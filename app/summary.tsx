@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChipsDisplay from '../components/ChipsDisplay';
+import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 
@@ -109,18 +110,8 @@ export default function SummaryScreen() {
         <ChipsDisplay amount={chips} label="Current Balance" size="large" />
 
         <View style={styles.buttons}>
-          <Pressable
-            style={({ pressed }) => [styles.nextButton, pressed && styles.pressed]}
-            onPress={() => router.replace('/game')}
-          >
-            <Text style={styles.nextText}>NEXT HAND</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.homeButton, pressed && styles.pressed]}
-            onPress={() => router.replace('/')}
-          >
-            <Text style={styles.homeText}>HOME</Text>
-          </Pressable>
+          <Button title="NEXT HAND" variant="gold" onPress={() => router.replace('/game')} />
+          <Button title="HOME" variant="secondary" onPress={() => router.replace('/')} />
         </View>
       </View>
     </SafeAreaView>
@@ -272,34 +263,5 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 10,
     marginTop: 'auto',
-  },
-  nextButton: {
-    backgroundColor: COLORS.gold,
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  nextText: {
-    color: COLORS.background,
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 3,
-  },
-  homeButton: {
-    borderWidth: 1.5,
-    borderColor: COLORS.boardBorder,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  homeText: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-  pressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
   },
 });

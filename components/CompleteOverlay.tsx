@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+  withSequence,
+  runOnJS,
+} from 'react-native-reanimated';
 import { COLORS } from '../constants/gameConfig';
 
 interface CompleteOverlayProps {
@@ -10,31 +19,98 @@ interface CompleteOverlayProps {
 }
 
 const { width, height } = Dimensions.get('window');
+const NUM_PARTICLES = 12;
 
-export default function CompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
-  const [visible, setVisible] = useState(true);
+function Particle({ index }: { index: number }) {
+  const angle = (index / NUM_PARTICLES) * 2 * Math.PI;
+  const targetX = Math.cos(angle) * 120;
+  const targetY = Math.sin(angle) * 120;
+
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
 
   useEffect(() => {
+    translateX.value = withDelay(100, withSpring(targetX, { damping: 12, stiffness: 60 }));
+    translateY.value = withDelay(100, withSpring(targetY, { damping: 12, stiffness: 60 }));
+    opacity.value = withDelay(200, withTiming(0, { duration: 800 }));
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+    ],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.particle,
+        animStyle,
+      ]}
+    />
+  );
+}
+
+export default function CompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
+  // Timer-based auto-dismiss
+  useEffect(() => {
     const timer = setTimeout(() => {
-      setVisible(false);
       onDone();
     }, duration * 1000);
     return () => clearTimeout(timer);
   }, [duration, onDone]);
 
-  if (!visible) return null;
+  // "COMPLETE!" text entrance: scale from 0 -> 1.15 -> 1.0
+  const titleScale = useSharedValue(0);
+  // Sub text fade in
+  const subOpacity = useSharedValue(0);
+  // Bonus row slide up
+  const bonusTranslateY = useSharedValue(30);
+  const bonusOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    titleScale.value = withSpring(1, { damping: 8, stiffness: 100 });
+    subOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
+    bonusTranslateY.value = withDelay(500, withSpring(0, { damping: 10, stiffness: 100 }));
+    bonusOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
+  }, []);
+
+  const titleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: titleScale.value }],
+  }));
+
+  const subStyle = useAnimatedStyle(() => ({
+    opacity: subOpacity.value,
+  }));
+
+  const bonusStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: bonusTranslateY.value }],
+    opacity: bonusOpacity.value,
+  }));
 
   return (
     <View style={styles.overlay}>
+      {/* Particles */}
+      <View style={styles.particleContainer}>
+        {Array.from({ length: NUM_PARTICLES }).map((_, i) => (
+          <Particle key={i} index={i} />
+        ))}
+      </View>
+
       <View style={styles.content}>
-        <Text style={styles.completeText}>COMPLETE!</Text>
-        <Text style={styles.subText}>
+        <Animated.Text style={[styles.completeText, titleStyle]}>
+          COMPLETE!
+        </Animated.Text>
+        <Animated.Text style={[styles.subText, subStyle]}>
           {winner === 'player' ? 'You swept' : 'Bot swept'} all boards!
-        </Text>
-        <View style={styles.bonusRow}>
+        </Animated.Text>
+        <Animated.View style={[styles.bonusRow, bonusStyle]}>
           <Text style={styles.bonusLabel}>BONUS</Text>
           <Text style={styles.bonusAmount}>+{bonusAmount} 🪙</Text>
-        </View>
+        </Animated.View>
       </View>
     </View>
   );
@@ -51,6 +127,22 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     padding: 40,
+  },
+  particleContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 0,
+    height: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  particle: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.goldBright,
   },
   completeText: {
     fontSize: 52,

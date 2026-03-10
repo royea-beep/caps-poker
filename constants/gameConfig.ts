@@ -1,3 +1,5 @@
+import { THEME } from './theme';
+
 export const DEFAULT_CONFIG = {
   arrangementTime: 60,
   boardRevealDuration: 5,
@@ -30,26 +32,5 @@ export const BOARD_OPEN_CARDS = 3;
 export const BOARD_CLOSED_CARDS = 2;
 export const PLAYER_HAND_SIZE = 16;
 
-export const COLORS = {
-  background: '#0a1a0f',
-  felt: '#0d2818',
-  feltLight: '#143d24',
-  gold: '#d4a843',
-  goldBright: '#f0c75e',
-  goldDim: '#8a6d2b',
-  cardWhite: '#f5f0e8',
-  cardBack: '#1a3a2a',
-  cardBackPattern: '#245035',
-  red: '#c0392b',
-  black: '#1a1a1a',
-  white: '#ffffff',
-  textPrimary: '#e8e0d0',
-  textSecondary: '#8a9a8a',
-  chipGreen: '#27ae60',
-  chipRed: '#e74c3c',
-  boardBorder: '#2a5a3a',
-  boardActive: '#d4a843',
-  overlay: 'rgba(0, 0, 0, 0.7)',
-  success: '#2ecc71',
-  danger: '#e74c3c',
-};
+// Re-export for backward compatibility
+export const COLORS = THEME.colors;

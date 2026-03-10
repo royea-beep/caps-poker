@@ -7,6 +7,7 @@ import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import CompleteOverlay from '../components/CompleteOverlay';
+import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, Card, NUM_BOARDS, CARDS_PER_BOARD } from '../constants/gameConfig';
 import {
@@ -17,8 +18,9 @@ import {
   calculateHandResults,
   BoardResult,
 } from '../utils/gameLogic';
-
-type Phase = 'arrangement' | 'reveal' | 'summary';
+import { GamePhase } from '../types/gameTypes';
+import { useGameTimer } from '../hooks/useGameTimer';
+import { useRevealSequence } from '../hooks/useRevealSequence';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -29,13 +31,10 @@ export default function GameScreen() {
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [botHand, setBotHand] = useState<Card[]>([]);
-  const [phase, setPhase] = useState<Phase>('arrangement');
-  const [timeRemaining, setTimeRemaining] = useState(config.arrangementTime);
+  const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: config.arrangementTime });
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [selectedBoardIndex, setSelectedBoardIndex] = useState<number | null>(null);
-  const [playerReady, setPlayerReady] = useState(false);
   const [botReady, setBotReady] = useState(false);
-  const [currentRevealBoard, setCurrentRevealBoard] = useState(-1);
   const [boardResults, setBoardResults] = useState<BoardResult[]>([]);
   const [showComplete, setShowComplete] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -43,21 +42,91 @@ export default function GameScreen() {
   const [completeWinner, setCompleteWinner] = useState<'player' | 'bot'>('player');
   const [netChips, setNetChips] = useState(0);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const bothReady = playerReady && botReady;
 
-  // Cleanup all timers on unmount
+  const isArranging = phase.type === 'arranging';
+  const isPlayerReady = phase.type === 'waiting_for_bot' || phase.type === 'revealing' || phase.type === 'complete' || phase.type === 'summary';
+  const isRevealing = phase.type === 'revealing';
+
+  // Auto-fill and ready handler (defined early so hooks can reference it)
+  const handleAutoFillAndReady = useCallback(() => {
+    setBoards((currentBoards) => {
+      setPlayerHand((currentHand) => {
+        const { boards: filledBoards, remainingHand } = autoFillPlayerCards(currentHand, currentBoards);
+        Promise.resolve().then(() => {
+          if (mountedRef.current) {
+            setBoards(filledBoards);
+          }
+        });
+        return remainingHand;
+      });
+      return currentBoards;
+    });
+    setPhase({ type: 'waiting_for_bot' });
+  }, []);
+
+  // Game timer hook
+  const timer = useGameTimer({
+    initialSeconds: config.arrangementTime,
+    onExpire: handleAutoFillAndReady,
+    autoStart: true,
+  });
+
+  // Reveal sequence callbacks
+  const handleBoardRevealed = useCallback((index: number) => {
+    if (!mountedRef.current) return;
+    setPhase({ type: 'revealing', boardIndex: index });
+    setBoardResults((currentResults) => {
+      setBoards((prev) => {
+        const result = currentResults[index];
+        if (!result) return prev;
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          revealed: true,
+          playerResult: result.playerResult,
+          botResult: result.botResult,
+          winner: result.winner,
+        };
+        return updated;
+      });
+      return currentResults;
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  }, []);
+
+  const handleAllRevealed = useCallback(() => {
+    if (!mountedRef.current) return;
+    // addChips and check complete are handled here
+    // We need boardResults and isComplete — read from refs
+    setBoardResults((currentResults) => {
+      // Re-derive isComplete / playerChipsWon from currentResults
+      // But we already stored these in state, so just trigger the final step
+      return currentResults;
+    });
+  }, []);
+
+  const revealSequence = useRevealSequence({
+    boardCount: NUM_BOARDS,
+    revealDuration: config.boardRevealDuration,
+    onBoardRevealed: handleBoardRevealed,
+    onAllRevealed: handleAllRevealed,
+  });
+
+  // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (timerRef.current) clearInterval(timerRef.current);
       timeoutsRef.current.forEach((t) => clearTimeout(t));
       timeoutsRef.current = [];
     };
   }, []);
+
+  // We need refs for the calculated results so handleAllRevealed can access them
+  const playerChipsWonRef = useRef(0);
+  const isCompleteRef = useRef(false);
 
   // Initialize game
   useEffect(() => {
@@ -65,7 +134,6 @@ export default function GameScreen() {
     setBoards(gameState.boards);
     setPlayerHand(gameState.playerHand);
     setBotHand(gameState.botHand);
-    setTimeRemaining(config.arrangementTime);
 
     // Deduct pot from player chips
     const totalPot = config.potPerBoard * NUM_BOARDS;
@@ -83,57 +151,66 @@ export default function GameScreen() {
     return () => clearTimeout(botTimer);
   }, []);
 
-  // Timer countdown
+  // Sync timer timeLeft into phase state (for display)
   useEffect(() => {
-    if (phase !== 'arrangement' || playerReady) return;
+    if (isArranging) {
+      setPhase({ type: 'arranging', timeLeft: timer.timeLeft });
+    }
+  }, [timer.timeLeft, isArranging]);
 
-    timerRef.current = setInterval(() => {
-      if (!mountedRef.current) return;
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          // Auto-fill and force ready
-          handleAutoFillAndReady();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [phase, playerReady]);
-
-  // Both ready -> start reveal
+  // When player is waiting and bot becomes ready -> start reveal
   useEffect(() => {
-    if (bothReady && phase === 'arrangement') {
-      if (timerRef.current) clearInterval(timerRef.current);
+    if (phase.type === 'waiting_for_bot' && botReady) {
       startRevealPhase();
     }
-  }, [bothReady, phase]);
+  }, [phase.type, botReady]);
 
-  const handleAutoFillAndReady = useCallback(() => {
-    // Use functional updaters to read latest state without nesting setters.
-    // We read boards inside setBoards, compute the fill, then schedule
-    // setPlayerHand via a microtask to avoid the dangerous nested-setter pattern.
+  const startRevealPhase = useCallback(() => {
+    setPhase({ type: 'revealing', boardIndex: -1 });
+
+    // Calculate results using functional state read for boards
     setBoards((currentBoards) => {
-      // Read the current playerHand via a ref-like trick: capture it in closure
-      // by scheduling the paired update on the next microtask.
-      setPlayerHand((currentHand) => {
-        const { boards: filledBoards, remainingHand } = autoFillPlayerCards(currentHand, currentBoards);
-        // Update boards outside the nested setter via microtask
-        Promise.resolve().then(() => {
-          if (mountedRef.current) {
-            setBoards(filledBoards);
-          }
-        });
-        return remainingHand;
+      const results = calculateHandResults(currentBoards, config.potPerBoard, config.completeBonusPercent);
+      setBoardResults(results.boardResults);
+      setIsComplete(results.isComplete);
+      setCompleteBonusAmount(results.completeBonusAmount);
+
+      const totalPaid = config.potPerBoard * NUM_BOARDS;
+      const playerNet = results.playerChipsWon - totalPaid;
+      setNetChips(playerNet);
+
+      playerChipsWonRef.current = results.playerChipsWon;
+      isCompleteRef.current = results.isComplete;
+
+      if (results.isComplete) {
+        setCompleteWinner(results.boardResults.every((r) => r.winner === 'player') ? 'player' : 'bot');
+      }
+
+      // Start reveal sequence after a microtask so boardResults state is set
+      Promise.resolve().then(() => {
+        revealSequence.startReveal();
       });
-      // Return current boards unchanged; the microtask will set the filled version
+
       return currentBoards;
     });
-    setPlayerReady(true);
-  }, []);
+  }, [config, revealSequence]);
+
+  // When all reveals are done (revealSequence.isRevealing goes false after being true)
+  const wasRevealingRef = useRef(false);
+  useEffect(() => {
+    if (revealSequence.isRevealing) {
+      wasRevealingRef.current = true;
+    } else if (wasRevealingRef.current) {
+      wasRevealingRef.current = false;
+      // All reveals done
+      addChips(playerChipsWonRef.current);
+      if (isCompleteRef.current) {
+        setShowComplete(true);
+      } else {
+        setPhase({ type: 'summary' });
+      }
+    }
+  }, [revealSequence.isRevealing, addChips]);
 
   const handleCardSelect = useCallback((card: Card) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -142,10 +219,9 @@ export default function GameScreen() {
 
   const handleBoardPress = useCallback(
     (boardIndex: number) => {
-      if (phase !== 'arrangement' || playerReady) return;
+      if (!isArranging) return;
 
       if (selectedCard) {
-        // Place card on board
         setBoards((prev) => {
           const board = prev[boardIndex];
           if (board.playerCards.length >= CARDS_PER_BOARD) {
@@ -163,16 +239,15 @@ export default function GameScreen() {
         setPlayerHand((prev) => prev.filter((c) => c.id !== selectedCard.id));
         setSelectedCard(null);
       } else {
-        // Toggle selected board (for removing cards)
         setSelectedBoardIndex((prev) => (prev === boardIndex ? null : boardIndex));
       }
     },
-    [selectedCard, phase, playerReady]
+    [selectedCard, isArranging]
   );
 
   const handleRemoveCardFromBoard = useCallback(
     (boardIndex: number, card: Card) => {
-      if (phase !== 'arrangement' || playerReady) return;
+      if (!isArranging) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setBoards((prev) => {
         const updated = [...prev];
@@ -185,7 +260,7 @@ export default function GameScreen() {
       });
       setPlayerHand((prev) => [...prev, card]);
     },
-    [phase, playerReady]
+    [isArranging]
   );
 
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
@@ -193,68 +268,19 @@ export default function GameScreen() {
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setPlayerReady(true);
-  }, [allBoardsFull]);
-
-  const startRevealPhase = useCallback(() => {
-    setPhase('reveal');
-
-    // Calculate results
-    const results = calculateHandResults(boards, config.potPerBoard, config.completeBonusPercent);
-    setBoardResults(results.boardResults);
-    setIsComplete(results.isComplete);
-    setCompleteBonusAmount(results.completeBonusAmount);
-
-    // Net chips = winnings minus what was paid in (potPerBoard * NUM_BOARDS)
-    const totalPaid = config.potPerBoard * NUM_BOARDS;
-    const playerNet = results.playerChipsWon - totalPaid;
-    setNetChips(playerNet);
-
-    if (results.isComplete) {
-      setCompleteWinner(results.boardResults.every((r) => r.winner === 'player') ? 'player' : 'bot');
+    timer.stop();
+    if (botReady) {
+      // Bot already ready, go straight to reveal
+      setPhase({ type: 'waiting_for_bot' });
+      // The useEffect watching waiting_for_bot + botReady will trigger startRevealPhase
+    } else {
+      setPhase({ type: 'waiting_for_bot' });
     }
-
-    // Reveal boards one at a time
-    let delay = 500;
-    for (let i = 0; i < NUM_BOARDS; i++) {
-      const revealTimer = setTimeout(() => {
-        if (!mountedRef.current) return;
-        setCurrentRevealBoard(i);
-        setBoards((prev) => {
-          const updated = [...prev];
-          updated[i] = {
-            ...updated[i],
-            revealed: true,
-            playerResult: results.boardResults[i].playerResult,
-            botResult: results.boardResults[i].botResult,
-            winner: results.boardResults[i].winner,
-          };
-          return updated;
-        });
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      }, delay);
-      timeoutsRef.current.push(revealTimer);
-      delay += config.boardRevealDuration * 1000;
-    }
-
-    // After all reveals
-    const finalTimer = setTimeout(() => {
-      if (!mountedRef.current) return;
-      // Apply chips
-      addChips(results.playerChipsWon);
-
-      if (results.isComplete) {
-        setShowComplete(true);
-      } else {
-        setPhase('summary');
-      }
-    }, delay);
-    timeoutsRef.current.push(finalTimer);
-  }, [boards, config]);
+  }, [allBoardsFull, timer, botReady]);
 
   const handleCompleteDone = useCallback(() => {
     setShowComplete(false);
-    setPhase('summary');
+    setPhase({ type: 'summary' });
   }, []);
 
   const formatTime = (seconds: number) => {
@@ -263,7 +289,7 @@ export default function GameScreen() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  if (phase === 'summary') {
+  if (phase.type === 'summary') {
     router.replace({
       pathname: '/summary',
       params: {
@@ -283,22 +309,24 @@ export default function GameScreen() {
     return null;
   }
 
+  const displayTimeLeft = phase.type === 'arranging' ? phase.timeLeft : 0;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>✕</Text>
+          <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topInfo}>
-          {phase === 'arrangement' && (
-            <View style={[styles.timerContainer, timeRemaining <= 10 && styles.timerUrgent]}>
-              <Text style={[styles.timerText, timeRemaining <= 10 && styles.timerTextUrgent]}>
-                {formatTime(timeRemaining)}
+          {isArranging && (
+            <View style={[styles.timerContainer, displayTimeLeft <= 10 && styles.timerUrgent]}>
+              <Text style={[styles.timerText, displayTimeLeft <= 10 && styles.timerTextUrgent]}>
+                {formatTime(displayTimeLeft)}
               </Text>
             </View>
           )}
-          {phase === 'reveal' && (
+          {isRevealing && (
             <Text style={styles.revealText}>REVEALING...</Text>
           )}
         </View>
@@ -308,7 +336,7 @@ export default function GameScreen() {
       {/* Bot status */}
       <View style={styles.botSection}>
         <Text style={styles.botLabel}>
-          BOT {botReady ? '✓ READY' : `(${botHand.length} cards)`}
+          BOT {botReady ? '\u2713 READY' : `(${botHand.length} cards)`}
         </Text>
       </View>
 
@@ -345,7 +373,7 @@ export default function GameScreen() {
                 playerCards={board.playerCards}
                 botCards={board.botCards}
                 revealed={board.revealed}
-                active={currentRevealBoard === i}
+                active={revealSequence.currentBoardIndex === i}
                 potAmount={config.potPerBoard}
                 winner={board.winner}
                 playerHighlightIds={playerHighlightIds}
@@ -354,14 +382,14 @@ export default function GameScreen() {
                 playerHandName={board.playerResult?.name}
                 botHandName={board.botResult?.name}
                 onPress={() => handleBoardPress(i)}
-                isArrangement={phase === 'arrangement' && !playerReady}
+                isArrangement={isArranging}
               />
             );
           })}
         </View>
 
         {/* Remove cards from board */}
-        {phase === 'arrangement' && !playerReady && (
+        {isArranging && (
           <View style={styles.removeSection}>
             {boards.map((board, bi) =>
               board.playerCards.length > 0 ? (
@@ -374,9 +402,9 @@ export default function GameScreen() {
                       style={styles.removeCardBtn}
                     >
                       <Text style={styles.removeCardText}>
-                        {card.rank}{card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠'}
+                        {card.rank}{card.suit === 'hearts' ? '\u2665' : card.suit === 'diamonds' ? '\u2666' : card.suit === 'clubs' ? '\u2663' : '\u2660'}
                       </Text>
-                      <Text style={styles.removeX}>✕</Text>
+                      <Text style={styles.removeX}>{'\u2715'}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -387,7 +415,7 @@ export default function GameScreen() {
       </ScrollView>
 
       {/* Player hand */}
-      {phase === 'arrangement' && !playerReady && (
+      {isArranging && (
         <>
           <PlayerHand
             cards={playerHand}
@@ -395,27 +423,24 @@ export default function GameScreen() {
             onSelectCard={handleCardSelect}
           />
           {selectedCard && (
-            <Text style={styles.hint}>Tap a board to place {selectedCard.rank}{selectedCard.suit === 'hearts' ? '♥' : selectedCard.suit === 'diamonds' ? '♦' : selectedCard.suit === 'clubs' ? '♣' : '♠'}</Text>
+            <Text style={styles.hint}>Tap a board to place {selectedCard.rank}{selectedCard.suit === 'hearts' ? '\u2665' : selectedCard.suit === 'diamonds' ? '\u2666' : selectedCard.suit === 'clubs' ? '\u2663' : '\u2660'}</Text>
           )}
         </>
       )}
 
       {/* Ready button */}
-      {phase === 'arrangement' && !playerReady && (
+      {isArranging && (
         <View style={styles.readySection}>
-          <Pressable
-            style={[styles.readyButton, !allBoardsFull && styles.readyButtonDisabled]}
-            onPress={handleReady}
+          <Button
+            title={allBoardsFull ? 'READY' : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`}
+            variant="gold"
             disabled={!allBoardsFull}
-          >
-            <Text style={[styles.readyText, !allBoardsFull && styles.readyTextDisabled]}>
-              {allBoardsFull ? 'READY' : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`}
-            </Text>
-          </Pressable>
+            onPress={handleReady}
+          />
         </View>
       )}
 
-      {phase === 'arrangement' && playerReady && !botReady && (
+      {phase.type === 'waiting_for_bot' && (
         <View style={styles.waitingSection}>
           <Text style={styles.waitingText}>Waiting for bot...</Text>
         </View>
@@ -554,29 +579,6 @@ const styles = StyleSheet.create({
   readySection: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-  },
-  readyButton: {
-    backgroundColor: COLORS.gold,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  readyButtonDisabled: {
-    backgroundColor: COLORS.feltLight,
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
-  },
-  readyText: {
-    color: COLORS.background,
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 3,
-  },
-  readyTextDisabled: {
-    color: COLORS.textSecondary,
-    letterSpacing: 0,
-    fontWeight: '600',
-    fontSize: 14,
   },
   waitingSection: {
     flex: 1,

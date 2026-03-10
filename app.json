@@ -2,6 +2,7 @@
   "expo": {
     "name": "Caps Poker",
     "slug": "caps-poker",
+    "owner": "PLACEHOLDER_OWNER",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,6 +27,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "PLACEHOLDER_PROJECT_ID"
+      }
     },
     "plugins": [
       "expo-router"

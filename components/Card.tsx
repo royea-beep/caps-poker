@@ -1,5 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { Card as CardType, COLORS } from '../constants/gameConfig';
 
 interface CardProps {
@@ -21,6 +27,24 @@ export default function CardComponent({ card, faceDown, small, highlighted, dimm
   const width = small ? 32 : 48;
   const height = small ? 46 : 70;
 
+  const glowOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    glowOpacity.value = highlighted
+      ? withSpring(1, { damping: 12, stiffness: 120 })
+      : withTiming(0, { duration: 200 });
+  }, [highlighted]);
+
+  const highlightAnimStyle = useAnimatedStyle(() => ({
+    borderWidth: glowOpacity.value * 2,
+    borderColor: COLORS.goldBright,
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: glowOpacity.value * 0.8,
+    shadowRadius: glowOpacity.value * 8,
+    elevation: glowOpacity.value * 8,
+  }));
+
   if (faceDown || !card) {
     return (
       <View style={[styles.card, styles.faceDown, { width, height }]}>
@@ -35,12 +59,12 @@ export default function CardComponent({ card, faceDown, small, highlighted, dimm
   const suitColor = isRed ? COLORS.red : COLORS.black;
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.card,
         styles.faceUp,
         { width, height },
-        highlighted && styles.highlighted,
+        highlightAnimStyle,
         dimmed && styles.dimmed,
       ]}
     >
@@ -50,7 +74,7 @@ export default function CardComponent({ card, faceDown, small, highlighted, dimm
       <Text style={[styles.suit, { color: suitColor, fontSize: small ? 12 : 18 }]}>
         {SUIT_SYMBOLS[card.suit]}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -89,15 +113,6 @@ const styles = StyleSheet.create({
   },
   suit: {
     marginTop: -2,
-  },
-  highlighted: {
-    borderWidth: 2,
-    borderColor: COLORS.goldBright,
-    shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
   },
   dimmed: {
     opacity: 0.4,

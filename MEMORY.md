@@ -11,78 +11,58 @@
 ## Tech Stack
 - React Native + Expo SDK 55 (React 19, RN 0.83)
 - expo-router for navigation
-- Zustand for state
-- AsyncStorage for persistence
-- react-native-reanimated for animations
+- Zustand with persist middleware for state + AsyncStorage
+- react-native-reanimated for animations (spring press, pulsing borders, particle effects)
 - react-native-gesture-handler for interactions
 - expo-haptics for tactile feedback
 - TypeScript strict
 - Jest + ts-jest for testing
+- EAS Build configured for TestFlight
 
 ## Current State
-- Sprint 02 complete — cross-project audit done, integration plan ready
+- Sprint 03 complete — Wingman theme integrated, state machine refactored, reanimated animations added, EAS/TestFlight configured
 - TypeScript: 0 errors
 - Hand evaluator: 12/12 tests passing
 
-## Audit Findings (Sprint 02)
-Top items to integrate from sibling projects:
-
-### From Wingman (highest value — same tech stack)
-- **Theme system**: spacing.ts, colors.ts, typography.ts — complete design tokens, copy and adapt
-- **Button component**: 5 variants, spring press animation, loading state, gradient support
-- **Badge component**: status badges with spring entrance, good for hand rankings
-- **DailyRewardModal**: celebration pattern with particles — adapt for COMPLETE overlay
-- **LoadingSkeleton**: composable pulse-animated skeletons
-- Source: `C:\Projects\Wingman\apps\mobile\src\`
-
-### Architecture Improvements (from crypto-arb-bot + TokenWise patterns)
-- Replace game phase booleans with discriminated union state machine
-- Extract useGameTimer and useRevealSequence custom hooks
-- Use Zustand persist middleware instead of manual AsyncStorage calls
-
-### TestFlight Path (from royea-mobile-launch-kit)
-- Run init-project.js to generate eas.json + preflight checks
-- ~45 min to TestFlight with EAS Build
-- Kit at: `C:\Projects\royea-mobile-launch-kit\`
-
-### Skipped
-- ftable / ftable-hands: no game logic (tournament mgmt + video OCR)
-- shared-utils: mostly backend/web utilities, not applicable to local-only RN game
-- FlushQueue: event buffer pattern noted but no backend to flush to
-
-## Issues Found & Fixed (Sprint 01 Audit)
-- babel.config.js was missing — created with reanimated/plugin last
-- Chip math bug: winners only got potPerBoard (1x) instead of 2x — fixed
-- COMPLETE bonus calculated from single-player pot, now from total pot — fixed
-- netChips was gross instead of net in game.tsx — fixed
-- summary.tsx double-subtracted totalPaid — fixed
-- handEvaluator.ts: added guards for edge cases, try/catch, null-safe return
-- gameStore.ts: added isNaN guard on parseInt for persisted chips
-- summary.tsx: wrapped JSON.parse in try/catch
-- game.tsx: mountedRef, timer cleanup, handleAutoFillAndReady rewrite
-- Board/Card sizes reduced for iPhone 14 Pro fit
-- Boards grid wrapped in ScrollView
-
 ## File Structure
 /app/_layout.tsx, /app/index.tsx, /app/game.tsx, /app/summary.tsx, /app/settings.tsx
-/components/Card.tsx, Board.tsx, PlayerHand.tsx, ChipsDisplay.tsx, CompleteOverlay.tsx
+/components/Card.tsx, Board.tsx, PlayerHand.tsx, ChipsDisplay.tsx, CompleteOverlay.tsx, Button.tsx, Badge.tsx
+/hooks/useGameTimer.ts, useRevealSequence.ts
+/types/gameTypes.ts
 /utils/deck.ts, handEvaluator.ts, gameLogic.ts, __tests__/handEvaluator.test.ts
-/constants/gameConfig.ts
+/constants/gameConfig.ts, theme.ts
 /store/gameStore.ts
-/babel.config.js, /jest.config.js
-/AUDIT_REPORT.md
+/babel.config.js, /jest.config.js, /eas.json
+/AUDIT_REPORT.md, /TESTFLIGHT_GUIDE.md
+
+## Sprint 03 Changes
+- constants/theme.ts: Full design system (spacing, colors, typography) adapted from Wingman
+- gameConfig.ts: COLORS now re-exports from theme.ts with backward-compatible aliases
+- Button.tsx: 3 variants (gold/secondary/ghost), spring press animation, loading/disabled states
+- Badge.tsx: 4 variants (win/lose/tie/rank), spring entrance animation
+- All raw Pressable buttons replaced with Button component across index, game, summary, settings
+- types/gameTypes.ts: GamePhase discriminated union (idle/arranging/waiting_for_bot/revealing/complete/summary)
+- hooks/useGameTimer.ts: Reusable countdown with start/stop/reset
+- hooks/useRevealSequence.ts: Sequential board reveal with configurable duration
+- game.tsx refactored: boolean flags replaced with GamePhase, manual timers replaced with hooks
+- gameStore.ts: Zustand persist middleware, removed manual loadPersistedData/persistChips
+- _layout.tsx: Simplified, no manual hydration needed
+- Card.tsx: Animated highlight glow with spring physics
+- Board.tsx: Pulsing gold border when active during reveal
+- CompleteOverlay.tsx: Spring scale entrance, fade-in text, slide-up bonus, 12-particle gold burst
+- eas.json + app.json: EAS Build configured for TestFlight (3 placeholders to fill)
+- TESTFLIGHT_GUIDE.md: Step-by-step deployment guide
 
 ## Open Items
 - First run on device not yet verified
+- Fill TestFlight placeholders: expo.owner, eas.projectId, appleId
 - Tap-to-place UX needs real device testing
-- Integrate Wingman theme system (spacing, colors, typography)
-- Refactor gameStore with Zustand persist middleware
-- Extract useGameTimer + useRevealSequence hooks
-- Implement reanimated animations (card reveal, chip movement, spring press)
-- Upgrade CompleteOverlay with celebration particles (DailyRewardModal pattern)
-- Run royea-mobile-launch-kit init for EAS/TestFlight setup
+- Card flip animation (rotateY) not yet implemented
+- Floating "+chips" text after board reveal not yet implemented
+- Badge component created but not yet used in Board/Summary screens
 
 ## Commit History
 - Sprint 01: Initial full build
 - Sprint 01 audit: dependency fix, crash prevention, layout fixes, game flow fix, tests
 - Sprint 02: Cross-project audit complete
+- Sprint 03: Wingman theme, state machine, reanimated animations, EAS TestFlight setup

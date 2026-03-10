@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig } from '../constants/gameConfig';
 
@@ -51,9 +52,7 @@ export default function SettingsScreen() {
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.title}>SETTINGS</Text>
-        <Pressable onPress={resetConfig} style={styles.resetButton}>
-          <Text style={styles.resetText}>Reset</Text>
-        </Pressable>
+        <Button title="Reset" variant="secondary" onPress={resetConfig} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 }} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -111,19 +110,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     letterSpacing: 4,
-  },
-  resetButton: {
-    backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
-  },
-  resetText: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
   },
   scrollView: {
     flex: 1,

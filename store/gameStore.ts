@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig } from '../constants/gameConfig';
 
@@ -9,52 +10,27 @@ interface GameStore {
   addChips: (amount: number) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
-  loadPersistedData: () => Promise<void>;
-  persistChips: (chips: number) => Promise<void>;
 }
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  chips: DEFAULT_CONFIG.startingChips,
-  config: { ...DEFAULT_CONFIG },
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set, get) => ({
+      chips: DEFAULT_CONFIG.startingChips,
+      config: { ...DEFAULT_CONFIG },
 
-  setChips: (chips: number) => {
-    set({ chips });
-    get().persistChips(chips);
-  },
+      setChips: (chips: number) => set({ chips }),
 
-  addChips: (amount: number) => {
-    const newChips = get().chips + amount;
-    set({ chips: newChips });
-    get().persistChips(newChips);
-  },
+      addChips: (amount: number) => set((state) => ({ chips: state.chips + amount })),
 
-  updateConfig: (partial: Partial<GameConfig>) => {
-    set((state) => ({ config: { ...state.config, ...partial } }));
-  },
+      updateConfig: (partial: Partial<GameConfig>) =>
+        set((state) => ({ config: { ...state.config, ...partial } })),
 
-  resetConfig: () => {
-    set({ config: { ...DEFAULT_CONFIG } });
-  },
-
-  loadPersistedData: async () => {
-    try {
-      const stored = await AsyncStorage.getItem('caps_poker_chips');
-      if (stored !== null) {
-        const parsed = parseInt(stored, 10);
-        if (!isNaN(parsed)) {
-          set({ chips: parsed });
-        }
-      }
-    } catch {
-      // Ignore storage errors
+      resetConfig: () => set({ config: { ...DEFAULT_CONFIG } }),
+    }),
+    {
+      name: 'caps-poker-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ chips: state.chips, config: state.config }),
     }
-  },
-
-  persistChips: async (chips: number) => {
-    try {
-      await AsyncStorage.setItem('caps_poker_chips', chips.toString());
-    } catch {
-      // Ignore storage errors
-    }
-  },
-}));
+  )
+);

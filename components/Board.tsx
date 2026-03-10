@@ -1,5 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 
@@ -41,110 +48,141 @@ export default function Board({
   isArrangement,
 }: BoardProps) {
   const allBoardCards = [...openCards, ...(revealed ? closedCards : [])];
+  const pulseValue = useSharedValue(0.4);
+
+  useEffect(() => {
+    if (active) {
+      pulseValue.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 800 }),
+          withTiming(0.4, { duration: 800 }),
+        ),
+        -1,
+      );
+    } else {
+      pulseValue.value = withTiming(0, { duration: 200 });
+    }
+  }, [active]);
+
+  const pulseStyle = useAnimatedStyle(() => {
+    if (pulseValue.value === 0) {
+      return {};
+    }
+    return {
+      borderColor: COLORS.boardActive,
+      shadowColor: COLORS.gold,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: pulseValue.value * 0.6,
+      shadowRadius: pulseValue.value * 10,
+      elevation: pulseValue.value * 8,
+    };
+  });
 
   return (
-    <Pressable
-      onPress={onPress}
+    <Animated.View
       style={[
         styles.container,
         active && styles.active,
         winner === 'player' && styles.playerWon,
         winner === 'bot' && styles.botWon,
+        active && pulseStyle,
       ]}
     >
-      <View style={styles.header}>
-        <Text style={styles.boardLabel}>Board {index + 1}</Text>
-        <Text style={styles.potLabel}>{potAmount} 🪙</Text>
-      </View>
+      <Pressable onPress={onPress} style={styles.pressableInner}>
+        <View style={styles.header}>
+          <Text style={styles.boardLabel}>Board {index + 1}</Text>
+          <Text style={styles.potLabel}>{potAmount} 🪙</Text>
+        </View>
 
-      {/* Bot cards */}
-      <View style={styles.playerRow}>
-        {botCards.length > 0 ? (
-          botCards.map((c, i) => (
+        {/* Bot cards */}
+        <View style={styles.playerRow}>
+          {botCards.length > 0 ? (
+            botCards.map((c, i) => (
+              <CardComponent
+                key={c.id}
+                card={c}
+                faceDown={!revealed}
+                small
+                highlighted={revealed && botHighlightIds.includes(c.id)}
+                dimmed={revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
+              />
+            ))
+          ) : (
+            Array.from({ length: 4 }).map((_, i) => (
+              <View key={`bot-empty-${i}`} style={styles.emptySlot} />
+            ))
+          )}
+        </View>
+        {revealed && botHandName && (
+          <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName]}>{botHandName}</Text>
+        )}
+
+        {/* Community cards */}
+        <View style={styles.communityRow}>
+          {openCards.map((c) => (
             <CardComponent
               key={c.id}
               card={c}
-              faceDown={!revealed}
               small
-              highlighted={revealed && botHighlightIds.includes(c.id)}
-              dimmed={revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
+              highlighted={revealed && boardHighlightIds.includes(c.id)}
+              dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
-          ))
-        ) : (
-          Array.from({ length: 4 }).map((_, i) => (
-            <View key={`bot-empty-${i}`} style={styles.emptySlot} />
-          ))
-        )}
-      </View>
-      {revealed && botHandName && (
-        <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName]}>{botHandName}</Text>
-      )}
+          ))}
+          {revealed
+            ? closedCards.map((c) => (
+                <CardComponent
+                  key={c.id}
+                  card={c}
+                  small
+                  highlighted={boardHighlightIds.includes(c.id)}
+                  dimmed={!boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
+                />
+              ))
+            : closedCards.map((_, i) => (
+                <CardComponent key={`closed-${i}`} faceDown small />
+              ))}
+        </View>
 
-      {/* Community cards */}
-      <View style={styles.communityRow}>
-        {openCards.map((c) => (
-          <CardComponent
-            key={c.id}
-            card={c}
-            small
-            highlighted={revealed && boardHighlightIds.includes(c.id)}
-            dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
-          />
-        ))}
-        {revealed
-          ? closedCards.map((c) => (
+        {/* Player cards */}
+        {revealed && playerHandName && (
+          <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
+        )}
+        <View style={styles.playerRow}>
+          {playerCards.length > 0 ? (
+            playerCards.map((c) => (
               <CardComponent
                 key={c.id}
                 card={c}
                 small
-                highlighted={boardHighlightIds.includes(c.id)}
-                dimmed={!boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
+                highlighted={revealed && playerHighlightIds.includes(c.id)}
+                dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
               />
             ))
-          : closedCards.map((_, i) => (
-              <CardComponent key={`closed-${i}`} faceDown small />
-            ))}
-      </View>
-
-      {/* Player cards */}
-      {revealed && playerHandName && (
-        <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
-      )}
-      <View style={styles.playerRow}>
-        {playerCards.length > 0 ? (
-          playerCards.map((c) => (
-            <CardComponent
-              key={c.id}
-              card={c}
-              small
-              highlighted={revealed && playerHighlightIds.includes(c.id)}
-              dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
-            />
-          ))
-        ) : (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Pressable key={`player-empty-${i}`} style={[styles.emptySlot, isArrangement && styles.dropTarget]} onPress={onPress}>
-              <Text style={styles.plusText}>+</Text>
-            </Pressable>
-          ))
-        )}
-        {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
-          Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-            <Pressable key={`player-empty-fill-${i}`} style={[styles.emptySlot, styles.dropTarget]} onPress={onPress}>
-              <Text style={styles.plusText}>+</Text>
-            </Pressable>
-          ))
-        }
-      </View>
-
-      {winner && (
-        <View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge]}>
-          <Text style={styles.winnerText}>
-            {winner === 'player' ? 'YOU WIN' : winner === 'bot' ? 'BOT WINS' : 'TIE'}
-          </Text>
+          ) : (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Pressable key={`player-empty-${i}`} style={[styles.emptySlot, isArrangement && styles.dropTarget]} onPress={onPress}>
+                <Text style={styles.plusText}>+</Text>
+              </Pressable>
+            ))
+          )}
+          {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
+            Array.from({ length: 4 - playerCards.length }).map((_, i) => (
+              <Pressable key={`player-empty-fill-${i}`} style={[styles.emptySlot, styles.dropTarget]} onPress={onPress}>
+                <Text style={styles.plusText}>+</Text>
+              </Pressable>
+            ))
+          }
         </View>
-      )}
-    </Pressable>
+
+        {winner && (
+          <View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge]}>
+            <Text style={styles.winnerText}>
+              {winner === 'player' ? 'YOU WIN' : winner === 'bot' ? 'BOT WINS' : 'TIE'}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -154,9 +192,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 2,
     borderColor: COLORS.boardBorder,
-    padding: 4,
+    padding: 0,
     width: '48%',
     marginBottom: 4,
+    overflow: 'hidden',
+  },
+  pressableInner: {
+    padding: 4,
   },
   active: {
     borderColor: COLORS.boardActive,
