@@ -12,17 +12,20 @@
 - React Native + Expo SDK 55 (React 19, RN 0.83)
 - expo-router for navigation
 - Zustand with persist middleware for state + AsyncStorage
-- react-native-reanimated for animations (spring press, pulsing borders, particle effects)
+- react-native-reanimated for animations
 - react-native-gesture-handler for interactions
 - expo-haptics for tactile feedback
 - TypeScript strict
-- Jest + ts-jest for testing
+- Jest 29 + ts-jest for testing
 - EAS Build configured for TestFlight
 
 ## Current State
-- Sprint 03 complete — Wingman theme integrated, state machine refactored, reanimated animations added, EAS/TestFlight configured
+- Sprint 04 complete — TestFlight build ready, awaiting eas login + build:configure
 - TypeScript: 0 errors
+- Expo doctor: 17/17 checks passed
+- Preflight: 10/10 checks passed
 - Hand evaluator: 12/12 tests passing
+- iOS bundle: 1462 modules, 3.9 MB
 
 ## File Structure
 /app/_layout.tsx, /app/index.tsx, /app/game.tsx, /app/summary.tsx, /app/settings.tsx
@@ -32,37 +35,28 @@
 /utils/deck.ts, handEvaluator.ts, gameLogic.ts, __tests__/handEvaluator.test.ts
 /constants/gameConfig.ts, theme.ts
 /store/gameStore.ts
-/babel.config.js, /jest.config.js, /eas.json
-/AUDIT_REPORT.md, /TESTFLIGHT_GUIDE.md
+/scripts/generate-icon.js, preflight-check.js
+/babel.config.js, jest.config.js, metro.config.js, eas.json
+/BUILD_INSTRUCTIONS.md, TESTFLIGHT_GUIDE.md, QA_CHECKLIST.md, AUDIT_REPORT.md
 
-## Sprint 03 Changes
-- constants/theme.ts: Full design system (spacing, colors, typography) adapted from Wingman
-- gameConfig.ts: COLORS now re-exports from theme.ts with backward-compatible aliases
-- Button.tsx: 3 variants (gold/secondary/ghost), spring press animation, loading/disabled states
-- Badge.tsx: 4 variants (win/lose/tie/rank), spring entrance animation
-- All raw Pressable buttons replaced with Button component across index, game, summary, settings
-- types/gameTypes.ts: GamePhase discriminated union (idle/arranging/waiting_for_bot/revealing/complete/summary)
-- hooks/useGameTimer.ts: Reusable countdown with start/stop/reset
-- hooks/useRevealSequence.ts: Sequential board reveal with configurable duration
-- game.tsx refactored: boolean flags replaced with GamePhase, manual timers replaced with hooks
-- gameStore.ts: Zustand persist middleware, removed manual loadPersistedData/persistChips
-- _layout.tsx: Simplified, no manual hydration needed
-- Card.tsx: Animated highlight glow with spring physics
-- Board.tsx: Pulsing gold border when active during reveal
-- CompleteOverlay.tsx: Spring scale entrance, fade-in text, slide-up bonus, 12-particle gold burst
-- eas.json + app.json: EAS Build configured for TestFlight (3 placeholders to fill)
-- TESTFLIGHT_GUIDE.md: Step-by-step deployment guide
+## TestFlight — Next Steps (manual)
+1. Run: eas login
+2. Run: eas build:configure (sets projectId in app.json)
+3. Run: eas build --platform ios --profile preview
+4. Run: eas submit --platform ios --latest (needs Apple Developer account)
+5. Replace placeholder icons with designed assets before public release
 
 ## Open Items
-- First run on device not yet verified
-- Fill TestFlight placeholders: expo.owner, eas.projectId, appleId
-- Tap-to-place UX needs real device testing
+- Replace placeholder dark green icons with designed CP logo
+- First device test via TestFlight
 - Card flip animation (rotateY) not yet implemented
 - Floating "+chips" text after board reveal not yet implemented
 - Badge component created but not yet used in Board/Summary screens
+- handleAllRevealed callback in game.tsx is effectively dead code (noted in smoke test)
 
 ## Commit History
 - Sprint 01: Initial full build
 - Sprint 01 audit: dependency fix, crash prevention, layout fixes, game flow fix, tests
 - Sprint 02: Cross-project audit complete
 - Sprint 03: Wingman theme, state machine, reanimated animations, EAS TestFlight setup
+- Sprint 04: TestFlight prep, assets, EAS config, QA checklist

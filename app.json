@@ -2,7 +2,6 @@
   "expo": {
     "name": "Caps Poker",
     "slug": "caps-poker",
-    "owner": "PLACEHOLDER_OWNER",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.capspoker.app"
+      "bundleIdentifier": "com.capspoker.app",
+      "infoPlist": {
+        "UIRequiresFullScreen": true,
+        "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]
+      }
     },
     "android": {
       "adaptiveIcon": {
