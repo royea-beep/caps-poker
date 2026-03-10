@@ -20,52 +20,69 @@
 - Jest + ts-jest for testing
 
 ## Current State
-- Sprint 01 complete — ready for first device test
+- Sprint 02 complete — cross-project audit done, integration plan ready
 - TypeScript: 0 errors
 - Hand evaluator: 12/12 tests passing
 
+## Audit Findings (Sprint 02)
+Top items to integrate from sibling projects:
+
+### From Wingman (highest value — same tech stack)
+- **Theme system**: spacing.ts, colors.ts, typography.ts — complete design tokens, copy and adapt
+- **Button component**: 5 variants, spring press animation, loading state, gradient support
+- **Badge component**: status badges with spring entrance, good for hand rankings
+- **DailyRewardModal**: celebration pattern with particles — adapt for COMPLETE overlay
+- **LoadingSkeleton**: composable pulse-animated skeletons
+- Source: `C:\Projects\Wingman\apps\mobile\src\`
+
+### Architecture Improvements (from crypto-arb-bot + TokenWise patterns)
+- Replace game phase booleans with discriminated union state machine
+- Extract useGameTimer and useRevealSequence custom hooks
+- Use Zustand persist middleware instead of manual AsyncStorage calls
+
+### TestFlight Path (from royea-mobile-launch-kit)
+- Run init-project.js to generate eas.json + preflight checks
+- ~45 min to TestFlight with EAS Build
+- Kit at: `C:\Projects\royea-mobile-launch-kit\`
+
+### Skipped
+- ftable / ftable-hands: no game logic (tournament mgmt + video OCR)
+- shared-utils: mostly backend/web utilities, not applicable to local-only RN game
+- FlushQueue: event buffer pattern noted but no backend to flush to
+
 ## Issues Found & Fixed (Sprint 01 Audit)
 - babel.config.js was missing — created with reanimated/plugin last
-- Chip math bug: winners only got potPerBoard (1x) instead of 2x (both contributions) — fixed
+- Chip math bug: winners only got potPerBoard (1x) instead of 2x — fixed
 - COMPLETE bonus calculated from single-player pot, now from total pot — fixed
 - netChips was gross instead of net in game.tsx — fixed
 - summary.tsx double-subtracted totalPaid — fixed
-- handEvaluator.ts: added guards for <2 player / <3 board cards, try/catch, null-safe return
+- handEvaluator.ts: added guards for edge cases, try/catch, null-safe return
 - gameStore.ts: added isNaN guard on parseInt for persisted chips
-- summary.tsx: wrapped JSON.parse in try/catch with Array.isArray validation
-- game.tsx: added mountedRef to prevent post-unmount state updates
-- game.tsx: all setTimeout/setInterval tracked and cleared on unmount
-- game.tsx: handleAutoFillAndReady rewritten to avoid stale-closure hazard
-- Board/Card sizes reduced for iPhone 14 Pro fit (34x48 small cards)
-- Boards grid wrapped in ScrollView for overflow safety
-- PlayerHand: keyboardShouldPersistTaps added
+- summary.tsx: wrapped JSON.parse in try/catch
+- game.tsx: mountedRef, timer cleanup, handleAutoFillAndReady rewrite
+- Board/Card sizes reduced for iPhone 14 Pro fit
+- Boards grid wrapped in ScrollView
 
 ## File Structure
-/app/_layout.tsx
-/app/index.tsx
-/app/game.tsx
-/app/summary.tsx
-/app/settings.tsx
-/components/Card.tsx
-/components/Board.tsx
-/components/PlayerHand.tsx
-/components/ChipsDisplay.tsx
-/components/CompleteOverlay.tsx
-/utils/deck.ts
-/utils/handEvaluator.ts
-/utils/gameLogic.ts
-/utils/__tests__/handEvaluator.test.ts
+/app/_layout.tsx, /app/index.tsx, /app/game.tsx, /app/summary.tsx, /app/settings.tsx
+/components/Card.tsx, Board.tsx, PlayerHand.tsx, ChipsDisplay.tsx, CompleteOverlay.tsx
+/utils/deck.ts, handEvaluator.ts, gameLogic.ts, __tests__/handEvaluator.test.ts
 /constants/gameConfig.ts
 /store/gameStore.ts
-/babel.config.js
-/jest.config.js
+/babel.config.js, /jest.config.js
+/AUDIT_REPORT.md
 
 ## Open Items
 - First run on device not yet verified
 - Tap-to-place UX needs real device testing
-- Animations (card reveal, chip movement) not yet tested on device
-- reanimated animations not yet implemented (static transitions only)
+- Integrate Wingman theme system (spacing, colors, typography)
+- Refactor gameStore with Zustand persist middleware
+- Extract useGameTimer + useRevealSequence hooks
+- Implement reanimated animations (card reveal, chip movement, spring press)
+- Upgrade CompleteOverlay with celebration particles (DailyRewardModal pattern)
+- Run royea-mobile-launch-kit init for EAS/TestFlight setup
 
 ## Commit History
 - Sprint 01: Initial full build
 - Sprint 01 audit: dependency fix, crash prevention, layout fixes, game flow fix, tests
+- Sprint 02: Cross-project audit complete
