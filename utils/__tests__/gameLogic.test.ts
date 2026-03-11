@@ -317,6 +317,43 @@ describe('assignCardsRandomly', () => {
   });
 });
 
+describe('timer color tiers', () => {
+  const getTimerColor = (seconds: number) =>
+    seconds > 30 ? 'green' : seconds > 15 ? 'yellow' : 'red';
+
+  it('returns green for >30 seconds', () => {
+    expect(getTimerColor(60)).toBe('green');
+    expect(getTimerColor(31)).toBe('green');
+  });
+
+  it('returns yellow for 16-30 seconds', () => {
+    expect(getTimerColor(30)).toBe('yellow');
+    expect(getTimerColor(16)).toBe('yellow');
+  });
+
+  it('returns red for ≤15 seconds', () => {
+    expect(getTimerColor(15)).toBe('red');
+    expect(getTimerColor(0)).toBe('red');
+    expect(getTimerColor(1)).toBe('red');
+  });
+});
+
+describe('ready button disabled logic', () => {
+  it('disabled when any board has < 4 cards', () => {
+    const { gameState } = initializeGame();
+    // No cards placed yet
+    const allFull = gameState.boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
+    expect(allFull).toBe(false);
+  });
+
+  it('enabled when all boards have 4 cards', () => {
+    const { gameState } = initializeGame();
+    const { boards } = autoFillPlayerCards(gameState.playerHand, gameState.boards);
+    const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
+    expect(allFull).toBe(true);
+  });
+});
+
 describe('Badge result mapping', () => {
   it('maps winner values to correct badge labels', () => {
     const mapWinner = (winner: 'player' | 'bot' | 'tie') => ({

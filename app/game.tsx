@@ -344,6 +344,11 @@ export default function GameScreen() {
   if (phase.type === 'summary') return null;
 
   const displayTimeLeft = phase.type === 'arranging' ? phase.timeLeft : 0;
+  const timerColor = displayTimeLeft > 30
+    ? COLORS.success
+    : displayTimeLeft > 15
+    ? COLORS.gold
+    : COLORS.danger;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -354,8 +359,12 @@ export default function GameScreen() {
         </Pressable>
         <View style={styles.topInfo}>
           {isArranging && (
-            <View style={[styles.timerContainer, displayTimeLeft <= 10 && styles.timerUrgent]}>
-              <Text style={[styles.timerText, displayTimeLeft <= 10 && styles.timerTextUrgent]}>
+            <View style={[
+              styles.timerContainer,
+              { borderColor: timerColor },
+              displayTimeLeft <= 15 && styles.timerUrgent,
+            ]}>
+              <Text style={[styles.timerText, { color: timerColor }]}>
                 {formatTime(displayTimeLeft)}
               </Text>
             </View>
@@ -511,13 +520,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(231, 76, 60, 0.15)',
   },
   timerText: {
-    color: COLORS.textPrimary,
     fontSize: 24,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
-  },
-  timerTextUrgent: {
-    color: COLORS.danger,
   },
   revealText: {
     color: COLORS.gold,
