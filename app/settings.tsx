@@ -59,6 +59,27 @@ function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps)
   );
 }
 
+function SoundToggle() {
+  const soundEnabled = useGameStore((s) => s.config.soundEnabled);
+  const updateConfig = useGameStore((s) => s.updateConfig);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Sound Effects</Text>
+      </View>
+      <Pressable
+        onPress={() => updateConfig({ soundEnabled: !soundEnabled })}
+        style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
+      >
+        <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
+          {soundEnabled ? 'ON' : 'OFF'}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function PlayerCountSelector() {
   const value = useGameStore((s) => s.config.numberOfPlayers);
   const updateConfig = useGameStore((s) => s.updateConfig);
@@ -120,6 +141,9 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>BOT</Text>
         <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
         <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
+
+        <Text style={styles.sectionTitle}>AUDIO</Text>
+        <SoundToggle />
 
         <Text style={styles.sectionTitle}>TOOLS</Text>
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
@@ -257,6 +281,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   selectorTextActive: {
+    color: COLORS.background,
+  },
+  toggleBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  toggleBtnActive: {
+    backgroundColor: COLORS.gold,
+    borderColor: COLORS.gold,
+  },
+  toggleText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  toggleTextActive: {
     color: COLORS.background,
   },
 });

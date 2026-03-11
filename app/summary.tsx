@@ -18,6 +18,7 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, NUM_BOARDS } from '../constants/gameConfig';
+import { playSound } from '../utils/sounds';
 
 interface BoardSummary {
   winner: 'player' | 'bot' | 'tie';
@@ -36,6 +37,7 @@ export default function SummaryScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
+  const incrementHandsPlayed = useGameStore((s) => s.incrementHandsPlayed);
   const params = useLocalSearchParams<{
     results: string;
     netChips: string;
@@ -77,6 +79,8 @@ export default function SummaryScreen() {
   };
 
   useEffect(() => {
+    incrementHandsPlayed();
+
     // Start chip count animation after boards have appeared
     chipCountProgress.value = withDelay(
       chipsStartDelay,
@@ -86,9 +90,12 @@ export default function SummaryScreen() {
       })
     );
 
+    // Play sound when chips start counting
+    const soundTimer = setTimeout(() => playSound('chipsWin'), chipsStartDelay);
+
     // Show buttons after everything is done
     const timer = setTimeout(showButtonsCallback, buttonsShowDelay);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); clearTimeout(soundTimer); };
   }, []);
 
   // Derived animated text for net chips

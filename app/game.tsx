@@ -21,6 +21,7 @@ import {
 import { GamePhase } from '../types/gameTypes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { useRevealSequence } from '../hooks/useRevealSequence';
+import { playSound } from '../utils/sounds';
 
 const haptic = (style: Haptics.ImpactFeedbackStyle) => {
   Haptics.impactAsync(style).catch(() => {});
@@ -98,6 +99,7 @@ export default function GameScreen() {
       return currentResults;
     });
     haptic(Haptics.ImpactFeedbackStyle.Heavy);
+    playSound('cardFlip');
   }, []);
 
   const handleAllRevealed = useCallback(() => {
@@ -243,6 +245,7 @@ export default function GameScreen() {
           );
           if (isUsed) return prev;
           haptic(Haptics.ImpactFeedbackStyle.Medium);
+          playSound('cardPlace');
           const updated = [...prev];
           updated[boardIndex] = {
             ...board,
