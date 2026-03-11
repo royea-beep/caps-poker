@@ -1,67 +1,78 @@
 /**
- * Generate placeholder app icons for Caps Poker.
+ * Generate CP branded app icons for Caps Poker.
  *
- * Creates a 1024x1024 dark-green icon and variants needed by Expo/EAS.
- * Replace these with a professionally designed icon before public release.
+ * Creates:
+ *  - 1024x1024 icon (dark green bg, gold "CP" text, small ♠ corner)
+ *  - 1284x2778 splash
+ *  - 48x48 favicon
+ *  - Android adaptive icon variants
  *
  * Usage:  node scripts/generate-icon.js
  */
 
-const { Jimp } = require("jimp");
+const sharp = require("sharp");
 const path = require("path");
 
-const SIZE = 1024;
-const BG_COLOR = 0x0a1a0fff; // dark green, fully opaque
+const ASSETS = path.resolve(__dirname, "..", "assets");
+
+const ICON_SIZE = 1024;
+const SPLASH_W = 1284;
+const SPLASH_H = 2778;
+
+const BG = "#1a3a2a";
+const GOLD = "#c9a84c";
+
+function iconSvg(size) {
+  const fontSize = Math.round(size * 0.37);
+  const suitSize = Math.round(size * 0.12);
+  const suitX = Math.round(size * 0.88);
+  const suitY = Math.round(size * 0.92);
+  return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${size}" height="${size}" rx="${Math.round(size * 0.08)}" fill="${BG}"/>
+  <text x="${size / 2}" y="${size * 0.52}" font-family="Arial, Helvetica, sans-serif"
+    font-size="${fontSize}" font-weight="bold" fill="${GOLD}"
+    text-anchor="middle" dominant-baseline="middle">CP</text>
+  <text x="${suitX}" y="${suitY}" font-family="Arial, sans-serif"
+    font-size="${suitSize}" fill="${GOLD}" text-anchor="middle" opacity="0.5">&#9824;</text>
+</svg>`;
+}
+
+function splashSvg(w, h) {
+  const fontSize = Math.round(w * 0.25);
+  return `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${w}" height="${h}" fill="${BG}"/>
+  <text x="${w / 2}" y="${h * 0.44}" font-family="Arial, Helvetica, sans-serif"
+    font-size="${fontSize}" font-weight="bold" fill="${GOLD}"
+    text-anchor="middle" dominant-baseline="middle">CP</text>
+  <text x="${w / 2}" y="${h * 0.50}" font-family="Arial, sans-serif"
+    font-size="${Math.round(w * 0.06)}" fill="${GOLD}" opacity="0.6"
+    text-anchor="middle" dominant-baseline="middle">CAPS POKER</text>
+</svg>`;
+}
 
 async function generate() {
-  // --- Main icon (1024x1024 solid dark green) ---
-  const icon = new Jimp({ width: SIZE, height: SIZE, color: BG_COLOR });
-  const iconPath = path.resolve(__dirname, "..", "assets", "icon.png");
-  await icon.write(iconPath);
-  console.log("wrote", iconPath);
+  const iconBuf = Buffer.from(iconSvg(ICON_SIZE));
+  const splashBuf = Buffer.from(splashSvg(SPLASH_W, SPLASH_H));
 
-  // --- splash-icon (same for now) ---
-  const splashPath = path.resolve(__dirname, "..", "assets", "splash-icon.png");
-  await icon.write(splashPath);
-  console.log("wrote", splashPath);
+  // Main icon
+  await sharp(iconBuf).png().toFile(path.join(ASSETS, "icon.png"));
+  console.log("wrote icon.png (1024x1024)");
 
-  // --- favicon (48x48) ---
-  const favicon = icon.clone().resize({ w: 48, h: 48 });
-  const faviconPath = path.resolve(__dirname, "..", "assets", "favicon.png");
-  await favicon.write(faviconPath);
-  console.log("wrote", faviconPath);
+  // Splash
+  await sharp(splashBuf).png().toFile(path.join(ASSETS, "splash-icon.png"));
+  console.log("wrote splash-icon.png (1284x2778)");
 
-  // --- Android adaptive icon foreground (1024x1024) ---
-  const fgPath = path.resolve(
-    __dirname,
-    "..",
-    "assets",
-    "android-icon-foreground.png"
-  );
-  await icon.write(fgPath);
-  console.log("wrote", fgPath);
+  // Favicon
+  await sharp(iconBuf).resize(48, 48).png().toFile(path.join(ASSETS, "favicon.png"));
+  console.log("wrote favicon.png (48x48)");
 
-  // --- Android adaptive icon background (1024x1024 solid) ---
-  const bgPath = path.resolve(
-    __dirname,
-    "..",
-    "assets",
-    "android-icon-background.png"
-  );
-  await icon.write(bgPath);
-  console.log("wrote", bgPath);
+  // Android adaptive icon variants (all same for now)
+  await sharp(iconBuf).png().toFile(path.join(ASSETS, "android-icon-foreground.png"));
+  await sharp(iconBuf).png().toFile(path.join(ASSETS, "android-icon-background.png"));
+  await sharp(iconBuf).png().toFile(path.join(ASSETS, "android-icon-monochrome.png"));
+  console.log("wrote android adaptive icon variants");
 
-  // --- Android monochrome (1024x1024) ---
-  const monoPath = path.resolve(
-    __dirname,
-    "..",
-    "assets",
-    "android-icon-monochrome.png"
-  );
-  await icon.write(monoPath);
-  console.log("wrote", monoPath);
-
-  console.log("\nAll icons generated. Replace with designed assets before public release.");
+  console.log("\nAll icons generated successfully.");
 }
 
 generate().catch((err) => {

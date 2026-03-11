@@ -10,6 +10,7 @@ import { COLORS } from '../constants/gameConfig';
 interface BadgeProps {
   label: string;
   variant?: 'win' | 'lose' | 'tie' | 'rank';
+  small?: boolean;
 }
 
 const BADGE_COLORS = {
@@ -19,7 +20,7 @@ const BADGE_COLORS = {
   rank: { bg: 'transparent', text: COLORS.gold },
 };
 
-export function Badge({ label, variant = 'win' }: BadgeProps) {
+export function Badge({ label, variant = 'win', small }: BadgeProps) {
   const scale = useSharedValue(0);
 
   useEffect(() => {
@@ -38,10 +39,11 @@ export function Badge({ label, variant = 'win' }: BadgeProps) {
         styles.badge,
         { backgroundColor: colors.bg },
         variant === 'rank' && styles.rankBorder,
+        small && styles.badgeSmall,
         animatedStyle,
       ]}
     >
-      <Text style={[styles.text, { color: colors.text }]}>{label}</Text>
+      <Text style={[styles.text, { color: colors.text }, small && styles.textSmall]}>{label}</Text>
     </Animated.View>
   );
 }
@@ -57,6 +59,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  badgeSmall: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
   rankBorder: {
     borderWidth: 1.5,
     borderColor: COLORS.gold,
@@ -65,5 +71,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  textSmall: {
+    fontSize: 9,
+    letterSpacing: 0,
   },
 });
