@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -141,6 +141,33 @@ export default function Board({
     };
   });
 
+  // Board-complete pulse: single green flash when board becomes full during arrangement
+  const boardFull = isArrangement && playerCards.length === CARDS_PER_BOARD;
+  const prevBoardFull = useRef(false);
+  const completePulse = useSharedValue(0);
+
+  useEffect(() => {
+    if (boardFull && !prevBoardFull.current) {
+      completePulse.value = withSequence(
+        withTiming(1, { duration: 300 }),
+        withTiming(0, { duration: 500 }),
+      );
+    }
+    prevBoardFull.current = !!boardFull;
+  }, [boardFull]);
+
+  const completePulseStyle = useAnimatedStyle(() => {
+    if (completePulse.value === 0) return {};
+    return {
+      borderColor: COLORS.success,
+      shadowColor: COLORS.success,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: completePulse.value * 0.8,
+      shadowRadius: completePulse.value * 12,
+      elevation: completePulse.value * 10,
+    };
+  });
+
   return (
     <Animated.View
       style={[
@@ -150,6 +177,7 @@ export default function Board({
         winner === 'player' && styles.playerWon,
         winner === 'bot' && styles.botWon,
         active && pulseStyle,
+        completePulseStyle,
       ]}
     >
       <Pressable onPress={onPress} style={styles.pressableInner}>

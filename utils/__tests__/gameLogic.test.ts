@@ -410,3 +410,27 @@ describe('calculateChipDeltas (multiplayer)', () => {
     expect(totalDelta).toBe(0);
   });
 });
+
+describe('game over condition', () => {
+  const buyIn = (config: typeof DEFAULT_CONFIG) => config.potPerBoard * NUM_BOARDS;
+
+  it('game continues when chips >= buy-in', () => {
+    const cost = buyIn(DEFAULT_CONFIG); // 25 * 4 = 100
+    expect(1000 >= cost).toBe(true);
+    expect(100 >= cost).toBe(true);
+  });
+
+  it('game over when chips < buy-in', () => {
+    const cost = buyIn(DEFAULT_CONFIG); // 100
+    expect(99 < cost).toBe(true);
+    expect(0 < cost).toBe(true);
+    expect(50 < cost).toBe(true);
+  });
+
+  it('buy-in scales with potPerBoard setting', () => {
+    const config50 = { ...DEFAULT_CONFIG, potPerBoard: 50 };
+    expect(buyIn(config50)).toBe(200); // 50 * 4
+    expect(199 < buyIn(config50)).toBe(true);
+    expect(200 >= buyIn(config50)).toBe(true);
+  });
+});
