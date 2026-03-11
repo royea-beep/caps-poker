@@ -13,6 +13,10 @@
       "distribution": "internal",
       "ios": { "simulator": false }
     },
+    "testflight": {
+      "distribution": "store",
+      "ios": { "autoIncrement": true }
+    },
     "production": {
       "ios": { "buildConfiguration": "Release", "autoIncrement": true }
     }
