@@ -22,11 +22,21 @@
       "ios": {
         "appleId": "royearguan@gmail.com",
         "ascAppId": "6760429619",
-        "appleTeamId": "3K9KJNGL9U"
+        "appleTeamId": "3K9KJNGL9U",
+        "ascApiKeyPath": "./AuthKey_WTWALQMG5N.p8",
+        "ascApiKeyId": "WTWALQMG5N",
+        "ascApiKeyIssuerId": "686f97b8-3f8a-40b7-a6cd-5293a3168439"
       }
     },
     "production": {
-      "ios": { "appleId": "royearguan@gmail.com" }
+      "ios": {
+        "appleId": "royearguan@gmail.com",
+        "ascAppId": "6760429619",
+        "appleTeamId": "3K9KJNGL9U",
+        "ascApiKeyPath": "./AuthKey_WTWALQMG5N.p8",
+        "ascApiKeyId": "WTWALQMG5N",
+        "ascApiKeyIssuerId": "686f97b8-3f8a-40b7-a6cd-5293a3168439"
+      }
     }
   }
 }
