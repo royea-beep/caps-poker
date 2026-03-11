@@ -7,28 +7,30 @@
 - Rule 4: Hand evaluation uses full Omaha rules — exactly 2 player cards + 3 board cards
 - Rule 5: Bot is random only — no strategy, exists for testing purposes only
 - Rule 6: No backend for single-player — local storage only
-- Rule 7: Local multiplayer via react-native-tcp-socket (host as WebSocket server)
-- Rule 8: Internet multiplayer via Supabase Realtime (Phase 2, future sprint)
+- Rule 7: Local multiplayer via react-native-tcp-socket (host as WebSocket server) — LOCKED
+- Rule 8: Internet multiplayer via Supabase Realtime (Phase 2, future sprint) — LOCKED
 
 ## Tech Stack
 - React Native + Expo SDK 55 (React 19, RN 0.83)
-- expo-router for navigation (file-based, including /lobby sub-route)
+- expo-router for navigation (file-based, /lobby sub-route)
+- expo-dev-client for custom dev builds (needed for native modules)
 - Zustand with persist middleware for state + AsyncStorage
 - react-native-reanimated for animations
 - react-native-gesture-handler for interactions
 - react-native-tcp-socket for local multiplayer networking
 - expo-haptics for tactile feedback
+- uuid for player/device IDs
 - TypeScript strict
 - Jest 29 + ts-jest for testing
-- EAS Build configured for TestFlight
-- uuid for player/device IDs
+- EAS Build: development (dev client), preview (TestFlight), production
 
 ## Current State
-- Sprint 06 complete — local multiplayer implemented
+- Sprint 07 complete — EAS dev build configured, multiplayer TODOs fixed, ready for device testing
+- Version: 1.1.0, build number: 2
 - TypeScript: 0 errors
 - Tests: 31/31 passing (12 hand evaluator + 19 simulation)
 - Expo doctor: 17/17 checks passed
-- iOS bundle: ~1464 modules
+- Preflight: 10/10 checks passed
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
 ## File Structure
@@ -42,23 +44,22 @@
 /utils/gameServer.ts, gameClient.ts, roomCode.ts
 /utils/__tests__/handEvaluator.test.ts, simulate.test.ts
 /constants/gameConfig.ts, theme.ts, networkConfig.ts
-/store/gameStore.ts (chips, config persisted; multiplayer state transient)
+/store/gameStore.ts (chips+config persisted; multiplayer state+onSendReady transient)
 /scripts/generate-icon.js, preflight-check.js
 /babel.config.js, jest.config.js, metro.config.js, eas.json, .npmrc
 /BUILD_INSTRUCTIONS.md, TESTFLIGHT_GUIDE.md, QA_CHECKLIST.md, AUDIT_REPORT.md
-/MULTIPLAYER_RESEARCH.md, LOCAL_MULTIPLAYER_DESIGN.md
+/DEV_BUILD_GUIDE.md, MULTIPLAYER_RESEARCH.md, LOCAL_MULTIPLAYER_DESIGN.md
 
 ## Multiplayer Architecture
-- GameServer: TCP server on host device, newline-delimited JSON protocol
-- GameClient: TCP client on guest devices, auto-heartbeat, reconnect support
-- Host is source of truth: deals cards, collects arrangements, evaluates, broadcasts
+- GameServer: TCP server on host, newline-delimited JSON, heartbeat monitor
+- GameClient: TCP client on guest, auto-heartbeat, reconnect (3 attempts with 2s backoff)
+- Host is source of truth: deals, evaluates, broadcasts
 - Room discovery: 4-digit code + manual IP entry
-- Zustand store has transient multiplayer state (mode, roomCode, hostIP, connectedPlayers, gameSession)
-- Message types: ROOM_JOIN, ROOM_JOIN_ACK, ROOM_STATE, GAME_START, CARDS_DEALT, PLAYER_READY, ALL_READY, BOARD_REVEAL, HAND_COMPLETE, HEARTBEAT, ERROR, PLAYER_DISCONNECTED
+- onSendReady callback in store bridges game screen to server/client
+- Disconnected players auto-filled with random card assignments
 
 ## Open Items
-- Device test of multiplayer on real devices (needs custom dev client build)
-- TODO markers in multiplayer-game.tsx for wiring PLAYER_READY send
+- First multiplayer device test pending (needs dev build)
 - Replace placeholder icons with designed CP logo
 - Card flip animation (rotateY) not yet implemented
 - Floating "+chips" text after board reveal not yet implemented
@@ -73,3 +74,4 @@
 - Sprint 04: TestFlight prep, assets, EAS config, QA checklist
 - Sprint 05: Simulation engine, multiplayer logic refactor, OSS research
 - Sprint 06: Local multiplayer — host server, client, lobby, game screen
+- Sprint 07: EAS dev build config, multiplayer TODOs fixed, resilience, v1.1.0

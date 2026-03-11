@@ -35,6 +35,7 @@ export default function MultiplayerGameScreen() {
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
   const connectedPlayers = useGameStore((s) => s.connectedPlayers);
+  const onSendReady = useGameStore((s) => s.onSendReady);
 
   const isHost = params.isHost === 'true';
   const playerIndex = parseInt(params.playerIndex || '0', 10);
@@ -110,7 +111,9 @@ export default function MultiplayerGameScreen() {
       setIsReady(true);
       setPhase('waiting');
       timer.stop();
-      // TODO: Send PLAYER_READY message to host via GameServer/GameClient
+      // Send PLAYER_READY with board assignments
+      const assignments = updated.map((b) => b.playerCards);
+      if (onSendReady) onSendReady(assignments);
       return updated;
     });
   }, [playerHand, timer]);
@@ -170,8 +173,10 @@ export default function MultiplayerGameScreen() {
     timer.stop();
     setIsReady(true);
     setPhase('waiting');
-    // TODO: Send PLAYER_READY with board assignments to host
-  }, [allBoardsFull, timer]);
+    // Send PLAYER_READY with board assignments
+    const assignments = boards.map((b) => b.playerCards);
+    if (onSendReady) onSendReady(assignments);
+  }, [allBoardsFull, timer, boards, onSendReady]);
 
   // Handle board reveal (called by networking layer)
   const handleBoardReveal = useCallback((data: BoardRevealPayload) => {

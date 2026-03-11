@@ -1,4 +1,15 @@
-# How to Build Caps Poker for TestFlight
+# How to Build Caps Poker
+
+## Development Build (for testing multiplayer)
+```
+eas build --platform ios --profile development
+npx expo start --dev-client
+```
+See `DEV_BUILD_GUIDE.md` for full details.
+
+---
+
+# TestFlight Build
 
 ## Step 1 — Login (one time)
 ```

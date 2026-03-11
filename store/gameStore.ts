@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_CONFIG, GameConfig } from '../constants/gameConfig';
+import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
 import { ConnectedPlayerInfo, GameSession } from '../types/gameTypes';
 
 interface GameStore {
@@ -15,6 +15,7 @@ interface GameStore {
   hostIP: string | null;
   connectedPlayers: ConnectedPlayerInfo[];
   gameSession: GameSession | null;
+  onSendReady: ((boardAssignments: Card[][]) => void) | null;
 
   // Persisted actions
   setChips: (chips: number) => void;
@@ -29,6 +30,7 @@ interface GameStore {
   setConnectedPlayers: (players: ConnectedPlayerInfo[]) => void;
   updatePlayer: (id: string, updates: Partial<ConnectedPlayerInfo>) => void;
   setGameSession: (session: GameSession | null) => void;
+  setOnSendReady: (fn: ((boardAssignments: Card[][]) => void) | null) => void;
   resetMultiplayer: () => void;
 }
 
@@ -45,6 +47,7 @@ export const useGameStore = create<GameStore>()(
       hostIP: null,
       connectedPlayers: [],
       gameSession: null,
+      onSendReady: null,
 
       // Persisted actions
       setChips: (chips: number) => set({ chips }),
@@ -65,6 +68,7 @@ export const useGameStore = create<GameStore>()(
           ),
         })),
       setGameSession: (session) => set({ gameSession: session }),
+      setOnSendReady: (fn) => set({ onSendReady: fn }),
       resetMultiplayer: () =>
         set({
           multiplayerMode: 'none',
@@ -72,6 +76,7 @@ export const useGameStore = create<GameStore>()(
           hostIP: null,
           connectedPlayers: [],
           gameSession: null,
+          onSendReady: null,
         }),
     }),
     {

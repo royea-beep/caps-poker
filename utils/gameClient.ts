@@ -24,6 +24,7 @@ export interface GameClientCallbacks {
   onBoardReveal: (data: BoardRevealPayload) => void;
   onHandComplete: (data: HandCompletePayload) => void;
   onPlayerDisconnected: (playerId: string, playerName: string) => void;
+  onReconnecting: (attempt: number) => void;
   onDisconnected: () => void;
   onError: (error: Error) => void;
 }
@@ -37,6 +38,11 @@ export class GameClient {
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private lastHeartbeatAck: number = Date.now();
   private connected: boolean = false;
+  private reconnecting: boolean = false;
+  private reconnectAttempt: number = 0;
+  private lastHostIP: string = '';
+  private lastRoomCode: string = '';
+  private lastPort: number = NETWORK_CONFIG.port;
 
   constructor(callbacks: GameClientCallbacks, playerName: string) {
     this.callbacks = callbacks;
@@ -57,6 +63,9 @@ export class GameClient {
     roomCode: string,
     port: number = NETWORK_CONFIG.port
   ): Promise<void> {
+    this.lastHostIP = hostIP;
+    this.lastRoomCode = roomCode;
+    this.lastPort = port;
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Connection timed out'));
@@ -120,9 +129,11 @@ export class GameClient {
         });
 
         this.socket.on('close', () => {
-          this.connected = false;
-          this.stopHeartbeat();
-          this.callbacks.onDisconnected();
+          if (this.connected && !this.reconnecting) {
+            this.connected = false;
+            this.stopHeartbeat();
+            this.attemptReconnect();
+          }
         });
       } catch (err) {
         clearTimeout(timeout);
@@ -201,7 +212,7 @@ export class GameClient {
       if (Date.now() - this.lastHeartbeatAck > NETWORK_CONFIG.heartbeatTimeoutMs) {
         this.connected = false;
         this.stopHeartbeat();
-        this.callbacks.onDisconnected();
+        this.attemptReconnect();
         return;
       }
       this.send(createMessage('HEARTBEAT', {}, this.playerId));
@@ -215,7 +226,36 @@ export class GameClient {
     }
   }
 
+  private attemptReconnect(): void {
+    if (this.reconnectAttempt >= NETWORK_CONFIG.reconnectAttempts) {
+      this.reconnecting = false;
+      this.reconnectAttempt = 0;
+      this.callbacks.onDisconnected();
+      return;
+    }
+
+    this.reconnecting = true;
+    this.reconnectAttempt++;
+    this.callbacks.onReconnecting(this.reconnectAttempt);
+
+    // Wait 2 seconds between reconnect attempts
+    setTimeout(() => {
+      if (!this.reconnecting) return;
+
+      this.connect(this.lastHostIP, this.lastRoomCode, this.lastPort)
+        .then(() => {
+          this.reconnecting = false;
+          this.reconnectAttempt = 0;
+        })
+        .catch(() => {
+          this.attemptReconnect();
+        });
+    }, 2000);
+  }
+
   disconnect(): void {
+    this.reconnecting = false;
+    this.reconnectAttempt = 0;
     this.connected = false;
     this.stopHeartbeat();
     if (this.socket) {

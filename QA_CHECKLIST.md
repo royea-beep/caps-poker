@@ -42,3 +42,20 @@
 - [ ] 0 chips → can still start new hand (negative balance allowed)
 - [ ] App backgrounded mid-game → returns without crash
 - [ ] Rapid card placement → no duplicate cards on boards
+
+## Local Multiplayer (requires dev build)
+- [ ] HOST GAME button visible on home screen
+- [ ] JOIN GAME button visible on home screen
+- [ ] Host lobby shows room code and IP address
+- [ ] Guest can connect via IP + room code
+- [ ] Player list updates on both devices when guest joins
+- [ ] Host can select player count (2/3/4)
+- [ ] Start Game deals correct card counts
+- [ ] Each player only sees their own cards
+- [ ] Both players can arrange cards independently
+- [ ] Ready button sends signal to host
+- [ ] Reveal sequence runs on both devices simultaneously
+- [ ] Chip deltas are correct and zero-sum
+- [ ] Disconnection handled gracefully (auto-fill + reconnect attempt)
+- [ ] Invalid room code shows error
+- [ ] Room full shows error

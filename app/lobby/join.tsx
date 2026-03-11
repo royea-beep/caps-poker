@@ -90,6 +90,10 @@ export default function JoinLobbyScreen() {
         onPlayerDisconnected: () => {
           // Show in room state
         },
+        onReconnecting: (attempt: number) => {
+          setStatus('connecting');
+          setErrorMsg(`Reconnecting... (attempt ${attempt}/${3})`);
+        },
         onDisconnected: () => {
           setStatus('error');
           setErrorMsg('Disconnected from host');

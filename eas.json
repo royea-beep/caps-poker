@@ -1,29 +1,25 @@
 {
-  "cli": {
-    "version": ">= 12.0.0"
-  },
+  "cli": { "version": ">= 12.0.0" },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Debug"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "ios": {
-        "simulator": false
-      }
+      "ios": { "simulator": false }
     },
     "production": {
-      "ios": {
-        "buildConfiguration": "Release"
-      }
+      "ios": { "buildConfiguration": "Release" }
     }
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "PLACEHOLDER_APPLE_ID"
-      }
+      "ios": { "appleId": "royearguan@gmail.com" }
     }
   }
 }
