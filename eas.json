@@ -11,7 +11,8 @@
     },
     "preview": {
       "distribution": "internal",
-      "ios": { "simulator": false }
+      "ios": { "simulator": false },
+      "env": { "NODE_ENV": "production" }
     },
     "production": {
       "ios": { "buildConfiguration": "Release", "autoIncrement": true }
