@@ -17,7 +17,7 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { COLORS } from '../constants/gameConfig';
+import { COLORS, NUM_BOARDS } from '../constants/gameConfig';
 
 interface BoardSummary {
   winner: 'player' | 'bot' | 'tie';
@@ -35,6 +35,7 @@ const BUTTONS_DELAY = 400; // after chips finish counting
 export default function SummaryScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
+  const config = useGameStore((s) => s.config);
   const params = useLocalSearchParams<{
     results: string;
     netChips: string;
@@ -186,7 +187,11 @@ export default function SummaryScreen() {
             style={styles.buttons}
             entering={FadeIn.duration(400)}
           >
-            <Button title="NEXT HAND" variant="gold" onPress={() => router.replace('/game')} />
+            {chips >= config.potPerBoard * NUM_BOARDS ? (
+              <Button title="NEXT HAND" variant="gold" onPress={() => router.replace('/game')} />
+            ) : (
+              <Button title="GAME OVER" variant="gold" onPress={() => router.replace('/gameover')} />
+            )}
             <Button title="HOME" variant="secondary" onPress={() => router.replace('/')} />
           </Animated.View>
         )}
