@@ -1,5 +1,8 @@
 {
-  "cli": { "version": ">= 12.0.0" },
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
     "development": {
       "developmentClient": true,
@@ -11,14 +14,21 @@
     },
     "preview": {
       "distribution": "internal",
-      "ios": { "simulator": false }
+      "ios": {
+        "simulator": false
+      }
     },
     "testflight": {
       "distribution": "store",
-      "ios": { "autoIncrement": true }
+      "ios": {
+        "autoIncrement": true
+      }
     },
     "production": {
-      "ios": { "buildConfiguration": "Release", "autoIncrement": true }
+      "ios": {
+        "buildConfiguration": "Release",
+        "autoIncrement": true
+      }
     }
   },
   "submit": {

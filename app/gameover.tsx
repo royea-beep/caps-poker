@@ -2,7 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
@@ -17,11 +23,27 @@ export default function GameOverScreen() {
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Shake animation on mount
+  const shakeX = useSharedValue(0);
+
   useEffect(() => {
+    shakeX.value = withSequence(
+      withTiming(-8, { duration: 60 }),
+      withTiming(8, { duration: 60 }),
+      withTiming(-6, { duration: 60 }),
+      withTiming(6, { duration: 60 }),
+      withTiming(-3, { duration: 60 }),
+      withTiming(3, { duration: 60 }),
+      withTiming(0, { duration: 60 }),
+    );
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
+
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
 
   const handlePlayAgain = () => {
     if (!confirming) {
@@ -44,7 +66,7 @@ export default function GameOverScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Animated.View entering={FadeIn.duration(600)} style={styles.header}>
-          <Text style={styles.title}>GAME OVER</Text>
+          <Animated.Text style={[styles.title, shakeStyle]}>GAME OVER</Animated.Text>
           <Text style={styles.subtitle}>Not enough chips to continue</Text>
         </Animated.View>
 
@@ -89,10 +111,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: '900',
-    color: COLORS.danger,
+    color: COLORS.neonRed,
     letterSpacing: 6,
+    textShadowColor: COLORS.neonRed,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   subtitle: {
     fontSize: 16,

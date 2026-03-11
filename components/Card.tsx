@@ -94,7 +94,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? '#e63946' : '#1a1a2e';
+  const suitColor = isRed ? COLORS.cardRed : COLORS.cardBlack;
 
   return (
     <View style={{ width, height }}>
