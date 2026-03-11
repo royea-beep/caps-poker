@@ -17,7 +17,11 @@
       "bundleIdentifier": "com.capspoker.app",
       "infoPlist": {
         "UIRequiresFullScreen": true,
-        "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortrait"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -33,11 +37,13 @@
     },
     "extra": {
       "eas": {
-        "projectId": "PLACEHOLDER_PROJECT_ID"
-      }
+        "projectId": "114b97d5-5cb3-4798-9a97-8233a6a37c07"
+      },
+      "router": {}
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "owner": "royea"
   }
 }

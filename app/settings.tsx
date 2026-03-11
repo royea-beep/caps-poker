@@ -44,6 +44,7 @@ function SettingRow({ label, configKey, suffix }: SettingRowProps) {
 export default function SettingsScreen() {
   const router = useRouter();
   const resetConfig = useGameStore((s) => s.resetConfig);
+  const navigateToSimulation = () => router.push('/simulate');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,6 +70,9 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>BOT</Text>
         <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" />
         <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" />
+
+        <Text style={styles.sectionTitle}>DEBUG</Text>
+        <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
 
         <View style={styles.defaultsSection}>
           <Text style={styles.defaultsTitle}>Defaults</Text>

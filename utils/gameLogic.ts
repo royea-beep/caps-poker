@@ -1,6 +1,7 @@
-import { Card, NUM_BOARDS, CARDS_PER_BOARD } from '../constants/gameConfig';
-import { dealCards, DealResult } from './deck';
+import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig } from '../constants/gameConfig';
+import { dealCards, DealResult, dealCardsMultiplayer, MultiDealResult } from './deck';
 import { evaluateOmahaHand, compareHands, HandResult } from './handEvaluator';
+import { Player, MultiBoardState } from '../types/gameTypes';
 
 export interface BoardState {
   openCards: Card[];
@@ -146,4 +147,183 @@ export function calculateHandResults(
   }
 
   return { boardResults, playerChipsWon, botChipsWon, isComplete, completeBonusAmount };
+}
+
+// --- Multi-player functions (Sprint 05) ---
+
+export interface MultiPlayerBoardResult {
+  boardIndex: number;
+  playerResults: HandResult[]; // one per player
+  winnerIndex: number; // player index, -1 for tie
+  tiedPlayers: number[]; // player indices in case of multi-way tie
+  potWon: number; // amount won by winner (or per tied player)
+}
+
+export interface MultiPlayerHandResult {
+  boardResults: MultiPlayerBoardResult[];
+  chipDeltas: number[]; // net chips per player (zero-sum)
+  completeWinner: number | null; // player index who won ALL boards, null if none
+  completeBonusAmount: number;
+}
+
+export function createPlayers(playerCount: number, startingChips: number): Player[] {
+  const players: Player[] = [];
+  for (let i = 0; i < playerCount; i++) {
+    players.push({
+      id: `player_${i}`,
+      name: i === 0 ? 'You' : `Bot ${i}`,
+      isHuman: i === 0,
+      chips: startingChips,
+      cards: [],
+    });
+  }
+  return players;
+}
+
+export function dealNewHand(
+  playerCount: 2 | 3 | 4,
+  config: GameConfig
+): { players: Player[]; boards: MultiBoardState[]; dealResult: MultiDealResult } {
+  const dealResult = dealCardsMultiplayer(playerCount);
+  const players = createPlayers(playerCount, config.startingChips);
+
+  for (let i = 0; i < playerCount; i++) {
+    players[i].cards = dealResult.playerHands[i];
+  }
+
+  const boards: MultiBoardState[] = dealResult.boards.map((b) => ({
+    openCards: b.openCards,
+    closedCards: b.closedCards,
+    playerCards: Array.from({ length: playerCount }, () => []),
+    revealed: false,
+  }));
+
+  return { players, boards, dealResult };
+}
+
+/**
+ * Randomly assign a player's cards to boards (4 per board).
+ * Used for bot players and simulation.
+ */
+export function assignCardsRandomly(
+  hand: Card[],
+  boardCount: number,
+  cardsPerBoard: number = CARDS_PER_BOARD
+): Card[][] {
+  const shuffled = [...hand].sort(() => Math.random() - 0.5);
+  const result: Card[][] = [];
+  for (let b = 0; b < boardCount; b++) {
+    result.push(shuffled.slice(b * cardsPerBoard, (b + 1) * cardsPerBoard));
+  }
+  return result;
+}
+
+export function evaluateAllBoards(
+  boards: MultiBoardState[],
+  playerCount: number
+): MultiPlayerBoardResult[] {
+  return boards.map((board, boardIndex) => {
+    const allBoardCards = [...board.openCards, ...board.closedCards];
+    const playerResults: HandResult[] = [];
+
+    for (let p = 0; p < playerCount; p++) {
+      playerResults.push(evaluateOmahaHand(board.playerCards[p], allBoardCards));
+    }
+
+    // Find winner(s)
+    let bestScore = -1;
+    let winnerIndex = -1;
+    const tiedPlayers: number[] = [];
+
+    for (let p = 0; p < playerCount; p++) {
+      if (playerResults[p].score > bestScore) {
+        bestScore = playerResults[p].score;
+        winnerIndex = p;
+        tiedPlayers.length = 0;
+        tiedPlayers.push(p);
+      } else if (playerResults[p].score === bestScore) {
+        tiedPlayers.push(p);
+      }
+    }
+
+    // If multi-way tie, winnerIndex = -1
+    if (tiedPlayers.length > 1) {
+      winnerIndex = -1;
+    }
+
+    return { boardIndex, playerResults, winnerIndex, tiedPlayers, potWon: 0 };
+  });
+}
+
+export function calculateChipDeltas(
+  boardResults: MultiPlayerBoardResult[],
+  playerCount: number,
+  config: GameConfig
+): MultiPlayerHandResult {
+  const potPerBoard = config.potPerBoard;
+  const totalBoardPot = potPerBoard * playerCount; // all players contribute
+  const chipDeltas = new Array(playerCount).fill(0);
+
+  // Each player pays potPerBoard per board
+  const boardCount = boardResults.length;
+  const totalPaid = potPerBoard * boardCount;
+  for (let p = 0; p < playerCount; p++) {
+    chipDeltas[p] -= totalPaid;
+  }
+
+  for (const result of boardResults) {
+    if (result.winnerIndex >= 0) {
+      // Single winner takes the whole pot
+      chipDeltas[result.winnerIndex] += totalBoardPot;
+      result.potWon = totalBoardPot;
+    } else {
+      // Tie — split pot among tied players, distribute rounding remainder
+      const tiedCount = result.tiedPlayers.length;
+      const share = Math.floor(totalBoardPot / tiedCount);
+      const tieRemainder = totalBoardPot - share * tiedCount;
+      for (let t = 0; t < tiedCount; t++) {
+        const extra = t < tieRemainder ? 1 : 0;
+        chipDeltas[result.tiedPlayers[t]] += share + extra;
+      }
+      result.potWon = share;
+    }
+  }
+
+  // Check COMPLETE: did any player win ALL boards?
+  let completeWinner: number | null = null;
+  for (let p = 0; p < playerCount; p++) {
+    if (boardResults.every((r) => r.winnerIndex === p)) {
+      completeWinner = p;
+      break;
+    }
+  }
+
+  const totalPotAllBoards = totalBoardPot * boardCount;
+  let completeBonusAmount = 0;
+  if (completeWinner !== null) {
+    completeBonusAmount = Math.floor(
+      (totalPotAllBoards * config.completeBonusPercent) / 100
+    );
+    chipDeltas[completeWinner] += completeBonusAmount;
+    // Distribute bonus cost to losers (zero-sum)
+    const losers = playerCount - 1;
+    const perLoserCost = Math.floor(completeBonusAmount / losers);
+    const remainder = completeBonusAmount - perLoserCost * losers;
+    for (let p = 0; p < playerCount; p++) {
+      if (p !== completeWinner) {
+        chipDeltas[p] -= perLoserCost;
+      }
+    }
+    // Assign any rounding remainder to the first loser
+    if (remainder > 0) {
+      for (let p = 0; p < playerCount; p++) {
+        if (p !== completeWinner) {
+          chipDeltas[p] -= remainder;
+          break;
+        }
+      }
+    }
+  }
+
+  return { boardResults, chipDeltas, completeWinner, completeBonusAmount };
 }
