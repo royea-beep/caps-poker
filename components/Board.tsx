@@ -26,7 +26,39 @@ interface BoardProps {
   playerHandName?: string;
   botHandName?: string;
   onPress?: () => void;
+  onRemoveCard?: (card: Card) => void;
   isArrangement?: boolean;
+  selected?: boolean;
+}
+
+function EmptySlotAnimated({ isArrangement, onPress }: { isArrangement?: boolean; onPress?: () => void }) {
+  const pulseOpacity = useSharedValue(0.6);
+
+  useEffect(() => {
+    if (isArrangement) {
+      pulseOpacity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1000 }),
+          withTiming(0.4, { duration: 1000 }),
+        ),
+        -1,
+      );
+    } else {
+      pulseOpacity.value = withTiming(0.6, { duration: 200 });
+    }
+  }, [isArrangement]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: pulseOpacity.value,
+  }));
+
+  return (
+    <Pressable onPress={onPress}>
+      <Animated.View style={[styles.emptySlot, isArrangement && styles.dropTarget, animStyle]}>
+        <Text style={styles.plusText}>+</Text>
+      </Animated.View>
+    </Pressable>
+  );
 }
 
 export default function Board({
@@ -45,9 +77,10 @@ export default function Board({
   playerHandName,
   botHandName,
   onPress,
+  onRemoveCard,
   isArrangement,
+  selected,
 }: BoardProps) {
-  const allBoardCards = [...openCards, ...(revealed ? closedCards : [])];
   const pulseValue = useSharedValue(0.4);
 
   useEffect(() => {
@@ -83,6 +116,7 @@ export default function Board({
       style={[
         styles.container,
         active && styles.active,
+        selected && styles.selected,
         winner === 'player' && styles.playerWon,
         winner === 'bot' && styles.botWon,
         active && pulseStyle,
@@ -153,27 +187,35 @@ export default function Board({
         <View style={styles.playerRow}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
-              <CardComponent
-                key={c.id}
-                card={c}
-                faceDown={false}
-                small
-                highlighted={revealed && playerHighlightIds.includes(c.id)}
-                dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
-              />
+              isArrangement && onRemoveCard ? (
+                <Pressable key={c.id} onPress={() => onRemoveCard(c)}>
+                  <CardComponent
+                    card={c}
+                    faceDown={false}
+                    small
+                    highlighted={revealed && playerHighlightIds.includes(c.id)}
+                    dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
+                  />
+                </Pressable>
+              ) : (
+                <CardComponent
+                  key={c.id}
+                  card={c}
+                  faceDown={false}
+                  small
+                  highlighted={revealed && playerHighlightIds.includes(c.id)}
+                  dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
+                />
+              )
             ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
-              <Pressable key={`player-empty-${i}`} style={[styles.emptySlot, isArrangement && styles.dropTarget]} onPress={onPress}>
-                <Text style={styles.plusText}>+</Text>
-              </Pressable>
+              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} />
             ))
           )}
           {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
             Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <Pressable key={`player-empty-fill-${i}`} style={[styles.emptySlot, styles.dropTarget]} onPress={onPress}>
-                <Text style={styles.plusText}>+</Text>
-              </Pressable>
+              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} />
             ))
           }
         </View>
@@ -211,6 +253,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 10,
     elevation: 8,
+  },
+  selected: {
+    borderColor: COLORS.gold,
+    borderWidth: 2.5,
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
   },
   playerWon: {
     borderColor: COLORS.success,
@@ -270,7 +321,6 @@ const styles = StyleSheet.create({
   plusText: {
     color: COLORS.gold,
     fontSize: 16,
-    opacity: 0.6,
   },
   handName: {
     color: COLORS.textSecondary,

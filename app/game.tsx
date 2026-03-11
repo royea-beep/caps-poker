@@ -382,36 +382,15 @@ export default function GameScreen() {
                 playerHandName={board.playerResult?.name}
                 botHandName={board.botResult?.name}
                 onPress={() => handleBoardPress(i)}
+                onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
                 isArrangement={isArranging}
+                selected={isArranging && !!selectedCard && board.playerCards.length < CARDS_PER_BOARD}
               />
             );
           })}
         </View>
 
-        {/* Remove cards from board */}
-        {isArranging && (
-          <View style={styles.removeSection}>
-            {boards.map((board, bi) =>
-              board.playerCards.length > 0 ? (
-                <View key={bi} style={styles.removeRow}>
-                  <Text style={styles.removeLabel}>B{bi + 1}:</Text>
-                  {board.playerCards.map((card) => (
-                    <Pressable
-                      key={card.id}
-                      onPress={() => handleRemoveCardFromBoard(bi, card)}
-                      style={styles.removeCardBtn}
-                    >
-                      <Text style={styles.removeCardText}>
-                        {card.rank}{card.suit === 'hearts' ? '\u2665' : card.suit === 'diamonds' ? '\u2666' : card.suit === 'clubs' ? '\u2663' : '\u2660'}
-                      </Text>
-                      <Text style={styles.removeX}>{'\u2715'}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null
-            )}
-          </View>
-        )}
+        {/* Tap cards on boards directly to remove them */}
       </ScrollView>
 
       {/* Player hand */}
@@ -533,41 +512,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 8,
     gap: 4,
-  },
-  removeSection: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-  },
-  removeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-  },
-  removeLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 10,
-    fontWeight: '700',
-    width: 24,
-  },
-  removeCardBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 2,
-  },
-  removeCardText: {
-    color: COLORS.textPrimary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  removeX: {
-    color: COLORS.danger,
-    fontSize: 10,
-    fontWeight: '800',
   },
   hint: {
     color: COLORS.gold,
