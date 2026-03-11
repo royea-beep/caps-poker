@@ -25,10 +25,10 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 16 complete — hand hint indicator, multiplayer test guide, EAS build success
+- Sprint 17 complete — arrangement UX audit, timer colors, TestFlight prep, web deploy
 - Version: 1.2.0, latest build: bbb538b7 (FINISHED, preview/internal)
 - TypeScript: 0 errors
-- Tests: 64/64 passing (14 hand evaluator + 19 simulation + 24 game logic + 7 hand hint)
+- Tests: 69/69 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint)
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
 ## Game Config (all runtime-configurable in Settings)
@@ -104,6 +104,7 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
+- TestFlight submission: needs `ascAppId` in eas.json → run `eas submit --platform ios` interactively first time to set up App Store Connect app, or add `ascAppId` manually from ASC dashboard
 - SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
 - First multiplayer device test pending (needs dev build)
 - Internet multiplayer (Supabase) — future sprint
@@ -125,3 +126,4 @@
 - Sprint 14: Card flip animation (rotateY via reanimated), floating "+chips"/"-chips" text on board reveal, iOS build checklist, 6 new tests (53 total), closed cards render fix for flip support
 - Sprint 15: CP branded icon (sharp SVG), Badge in Board+Summary, v1.2.0, EAS preview build, web re-deploy, 4 new tests (57 total)
 - Sprint 16: Hand hint indicator (Pair/Trips/Flush Draw etc.), multiplayer test guide, EAS build success (bbb538b7), 7 new tests (64 total)
+- Sprint 17: Arrangement UX audit (all 4 checks pass), timer 3-tier colors (green/yellow/red), reveal phase verified, TestFlight needs ascAppId, web re-deploy, 5 new tests (69 total)
