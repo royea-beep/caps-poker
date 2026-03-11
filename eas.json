@@ -18,6 +18,13 @@
     }
   },
   "submit": {
+    "preview": {
+      "ios": {
+        "appleId": "royearguan@gmail.com",
+        "ascAppId": "PLACEHOLDER_REPLACE_ME",
+        "appleTeamId": "3K9KJNGL9U"
+      }
+    },
     "production": {
       "ios": { "appleId": "royearguan@gmail.com" }
     }

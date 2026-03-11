@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,9 +14,26 @@ export default function GameOverScreen() {
   const config = useGameStore((s) => s.config);
   const setChips = useGameStore((s) => s.setChips);
 
+  const [confirming, setConfirming] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const handlePlayAgain = () => {
-    setChips(config.startingChips);
-    router.replace('/game');
+    if (!confirming) {
+      setConfirming(true);
+      timerRef.current = setTimeout(() => {
+        setConfirming(false);
+      }, 3000);
+    } else {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      setChips(config.startingChips);
+      router.replace('/game');
+    }
   };
 
   const handleHome = () => {
@@ -40,8 +57,8 @@ export default function GameOverScreen() {
           entering={FadeIn.duration(400).delay(800)}
         >
           <Button
-            title="PLAY AGAIN"
-            variant="gold"
+            title={confirming ? 'ARE YOU SURE?' : 'PLAY AGAIN'}
+            variant={confirming ? 'secondary' : 'gold'}
             onPress={handlePlayAgain}
           />
           <Button

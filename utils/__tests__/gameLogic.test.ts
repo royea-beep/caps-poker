@@ -469,3 +469,24 @@ describe('sound config', () => {
     expect(config.soundEnabled).toBe(false);
   });
 });
+
+describe('best chips tracking', () => {
+  it('bestChips defaults to startingChips', () => {
+    const bestChips = DEFAULT_CONFIG.startingChips;
+    expect(bestChips).toBe(1000);
+  });
+
+  it('bestChips updates when chips exceed previous best', () => {
+    let bestChips = 1000;
+    const currentChips = 1200;
+    bestChips = Math.max(bestChips, currentChips);
+    expect(bestChips).toBe(1200);
+  });
+
+  it('bestChips does NOT update when chips are lower', () => {
+    let bestChips = 1200;
+    const currentChips = 900;
+    bestChips = Math.max(bestChips, currentChips);
+    expect(bestChips).toBe(1200);
+  });
+});

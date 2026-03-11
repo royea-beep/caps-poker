@@ -11,6 +11,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
+  const bestChips = useGameStore((s) => s.bestChips);
   const sessionStartChips = useGameStore((s) => s.sessionStartChips);
 
   const sessionNet = chips - sessionStartChips;
@@ -30,6 +31,9 @@ export default function HomeScreen() {
           <Text style={styles.statText}>Hands Played: {handsPlayed}</Text>
           <Text style={[styles.statText, { color: sessionNet >= 0 ? COLORS.success : COLORS.danger }]}>
             Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
+          </Text>
+          <Text style={[styles.statText, { color: COLORS.gold }]}>
+            Best: {bestChips} chips
           </Text>
         </View>
 
