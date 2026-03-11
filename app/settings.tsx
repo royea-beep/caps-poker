@@ -1,37 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { DEFAULT_CONFIG, COLORS, GameConfig } from '../constants/gameConfig';
+import { DEFAULT_CONFIG, COLORS, GameConfig, NUM_BOARDS } from '../constants/gameConfig';
 
 interface SettingRowProps {
   label: string;
   configKey: keyof GameConfig;
   suffix?: string;
+  min?: number;
+  max?: number;
 }
 
-function SettingRow({ label, configKey, suffix }: SettingRowProps) {
+function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps) {
   const value = useGameStore((s) => s.config[configKey]);
   const updateConfig = useGameStore((s) => s.updateConfig);
+  const [localText, setLocalText] = useState(value.toString());
+  const [error, setError] = useState<string | null>(null);
+
+  // Sync local text when store value changes externally (e.g. reset)
+  useEffect(() => {
+    setLocalText(value.toString());
+    setError(null);
+  }, [value]);
+
+  const commitValue = () => {
+    const num = parseInt(localText, 10);
+    if (isNaN(num) || num < min || (max !== undefined && num > max)) {
+      setError(`${min}${max !== undefined ? `–${max}` : '+'}`);
+      setLocalText(value.toString());
+    } else {
+      setError(null);
+      updateConfig({ [configKey]: num });
+    }
+  };
 
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
         <Text style={styles.rowLabel}>{label}</Text>
-        <Text style={styles.rowKey}>{configKey}</Text>
+        {error && <Text style={styles.rowError}>Min: {error}</Text>}
       </View>
       <View style={styles.rowRight}>
         <TextInput
-          style={styles.input}
-          value={value.toString()}
-          onChangeText={(text) => {
-            const num = parseInt(text, 10);
-            if (!isNaN(num)) {
-              updateConfig({ [configKey]: num });
-            }
-          }}
+          style={[styles.input, error && styles.inputError]}
+          value={localText}
+          onChangeText={setLocalText}
+          onBlur={commitValue}
+          onSubmitEditing={commitValue}
           keyboardType="numeric"
           selectTextOnFocus
         />
@@ -41,10 +59,40 @@ function SettingRow({ label, configKey, suffix }: SettingRowProps) {
   );
 }
 
+function PlayerCountSelector() {
+  const value = useGameStore((s) => s.config.numberOfPlayers);
+  const updateConfig = useGameStore((s) => s.updateConfig);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Number of Players</Text>
+        <Text style={styles.rowHint}>For multiplayer (single-player is always 2)</Text>
+      </View>
+      <View style={styles.selectorRow}>
+        {([2, 3, 4] as const).map((n) => (
+          <Pressable
+            key={n}
+            onPress={() => updateConfig({ numberOfPlayers: n })}
+            style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
+          >
+            <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>
+              {n}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
+  const config = useGameStore((s) => s.config);
   const resetConfig = useGameStore((s) => s.resetConfig);
   const navigateToSimulation = () => router.push('/simulate');
+
+  const buyIn = config.potPerBoard * NUM_BOARDS;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -53,36 +101,35 @@ export default function SettingsScreen() {
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.title}>SETTINGS</Text>
-        <Button title="Reset" variant="secondary" onPress={resetConfig} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 }} />
+        <View style={{ width: 60 }} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>TIMING</Text>
-        <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" />
-        <SettingRow label="Board Reveal Duration" configKey="boardRevealDuration" suffix="sec" />
-        <SettingRow label="Complete Bonus Display" configKey="completeBonusDisplay" suffix="sec" />
+        <Text style={styles.sectionTitle}>GAMEPLAY</Text>
+        <PlayerCountSelector />
+        <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
+        <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${NUM_BOARDS} = ${buyIn}`} min={1} />
+        <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
 
-        <Text style={styles.sectionTitle}>CHIPS</Text>
-        <SettingRow label="Starting Chips" configKey="startingChips" />
-        <SettingRow label="Pot Per Board" configKey="potPerBoard" />
-        <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="%" />
+        <Text style={styles.sectionTitle}>TIMING</Text>
+        <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />
+        <SettingRow label="Board Reveal Duration" configKey="boardRevealDuration" suffix="sec" min={1} />
+        <SettingRow label="Card Flip Speed" configKey="turnRevealDelay" suffix="ms" min={100} />
+        <SettingRow label="Complete Bonus Display" configKey="completeBonusDisplay" suffix="sec" min={1} />
 
         <Text style={styles.sectionTitle}>BOT</Text>
-        <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" />
-        <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" />
+        <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
+        <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
 
-        <Text style={styles.sectionTitle}>DEBUG</Text>
+        <Text style={styles.sectionTitle}>TOOLS</Text>
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
 
-        <View style={styles.defaultsSection}>
-          <Text style={styles.defaultsTitle}>Defaults</Text>
-          {Object.entries(DEFAULT_CONFIG).map(([key, val]) => (
-            <View key={key} style={styles.defaultRow}>
-              <Text style={styles.defaultKey}>{key}</Text>
-              <Text style={styles.defaultVal}>{val}</Text>
-            </View>
-          ))}
-        </View>
+        <Button
+          title="Reset to Defaults"
+          variant="secondary"
+          onPress={resetConfig}
+          style={{ marginBottom: 24 }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -149,10 +196,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  rowKey: {
+  rowHint: {
     color: COLORS.textSecondary,
-    fontSize: 11,
-    fontFamily: 'monospace',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  rowError: {
+    color: COLORS.danger,
+    fontSize: 10,
+    fontWeight: '600',
     marginTop: 2,
   },
   rowRight: {
@@ -173,39 +225,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
   suffix: {
     color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '600',
   },
-  defaultsSection: {
-    marginTop: 24,
-    padding: 12,
-    backgroundColor: COLORS.feltLight,
-    borderRadius: 8,
+  selectorRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  selectorBtn: {
+    width: 40,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
-  defaultsTitle: {
+  selectorBtnActive: {
+    backgroundColor: COLORS.gold,
+    borderColor: COLORS.gold,
+  },
+  selectorText: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 8,
   },
-  defaultRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 3,
-  },
-  defaultKey: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-  defaultVal: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontFamily: 'monospace',
+  selectorTextActive: {
+    color: COLORS.background,
   },
 });

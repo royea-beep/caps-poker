@@ -22,6 +22,13 @@ import { GamePhase } from '../types/gameTypes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { useRevealSequence } from '../hooks/useRevealSequence';
 
+const haptic = (style: Haptics.ImpactFeedbackStyle) => {
+  Haptics.impactAsync(style).catch(() => {});
+};
+const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
+  Haptics.notificationAsync(type).catch(() => {});
+};
+
 export default function GameScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -44,6 +51,11 @@ export default function GameScreen() {
 
   const mountedRef = useRef(true);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const playerHandRef = useRef(playerHand);
+
+  useEffect(() => {
+    playerHandRef.current = playerHand;
+  }, [playerHand]);
 
   const isArranging = phase.type === 'arranging';
   const isRevealing = phase.type === 'revealing';
@@ -51,16 +63,9 @@ export default function GameScreen() {
   // Auto-fill and ready handler (defined early so hooks can reference it)
   const handleAutoFillAndReady = useCallback(() => {
     setBoards((currentBoards) => {
-      setPlayerHand((currentHand) => {
-        const { boards: filledBoards, remainingHand } = autoFillPlayerCards(currentHand, currentBoards);
-        Promise.resolve().then(() => {
-          if (mountedRef.current) {
-            setBoards(filledBoards);
-          }
-        });
-        return remainingHand;
-      });
-      return currentBoards;
+      const { boards: filledBoards, remainingHand } = autoFillPlayerCards(playerHandRef.current, currentBoards);
+      setPlayerHand(remainingHand);
+      return filledBoards;
     });
     setPhase({ type: 'waiting_for_bot' });
   }, []);
@@ -92,7 +97,7 @@ export default function GameScreen() {
       });
       return currentResults;
     });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    haptic(Haptics.ImpactFeedbackStyle.Heavy);
   }, []);
 
   const handleAllRevealed = useCallback(() => {
@@ -157,13 +162,6 @@ export default function GameScreen() {
     }
   }, [timer.timeLeft, isArranging]);
 
-  // When player is waiting and bot becomes ready -> start reveal
-  useEffect(() => {
-    if (phase.type === 'waiting_for_bot' && botReady) {
-      startRevealPhase();
-    }
-  }, [phase.type, botReady]);
-
   const startRevealPhase = useCallback(() => {
     setPhase({ type: 'revealing', boardIndex: -1 });
 
@@ -194,6 +192,13 @@ export default function GameScreen() {
     });
   }, [config, revealSequence]);
 
+  // When player is waiting and bot becomes ready -> start reveal
+  useEffect(() => {
+    if (phase.type === 'waiting_for_bot' && botReady) {
+      startRevealPhase();
+    }
+  }, [phase.type, botReady, startRevealPhase]);
+
   // When all reveals are done (revealSequence.isRevealing goes false after being true)
   const wasRevealingRef = useRef(false);
   useEffect(() => {
@@ -212,7 +217,7 @@ export default function GameScreen() {
   }, [revealSequence.isRevealing, addChips]);
 
   const handleCardSelect = useCallback((card: Card) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptic(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCard((prev) => (prev?.id === card.id ? null : card));
   }, []);
 
@@ -222,12 +227,22 @@ export default function GameScreen() {
 
       if (selectedCard) {
         setBoards((prev) => {
+          if (!prev[boardIndex]) return prev;
           const board = prev[boardIndex];
           if (board.playerCards.length >= CARDS_PER_BOARD) {
             Alert.alert('Board Full', 'This board already has 4 cards.');
             return prev;
           }
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          // Check if card is already placed on this board
+          const isUsed = board.playerCards.some(
+            (c) => c.suit === selectedCard.suit && c.rank === selectedCard.rank
+          ) || board.openCards.some(
+            (c) => c.suit === selectedCard.suit && c.rank === selectedCard.rank
+          ) || board.closedCards.some(
+            (c) => c.suit === selectedCard.suit && c.rank === selectedCard.rank
+          );
+          if (isUsed) return prev;
+          haptic(Haptics.ImpactFeedbackStyle.Medium);
           const updated = [...prev];
           updated[boardIndex] = {
             ...board,
@@ -247,8 +262,9 @@ export default function GameScreen() {
   const handleRemoveCardFromBoard = useCallback(
     (boardIndex: number, card: Card) => {
       if (!isArranging) return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptic(Haptics.ImpactFeedbackStyle.Light);
       setBoards((prev) => {
+        if (!prev[boardIndex]) return prev;
         const updated = [...prev];
         const board = updated[boardIndex];
         updated[boardIndex] = {
@@ -266,7 +282,7 @@ export default function GameScreen() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    hapticNotify(Haptics.NotificationFeedbackType.Success);
     timer.stop();
     if (botReady) {
       // Bot already ready, go straight to reveal
@@ -282,31 +298,50 @@ export default function GameScreen() {
     setPhase({ type: 'summary' });
   }, []);
 
+  const handleBack = useCallback(() => {
+    if (isArranging || isRevealing || phase.type === 'waiting_for_bot') {
+      Alert.alert(
+        'Leave Game?',
+        'You will lose your pot for this hand.',
+        [
+          { text: 'Stay', style: 'cancel' },
+          { text: 'Leave', style: 'destructive', onPress: () => router.back() },
+        ]
+      );
+    } else {
+      router.back();
+    }
+  }, [isArranging, isRevealing, phase.type, router]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  if (phase.type === 'summary') {
-    router.replace({
-      pathname: '/summary',
-      params: {
-        results: JSON.stringify(
-          boardResults.map((r) => ({
-            winner: r.winner,
-            playerHand: r.playerResult.name,
-            botHand: r.botResult.name,
-          }))
-        ),
-        netChips: netChips.toString(),
-        isComplete: isComplete.toString(),
-        completeBonusAmount: completeBonusAmount.toString(),
-        potPerBoard: config.potPerBoard.toString(),
-      },
-    });
-    return null;
-  }
+  // Navigate to summary screen via effect (not during render)
+  useEffect(() => {
+    if (phase.type === 'summary') {
+      router.replace({
+        pathname: '/summary',
+        params: {
+          results: JSON.stringify(
+            boardResults.map((r) => ({
+              winner: r.winner,
+              playerHand: r.playerResult.name,
+              botHand: r.botResult.name,
+            }))
+          ),
+          netChips: netChips.toString(),
+          isComplete: isComplete.toString(),
+          completeBonusAmount: completeBonusAmount.toString(),
+          potPerBoard: config.potPerBoard.toString(),
+        },
+      });
+    }
+  }, [phase.type]);
+
+  if (phase.type === 'summary') return null;
 
   const displayTimeLeft = phase.type === 'arranging' ? phase.timeLeft : 0;
 
@@ -314,7 +349,7 @@ export default function GameScreen() {
     <SafeAreaView style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topInfo}>

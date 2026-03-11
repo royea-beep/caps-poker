@@ -1,4 +1,5 @@
 import TcpSocket from 'react-native-tcp-socket';
+import { AppState, AppStateStatus } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import {
   NETWORK_CONFIG,
@@ -43,6 +44,8 @@ export class GameClient {
   private lastHostIP: string = '';
   private lastRoomCode: string = '';
   private lastPort: number = NETWORK_CONFIG.port;
+  private appStateSubscription: any = null;
+  private wasBackgrounded: boolean = false;
 
   constructor(callbacks: GameClientCallbacks, playerName: string) {
     this.callbacks = callbacks;
@@ -63,6 +66,16 @@ export class GameClient {
     roomCode: string,
     port: number = NETWORK_CONFIG.port
   ): Promise<void> {
+    // Clean up any existing socket first
+    if (this.socket) {
+      try {
+        this.socket.removeAllListeners?.();
+        this.socket.destroy();
+      } catch {}
+      this.socket = null;
+    }
+    this.stopHeartbeat();
+
     this.lastHostIP = hostIP;
     this.lastRoomCode = roomCode;
     this.lastPort = port;
@@ -104,6 +117,15 @@ export class GameClient {
                   this.playerId = ack.playerId;
                   this.connected = true;
                   this.startHeartbeat();
+                  this.appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+                    if (state === 'background' || state === 'inactive') {
+                      this.wasBackgrounded = true;
+                    } else if (state === 'active' && this.wasBackgrounded) {
+                      this.wasBackgrounded = false;
+                      // Reset heartbeat timing after returning from background
+                      this.lastHeartbeatAck = Date.now();
+                    }
+                  });
                   this.callbacks.onConnected(ack);
                   resolve();
                 } else if (message.type === 'ERROR') {
@@ -190,23 +212,27 @@ export class GameClient {
     }
   }
 
-  sendReady(boardAssignments: Card[][]): void {
+  sendReady(boardAssignments: Card[][]): boolean {
     const payload: PlayerReadyPayload = { boardAssignments };
-    this.send(createMessage('PLAYER_READY', payload, this.playerId));
+    return this.send(createMessage('PLAYER_READY', payload, this.playerId));
   }
 
-  send(message: NetworkMessage): void {
+  send(message: NetworkMessage): boolean {
     if (this.socket && this.connected) {
       try {
         this.socket.write(JSON.stringify(message) + '\n');
+        return true;
       } catch {
         this.connected = false;
         this.callbacks.onDisconnected();
+        return false;
       }
     }
+    return false;
   }
 
   private startHeartbeat(): void {
+    this.stopHeartbeat();  // Clear any existing interval
     this.lastHeartbeatAck = Date.now();
     this.heartbeatInterval = setInterval(() => {
       if (Date.now() - this.lastHeartbeatAck > NETWORK_CONFIG.heartbeatTimeoutMs) {
@@ -258,6 +284,10 @@ export class GameClient {
     this.reconnectAttempt = 0;
     this.connected = false;
     this.stopHeartbeat();
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
     if (this.socket) {
       try {
         this.socket.destroy();

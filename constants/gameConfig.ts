@@ -3,10 +3,12 @@ import { THEME } from './theme';
 export const DEFAULT_CONFIG = {
   arrangementTime: 60,
   boardRevealDuration: 5,
+  turnRevealDelay: 800,
   completeBonusDisplay: 2,
   startingChips: 1000,
   potPerBoard: 25,
   completeBonusPercent: 50,
+  numberOfPlayers: 2,
   botSpeedMin: 5000,
   botSpeedMax: 30000,
 };

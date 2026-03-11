@@ -53,7 +53,21 @@ export const useGameStore = create<GameStore>()(
       setChips: (chips: number) => set({ chips }),
       addChips: (amount: number) => set((state) => ({ chips: state.chips + amount })),
       updateConfig: (partial: Partial<GameConfig>) =>
-        set((state) => ({ config: { ...state.config, ...partial } })),
+        set((state) => {
+          const merged = { ...state.config, ...partial };
+          // Clamp numeric settings to reasonable bounds
+          merged.potPerBoard = Math.max(1, merged.potPerBoard);
+          merged.arrangementTime = Math.max(10, merged.arrangementTime);
+          merged.startingChips = Math.max(1, merged.startingChips);
+          merged.boardRevealDuration = Math.max(1, merged.boardRevealDuration);
+          merged.completeBonusDisplay = Math.max(1, merged.completeBonusDisplay);
+          merged.completeBonusPercent = Math.max(0, Math.min(100, merged.completeBonusPercent));
+          merged.turnRevealDelay = Math.max(100, merged.turnRevealDelay);
+          merged.numberOfPlayers = Math.max(2, Math.min(4, merged.numberOfPlayers));
+          merged.botSpeedMin = Math.max(0, merged.botSpeedMin);
+          merged.botSpeedMax = Math.max(merged.botSpeedMin, merged.botSpeedMax);
+          return { config: merged };
+        }),
       resetConfig: () => set({ config: { ...DEFAULT_CONFIG } }),
 
       // Multiplayer actions

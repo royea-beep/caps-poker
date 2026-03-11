@@ -3,6 +3,14 @@ import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-nati
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+
+const haptic = (style: Haptics.ImpactFeedbackStyle) => {
+  Haptics.impactAsync(style).catch(() => {});
+};
+const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
+  Haptics.notificationAsync(type).catch(() => {});
+};
+
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
@@ -67,6 +75,10 @@ export default function MultiplayerGameScreen() {
     }))
   );
   const [playerHand, setPlayerHand] = useState<Card[]>(yourCards);
+  const playerHandRef = useRef(playerHand);
+  useEffect(() => {
+    playerHandRef.current = playerHand;
+  }, [playerHand]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [phase, setPhase] = useState<'arranging' | 'waiting' | 'revealing' | 'summary'>('arranging');
   const [isReady, setIsReady] = useState(false);
@@ -98,7 +110,7 @@ export default function MultiplayerGameScreen() {
   // Auto-fill remaining cards
   const autoFillAndReady = useCallback(() => {
     setBoards((currentBoards) => {
-      const remaining = [...playerHand];
+      const remaining = [...playerHandRef.current];
       const updated = currentBoards.map((board) => {
         const needed = CARDS_PER_BOARD - board.playerCards.length;
         if (needed > 0) {
@@ -116,11 +128,11 @@ export default function MultiplayerGameScreen() {
       if (onSendReady) onSendReady(assignments);
       return updated;
     });
-  }, [playerHand, timer]);
+  }, [timer, onSendReady]);
 
   // Card placement
   const handleCardSelect = useCallback((card: Card) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptic(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCard((prev) => (prev?.id === card.id ? null : card));
   }, []);
 
@@ -134,7 +146,7 @@ export default function MultiplayerGameScreen() {
           Alert.alert('Board Full', 'This board already has 4 cards.');
           return prev;
         }
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        haptic(Haptics.ImpactFeedbackStyle.Medium);
         const updated = [...prev];
         updated[boardIndex] = {
           ...board,
@@ -151,7 +163,7 @@ export default function MultiplayerGameScreen() {
   const handleRemoveCard = useCallback(
     (boardIndex: number, card: Card) => {
       if (phase !== 'arranging') return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptic(Haptics.ImpactFeedbackStyle.Light);
       setBoards((prev) => {
         const updated = [...prev];
         updated[boardIndex] = {
@@ -169,7 +181,7 @@ export default function MultiplayerGameScreen() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    hapticNotify(Haptics.NotificationFeedbackType.Success);
     timer.stop();
     setIsReady(true);
     setPhase('waiting');
@@ -193,7 +205,7 @@ export default function MultiplayerGameScreen() {
       };
       return updated;
     });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    haptic(Haptics.ImpactFeedbackStyle.Heavy);
   }, []);
 
   // Handle hand complete
@@ -238,6 +250,21 @@ export default function MultiplayerGameScreen() {
     }
   }, [phase, handResult]);
 
+  const handleBack = useCallback(() => {
+    if (phase === 'arranging' || phase === 'waiting' || phase === 'revealing') {
+      Alert.alert(
+        'Leave Game?',
+        'You will forfeit this hand if you leave.',
+        [
+          { text: 'Stay', style: 'cancel' },
+          { text: 'Leave', style: 'destructive', onPress: () => router.back() },
+        ]
+      );
+    } else {
+      router.back();
+    }
+  }, [phase, router]);
+
   const isArranging = phase === 'arranging';
   const displayTimeLeft = timer.timeLeft;
 
@@ -245,7 +272,7 @@ export default function MultiplayerGameScreen() {
     <SafeAreaView style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topInfo}>

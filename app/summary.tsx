@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  useDerivedValue,
+  FadeIn,
+  Easing,
+  runOnJS,
+  SharedValue,
+} from 'react-native-reanimated';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
@@ -12,6 +23,13 @@ interface BoardSummary {
   playerHand: string;
   botHand: string;
 }
+
+// Timing constants (ms)
+const BOARD_STAGGER = 300;
+const BOARD_FADE_DURATION = 400;
+const CHIPS_COUNT_DELAY = 200; // after last board appears
+const CHIPS_COUNT_DURATION = 1200;
+const BUTTONS_DELAY = 400; // after chips finish counting
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -41,58 +59,118 @@ export default function SummaryScreen() {
   const playerWins = boardResults.filter((r) => r.winner === 'player').length;
   const botWins = boardResults.filter((r) => r.winner === 'bot').length;
 
+  // --- Animation state ---
+  const [showButtons, setShowButtons] = useState(false);
+
+  // Shared values for counting animation
+  const chipCountProgress = useSharedValue(0);
+
+  // Calculate when animations should complete
+  const lastBoardDelay = boardResults.length * BOARD_STAGGER;
+  const chipsStartDelay = lastBoardDelay + BOARD_FADE_DURATION + CHIPS_COUNT_DELAY;
+  const buttonsShowDelay = chipsStartDelay + CHIPS_COUNT_DURATION + BUTTONS_DELAY;
+
+  const showButtonsCallback = () => {
+    setShowButtons(true);
+  };
+
+  useEffect(() => {
+    // Start chip count animation after boards have appeared
+    chipCountProgress.value = withDelay(
+      chipsStartDelay,
+      withTiming(1, {
+        duration: CHIPS_COUNT_DURATION,
+        easing: Easing.out(Easing.cubic),
+      })
+    );
+
+    // Show buttons after everything is done
+    const timer = setTimeout(showButtonsCallback, buttonsShowDelay);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Derived animated text for net chips
+  const animatedProfit = useDerivedValue(() => {
+    return Math.round(chipCountProgress.value * profit);
+  });
+
+  // Animated style for chip count (scale pop when done)
+  const chipCountStyle = useAnimatedStyle(() => {
+    const scale = chipCountProgress.value >= 0.95
+      ? withTiming(1, { duration: 150 })
+      : 0.9 + chipCountProgress.value * 0.1;
+    return {
+      transform: [{ scale }],
+      opacity: chipCountProgress.value > 0 ? 1 : 0,
+    };
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>HAND RESULTS</Text>
+        {/* Title fades in immediately */}
+        <Animated.View entering={FadeIn.duration(400)}>
+          <Text style={styles.title}>HAND RESULTS</Text>
+        </Animated.View>
 
-        <View style={styles.scoreRow}>
-          <View style={styles.scoreItem}>
-            <Text style={styles.scoreLabel}>YOU</Text>
-            <Text style={[styles.scoreNum, { color: COLORS.success }]}>{playerWins}</Text>
+        {/* Score row fades in quickly */}
+        <Animated.View entering={FadeIn.duration(400).delay(150)}>
+          <View style={styles.scoreRow}>
+            <View style={styles.scoreItem}>
+              <Text style={styles.scoreLabel}>YOU</Text>
+              <Text style={[styles.scoreNum, { color: COLORS.success }]}>{playerWins}</Text>
+            </View>
+            <Text style={styles.scoreDivider}>—</Text>
+            <View style={styles.scoreItem}>
+              <Text style={styles.scoreLabel}>BOT</Text>
+              <Text style={[styles.scoreNum, { color: COLORS.danger }]}>{botWins}</Text>
+            </View>
           </View>
-          <Text style={styles.scoreDivider}>—</Text>
-          <View style={styles.scoreItem}>
-            <Text style={styles.scoreLabel}>BOT</Text>
-            <Text style={[styles.scoreNum, { color: COLORS.danger }]}>{botWins}</Text>
-          </View>
-        </View>
+        </Animated.View>
 
-        {/* Board details */}
+        {/* Board details — staggered fade in */}
         <View style={styles.boardsList}>
           {boardResults.map((result, i) => (
-            <View key={i} style={styles.boardRow}>
-              <View style={styles.boardHeader}>
-                <Text style={styles.boardLabel}>Board {i + 1}</Text>
-                <View
-                  style={[
-                    styles.winnerTag,
-                    result.winner === 'player'
-                      ? styles.playerTag
-                      : result.winner === 'bot'
-                      ? styles.botTag
-                      : styles.tieTag,
-                  ]}
-                >
-                  <Text style={styles.winnerTagText}>
-                    {result.winner === 'player' ? 'YOU' : result.winner === 'bot' ? 'BOT' : 'TIE'}
+            <Animated.View
+              key={i}
+              entering={FadeIn.duration(BOARD_FADE_DURATION).delay(BOARD_STAGGER * (i + 1))}
+            >
+              <View style={styles.boardRow}>
+                <View style={styles.boardHeader}>
+                  <Text style={styles.boardLabel}>Board {i + 1}</Text>
+                  <View
+                    style={[
+                      styles.winnerTag,
+                      result.winner === 'player'
+                        ? styles.playerTag
+                        : result.winner === 'bot'
+                        ? styles.botTag
+                        : styles.tieTag,
+                    ]}
+                  >
+                    <Text style={styles.winnerTagText}>
+                      {result.winner === 'player' ? 'YOU' : result.winner === 'bot' ? 'BOT' : 'TIE'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.handRow}>
+                  <Text style={[styles.handText, result.winner === 'player' && styles.handWinner]}>
+                    You: {result.playerHand}
+                  </Text>
+                  <Text style={[styles.handText, result.winner === 'bot' && styles.handWinner]}>
+                    Bot: {result.botHand}
                   </Text>
                 </View>
               </View>
-              <View style={styles.handRow}>
-                <Text style={[styles.handText, result.winner === 'player' && styles.handWinner]}>
-                  You: {result.playerHand}
-                </Text>
-                <Text style={[styles.handText, result.winner === 'bot' && styles.handWinner]}>
-                  Bot: {result.botHand}
-                </Text>
-              </View>
-            </View>
+            </Animated.View>
           ))}
         </View>
 
-        {/* Chips summary */}
-        <View style={styles.chipsSummary}>
+        {/* Chips summary — animated counting */}
+        <Animated.View
+          style={styles.chipsSummary}
+          entering={FadeIn.duration(300).delay(chipsStartDelay - 200)}
+        >
           {isComplete && (
             <View style={styles.completeRow}>
               <Text style={styles.completeLabel}>COMPLETE BONUS</Text>
@@ -101,20 +179,62 @@ export default function SummaryScreen() {
           )}
           <View style={styles.netRow}>
             <Text style={styles.netLabel}>Net Result</Text>
-            <Text style={[styles.netAmount, profit >= 0 ? styles.profit : styles.loss]}>
-              {profit >= 0 ? '+' : ''}{profit} 🪙
-            </Text>
+            <Animated.View style={chipCountStyle}>
+              <AnimatedChipCount profit={profit} progress={chipCountProgress} />
+            </Animated.View>
           </View>
-        </View>
+        </Animated.View>
 
-        <ChipsDisplay amount={chips} label="Current Balance" size="large" />
+        <Animated.View entering={FadeIn.duration(300).delay(chipsStartDelay)}>
+          <ChipsDisplay amount={chips} label="Current Balance" size="large" />
+        </Animated.View>
 
-        <View style={styles.buttons}>
-          <Button title="NEXT HAND" variant="gold" onPress={() => router.replace('/game')} />
-          <Button title="HOME" variant="secondary" onPress={() => router.replace('/')} />
-        </View>
+        {/* Buttons appear only after animation completes */}
+        {showButtons && (
+          <Animated.View
+            style={styles.buttons}
+            entering={FadeIn.duration(400)}
+          >
+            <Button title="NEXT HAND" variant="gold" onPress={() => router.replace('/game')} />
+            <Button title="HOME" variant="secondary" onPress={() => router.replace('/')} />
+          </Animated.View>
+        )}
       </View>
     </SafeAreaView>
+  );
+}
+
+/**
+ * Separate component to display the animated chip count.
+ * Uses useDerivedValue + useAnimatedProps pattern with a state-based approach
+ * to show the counting number on the JS thread.
+ */
+function AnimatedChipCount({
+  profit,
+  progress,
+}: {
+  profit: number;
+  progress: SharedValue<number>;
+}) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  const updateDisplay = (val: number) => {
+    setDisplayValue(val);
+  };
+
+  useDerivedValue(() => {
+    const current = Math.round(progress.value * profit);
+    runOnJS(updateDisplay)(current);
+    return current;
+  });
+
+  const prefix = displayValue >= 0 ? '+' : '';
+  const color = displayValue >= 0 ? styles.profit : styles.loss;
+
+  return (
+    <Text style={[styles.netAmount, color]}>
+      {prefix}{displayValue} 🪙
+    </Text>
   );
 }
 

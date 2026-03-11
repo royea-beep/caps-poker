@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, Pressable, Text, StyleSheet } from 'react-native';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 
@@ -10,23 +10,36 @@ interface PlayerHandProps {
 }
 
 export default function PlayerHand({ cards, selectedCardId, onSelectCard }: PlayerHandProps) {
+  const midpoint = Math.ceil(cards.length / 2);
+  const topRow = cards.slice(0, midpoint);
+  const bottomRow = cards.slice(midpoint);
+
+  const renderCard = (card: Card) => (
+    <Pressable
+      key={card.id}
+      onPress={() => onSelectCard(card)}
+      style={[
+        styles.cardWrapper,
+        selectedCardId === card.id && styles.selected,
+      ]}
+    >
+      <CardComponent card={card} faceDown={false} />
+    </Pressable>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>YOUR HAND ({cards.length} cards)</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
-        {cards.map((card) => (
-          <Pressable
-            key={card.id}
-            onPress={() => onSelectCard(card)}
-            style={[
-              styles.cardWrapper,
-              selectedCardId === card.id && styles.selected,
-            ]}
-          >
-            <CardComponent card={card} faceDown={false} />
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={styles.grid}>
+        <View style={styles.row}>
+          {topRow.map(renderCard)}
+        </View>
+        {bottomRow.length > 0 && (
+          <View style={styles.row}>
+            {bottomRow.map(renderCard)}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -43,8 +56,13 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     marginBottom: 6,
   },
-  scrollContent: {
+  grid: {
     paddingHorizontal: 12,
+    gap: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     gap: 2,
   },
   cardWrapper: {

@@ -26,6 +26,7 @@ import { GameConfig } from '../constants/gameConfig';
 export interface ConnectedClient {
   id: string;
   name: string;
+  deviceId: string;
   socket: any;
   seat: number;
   isReady: boolean;
@@ -44,6 +45,8 @@ export interface GameServerCallbacks {
   onRoomStateChanged: (players: ConnectedClient[]) => void;
 }
 
+const MAX_BUFFER_SIZE = 1024 * 64; // 64KB max buffer
+
 export class GameServer {
   private server: any = null;
   private clients: Map<string, ConnectedClient> = new Map();
@@ -55,6 +58,8 @@ export class GameServer {
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private boards: MultiBoardState[] = [];
   private playerHands: Card[][] = [];
+  private stopping: boolean = false;
+  private lastHeartbeatCheck: number = Date.now();
 
   constructor(
     callbacks: GameServerCallbacks,
@@ -81,11 +86,13 @@ export class GameServer {
 
   async start(port: number = NETWORK_CONFIG.port): Promise<string> {
     this.roomCode = generateRoomCode();
+    this.stopping = false;
 
     // Add host as first player (seat 0)
     this.clients.set(this.hostId, {
       id: this.hostId,
       name: this.hostName,
+      deviceId: '',
       socket: null, // host doesn't have a socket to itself
       seat: 0,
       isReady: false,
@@ -119,10 +126,27 @@ export class GameServer {
   }
 
   private handleNewConnection(socket: any): void {
+    // Fix 5: Reject connections while stopping
+    if (this.stopping) {
+      try {
+        socket.destroy();
+      } catch {
+        // Ignore
+      }
+      return;
+    }
+
     let buffer = '';
 
     socket.on('data', (data: Buffer | string) => {
       buffer += data.toString();
+
+      // Fix 4: Message size limit to prevent memory exhaustion
+      if (buffer.length > MAX_BUFFER_SIZE) {
+        buffer = ''; // Drop oversized buffer
+        return;
+      }
+
       // Process complete JSON messages (newline-delimited)
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
@@ -148,10 +172,39 @@ export class GameServer {
     });
   }
 
+  // Fix 3: Payload validation helper
+  private validatePayload(message: NetworkMessage): boolean {
+    if (!message || typeof message.type !== 'string') return false;
+    if (!message.payload || typeof message.payload !== 'object') return false;
+    return true;
+  }
+
   private handleMessage(message: NetworkMessage, socket: any): void {
+    // Fix 3: Validate payload before processing
+    if (!this.validatePayload(message)) return;
+
     switch (message.type) {
       case 'ROOM_JOIN': {
         const payload = message.payload as RoomJoinPayload;
+
+        // Fix 3: Validate ROOM_JOIN specific fields
+        if (
+          typeof payload.playerName !== 'string' ||
+          !payload.playerName.trim() ||
+          typeof payload.roomCode !== 'string' ||
+          typeof payload.deviceId !== 'string' ||
+          !payload.deviceId.trim()
+        ) {
+          this.sendToSocket(socket, createMessage('ERROR', {
+            code: 'INVALID_PAYLOAD',
+            message: 'Invalid join payload',
+          }, this.hostId));
+          return;
+        }
+
+        // Truncate playerName to 20 chars max
+        const playerName = payload.playerName.trim().slice(0, 20);
+
         if (payload.roomCode !== this.roomCode) {
           this.sendToSocket(socket, createMessage('ERROR', {
             code: 'INVALID_CODE',
@@ -159,6 +212,37 @@ export class GameServer {
           }, this.hostId));
           return;
         }
+
+        // Fix 2: Check for reconnection by deviceId
+        let existingClient: ConnectedClient | undefined;
+        for (const client of this.clients.values()) {
+          if (!client.isHost && !client.connected && client.deviceId === payload.deviceId) {
+            existingClient = client;
+            break;
+          }
+        }
+
+        if (existingClient) {
+          // Reconnection — restore existing seat
+          existingClient.socket = socket;
+          existingClient.connected = true;
+          existingClient.name = playerName;
+          existingClient.lastHeartbeat = Date.now();
+          existingClient.isReady = false;
+          existingClient.boardAssignments = null;
+
+          const ack: RoomJoinAckPayload = {
+            playerId: existingClient.id,
+            seat: existingClient.seat,
+            roomCode: this.roomCode,
+            hostName: this.hostName,
+          };
+          this.sendToSocket(socket, createMessage('ROOM_JOIN_ACK', ack, this.hostId));
+          this.broadcastRoomState();
+          this.callbacks.onPlayerJoined(existingClient);
+          break;
+        }
+
         if (this.clients.size >= this.maxPlayers) {
           this.sendToSocket(socket, createMessage('ERROR', {
             code: 'ROOM_FULL',
@@ -171,7 +255,8 @@ export class GameServer {
         const seat = this.getNextSeat();
         const client: ConnectedClient = {
           id: playerId,
-          name: payload.playerName,
+          name: playerName,
+          deviceId: payload.deviceId,
           socket,
           seat,
           isReady: false,
@@ -200,6 +285,12 @@ export class GameServer {
 
       case 'PLAYER_READY': {
         const readyPayload = message.payload as PlayerReadyPayload;
+
+        // Fix 3: Validate PLAYER_READY specific fields
+        if (!Array.isArray(readyPayload.boardAssignments)) {
+          return;
+        }
+
         const client = this.findClientBySocket(socket);
         if (client) {
           client.isReady = true;
@@ -229,10 +320,12 @@ export class GameServer {
     return undefined;
   }
 
+  // Fix 1: Guard against double disconnect
   private handleSocketDisconnect(socket: any): void {
     const client = this.findClientBySocket(socket);
-    if (client) {
+    if (client && client.connected) {  // Only process if still marked connected
       client.connected = false;
+      client.socket = null;  // Clear socket reference to prevent re-matching
       this.callbacks.onPlayerLeft(client.id);
       this.broadcastRoomState();
       // Broadcast disconnection to other players
@@ -428,9 +521,25 @@ export class GameServer {
     }
   }
 
+  // Fix 6: Heartbeat with app-background grace period
   private startHeartbeatMonitor(): void {
+    this.lastHeartbeatCheck = Date.now();
+
     this.heartbeatInterval = setInterval(() => {
       const now = Date.now();
+      const elapsed = now - this.lastHeartbeatCheck;
+      this.lastHeartbeatCheck = now;
+
+      // If we were backgrounded (gap > 2x interval), reset all heartbeat timestamps
+      if (elapsed > NETWORK_CONFIG.heartbeatIntervalMs * 2) {
+        for (const client of this.clients.values()) {
+          if (!client.isHost && client.connected) {
+            client.lastHeartbeat = now;
+          }
+        }
+        return; // Skip this check cycle
+      }
+
       for (const client of this.clients.values()) {
         if (
           !client.isHost &&
@@ -446,6 +555,9 @@ export class GameServer {
   }
 
   stop(): void {
+    // Fix 5: Set stopping flag to reject new connections
+    this.stopping = true;
+
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;

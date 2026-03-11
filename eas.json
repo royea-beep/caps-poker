@@ -14,7 +14,7 @@
       "ios": { "simulator": false }
     },
     "production": {
-      "ios": { "buildConfiguration": "Release" }
+      "ios": { "buildConfiguration": "Release", "autoIncrement": true }
     }
   },
   "submit": {

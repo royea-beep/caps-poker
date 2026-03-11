@@ -19,7 +19,6 @@
       "infoPlist": {
         "UIRequiresFullScreen": true,
         "UISupportedInterfaceOrientations": [
-          "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortrait"
         ],
         "ITSAppUsesNonExemptEncryption": false

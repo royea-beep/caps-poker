@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,14 +16,29 @@ export default function SimulateScreen() {
   const config = useGameStore((s) => s.config);
   const [results, setResults] = useState<SimResultDisplay[]>([]);
   const [running, setRunning] = useState(false);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Clear all pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((t) => clearTimeout(t));
+      timeoutsRef.current = [];
+    };
+  }, []);
 
   const HAND_COUNT = 100;
+
+  const trackTimeout = (fn: () => void, delay: number) => {
+    const id = setTimeout(fn, delay);
+    timeoutsRef.current.push(id);
+    return id;
+  };
 
   const runSimulation = useCallback(
     (playerCount: 2 | 3 | 4) => {
       setRunning(true);
       // Use setTimeout to avoid blocking UI
-      setTimeout(() => {
+      trackTimeout(() => {
         const result = simulateBatch(playerCount, HAND_COUNT, config);
         const display: SimResultDisplay = {
           ...result,
@@ -44,13 +59,13 @@ export default function SimulateScreen() {
     setRunning(true);
     setResults([]);
     // Run sequentially with timeouts to keep UI responsive
-    setTimeout(() => {
+    trackTimeout(() => {
       const r2 = simulateBatch(2, HAND_COUNT, config);
       setResults([{ ...r2, label: '2P' }]);
-      setTimeout(() => {
+      trackTimeout(() => {
         const r3 = simulateBatch(3, HAND_COUNT, config);
         setResults((prev) => [...prev, { ...r3, label: '3P' }]);
-        setTimeout(() => {
+        trackTimeout(() => {
           const r4 = simulateBatch(4, HAND_COUNT, config);
           setResults((prev) => [...prev, { ...r4, label: '4P' }]);
           setRunning(false);

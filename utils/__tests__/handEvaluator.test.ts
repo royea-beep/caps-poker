@@ -126,4 +126,39 @@ describe('evaluateOmahaHand', () => {
     const result = evaluateOmahaHand(player, board);
     expect(result.rank).toBe(HandRank.Straight);
   });
+
+  test('Ace-low straight should rank below 6-high straight', () => {
+    // Wheel: A-2-3-4-5 (5-high straight)
+    const wheelPlayer = [card('A', 's'), card('2', 'h'), card('K', 'c'), card('Q', 'd')];
+    const wheelBoard = [card('3', 'd'), card('4', 'c'), card('5', 's'), card('9', 'h'), card('8', 'd')];
+    const wheel = evaluateOmahaHand(wheelPlayer, wheelBoard);
+
+    // 6-high straight: 2-3-4-5-6
+    const sixHighPlayer = [card('6', 's'), card('2', 'h'), card('K', 'c'), card('Q', 'd')];
+    const sixHighBoard = [card('3', 'd'), card('4', 'c'), card('5', 's'), card('9', 'h'), card('8', 'd')];
+    const sixHigh = evaluateOmahaHand(sixHighPlayer, sixHighBoard);
+
+    expect(wheel.rank).toBe(HandRank.Straight);
+    expect(sixHigh.rank).toBe(HandRank.Straight);
+    expect(compareHands(sixHigh, wheel)).toBeGreaterThan(0);
+    expect(compareHands(wheel, sixHigh)).toBeLessThan(0);
+  });
+
+  test('Two Pair with same high pair but different low pair ranks correctly', () => {
+    // KK-33-7
+    const player1 = [card('K', 's'), card('3', 'h'), card('Q', 'c'), card('J', 'd')];
+    const board1 = [card('K', 'd'), card('3', 'c'), card('7', 's'), card('9', 'h'), card('8', 'd')];
+    const kk33 = evaluateOmahaHand(player1, board1);
+
+    // KK-22-7
+    const player2 = [card('K', 's'), card('2', 'h'), card('Q', 'c'), card('J', 'd')];
+    const board2 = [card('K', 'd'), card('2', 'c'), card('7', 's'), card('9', 'h'), card('8', 'd')];
+    const kk22 = evaluateOmahaHand(player2, board2);
+
+    expect(kk33.rank).toBe(HandRank.TwoPair);
+    expect(kk22.rank).toBe(HandRank.TwoPair);
+    // KK-33 should beat KK-22 (higher low pair)
+    expect(compareHands(kk33, kk22)).toBeGreaterThan(0);
+    expect(compareHands(kk22, kk33)).toBeLessThan(0);
+  });
 });

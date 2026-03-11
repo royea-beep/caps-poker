@@ -82,7 +82,9 @@ export interface BoardResult {
   winner: 'player' | 'bot' | 'tie';
 }
 
-export function evaluateBoard(board: BoardState): BoardResult {
+export function evaluateBoard(board: BoardState): BoardResult | null {
+  if (board.playerCards.length === 0 || board.botCards.length === 0) return null;
+
   const allBoardCards = [...board.openCards, ...board.closedCards];
   const playerResult = evaluateOmahaHand(board.playerCards, allBoardCards);
   const botResult = evaluateOmahaHand(board.botCards, allBoardCards);
@@ -107,7 +109,11 @@ export function calculateHandResults(
   isComplete: boolean;
   completeBonusAmount: number;
 } {
-  const boardResults = boards.map((b) => evaluateBoard(b));
+  const boardResults = boards.map((b) => evaluateBoard(b)).filter((r): r is BoardResult => r !== null);
+
+  if (boardResults.length === 0) {
+    return { boardResults: [], playerChipsWon: 0, botChipsWon: 0, isComplete: false, completeBonusAmount: 0 };
+  }
 
   let playerWins = 0;
   let botWins = 0;
@@ -132,13 +138,14 @@ export function calculateHandResults(
     }
   }
 
-  // Total pot paid by BOTH players across all boards
-  const totalPotAllBoards = totalBoardPot * NUM_BOARDS;
+  // Complete bonus: % of the player's own buy-in (not total pot)
+  const buyIn = potPerBoard * NUM_BOARDS; // single player's buy-in per hand
   const isComplete = playerWins === NUM_BOARDS || botWins === NUM_BOARDS;
   let completeBonusAmount = 0;
 
   if (isComplete) {
-    completeBonusAmount = Math.floor((totalPotAllBoards * completeBonusPercent) / 100);
+    // Winner receives (buyIn * bonusPercent/100) per opponent (1 opponent in 2-player)
+    completeBonusAmount = Math.floor((buyIn * completeBonusPercent) / 100);
     if (playerWins === NUM_BOARDS) {
       playerChipsWon += completeBonusAmount;
     } else {
@@ -222,6 +229,8 @@ export function evaluateAllBoards(
   boards: MultiBoardState[],
   playerCount: number
 ): MultiPlayerBoardResult[] {
+  if (boards.length === 0 || playerCount === 0) return [];
+
   return boards.map((board, boardIndex) => {
     const allBoardCards = [...board.openCards, ...board.closedCards];
     const playerResults: HandResult[] = [];
@@ -298,11 +307,13 @@ export function calculateChipDeltas(
     }
   }
 
-  const totalPotAllBoards = totalBoardPot * boardCount;
+  // Complete bonus: % of each player's buy-in, collected from each opponent
+  const buyIn = potPerBoard * boardCount; // single player's buy-in
   let completeBonusAmount = 0;
   if (completeWinner !== null) {
+    // Winner receives (buyIn * bonusPercent/100) per opponent
     completeBonusAmount = Math.floor(
-      (totalPotAllBoards * config.completeBonusPercent) / 100
+      (buyIn * config.completeBonusPercent / 100) * (playerCount - 1)
     );
     chipDeltas[completeWinner] += completeBonusAmount;
     // Distribute bonus cost to losers (zero-sum)

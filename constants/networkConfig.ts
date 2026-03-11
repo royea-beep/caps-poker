@@ -9,6 +9,8 @@ export const NETWORK_CONFIG = {
   reconnectAttempts: 3,
   reconnectWindowMs: 30000,
   heartbeatTimeoutMs: 15000,
+  maxMessageSize: 65536, // 64KB max buffer per connection
+  maxPlayerNameLength: 20,
 };
 
 export type MessageType =
