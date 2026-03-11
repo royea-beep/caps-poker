@@ -42,6 +42,7 @@
 - numberOfPlayers: 2 (2/3/4 selector, for multiplayer)
 - botSpeedMin: 5000 (ms)
 - botSpeedMax: 30000 (ms)
+- soundEnabled: true (toggle in Settings)
 
 ## Complete Bonus Definition (LOCKED)
 - If a player wins ALL boards in a single hand → receives (buyIn × bonusPercent/100) per opponent

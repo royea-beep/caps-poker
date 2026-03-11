@@ -81,7 +81,7 @@ function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 
   }));
 
   const text = winner === 'tie' ? '±0' : winner === 'player' ? `+${amount}` : `-${amount}`;
-  const color = winner === 'player' ? COLORS.success : winner === 'bot' ? COLORS.danger : COLORS.textSecondary;
+  const color = winner === 'player' ? COLORS.neonGreen : winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
 
   return (
     <Animated.Text style={[styles.floatingChips, { color }, animStyle]}>
@@ -133,7 +133,7 @@ export default function Board({
     }
     return {
       borderColor: COLORS.boardActive,
-      shadowColor: COLORS.gold,
+      shadowColor: COLORS.neonBlue,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: pulseValue.value * 0.6,
       shadowRadius: pulseValue.value * 10,
@@ -159,8 +159,8 @@ export default function Board({
   const completePulseStyle = useAnimatedStyle(() => {
     if (completePulse.value === 0) return {};
     return {
-      borderColor: COLORS.success,
-      shadowColor: COLORS.success,
+      borderColor: COLORS.boardFull,
+      shadowColor: COLORS.neonGreen,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: completePulse.value * 0.8,
       shadowRadius: completePulse.value * 12,
@@ -198,10 +198,10 @@ export default function Board({
           </View>
         </View>
 
-        {/* Bot cards */}
-        <View style={styles.playerRow}>
+        {/* Bot cards — single row */}
+        <View style={styles.cardRow}>
           {botCards.length > 0 ? (
-            botCards.map((c, i) => (
+            botCards.map((c) => (
               <CardComponent
                 key={c.id}
                 card={c}
@@ -222,7 +222,8 @@ export default function Board({
           <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName]}>{botHandName}</Text>
         )}
 
-        {/* Community cards: 3 open (flop) + 2 closed (turn/river) */}
+        {/* Community cards: 3 open (flop) + 2 closed (turn/river) in single row */}
+        <Text style={styles.sectionLabel}>BOARD</Text>
         <View style={styles.communityRow}>
           {openCards.map((c) => (
             <CardComponent
@@ -248,11 +249,12 @@ export default function Board({
           ))}
         </View>
 
-        {/* Player cards */}
+        {/* Player cards — single row */}
+        <Text style={styles.sectionLabel}>YOUR CARDS</Text>
         {revealed && playerHandName && (
           <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
         )}
-        <View style={styles.playerRow}>
+        <View style={styles.cardRow}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               isArrangement && onRemoveCard ? (
@@ -305,9 +307,9 @@ export default function Board({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.feltLight,
-    borderRadius: 10,
-    borderWidth: 2,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: COLORS.boardBorder,
     padding: 0,
     width: '48%',
@@ -315,11 +317,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   pressableInner: {
-    padding: 4,
+    padding: 6,
   },
   active: {
     borderColor: COLORS.boardActive,
-    shadowColor: COLORS.gold,
+    shadowColor: COLORS.neonBlue,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -335,10 +337,10 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   playerWon: {
-    borderColor: COLORS.success,
+    borderColor: COLORS.neonGreen,
   },
   botWon: {
-    borderColor: COLORS.danger,
+    borderColor: COLORS.neonRed,
   },
   header: {
     flexDirection: 'row',
@@ -352,7 +354,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   boardLabel: {
-    color: COLORS.textSecondary,
+    color: COLORS.textDim,
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -375,12 +377,22 @@ const styles = StyleSheet.create({
     right: -4,
     top: -2,
   },
-  playerRow: {
+  sectionLabel: {
+    color: COLORS.textDim,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginTop: 2,
+    marginBottom: 1,
+  },
+  cardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     minHeight: 48,
     alignItems: 'center',
-    flexWrap: 'wrap',
+    gap: 2,
   },
   communityRow: {
     flexDirection: 'row',
@@ -411,16 +423,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   handName: {
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontSize: 9,
     textAlign: 'center',
     fontWeight: '600',
   },
   winnerHandName: {
-    color: COLORS.goldBright,
+    color: COLORS.goldLight,
   },
   hintText: {
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontSize: 8,
     fontWeight: '600',
     textAlign: 'center',
@@ -436,16 +448,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   playerBadge: {
-    backgroundColor: COLORS.success,
+    backgroundColor: COLORS.neonGreen,
   },
   botBadge: {
-    backgroundColor: COLORS.danger,
+    backgroundColor: COLORS.neonRed,
   },
   tieBadge: {
     backgroundColor: COLORS.goldDim,
   },
   winnerText: {
-    color: COLORS.white,
+    color: '#000000',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,

@@ -100,11 +100,6 @@ export default function SummaryScreen() {
     return () => { clearTimeout(timer); clearTimeout(soundTimer); };
   }, []);
 
-  // Derived animated text for net chips
-  const animatedProfit = useDerivedValue(() => {
-    return Math.round(chipCountProgress.value * profit);
-  });
-
   // Animated style for chip count (scale pop when done)
   const chipCountStyle = useAnimatedStyle(() => {
     const scale = chipCountProgress.value >= 0.95
@@ -129,12 +124,12 @@ export default function SummaryScreen() {
           <View style={styles.scoreRow}>
             <View style={styles.scoreItem}>
               <Text style={styles.scoreLabel}>YOU</Text>
-              <Text style={[styles.scoreNum, { color: COLORS.success }]}>{playerWins}</Text>
+              <Text style={[styles.scoreNum, { color: COLORS.neonGreen }]}>{playerWins}</Text>
             </View>
             <Text style={styles.scoreDivider}>—</Text>
             <View style={styles.scoreItem}>
               <Text style={styles.scoreLabel}>BOT</Text>
-              <Text style={[styles.scoreNum, { color: COLORS.danger }]}>{botWins}</Text>
+              <Text style={[styles.scoreNum, { color: COLORS.neonRed }]}>{botWins}</Text>
             </View>
           </View>
         </Animated.View>
@@ -146,7 +141,11 @@ export default function SummaryScreen() {
               key={i}
               entering={FadeIn.duration(BOARD_FADE_DURATION).delay(BOARD_STAGGER * (i + 1))}
             >
-              <View style={styles.boardRow}>
+              <View style={[
+                styles.boardRow,
+                result.winner === 'player' && styles.boardRowWin,
+                result.winner === 'bot' && styles.boardRowLose,
+              ]}>
                 <View style={styles.boardHeader}>
                   <Text style={styles.boardLabel}>Board {i + 1}</Text>
                   <Badge
@@ -257,7 +256,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '900',
-    color: COLORS.goldBright,
+    color: COLORS.gold,
     letterSpacing: 6,
     marginTop: 12,
   },
@@ -270,7 +269,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreLabel: {
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 2,
@@ -280,7 +279,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   scoreDivider: {
-    color: COLORS.textSecondary,
+    color: COLORS.textDim,
     fontSize: 24,
     marginTop: 16,
   },
@@ -289,11 +288,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   boardRow: {
-    backgroundColor: COLORS.feltLight,
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
+  },
+  boardRowWin: {
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  boardRowLose: {
+    borderColor: COLORS.neonRed,
+    shadowColor: COLORS.neonRed,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   boardHeader: {
     flexDirection: 'row',
@@ -302,7 +315,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   boardLabel: {
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1,
@@ -311,11 +324,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   handText: {
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontSize: 13,
   },
   handWinner: {
-    color: COLORS.goldBright,
+    color: COLORS.goldLight,
     fontWeight: '700',
   },
   chipsSummary: {
@@ -326,7 +339,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(212, 168, 67, 0.15)',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
@@ -339,7 +352,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   completeAmount: {
-    color: COLORS.goldBright,
+    color: COLORS.goldLight,
     fontSize: 18,
     fontWeight: '900',
   },
@@ -350,7 +363,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   netLabel: {
-    color: COLORS.textSecondary,
+    color: COLORS.textMuted,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -359,10 +372,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   profit: {
-    color: COLORS.success,
+    color: COLORS.neonGreen,
   },
   loss: {
-    color: COLORS.danger,
+    color: COLORS.neonRed,
   },
   buttons: {
     width: '100%',

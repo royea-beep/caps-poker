@@ -47,14 +47,18 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 4,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.boardBorder,
   },
   label: {
-    color: COLORS.textSecondary,
-    fontSize: 11,
+    color: COLORS.neonBlue,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.5,
     marginLeft: 16,
     marginBottom: 6,
+    textTransform: 'uppercase',
   },
   grid: {
     paddingHorizontal: 12,
@@ -71,7 +75,7 @@ const styles = StyleSheet.create({
   },
   selected: {
     backgroundColor: COLORS.gold,
-    transform: [{ translateY: -8 }],
+    transform: [{ translateY: -8 }, { scale: 1.05 }],
     borderRadius: 8,
     shadowColor: COLORS.gold,
     shadowOffset: { width: 0, height: 4 },

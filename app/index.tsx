@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
@@ -16,13 +23,33 @@ export default function HomeScreen() {
 
   const sessionNet = chips - sessionStartChips;
 
+  // Pulsing glow behind title
+  const glowOpacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: 1500 }),
+        withTiming(0.3, { duration: 1500 }),
+      ),
+      -1,
+    );
+  }, []);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.titleSection}>
+          {/* Pulsing glow behind title */}
+          <Animated.View style={[styles.titleGlow, glowStyle]} />
           <Text style={styles.titleSmall}>♠ ♥ ♦ ♣</Text>
           <Text style={styles.title}>CAPS</Text>
           <Text style={styles.titleSub}>POKER</Text>
+          <View style={styles.titleLine} />
         </View>
 
         <ChipsDisplay amount={chips} label="Your Balance" size="large" />
@@ -32,8 +59,8 @@ export default function HomeScreen() {
           <Text style={[styles.statText, { color: sessionNet >= 0 ? COLORS.success : COLORS.danger }]}>
             Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
           </Text>
-          <Text style={[styles.statText, { color: COLORS.gold }]}>
-            Best: {bestChips} chips
+          <Text style={[styles.statBest, { color: COLORS.gold }]}>
+            ★ Best: {bestChips} chips
           </Text>
         </View>
 
@@ -68,6 +95,17 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     alignItems: 'center',
+    position: 'relative',
+  },
+  titleGlow: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: COLORS.neonBlue,
+    top: -40,
+    alignSelf: 'center',
+    zIndex: -1,
   },
   titleSmall: {
     color: COLORS.gold,
@@ -76,29 +114,41 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 64,
+    fontSize: 72,
     fontWeight: '900',
-    color: COLORS.goldBright,
+    color: COLORS.gold,
     letterSpacing: 16,
-    textShadowColor: COLORS.gold,
+    textShadowColor: COLORS.goldGlow,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    textShadowRadius: 30,
   },
   titleSub: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '300',
-    color: COLORS.textPrimary,
-    letterSpacing: 20,
+    color: COLORS.neonBlue,
+    letterSpacing: 12,
     marginTop: -4,
+  },
+  titleLine: {
+    width: '60%',
+    height: 2,
+    backgroundColor: COLORS.neonBlue,
+    marginTop: 12,
+    borderRadius: 1,
   },
   statsRow: {
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   statText: {
     color: COLORS.textSecondary,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
+  },
+  statBest: {
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   buttonSection: {
     width: '100%',

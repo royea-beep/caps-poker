@@ -1,6 +1,6 @@
-// Caps Poker Theme — adapted from Wingman theme system
+// Caps Poker Theme — Gaming palette: vibrant, bold, aggressive
 
-// ─── Spacing (from Wingman) ───────────────────────────────────────────────────
+// ─── Spacing ────────────────────────────────────────────────────────────────
 export const spacing = {
   hairline: 1,
   xs: 4,
@@ -12,7 +12,7 @@ export const spacing = {
   xxxl: 64,
 } as const;
 
-// ─── Typography (from Wingman) ────────────────────────────────────────────────
+// ─── Typography ─────────────────────────────────────────────────────────────
 export const fontWeight = {
   regular: '400' as const,
   medium: '500' as const,
@@ -22,45 +22,69 @@ export const fontWeight = {
   black: '900' as const,
 };
 
-// ─── Colors (Caps Poker palette) ──────────────────────────────────────────────
+// ─── Colors (Gaming palette — neon accents, strong contrast) ────────────────
 export const colors = {
-  // Core palette
-  background: '#0a1a0f',
-  surface: '#0f2318',
-  surfaceRaised: '#143020',
-  border: '#1e4028',
-  gold: '#c9a227',
-  goldLight: '#e8c547',
-  goldDim: '#8a6e1a',
-  text: '#f0f0e8',
-  textMuted: '#8a9e8a',
-  textDim: '#4a6050',
-  cardRed: '#e63946',
-  cardBlack: '#1a1a2e',
-  success: '#4caf50',
-  error: '#f44336',
+  // Core surfaces
+  background: '#0a0a0f',
+  surface: '#12121f',
+  surfaceRaised: '#1a1a2e',
+  border: '#2a2a4a',
   overlay: 'rgba(0,0,0,0.85)',
 
-  // Legacy aliases — map old gameConfig COLORS keys to new palette values
-  felt: '#0f2318',            // → surface
-  feltLight: '#143020',       // → surfaceRaised
-  goldBright: '#e8c547',      // → goldLight
-  cardWhite: '#f0f0e8',       // → text
-  cardBack: '#0f2318',        // → surface
-  cardBackPattern: '#1e4028', // → border
-  red: '#e63946',             // → cardRed
-  black: '#1a1a2e',           // → cardBlack (dark color for card face text)
-  white: '#ffffff',
-  textPrimary: '#f0f0e8',     // → text
-  textSecondary: '#8a9e8a',   // → textMuted
-  chipGreen: '#4caf50',       // → success
-  chipRed: '#f44336',         // → error
-  boardBorder: '#1e4028',     // → border
-  boardActive: '#c9a227',     // → gold
-  danger: '#f44336',          // → error
+  // Gold accent (primary)
+  gold: '#FFD700',
+  goldLight: '#FFE44D',
+  goldDim: '#CC9900',
+  goldGlow: '#FFD70066',
+
+  // Neon accents
+  neonBlue: '#00D4FF',
+  neonPurple: '#8B5CF6',
+  neonGreen: '#00FF88',
+  neonRed: '#FF3366',
+
+  // Text
+  text: '#FFFFFF',
+  textMuted: '#A0A0C0',
+  textDim: '#606080',
+
+  // Cards
+  cardRed: '#e63946',
+  cardBlack: '#1a1a2e',
+  cardBack: '#1a1a3e',
+  cardFace: '#FFFFFF',
+
+  // Semantic
+  success: '#00FF88',
+  error: '#FF3366',
+  danger: '#FF3366',
+
+  // Board
+  boardBorder: '#2a2a4a',
+  boardActive: '#00D4FF',
+  boardFull: '#00FF88',
+
+  // Legacy aliases — backward compat (map old keys to new values)
+  felt: '#12121f',
+  feltLight: '#1a1a2e',
+  goldBright: '#FFE44D',
+  cardWhite: '#FFFFFF',
+  cardBackPattern: '#2a2a4a',
+  red: '#FF3366',
+  black: '#1a1a2e',
+  white: '#FFFFFF',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0A0C0',
+  chipGreen: '#00FF88',
+  chipRed: '#FF3366',
+
+  // Button
+  buttonPrimary: '#FFD700',
+  buttonSecondary: '#1a1a3e',
+  buttonDanger: '#FF3366',
 } as const;
 
-// ─── Unified THEME export ─────────────────────────────────────────────────────
+// ─── Unified THEME export ──────────────────────────────────────────────────
 export const THEME = {
   colors,
   spacing,
