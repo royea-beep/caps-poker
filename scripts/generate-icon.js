@@ -7,6 +7,7 @@
  *  - 48x48 favicon
  *  - Android adaptive icon variants
  *
+ * Requires: npm install sharp (not in package.json to avoid EAS build failures)
  * Usage:  node scripts/generate-icon.js
  */
 
