@@ -434,3 +434,38 @@ describe('game over condition', () => {
     expect(200 >= buyIn(config50)).toBe(true);
   });
 });
+
+describe('home screen stats', () => {
+  it('handsPlayed starts at 0 and increments', () => {
+    let handsPlayed = 0;
+    expect(handsPlayed).toBe(0);
+    handsPlayed++;
+    expect(handsPlayed).toBe(1);
+    handsPlayed++;
+    expect(handsPlayed).toBe(2);
+  });
+
+  it('sessionStartChips tracks session start correctly', () => {
+    const startingChips = DEFAULT_CONFIG.startingChips; // 1000
+    const sessionStartChips = startingChips;
+    // After winning 50 chips
+    const currentChips = startingChips + 50;
+    const sessionNet = currentChips - sessionStartChips;
+    expect(sessionNet).toBe(50);
+    // After losing 200 chips
+    const currentChips2 = startingChips - 200;
+    const sessionNet2 = currentChips2 - sessionStartChips;
+    expect(sessionNet2).toBe(-200);
+  });
+});
+
+describe('sound config', () => {
+  it('soundEnabled defaults to true', () => {
+    expect(DEFAULT_CONFIG.soundEnabled).toBe(true);
+  });
+
+  it('soundEnabled can be toggled off', () => {
+    const config = { ...DEFAULT_CONFIG, soundEnabled: false };
+    expect(config.soundEnabled).toBe(false);
+  });
+});

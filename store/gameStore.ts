@@ -8,6 +8,10 @@ interface GameStore {
   // Persisted state
   chips: number;
   config: GameConfig;
+  handsPlayed: number;
+
+  // Transient session state (NOT persisted)
+  sessionStartChips: number;
 
   // Multiplayer state (NOT persisted)
   multiplayerMode: 'none' | 'host' | 'guest';
@@ -20,8 +24,12 @@ interface GameStore {
   // Persisted actions
   setChips: (chips: number) => void;
   addChips: (amount: number) => void;
+  incrementHandsPlayed: () => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
+
+  // Session actions
+  initSession: () => void;
 
   // Multiplayer actions
   setMultiplayerMode: (mode: 'none' | 'host' | 'guest') => void;
@@ -40,6 +48,10 @@ export const useGameStore = create<GameStore>()(
       // Persisted state
       chips: DEFAULT_CONFIG.startingChips,
       config: { ...DEFAULT_CONFIG },
+      handsPlayed: 0,
+
+      // Transient session state
+      sessionStartChips: DEFAULT_CONFIG.startingChips,
 
       // Multiplayer state (not persisted via partialize)
       multiplayerMode: 'none',
@@ -52,6 +64,8 @@ export const useGameStore = create<GameStore>()(
       // Persisted actions
       setChips: (chips: number) => set({ chips }),
       addChips: (amount: number) => set((state) => ({ chips: state.chips + amount })),
+      incrementHandsPlayed: () => set((state) => ({ handsPlayed: state.handsPlayed + 1 })),
+      initSession: () => set((state) => ({ sessionStartChips: state.chips })),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
           const merged = { ...state.config, ...partial };
@@ -96,7 +110,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed }),
     }
   )
 );

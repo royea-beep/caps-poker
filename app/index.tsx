@@ -10,6 +10,10 @@ import { COLORS } from '../constants/gameConfig';
 export default function HomeScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
+  const handsPlayed = useGameStore((s) => s.handsPlayed);
+  const sessionStartChips = useGameStore((s) => s.sessionStartChips);
+
+  const sessionNet = chips - sessionStartChips;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -21,6 +25,13 @@ export default function HomeScreen() {
         </View>
 
         <ChipsDisplay amount={chips} label="Your Balance" size="large" />
+
+        <View style={styles.statsRow}>
+          <Text style={styles.statText}>Hands Played: {handsPlayed}</Text>
+          <Text style={[styles.statText, { color: sessionNet >= 0 ? COLORS.success : COLORS.danger }]}>
+            Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
+          </Text>
+        </View>
 
         <View style={styles.buttonSection}>
           <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => router.push('/game')} />
@@ -75,6 +86,15 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     letterSpacing: 20,
     marginTop: -4,
+  },
+  statsRow: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   buttonSection: {
     width: '100%',

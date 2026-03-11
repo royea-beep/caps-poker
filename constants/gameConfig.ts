@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG = {
   numberOfPlayers: 2,
   botSpeedMin: 5000,
   botSpeedMax: 30000,
+  soundEnabled: true as boolean,
 };
 
 export type GameConfig = typeof DEFAULT_CONFIG;

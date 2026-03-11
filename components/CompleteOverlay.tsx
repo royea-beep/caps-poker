@@ -10,6 +10,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { COLORS } from '../constants/gameConfig';
+import { playSound } from '../utils/sounds';
 
 interface CompleteOverlayProps {
   winner: 'player' | 'bot';
@@ -57,6 +58,7 @@ function Particle({ index }: { index: number }) {
 export default function CompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
   // Timer-based auto-dismiss
   useEffect(() => {
+    playSound('complete');
     const timer = setTimeout(() => {
       onDone();
     }, duration * 1000);
