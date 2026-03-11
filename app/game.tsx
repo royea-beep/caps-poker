@@ -419,6 +419,7 @@ export default function GameScreen() {
                 onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
                 isArrangement={isArranging}
                 selected={isArranging && !!selectedCard && board.playerCards.length < CARDS_PER_BOARD}
+                flipDuration={config.turnRevealDelay}
               />
             );
           })}

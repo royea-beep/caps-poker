@@ -6,6 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
   withSequence,
+  withDelay,
 } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
@@ -29,6 +30,7 @@ interface BoardProps {
   onRemoveCard?: (card: Card) => void;
   isArrangement?: boolean;
   selected?: boolean;
+  flipDuration?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress }: { isArrangement?: boolean; onPress?: () => void }) {
@@ -61,6 +63,31 @@ function EmptySlotAnimated({ isArrangement, onPress }: { isArrangement?: boolean
   );
 }
 
+function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 'bot' | 'tie' }) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 300 });
+    translateY.value = withTiming(-16, { duration: 1200 });
+    opacity.value = withDelay(800, withTiming(0, { duration: 400 }));
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const text = winner === 'tie' ? '±0' : winner === 'player' ? `+${amount}` : `-${amount}`;
+  const color = winner === 'player' ? COLORS.success : winner === 'bot' ? COLORS.danger : COLORS.textSecondary;
+
+  return (
+    <Animated.Text style={[styles.floatingChips, { color }, animStyle]}>
+      {text}
+    </Animated.Text>
+  );
+}
+
 export default function Board({
   index,
   openCards,
@@ -80,6 +107,7 @@ export default function Board({
   onRemoveCard,
   isArrangement,
   selected,
+  flipDuration,
 }: BoardProps) {
   const pulseValue = useSharedValue(0.4);
 
@@ -125,7 +153,10 @@ export default function Board({
       <Pressable onPress={onPress} style={styles.pressableInner}>
         <View style={styles.header}>
           <Text style={styles.boardLabel}>Board {index + 1}</Text>
-          <Text style={styles.potLabel}>{potAmount} 🪙</Text>
+          <View style={styles.potArea}>
+            <Text style={styles.potLabel}>{potAmount} 🪙</Text>
+            {winner && <FloatingChips amount={potAmount} winner={winner} />}
+          </View>
         </View>
 
         {/* Bot cards */}
@@ -139,6 +170,7 @@ export default function Board({
                 small
                 highlighted={revealed && botHighlightIds.includes(c.id)}
                 dimmed={revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
+                flipDuration={flipDuration}
               />
             ))
           ) : (
@@ -164,20 +196,17 @@ export default function Board({
             />
           ))}
           <View style={styles.communitySeparator} />
-          {revealed
-            ? closedCards.map((c) => (
-                <CardComponent
-                  key={c.id}
-                  card={c}
-                  faceDown={false}
-                  small
-                  highlighted={boardHighlightIds.includes(c.id)}
-                  dimmed={!boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
-                />
-              ))
-            : closedCards.map((_, i) => (
-                <CardComponent key={`closed-${i}`} faceDown small />
-              ))}
+          {closedCards.map((c) => (
+            <CardComponent
+              key={c.id}
+              card={c}
+              faceDown={!revealed}
+              small
+              highlighted={revealed && boardHighlightIds.includes(c.id)}
+              dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
+              flipDuration={flipDuration}
+            />
+          ))}
         </View>
 
         {/* Player cards */}
@@ -282,10 +311,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
+  potArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   potLabel: {
     color: COLORS.gold,
     fontSize: 11,
     fontWeight: '700',
+  },
+  floatingChips: {
+    fontSize: 12,
+    fontWeight: '800',
+    position: 'absolute',
+    right: -4,
+    top: -2,
   },
   playerRow: {
     flexDirection: 'row',

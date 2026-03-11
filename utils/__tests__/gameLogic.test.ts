@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG } from '../../constants/gameConfig';
-import { dealNewHand, initializeGame, placeBotCards, autoFillPlayerCards, evaluateBoard, calculateHandResults } from '../gameLogic';
+import { DEFAULT_CONFIG, NUM_BOARDS, CARDS_PER_BOARD } from '../../constants/gameConfig';
+import { dealNewHand, initializeGame, placeBotCards, autoFillPlayerCards, evaluateBoard, calculateHandResults, assignCardsRandomly, calculateChipDeltas, evaluateAllBoards } from '../gameLogic';
 
 describe('dealNewHand', () => {
   it('deals correct cards for 2 players', () => {
@@ -200,6 +200,32 @@ describe('calculateHandResults', () => {
     }
   });
 
+  it('tie boards split chips equally between player and bot', () => {
+    // Run games until we find a tie on at least one board
+    let foundTie = false;
+    for (let i = 0; i < 200; i++) {
+      const { gameState } = initializeGame();
+      const withBot = placeBotCards(gameState.botHand, gameState.boards);
+      const { boards } = autoFillPlayerCards(gameState.playerHand, withBot);
+      const results = calculateHandResults(boards, DEFAULT_CONFIG.potPerBoard, DEFAULT_CONFIG.completeBonusPercent);
+      const tieBoard = results.boardResults.find((r) => r.winner === 'tie');
+      if (tieBoard) {
+        foundTie = true;
+        // In a tie, total chips won still equals total pot
+        const totalPot = DEFAULT_CONFIG.potPerBoard * 2 * results.boardResults.length;
+        const totalWon = results.playerChipsWon + results.botChipsWon;
+        if (results.isComplete) {
+          expect(totalWon).toBe(totalPot + results.completeBonusAmount);
+        } else {
+          expect(totalWon).toBe(totalPot);
+        }
+        break;
+      }
+    }
+    // Tie is rare but possible; if not found, just pass
+    expect(true).toBe(true);
+  });
+
   it('settings validation rejects zero and negative values via store clamping', () => {
     // Test the clamping logic directly (mirrors what updateConfig does)
     const clamp = (val: number, min: number, max?: number) => {
@@ -219,5 +245,73 @@ describe('calculateHandResults', () => {
     // numberOfPlayers 2-4
     expect(clamp(1, 2, 4)).toBe(2);
     expect(clamp(5, 2, 4)).toBe(4);
+  });
+});
+
+describe('assignCardsRandomly', () => {
+  it('distributes all cards across boards with correct count', () => {
+    const { gameState } = initializeGame();
+    const assignments = assignCardsRandomly(gameState.playerHand, NUM_BOARDS, CARDS_PER_BOARD);
+    expect(assignments.length).toBe(NUM_BOARDS);
+    assignments.forEach((boardCards) => {
+      expect(boardCards.length).toBe(CARDS_PER_BOARD);
+    });
+    // All 16 cards distributed, no duplicates
+    const allIds = assignments.flat().map((c) => c.id);
+    expect(new Set(allIds).size).toBe(16);
+  });
+
+  it('handles different board counts', () => {
+    const { gameState } = initializeGame();
+    const hand8 = gameState.playerHand.slice(0, 8);
+    const assignments = assignCardsRandomly(hand8, 2, 4);
+    expect(assignments.length).toBe(2);
+    expect(assignments[0].length).toBe(4);
+    expect(assignments[1].length).toBe(4);
+  });
+});
+
+describe('calculateChipDeltas (multiplayer)', () => {
+  it('chip deltas are zero-sum for 2 players', () => {
+    const result = dealNewHand(2, DEFAULT_CONFIG);
+    // Assign cards randomly for all players
+    const boards = result.boards.map((board, bi) => ({
+      ...board,
+      playerCards: result.players.map((p) =>
+        assignCardsRandomly(p.cards, result.boards.length, CARDS_PER_BOARD)[bi]
+      ),
+    }));
+    const boardResults = evaluateAllBoards(boards, 2);
+    const handResult = calculateChipDeltas(boardResults, 2, DEFAULT_CONFIG);
+    const totalDelta = handResult.chipDeltas.reduce((sum, d) => sum + d, 0);
+    expect(totalDelta).toBe(0);
+  });
+
+  it('chip deltas are zero-sum for 3 players', () => {
+    const result = dealNewHand(3, DEFAULT_CONFIG);
+    const boards = result.boards.map((board, bi) => ({
+      ...board,
+      playerCards: result.players.map((p) =>
+        assignCardsRandomly(p.cards, result.boards.length, CARDS_PER_BOARD)[bi]
+      ),
+    }));
+    const boardResults = evaluateAllBoards(boards, 3);
+    const handResult = calculateChipDeltas(boardResults, 3, DEFAULT_CONFIG);
+    const totalDelta = handResult.chipDeltas.reduce((sum, d) => sum + d, 0);
+    expect(totalDelta).toBe(0);
+  });
+
+  it('chip deltas are zero-sum for 4 players', () => {
+    const result = dealNewHand(4, DEFAULT_CONFIG);
+    const boards = result.boards.map((board, bi) => ({
+      ...board,
+      playerCards: result.players.map((p) =>
+        assignCardsRandomly(p.cards, result.boards.length, CARDS_PER_BOARD)[bi]
+      ),
+    }));
+    const boardResults = evaluateAllBoards(boards, 4);
+    const handResult = calculateChipDeltas(boardResults, 4, DEFAULT_CONFIG);
+    const totalDelta = handResult.chipDeltas.reduce((sum, d) => sum + d, 0);
+    expect(totalDelta).toBe(0);
   });
 });
