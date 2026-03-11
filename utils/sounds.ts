@@ -1,7 +1,17 @@
-import { Audio } from 'expo-av';
-import { useGameStore } from '../store/gameStore';
+/**
+ * Sound effects infrastructure for Caps Poker.
+ * Uses expo-av when available, silently no-ops when not.
+ * Sound files go in assets/sounds/ — see README.txt there.
+ */
 
 export type SoundName = 'cardPlace' | 'cardFlip' | 'chipsWin' | 'complete';
+
+let Audio: any = null;
+try {
+  Audio = require('expo-av').Audio;
+} catch {
+  // expo-av not available (e.g. web or build issue) — sounds disabled
+}
 
 const soundFiles: Record<SoundName, ReturnType<typeof require> | null> = {
   cardPlace: null,
@@ -16,9 +26,10 @@ try { soundFiles.cardFlip = require('../assets/sounds/cardFlip.mp3'); } catch {}
 try { soundFiles.chipsWin = require('../assets/sounds/chipsWin.mp3'); } catch {}
 try { soundFiles.complete = require('../assets/sounds/complete.mp3'); } catch {}
 
-const loadedSounds: Partial<Record<SoundName, Audio.Sound>> = {};
+const loadedSounds: Partial<Record<SoundName, any>> = {};
 
 export async function preloadSounds(): Promise<void> {
+  if (!Audio) return;
   for (const [name, file] of Object.entries(soundFiles)) {
     if (!file) continue;
     try {
@@ -32,6 +43,8 @@ export async function preloadSounds(): Promise<void> {
 
 export async function playSound(name: SoundName): Promise<void> {
   try {
+    // Dynamic import to avoid requiring the store module at import time in tests
+    const { useGameStore } = require('../store/gameStore');
     const config = useGameStore.getState().config;
     if (!config.soundEnabled) return;
 
