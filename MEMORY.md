@@ -22,16 +22,36 @@
 - uuid for player/device IDs
 - TypeScript strict
 - Jest 29 + ts-jest for testing
-- EAS Build: development (dev client), preview (TestFlight), production
+- EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 07 complete — EAS dev build configured, multiplayer TODOs fixed, ready for device testing
-- Version: 1.1.0, build number: 2
+- Sprint 14 complete — card flip animation, floating chips, 6 new tests
+- Version: 1.1.0, build number: 2 (autoIncrement enabled for production)
 - TypeScript: 0 errors
-- Tests: 31/31 passing (12 hand evaluator + 19 simulation)
-- Expo doctor: 17/17 checks passed
-- Preflight: 10/10 checks passed
+- Tests: 53/53 passing (14 hand evaluator + 19 simulation + 20 game logic)
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
+
+## Game Config (all runtime-configurable in Settings)
+- arrangementTime: 60 (sec)
+- boardRevealDuration: 5 (sec)
+- turnRevealDelay: 800 (ms) — card flip speed within a board
+- completeBonusDisplay: 2 (sec)
+- startingChips: 1000
+- potPerBoard: 25 (buy-in = potPerBoard × NUM_BOARDS = 100)
+- completeBonusPercent: 50 (% of buy-in per opponent)
+- numberOfPlayers: 2 (2/3/4 selector, for multiplayer)
+- botSpeedMin: 5000 (ms)
+- botSpeedMax: 30000 (ms)
+
+## Complete Bonus Definition (LOCKED)
+- If a player wins ALL boards in a single hand → receives (buyIn × bonusPercent/100) per opponent
+- Example: buy-in=100, 2 players → winner gets +50 chips bonus
+- Zero-sum: losers each pay their share of the bonus
+
+## UI Specs (LOCKED)
+- Player hand: 2 fixed rows at bottom (no scroll)
+- Board reveal: fully automatic, no user input between boards
+- Summary: chip counting animation + staggered board fade-in, then "Next Hand" button
 
 ## File Structure
 /app/_layout.tsx, /app/index.tsx, /app/game.tsx, /app/summary.tsx, /app/settings.tsx
@@ -42,7 +62,7 @@
 /types/gameTypes.ts (GamePhase, Player, MultiBoardState, GameSession, ConnectedPlayerInfo)
 /utils/deck.ts, handEvaluator.ts, gameLogic.ts, simulate.ts
 /utils/gameServer.ts, gameClient.ts, roomCode.ts
-/utils/__tests__/handEvaluator.test.ts, simulate.test.ts
+/utils/__tests__/handEvaluator.test.ts, simulate.test.ts, gameLogic.test.ts
 /constants/gameConfig.ts, theme.ts, networkConfig.ts
 /store/gameStore.ts (chips+config persisted; multiplayer state+onSendReady transient)
 /scripts/generate-icon.js, preflight-check.js
@@ -57,12 +77,35 @@
 - Room discovery: 4-digit code + manual IP entry
 - onSendReady callback in store bridges game screen to server/client
 - Disconnected players auto-filled with random card assignments
+- DeviceId-based reconnection: server matches reconnecting clients by deviceId, restores seat
+- Payload validation: all incoming messages validated, player names truncated to 20 chars
+- Message buffer: 64KB max per connection, prevents memory exhaustion
+- Background-aware: heartbeat resets after app returns from background (both server+client)
+- Double-disconnect prevention: socket disconnect only processed once per client
+
+## Deployment
+- Web export: `npx expo export --platform web` → dist/ folder
+- Hosting: cPanel shared hosting at ftable.co.il (SPD hosting)
+- FTP creds: ftableco / Sb9k46-l)WI2Gq (from C:/Projects/ftable/.env)
+- cPanel API: https://ftable.co.il:2083/ (Basic auth with same creds)
+- Server IP: 195.225.46.105
+- Subdomain: caps.ftable.co.il → public_html/caps
+- HTTP works: http://caps.ftable.co.il/ serves the app correctly
+- SSL issue: cert installed in cPanel but Apache SNI returns compass.spd.co.il (shared hosting default) for ALL subdomains. Needs hosting provider to rebuild Apache SSL vhost config (WHM-level fix).
+
+## iOS Build Checklist (do NOT auto-trigger)
+1. `npx tsc --noEmit` — 0 errors
+2. `npx jest` — all tests passing
+3. `npx expo-doctor` — all checks passed
+4. `node scripts/preflight-check.js` — 10/10
+5. `eas build --platform ios --profile production` — submit manually
+6. Verify app.json version/buildNumber before submitting
+7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
+- SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
 - First multiplayer device test pending (needs dev build)
 - Replace placeholder icons with designed CP logo
-- Card flip animation (rotateY) not yet implemented
-- Floating "+chips" text after board reveal not yet implemented
 - Badge component not yet used in Board/Summary screens
 - Internet multiplayer (Supabase) — future sprint
 
@@ -75,3 +118,9 @@
 - Sprint 05: Simulation engine, multiplayer logic refactor, OSS research
 - Sprint 06: Local multiplayer — host server, client, lobby, game screen
 - Sprint 07: EAS dev build config, multiplayer TODOs fixed, resilience, v1.1.0
+- Sprint 08: Fix player hand face-up, board community cards layout
+- Sprint 09: Board UI polish — selected board highlight, empty slot pulse, tap-to-remove UX
+- Sprint 10: Full audit — deal logic verified, 12 new gameLogic tests, dead code cleanup
+- Sprint 11: Fix card text color — COLORS.black was #f0f0e8 (same as card bg), changed to #1a1a2e
+- Sprint 12: Full audit (61 bugs) + fixes — critical game.tsx race conditions, PlayerHand 2-row grid, summary chip animation, complete bonus calc fix (50% of buy-in not pot), settings overhaul (all params + validation + numberOfPlayers selector + turnRevealDelay), multiplayer networking hardening (deviceId reconnect, payload validation, background heartbeat), web re-deploy, 47 tests
+- Sprint 14: Card flip animation (rotateY via reanimated), floating "+chips"/"-chips" text on board reveal, iOS build checklist, 6 new tests (53 total), closed cards render fix for flip support
