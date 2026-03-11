@@ -38,6 +38,7 @@ export default function SummaryScreen() {
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const incrementHandsPlayed = useGameStore((s) => s.incrementHandsPlayed);
+  const updateBestChips = useGameStore((s) => s.updateBestChips);
   const params = useLocalSearchParams<{
     results: string;
     netChips: string;
@@ -80,6 +81,7 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     incrementHandsPlayed();
+    updateBestChips();
 
     // Start chip count animation after boards have appeared
     chipCountProgress.value = withDelay(

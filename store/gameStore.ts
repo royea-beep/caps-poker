@@ -9,6 +9,7 @@ interface GameStore {
   chips: number;
   config: GameConfig;
   handsPlayed: number;
+  bestChips: number;
 
   // Transient session state (NOT persisted)
   sessionStartChips: number;
@@ -25,6 +26,7 @@ interface GameStore {
   setChips: (chips: number) => void;
   addChips: (amount: number) => void;
   incrementHandsPlayed: () => void;
+  updateBestChips: () => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
 
@@ -49,6 +51,7 @@ export const useGameStore = create<GameStore>()(
       chips: DEFAULT_CONFIG.startingChips,
       config: { ...DEFAULT_CONFIG },
       handsPlayed: 0,
+      bestChips: DEFAULT_CONFIG.startingChips,
 
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
@@ -65,6 +68,9 @@ export const useGameStore = create<GameStore>()(
       setChips: (chips: number) => set({ chips }),
       addChips: (amount: number) => set((state) => ({ chips: state.chips + amount })),
       incrementHandsPlayed: () => set((state) => ({ handsPlayed: state.handsPlayed + 1 })),
+      updateBestChips: () => set((state) => ({
+        bestChips: Math.max(state.bestChips, state.chips),
+      })),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
@@ -110,7 +116,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips }),
     }
   )
 );
