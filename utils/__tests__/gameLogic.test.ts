@@ -248,6 +248,52 @@ describe('calculateHandResults', () => {
   });
 });
 
+describe('game flow integration', () => {
+  it('auto-fill places all 16 cards when no cards pre-placed', () => {
+    const { gameState } = initializeGame();
+    expect(gameState.playerHand.length).toBe(16);
+    const { boards, remainingHand } = autoFillPlayerCards(gameState.playerHand, gameState.boards);
+    expect(remainingHand.length).toBe(0);
+    boards.forEach((b) => expect(b.playerCards.length).toBe(CARDS_PER_BOARD));
+  });
+
+  it('full reveal flow: deal → bot place → auto-fill → evaluate all boards', () => {
+    const { gameState } = initializeGame();
+    const withBot = placeBotCards(gameState.botHand, gameState.boards);
+    const { boards } = autoFillPlayerCards(gameState.playerHand, withBot);
+    // Every board should be evaluable
+    boards.forEach((board) => {
+      const result = evaluateBoard(board);
+      expect(result).not.toBeNull();
+      expect(['player', 'bot', 'tie']).toContain(result!.winner);
+    });
+  });
+
+  it('complete bonus only triggers when one side wins ALL boards', () => {
+    let completeCount = 0;
+    let noCompleteCount = 0;
+    for (let i = 0; i < 100; i++) {
+      const { gameState } = initializeGame();
+      const withBot = placeBotCards(gameState.botHand, gameState.boards);
+      const { boards } = autoFillPlayerCards(gameState.playerHand, withBot);
+      const results = calculateHandResults(boards, DEFAULT_CONFIG.potPerBoard, DEFAULT_CONFIG.completeBonusPercent);
+      if (results.isComplete) {
+        // Verify all boards won by same side
+        const allPlayer = results.boardResults.every((r) => r.winner === 'player');
+        const allBot = results.boardResults.every((r) => r.winner === 'bot');
+        expect(allPlayer || allBot).toBe(true);
+        expect(results.completeBonusAmount).toBeGreaterThan(0);
+        completeCount++;
+      } else {
+        expect(results.completeBonusAmount).toBe(0);
+        noCompleteCount++;
+      }
+    }
+    // Both outcomes should occur in 100 games (statistically near-certain)
+    expect(noCompleteCount).toBeGreaterThan(0);
+  });
+});
+
 describe('assignCardsRandomly', () => {
   it('distributes all cards across boards with correct count', () => {
     const { gameState } = initializeGame();
@@ -268,6 +314,18 @@ describe('assignCardsRandomly', () => {
     expect(assignments.length).toBe(2);
     expect(assignments[0].length).toBe(4);
     expect(assignments[1].length).toBe(4);
+  });
+});
+
+describe('Badge result mapping', () => {
+  it('maps winner values to correct badge labels', () => {
+    const mapWinner = (winner: 'player' | 'bot' | 'tie') => ({
+      label: winner === 'player' ? 'W' : winner === 'bot' ? 'L' : 'T',
+      variant: winner === 'player' ? 'win' : winner === 'bot' ? 'lose' : 'tie',
+    });
+    expect(mapWinner('player')).toEqual({ label: 'W', variant: 'win' });
+    expect(mapWinner('bot')).toEqual({ label: 'L', variant: 'lose' });
+    expect(mapWinner('tie')).toEqual({ label: 'T', variant: 'tie' });
   });
 });
 

@@ -9,6 +9,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import CardComponent from './Card';
+import { Badge } from './Badge';
 import { Card, COLORS } from '../constants/gameConfig';
 
 interface BoardProps {
@@ -152,7 +153,16 @@ export default function Board({
     >
       <Pressable onPress={onPress} style={styles.pressableInner}>
         <View style={styles.header}>
-          <Text style={styles.boardLabel}>Board {index + 1}</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.boardLabel}>Board {index + 1}</Text>
+            {winner && (
+              <Badge
+                label={winner === 'player' ? 'W' : winner === 'bot' ? 'L' : 'T'}
+                variant={winner === 'player' ? 'win' : winner === 'bot' ? 'lose' : 'tie'}
+                small
+              />
+            )}
+          </View>
           <View style={styles.potArea}>
             <Text style={styles.potLabel}>{potAmount} 🪙</Text>
             {winner && <FloatingChips amount={potAmount} winner={winner} />}
@@ -303,6 +313,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   boardLabel: {
     color: COLORS.textSecondary,

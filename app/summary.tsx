@@ -14,6 +14,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import ChipsDisplay from '../components/ChipsDisplay';
+import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
@@ -138,20 +139,10 @@ export default function SummaryScreen() {
               <View style={styles.boardRow}>
                 <View style={styles.boardHeader}>
                   <Text style={styles.boardLabel}>Board {i + 1}</Text>
-                  <View
-                    style={[
-                      styles.winnerTag,
-                      result.winner === 'player'
-                        ? styles.playerTag
-                        : result.winner === 'bot'
-                        ? styles.botTag
-                        : styles.tieTag,
-                    ]}
-                  >
-                    <Text style={styles.winnerTagText}>
-                      {result.winner === 'player' ? 'YOU' : result.winner === 'bot' ? 'BOT' : 'TIE'}
-                    </Text>
-                  </View>
+                  <Badge
+                    label={result.winner === 'player' ? 'WIN' : result.winner === 'bot' ? 'LOSS' : 'TIE'}
+                    variant={result.winner === 'player' ? 'win' : result.winner === 'bot' ? 'lose' : 'tie'}
+                  />
                 </View>
                 <View style={styles.handRow}>
                   <Text style={[styles.handText, result.winner === 'player' && styles.handWinner]}>
@@ -300,26 +291,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 13,
     fontWeight: '700',
-    letterSpacing: 1,
-  },
-  winnerTag: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  playerTag: {
-    backgroundColor: COLORS.success,
-  },
-  botTag: {
-    backgroundColor: COLORS.danger,
-  },
-  tieTag: {
-    backgroundColor: COLORS.goldDim,
-  },
-  winnerTagText: {
-    color: COLORS.white,
-    fontSize: 11,
-    fontWeight: '800',
     letterSpacing: 1,
   },
   handRow: {

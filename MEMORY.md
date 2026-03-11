@@ -25,10 +25,10 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 14 complete — card flip animation, floating chips, 6 new tests
-- Version: 1.1.0, build number: 2 (autoIncrement enabled for production)
+- Sprint 15 complete — CP icon, Badge component, v1.2.0, web re-deploy
+- Version: 1.2.0, build number: autoIncrement (production)
 - TypeScript: 0 errors
-- Tests: 53/53 passing (14 hand evaluator + 19 simulation + 20 game logic)
+- Tests: 57/57 passing (14 hand evaluator + 19 simulation + 24 game logic)
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
 ## Game Config (all runtime-configurable in Settings)
@@ -105,8 +105,6 @@
 ## Open Items
 - SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
 - First multiplayer device test pending (needs dev build)
-- Replace placeholder icons with designed CP logo
-- Badge component not yet used in Board/Summary screens
 - Internet multiplayer (Supabase) — future sprint
 
 ## Commit History
@@ -124,3 +122,4 @@
 - Sprint 11: Fix card text color — COLORS.black was #f0f0e8 (same as card bg), changed to #1a1a2e
 - Sprint 12: Full audit (61 bugs) + fixes — critical game.tsx race conditions, PlayerHand 2-row grid, summary chip animation, complete bonus calc fix (50% of buy-in not pot), settings overhaul (all params + validation + numberOfPlayers selector + turnRevealDelay), multiplayer networking hardening (deviceId reconnect, payload validation, background heartbeat), web re-deploy, 47 tests
 - Sprint 14: Card flip animation (rotateY via reanimated), floating "+chips"/"-chips" text on board reveal, iOS build checklist, 6 new tests (53 total), closed cards render fix for flip support
+- Sprint 15: CP branded icon (sharp SVG), Badge in Board+Summary, v1.2.0, EAS preview build, web re-deploy, 4 new tests (57 total)
