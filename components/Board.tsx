@@ -10,7 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Badge } from './Badge';
-import { Card, COLORS } from '../constants/gameConfig';
+import { Card, COLORS, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { getHandHint } from '../utils/handHint';
 
 interface BoardProps {
   index: number;
@@ -258,6 +259,9 @@ export default function Board({
             ))
           }
         </View>
+        {isArrangement && playerCards.length === CARDS_PER_BOARD && (
+          <Text style={styles.hintText}>{getHandHint(playerCards)}</Text>
+        )}
 
         {winner && (
           <View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge]}>
@@ -386,6 +390,14 @@ const styles = StyleSheet.create({
   },
   winnerHandName: {
     color: COLORS.goldBright,
+  },
+  hintText: {
+    color: COLORS.textSecondary,
+    fontSize: 8,
+    fontWeight: '600',
+    textAlign: 'center',
+    opacity: 0.7,
+    marginTop: 1,
   },
   winnerBadge: {
     position: 'absolute',

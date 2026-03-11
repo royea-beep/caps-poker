@@ -25,10 +25,10 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 15 complete — CP icon, Badge component, v1.2.0, web re-deploy
-- Version: 1.2.0, build number: autoIncrement (production)
+- Sprint 16 complete — hand hint indicator, multiplayer test guide, EAS build success
+- Version: 1.2.0, latest build: bbb538b7 (FINISHED, preview/internal)
 - TypeScript: 0 errors
-- Tests: 57/57 passing (14 hand evaluator + 19 simulation + 24 game logic)
+- Tests: 64/64 passing (14 hand evaluator + 19 simulation + 24 game logic + 7 hand hint)
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
 ## Game Config (all runtime-configurable in Settings)
@@ -60,13 +60,14 @@
 /components/Card.tsx, Board.tsx, PlayerHand.tsx, ChipsDisplay.tsx, CompleteOverlay.tsx, Button.tsx, Badge.tsx
 /hooks/useGameTimer.ts, useRevealSequence.ts
 /types/gameTypes.ts (GamePhase, Player, MultiBoardState, GameSession, ConnectedPlayerInfo)
-/utils/deck.ts, handEvaluator.ts, gameLogic.ts, simulate.ts
+/utils/deck.ts, handEvaluator.ts, gameLogic.ts, simulate.ts, handHint.ts
 /utils/gameServer.ts, gameClient.ts, roomCode.ts
-/utils/__tests__/handEvaluator.test.ts, simulate.test.ts, gameLogic.test.ts
+/utils/__tests__/handEvaluator.test.ts, simulate.test.ts, gameLogic.test.ts, handHint.test.ts
 /constants/gameConfig.ts, theme.ts, networkConfig.ts
 /store/gameStore.ts (chips+config persisted; multiplayer state+onSendReady transient)
 /scripts/generate-icon.js, preflight-check.js
 /babel.config.js, jest.config.js, metro.config.js, eas.json, .npmrc
+/docs/multiplayer-test-guide.md
 /BUILD_INSTRUCTIONS.md, TESTFLIGHT_GUIDE.md, QA_CHECKLIST.md, AUDIT_REPORT.md
 /DEV_BUILD_GUIDE.md, MULTIPLAYER_RESEARCH.md, LOCAL_MULTIPLAYER_DESIGN.md
 
@@ -123,3 +124,4 @@
 - Sprint 12: Full audit (61 bugs) + fixes — critical game.tsx race conditions, PlayerHand 2-row grid, summary chip animation, complete bonus calc fix (50% of buy-in not pot), settings overhaul (all params + validation + numberOfPlayers selector + turnRevealDelay), multiplayer networking hardening (deviceId reconnect, payload validation, background heartbeat), web re-deploy, 47 tests
 - Sprint 14: Card flip animation (rotateY via reanimated), floating "+chips"/"-chips" text on board reveal, iOS build checklist, 6 new tests (53 total), closed cards render fix for flip support
 - Sprint 15: CP branded icon (sharp SVG), Badge in Board+Summary, v1.2.0, EAS preview build, web re-deploy, 4 new tests (57 total)
+- Sprint 16: Hand hint indicator (Pair/Trips/Flush Draw etc.), multiplayer test guide, EAS build success (bbb538b7), 7 new tests (64 total)
