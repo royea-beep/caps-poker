@@ -1,4 +1,4 @@
-import { Card, GameConfig } from '../constants/gameConfig';
+import type { Card, GameConfig } from '../constants/gameConfig';
 
 export type GamePhase =
   | { type: 'idle' }
@@ -30,4 +30,15 @@ export interface GameSession {
   boards: MultiBoardState[];
   phase: GamePhase;
   config: GameConfig;
+}
+
+// --- Multiplayer networking types (Sprint 06) ---
+
+export interface ConnectedPlayerInfo {
+  id: string;
+  name: string;
+  isHost: boolean;
+  isReady: boolean;
+  seat: number;
+  connected: boolean;
 }

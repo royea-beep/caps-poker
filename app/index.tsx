@@ -23,8 +23,10 @@ export default function HomeScreen() {
         <ChipsDisplay amount={chips} label="Your Balance" size="large" />
 
         <View style={styles.buttonSection}>
-          <Button title="NEW HAND" variant="gold" onPress={() => router.push('/game')} />
-          <Button title="⚙ SETTINGS" variant="secondary" onPress={() => router.push('/settings')} />
+          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => router.push('/game')} />
+          <Button title="HOST GAME" variant="secondary" onPress={() => router.push('/lobby/host')} />
+          <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join')} />
+          <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings')} />
         </View>
 
         <Button
