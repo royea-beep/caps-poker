@@ -23,7 +23,7 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
               selectedCardId === card.id && styles.selected,
             ]}
           >
-            <CardComponent card={card} />
+            <CardComponent card={card} faceDown={false} />
           </Pressable>
         ))}
       </ScrollView>

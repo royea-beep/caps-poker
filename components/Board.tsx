@@ -117,22 +117,25 @@ export default function Board({
           <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName]}>{botHandName}</Text>
         )}
 
-        {/* Community cards */}
+        {/* Community cards: 3 open (flop) + 2 closed (turn/river) */}
         <View style={styles.communityRow}>
           {openCards.map((c) => (
             <CardComponent
               key={c.id}
               card={c}
+              faceDown={false}
               small
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
+          <View style={styles.communitySeparator} />
           {revealed
             ? closedCards.map((c) => (
                 <CardComponent
                   key={c.id}
                   card={c}
+                  faceDown={false}
                   small
                   highlighted={boardHighlightIds.includes(c.id)}
                   dimmed={!boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
@@ -153,6 +156,7 @@ export default function Board({
               <CardComponent
                 key={c.id}
                 card={c}
+                faceDown={false}
                 small
                 highlighted={revealed && playerHighlightIds.includes(c.id)}
                 dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
@@ -244,7 +248,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 2,
     alignItems: 'center',
-    flexWrap: 'wrap',
+  },
+  communitySeparator: {
+    width: 4,
   },
   emptySlot: {
     width: 32,
