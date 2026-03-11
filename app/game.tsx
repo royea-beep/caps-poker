@@ -46,7 +46,6 @@ export default function GameScreen() {
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const isArranging = phase.type === 'arranging';
-  const isPlayerReady = phase.type === 'waiting_for_bot' || phase.type === 'revealing' || phase.type === 'complete' || phase.type === 'summary';
   const isRevealing = phase.type === 'revealing';
 
   // Auto-fill and ready handler (defined early so hooks can reference it)
