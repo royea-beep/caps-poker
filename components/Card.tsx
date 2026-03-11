@@ -56,7 +56,7 @@ export default function CardComponent({ card, faceDown, small, highlighted, dimm
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? COLORS.red : COLORS.black;
+  const suitColor = isRed ? '#e63946' : '#1a1a2e';
 
   return (
     <Animated.View

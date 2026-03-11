@@ -36,7 +36,7 @@ export const colors = {
   textMuted: '#8a9e8a',
   textDim: '#4a6050',
   cardRed: '#e63946',
-  cardBlack: '#f0f0e8',
+  cardBlack: '#1a1a2e',
   success: '#4caf50',
   error: '#f44336',
   overlay: 'rgba(0,0,0,0.85)',
@@ -49,7 +49,7 @@ export const colors = {
   cardBack: '#0f2318',        // → surface
   cardBackPattern: '#1e4028', // → border
   red: '#e63946',             // → cardRed
-  black: '#f0f0e8',           // → cardBlack
+  black: '#1a1a2e',           // → cardBlack (dark color for card face text)
   white: '#ffffff',
   textPrimary: '#f0f0e8',     // → text
   textSecondary: '#8a9e8a',   // → textMuted
