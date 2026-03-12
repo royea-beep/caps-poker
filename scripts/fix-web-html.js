@@ -36,7 +36,7 @@ fs.writeFileSync(htmlPath, html);
 console.log('✓ index.html patched (type="module", error handler)');
 
 // 3. Write vercel.json for SPA routing
-const vercelJson = JSON.stringify({ rewrites: [{ source: "/(.*)", destination: "/index.html" }] });
+const vercelJson = JSON.stringify({ rewrites: [{ source: "/privacy.html", destination: "/privacy.html" }, { source: "/(.*)", destination: "/index.html" }] });
 fs.writeFileSync(path.join(distDir, 'vercel.json'), vercelJson);
 console.log('✓ vercel.json written');
 
@@ -48,5 +48,13 @@ fs.writeFileSync(
   JSON.stringify({ projectId: 'prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP', orgId: 'team_ayrePMw5z8jSPhRe67RiBD0k' })
 );
 console.log('✓ .vercel/project.json written');
+
+// 5. Copy privacy.html from project root if it exists
+const privacySrc = path.join(__dirname, '..', 'privacy.html');
+const privacyDst = path.join(distDir, 'privacy.html');
+if (fs.existsSync(privacySrc)) {
+  fs.copyFileSync(privacySrc, privacyDst);
+  console.log('✓ privacy.html copied');
+}
 
 console.log('\nReady to deploy: cd web-dist && vercel --prod --yes');

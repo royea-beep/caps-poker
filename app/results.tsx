@@ -22,6 +22,7 @@ import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
 import { CardsDealtPayload } from '../constants/networkConfig';
 import { playSound } from '../utils/sounds';
+import { submitScore } from '../utils/leaderboard';
 
 // Animation timing
 const BOARD_STAGGER = 250;
@@ -38,7 +39,9 @@ export default function ResultsScreen() {
   const revealData = useGameStore((s) => s.revealData);
   const clearRevealData = useGameStore((s) => s.clearRevealData);
   const incrementHandsPlayed = useGameStore((s) => s.incrementHandsPlayed);
+  const incrementHandsWon = useGameStore((s) => s.incrementHandsWon);
   const updateBestChips = useGameStore((s) => s.updateBestChips);
+  const updateBiggestWin = useGameStore((s) => s.updateBiggestWin);
 
   const mpServer = useGameStore((s) => s.mpServer);
   const mpClient = useGameStore((s) => s.mpClient);
@@ -69,6 +72,22 @@ export default function ResultsScreen() {
     if (!revealData) return;
     incrementHandsPlayed();
     updateBestChips();
+
+    // Track wins and biggest win
+    if (revealData.netChips > 0) {
+      incrementHandsWon();
+      updateBiggestWin(revealData.netChips);
+    }
+
+    // Submit to leaderboard (async, silent fail)
+    const store = useGameStore.getState();
+    submitScore(
+      store.playerName || 'Player',
+      store.chips,
+      store.handsPlayed,
+      store.handsWon,
+      store.biggestWin,
+    ).catch(() => {});
 
     const lastBoardDelay = revealData.boardCount * BOARD_STAGGER;
     const chipsStart = lastBoardDelay + BOARD_FADE + CHIPS_DELAY;

@@ -59,6 +59,63 @@ function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps)
   );
 }
 
+function PlayerNameInput() {
+  const playerName = useGameStore((s) => s.playerName);
+  const setPlayerName = useGameStore((s) => s.setPlayerName);
+  const [localText, setLocalText] = useState(playerName);
+
+  useEffect(() => {
+    setLocalText(playerName);
+  }, [playerName]);
+
+  const commitValue = () => {
+    const trimmed = localText.trim().slice(0, 20);
+    setPlayerName(trimmed);
+    setLocalText(trimmed);
+  };
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Player Name</Text>
+        <Text style={styles.rowHint}>Shown on leaderboard</Text>
+      </View>
+      <TextInput
+        style={[styles.input, { minWidth: 120 }]}
+        value={localText}
+        onChangeText={setLocalText}
+        onBlur={commitValue}
+        onSubmitEditing={commitValue}
+        placeholder="Your name"
+        placeholderTextColor={COLORS.textMuted}
+        maxLength={20}
+        selectTextOnFocus
+      />
+    </View>
+  );
+}
+
+function NotificationsToggle() {
+  const enabled = useGameStore((s) => s.notificationsEnabled);
+  const setEnabled = useGameStore((s) => s.setNotificationsEnabled);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Push Notifications</Text>
+      </View>
+      <Pressable
+        onPress={() => setEnabled(!enabled)}
+        style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
+      >
+        <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
+          {enabled ? 'ON' : 'OFF'}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function SoundToggle() {
   const soundEnabled = useGameStore((s) => s.config.soundEnabled);
   const updateConfig = useGameStore((s) => s.updateConfig);
@@ -133,6 +190,9 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionTitle}>PROFILE</Text>
+        <PlayerNameInput />
+
         <Text style={styles.sectionTitle}>GAMEPLAY</Text>
         <PlayerCountSelector />
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
@@ -149,8 +209,9 @@ export default function SettingsScreen() {
         <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
         <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
 
-        <Text style={styles.sectionTitle}>AUDIO</Text>
+        <Text style={styles.sectionTitle}>AUDIO &amp; NOTIFICATIONS</Text>
         <SoundToggle />
+        <NotificationsToggle />
 
         <Text style={styles.sectionTitle}>TOOLS</Text>
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
