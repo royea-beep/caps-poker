@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 
@@ -10,6 +10,14 @@ interface PlayerHandProps {
 }
 
 export default function PlayerHand({ cards, selectedCardId, onSelectCard }: PlayerHandProps) {
+  const { width: SCREEN_W } = useWindowDimensions();
+
+  // Dynamic card sizing: fit 8 cards per row with gaps and padding
+  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
+  const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
+  const cardW = Math.min(40, Math.max(28, maxCardW));
+  const cardH = Math.round(cardW * 1.4);
+
   const midpoint = Math.ceil(cards.length / 2);
   const topRow = cards.slice(0, midpoint);
   const bottomRow = cards.slice(midpoint);
@@ -25,7 +33,7 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
           isSelected && styles.selected,
         ]}
       >
-        <CardComponent card={card} faceDown={false} small />
+        <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
       </Pressable>
     );
   };
@@ -57,7 +65,7 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 4,
+    paddingVertical: 3,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
@@ -68,7 +76,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 2,
     marginLeft: 12,
-    marginBottom: 4,
+    marginBottom: 3,
     textTransform: 'uppercase',
   },
   grid: {
@@ -78,7 +86,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
   cardWrapper: {
     borderRadius: 6,
@@ -88,14 +96,14 @@ const styles = StyleSheet.create({
   },
   selected: {
     borderColor: COLORS.gold,
-    transform: [{ translateY: -6 }, { scale: 1.08 }],
+    transform: [{ translateY: -4 }, { scale: 1.06 }],
     borderRadius: 6,
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.6,
-        shadowRadius: 8,
+        shadowRadius: 6,
       },
       android: { elevation: 6 },
       default: {},
@@ -103,7 +111,7 @@ const styles = StyleSheet.create({
   },
   emptyRow: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   emptyText: {
     color: COLORS.neonGreen,

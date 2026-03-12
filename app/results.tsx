@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -22,10 +22,6 @@ import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 
-// Card sizes for result display
-const CARD_W = 36;
-const CARD_H = 50;
-
 // Animation timing
 const BOARD_STAGGER = 250;
 const BOARD_FADE = 350;
@@ -35,6 +31,7 @@ const BUTTONS_DELAY = 400;
 
 export default function ResultsScreen() {
   const router = useRouter();
+  const { width: SCREEN_W } = useWindowDimensions();
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const revealData = useGameStore((s) => s.revealData);
@@ -46,6 +43,12 @@ export default function ResultsScreen() {
   const [showComplete, setShowComplete] = useState(false);
 
   const chipCountProgress = useSharedValue(0);
+
+  // Dynamic card sizing: fit 5 community cards + separator in available width
+  // Available = screenWidth - container padding (32) - board padding (20) - separator (6)
+  const availableW = SCREEN_W - 32 - 20 - 6;
+  const CARD_W = Math.min(42, Math.max(28, Math.floor(availableW / 5.5)));
+  const CARD_H = Math.round(CARD_W * 1.4);
 
   // Guard: no data → go home
   useEffect(() => {
@@ -133,7 +136,7 @@ export default function ResultsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Title */}
+        {/* Title + score */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.titleSection}>
           <Text style={styles.title}>RESULTS</Text>
           <View style={styles.scoreRow}>
@@ -149,7 +152,7 @@ export default function ResultsScreen() {
           </View>
         </Animated.View>
 
-        {/* Board results */}
+        {/* Board results — stacked vertically */}
         {boards.map((board, i) => {
           const chipResult = board.winner === 'player'
             ? `+${potPerBoardTotal}`
@@ -167,13 +170,14 @@ export default function ResultsScreen() {
             <Animated.View
               key={i}
               entering={FadeIn.duration(BOARD_FADE).delay(BOARD_STAGGER * (i + 1))}
+              style={{ width: '100%' }}
             >
               <View style={[
                 styles.boardCard,
                 board.winner === 'player' && styles.boardCardWin,
                 board.winner === 'bot' && styles.boardCardLose,
               ]}>
-                {/* Board header */}
+                {/* Header: BOARD X + badge + chip amount */}
                 <View style={styles.boardHeader}>
                   <View style={styles.boardHeaderLeft}>
                     <Text style={styles.boardLabel}>BOARD {i + 1}</Text>
@@ -186,87 +190,80 @@ export default function ResultsScreen() {
                   <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>
                 </View>
 
-                {/* Community cards */}
-                <View style={styles.communityRow}>
-                  <Text style={styles.rowLabel}>BOARD</Text>
-                  <View style={styles.cardsRow}>
-                    {board.openCards.map((c) => (
-                      <CardComponent
-                        key={c.id}
-                        card={c}
-                        faceDown={false}
-                        cardWidth={CARD_W}
-                        cardHeight={CARD_H}
-                        highlighted={board.boardHighlightIds.includes(c.id)}
-                        dimmed={!board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
-                      />
-                    ))}
-                    <View style={styles.cardSeparator} />
-                    {board.closedCards.map((c) => (
-                      <CardComponent
-                        key={c.id}
-                        card={c}
-                        faceDown={false}
-                        cardWidth={CARD_W}
-                        cardHeight={CARD_H}
-                        highlighted={board.boardHighlightIds.includes(c.id)}
-                        dimmed={!board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
-                      />
-                    ))}
-                  </View>
+                {/* Community cards — single centered row */}
+                <View style={styles.cardsRow}>
+                  {board.openCards.map((c) => (
+                    <CardComponent
+                      key={c.id}
+                      card={c}
+                      faceDown={false}
+                      cardWidth={CARD_W}
+                      cardHeight={CARD_H}
+                      highlighted={board.boardHighlightIds.includes(c.id)}
+                      dimmed={!board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
+                    />
+                  ))}
+                  <View style={styles.cardSeparator} />
+                  {board.closedCards.map((c) => (
+                    <CardComponent
+                      key={c.id}
+                      card={c}
+                      faceDown={false}
+                      cardWidth={CARD_W}
+                      cardHeight={CARD_H}
+                      highlighted={board.boardHighlightIds.includes(c.id)}
+                      dimmed={!board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
+                    />
+                  ))}
                 </View>
 
-                {/* Player cards */}
-                <View style={styles.handRow}>
-                  <View style={styles.handSide}>
-                    <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>YOU</Text>
-                    <View style={styles.cardsRow}>
-                      {board.playerCards.map((c) => (
-                        <CardComponent
-                          key={c.id}
-                          card={c}
-                          faceDown={false}
-                          cardWidth={CARD_W}
-                          cardHeight={CARD_H}
-                          highlighted={board.playerHighlightIds.includes(c.id)}
-                          dimmed={!board.playerHighlightIds.includes(c.id) && board.playerHighlightIds.length > 0}
-                        />
-                      ))}
-                    </View>
+                {/* Player hand row */}
+                <View style={styles.handRowVertical}>
+                  <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>YOU</Text>
+                  <View style={styles.cardsRow}>
+                    {board.playerCards.map((c) => (
+                      <CardComponent
+                        key={c.id}
+                        card={c}
+                        faceDown={false}
+                        cardWidth={CARD_W}
+                        cardHeight={CARD_H}
+                        highlighted={board.playerHighlightIds.includes(c.id)}
+                        dimmed={!board.playerHighlightIds.includes(c.id) && board.playerHighlightIds.length > 0}
+                      />
+                    ))}
                     <Text style={[styles.handName, board.winner === 'player' && styles.handNameWin]}>
                       {board.playerHandName}
                     </Text>
                   </View>
+                </View>
 
-                  <Text style={styles.vsText}>vs</Text>
-
-                  {/* Bot cards — show each bot set */}
-                  {board.allBotCards.map((botCards, botIdx) =>
-                    botCards.length > 0 ? (
-                      <View key={`bot-${botIdx}`} style={styles.handSide}>
-                        <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
-                          {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
-                        </Text>
-                        <View style={styles.cardsRow}>
-                          {botCards.map((c) => (
-                            <CardComponent
-                              key={c.id}
-                              card={c}
-                              faceDown={false}
-                              cardWidth={CARD_W}
-                              cardHeight={CARD_H}
-                              highlighted={botIdx === 0 && board.botHighlightIds.includes(c.id)}
-                              dimmed={botIdx === 0 && !board.botHighlightIds.includes(c.id) && board.botHighlightIds.length > 0}
-                            />
-                          ))}
-                        </View>
+                {/* Bot hand rows — one per bot, stacked vertically */}
+                {board.allBotCards.map((botCards, botIdx) =>
+                  botCards.length > 0 ? (
+                    <View key={`bot-${botIdx}`} style={styles.handRowVertical}>
+                      <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
+                        {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
+                      </Text>
+                      <View style={styles.cardsRow}>
+                        {botCards.map((c) => (
+                          <CardComponent
+                            key={c.id}
+                            card={c}
+                            faceDown={false}
+                            cardWidth={CARD_W}
+                            cardHeight={CARD_H}
+                            highlighted={botIdx === 0 && board.botHighlightIds.includes(c.id)}
+                            dimmed={botIdx === 0 && !board.botHighlightIds.includes(c.id) && board.botHighlightIds.length > 0}
+                          />
+                        ))}
                         <Text style={[styles.handName, board.winner === 'bot' && styles.handNameWin]}>
                           {board.allBotHandNames[botIdx] || board.botHandName}
                         </Text>
                       </View>
-                    ) : null
-                  )}
-                </View>
+                    </View>
+                  ) : null
+                )}
               </View>
             </Animated.View>
           );
@@ -366,10 +363,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 32,
-    gap: 16,
+    gap: 12,
     alignItems: 'center',
     ...Platform.select({
-      web: { maxWidth: 540, alignSelf: 'center' as const, width: '100%' },
+      web: { maxWidth: 480, alignSelf: 'center' as const, width: '100%' },
       default: {},
     }),
   },
@@ -385,10 +382,10 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '900',
     color: COLORS.gold,
     letterSpacing: 6,
@@ -408,16 +405,16 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   scoreNum: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '900',
   },
   scoreDivider: {
     color: COLORS.textDim,
-    fontSize: 20,
-    marginTop: 12,
+    fontSize: 18,
+    marginTop: 10,
   },
 
-  // Board card
+  // Board card — vertical layout
   boardCard: {
     width: '100%',
     backgroundColor: COLORS.surface,
@@ -425,7 +422,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    gap: 6,
+    gap: 4,
   },
   boardCardWin: {
     borderColor: COLORS.neonGreen,
@@ -470,21 +467,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   chipAmount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
   },
 
-  // Community row
-  communityRow: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  rowLabel: {
-    color: COLORS.textDim,
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
+  // Cards row — centered, used for community + each hand
   cardsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -495,22 +482,18 @@ const styles = StyleSheet.create({
     width: 4,
   },
 
-  // Hand comparison row
-  handRow: {
+  // Hand rows — stacked vertically (label + cards per row)
+  handRowVertical: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  handSide: {
     alignItems: 'center',
-    gap: 2,
+    gap: 6,
   },
   handLabel: {
     color: COLORS.textDim,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1,
+    width: 28,
   },
   handLabelWin: {
     color: COLORS.neonGreen,
@@ -518,16 +501,11 @@ const styles = StyleSheet.create({
   handLabelLose: {
     color: COLORS.neonRed,
   },
-  vsText: {
-    color: COLORS.textDim,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 20,
-  },
   handName: {
     color: COLORS.textMuted,
     fontSize: 9,
     fontWeight: '600',
+    marginLeft: 4,
   },
   handNameWin: {
     color: COLORS.goldLight,
@@ -582,6 +560,6 @@ const styles = StyleSheet.create({
   buttons: {
     width: '100%',
     gap: 10,
-    marginTop: 8,
+    marginTop: 4,
   },
 });
