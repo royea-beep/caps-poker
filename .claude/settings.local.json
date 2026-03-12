@@ -118,7 +118,8 @@
       "Bash(cd C:/Projects/Caps && eas submit --platform ios --profile preview --id 31e22352-85ac-4463-9d6e-15083b95363b --non-interactive 2>&1)",
       "Bash(fastlane --version 2>&1)",
       "Bash(cd C:/Projects/Caps && eas build --platform ios --profile production --non-interactive 2>&1 | tail -30)",
-      "Bash(cd C:/Projects/Caps && eas build --platform ios --profile testflight --non-interactive 2>&1 | tail -30)"
+      "Bash(cd C:/Projects/Caps && eas build --platform ios --profile testflight --non-interactive 2>&1 | tail -30)",
+      "Bash(eas submit:*)"
     ]
   }
 }
