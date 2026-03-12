@@ -32,6 +32,38 @@ export interface GameSession {
   config: GameConfig;
 }
 
+// --- Reveal screen data (Sprint 30) ---
+
+export interface RevealBoardData {
+  openCards: Card[];
+  closedCards: Card[];
+  playerCards: Card[];
+  allBotCards: Card[][];
+  winner: 'player' | 'bot' | 'tie';
+  playerHandName: string;
+  botHandName: string;
+  allBotHandNames: string[];
+  playerHighlightIds: string[];
+  botHighlightIds: string[];
+  boardHighlightIds: string[];
+  potAmount: number;
+}
+
+export interface RevealData {
+  boards: RevealBoardData[];
+  netChips: number;
+  playerChipsWon: number;
+  isComplete: boolean;
+  completeBonusAmount: number;
+  completeWinner: 'player' | 'bot' | null;
+  boardRevealDuration: number;
+  completeBonusDisplay: number;
+  turnRevealDelay: number;
+  potPerBoard: number;
+  numberOfPlayers: number;
+  boardCount: number;
+}
+
 // --- Multiplayer networking types (Sprint 06) ---
 
 export interface ConnectedPlayerInfo {
