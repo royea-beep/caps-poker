@@ -79,7 +79,8 @@ export default function ResultsScreen() {
       withTiming(1, { duration: CHIPS_DURATION, easing: Easing.out(Easing.cubic) })
     );
 
-    const soundTimer = setTimeout(() => playSound('chipsWin'), chipsStart);
+    const playerWon = revealData.netChips >= 0;
+    const soundTimer = setTimeout(() => playSound(playerWon ? 'chipsWin' : 'lose'), chipsStart);
     const btnTimer = setTimeout(() => {
       if (revealData.isComplete && revealData.completeWinner) {
         setShowComplete(true);

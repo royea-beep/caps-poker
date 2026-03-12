@@ -124,10 +124,15 @@ export default function GameScreen() {
     }
   }, []);
 
-  // Sync timer into phase state
+  // Sync timer into phase state + warning beep at 10s
+  const timerWarnedRef = useRef(false);
   useEffect(() => {
     if (isArranging) {
       setPhase({ type: 'arranging', timeLeft: timer.timeLeft });
+      if (timer.timeLeft === 10 && !timerWarnedRef.current) {
+        timerWarnedRef.current = true;
+        playSound('timerLow');
+      }
     }
   }, [timer.timeLeft, isArranging]);
 
@@ -196,6 +201,7 @@ export default function GameScreen() {
     (card: Card) => {
       if (!isArranging) return;
       haptic(Haptics.ImpactFeedbackStyle.Light);
+      playSound('cardSelect');
       setSelectedCardId((prev) => (prev === card.id ? null : card.id));
     },
     [isArranging]
