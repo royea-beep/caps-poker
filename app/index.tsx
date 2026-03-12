@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,8 @@ import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 
+const isWeb = Platform.OS === 'web';
+
 export default function HomeScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
@@ -23,11 +25,11 @@ export default function HomeScreen() {
 
   const sessionNet = chips - sessionStartChips;
 
-  // Pulsing glow behind title (native only — skip on web to avoid hydration issues)
+  // Pulsing glow behind title (native only — skip on web)
   const glowOpacity = useSharedValue(0.3);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
+    if (isWeb) return;
     glowOpacity.value = withRepeat(
       withSequence(
         withTiming(0.6, { duration: 1500 }),
@@ -41,22 +43,13 @@ export default function HomeScreen() {
     opacity: glowOpacity.value,
   }));
 
-  // Web-safe navigation: use window.location as fallback if router.push fails
-  const navigateTo = useCallback((path: string) => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.location.href = path;
-    } else {
-      router.push(path as any);
-    }
-  }, [router]);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.titleSection}>
-          {/* Pulsing glow — static on web, animated on native */}
-          {Platform.OS === 'web' ? (
-            <View style={[styles.titleGlow, { opacity: 0.4 }]} />
+          {/* Glow — static on web, animated on native */}
+          {isWeb ? (
+            <View style={[styles.titleGlow, styles.titleGlowWeb]} />
           ) : (
             <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
           )}
@@ -79,10 +72,10 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.buttonSection}>
-          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => navigateTo('/game')} />
-          <Button title="HOST GAME" variant="secondary" onPress={() => navigateTo('/lobby/host')} />
-          <Button title="JOIN GAME" variant="secondary" onPress={() => navigateTo('/lobby/join')} />
-          <Button title="SETTINGS" variant="ghost" onPress={() => navigateTo('/settings')} />
+          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => router.push('/game' as any)} />
+          <Button title="HOST GAME" variant="secondary" onPress={() => router.push('/lobby/host' as any)} />
+          <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join' as any)} />
+          <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
         </View>
 
         <Button
@@ -106,6 +99,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     gap: 40,
+    ...Platform.select({
+      web: { maxWidth: 540, alignSelf: 'center' as const, width: '100%' },
+      default: {},
+    }),
   },
   titleSection: {
     alignItems: 'center',
@@ -120,6 +117,18 @@ const styles = StyleSheet.create({
     top: -40,
     alignSelf: 'center',
     zIndex: -1,
+  },
+  titleGlowWeb: {
+    opacity: 0.35,
+    ...Platform.select({
+      web: {
+        background: `radial-gradient(circle, ${COLORS.neonBlue}88 0%, ${COLORS.background}00 70%)`,
+        width: 260,
+        height: 260,
+        top: -60,
+      } as any,
+      default: {},
+    }),
   },
   titleSmall: {
     color: COLORS.gold,
@@ -167,5 +176,9 @@ const styles = StyleSheet.create({
   buttonSection: {
     width: '100%',
     gap: 12,
+    ...Platform.select({
+      web: { maxWidth: 480, alignSelf: 'center' as const },
+      default: {},
+    }),
   },
 });
