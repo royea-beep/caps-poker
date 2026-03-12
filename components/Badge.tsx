@@ -15,8 +15,8 @@ interface BadgeProps {
 
 const BADGE_COLORS = {
   win: { bg: COLORS.gold, text: COLORS.background },
-  lose: { bg: '#c0392b', text: COLORS.white },
-  tie: { bg: '#555555', text: COLORS.white },
+  lose: { bg: COLORS.neonRed, text: COLORS.white },
+  tie: { bg: COLORS.textDim, text: COLORS.white },
   rank: { bg: 'transparent', text: COLORS.gold },
 };
 

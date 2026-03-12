@@ -17,6 +17,8 @@ interface CardProps {
   highlighted?: boolean;
   dimmed?: boolean;
   flipDuration?: number;
+  cardWidth?: number;
+  cardHeight?: number;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -26,9 +28,12 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '♠',
 };
 
-export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800 }: CardProps) {
-  const width = small ? 32 : 48;
-  const height = small ? 46 : 70;
+export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight }: CardProps) {
+  const width = cardWidth ?? (small ? 32 : 48);
+  const height = cardHeight ?? (small ? 46 : 70);
+  const rankSize = cardHeight ? Math.max(8, Math.floor(height * 0.24)) : (small ? 11 : 16);
+  const suitSize = cardHeight ? Math.max(9, Math.floor(height * 0.28)) : (small ? 12 : 18);
+  const backTextSize = cardHeight ? Math.max(12, Math.floor(height * 0.45)) : 20;
 
   const prevFaceDownRef = useRef(faceDown);
   // 0 = showing back, 1 = showing front
@@ -87,7 +92,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     return (
       <View style={[styles.card, styles.faceDown, { width, height }]}>
         <View style={styles.backPattern}>
-          <Text style={styles.backText}>♠</Text>
+          <Text style={[styles.backText, { fontSize: backTextSize }]}>♠</Text>
         </View>
       </View>
     );
@@ -101,7 +106,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
       {/* Back face */}
       <Animated.View style={[styles.card, styles.faceDown, { width, height }, backAnimStyle]}>
         <View style={styles.backPattern}>
-          <Text style={styles.backText}>♠</Text>
+          <Text style={[styles.backText, { fontSize: backTextSize }]}>♠</Text>
         </View>
       </Animated.View>
 
@@ -116,10 +121,10 @@ export default function CardComponent({ card, faceDown = false, small, highlight
           frontAnimStyle,
         ]}
       >
-        <Text style={[styles.rank, { color: suitColor, fontSize: small ? 11 : 16 }]}>
+        <Text style={[styles.rank, { color: suitColor, fontSize: rankSize }]}>
           {card.rank}
         </Text>
-        <Text style={[styles.suit, { color: suitColor, fontSize: small ? 12 : 18 }]}>
+        <Text style={[styles.suit, { color: suitColor, fontSize: suitSize }]}>
           {SUIT_SYMBOLS[card.suit]}
         </Text>
       </Animated.View>
@@ -136,7 +141,7 @@ const styles = StyleSheet.create({
   },
   faceUp: {
     backgroundColor: COLORS.cardWhite,
-    shadowColor: '#000',
+    shadowColor: COLORS.background,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -153,7 +158,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: COLORS.cardBackPattern,
-    fontSize: 20,
     opacity: 0.5,
   },
   rank: {
