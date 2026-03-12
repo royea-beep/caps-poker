@@ -25,8 +25,8 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint-37 complete — multiplayer functional (3 critical gaps fixed, UX aligned)
-- Version: 1.6.0, buildNumber: 9 (auto-increment), EAS production build in progress
+- Sprint-38 complete — professional app icon + splash screen
+- Version: 1.7.0, buildNumber: 10 (auto-increment), EAS production build in progress
 - TypeScript: 0 errors
 - Tests: 90/90 passing (14 hand evaluator + 19 simulation + 39 game logic + 7 hand hint + 11 theme)
 - Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
@@ -73,6 +73,8 @@
 /store/gameStore.ts (chips+config persisted; multiplayer state+onSendReady transient)
 /scripts/generate-icon.js, preflight-check.js
 /babel.config.js, jest.config.js, metro.config.js, eas.json, .npmrc
+/scripts/generate-assets.py (Pillow — generates icon, splash, favicon)
+/screenshots/README.md (App Store screenshot instructions)
 /docs/multiplayer-test-guide.md
 /BUILD_INSTRUCTIONS.md, TESTFLIGHT_GUIDE.md, QA_CHECKLIST.md, AUDIT_REPORT.md
 /DEV_BUILD_GUIDE.md, MULTIPLAYER_RESEARCH.md, LOCAL_MULTIPLAYER_DESIGN.md
@@ -118,9 +120,10 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- EAS production build v1.6.0 in progress — submit to TestFlight after build completes
+- EAS production build v1.7.0 in progress — submit to TestFlight after build completes
 - First multiplayer device test pending (needs dev build on 2 devices)
 - Multiplayer polish remaining: animated board reveal on guest side, player disconnect toast during game, per-player names in results
+- App Store screenshots: needed for submission (see screenshots/README.md)
 - Internet multiplayer (Supabase) — future sprint
 
 ## Commit History
@@ -154,3 +157,4 @@
 - Sprint 35: Full UX audit — 2 critical responsive bugs fixed. Results: changed from side-by-side (overflow on 375px) to vertical stacking, dynamic card sizing from screen width. Game: replaced hardcoded SAFE_AREA=84 with useSafeAreaInsets(), min card height 28px, PLAYER_HAND_H 130. PlayerHand: dynamic card width (fits 8/row on any phone). Home: gap 40→28. All screens fit iPhone SE (375×667) through iPhone 14 Plus (430×932). Web maxWidth 480px. Web re-deploy to Vercel
 - Sprint 36: READ-ONLY multiplayer diagnostic. Full protocol map, 9 gap analysis, implementation plan. No code changed.
 - Sprint 37: Multiplayer functional — 3 critical gaps fixed. A1: server/client instances stored in Zustand (mpServer/mpClient), survive screen transitions, removed dead onSendReady callback. A2: multiplayer-game.tsx reveal flow builds RevealData and navigates to /results (same as single-player). A3: NEXT_HAND_REQUEST protocol message, server tracks requests, re-deals when all players ready. B1: multiplayer-game vertical board layout (from game.tsx), dynamic card sizing via useSafeAreaInsets, same tap-to-select UX, player names from connectedPlayers. B2: waiting overlay + results.tsx "Waiting for other players" state. v1.6.0, web re-deploy, EAS production build
+- Sprint 38: App icon + splash screen generated via Pillow script. Icon: 1024x1024, gold "C" on poker green radial gradient, gold ring border, corner suit symbols. Splash: 1284x2778, "CAPS POKER" on green felt with gold text + suit symbols. Favicon: 64x64. Android adaptive icon updated. Screenshots README created. v1.7.0, web re-deploy, EAS production build
