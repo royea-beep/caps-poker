@@ -226,6 +226,14 @@ export class GameClient {
     return this.send(createMessage('PLAYER_READY', payload, this.playerId));
   }
 
+  updateCallbacks(partial: Partial<GameClientCallbacks>): void {
+    Object.assign(this.callbacks, partial);
+  }
+
+  sendNextHandRequest(): boolean {
+    return this.send(createMessage('NEXT_HAND_REQUEST', {}, this.playerId));
+  }
+
   send(message: NetworkMessage): boolean {
     if (this.socket && this.connected) {
       try {

@@ -20,6 +20,7 @@ import CompleteOverlay from '../components/CompleteOverlay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
+import { CardsDealtPayload } from '../constants/networkConfig';
 import { playSound } from '../utils/sounds';
 
 // Animation timing
@@ -39,8 +40,14 @@ export default function ResultsScreen() {
   const incrementHandsPlayed = useGameStore((s) => s.incrementHandsPlayed);
   const updateBestChips = useGameStore((s) => s.updateBestChips);
 
+  const mpServer = useGameStore((s) => s.mpServer);
+  const mpClient = useGameStore((s) => s.mpClient);
+  const connectedPlayers = useGameStore((s) => s.connectedPlayers);
+  const isMultiplayer = mpServer !== null || mpClient !== null;
+
   const [showButtons, setShowButtons] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [waitingForNextHand, setWaitingForNextHand] = useState(false);
 
   const chipCountProgress = useSharedValue(0);
 
@@ -95,13 +102,68 @@ export default function ResultsScreen() {
   const handleNextHand = useCallback(() => {
     if (!revealData) return;
     const boardCount = revealData.boardCount;
+
+    // Multiplayer: request next hand via server/client
+    if (isMultiplayer) {
+      setWaitingForNextHand(true);
+
+      const navigateToMpGame = (
+        isHost: boolean,
+        pIndex: number,
+        pCount: number,
+        yourCards: any[],
+        boards: any[]
+      ) => {
+        clearRevealData();
+        router.replace({
+          pathname: '/multiplayer-game',
+          params: {
+            isHost: isHost ? 'true' : 'false',
+            playerIndex: String(pIndex),
+            playerCount: String(pCount),
+            yourCards: JSON.stringify(yourCards),
+            boards: JSON.stringify(boards),
+          },
+        } as any);
+      };
+
+      if (mpServer) {
+        // Host: update callback, then request
+        mpServer.updateCallbacks({
+          onNewHandDealt: () => {
+            const { boards: newBoards, playerHands } = mpServer.getDealtCards();
+            const boardsData = newBoards.map((b: any, i: number) => ({
+              boardIndex: i,
+              openCards: b.openCards,
+              closedCardCount: b.closedCards.length,
+            }));
+            const pCount = mpServer.getClients().filter((c: any) => c.connected).length;
+            navigateToMpGame(true, 0, pCount, playerHands[0], boardsData);
+          },
+        });
+        mpServer.requestNextHand(config);
+      } else if (mpClient) {
+        // Guest: update callback, then request
+        const myId = mpClient.getPlayerId();
+        const mySeat = connectedPlayers.find((p) => p.id === myId)?.seat ?? 1;
+        mpClient.updateCallbacks({
+          onCardsDealt: (data: CardsDealtPayload) => {
+            navigateToMpGame(false, mySeat, data.playerCount, data.yourCards, data.boards);
+          },
+        });
+        mpClient.sendNextHandRequest();
+      }
+      return;
+    }
+
+    // Single-player: navigate directly
     clearRevealData();
     if (chips >= config.potPerBoard * boardCount) {
       router.replace('/game');
     } else {
       router.replace('/gameover');
     }
-  }, [revealData, chips, config, clearRevealData, router]);
+  }, [revealData, chips, config, clearRevealData, router, isMultiplayer, mpServer, mpClient, connectedPlayers]);
 
   const handleHome = useCallback(() => {
     clearRevealData();
@@ -303,12 +365,20 @@ export default function ResultsScreen() {
         {/* Buttons */}
         {showButtons && (
           <Animated.View style={styles.buttons} entering={FadeIn.duration(400)}>
-            <Button
-              title={chips >= config.potPerBoard * revealData.boardCount ? 'NEXT HAND' : 'GAME OVER'}
-              variant="gold"
-              onPress={handleNextHand}
-            />
-            <Button title="HOME" variant="secondary" onPress={handleHome} />
+            {waitingForNextHand ? (
+              <View style={styles.waitingNextHand}>
+                <Text style={styles.waitingNextHandText}>Waiting for other players...</Text>
+              </View>
+            ) : (
+              <>
+                <Button
+                  title={chips >= config.potPerBoard * revealData.boardCount ? 'NEXT HAND' : 'GAME OVER'}
+                  variant="gold"
+                  onPress={handleNextHand}
+                />
+                <Button title="HOME" variant="secondary" onPress={handleHome} />
+              </>
+            )}
           </Animated.View>
         )}
       </ScrollView>
@@ -561,5 +631,18 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 10,
     marginTop: 4,
+  },
+  waitingNextHand: {
+    backgroundColor: COLORS.feltLight,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    alignItems: 'center',
+  },
+  waitingNextHandText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

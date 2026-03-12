@@ -14,6 +14,7 @@ export default function HostLobbyScreen() {
   const setRoomCode = useGameStore((s) => s.setRoomCode);
   const setHostIP = useGameStore((s) => s.setHostIP);
   const setConnectedPlayers = useGameStore((s) => s.setConnectedPlayers);
+  const setMpServer = useGameStore((s) => s.setMpServer);
   const resetMultiplayer = useGameStore((s) => s.resetMultiplayer);
 
   const [maxPlayers, setMaxPlayers] = useState<2 | 3 | 4>(2);
@@ -56,6 +57,7 @@ export default function HostLobbyScreen() {
 
       const ip = await server.start();
       serverRef.current = server;
+      setMpServer(server);
       setHostIPLocal(ip);
       setRoomCodeLocal(server.getRoomCode());
       setServerStarted(true);

@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import Board from '../components/Board';
+import PlayerHand from '../components/PlayerHand';
+import ChipsDisplay from '../components/ChipsDisplay';
+import { Button } from '../components/Button';
+import { useGameStore } from '../store/gameStore';
+import { COLORS, Card, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { useGameTimer } from '../hooks/useGameTimer';
+import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
+import { RevealBoardData } from '../types/gameTypes';
+import { playSound } from '../utils/sounds';
 
 const haptic = (style: Haptics.ImpactFeedbackStyle) => {
   Haptics.impactAsync(style).catch(() => {});
@@ -11,26 +21,24 @@ const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
   Haptics.notificationAsync(type).catch(() => {});
 };
 
-import Board from '../components/Board';
-import PlayerHand from '../components/PlayerHand';
-import ChipsDisplay from '../components/ChipsDisplay';
-import CompleteOverlay from '../components/CompleteOverlay';
-import { Button } from '../components/Button';
-import { useGameStore } from '../store/gameStore';
-import { COLORS, Card, CARDS_PER_BOARD } from '../constants/gameConfig';
-import { useGameTimer } from '../hooks/useGameTimer';
-import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
+// Layout constants
+const TOP_BAR_H = 44;
+const MODE_BADGE_H = 24;
+const PLAYER_HAND_H = 130;
+const READY_BTN_H = 48;
 
 interface BoardDisplay {
   openCards: Card[];
   closedCards: Card[];
   playerCards: Card[];
   revealed: boolean;
-  revealData?: BoardRevealPayload;
 }
 
 export default function MultiplayerGameScreen() {
   const router = useRouter();
+  const { height: SCREEN_H } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
   const params = useLocalSearchParams<{
     isHost: string;
     playerIndex: string;
@@ -42,28 +50,29 @@ export default function MultiplayerGameScreen() {
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
+  const setRevealData = useGameStore((s) => s.setRevealData);
   const connectedPlayers = useGameStore((s) => s.connectedPlayers);
-  const onSendReady = useGameStore((s) => s.onSendReady);
+  const mpServer = useGameStore((s) => s.mpServer);
+  const mpClient = useGameStore((s) => s.mpClient);
 
   const isHost = params.isHost === 'true';
   const playerIndex = parseInt(params.playerIndex || '0', 10);
   const playerCount = parseInt(params.playerCount || '2', 10);
 
   let yourCards: Card[] = [];
-  try {
-    yourCards = JSON.parse(params.yourCards || '[]');
-  } catch {
-    yourCards = [];
-  }
+  try { yourCards = JSON.parse(params.yourCards || '[]'); } catch { yourCards = []; }
 
   let boardsParam: CardsDealtPayload['boards'] = [];
-  try {
-    boardsParam = JSON.parse(params.boards || '[]');
-  } catch {
-    boardsParam = [];
-  }
+  try { boardsParam = JSON.parse(params.boards || '[]'); } catch { boardsParam = []; }
 
   const boardCount = boardsParam.length;
+
+  // Dynamic card sizing (same formula as game.tsx)
+  const safeH = SCREEN_H - insets.top - insets.bottom;
+  const BOARD_GAPS = (boardCount - 1) * 4;
+  const BOARD_CHROME = 20;
+  const boardSpace = (safeH - TOP_BAR_H - MODE_BADGE_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const BOARD_CARD_H = Math.max(28, Math.min(52, Math.floor(boardSpace / 2)));
 
   // State
   const [boards, setBoards] = useState<BoardDisplay[]>(() =>
@@ -76,30 +85,247 @@ export default function MultiplayerGameScreen() {
   );
   const [playerHand, setPlayerHand] = useState<Card[]>(yourCards);
   const playerHandRef = useRef(playerHand);
-  useEffect(() => {
-    playerHandRef.current = playerHand;
-  }, [playerHand]);
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [phase, setPhase] = useState<'arranging' | 'waiting' | 'revealing' | 'summary'>('arranging');
-  const [isReady, setIsReady] = useState(false);
-  const [showComplete, setShowComplete] = useState(false);
-  const [handResult, setHandResult] = useState<HandCompletePayload | null>(null);
-  const [revealIndex, setRevealIndex] = useState(-1);
+  useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
+  const boardsRef = useRef(boards);
+  useEffect(() => { boardsRef.current = boards; }, [boards]);
 
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>('arranging');
+
+  // Collected reveal data for guest
+  const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
   const mountedRef = useRef(true);
 
   useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
+    return () => { mountedRef.current = false; };
   }, []);
+
+  // Player names from connected players
+  const playerNames = connectedPlayers
+    .sort((a, b) => a.seat - b.seat)
+    .map((p) => p.name);
+
+  const isArranging = phase === 'arranging';
+
+  // --- Host: wire server callbacks on mount ---
+  useEffect(() => {
+    if (!isHost || !mpServer) return;
+
+    mpServer.updateCallbacks({
+      onAllPlayersReady: () => {
+        if (!mountedRef.current) return;
+
+        const { boardResults, handResult } = mpServer.runRevealSequence(config);
+        const serverBoards = mpServer.getBoards();
+        const clientArray = mpServer.getClients().sort((a: any, b: any) => a.seat - b.seat);
+
+        // Broadcast BOARD_REVEAL to guests
+        for (let b = 0; b < boardResults.length; b++) {
+          const br = boardResults[b];
+          const playerHandsData = br.playerResults.map((pr: any, pi: number) => ({
+            playerId: clientArray[pi]?.id || '',
+            playerName: clientArray[pi]?.name || '',
+            cards: serverBoards[b].playerCards[pi] || [],
+            handRank: pr.name,
+            score: pr.score,
+          }));
+          mpServer.sendBoardReveal(
+            b,
+            serverBoards[b].closedCards,
+            playerHandsData,
+            br.winnerIndex,
+            br.winnerIndex >= 0 ? clientArray[br.winnerIndex]?.name || '' : 'Tie'
+          );
+        }
+
+        // Broadcast HAND_COMPLETE to guests
+        const handCompletePayload: HandCompletePayload = {
+          boardResults: boardResults.map((br: any) => ({
+            boardIndex: br.boardIndex,
+            winnerIndex: br.winnerIndex,
+            winnerName: br.winnerIndex >= 0 ? clientArray[br.winnerIndex]?.name || '' : 'Tie',
+          })),
+          chipDeltas: handResult.chipDeltas,
+          playerNames: clientArray.map((c: any) => c.name),
+          isComplete: handResult.completeWinner !== null,
+          completeWinnerIndex: handResult.completeWinner,
+          completeBonusAmount: handResult.completeBonusAmount,
+        };
+        mpServer.sendHandComplete(handCompletePayload);
+
+        // Build RevealData for host and navigate
+        buildRevealDataAndNavigate(boardResults, handResult, serverBoards, clientArray);
+      },
+    });
+  }, [isHost, mpServer, config]);
+
+  // --- Guest: wire client callbacks on mount ---
+  useEffect(() => {
+    if (isHost || !mpClient) return;
+
+    mpClient.updateCallbacks({
+      onBoardReveal: (data: BoardRevealPayload) => {
+        if (!mountedRef.current) return;
+        boardRevealsRef.current.set(data.boardIndex, data);
+      },
+      onHandComplete: (result: HandCompletePayload) => {
+        if (!mountedRef.current) return;
+        buildGuestRevealDataAndNavigate(result);
+      },
+    });
+  }, [isHost, mpClient, playerIndex, playerCount, config, boardCount]);
+
+  // Host: build RevealData from server evaluation results
+  const buildRevealDataAndNavigate = useCallback((
+    boardResults: any[],
+    handResult: any,
+    serverBoards: any[],
+    clientArray: any[]
+  ) => {
+    const myIdx = playerIndex;
+
+    const revealBoards: RevealBoardData[] = boardResults.map((br: any, bi: number) => {
+      const board = serverBoards[bi];
+      const myResult = br.playerResults[myIdx];
+      const otherCards: Card[][] = [];
+      const otherHandNames: string[] = [];
+      for (let p = 0; p < clientArray.length; p++) {
+        if (p !== myIdx) {
+          otherCards.push(board.playerCards[p] || []);
+          otherHandNames.push(br.playerResults[p]?.name || '');
+        }
+      }
+
+      const winner: 'player' | 'bot' | 'tie' =
+        br.winnerIndex === myIdx ? 'player' :
+        br.winnerIndex === -1 ? 'tie' : 'bot';
+
+      return {
+        openCards: board.openCards,
+        closedCards: board.closedCards,
+        playerCards: board.playerCards[myIdx] || [],
+        allBotCards: otherCards,
+        winner,
+        playerHandName: myResult?.name || '',
+        botHandName: br.winnerIndex >= 0 && br.winnerIndex !== myIdx
+          ? br.playerResults[br.winnerIndex]?.name || '' : '',
+        allBotHandNames: otherHandNames,
+        playerHighlightIds: [],
+        botHighlightIds: [],
+        boardHighlightIds: [],
+        potAmount: config.potPerBoard * clientArray.length,
+      };
+    });
+
+    const myDelta = handResult.chipDeltas[myIdx];
+    addChips(myDelta);
+
+    setRevealData({
+      boards: revealBoards,
+      netChips: myDelta,
+      playerChipsWon: myDelta + config.potPerBoard * boardCount,
+      isComplete: handResult.completeWinner !== null,
+      completeBonusAmount: handResult.completeBonusAmount,
+      completeWinner: handResult.completeWinner !== null
+        ? (handResult.completeWinner === myIdx ? 'player' : 'bot')
+        : null,
+      boardRevealDuration: config.boardRevealDuration,
+      completeBonusDisplay: config.completeBonusDisplay,
+      turnRevealDelay: config.turnRevealDelay,
+      potPerBoard: config.potPerBoard,
+      numberOfPlayers: clientArray.length,
+      boardCount,
+    });
+
+    setPhase('navigating');
+    router.replace('/results');
+  }, [playerIndex, config, boardCount, addChips, setRevealData, router]);
+
+  // Guest: build RevealData from BOARD_REVEAL + HAND_COMPLETE payloads
+  const buildGuestRevealDataAndNavigate = useCallback((result: HandCompletePayload) => {
+    const currentBoards = boardsRef.current;
+    const reveals = boardRevealsRef.current;
+
+    const revealBoards: RevealBoardData[] = currentBoards.map((board, bi) => {
+      const reveal = reveals.get(bi);
+      if (!reveal) {
+        return {
+          openCards: board.openCards,
+          closedCards: [],
+          playerCards: board.playerCards,
+          allBotCards: [],
+          winner: 'tie' as const,
+          playerHandName: '',
+          botHandName: '',
+          allBotHandNames: [],
+          playerHighlightIds: [],
+          botHighlightIds: [],
+          boardHighlightIds: [],
+          potAmount: config.potPerBoard * playerCount,
+        };
+      }
+
+      const myHand = reveal.playerHands[playerIndex];
+      const otherCards: Card[][] = [];
+      const otherHandNames: string[] = [];
+      for (let p = 0; p < reveal.playerHands.length; p++) {
+        if (p !== playerIndex) {
+          otherCards.push(reveal.playerHands[p]?.cards || []);
+          otherHandNames.push(reveal.playerHands[p]?.handRank || '');
+        }
+      }
+
+      const winner: 'player' | 'bot' | 'tie' =
+        reveal.winnerIndex === playerIndex ? 'player' :
+        reveal.winnerIndex === -1 ? 'tie' : 'bot';
+
+      return {
+        openCards: board.openCards,
+        closedCards: reveal.closedCards,
+        playerCards: myHand?.cards || board.playerCards,
+        allBotCards: otherCards,
+        winner,
+        playerHandName: myHand?.handRank || '',
+        botHandName: reveal.winnerIndex >= 0 && reveal.winnerIndex !== playerIndex
+          ? reveal.playerHands[reveal.winnerIndex]?.handRank || '' : '',
+        allBotHandNames: otherHandNames,
+        playerHighlightIds: [],
+        botHighlightIds: [],
+        boardHighlightIds: [],
+        potAmount: config.potPerBoard * playerCount,
+      };
+    });
+
+    const myDelta = result.chipDeltas[playerIndex] || 0;
+    addChips(myDelta);
+
+    const completeWinnerIsMe = result.completeWinnerIndex === playerIndex;
+
+    setRevealData({
+      boards: revealBoards,
+      netChips: myDelta,
+      playerChipsWon: myDelta + config.potPerBoard * boardCount,
+      isComplete: result.isComplete,
+      completeBonusAmount: result.completeBonusAmount,
+      completeWinner: result.isComplete
+        ? (completeWinnerIsMe ? 'player' : 'bot')
+        : null,
+      boardRevealDuration: config.boardRevealDuration,
+      completeBonusDisplay: config.completeBonusDisplay,
+      turnRevealDelay: config.turnRevealDelay,
+      potPerBoard: config.potPerBoard,
+      numberOfPlayers: playerCount,
+      boardCount,
+    });
+
+    setPhase('navigating');
+    router.replace('/results');
+  }, [playerIndex, playerCount, config, boardCount, addChips, setRevealData, router]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
-    if (!isReady) {
-      autoFillAndReady();
-    }
-  }, [isReady]);
+    autoFillAndReady();
+  }, []);
 
   const timer = useGameTimer({
     initialSeconds: config.arrangementTime,
@@ -107,7 +333,7 @@ export default function MultiplayerGameScreen() {
     autoStart: true,
   });
 
-  // Auto-fill remaining cards
+  // Auto-fill remaining cards and send ready
   const autoFillAndReady = useCallback(() => {
     setBoards((currentBoards) => {
       const remaining = [...playerHandRef.current];
@@ -120,62 +346,69 @@ export default function MultiplayerGameScreen() {
         return board;
       });
       setPlayerHand([]);
-      setIsReady(true);
+      setSelectedCardId(null);
       setPhase('waiting');
       timer.stop();
-      // Send PLAYER_READY with board assignments
+
       const assignments = updated.map((b) => b.playerCards);
-      if (onSendReady) onSendReady(assignments);
+      if (isHost && mpServer) {
+        mpServer.setHostReady(assignments);
+      } else if (!isHost && mpClient) {
+        mpClient.sendReady(assignments);
+      }
       return updated;
     });
-  }, [timer, onSendReady]);
+  }, [timer, isHost, mpServer, mpClient]);
 
-  // Card placement
-  const handleCardSelect = useCallback((card: Card) => {
+  // Card selection (same UX as game.tsx)
+  const handleSelectCard = useCallback((card: Card) => {
+    if (!isArranging) return;
     haptic(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedCard((prev) => (prev?.id === card.id ? null : card));
-  }, []);
+    setSelectedCardId((prev) => (prev === card.id ? null : card.id));
+  }, [isArranging]);
 
-  const handleBoardPress = useCallback(
-    (boardIndex: number) => {
-      if (phase !== 'arranging' || !selectedCard) return;
+  // Place card on board
+  const handleBoardPress = useCallback((boardIndex: number) => {
+    if (!isArranging) return;
+    const currentHand = playerHandRef.current;
+    if (currentHand.length === 0) return;
 
-      setBoards((prev) => {
-        const board = prev[boardIndex];
-        if (board.playerCards.length >= CARDS_PER_BOARD) {
-          Alert.alert('Board Full', 'This board already has 4 cards.');
-          return prev;
-        }
-        haptic(Haptics.ImpactFeedbackStyle.Medium);
-        const updated = [...prev];
-        updated[boardIndex] = {
-          ...board,
-          playerCards: [...board.playerCards, selectedCard],
-        };
-        return updated;
-      });
-      setPlayerHand((prev) => prev.filter((c) => c.id !== selectedCard.id));
-      setSelectedCard(null);
-    },
-    [selectedCard, phase]
-  );
+    const cardToPlace = selectedCardId
+      ? currentHand.find((c) => c.id === selectedCardId)
+      : currentHand[0];
+    if (!cardToPlace) return;
 
-  const handleRemoveCard = useCallback(
-    (boardIndex: number, card: Card) => {
-      if (phase !== 'arranging') return;
-      haptic(Haptics.ImpactFeedbackStyle.Light);
-      setBoards((prev) => {
-        const updated = [...prev];
-        updated[boardIndex] = {
-          ...prev[boardIndex],
-          playerCards: prev[boardIndex].playerCards.filter((c) => c.id !== card.id),
-        };
-        return updated;
-      });
-      setPlayerHand((prev) => [...prev, card]);
-    },
-    [phase]
-  );
+    setBoards((prev) => {
+      const board = prev[boardIndex];
+      if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
+      haptic(Haptics.ImpactFeedbackStyle.Medium);
+      playSound('cardPlace');
+      const updated = [...prev];
+      updated[boardIndex] = {
+        ...board,
+        playerCards: [...board.playerCards, cardToPlace],
+      };
+      setPlayerHand((hand) => hand.filter((c) => c.id !== cardToPlace.id));
+      setSelectedCardId(null);
+      return updated;
+    });
+  }, [isArranging, selectedCardId]);
+
+  // Remove card from board
+  const handleRemoveCardFromBoard = useCallback((boardIndex: number, card: Card) => {
+    if (!isArranging) return;
+    haptic(Haptics.ImpactFeedbackStyle.Light);
+    setBoards((prev) => {
+      if (!prev[boardIndex]) return prev;
+      const updated = [...prev];
+      updated[boardIndex] = {
+        ...prev[boardIndex],
+        playerCards: prev[boardIndex].playerCards.filter((c) => c.id !== card.id),
+      };
+      return updated;
+    });
+    setPlayerHand((prev) => [...prev, card]);
+  }, [isArranging]);
 
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
@@ -183,75 +416,19 @@ export default function MultiplayerGameScreen() {
     if (!allBoardsFull) return;
     hapticNotify(Haptics.NotificationFeedbackType.Success);
     timer.stop();
-    setIsReady(true);
+    setSelectedCardId(null);
     setPhase('waiting');
-    // Send PLAYER_READY with board assignments
+
     const assignments = boards.map((b) => b.playerCards);
-    if (onSendReady) onSendReady(assignments);
-  }, [allBoardsFull, timer, boards, onSendReady]);
-
-  // Handle board reveal (called by networking layer)
-  const handleBoardReveal = useCallback((data: BoardRevealPayload) => {
-    if (!mountedRef.current) return;
-    setPhase('revealing');
-    setRevealIndex(data.boardIndex);
-    setBoards((prev) => {
-      const updated = [...prev];
-      updated[data.boardIndex] = {
-        ...prev[data.boardIndex],
-        closedCards: data.closedCards,
-        revealed: true,
-        revealData: data,
-      };
-      return updated;
-    });
-    haptic(Haptics.ImpactFeedbackStyle.Heavy);
-  }, []);
-
-  // Handle hand complete
-  const handleHandComplete = useCallback((result: HandCompletePayload) => {
-    if (!mountedRef.current) return;
-    setHandResult(result);
-
-    if (result.isComplete) {
-      setShowComplete(true);
-    } else {
-      setPhase('summary');
+    if (isHost && mpServer) {
+      mpServer.setHostReady(assignments);
+    } else if (!isHost && mpClient) {
+      mpClient.sendReady(assignments);
     }
-  }, []);
-
-  const handleCompleteDone = useCallback(() => {
-    setShowComplete(false);
-    setPhase('summary');
-  }, []);
-
-  // Navigate to summary when phase changes to summary
-  useEffect(() => {
-    if (phase === 'summary' && handResult) {
-      const myDelta = handResult.chipDeltas[playerIndex] || 0;
-      addChips(myDelta);
-
-      router.replace({
-        pathname: '/summary',
-        params: {
-          results: JSON.stringify(
-            handResult.boardResults.map((br) => ({
-              winner: br.winnerIndex === playerIndex ? 'player' : br.winnerName || 'opponent',
-              playerHand: 'N/A',
-              botHand: 'N/A',
-            }))
-          ),
-          netChips: myDelta.toString(),
-          isComplete: handResult.isComplete.toString(),
-          completeBonusAmount: handResult.completeBonusAmount.toString(),
-          potPerBoard: config.potPerBoard.toString(),
-        },
-      });
-    }
-  }, [phase, handResult]);
+  }, [allBoardsFull, timer, boards, isHost, mpServer, mpClient]);
 
   const handleBack = useCallback(() => {
-    if (phase === 'arranging' || phase === 'waiting' || phase === 'revealing') {
+    if (phase === 'arranging' || phase === 'waiting') {
       Alert.alert(
         'Leave Game?',
         'You will forfeit this hand if you leave.',
@@ -265,8 +442,20 @@ export default function MultiplayerGameScreen() {
     }
   }, [phase, router]);
 
-  const isArranging = phase === 'arranging';
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   const displayTimeLeft = timer.timeLeft;
+  const timerColor = displayTimeLeft > 30
+    ? COLORS.success
+    : displayTimeLeft > 15
+    ? COLORS.gold
+    : COLORS.danger;
+
+  const cardsRemaining = playerHand.length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -277,123 +466,66 @@ export default function MultiplayerGameScreen() {
         </Pressable>
         <View style={styles.topInfo}>
           {isArranging && (
-            <View style={[styles.timerContainer, displayTimeLeft <= 10 && styles.timerUrgent]}>
-              <Text style={[styles.timerText, displayTimeLeft <= 10 && styles.timerTextUrgent]}>
-                {Math.floor(displayTimeLeft / 60)}:{(displayTimeLeft % 60).toString().padStart(2, '0')}
+            <View style={[
+              styles.timerContainer,
+              { borderColor: timerColor },
+              displayTimeLeft <= 15 && styles.timerUrgent,
+            ]}>
+              <Text style={[styles.timerText, { color: timerColor }]}>
+                {formatTime(displayTimeLeft)}
               </Text>
             </View>
           )}
-          {phase === 'waiting' && <Text style={styles.statusText}>WAITING...</Text>}
-          {phase === 'revealing' && <Text style={styles.statusText}>REVEALING...</Text>}
+          {phase === 'waiting' && (
+            <Text style={styles.statusText}>WAITING...</Text>
+          )}
         </View>
         <ChipsDisplay amount={chips} />
       </View>
 
-      {/* Mode badge */}
+      {/* Mode badge with player names */}
       <View style={styles.modeBadge}>
         <Text style={styles.modeText}>
-          {playerCount}P {isHost ? 'HOST' : 'GUEST'} | Seat {playerIndex + 1}
+          {playerCount}P {isHost ? 'HOST' : 'GUEST'} | {playerNames[playerIndex] || `Seat ${playerIndex + 1}`}
         </Text>
       </View>
 
-      {/* Boards */}
-      <ScrollView
-        style={styles.middleScroll}
-        contentContainerStyle={styles.middleScrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.boardsGrid}>
-          {boards.map((board, i) => {
-            const revealData = board.revealData;
-            return (
-              <Board
-                key={i}
-                index={i}
-                openCards={board.openCards}
-                closedCards={board.closedCards}
-                playerCards={board.playerCards}
-                botCards={[]} // Other players' cards not shown during arrangement
-                revealed={board.revealed}
-                active={revealIndex === i}
-                potAmount={config.potPerBoard}
-                winner={
-                  revealData
-                    ? revealData.winnerIndex === playerIndex
-                      ? 'player'
-                      : revealData.winnerIndex === -1
-                      ? 'tie'
-                      : 'bot'
-                    : undefined
-                }
-                playerHighlightIds={[]}
-                botHighlightIds={[]}
-                boardHighlightIds={[]}
-                playerHandName={revealData?.playerHands[playerIndex]?.handRank}
-                botHandName={
-                  revealData && revealData.winnerIndex >= 0 && revealData.winnerIndex !== playerIndex
-                    ? revealData.playerHands[revealData.winnerIndex]?.handRank
-                    : undefined
-                }
-                onPress={() => handleBoardPress(i)}
-                isArrangement={isArranging}
-              />
-            );
-          })}
-        </View>
-
-        {/* Remove cards */}
-        {isArranging && (
-          <View style={styles.removeSection}>
-            {boards.map((board, bi) =>
-              board.playerCards.length > 0 ? (
-                <View key={bi} style={styles.removeRow}>
-                  <Text style={styles.removeLabel}>B{bi + 1}:</Text>
-                  {board.playerCards.map((card) => (
-                    <Pressable
-                      key={card.id}
-                      onPress={() => handleRemoveCard(bi, card)}
-                      style={styles.removeCardBtn}
-                    >
-                      <Text style={styles.removeCardText}>
-                        {card.rank}
-                        {card.suit === 'hearts' ? '\u2665' : card.suit === 'diamonds' ? '\u2666' : card.suit === 'clubs' ? '\u2663' : '\u2660'}
-                      </Text>
-                      <Text style={styles.removeX}>{'\u2715'}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null
-            )}
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Player hand */}
-      {isArranging && (
-        <>
-          <PlayerHand
-            cards={playerHand}
-            selectedCardId={selectedCard?.id}
-            onSelectCard={handleCardSelect}
+      {/* Boards — stacked vertically (same as game.tsx) */}
+      <View style={styles.boardsColumn}>
+        {boards.map((board, i) => (
+          <Board
+            key={i}
+            index={i}
+            openCards={board.openCards}
+            closedCards={board.closedCards}
+            playerCards={board.playerCards}
+            botCards={[]}
+            revealed={board.revealed}
+            active={false}
+            potAmount={config.potPerBoard * playerCount}
+            onPress={() => handleBoardPress(i)}
+            onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
+            isArrangement={isArranging}
+            selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+            cardHeight={BOARD_CARD_H}
           />
-          {selectedCard && (
-            <Text style={styles.hint}>
-              Tap a board to place {selectedCard.rank}
-              {selectedCard.suit === 'hearts' ? '\u2665' : selectedCard.suit === 'diamonds' ? '\u2666' : selectedCard.suit === 'clubs' ? '\u2663' : '\u2660'}
-            </Text>
-          )}
-        </>
+        ))}
+      </View>
+
+      {/* Player hand — face-up at bottom */}
+      {isArranging && (
+        <PlayerHand
+          cards={playerHand}
+          selectedCardId={selectedCardId ?? undefined}
+          onSelectCard={handleSelectCard}
+        />
       )}
 
       {/* Ready button */}
       {isArranging && (
         <View style={styles.readySection}>
           <Button
-            title={
-              allBoardsFull
-                ? 'READY'
-                : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`
-            }
+            title={allBoardsFull ? 'READY' : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`}
             variant="gold"
             disabled={!allBoardsFull}
             onPress={handleReady}
@@ -401,22 +533,13 @@ export default function MultiplayerGameScreen() {
         </View>
       )}
 
+      {/* Waiting overlay */}
       {phase === 'waiting' && (
-        <View style={styles.waitingSection}>
-          <Text style={styles.waitingText}>Waiting for other players...</Text>
+        <View style={styles.waitingOverlay}>
+          <View style={styles.waitingBox}>
+            <Text style={styles.waitingText}>Waiting for other players...</Text>
+          </View>
         </View>
-      )}
-
-      {/* Complete overlay */}
-      {showComplete && handResult && (
-        <CompleteOverlay
-          winner={
-            handResult.completeWinnerIndex === playerIndex ? 'player' : 'bot'
-          }
-          bonusAmount={handResult.completeBonusAmount}
-          duration={config.completeBonusDisplay}
-          onDone={handleCompleteDone}
-        />
       )}
     </SafeAreaView>
   );
@@ -431,42 +554,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   backText: {
     color: COLORS.textSecondary,
-    fontSize: 20,
+    fontSize: 18,
   },
   topInfo: {
     alignItems: 'center',
   },
   timerContainer: {
     backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
   timerUrgent: {
     borderColor: COLORS.danger,
-    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    backgroundColor: COLORS.neonRed + '26',
   },
   timerText: {
-    color: COLORS.textPrimary,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
-  },
-  timerTextUrgent: {
-    color: COLORS.danger,
   },
   statusText: {
     color: COLORS.gold,
@@ -476,76 +595,40 @@ const styles = StyleSheet.create({
   },
   modeBadge: {
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   modeText: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
   },
-  middleScroll: {
+  boardsColumn: {
     flex: 1,
-  },
-  middleScrollContent: {
-    paddingBottom: 4,
-  },
-  boardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    flexDirection: 'column',
+    paddingHorizontal: 16,
     gap: 4,
-  },
-  removeSection: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-  },
-  removeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-  },
-  removeLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 10,
-    fontWeight: '700',
-    width: 24,
-  },
-  removeCardBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 2,
-  },
-  removeCardText: {
-    color: COLORS.textPrimary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  removeX: {
-    color: COLORS.danger,
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  hint: {
-    color: COLORS.gold,
-    textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '600',
-    paddingVertical: 4,
   },
   readySection: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
-  waitingSection: {
+  waitingOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 20,
     alignItems: 'center',
+    backgroundColor: COLORS.background + 'CC',
+  },
+  waitingBox: {
+    backgroundColor: COLORS.feltLight,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
   },
   waitingText: {
     color: COLORS.textSecondary,

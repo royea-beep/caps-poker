@@ -53,6 +53,7 @@ export interface GameServerCallbacks {
   onAllPlayersReady: () => void;
   onError: (error: Error) => void;
   onRoomStateChanged: (players: ConnectedClient[]) => void;
+  onNewHandDealt?: () => void;
 }
 
 const MAX_BUFFER_SIZE = 1024 * 64; // 64KB max buffer
@@ -70,6 +71,8 @@ export class GameServer {
   private playerHands: Card[][] = [];
   private stopping: boolean = false;
   private lastHeartbeatCheck: number = Date.now();
+  private nextHandRequests: Set<string> = new Set();
+  private gameConfig: GameConfig | null = null;
 
   constructor(
     callbacks: GameServerCallbacks,
@@ -312,6 +315,15 @@ export class GameServer {
         break;
       }
 
+      case 'NEXT_HAND_REQUEST': {
+        const nhClient = this.findClientBySocket(socket);
+        if (nhClient) {
+          this.nextHandRequests.add(nhClient.id);
+          this.checkNextHandReady();
+        }
+        break;
+      }
+
       case 'HEARTBEAT': {
         const client = this.findClientBySocket(socket);
         if (client) {
@@ -439,6 +451,40 @@ export class GameServer {
       this.broadcastRoomState();
       this.checkAllReady();
     }
+  }
+
+  updateCallbacks(partial: Partial<GameServerCallbacks>): void {
+    Object.assign(this.callbacks, partial);
+  }
+
+  getBoards(): MultiBoardState[] {
+    return this.boards;
+  }
+
+  requestNextHand(config: GameConfig): void {
+    this.gameConfig = config;
+    this.nextHandRequests.add(this.hostId);
+    this.checkNextHandReady();
+  }
+
+  private checkNextHandReady(): void {
+    const connectedClients = Array.from(this.clients.values()).filter((c) => c.connected);
+    if (this.nextHandRequests.size >= connectedClients.length && this.gameConfig) {
+      this.startNewHand(this.gameConfig);
+    }
+  }
+
+  private startNewHand(config: GameConfig): void {
+    // Reset all player states
+    for (const client of this.clients.values()) {
+      client.isReady = false;
+      client.boardAssignments = null;
+    }
+    this.nextHandRequests.clear();
+
+    // Re-deal and broadcast
+    this.startGame(config);
+    this.callbacks.onNewHandDealt?.();
   }
 
   runRevealSequence(config: GameConfig): {
