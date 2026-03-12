@@ -1,5 +1,5 @@
-import React, { useRef, useCallback, useMemo } from 'react';
-import { Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, ViewStyle, Platform } from 'react-native';
+import React, { useRef, useCallback } from 'react';
+import { Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, Pressable, ViewStyle, Platform } from 'react-native';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 import { COLORS } from '../constants/gameConfig';
@@ -66,6 +66,37 @@ export function Button({
       ? styles.textSecondary
       : styles.textGhost;
 
+  const content = loading ? (
+    <ActivityIndicator
+      color={variant === 'gold' ? COLORS.background : COLORS.neonBlue}
+      size="small"
+    />
+  ) : (
+    <Text style={[styles.text, textStyle]}>{title}</Text>
+  );
+
+  // Web: use Pressable (renders as <div> with onClick — no AnimatedTouchable issues)
+  if (Platform.OS === 'web') {
+    return (
+      <Pressable
+        onPress={disabled || loading ? undefined : onPress}
+        style={({ pressed }) => [
+          styles.base,
+          variantStyle,
+          (disabled || loading) && styles.disabled,
+          pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+          { cursor: disabled ? 'not-allowed' : 'pointer' } as ViewStyle,
+          style,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  // iOS/Android: AnimatedTouchable with scale animation
   return (
     <AnimatedTouchable
       onPress={onPress}
@@ -83,14 +114,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={title}
     >
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'gold' ? COLORS.background : COLORS.neonBlue}
-          size="small"
-        />
-      ) : (
-        <Text style={[styles.text, textStyle]}>{title}</Text>
-      )}
+      {content}
     </AnimatedTouchable>
   );
 }
