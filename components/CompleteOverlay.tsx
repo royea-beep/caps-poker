@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,7 +19,6 @@ interface CompleteOverlayProps {
   onDone: () => void;
 }
 
-const { width, height } = Dimensions.get('window');
 const NUM_PARTICLES = 12;
 
 function Particle({ index }: { index: number }) {
