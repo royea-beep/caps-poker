@@ -82,6 +82,14 @@ export default function HomeScreen() {
           variant="ghost"
           onPress={() => useGameStore.getState().setChips(useGameStore.getState().config.startingChips)}
         />
+
+        {__DEV__ && (
+          <Button
+            title="SIMULATE"
+            variant="ghost"
+            onPress={() => router.push('/simulate' as any)}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
