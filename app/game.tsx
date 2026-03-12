@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Board from '../components/Board';
+import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
@@ -30,7 +31,7 @@ const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
 const SAFE_AREA = 84;
 const TOP_BAR_H = 44;
 const BOT_STATUS_H = 20;
-const COUNTER_H = 32;
+const PLAYER_HAND_H = 140;
 const READY_BTN_H = 48;
 
 export default function GameScreen() {
@@ -45,15 +46,16 @@ export default function GameScreen() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
-  // Layout: no PlayerHand at bottom, boards fill more vertical space
+  // Layout: boards share space above PlayerHand
   const BOARD_GAPS = (boardCount - 1) * 4;
   const BOARD_CHROME = 22;
-  const boardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - COUNTER_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const boardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   // During arrangement: community row + player row = 2 rows per board
-  const BOARD_CARD_H = Math.max(32, Math.floor(boardSpace / 2));
+  const BOARD_CARD_H = Math.max(32, Math.min(52, Math.floor(boardSpace / 2)));
 
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [botsReady, setBotsReady] = useState<boolean[]>([]);
   const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: config.arrangementTime });
 
@@ -74,6 +76,7 @@ export default function GameScreen() {
       setPlayerHand(remainingHand);
       return filledBoards;
     });
+    setSelectedCardId(null);
     setPhase({ type: 'waiting_for_bot' });
   }, []);
 
@@ -187,29 +190,45 @@ export default function GameScreen() {
     }
   }, [phase.type, allBotsReady, navigateToReveal]);
 
-  // Tap board → auto-place next card from hand
+  // Tap card in hand → select it
+  const handleSelectCard = useCallback(
+    (card: Card) => {
+      if (!isArranging) return;
+      haptic(Haptics.ImpactFeedbackStyle.Light);
+      setSelectedCardId((prev) => (prev === card.id ? null : card.id));
+    },
+    [isArranging]
+  );
+
+  // Tap board slot → place selected card there
   const handleBoardPress = useCallback(
     (boardIndex: number) => {
       if (!isArranging) return;
       const currentHand = playerHandRef.current;
       if (currentHand.length === 0) return;
 
+      // Find the selected card, or use first card if none selected
+      const cardToPlace = selectedCardId
+        ? currentHand.find((c) => c.id === selectedCardId)
+        : currentHand[0];
+      if (!cardToPlace) return;
+
       setBoards((prev) => {
         const board = prev[boardIndex];
         if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
-        const nextCard = currentHand[0];
         haptic(Haptics.ImpactFeedbackStyle.Medium);
         playSound('cardPlace');
         const updated = [...prev];
         updated[boardIndex] = {
           ...board,
-          playerCards: [...board.playerCards, nextCard],
+          playerCards: [...board.playerCards, cardToPlace],
         };
-        setPlayerHand(currentHand.slice(1));
+        setPlayerHand((hand) => hand.filter((c) => c.id !== cardToPlace.id));
+        setSelectedCardId(null);
         return updated;
       });
     },
-    [isArranging]
+    [isArranging, selectedCardId]
   );
 
   // Tap placed card → remove from board, return to hand
@@ -237,6 +256,7 @@ export default function GameScreen() {
     if (!allBoardsFull) return;
     hapticNotify(Haptics.NotificationFeedbackType.Success);
     timer.stop();
+    setSelectedCardId(null);
     setPhase({ type: 'waiting_for_bot' });
   }, [allBoardsFull, timer]);
 
@@ -335,13 +355,13 @@ export default function GameScreen() {
         ))}
       </View>
 
-      {/* Hand counter */}
+      {/* Player hand — face-up cards at bottom */}
       {isArranging && (
-        <View style={styles.handCounter}>
-          <Text style={styles.handCounterText}>
-            YOUR HAND ({cardsRemaining} remaining)
-          </Text>
-        </View>
+        <PlayerHand
+          cards={playerHand}
+          selectedCardId={selectedCardId ?? undefined}
+          onSelectCard={handleSelectCard}
+        />
       )}
 
       {/* Ready button */}
@@ -416,17 +436,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     paddingHorizontal: 16,
     gap: 4,
-  },
-  handCounter: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  handCounterText: {
-    color: COLORS.neonBlue,
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 2,
-    textAlign: 'center',
   },
   readySection: {
     paddingHorizontal: 12,
