@@ -25,9 +25,9 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 21 complete — gaming visual redesign with neon palette
-- Version: 1.3.0, buildNumber: 5, latest build: e3fbbda4 (FINISHED, preview/internal)
-- TestFlight: v1.3.0 build 5 submitted 2026-03-12, processing by Apple
+- Sprint 24-build complete — v1.4.0 production build + TestFlight submit
+- Version: 1.4.0, buildNumber: 6, latest build: 04890b1f (FINISHED, production/store)
+- TestFlight: v1.4.0 build 6 submitted 2026-03-12, processing by Apple
 - TypeScript: 0 errors
 - Tests: 79/79 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint + 10 theme)
 - Web deployed to caps.ftable.co.il (FTP upload, 32 files)
@@ -108,7 +108,7 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- TestFlight: v1.3.0 build e3fbbda4 submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
+- TestFlight: v1.4.0 build 04890b1f submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
 - External testers: 1) `eas build --platform ios --profile production` 2) `eas submit --platform ios --profile preview` 3) Add testers in ASC → TestFlight → External Testers
 - Web shadow warnings: animated shadows in Board.tsx/Card.tsx (reanimated worklets) still use shadow* props — reanimated UI thread can't access Platform.select. Static shadows fixed in Button/Board/Card/PlayerHand
 - SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
@@ -136,3 +136,4 @@
 - Sprint 21: Gaming visual redesign — neon color palette (theme.ts rewrite), title/logo glow animation, button redesign (gold+neonBlue), board layout polish (neonBlue active pulse, neonGreen complete flash), PlayerHand gold selection glow, gameover shake+neonRed glow, summary neonGreen/neonRed score colors, Card suit colors from theme, 10 new theme tests (79 total), web re-deploy
 - Sprint 22: Vertical board layout — 4 boards stacked (no scroll), dynamic card sizing (Dimensions), Board.tsx full-width compact rows, Card.tsx dynamic dimensions props, PlayerHand gold border+scale select, hardcoded colors audit (Badge/Board/Card/game.tsx → COLORS refs), bot row hidden during arrangement, player hand hidden during reveal, web re-deploy
 - Sprint 23: Button press fix (reanimated → RN Animated + TouchableOpacity), web shadow deprecation fix (Platform.select for static shadows in Button/Board/Card/PlayerHand), external tester distribution docs, web re-deploy
+- Sprint 24-build: v1.4.0, production build 04890b1f (store distribution), TestFlight submitted, buildNumber auto-incremented to 6, removed stale buildNumber from app.json
