@@ -14,22 +14,25 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
   const topRow = cards.slice(0, midpoint);
   const bottomRow = cards.slice(midpoint);
 
-  const renderCard = (card: Card) => (
-    <Pressable
-      key={card.id}
-      onPress={() => onSelectCard(card)}
-      style={[
-        styles.cardWrapper,
-        selectedCardId === card.id && styles.selected,
-      ]}
-    >
-      <CardComponent card={card} faceDown={false} />
-    </Pressable>
-  );
+  const renderCard = (card: Card) => {
+    const isSelected = selectedCardId === card.id;
+    return (
+      <Pressable
+        key={card.id}
+        onPress={() => onSelectCard(card)}
+        style={[
+          styles.cardWrapper,
+          isSelected && styles.selected,
+        ]}
+      >
+        <CardComponent card={card} faceDown={false} small />
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>YOUR HAND ({cards.length} cards)</Text>
+      <Text style={styles.label}>YOUR HAND ({cards.length})</Text>
       <View style={styles.grid}>
         <View style={styles.row}>
           {topRow.map(renderCard)}
@@ -46,23 +49,23 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 4,
+    paddingVertical: 3,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
   },
   label: {
     color: COLORS.neonBlue,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1.5,
-    marginLeft: 16,
-    marginBottom: 6,
+    marginLeft: 12,
+    marginBottom: 3,
     textTransform: 'uppercase',
   },
   grid: {
-    paddingHorizontal: 12,
-    gap: 4,
+    paddingHorizontal: 8,
+    gap: 2,
   },
   row: {
     flexDirection: 'row',
@@ -70,13 +73,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   cardWrapper: {
-    borderRadius: 8,
-    padding: 2,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    padding: 1,
   },
   selected: {
-    backgroundColor: COLORS.gold,
-    transform: [{ translateY: -8 }, { scale: 1.05 }],
-    borderRadius: 8,
+    borderColor: COLORS.gold,
+    transform: [{ translateY: -6 }, { scale: 1.08 }],
+    borderRadius: 6,
     shadowColor: COLORS.gold,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,

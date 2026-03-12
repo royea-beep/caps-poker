@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +29,27 @@ const haptic = (style: Haptics.ImpactFeedbackStyle) => {
 const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
   Haptics.notificationAsync(type).catch(() => {});
 };
+
+// Layout constants for card size computation
+const { height: SCREEN_H } = Dimensions.get('window');
+const SAFE_AREA = 84;
+const TOP_BAR_H = 44;
+const BOT_STATUS_H = 20;
+const PLAYER_HAND_H = 120;
+const READY_BTN_H = 48;
+const BOARD_GAPS = 12; // 3 gaps between 4 boards
+const BOARD_CHROME = 22; // header + padding per board
+
+// Arrangement: player hand + ready btn shown, 2 card rows per board
+const arrangeBoardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / 4 - BOARD_CHROME;
+const arrangeCardH = Math.floor(arrangeBoardSpace / 2);
+
+// Reveal: no player hand, 3 card rows per board (bot + community + player)
+const revealBoardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - BOARD_GAPS) / 4 - BOARD_CHROME;
+const revealCardH = Math.floor(revealBoardSpace / 3);
+
+// Use the tighter constraint so card size is consistent
+const BOARD_CARD_H = Math.max(36, Math.min(arrangeCardH, revealCardH));
 
 export default function GameScreen() {
   const router = useRouter();
@@ -104,11 +125,7 @@ export default function GameScreen() {
 
   const handleAllRevealed = useCallback(() => {
     if (!mountedRef.current) return;
-    // addChips and check complete are handled here
-    // We need boardResults and isComplete — read from refs
     setBoardResults((currentResults) => {
-      // Re-derive isComplete / playerChipsWon from currentResults
-      // But we already stored these in state, so just trigger the final step
       return currentResults;
     });
   }, []);
@@ -353,6 +370,8 @@ export default function GameScreen() {
     ? COLORS.gold
     : COLORS.danger;
 
+  const showPlayerHand = isArranging;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Top bar */}
@@ -375,6 +394,9 @@ export default function GameScreen() {
           {isRevealing && (
             <Text style={styles.revealText}>REVEALING...</Text>
           )}
+          {phase.type === 'waiting_for_bot' && (
+            <Text style={styles.waitingText}>Waiting for bot...</Text>
+          )}
         </View>
         <ChipsDisplay amount={chips} />
       </View>
@@ -386,62 +408,53 @@ export default function GameScreen() {
         </Text>
       </View>
 
-      {/* Scrollable middle section: boards + remove cards */}
-      <ScrollView
-        style={styles.middleScroll}
-        contentContainerStyle={styles.middleScrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Boards 2x2 */}
-        <View style={styles.boardsGrid}>
-          {boards.map((board, i) => {
-            const result = boardResults[i];
-            const playerHighlightIds = board.revealed && result
-              ? result.playerResult.playerCardsUsed.map((c) => c.id)
-              : [];
-            const botHighlightIds = board.revealed && result
-              ? result.botResult.playerCardsUsed.map((c) => c.id)
-              : [];
-            const boardHighlightIds = board.revealed && result
-              ? [
-                  ...result.playerResult.boardCardsUsed.map((c) => c.id),
-                  ...result.botResult.boardCardsUsed.map((c) => c.id),
-                ]
-              : [];
+      {/* Boards — 4 stacked vertically */}
+      <View style={styles.boardsColumn}>
+        {boards.map((board, i) => {
+          const result = boardResults[i];
+          const playerHighlightIds = board.revealed && result
+            ? result.playerResult.playerCardsUsed.map((c) => c.id)
+            : [];
+          const botHighlightIds = board.revealed && result
+            ? result.botResult.playerCardsUsed.map((c) => c.id)
+            : [];
+          const boardHighlightIds = board.revealed && result
+            ? [
+                ...result.playerResult.boardCardsUsed.map((c) => c.id),
+                ...result.botResult.boardCardsUsed.map((c) => c.id),
+              ]
+            : [];
 
-            return (
-              <Board
-                key={i}
-                index={i}
-                openCards={board.openCards}
-                closedCards={board.closedCards}
-                playerCards={board.playerCards}
-                botCards={board.botCards}
-                revealed={board.revealed}
-                active={revealSequence.currentBoardIndex === i}
-                potAmount={config.potPerBoard}
-                winner={board.winner}
-                playerHighlightIds={playerHighlightIds}
-                botHighlightIds={botHighlightIds}
-                boardHighlightIds={boardHighlightIds}
-                playerHandName={board.playerResult?.name}
-                botHandName={board.botResult?.name}
-                onPress={() => handleBoardPress(i)}
-                onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
-                isArrangement={isArranging}
-                selected={isArranging && !!selectedCard && board.playerCards.length < CARDS_PER_BOARD}
-                flipDuration={config.turnRevealDelay}
-              />
-            );
-          })}
-        </View>
+          return (
+            <Board
+              key={i}
+              index={i}
+              openCards={board.openCards}
+              closedCards={board.closedCards}
+              playerCards={board.playerCards}
+              botCards={board.botCards}
+              revealed={board.revealed}
+              active={revealSequence.currentBoardIndex === i}
+              potAmount={config.potPerBoard}
+              winner={board.winner}
+              playerHighlightIds={playerHighlightIds}
+              botHighlightIds={botHighlightIds}
+              boardHighlightIds={boardHighlightIds}
+              playerHandName={board.playerResult?.name}
+              botHandName={board.botResult?.name}
+              onPress={() => handleBoardPress(i)}
+              onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
+              isArrangement={isArranging}
+              selected={isArranging && !!selectedCard && board.playerCards.length < CARDS_PER_BOARD}
+              flipDuration={config.turnRevealDelay}
+              cardHeight={BOARD_CARD_H}
+            />
+          );
+        })}
+      </View>
 
-        {/* Tap cards on boards directly to remove them */}
-      </ScrollView>
-
-      {/* Player hand */}
-      {isArranging && (
+      {/* Player hand — only during arrangement */}
+      {showPlayerHand && (
         <>
           <PlayerHand
             cards={playerHand}
@@ -463,12 +476,6 @@ export default function GameScreen() {
             disabled={!allBoardsFull}
             onPress={handleReady}
           />
-        </View>
-      )}
-
-      {phase.type === 'waiting_for_bot' && (
-        <View style={styles.waitingSection}>
-          <Text style={styles.waitingText}>Waiting for bot...</Text>
         </View>
       )}
 
@@ -494,87 +501,75 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   backText: {
     color: COLORS.textSecondary,
-    fontSize: 20,
+    fontSize: 18,
   },
   topInfo: {
     alignItems: 'center',
   },
   timerContainer: {
     backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
   timerUrgent: {
     borderColor: COLORS.danger,
-    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    backgroundColor: COLORS.neonRed + '26',
   },
   timerText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
   revealText: {
     color: COLORS.gold,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     letterSpacing: 4,
   },
   botSection: {
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   botLabel: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
   },
-  middleScroll: {
+  boardsColumn: {
     flex: 1,
-  },
-  middleScrollContent: {
-    paddingBottom: 4,
-  },
-  boardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     paddingHorizontal: 8,
     gap: 4,
   },
   hint: {
     color: COLORS.gold,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   readySection: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  waitingSection: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 6,
   },
   waitingText: {
     color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

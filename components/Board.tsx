@@ -33,9 +33,10 @@ interface BoardProps {
   isArrangement?: boolean;
   selected?: boolean;
   flipDuration?: number;
+  cardHeight?: number;
 }
 
-function EmptySlotAnimated({ isArrangement, onPress }: { isArrangement?: boolean; onPress?: () => void }) {
+function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
   const pulseOpacity = useSharedValue(0.6);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ function EmptySlotAnimated({ isArrangement, onPress }: { isArrangement?: boolean
 
   return (
     <Pressable onPress={onPress}>
-      <Animated.View style={[styles.emptySlot, isArrangement && styles.dropTarget, animStyle]}>
+      <Animated.View style={[styles.emptySlot, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, animStyle]}>
         <Text style={styles.plusText}>+</Text>
       </Animated.View>
     </Pressable>
@@ -80,7 +81,7 @@ function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 
     transform: [{ translateY: translateY.value }],
   }));
 
-  const text = winner === 'tie' ? '±0' : winner === 'player' ? `+${amount}` : `-${amount}`;
+  const text = winner === 'tie' ? '\u00b10' : winner === 'player' ? `+${amount}` : `-${amount}`;
   const color = winner === 'player' ? COLORS.neonGreen : winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
 
   return (
@@ -110,7 +111,11 @@ export default function Board({
   isArrangement,
   selected,
   flipDuration,
+  cardHeight: cardHeightProp,
 }: BoardProps) {
+  const ch = cardHeightProp ?? 46;
+  const cw = Math.round(ch * 0.7);
+
   const pulseValue = useSharedValue(0.4);
 
   useEffect(() => {
@@ -168,6 +173,8 @@ export default function Board({
     };
   });
 
+  const showBotRow = botCards.length > 0;
+
   return (
     <Animated.View
       style={[
@@ -181,9 +188,10 @@ export default function Board({
       ]}
     >
       <Pressable onPress={onPress} style={styles.pressableInner}>
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.boardLabel}>Board {index + 1}</Text>
+            <Text style={styles.boardLabel}>B{index + 1}</Text>
             {winner && (
               <Badge
                 label={winner === 'player' ? 'W' : winner === 'bot' ? 'L' : 'T'}
@@ -191,46 +199,47 @@ export default function Board({
                 small
               />
             )}
+            {revealed && playerHandName && (
+              <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
+            )}
           </View>
           <View style={styles.potArea}>
-            <Text style={styles.potLabel}>{potAmount} 🪙</Text>
+            <Text style={styles.potLabel}>{potAmount} \ud83e\ude99</Text>
             {winner && <FloatingChips amount={potAmount} winner={winner} />}
           </View>
         </View>
 
-        {/* Bot cards — single row */}
-        <View style={styles.cardRow}>
-          {botCards.length > 0 ? (
-            botCards.map((c) => (
+        {/* Bot cards — only shown when bot has placed cards */}
+        {showBotRow && (
+          <View style={styles.cardRow}>
+            <Text style={styles.rowLabel}>BOT</Text>
+            {botCards.map((c) => (
               <CardComponent
                 key={c.id}
                 card={c}
                 faceDown={!revealed}
-                small
+                cardWidth={cw}
+                cardHeight={ch}
                 highlighted={revealed && botHighlightIds.includes(c.id)}
                 dimmed={revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
                 flipDuration={flipDuration}
               />
-            ))
-          ) : (
-            Array.from({ length: 4 }).map((_, i) => (
-              <View key={`bot-empty-${i}`} style={styles.emptySlot} />
-            ))
-          )}
-        </View>
-        {revealed && botHandName && (
-          <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName]}>{botHandName}</Text>
+            ))}
+            {revealed && botHandName && (
+              <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}>{botHandName}</Text>
+            )}
+          </View>
         )}
 
-        {/* Community cards: 3 open (flop) + 2 closed (turn/river) in single row */}
-        <Text style={styles.sectionLabel}>BOARD</Text>
-        <View style={styles.communityRow}>
+        {/* Community cards: flop + turn/river */}
+        <View style={styles.cardRow}>
           {openCards.map((c) => (
             <CardComponent
               key={c.id}
               card={c}
               faceDown={false}
-              small
+              cardWidth={cw}
+              cardHeight={ch}
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
@@ -241,7 +250,8 @@ export default function Board({
               key={c.id}
               card={c}
               faceDown={!revealed}
-              small
+              cardWidth={cw}
+              cardHeight={ch}
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               flipDuration={flipDuration}
@@ -249,11 +259,7 @@ export default function Board({
           ))}
         </View>
 
-        {/* Player cards — single row */}
-        <Text style={styles.sectionLabel}>YOUR CARDS</Text>
-        {revealed && playerHandName && (
-          <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
-        )}
+        {/* Player cards */}
         <View style={styles.cardRow}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
@@ -262,7 +268,8 @@ export default function Board({
                   <CardComponent
                     card={c}
                     faceDown={false}
-                    small
+                    cardWidth={cw}
+                    cardHeight={ch}
                     highlighted={revealed && playerHighlightIds.includes(c.id)}
                     dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
                   />
@@ -272,7 +279,8 @@ export default function Board({
                   key={c.id}
                   card={c}
                   faceDown={false}
-                  small
+                  cardWidth={cw}
+                  cardHeight={ch}
                   highlighted={revealed && playerHighlightIds.includes(c.id)}
                   dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
                 />
@@ -280,18 +288,18 @@ export default function Board({
             ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} />
+              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={cw} slotHeight={ch} />
             ))
           )}
           {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
             Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} />
+              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={cw} slotHeight={ch} />
             ))
           }
+          {isArrangement && playerCards.length === CARDS_PER_BOARD && (
+            <Text style={styles.hintText}>{getHandHint(playerCards)}</Text>
+          )}
         </View>
-        {isArrangement && playerCards.length === CARDS_PER_BOARD && (
-          <Text style={styles.hintText}>{getHandHint(playerCards)}</Text>
-        )}
 
         {winner && (
           <View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge]}>
@@ -307,17 +315,18 @@ export default function Board({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: COLORS.boardBorder,
-    padding: 0,
-    width: '48%',
-    marginBottom: 4,
     overflow: 'hidden',
   },
   pressableInner: {
-    padding: 6,
+    flex: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    justifyContent: 'center',
   },
   active: {
     borderColor: COLORS.boardActive,
@@ -346,12 +355,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flex: 1,
   },
   boardLabel: {
     color: COLORS.textDim,
@@ -360,6 +370,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
+  rowLabel: {
+    color: COLORS.textDim,
+    fontSize: 7,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    width: 20,
+    textAlign: 'center',
+  },
   potArea: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,46 +385,28 @@ const styles = StyleSheet.create({
   },
   potLabel: {
     color: COLORS.gold,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
   },
   floatingChips: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     position: 'absolute',
     right: -4,
     top: -2,
   },
-  sectionLabel: {
-    color: COLORS.textDim,
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    marginTop: 2,
-    marginBottom: 1,
-  },
   cardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    minHeight: 48,
     alignItems: 'center',
-    gap: 2,
-  },
-  communityRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 2,
-    alignItems: 'center',
+    gap: 1,
+    paddingVertical: 1,
   },
   communitySeparator: {
-    width: 4,
+    width: 3,
   },
   emptySlot: {
-    width: 32,
-    height: 46,
-    borderRadius: 5,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
     borderStyle: 'dashed',
@@ -420,12 +420,11 @@ const styles = StyleSheet.create({
   },
   plusText: {
     color: COLORS.gold,
-    fontSize: 16,
+    fontSize: 14,
   },
   handName: {
     color: COLORS.textMuted,
-    fontSize: 9,
-    textAlign: 'center',
+    fontSize: 8,
     fontWeight: '600',
   },
   winnerHandName: {
@@ -433,11 +432,10 @@ const styles = StyleSheet.create({
   },
   hintText: {
     color: COLORS.textMuted,
-    fontSize: 8,
+    fontSize: 7,
     fontWeight: '600',
-    textAlign: 'center',
+    marginLeft: 4,
     opacity: 0.7,
-    marginTop: 1,
   },
   winnerBadge: {
     position: 'absolute',
@@ -457,7 +455,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.goldDim,
   },
   winnerText: {
-    color: '#000000',
+    color: COLORS.background,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,

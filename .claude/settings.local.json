@@ -119,7 +119,8 @@
       "Bash(fastlane --version 2>&1)",
       "Bash(cd C:/Projects/Caps && eas build --platform ios --profile production --non-interactive 2>&1 | tail -30)",
       "Bash(cd C:/Projects/Caps && eas build --platform ios --profile testflight --non-interactive 2>&1 | tail -30)",
-      "Bash(eas submit:*)"
+      "Bash(eas submit:*)",
+      "Bash(curl -s --ftp-create-dirs --user \"ftableco:Sb9k46-l\\)WI2Gq\" ftp://195.225.46.105/public_html/caps/ -Q \"TYPE A\" 2>&1 | head -5)"
     ]
   }
 }
