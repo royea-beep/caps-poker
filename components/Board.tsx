@@ -329,16 +329,16 @@ export default function Board({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: COLORS.boardBorder,
+    backgroundColor: 'rgba(13, 74, 38, 0.7)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
   },
   pressableInner: {
     flex: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     justifyContent: 'center',
   },
   active: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   selected: {
     borderColor: COLORS.gold,
-    borderWidth: 2.5,
+    borderWidth: 2,
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
@@ -429,9 +429,9 @@ const styles = StyleSheet.create({
     width: 3,
   },
   emptySlot: {
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
@@ -439,11 +439,11 @@ const styles = StyleSheet.create({
   },
   dropTarget: {
     borderColor: COLORS.gold,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   plusText: {
-    color: COLORS.gold,
-    fontSize: 14,
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 16,
   },
   handName: {
     color: COLORS.textMuted,

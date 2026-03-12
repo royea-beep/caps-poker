@@ -1,4 +1,4 @@
-// Caps Poker Theme — Gaming palette: vibrant, bold, aggressive
+// Caps Poker Theme — Poker felt table aesthetic
 
 // ─── Spacing ────────────────────────────────────────────────────────────────
 export const spacing = {
@@ -22,36 +22,36 @@ export const fontWeight = {
   black: '900' as const,
 };
 
-// ─── Colors (Gaming palette — neon accents, strong contrast) ────────────────
+// ─── Colors (Poker felt green + gold accents) ───────────────────────────────
 export const colors = {
-  // Core surfaces
-  background: '#0a0a0f',
-  surface: '#12121f',
-  surfaceRaised: '#1a1a2e',
-  border: '#2a2a4a',
+  // Core surfaces — poker felt green
+  background: '#0a3d1f',
+  surface: '#0d4a26',
+  surfaceRaised: '#126b32',
+  border: '#1a6b38',
   overlay: 'rgba(0,0,0,0.85)',
 
   // Gold accent (primary)
-  gold: '#FFD700',
-  goldLight: '#FFE44D',
-  goldDim: '#CC9900',
-  goldGlow: '#FFD70066',
+  gold: '#f0c040',
+  goldLight: '#f5d060',
+  goldDim: '#b89020',
+  goldGlow: '#f0c04066',
 
   // Neon accents
-  neonBlue: '#00D4FF',
+  neonBlue: '#00e5ff',
   neonPurple: '#8B5CF6',
   neonGreen: '#00FF88',
   neonRed: '#FF3366',
 
   // Text
   text: '#FFFFFF',
-  textMuted: '#A0A0C0',
-  textDim: '#606080',
+  textMuted: '#b0d0b8',
+  textDim: '#6a8a70',
 
   // Cards
-  cardRed: '#e63946',
-  cardBlack: '#1a1a2e',
-  cardBack: '#1a1a3e',
+  cardRed: '#cc2233',
+  cardBlack: '#1a1a1a',
+  cardBack: '#1a3a28',
   cardFace: '#FFFFFF',
 
   // Semantic
@@ -60,27 +60,27 @@ export const colors = {
   danger: '#FF3366',
 
   // Board
-  boardBorder: '#2a2a4a',
-  boardActive: '#00D4FF',
+  boardBorder: '#1a6b38',
+  boardActive: '#00e5ff',
   boardFull: '#00FF88',
 
-  // Legacy aliases — backward compat (map old keys to new values)
-  felt: '#12121f',
-  feltLight: '#1a1a2e',
-  goldBright: '#FFE44D',
+  // Legacy aliases — backward compat
+  felt: '#0a3d1f',
+  feltLight: '#0d4a26',
+  goldBright: '#f5d060',
   cardWhite: '#FFFFFF',
-  cardBackPattern: '#2a2a4a',
+  cardBackPattern: '#2a5a3a',
   red: '#FF3366',
-  black: '#1a1a2e',
+  black: '#1a1a1a',
   white: '#FFFFFF',
   textPrimary: '#FFFFFF',
-  textSecondary: '#A0A0C0',
+  textSecondary: '#b0d0b8',
   chipGreen: '#00FF88',
   chipRed: '#FF3366',
 
   // Button
-  buttonPrimary: '#FFD700',
-  buttonSecondary: '#1a1a3e',
+  buttonPrimary: '#f0c040',
+  buttonSecondary: '#0d4a26',
   buttonDanger: '#FF3366',
 } as const;
 

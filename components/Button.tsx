@@ -56,7 +56,7 @@ export function Button({
     variant === 'gold'
       ? [styles.variantGold, platformShadow(COLORS.gold, 4, 0.5, 8, 8)]
       : variant === 'secondary'
-      ? [styles.variantSecondary, platformShadow(COLORS.neonBlue, 0, 0.2, 6, 4)]
+      ? [styles.variantSecondary, platformShadow(COLORS.gold, 0, 0.15, 6, 4)]
       : styles.variantGhost;
 
   const textStyle =
@@ -68,7 +68,7 @@ export function Button({
 
   const content = loading ? (
     <ActivityIndicator
-      color={variant === 'gold' ? COLORS.background : COLORS.neonBlue}
+      color={variant === 'gold' ? COLORS.background : COLORS.gold}
       size="small"
     />
   ) : (
@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gold,
   },
   variantSecondary: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1.5,
-    borderColor: COLORS.neonBlue,
+    borderColor: COLORS.gold,
   },
   variantGhost: {
     backgroundColor: 'transparent',
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   textSecondary: {
-    color: COLORS.neonBlue,
+    color: COLORS.gold,
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 2,

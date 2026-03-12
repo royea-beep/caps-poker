@@ -25,7 +25,7 @@ export default function HomeScreen() {
 
   const sessionNet = chips - sessionStartChips;
 
-  // Pulsing glow behind title (native only — skip on web)
+  // Pulsing glow behind title (native only)
   const glowOpacity = useSharedValue(0.3);
 
   useEffect(() => {
@@ -47,7 +47,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.titleSection}>
-          {/* Glow — static on web, animated on native */}
           {isWeb ? (
             <View style={[styles.titleGlow, styles.titleGlowWeb]} />
           ) : (
@@ -110,21 +109,21 @@ const styles = StyleSheet.create({
   },
   titleGlow: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: COLORS.neonBlue,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: COLORS.gold,
     top: -40,
     alignSelf: 'center',
     zIndex: -1,
   },
   titleGlowWeb: {
-    opacity: 0.35,
+    opacity: 0.25,
     ...Platform.select({
       web: {
-        background: `radial-gradient(circle, ${COLORS.neonBlue}88 0%, ${COLORS.background}00 70%)`,
-        width: 260,
-        height: 260,
+        background: `radial-gradient(circle, ${COLORS.gold}66 0%, ${COLORS.background}00 70%)`,
+        width: 280,
+        height: 280,
         top: -60,
       } as any,
       default: {},
@@ -132,32 +131,33 @@ const styles = StyleSheet.create({
   },
   titleSmall: {
     color: COLORS.gold,
-    fontSize: 20,
-    letterSpacing: 12,
+    fontSize: 22,
+    letterSpacing: 14,
     marginBottom: 8,
   },
   title: {
-    fontSize: 72,
+    fontSize: 80,
     fontWeight: '900',
     color: COLORS.gold,
-    letterSpacing: 16,
+    letterSpacing: 20,
     textShadowColor: COLORS.goldGlow,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 30,
+    textShadowRadius: 40,
   },
   titleSub: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '300',
-    color: COLORS.neonBlue,
-    letterSpacing: 12,
+    color: COLORS.textMuted,
+    letterSpacing: 14,
     marginTop: -4,
   },
   titleLine: {
     width: '60%',
-    height: 2,
-    backgroundColor: COLORS.neonBlue,
-    marginTop: 12,
+    height: 1,
+    backgroundColor: COLORS.gold,
+    marginTop: 16,
     borderRadius: 1,
+    opacity: 0.4,
   },
   statsRow: {
     alignItems: 'center',
