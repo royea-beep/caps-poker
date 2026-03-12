@@ -32,35 +32,43 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>YOUR HAND ({cards.length})</Text>
-      <View style={styles.grid}>
-        <View style={styles.row}>
-          {topRow.map(renderCard)}
-        </View>
-        {bottomRow.length > 0 && (
+      <Text style={styles.label}>
+        YOUR HAND ({cards.length} remaining)
+      </Text>
+      {cards.length > 0 ? (
+        <View style={styles.grid}>
           <View style={styles.row}>
-            {bottomRow.map(renderCard)}
+            {topRow.map(renderCard)}
           </View>
-        )}
-      </View>
+          {bottomRow.length > 0 && (
+            <View style={styles.row}>
+              {bottomRow.map(renderCard)}
+            </View>
+          )}
+        </View>
+      ) : (
+        <View style={styles.emptyRow}>
+          <Text style={styles.emptyText}>All cards placed!</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 3,
+    paddingVertical: 4,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
   },
   label: {
     color: COLORS.neonBlue,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 2,
     marginLeft: 12,
-    marginBottom: 3,
+    marginBottom: 4,
     textTransform: 'uppercase',
   },
   grid: {
@@ -92,5 +100,15 @@ const styles = StyleSheet.create({
       android: { elevation: 6 },
       default: {},
     }),
+  },
+  emptyRow: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  emptyText: {
+    color: COLORS.neonGreen,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });
