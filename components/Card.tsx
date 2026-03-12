@@ -22,31 +22,28 @@ interface CardProps {
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
-  hearts: '♥',
-  diamonds: '♦',
-  clubs: '♣',
-  spades: '♠',
+  hearts: '\u2665',
+  diamonds: '\u2666',
+  clubs: '\u2663',
+  spades: '\u2660',
 };
 
 export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight }: CardProps) {
-  const width = cardWidth ?? (small ? 32 : 48);
-  const height = cardHeight ?? (small ? 46 : 70);
-  const rankSize = cardHeight ? Math.max(8, Math.floor(height * 0.24)) : (small ? 11 : 16);
-  const suitSize = cardHeight ? Math.max(9, Math.floor(height * 0.28)) : (small ? 12 : 18);
-  const backTextSize = cardHeight ? Math.max(12, Math.floor(height * 0.45)) : 20;
+  const width = cardWidth ?? (small ? 37 : 55);
+  const height = cardHeight ?? (small ? 53 : 80);
+  const rankSize = cardHeight ? Math.max(10, Math.floor(height * 0.30)) : (small ? 13 : 20);
+  const suitSize = cardHeight ? Math.max(11, Math.floor(height * 0.34)) : (small ? 14 : 22);
+  const backTextSize = cardHeight ? Math.max(14, Math.floor(height * 0.45)) : 24;
 
   const prevFaceDownRef = useRef(faceDown);
-  // 0 = showing back, 1 = showing front
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
   const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (prevFaceDownRef.current === true && faceDown === false && card) {
-      // Animate flip: back → front
       flipProgress.value = 0;
       flipProgress.value = withTiming(1, { duration: flipDuration });
     } else {
-      // Instant (initial render or going back to faceDown)
       flipProgress.value = faceDown ? 0 : 1;
     }
     prevFaceDownRef.current = faceDown;
@@ -78,13 +75,13 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   });
 
   const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: glowOpacity.value * 2,
+    borderWidth: glowOpacity.value * 2.5,
     borderColor: COLORS.goldBright,
     shadowColor: COLORS.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: glowOpacity.value * 0.8,
-    shadowRadius: glowOpacity.value * 8,
-    elevation: glowOpacity.value * 8,
+    shadowOpacity: glowOpacity.value * 0.9,
+    shadowRadius: glowOpacity.value * 10,
+    elevation: glowOpacity.value * 10,
   }));
 
   // No card data — static back
@@ -92,7 +89,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     return (
       <View style={[styles.card, styles.faceDown, { width, height }]}>
         <View style={styles.backPattern}>
-          <Text style={[styles.backText, { fontSize: backTextSize }]}>♠</Text>
+          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2660'}</Text>
         </View>
       </View>
     );
@@ -106,7 +103,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
       {/* Back face */}
       <Animated.View style={[styles.card, styles.faceDown, { width, height }, backAnimStyle]}>
         <View style={styles.backPattern}>
-          <Text style={[styles.backText, { fontSize: backTextSize }]}>♠</Text>
+          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2660'}</Text>
         </View>
       </Animated.View>
 
@@ -134,27 +131,29 @@ export default function CardComponent({ card, faceDown = false, small, highlight
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 5,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 1,
   },
   faceUp: {
     backgroundColor: COLORS.cardWhite,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.12)',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.background,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.4,
+        shadowRadius: 5,
       },
-      android: { elevation: 4 },
+      android: { elevation: 6 },
       default: {},
     }),
   },
   faceDown: {
     backgroundColor: COLORS.cardBack,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.cardBackPattern,
   },
   backPattern: {
@@ -166,13 +165,14 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   rank: {
-    fontWeight: '800',
+    fontWeight: '900',
     marginBottom: -4,
   },
   suit: {
     marginTop: -2,
+    fontWeight: '600',
   },
   dimmed: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
 });
