@@ -111,7 +111,7 @@
 - TestFlight: v1.4.0 build 04890b1f submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
 - External testers: 1) `eas build --platform ios --profile production` 2) `eas submit --platform ios --profile preview` 3) Add testers in ASC → TestFlight → External Testers
 - Web shadow warnings: animated shadows in Board.tsx/Card.tsx (reanimated worklets) still use shadow* props — reanimated UI thread can't access Platform.select. Static shadows fixed in Button/Board/Card/PlayerHand
-- SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
+- SSL fix for caps.ftable.co.il — ALL subdomains broken (Apache serves compass.spd.co.il cert). cPanel cert install works but Apache vhosts not rebuilt. Needs WHM-level `/scripts/rebuildhttpdconf` by SPD hosting provider. Alternative: Cloudflare proxy. Details in SSL-INSTRUCTIONS.md (2026-03-12)
 - First multiplayer device test pending (needs dev build)
 - Internet multiplayer (Supabase) — future sprint
 
