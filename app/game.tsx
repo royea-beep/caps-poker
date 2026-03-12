@@ -180,7 +180,7 @@ export default function GameScreen() {
       boardCount,
     });
 
-    router.replace('/reveal');
+    router.replace('/results');
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
