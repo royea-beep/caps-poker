@@ -119,6 +119,9 @@ export default function Board({
 }: BoardProps) {
   const ch = cardHeightProp ?? 46;
   const cw = Math.round(ch * 0.7);
+  // Empty slots are ~30% smaller during arrangement
+  const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
+  const slotW = Math.round(slotH * 0.7);
 
   const pulseValue = useSharedValue(0.4);
 
@@ -215,8 +218,8 @@ export default function Board({
           </View>
         </View>
 
-        {/* Bot card rows — one row per bot */}
-        {botCardSets.map((botCardSet, botIdx) =>
+        {/* Bot card rows — hidden during arrangement, shown during reveal */}
+        {!isArrangement && botCardSets.map((botCardSet, botIdx) =>
           botCardSet.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
               <Text style={styles.rowLabel}>{multiBot ? `B${botIdx + 1}` : 'BOT'}</Text>
@@ -298,12 +301,12 @@ export default function Board({
             ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={cw} slotHeight={ch} />
+              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           )}
           {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
             Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={cw} slotHeight={ch} />
+              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           }
           {isArrangement && playerCards.length === CARDS_PER_BOARD && (

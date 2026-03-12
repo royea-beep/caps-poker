@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
-import { ConnectedPlayerInfo, GameSession } from '../types/gameTypes';
+import { ConnectedPlayerInfo, GameSession, RevealData } from '../types/gameTypes';
 
 interface GameStore {
   // Persisted state
@@ -13,6 +13,9 @@ interface GameStore {
 
   // Transient session state (NOT persisted)
   sessionStartChips: number;
+
+  // Reveal data (NOT persisted — passed between game → reveal screens)
+  revealData: RevealData | null;
 
   // Multiplayer state (NOT persisted)
   multiplayerMode: 'none' | 'host' | 'guest';
@@ -32,6 +35,10 @@ interface GameStore {
 
   // Session actions
   initSession: () => void;
+
+  // Reveal actions
+  setRevealData: (data: RevealData) => void;
+  clearRevealData: () => void;
 
   // Multiplayer actions
   setMultiplayerMode: (mode: 'none' | 'host' | 'guest') => void;
@@ -55,6 +62,9 @@ export const useGameStore = create<GameStore>()(
 
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
+
+      // Reveal data (not persisted)
+      revealData: null,
 
       // Multiplayer state (not persisted via partialize)
       multiplayerMode: 'none',
@@ -89,6 +99,10 @@ export const useGameStore = create<GameStore>()(
           return { config: merged };
         }),
       resetConfig: () => set({ config: { ...DEFAULT_CONFIG } }),
+
+      // Reveal actions
+      setRevealData: (data) => set({ revealData: data }),
+      clearRevealData: () => set({ revealData: null }),
 
       // Multiplayer actions
       setMultiplayerMode: (mode) => set({ multiplayerMode: mode }),
