@@ -2,15 +2,15 @@
   "expo": {
     "name": "Caps Poker",
     "slug": "caps-poker",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "capspoker",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0a1a0f"
+      "backgroundColor": "#0a3d1f"
     },
     "ios": {
       "supportsTablet": false,
@@ -25,7 +25,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0a1a0f",
+        "backgroundColor": "#0a3d1f",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
