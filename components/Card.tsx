@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -141,11 +141,16 @@ const styles = StyleSheet.create({
   },
   faceUp: {
     backgroundColor: COLORS.cardWhite,
-    shadowColor: COLORS.background,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.background,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+      },
+      android: { elevation: 4 },
+      default: {},
+    }),
   },
   faceDown: {
     backgroundColor: COLORS.cardBack,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 
@@ -82,10 +82,15 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gold,
     transform: [{ translateY: -6 }, { scale: 1.08 }],
     borderRadius: 6,
-    shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.6,
+        shadowRadius: 8,
+      },
+      android: { elevation: 6 },
+      default: {},
+    }),
   },
 });

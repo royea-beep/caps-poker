@@ -109,6 +109,8 @@
 
 ## Open Items
 - TestFlight: v1.3.0 build e3fbbda4 submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
+- External testers: 1) `eas build --platform ios --profile production` 2) `eas submit --platform ios --profile preview` 3) Add testers in ASC → TestFlight → External Testers
+- Web shadow warnings: animated shadows in Board.tsx/Card.tsx (reanimated worklets) still use shadow* props — reanimated UI thread can't access Platform.select. Static shadows fixed in Button/Board/Card/PlayerHand
 - SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
 - First multiplayer device test pending (needs dev build)
 - Internet multiplayer (Supabase) — future sprint
@@ -133,3 +135,4 @@
 - Sprint 17: Arrangement UX audit (all 4 checks pass), timer 3-tier colors (green/yellow/red), reveal phase verified, TestFlight needs ascAppId, web re-deploy, 5 new tests (69 total)
 - Sprint 21: Gaming visual redesign — neon color palette (theme.ts rewrite), title/logo glow animation, button redesign (gold+neonBlue), board layout polish (neonBlue active pulse, neonGreen complete flash), PlayerHand gold selection glow, gameover shake+neonRed glow, summary neonGreen/neonRed score colors, Card suit colors from theme, 10 new theme tests (79 total), web re-deploy
 - Sprint 22: Vertical board layout — 4 boards stacked (no scroll), dynamic card sizing (Dimensions), Board.tsx full-width compact rows, Card.tsx dynamic dimensions props, PlayerHand gold border+scale select, hardcoded colors audit (Badge/Board/Card/game.tsx → COLORS refs), bot row hidden during arrangement, player hand hidden during reveal, web re-deploy
+- Sprint 23: Button press fix (reanimated → RN Animated + TouchableOpacity), web shadow deprecation fix (Platform.select for static shadows in Button/Board/Card/PlayerHand), external tester distribution docs, web re-deploy
