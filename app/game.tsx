@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -32,7 +32,6 @@ const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
 };
 
 // Layout constants for card size computation
-const { height: SCREEN_H } = Dimensions.get('window');
 const SAFE_AREA = 84;
 const TOP_BAR_H = 44;
 const BOT_STATUS_H = 20;
@@ -41,6 +40,7 @@ const READY_BTN_H = 48;
 
 export default function GameScreen() {
   const router = useRouter();
+  const { height: SCREEN_H } = useWindowDimensions();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
