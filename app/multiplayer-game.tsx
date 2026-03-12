@@ -364,6 +364,7 @@ export default function MultiplayerGameScreen() {
   const handleSelectCard = useCallback((card: Card) => {
     if (!isArranging) return;
     haptic(Haptics.ImpactFeedbackStyle.Light);
+    playSound('cardSelect');
     setSelectedCardId((prev) => (prev === card.id ? null : card.id));
   }, [isArranging]);
 

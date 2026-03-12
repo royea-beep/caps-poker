@@ -25,8 +25,8 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint-38 complete — professional app icon + splash screen
-- Version: 1.7.0, buildNumber: 10 (auto-increment), EAS production build in progress
+- Sprint-39 complete — sound effects (7 WAV files, wired to game events)
+- Version: 1.8.0, buildNumber: 11 (auto-increment), EAS production build in progress
 - TypeScript: 0 errors
 - Tests: 90/90 passing (14 hand evaluator + 19 simulation + 39 game logic + 7 hand hint + 11 theme)
 - Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
@@ -120,7 +120,7 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- EAS production build v1.7.0 in progress — submit to TestFlight after build completes
+- EAS production build v1.8.0 in progress — submit to TestFlight after build completes
 - First multiplayer device test pending (needs dev build on 2 devices)
 - Multiplayer polish remaining: animated board reveal on guest side, player disconnect toast during game, per-player names in results
 - App Store screenshots: needed for submission (see screenshots/README.md)
@@ -158,3 +158,4 @@
 - Sprint 36: READ-ONLY multiplayer diagnostic. Full protocol map, 9 gap analysis, implementation plan. No code changed.
 - Sprint 37: Multiplayer functional — 3 critical gaps fixed. A1: server/client instances stored in Zustand (mpServer/mpClient), survive screen transitions, removed dead onSendReady callback. A2: multiplayer-game.tsx reveal flow builds RevealData and navigates to /results (same as single-player). A3: NEXT_HAND_REQUEST protocol message, server tracks requests, re-deals when all players ready. B1: multiplayer-game vertical board layout (from game.tsx), dynamic card sizing via useSafeAreaInsets, same tap-to-select UX, player names from connectedPlayers. B2: waiting overlay + results.tsx "Waiting for other players" state. v1.6.0, web re-deploy, EAS production build
 - Sprint 38: App icon + splash screen generated via Pillow script. Icon: 1024x1024, gold "C" on poker green radial gradient, gold ring border, corner suit symbols. Splash: 1284x2778, "CAPS POKER" on green felt with gold text + suit symbols. Favicon: 64x64. Android adaptive icon updated. Screenshots README created. v1.7.0, web re-deploy, EAS production build
+- Sprint 39: Sound effects — 7 WAV files generated via numpy script (cardPlace, cardSelect, cardFlip, chipsWin, lose, complete, timerLow). sounds.ts rewritten with new SoundName type + WAV requires. Wired: cardSelect on tap in game.tsx + multiplayer-game.tsx, timerLow at 10s warning in game.tsx, win/lose conditional in results.tsx. Settings toggle already existed. Preload on app start via _layout.tsx. v1.8.0, web re-deploy, EAS production build
