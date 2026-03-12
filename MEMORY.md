@@ -25,10 +25,13 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 17 complete — arrangement UX audit, timer colors, TestFlight prep, web deploy
-- Version: 1.2.0, latest build: bbb538b7 (FINISHED, preview/internal)
+- Sprint 21 complete — gaming visual redesign with neon palette
+- Version: 1.3.0, buildNumber: 5, latest build: e3fbbda4 (FINISHED, preview/internal)
+- TestFlight: v1.3.0 build 5 submitted 2026-03-12, processing by Apple
 - TypeScript: 0 errors
-- Tests: 69/69 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint)
+- Tests: 79/79 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint + 10 theme)
+- Web deployed to caps.ftable.co.il (FTP upload, 32 files)
+- No git remote configured — commit 5656767 is local only
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
 ## Game Config (all runtime-configurable in Settings)
@@ -105,7 +108,7 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- TestFlight submission: needs `ascAppId` in eas.json → run `eas submit --platform ios` interactively first time to set up App Store Connect app, or add `ascAppId` manually from ASC dashboard
+- TestFlight: v1.3.0 build e3fbbda4 submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
 - SSL fix for caps.ftable.co.il — needs hosting provider to rebuild Apache SNI config (confirmed still broken 2026-03-11)
 - First multiplayer device test pending (needs dev build)
 - Internet multiplayer (Supabase) — future sprint
@@ -128,3 +131,4 @@
 - Sprint 15: CP branded icon (sharp SVG), Badge in Board+Summary, v1.2.0, EAS preview build, web re-deploy, 4 new tests (57 total)
 - Sprint 16: Hand hint indicator (Pair/Trips/Flush Draw etc.), multiplayer test guide, EAS build success (bbb538b7), 7 new tests (64 total)
 - Sprint 17: Arrangement UX audit (all 4 checks pass), timer 3-tier colors (green/yellow/red), reveal phase verified, TestFlight needs ascAppId, web re-deploy, 5 new tests (69 total)
+- Sprint 21: Gaming visual redesign — neon color palette (theme.ts rewrite), title/logo glow animation, button redesign (gold+neonBlue), board layout polish (neonBlue active pulse, neonGreen complete flash), PlayerHand gold selection glow, gameover shake+neonRed glow, summary neonGreen/neonRed score colors, Card suit colors from theme, 10 new theme tests (79 total), web re-deploy
