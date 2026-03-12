@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { DEFAULT_CONFIG, COLORS, GameConfig, NUM_BOARDS } from '../constants/gameConfig';
+import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
 
 interface SettingRowProps {
   label: string;
@@ -84,11 +84,17 @@ function PlayerCountSelector() {
   const value = useGameStore((s) => s.config.numberOfPlayers);
   const updateConfig = useGameStore((s) => s.updateConfig);
 
+  const labels: Record<number, string> = {
+    2: '2 Players (vs 1 Bot)',
+    3: '3 Players (vs 2 Bots)',
+    4: '4 Players (vs 3 Bots)',
+  };
+
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Number of Players</Text>
-        <Text style={styles.rowHint}>For multiplayer (single-player is always 2)</Text>
+        <Text style={styles.rowLabel}>Players</Text>
+        <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
       </View>
       <View style={styles.selectorRow}>
         {([2, 3, 4] as const).map((n) => (
@@ -113,7 +119,8 @@ export default function SettingsScreen() {
   const resetConfig = useGameStore((s) => s.resetConfig);
   const navigateToSimulation = () => router.push('/simulate');
 
-  const buyIn = config.potPerBoard * NUM_BOARDS;
+  const boardCount = getBoardCount(config.numberOfPlayers);
+  const buyIn = config.potPerBoard * boardCount;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -129,7 +136,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>GAMEPLAY</Text>
         <PlayerCountSelector />
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
-        <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${NUM_BOARDS} = ${buyIn}`} min={1} />
+        <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
 
         <Text style={styles.sectionTitle}>TIMING</Text>

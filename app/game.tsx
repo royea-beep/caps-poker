@@ -9,19 +9,20 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import CompleteOverlay from '../components/CompleteOverlay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { COLORS, Card, NUM_BOARDS, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
 import {
   BoardState,
-  initializeGame,
-  placeBotCards,
+  initializeGameMulti,
+  placeSingleBotCards,
   autoFillPlayerCards,
-  calculateHandResults,
+  calculateHandResultsMulti,
   BoardResult,
 } from '../utils/gameLogic';
 import { GamePhase } from '../types/gameTypes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { useRevealSequence } from '../hooks/useRevealSequence';
 import { playSound } from '../utils/sounds';
+import { HandResult } from '../utils/handEvaluator';
 
 const haptic = (style: Haptics.ImpactFeedbackStyle) => {
   Haptics.impactAsync(style).catch(() => {});
@@ -37,19 +38,6 @@ const TOP_BAR_H = 44;
 const BOT_STATUS_H = 20;
 const PLAYER_HAND_H = 120;
 const READY_BTN_H = 48;
-const BOARD_GAPS = 12; // 3 gaps between 4 boards
-const BOARD_CHROME = 22; // header + padding per board
-
-// Arrangement: player hand + ready btn shown, 2 card rows per board
-const arrangeBoardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / 4 - BOARD_CHROME;
-const arrangeCardH = Math.floor(arrangeBoardSpace / 2);
-
-// Reveal: no player hand, 3 card rows per board (bot + community + player)
-const revealBoardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - BOARD_GAPS) / 4 - BOARD_CHROME;
-const revealCardH = Math.floor(revealBoardSpace / 3);
-
-// Use the tighter constraint so card size is consistent
-const BOARD_CARD_H = Math.max(36, Math.min(arrangeCardH, revealCardH));
 
 export default function GameScreen() {
   const router = useRouter();
@@ -57,14 +45,29 @@ export default function GameScreen() {
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
 
+  const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4;
+  const numberOfBots = numberOfPlayers - 1;
+  const boardCount = getBoardCount(numberOfPlayers);
+
+  // Dynamic card height based on board count and number of bot rows during reveal
+  const BOARD_GAPS = (boardCount - 1) * 4;
+  const BOARD_CHROME = 22;
+  const arrangeBoardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const arrangeCardH = Math.floor(arrangeBoardSpace / 2);
+  // Reveal: no player hand, (numberOfBots + 2) card rows per board (N bot rows + community + player)
+  const revealRows = numberOfBots + 2;
+  const revealBoardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const revealCardH = Math.floor(revealBoardSpace / revealRows);
+  const BOARD_CARD_H = Math.max(28, Math.min(arrangeCardH, revealCardH));
+
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
-  const [botHand, setBotHand] = useState<Card[]>([]);
+  const [botsReady, setBotsReady] = useState<boolean[]>([]);
   const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: config.arrangementTime });
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [selectedBoardIndex, setSelectedBoardIndex] = useState<number | null>(null);
-  const [botReady, setBotReady] = useState(false);
   const [boardResults, setBoardResults] = useState<BoardResult[]>([]);
+  const [allBotResults, setAllBotResults] = useState<HandResult[][]>([]);
   const [showComplete, setShowComplete] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [completeBonusAmount, setCompleteBonusAmount] = useState(0);
@@ -82,7 +85,7 @@ export default function GameScreen() {
   const isArranging = phase.type === 'arranging';
   const isRevealing = phase.type === 'revealing';
 
-  // Auto-fill and ready handler (defined early so hooks can reference it)
+  // Auto-fill and ready handler
   const handleAutoFillAndReady = useCallback(() => {
     setBoards((currentBoards) => {
       const { boards: filledBoards, remainingHand } = autoFillPlayerCards(playerHandRef.current, currentBoards);
@@ -125,13 +128,11 @@ export default function GameScreen() {
 
   const handleAllRevealed = useCallback(() => {
     if (!mountedRef.current) return;
-    setBoardResults((currentResults) => {
-      return currentResults;
-    });
+    setBoardResults((currentResults) => currentResults);
   }, []);
 
   const revealSequence = useRevealSequence({
-    boardCount: NUM_BOARDS,
+    boardCount,
     revealDuration: config.boardRevealDuration,
     onBoardRevealed: handleBoardRevealed,
     onAllRevealed: handleAllRevealed,
@@ -147,34 +148,38 @@ export default function GameScreen() {
     };
   }, []);
 
-  // We need refs for the calculated results so handleAllRevealed can access them
   const playerChipsWonRef = useRef(0);
   const isCompleteRef = useRef(false);
 
   // Initialize game
   useEffect(() => {
-    const { gameState } = initializeGame();
-    setBoards(gameState.boards);
-    setPlayerHand(gameState.playerHand);
-    setBotHand(gameState.botHand);
+    const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
+    setBoards(initialBoards);
+    setPlayerHand(pHand);
+    setBotsReady(new Array(numberOfBots).fill(false));
 
-    // Deduct pot from player chips
-    const totalPot = config.potPerBoard * NUM_BOARDS;
+    // Deduct buy-in
+    const totalPot = config.potPerBoard * boardCount;
     addChips(-totalPot);
 
-    // Bot places cards after random delay
-    const botDelay = config.botSpeedMin + Math.random() * (config.botSpeedMax - config.botSpeedMin);
-    const botTimer = setTimeout(() => {
-      if (!mountedRef.current) return;
-      setBoards((prev) => placeBotCards(gameState.botHand, prev));
-      setBotReady(true);
-    }, botDelay);
-    timeoutsRef.current.push(botTimer);
-
-    return () => clearTimeout(botTimer);
+    // Bot timers — each bot places cards after independent random delay
+    for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
+      const delay = config.botSpeedMin + Math.random() * (config.botSpeedMax - config.botSpeedMin);
+      const botCards = botHands[botIdx];
+      const botTimer = setTimeout(() => {
+        if (!mountedRef.current) return;
+        setBoards((prev) => placeSingleBotCards(botCards, prev, botIdx));
+        setBotsReady((prev) => {
+          const updated = [...prev];
+          updated[botIdx] = true;
+          return updated;
+        });
+      }, delay);
+      timeoutsRef.current.push(botTimer);
+    }
   }, []);
 
-  // Sync timer timeLeft into phase state (for display)
+  // Sync timer timeLeft into phase state
   useEffect(() => {
     if (isArranging) {
       setPhase({ type: 'arranging', timeLeft: timer.timeLeft });
@@ -184,48 +189,47 @@ export default function GameScreen() {
   const startRevealPhase = useCallback(() => {
     setPhase({ type: 'revealing', boardIndex: -1 });
 
-    // Calculate results using functional state read for boards
     setBoards((currentBoards) => {
-      const results = calculateHandResults(currentBoards, config.potPerBoard, config.completeBonusPercent);
+      const results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
       setBoardResults(results.boardResults);
+      setAllBotResults(results.allBotResults);
       setIsComplete(results.isComplete);
       setCompleteBonusAmount(results.completeBonusAmount);
 
-      const totalPaid = config.potPerBoard * NUM_BOARDS;
+      const totalPaid = config.potPerBoard * boardCount;
       const playerNet = results.playerChipsWon - totalPaid;
       setNetChips(playerNet);
 
       playerChipsWonRef.current = results.playerChipsWon;
       isCompleteRef.current = results.isComplete;
 
-      if (results.isComplete) {
-        setCompleteWinner(results.boardResults.every((r) => r.winner === 'player') ? 'player' : 'bot');
+      if (results.isComplete && results.completeWinner) {
+        setCompleteWinner(results.completeWinner);
       }
 
-      // Start reveal sequence after a microtask so boardResults state is set
       Promise.resolve().then(() => {
         revealSequence.startReveal();
       });
 
       return currentBoards;
     });
-  }, [config, revealSequence]);
+  }, [config, revealSequence, numberOfPlayers, boardCount]);
 
-  // When player is waiting and bot becomes ready -> start reveal
+  // When player is waiting and all bots ready -> start reveal
+  const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
   useEffect(() => {
-    if (phase.type === 'waiting_for_bot' && botReady) {
+    if (phase.type === 'waiting_for_bot' && allBotsReady) {
       startRevealPhase();
     }
-  }, [phase.type, botReady, startRevealPhase]);
+  }, [phase.type, allBotsReady, startRevealPhase]);
 
-  // When all reveals are done (revealSequence.isRevealing goes false after being true)
+  // When all reveals done
   const wasRevealingRef = useRef(false);
   useEffect(() => {
     if (revealSequence.isRevealing) {
       wasRevealingRef.current = true;
     } else if (wasRevealingRef.current) {
       wasRevealingRef.current = false;
-      // All reveals done
       addChips(playerChipsWonRef.current);
       if (isCompleteRef.current) {
         setShowComplete(true);
@@ -252,7 +256,6 @@ export default function GameScreen() {
             Alert.alert('Board Full', 'This board already has 4 cards.');
             return prev;
           }
-          // Check if card is already placed on this board
           const isUsed = board.playerCards.some(
             (c) => c.suit === selectedCard.suit && c.rank === selectedCard.rank
           ) || board.openCards.some(
@@ -304,14 +307,8 @@ export default function GameScreen() {
     if (!allBoardsFull) return;
     hapticNotify(Haptics.NotificationFeedbackType.Success);
     timer.stop();
-    if (botReady) {
-      // Bot already ready, go straight to reveal
-      setPhase({ type: 'waiting_for_bot' });
-      // The useEffect watching waiting_for_bot + botReady will trigger startRevealPhase
-    } else {
-      setPhase({ type: 'waiting_for_bot' });
-    }
-  }, [allBoardsFull, timer, botReady]);
+    setPhase({ type: 'waiting_for_bot' });
+  }, [allBoardsFull, timer]);
 
   const handleCompleteDone = useCallback(() => {
     setShowComplete(false);
@@ -339,23 +336,26 @@ export default function GameScreen() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Navigate to summary screen via effect (not during render)
+  // Navigate to summary screen via effect
   useEffect(() => {
     if (phase.type === 'summary') {
       router.replace({
         pathname: '/summary',
         params: {
           results: JSON.stringify(
-            boardResults.map((r) => ({
+            boardResults.map((r, i) => ({
               winner: r.winner,
               playerHand: r.playerResult.name,
               botHand: r.botResult.name,
+              allBotHands: allBotResults[i]?.map((br) => br.name) || [],
             }))
           ),
           netChips: netChips.toString(),
           isComplete: isComplete.toString(),
           completeBonusAmount: completeBonusAmount.toString(),
           potPerBoard: config.potPerBoard.toString(),
+          boardCount: boardCount.toString(),
+          numberOfPlayers: numberOfPlayers.toString(),
         },
       });
     }
@@ -371,6 +371,7 @@ export default function GameScreen() {
     : COLORS.danger;
 
   const showPlayerHand = isArranging;
+  const readyBotCount = botsReady.filter(Boolean).length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -395,7 +396,9 @@ export default function GameScreen() {
             <Text style={styles.revealText}>REVEALING...</Text>
           )}
           {phase.type === 'waiting_for_bot' && (
-            <Text style={styles.waitingText}>Waiting for bot...</Text>
+            <Text style={styles.waitingText}>
+              Waiting for bot{numberOfBots > 1 ? 's' : ''}...
+            </Text>
           )}
         </View>
         <ChipsDisplay amount={chips} />
@@ -403,12 +406,18 @@ export default function GameScreen() {
 
       {/* Bot status */}
       <View style={styles.botSection}>
-        <Text style={styles.botLabel}>
-          BOT {botReady ? '\u2713 READY' : `(${botHand.length} cards)`}
-        </Text>
+        {numberOfBots === 1 ? (
+          <Text style={styles.botLabel}>
+            BOT {allBotsReady ? '\u2713 READY' : ''}
+          </Text>
+        ) : (
+          <Text style={styles.botLabel}>
+            BOTS {readyBotCount}/{numberOfBots} READY
+          </Text>
+        )}
       </View>
 
-      {/* Boards — 4 stacked vertically */}
+      {/* Boards — stacked vertically */}
       <View style={styles.boardsColumn}>
         {boards.map((board, i) => {
           const result = boardResults[i];
@@ -425,6 +434,9 @@ export default function GameScreen() {
               ]
             : [];
 
+          // All bot hand names for this board
+          const botHandNames = allBotResults[i]?.map((br) => br.name);
+
           return (
             <Board
               key={i}
@@ -432,16 +444,18 @@ export default function GameScreen() {
               openCards={board.openCards}
               closedCards={board.closedCards}
               playerCards={board.playerCards}
-              botCards={board.botCards}
+              botCards={board.allBotCards[0] || board.botCards}
+              allBotCards={board.allBotCards}
               revealed={board.revealed}
               active={revealSequence.currentBoardIndex === i}
-              potAmount={config.potPerBoard}
+              potAmount={config.potPerBoard * numberOfPlayers}
               winner={board.winner}
               playerHighlightIds={playerHighlightIds}
               botHighlightIds={botHighlightIds}
               boardHighlightIds={boardHighlightIds}
               playerHandName={board.playerResult?.name}
               botHandName={board.botResult?.name}
+              allBotHandNames={botHandNames}
               onPress={() => handleBoardPress(i)}
               onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
               isArrangement={isArranging}

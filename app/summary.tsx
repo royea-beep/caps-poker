@@ -17,13 +17,14 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { COLORS, NUM_BOARDS } from '../constants/gameConfig';
+import { COLORS, NUM_BOARDS, getBoardCount } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 
 interface BoardSummary {
   winner: 'player' | 'bot' | 'tie';
   playerHand: string;
   botHand: string;
+  allBotHands?: string[];
 }
 
 // Timing constants (ms)
@@ -45,6 +46,8 @@ export default function SummaryScreen() {
     isComplete: string;
     completeBonusAmount: string;
     potPerBoard: string;
+    boardCount: string;
+    numberOfPlayers: string;
   }>();
 
   let boardResults: BoardSummary[] = [];
@@ -56,6 +59,8 @@ export default function SummaryScreen() {
   }
   const netChips = parseInt(params.netChips || '0', 10) || 0;
   const potPerBoard = parseInt(params.potPerBoard || '25', 10) || 25;
+  const numberOfPlayers = parseInt(params.numberOfPlayers || '2', 10) || 2;
+  const boardCount = parseInt(params.boardCount || String(getBoardCount(numberOfPlayers)), 10);
   // netChips is already the net result (winnings minus amount paid in)
   const profit = netChips;
   const isComplete = params.isComplete === 'true';
@@ -128,7 +133,7 @@ export default function SummaryScreen() {
             </View>
             <Text style={styles.scoreDivider}>—</Text>
             <View style={styles.scoreItem}>
-              <Text style={styles.scoreLabel}>BOT</Text>
+              <Text style={styles.scoreLabel}>{numberOfPlayers > 2 ? 'BOTS' : 'BOT'}</Text>
               <Text style={[styles.scoreNum, { color: COLORS.neonRed }]}>{botWins}</Text>
             </View>
           </View>
@@ -157,9 +162,17 @@ export default function SummaryScreen() {
                   <Text style={[styles.handText, result.winner === 'player' && styles.handWinner]}>
                     You: {result.playerHand}
                   </Text>
-                  <Text style={[styles.handText, result.winner === 'bot' && styles.handWinner]}>
-                    Bot: {result.botHand}
-                  </Text>
+                  {result.allBotHands && result.allBotHands.length > 1 ? (
+                    result.allBotHands.map((hand, bi) => (
+                      <Text key={bi} style={[styles.handText, result.winner === 'bot' && styles.handWinner]}>
+                        Bot {bi + 1}: {hand}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={[styles.handText, result.winner === 'bot' && styles.handWinner]}>
+                      Bot: {result.botHand}
+                    </Text>
+                  )}
                 </View>
               </View>
             </Animated.View>
@@ -195,7 +208,7 @@ export default function SummaryScreen() {
             style={styles.buttons}
             entering={FadeIn.duration(400)}
           >
-            {chips >= config.potPerBoard * NUM_BOARDS ? (
+            {chips >= config.potPerBoard * boardCount ? (
               <Button title="NEXT HAND" variant="gold" onPress={() => router.replace('/game')} />
             ) : (
               <Button title="GAME OVER" variant="gold" onPress={() => router.replace('/gameover')} />

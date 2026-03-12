@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
+import { View, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { preloadSounds } from '../utils/sounds';
+
+// GestureHandlerRootView can fail to hydrate on web — use plain View
+const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
 
 export default function RootLayout() {
   const initSession = useGameStore((s) => s.initSession);
@@ -15,7 +19,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <RootWrapper style={{ flex: 1 }}>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -24,6 +28,6 @@ export default function RootLayout() {
           animation: 'fade',
         }}
       />
-    </GestureHandlerRootView>
+    </RootWrapper>
   );
 }
