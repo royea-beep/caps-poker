@@ -10,6 +10,10 @@ interface GameStore {
   config: GameConfig;
   handsPlayed: number;
   bestChips: number;
+  handsWon: number;
+  biggestWin: number;
+  playerName: string;
+  notificationsEnabled: boolean;
 
   // Transient session state (NOT persisted)
   sessionStartChips: number;
@@ -32,7 +36,11 @@ interface GameStore {
   setChips: (chips: number) => void;
   addChips: (amount: number) => void;
   incrementHandsPlayed: () => void;
+  incrementHandsWon: () => void;
   updateBestChips: () => void;
+  updateBiggestWin: (win: number) => void;
+  setPlayerName: (name: string) => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
 
@@ -63,6 +71,10 @@ export const useGameStore = create<GameStore>()(
       config: { ...DEFAULT_CONFIG },
       handsPlayed: 0,
       bestChips: DEFAULT_CONFIG.startingChips,
+      handsWon: 0,
+      biggestWin: 0,
+      playerName: '',
+      notificationsEnabled: true,
 
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
@@ -83,9 +95,15 @@ export const useGameStore = create<GameStore>()(
       setChips: (chips: number) => set({ chips }),
       addChips: (amount: number) => set((state) => ({ chips: state.chips + amount })),
       incrementHandsPlayed: () => set((state) => ({ handsPlayed: state.handsPlayed + 1 })),
+      incrementHandsWon: () => set((state) => ({ handsWon: state.handsWon + 1 })),
       updateBestChips: () => set((state) => ({
         bestChips: Math.max(state.bestChips, state.chips),
       })),
+      updateBiggestWin: (win: number) => set((state) => ({
+        biggestWin: Math.max(state.biggestWin, win),
+      })),
+      setPlayerName: (name: string) => set({ playerName: name }),
+      setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
@@ -145,7 +163,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled }),
     }
   )
 );

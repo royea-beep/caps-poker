@@ -25,11 +25,16 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint-41 complete — App Store submission v1.0.0
-- Version: 1.0.0 (public release), buildNumber: 13
-- App Store: submitted to ASC (build 454ae10a), pending Apple processing + review
-- Privacy policy: https://caps.ftable.co.il/privacy.html
-- Screenshots: 6 placeholder mockups (6.7" + 6.1") generated via Pillow
+- Sprint-42 complete — Phase 2 (leaderboard, internet MP, notifications)
+- Version: 1.1.0, buildNumber: 14 (auto-increment)
+- App Store: v1.0.0 (build 454ae10a) submitted, v1.1.0 build in progress
+- Privacy policy: https://caps.ftable.co.il/privacy.html (updated for leaderboard + online MP)
+- Supabase: @supabase/supabase-js installed, utils/supabase.ts shared client
+- Iron Rule 8: IMPLEMENTED — RealtimeServer/RealtimeClient via Supabase Realtime channels
+- New screens: leaderboard.tsx, lobby/internet-host.tsx, lobby/internet-join.tsx
+- New utils: leaderboard.ts, realtimeMultiplayer.ts, notifications.ts, supabase.ts
+- Store: playerName, notificationsEnabled, handsWon, biggestWin added (persisted)
+- NOTE: Supabase features degrade gracefully when .env not configured
 - TypeScript: 0 errors
 - Tests: 104/104 passing (14 hand evaluator + 19 simulation + 39 game logic + 7 hand hint + 11 theme + 14 full simulation)
 - Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
@@ -65,15 +70,18 @@
 ## File Structure
 /app/_layout.tsx, /app/index.tsx, /app/game.tsx, /app/results.tsx, /app/summary.tsx, /app/settings.tsx
 /app/simulate.tsx, /app/multiplayer-game.tsx, /app/reveal.tsx (legacy, unused)
+/app/leaderboard.tsx
 /app/lobby/_layout.tsx, /app/lobby/host.tsx, /app/lobby/join.tsx
+/app/lobby/internet-host.tsx, /app/lobby/internet-join.tsx
 /components/Card.tsx, Board.tsx, PlayerHand.tsx, ChipsDisplay.tsx, CompleteOverlay.tsx, Button.tsx, Badge.tsx
 /hooks/useGameTimer.ts, useRevealSequence.ts
 /types/gameTypes.ts (GamePhase, Player, MultiBoardState, GameSession, ConnectedPlayerInfo)
 /utils/deck.ts, handEvaluator.ts, gameLogic.ts, simulate.ts, handHint.ts
 /utils/gameServer.ts, gameClient.ts, roomCode.ts
+/utils/supabase.ts, leaderboard.ts, realtimeMultiplayer.ts, notifications.ts
 /utils/__tests__/handEvaluator.test.ts, simulate.test.ts, gameLogic.test.ts, handHint.test.ts
 /constants/gameConfig.ts, theme.ts, networkConfig.ts
-/store/gameStore.ts (chips+config persisted; multiplayer state+onSendReady transient)
+/store/gameStore.ts (chips+config+handsPlayed+bestChips+handsWon+biggestWin+playerName+notificationsEnabled persisted; multiplayer+revealData transient)
 /scripts/generate-icon.js, preflight-check.js
 /babel.config.js, jest.config.js, metro.config.js, eas.json, .npmrc
 /scripts/generate-assets.py (Pillow — generates icon, splash, favicon)
@@ -123,10 +131,11 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- App Store: v1.0.0 build 13 submitted — needs metadata + screenshots uploaded in ASC dashboard, then submit for review (see APPSTORE_METADATA.md)
+- Supabase project not yet created — need to create project at supabase.com and add SUPABASE_URL + SUPABASE_ANON_KEY to .env (see .env.example)
+- Supabase tables not yet created (leaderboard, push_tokens) — SQL in utils/leaderboard.ts comments
+- App Store: v1.0.0 build 13 submitted — needs metadata + screenshots in ASC dashboard (see APPSTORE_METADATA.md)
 - First multiplayer device test pending (needs dev build on 2 devices)
-- Multiplayer polish remaining: animated board reveal on guest side, player disconnect toast during game, per-player names in results
-- Internet multiplayer (Supabase) — future sprint
+- Multiplayer polish remaining: animated board reveal on guest side, player disconnect toast during game
 
 ## Commit History
 - Sprint 01: Initial full build
@@ -163,3 +172,4 @@
 - Sprint 39: Sound effects — 7 WAV files generated via numpy script (cardPlace, cardSelect, cardFlip, chipsWin, lose, complete, timerLow). sounds.ts rewritten with new SoundName type + WAV requires. Wired: cardSelect on tap in game.tsx + multiplayer-game.tsx, timerLow at 10s warning in game.tsx, win/lose conditional in results.tsx. Settings toggle already existed. Preload on app start via _layout.tsx. v1.8.0, web re-deploy, EAS production build
 - Sprint 40: Full simulation test suite — 14 new tests (104 total). Tests cover: 2/3/4-player full hands, COMPLETE bonus trigger, game over detection, 10-hand stress test, auto-fill timer, results data shape, card uniqueness, Omaha rule verification (Iron Rule 4). simulate.tsx upgraded with auto-play mode (configurable hands/players, per-hand logs, running chip balance, stop button). SIMULATE button added to home (__DEV__ only). 0 bugs found. Web re-deploy
 - Sprint 41: App Store submission — version reset to 1.0.0 (public release), build 13 (454ae10a). Privacy policy page deployed to caps.ftable.co.il/privacy.html. 6 placeholder screenshots generated via Pillow (6.7" + 6.1", home/game/results mockups). APPSTORE_METADATA.md created with all ASC fields. EAS build submitted to App Store Connect. Pending: upload metadata + screenshots in ASC dashboard, submit for Apple review
+- Sprint 42: Phase 2 — 3 parallel features. (1) Leaderboard: utils/leaderboard.ts (getDeviceId, submitScore, getLeaderboard), app/leaderboard.tsx (top 20, pull-to-refresh, highlighted current player). (2) Internet multiplayer: utils/realtimeMultiplayer.ts (RealtimeServer + RealtimeClient via Supabase Realtime channels, Presence tracking, same message protocol as TCP), app/lobby/internet-host.tsx + internet-join.tsx. (3) Notifications: utils/notifications.ts (requestPermissions, scheduleLocal, scheduleReengagement, sendPushNotification). Shared: utils/supabase.ts client, .env.example. Store: playerName, notificationsEnabled, handsWon, biggestWin. Settings: player name input, notifications toggle. Index: PLAY ONLINE + LEADERBOARD buttons. Results: auto-submit to leaderboard, track handsWon/biggestWin. Iron Rule 8: IMPLEMENTED. v1.1.0, web re-deploy, EAS build
