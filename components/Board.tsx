@@ -213,7 +213,10 @@ export default function Board({
             )}
           </View>
           <View style={styles.potArea}>
-            <Text style={styles.potLabel}>{potAmount} \ud83e\ude99</Text>
+            <View style={styles.potRow}>
+              <Text style={styles.potLabel}>{potAmount}</Text>
+              <View style={styles.potDot} />
+            </View>
             {winner && <FloatingChips amount={potAmount} winner={winner} />}
           </View>
         </View>
@@ -406,10 +409,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
+  potRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   potLabel: {
     color: COLORS.gold,
     fontSize: 10,
     fontWeight: '700',
+  },
+  potDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.gold,
   },
   floatingChips: {
     fontSize: 11,

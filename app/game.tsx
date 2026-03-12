@@ -414,18 +414,19 @@ const styles = StyleSheet.create({
   boardsColumn: {
     flex: 1,
     flexDirection: 'column',
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     gap: 4,
   },
   handCounter: {
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   handCounterText: {
     color: COLORS.neonBlue,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 2,
+    textAlign: 'center',
   },
   readySection: {
     paddingHorizontal: 12,
