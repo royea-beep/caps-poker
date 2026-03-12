@@ -1,5 +1,7 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import { Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, ViewStyle, Platform } from 'react-native';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 import { COLORS } from '../constants/gameConfig';
 
 interface ButtonProps {
@@ -65,32 +67,31 @@ export function Button({
       : styles.textGhost;
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={disabled || loading}
-        activeOpacity={0.8}
-        style={[
-          styles.base,
-          variantStyle,
-          (disabled || loading) && styles.disabled,
-          style,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={title}
-      >
-        {loading ? (
-          <ActivityIndicator
-            color={variant === 'gold' ? COLORS.background : COLORS.neonBlue}
-            size="small"
-          />
-        ) : (
-          <Text style={[styles.text, textStyle]}>{title}</Text>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
+    <AnimatedTouchable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
+      style={[
+        styles.base,
+        variantStyle,
+        (disabled || loading) && styles.disabled,
+        { transform: [{ scale: scaleAnim }] },
+        style,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
+      {loading ? (
+        <ActivityIndicator
+          color={variant === 'gold' ? COLORS.background : COLORS.neonBlue}
+          size="small"
+        />
+      ) : (
+        <Text style={[styles.text, textStyle]}>{title}</Text>
+      )}
+    </AnimatedTouchable>
   );
 }
 

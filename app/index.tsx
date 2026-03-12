@@ -45,7 +45,7 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.titleSection}>
           {/* Pulsing glow behind title */}
-          <Animated.View style={[styles.titleGlow, glowStyle]} />
+          <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
           <Text style={styles.titleSmall}>♠ ♥ ♦ ♣</Text>
           <Text style={styles.title}>CAPS</Text>
           <Text style={styles.titleSub}>POKER</Text>

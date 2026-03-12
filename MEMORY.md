@@ -25,9 +25,9 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint 24-build complete — v1.4.0 production build + TestFlight submit
-- Version: 1.4.0, buildNumber: 6, latest build: 04890b1f (FINISHED, production/store)
-- TestFlight: v1.4.0 build 6 submitted 2026-03-12, processing by Apple
+- Button-fix-iOS complete — v1.4.1 production build + TestFlight submit
+- Version: 1.4.1, buildNumber: 7, latest build: 1b272517 (FINISHED, production/store)
+- TestFlight: v1.4.1 build 7 submitted 2026-03-12, processing by Apple
 - TypeScript: 0 errors
 - Tests: 79/79 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint + 10 theme)
 - Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
@@ -114,7 +114,7 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- TestFlight: v1.4.0 build 04890b1f submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
+- TestFlight: v1.4.1 build 7 (1b272517) submitted 2026-03-12 via ASC API Key. Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
 - External testers: 1) `eas build --platform ios --profile production` 2) `eas submit --platform ios --profile preview` 3) Add testers in ASC → TestFlight → External Testers
 - Web shadow warnings: animated shadows in Board.tsx/Card.tsx (reanimated worklets) still use shadow* props — reanimated UI thread can't access Platform.select. Static shadows fixed in Button/Board/Card/PlayerHand
 - SSL: RESOLVED via Vercel (2026-03-12). caps.ftable.co.il DNS now points to Vercel (76.76.21.21), auto-SSL works. SPD Apache SNI still broken for other subdomains — instructions in SSL-INSTRUCTIONS.md
@@ -144,3 +144,4 @@
 - Sprint 23: Button press fix (reanimated → RN Animated + TouchableOpacity), web shadow deprecation fix (Platform.select for static shadows in Button/Board/Card/PlayerHand), external tester distribution docs, web re-deploy
 - Sprint 24-build: v1.4.0, production build 04890b1f (store distribution), TestFlight submitted, buildNumber auto-incremented to 6, removed stale buildNumber from app.json
 - Vercel deploy: web export deployed to Vercel, custom domain caps.ftable.co.il with auto-SSL, DNS A record → 76.76.21.21, SSL issue bypassed
+- Button-fix-iOS: removed Animated.View wrapper around TouchableOpacity (blocked iOS touches), used AnimatedTouchable instead, added pointerEvents="none" to title glow, v1.4.1 build 7 (1b272517)
