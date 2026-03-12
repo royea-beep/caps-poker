@@ -30,7 +30,10 @@
 - TestFlight: v1.4.0 build 6 submitted 2026-03-12, processing by Apple
 - TypeScript: 0 errors
 - Tests: 79/79 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint + 10 theme)
-- Web deployed to caps.ftable.co.il (FTP upload, 32 files)
+- Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
+- Vercel project: dist (prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP), team: team_ayrePMw5z8jSPhRe67RiBD0k
+- Vercel URL: https://dist-beryl-eta-15.vercel.app (fallback)
+- DNS: caps.ftable.co.il A → 76.76.21.21 (Vercel), TTL 300s
 - No git remote configured — commit 5656767 is local only
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
@@ -90,13 +93,16 @@
 
 ## Deployment
 - Web export: `npx expo export --platform web` → dist/ folder
-- Hosting: cPanel shared hosting at ftable.co.il (SPD hosting)
+- **Primary**: Vercel (auto-SSL, CDN) — `vercel deploy --prod` from dist/
+- Vercel project: dist (prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP), team: team_ayrePMw5z8jSPhRe67RiBD0k
+- Vercel auth token: in C:/Users/royea/AppData/Roaming/com.vercel.cli/Data/auth.json
+- Custom domain: caps.ftable.co.il → A record 76.76.21.21 (Vercel)
+- Vercel URL: https://dist-beryl-eta-15.vercel.app (fallback)
+- **Legacy (FTP)**: cPanel shared hosting at ftable.co.il (SPD hosting)
 - FTP creds: ftableco / Sb9k46-l)WI2Gq (from C:/Projects/ftable/.env)
 - cPanel API: https://ftable.co.il:2083/ (Basic auth with same creds)
 - Server IP: 195.225.46.105
-- Subdomain: caps.ftable.co.il → public_html/caps
-- HTTP works: http://caps.ftable.co.il/ serves the app correctly
-- SSL issue: cert installed in cPanel but Apache SNI returns compass.spd.co.il (shared hosting default) for ALL subdomains. Needs hosting provider to rebuild Apache SSL vhost config (WHM-level fix).
+- SPD SSL still broken (Apache SNI returns compass.spd.co.il) — bypassed by Vercel
 
 ## iOS Build Checklist (do NOT auto-trigger)
 1. `npx tsc --noEmit` — 0 errors
@@ -111,7 +117,7 @@
 - TestFlight: v1.4.0 build 04890b1f submitted 2026-03-12 via ASC API Key (WTWALQMG5N from Wingman). Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
 - External testers: 1) `eas build --platform ios --profile production` 2) `eas submit --platform ios --profile preview` 3) Add testers in ASC → TestFlight → External Testers
 - Web shadow warnings: animated shadows in Board.tsx/Card.tsx (reanimated worklets) still use shadow* props — reanimated UI thread can't access Platform.select. Static shadows fixed in Button/Board/Card/PlayerHand
-- SSL fix for caps.ftable.co.il — ALL subdomains broken (Apache serves compass.spd.co.il cert). cPanel UAPI tried ×2: delete+reinstall+autossl — no effect (WHM-level). No Cloudflare API token found. Registrar: Galcomm (galcomm.co.il). Next step: contact SPD support (support@spd.co.il) to run `/scripts/rebuildhttpdconf`. Full instructions in SSL-INSTRUCTIONS.md (2026-03-12)
+- SSL: RESOLVED via Vercel (2026-03-12). caps.ftable.co.il DNS now points to Vercel (76.76.21.21), auto-SSL works. SPD Apache SNI still broken for other subdomains — instructions in SSL-INSTRUCTIONS.md
 - First multiplayer device test pending (needs dev build)
 - Internet multiplayer (Supabase) — future sprint
 
@@ -137,3 +143,4 @@
 - Sprint 22: Vertical board layout — 4 boards stacked (no scroll), dynamic card sizing (Dimensions), Board.tsx full-width compact rows, Card.tsx dynamic dimensions props, PlayerHand gold border+scale select, hardcoded colors audit (Badge/Board/Card/game.tsx → COLORS refs), bot row hidden during arrangement, player hand hidden during reveal, web re-deploy
 - Sprint 23: Button press fix (reanimated → RN Animated + TouchableOpacity), web shadow deprecation fix (Platform.select for static shadows in Button/Board/Card/PlayerHand), external tester distribution docs, web re-deploy
 - Sprint 24-build: v1.4.0, production build 04890b1f (store distribution), TestFlight submitted, buildNumber auto-incremented to 6, removed stale buildNumber from app.json
+- Vercel deploy: web export deployed to Vercel, custom domain caps.ftable.co.il with auto-SSL, DNS A record → 76.76.21.21, SSL issue bypassed
