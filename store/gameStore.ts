@@ -23,7 +23,10 @@ interface GameStore {
   hostIP: string | null;
   connectedPlayers: ConnectedPlayerInfo[];
   gameSession: GameSession | null;
-  onSendReady: ((boardAssignments: Card[][]) => void) | null;
+  // Server/client instances survive screen transitions (stored as `any` to avoid
+  // importing native-only modules at the type level)
+  mpServer: any | null;
+  mpClient: any | null;
 
   // Persisted actions
   setChips: (chips: number) => void;
@@ -47,7 +50,8 @@ interface GameStore {
   setConnectedPlayers: (players: ConnectedPlayerInfo[]) => void;
   updatePlayer: (id: string, updates: Partial<ConnectedPlayerInfo>) => void;
   setGameSession: (session: GameSession | null) => void;
-  setOnSendReady: (fn: ((boardAssignments: Card[][]) => void) | null) => void;
+  setMpServer: (server: any | null) => void;
+  setMpClient: (client: any | null) => void;
   resetMultiplayer: () => void;
 }
 
@@ -72,7 +76,8 @@ export const useGameStore = create<GameStore>()(
       hostIP: null,
       connectedPlayers: [],
       gameSession: null,
-      onSendReady: null,
+      mpServer: null,
+      mpClient: null,
 
       // Persisted actions
       setChips: (chips: number) => set({ chips }),
@@ -116,16 +121,26 @@ export const useGameStore = create<GameStore>()(
           ),
         })),
       setGameSession: (session) => set({ gameSession: session }),
-      setOnSendReady: (fn) => set({ onSendReady: fn }),
-      resetMultiplayer: () =>
+      setMpServer: (server) => set({ mpServer: server }),
+      setMpClient: (client) => set({ mpClient: client }),
+      resetMultiplayer: () => {
+        const { mpServer, mpClient } = get();
+        if (mpServer) {
+          try { mpServer.stop(); } catch {}
+        }
+        if (mpClient) {
+          try { mpClient.disconnect(); } catch {}
+        }
         set({
           multiplayerMode: 'none',
           roomCode: null,
           hostIP: null,
           connectedPlayers: [],
           gameSession: null,
-          onSendReady: null,
-        }),
+          mpServer: null,
+          mpClient: null,
+        });
+      },
     }),
     {
       name: 'caps-poker-storage',

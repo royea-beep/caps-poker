@@ -26,7 +26,8 @@ export type MessageType =
   | 'HEARTBEAT'
   | 'HEARTBEAT_ACK'
   | 'ERROR'
-  | 'PLAYER_DISCONNECTED';
+  | 'PLAYER_DISCONNECTED'
+  | 'NEXT_HAND_REQUEST';
 
 export interface NetworkMessage {
   type: MessageType;

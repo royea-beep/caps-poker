@@ -20,6 +20,7 @@ export default function JoinLobbyScreen() {
   const setRoomCode = useGameStore((s) => s.setRoomCode);
   const setHostIP = useGameStore((s) => s.setHostIP);
   const setConnectedPlayers = useGameStore((s) => s.setConnectedPlayers);
+  const setMpClient = useGameStore((s) => s.setMpClient);
   const resetMultiplayer = useGameStore((s) => s.resetMultiplayer);
 
   const [hostIPInput, setHostIPInput] = useState('');
@@ -107,6 +108,7 @@ export default function JoinLobbyScreen() {
     );
 
     clientRef.current = client;
+    setMpClient(client);
 
     try {
       await client.connect(hostIPInput.trim(), roomCodeInput.trim());

@@ -25,16 +25,15 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Button-fix-iOS complete — v1.4.1 production build + TestFlight submit
-- Version: 1.4.1, buildNumber: 7, latest build: 1b272517 (FINISHED, production/store)
-- TestFlight: v1.4.1 build 7 submitted 2026-03-12, processing by Apple
+- Sprint-37 complete — multiplayer functional (3 critical gaps fixed, UX aligned)
+- Version: 1.6.0, buildNumber: 9 (auto-increment), EAS production build in progress
 - TypeScript: 0 errors
-- Tests: 79/79 passing (14 hand evaluator + 19 simulation + 29 game logic + 7 hand hint + 10 theme)
+- Tests: 90/90 passing (14 hand evaluator + 19 simulation + 39 game logic + 7 hand hint + 11 theme)
 - Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
 - Vercel project: dist (prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP), team: team_ayrePMw5z8jSPhRe67RiBD0k
 - Vercel URL: https://dist-beryl-eta-15.vercel.app (fallback)
 - DNS: caps.ftable.co.il A → 76.76.21.21 (Vercel), TTL 300s
-- No git remote configured — commit 5656767 is local only
+- No git remote configured
 - NOTE: react-native-tcp-socket requires custom dev client (not Expo Go)
 
 ## Game Config (all runtime-configurable in Settings)
@@ -83,13 +82,18 @@
 - GameClient: TCP client on guest, auto-heartbeat, reconnect (3 attempts with 2s backoff)
 - Host is source of truth: deals, evaluates, broadcasts
 - Room discovery: 4-digit code + manual IP entry
-- onSendReady callback in store bridges game screen to server/client
+- Server/client instances stored in Zustand (mpServer/mpClient) — survive screen transitions
+- Callbacks updated via updateCallbacks() when navigating between screens
+- Host reveal flow: onAllPlayersReady → runRevealSequence → broadcast BOARD_REVEAL + HAND_COMPLETE → build RevealData → navigate to /results
+- Guest reveal flow: collect BOARD_REVEAL messages → on HAND_COMPLETE → build RevealData → navigate to /results
+- Next-hand flow: NEXT_HAND_REQUEST message → server tracks requests → when all players request → re-deal → broadcast CARDS_DEALT → all navigate to /multiplayer-game
 - Disconnected players auto-filled with random card assignments
 - DeviceId-based reconnection: server matches reconnecting clients by deviceId, restores seat
 - Payload validation: all incoming messages validated, player names truncated to 20 chars
 - Message buffer: 64KB max per connection, prevents memory exhaustion
 - Background-aware: heartbeat resets after app returns from background (both server+client)
 - Double-disconnect prevention: socket disconnect only processed once per client
+- Protocol messages: ROOM_JOIN, ROOM_JOIN_ACK, ROOM_STATE, GAME_START, CARDS_DEALT, PLAYER_READY, ALL_READY, BOARD_REVEAL, HAND_COMPLETE, NEXT_HAND_REQUEST, HEARTBEAT/ACK, ERROR, PLAYER_DISCONNECTED
 
 ## Deployment
 - Web export: `npx expo export --platform web` → dist/ folder
@@ -114,11 +118,9 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
-- TestFlight: v1.4.1 build 7 (1b272517) submitted 2026-03-12 via ASC API Key. Submit command: `eas submit --platform ios --profile preview --id <build-id> --non-interactive`
-- External testers: 1) `eas build --platform ios --profile production` 2) `eas submit --platform ios --profile preview` 3) Add testers in ASC → TestFlight → External Testers
-- Web shadow warnings: animated shadows in Board.tsx/Card.tsx (reanimated worklets) still use shadow* props — reanimated UI thread can't access Platform.select. Static shadows fixed in Button/Board/Card/PlayerHand
-- SSL: RESOLVED via Vercel (2026-03-12). caps.ftable.co.il DNS now points to Vercel (76.76.21.21), auto-SSL works. SPD Apache SNI still broken for other subdomains — instructions in SSL-INSTRUCTIONS.md
-- First multiplayer device test pending (needs dev build)
+- EAS production build v1.6.0 in progress — submit to TestFlight after build completes
+- First multiplayer device test pending (needs dev build on 2 devices)
+- Multiplayer polish remaining: animated board reveal on guest side, player disconnect toast during game, per-player names in results
 - Internet multiplayer (Supabase) — future sprint
 
 ## Commit History
@@ -150,3 +152,5 @@
 - Sprint 33: CRITICAL FIX — Sprint-30 removed PlayerHand from game.tsx, player cards were invisible. Restored PlayerHand at bottom (face-up, 2-row grid). New UX: tap card → select (gold border), tap board slot → place selected card. Board sizing adjusted to fit with PlayerHand (~140px). Web re-deploy to Vercel
 - Sprint 34: New app/results.tsx — single results screen replaces 4 sequential reveal screens. Shows all boards at once with small cards (36x50), hand names, WIN/LOSS/TIE badges, chip amounts, animated net count-up, complete bonus banner, NEXT HAND button. Flow: game.tsx → results.tsx → game.tsx (skips summary). Fixed 🪙 emoji in summary.tsx. Web re-deploy to Vercel
 - Sprint 35: Full UX audit — 2 critical responsive bugs fixed. Results: changed from side-by-side (overflow on 375px) to vertical stacking, dynamic card sizing from screen width. Game: replaced hardcoded SAFE_AREA=84 with useSafeAreaInsets(), min card height 28px, PLAYER_HAND_H 130. PlayerHand: dynamic card width (fits 8/row on any phone). Home: gap 40→28. All screens fit iPhone SE (375×667) through iPhone 14 Plus (430×932). Web maxWidth 480px. Web re-deploy to Vercel
+- Sprint 36: READ-ONLY multiplayer diagnostic. Full protocol map, 9 gap analysis, implementation plan. No code changed.
+- Sprint 37: Multiplayer functional — 3 critical gaps fixed. A1: server/client instances stored in Zustand (mpServer/mpClient), survive screen transitions, removed dead onSendReady callback. A2: multiplayer-game.tsx reveal flow builds RevealData and navigates to /results (same as single-player). A3: NEXT_HAND_REQUEST protocol message, server tracks requests, re-deals when all players ready. B1: multiplayer-game vertical board layout (from game.tsx), dynamic card sizing via useSafeAreaInsets, same tap-to-select UX, player names from connectedPlayers. B2: waiting overlay + results.tsx "Waiting for other players" state. v1.6.0, web re-deploy, EAS production build
