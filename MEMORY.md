@@ -25,8 +25,11 @@
 - EAS Build: development (dev client), preview (TestFlight), production (autoIncrement)
 
 ## Current State
-- Sprint-40 complete — full simulation test suite, auto-play mode
-- Version: 1.8.0, buildNumber: 11
+- Sprint-41 complete — App Store submission v1.0.0
+- Version: 1.0.0 (public release), buildNumber: 13
+- App Store: submitted to ASC (build 454ae10a), pending Apple processing + review
+- Privacy policy: https://caps.ftable.co.il/privacy.html
+- Screenshots: 6 placeholder mockups (6.7" + 6.1") generated via Pillow
 - TypeScript: 0 errors
 - Tests: 104/104 passing (14 hand evaluator + 19 simulation + 39 game logic + 7 hand hint + 11 theme + 14 full simulation)
 - Web deployed to Vercel: https://caps.ftable.co.il (HTTPS works, auto-SSL)
@@ -120,9 +123,9 @@
 7. Test on physical device via TestFlight before App Store release
 
 ## Open Items
+- App Store: v1.0.0 build 13 submitted — needs metadata + screenshots uploaded in ASC dashboard, then submit for review (see APPSTORE_METADATA.md)
 - First multiplayer device test pending (needs dev build on 2 devices)
 - Multiplayer polish remaining: animated board reveal on guest side, player disconnect toast during game, per-player names in results
-- App Store screenshots: needed for submission (see screenshots/README.md)
 - Internet multiplayer (Supabase) — future sprint
 
 ## Commit History
@@ -159,3 +162,4 @@
 - Sprint 38: App icon + splash screen generated via Pillow script. Icon: 1024x1024, gold "C" on poker green radial gradient, gold ring border, corner suit symbols. Splash: 1284x2778, "CAPS POKER" on green felt with gold text + suit symbols. Favicon: 64x64. Android adaptive icon updated. Screenshots README created. v1.7.0, web re-deploy, EAS production build
 - Sprint 39: Sound effects — 7 WAV files generated via numpy script (cardPlace, cardSelect, cardFlip, chipsWin, lose, complete, timerLow). sounds.ts rewritten with new SoundName type + WAV requires. Wired: cardSelect on tap in game.tsx + multiplayer-game.tsx, timerLow at 10s warning in game.tsx, win/lose conditional in results.tsx. Settings toggle already existed. Preload on app start via _layout.tsx. v1.8.0, web re-deploy, EAS production build
 - Sprint 40: Full simulation test suite — 14 new tests (104 total). Tests cover: 2/3/4-player full hands, COMPLETE bonus trigger, game over detection, 10-hand stress test, auto-fill timer, results data shape, card uniqueness, Omaha rule verification (Iron Rule 4). simulate.tsx upgraded with auto-play mode (configurable hands/players, per-hand logs, running chip balance, stop button). SIMULATE button added to home (__DEV__ only). 0 bugs found. Web re-deploy
+- Sprint 41: App Store submission — version reset to 1.0.0 (public release), build 13 (454ae10a). Privacy policy page deployed to caps.ftable.co.il/privacy.html. 6 placeholder screenshots generated via Pillow (6.7" + 6.1", home/game/results mockups). APPSTORE_METADATA.md created with all ASC fields. EAS build submitted to App Store Connect. Pending: upload metadata + screenshots in ASC dashboard, submit for Apple review
