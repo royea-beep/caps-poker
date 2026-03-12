@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
@@ -27,16 +27,16 @@ const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
   Haptics.notificationAsync(type).catch(() => {});
 };
 
-// Layout constants
-const SAFE_AREA = 84;
+// Layout constants (heights that don't depend on safe area)
 const TOP_BAR_H = 44;
 const BOT_STATUS_H = 20;
-const PLAYER_HAND_H = 140;
+const PLAYER_HAND_H = 130;
 const READY_BTN_H = 48;
 
 export default function GameScreen() {
   const router = useRouter();
   const { height: SCREEN_H } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
@@ -46,12 +46,13 @@ export default function GameScreen() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
-  // Layout: boards share space above PlayerHand
+  // Layout: boards share space above PlayerHand — use actual safe area insets
+  const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
-  const BOARD_CHROME = 22;
-  const boardSpace = (SCREEN_H - SAFE_AREA - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const BOARD_CHROME = 20;
+  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   // During arrangement: community row + player row = 2 rows per board
-  const BOARD_CARD_H = Math.max(32, Math.min(52, Math.floor(boardSpace / 2)));
+  const BOARD_CARD_H = Math.max(28, Math.min(52, Math.floor(boardSpace / 2)));
 
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);

@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    gap: 40,
+    gap: 28,
     ...Platform.select({
       web: { maxWidth: 540, alignSelf: 'center' as const, width: '100%' },
       default: {},
