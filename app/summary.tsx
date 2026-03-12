@@ -187,7 +187,7 @@ export default function SummaryScreen() {
           {isComplete && (
             <View style={styles.completeRow}>
               <Text style={styles.completeLabel}>COMPLETE BONUS</Text>
-              <Text style={styles.completeAmount}>+{completeBonusAmount} 🪙</Text>
+              <Text style={styles.completeAmount}>+{completeBonusAmount}  chips</Text>
             </View>
           )}
           <View style={styles.netRow}>
@@ -250,7 +250,7 @@ function AnimatedChipCount({
 
   return (
     <Text style={[styles.netAmount, color]}>
-      {prefix}{displayValue} 🪙
+      {prefix}{displayValue}  chips
     </Text>
   );
 }
