@@ -75,16 +75,16 @@ export function Button({
     <Text style={[styles.text, textStyle]}>{title}</Text>
   );
 
-  // Web: use Pressable (renders as <div> with onClick — no AnimatedTouchable issues)
+  // Web: use Pressable with static style (no function callback — more reliable on web)
   if (Platform.OS === 'web') {
     return (
       <Pressable
-        onPress={disabled || loading ? undefined : onPress}
-        style={({ pressed }) => [
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[
           styles.base,
           variantStyle,
           (disabled || loading) && styles.disabled,
-          pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
           { cursor: disabled ? 'not-allowed' : 'pointer' } as ViewStyle,
           style,
         ]}

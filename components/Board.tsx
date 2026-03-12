@@ -19,6 +19,7 @@ interface BoardProps {
   closedCards: Card[];
   playerCards: Card[];
   botCards: Card[];
+  allBotCards?: Card[][];
   revealed: boolean;
   active: boolean;
   potAmount: number;
@@ -28,6 +29,7 @@ interface BoardProps {
   boardHighlightIds?: string[];
   playerHandName?: string;
   botHandName?: string;
+  allBotHandNames?: string[];
   onPress?: () => void;
   onRemoveCard?: (card: Card) => void;
   isArrangement?: boolean;
@@ -106,6 +108,8 @@ export default function Board({
   boardHighlightIds = [],
   playerHandName,
   botHandName,
+  allBotCards,
+  allBotHandNames,
   onPress,
   onRemoveCard,
   isArrangement,
@@ -173,7 +177,9 @@ export default function Board({
     };
   });
 
-  const showBotRow = botCards.length > 0;
+  // Build bot card sets: use allBotCards if provided, otherwise fall back to single botCards
+  const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : botCards.length > 0 ? [botCards] : [];
+  const multiBot = botCardSets.length > 1;
 
   return (
     <Animated.View
@@ -209,26 +215,30 @@ export default function Board({
           </View>
         </View>
 
-        {/* Bot cards — only shown when bot has placed cards */}
-        {showBotRow && (
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>BOT</Text>
-            {botCards.map((c) => (
-              <CardComponent
-                key={c.id}
-                card={c}
-                faceDown={!revealed}
-                cardWidth={cw}
-                cardHeight={ch}
-                highlighted={revealed && botHighlightIds.includes(c.id)}
-                dimmed={revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
-                flipDuration={flipDuration}
-              />
-            ))}
-            {revealed && botHandName && (
-              <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}>{botHandName}</Text>
-            )}
-          </View>
+        {/* Bot card rows — one row per bot */}
+        {botCardSets.map((botCardSet, botIdx) =>
+          botCardSet.length > 0 ? (
+            <View key={`bot-${botIdx}`} style={styles.cardRow}>
+              <Text style={styles.rowLabel}>{multiBot ? `B${botIdx + 1}` : 'BOT'}</Text>
+              {botCardSet.map((c) => (
+                <CardComponent
+                  key={c.id}
+                  card={c}
+                  faceDown={!revealed}
+                  cardWidth={cw}
+                  cardHeight={ch}
+                  highlighted={botIdx === 0 && revealed && botHighlightIds.includes(c.id)}
+                  dimmed={botIdx === 0 && revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
+                  flipDuration={flipDuration}
+                />
+              ))}
+              {revealed && (allBotHandNames?.[botIdx] || (botIdx === 0 && botHandName)) && (
+                <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}>
+                  {allBotHandNames?.[botIdx] || botHandName}
+                </Text>
+              )}
+            </View>
+          ) : null
         )}
 
         {/* Community cards: flop + turn/river */}

@@ -1,4 +1,4 @@
-import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig } from '../constants/gameConfig';
+import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig, getBoardCount } from '../constants/gameConfig';
 import { dealCards, DealResult, dealCardsMultiplayer, MultiDealResult } from './deck';
 import { evaluateOmahaHand, compareHands, HandResult } from './handEvaluator';
 import { Player, MultiBoardState } from '../types/gameTypes';
@@ -8,9 +8,11 @@ export interface BoardState {
   closedCards: Card[];
   playerCards: Card[];
   botCards: Card[];
+  allBotCards: Card[][];       // one array per bot (index 0 = first bot)
   revealed: boolean;
   playerResult?: HandResult;
   botResult?: HandResult;
+  allBotResults?: HandResult[];
   winner?: 'player' | 'bot' | 'tie';
 }
 
@@ -33,6 +35,7 @@ export function initializeGame(): { gameState: GameState; dealResult: DealResult
     closedCards: b.closedCards,
     playerCards: [],
     botCards: [],
+    allBotCards: [[]],
     revealed: false,
   }));
 
@@ -53,11 +56,28 @@ export function initializeGame(): { gameState: GameState; dealResult: DealResult
 
 export function placeBotCards(botHand: Card[], boards: BoardState[]): BoardState[] {
   const shuffled = [...botHand].sort(() => Math.random() - 0.5);
-  const updatedBoards = boards.map((b, i) => ({
-    ...b,
-    botCards: shuffled.slice(i * CARDS_PER_BOARD, (i + 1) * CARDS_PER_BOARD),
-  }));
+  const updatedBoards = boards.map((b, i) => {
+    const cards = shuffled.slice(i * CARDS_PER_BOARD, (i + 1) * CARDS_PER_BOARD);
+    const newAllBotCards = [...b.allBotCards];
+    newAllBotCards[0] = cards;
+    return { ...b, botCards: cards, allBotCards: newAllBotCards };
+  });
   return updatedBoards;
+}
+
+/** Place a single bot's cards on all boards. botIndex is 0-based (0 = first bot). */
+export function placeSingleBotCards(botHand: Card[], boards: BoardState[], botIndex: number): BoardState[] {
+  const shuffled = [...botHand].sort(() => Math.random() - 0.5);
+  return boards.map((b, i) => {
+    const cards = shuffled.slice(i * CARDS_PER_BOARD, (i + 1) * CARDS_PER_BOARD);
+    const newAllBotCards = [...b.allBotCards];
+    newAllBotCards[botIndex] = cards;
+    return {
+      ...b,
+      allBotCards: newAllBotCards,
+      botCards: botIndex === 0 ? cards : b.botCards,
+    };
+  });
 }
 
 export function autoFillPlayerCards(
@@ -154,6 +174,83 @@ export function calculateHandResults(
   }
 
   return { boardResults, playerChipsWon, botChipsWon, isComplete, completeBonusAmount };
+}
+
+/** Initialize a game for N players (1 human + N-1 bots). */
+export function initializeGameMulti(numberOfPlayers: 2 | 3 | 4): {
+  boards: BoardState[];
+  playerHand: Card[];
+  botHands: Card[][];
+  boardCount: number;
+} {
+  const { playerHands, boards: dealBoards } = dealCardsMultiplayer(numberOfPlayers);
+  const numberOfBots = numberOfPlayers - 1;
+
+  const boards: BoardState[] = dealBoards.map((b) => ({
+    openCards: b.openCards,
+    closedCards: b.closedCards,
+    playerCards: [],
+    botCards: [],
+    allBotCards: Array.from({ length: numberOfBots }, () => []),
+    revealed: false,
+  }));
+
+  return {
+    boards,
+    playerHand: playerHands[0],
+    botHands: playerHands.slice(1),
+    boardCount: dealBoards.length,
+  };
+}
+
+/** Evaluate all boards for multi-player and return results in BoardResult format. */
+export function calculateHandResultsMulti(
+  boards: BoardState[],
+  numberOfPlayers: number,
+  config: GameConfig
+): {
+  boardResults: BoardResult[];
+  playerChipsWon: number;
+  isComplete: boolean;
+  completeBonusAmount: number;
+  completeWinner: 'player' | 'bot' | null;
+  allBotResults: HandResult[][];
+} {
+  // Convert to MultiBoardState for evaluation
+  const multiBoards: MultiBoardState[] = boards.map((b) => ({
+    openCards: b.openCards,
+    closedCards: b.closedCards,
+    playerCards: [b.playerCards, ...b.allBotCards],
+    revealed: b.revealed,
+  }));
+
+  const mpBoardResults = evaluateAllBoards(multiBoards, numberOfPlayers);
+  const mpResult = calculateChipDeltas(mpBoardResults, numberOfPlayers, config);
+
+  // Convert to BoardResult format for backward compat
+  const boardResults: BoardResult[] = mpBoardResults.map((r) => ({
+    playerResult: r.playerResults[0],
+    botResult: r.playerResults[1] || r.playerResults[0],
+    winner: (r.winnerIndex === 0 ? 'player' : r.winnerIndex === -1 ? 'tie' : 'bot') as 'player' | 'bot' | 'tie',
+  }));
+
+  const allBotResults = mpBoardResults.map((r) => r.playerResults.slice(1));
+
+  // playerChipsWon is gross (add back buy-in since chipDeltas is net)
+  const totalPaid = config.potPerBoard * boards.length;
+  const playerChipsWon = mpResult.chipDeltas[0] + totalPaid;
+
+  const isComplete = mpResult.completeWinner !== null;
+  const completeWinner = mpResult.completeWinner === null ? null : mpResult.completeWinner === 0 ? 'player' as const : 'bot' as const;
+
+  return {
+    boardResults,
+    playerChipsWon,
+    isComplete,
+    completeBonusAmount: mpResult.completeBonusAmount,
+    completeWinner,
+    allBotResults,
+  };
 }
 
 // --- Multi-player functions (Sprint 05) ---

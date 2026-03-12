@@ -35,5 +35,19 @@ export const BOARD_OPEN_CARDS = 3;
 export const BOARD_CLOSED_CARDS = 2;
 export const PLAYER_HAND_SIZE = 16;
 
+/** Board count depends on player count (52-card deck constraint) */
+export function getBoardCount(numberOfPlayers: number): number {
+  if (numberOfPlayers === 3) return 3;
+  if (numberOfPlayers === 4) return 2;
+  return 4;
+}
+
+/** Cards per player depends on player count */
+export function getCardsPerPlayer(numberOfPlayers: number): number {
+  if (numberOfPlayers === 3) return 12;
+  if (numberOfPlayers === 4) return 8;
+  return 16;
+}
+
 // Re-export for backward compatibility
 export const COLORS = THEME.colors;

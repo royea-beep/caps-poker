@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -23,10 +23,11 @@ export default function HomeScreen() {
 
   const sessionNet = chips - sessionStartChips;
 
-  // Pulsing glow behind title
+  // Pulsing glow behind title (native only — skip on web to avoid hydration issues)
   const glowOpacity = useSharedValue(0.3);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     glowOpacity.value = withRepeat(
       withSequence(
         withTiming(0.6, { duration: 1500 }),
@@ -40,13 +41,26 @@ export default function HomeScreen() {
     opacity: glowOpacity.value,
   }));
 
+  // Web-safe navigation: use window.location as fallback if router.push fails
+  const navigateTo = useCallback((path: string) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = path;
+    } else {
+      router.push(path as any);
+    }
+  }, [router]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.titleSection}>
-          {/* Pulsing glow behind title */}
-          <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
-          <Text style={styles.titleSmall}>♠ ♥ ♦ ♣</Text>
+          {/* Pulsing glow — static on web, animated on native */}
+          {Platform.OS === 'web' ? (
+            <View style={[styles.titleGlow, { opacity: 0.4 }]} />
+          ) : (
+            <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
+          )}
+          <Text style={styles.titleSmall}>{'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}</Text>
           <Text style={styles.title}>CAPS</Text>
           <Text style={styles.titleSub}>POKER</Text>
           <View style={styles.titleLine} />
@@ -60,15 +74,15 @@ export default function HomeScreen() {
             Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
           </Text>
           <Text style={[styles.statBest, { color: COLORS.gold }]}>
-            ★ Best: {bestChips} chips
+            {'\u2605'} Best: {bestChips} chips
           </Text>
         </View>
 
         <View style={styles.buttonSection}>
-          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => router.push('/game')} />
-          <Button title="HOST GAME" variant="secondary" onPress={() => router.push('/lobby/host')} />
-          <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join')} />
-          <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings')} />
+          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => navigateTo('/game')} />
+          <Button title="HOST GAME" variant="secondary" onPress={() => navigateTo('/lobby/host')} />
+          <Button title="JOIN GAME" variant="secondary" onPress={() => navigateTo('/lobby/join')} />
+          <Button title="SETTINGS" variant="ghost" onPress={() => navigateTo('/settings')} />
         </View>
 
         <Button

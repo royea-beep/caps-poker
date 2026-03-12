@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG, NUM_BOARDS, CARDS_PER_BOARD } from '../../constants/gameConfig';
-import { dealNewHand, initializeGame, placeBotCards, autoFillPlayerCards, evaluateBoard, calculateHandResults, assignCardsRandomly, calculateChipDeltas, evaluateAllBoards } from '../gameLogic';
+import { DEFAULT_CONFIG, NUM_BOARDS, CARDS_PER_BOARD, getBoardCount, getCardsPerPlayer } from '../../constants/gameConfig';
+import { dealNewHand, initializeGame, placeBotCards, autoFillPlayerCards, evaluateBoard, calculateHandResults, assignCardsRandomly, calculateChipDeltas, evaluateAllBoards, initializeGameMulti, placeSingleBotCards, calculateHandResultsMulti } from '../gameLogic';
 
 describe('dealNewHand', () => {
   it('deals correct cards for 2 players', () => {
@@ -467,6 +467,118 @@ describe('sound config', () => {
   it('soundEnabled can be toggled off', () => {
     const config = { ...DEFAULT_CONFIG, soundEnabled: false };
     expect(config.soundEnabled).toBe(false);
+  });
+});
+
+describe('initializeGameMulti', () => {
+  it('creates correct boards and hands for 2 players', () => {
+    const result = initializeGameMulti(2);
+    expect(result.boardCount).toBe(4);
+    expect(result.boards.length).toBe(4);
+    expect(result.playerHand.length).toBe(16);
+    expect(result.botHands.length).toBe(1);
+    expect(result.botHands[0].length).toBe(16);
+  });
+
+  it('creates correct boards and hands for 3 players', () => {
+    const result = initializeGameMulti(3);
+    expect(result.boardCount).toBe(3);
+    expect(result.boards.length).toBe(3);
+    expect(result.playerHand.length).toBe(12);
+    expect(result.botHands.length).toBe(2);
+    result.botHands.forEach((h) => expect(h.length).toBe(12));
+  });
+
+  it('creates correct boards and hands for 4 players', () => {
+    const result = initializeGameMulti(4);
+    expect(result.boardCount).toBe(2);
+    expect(result.boards.length).toBe(2);
+    expect(result.playerHand.length).toBe(8);
+    expect(result.botHands.length).toBe(3);
+    result.botHands.forEach((h) => expect(h.length).toBe(8));
+  });
+
+  it('allBotCards arrays initialized with correct length', () => {
+    const result = initializeGameMulti(3);
+    result.boards.forEach((b) => {
+      expect(b.allBotCards.length).toBe(2); // 2 bots
+      b.allBotCards.forEach((bc) => expect(bc.length).toBe(0));
+    });
+  });
+});
+
+describe('placeSingleBotCards', () => {
+  it('places cards for a single bot at correct index', () => {
+    const { boards, botHands } = initializeGameMulti(3);
+    const updated = placeSingleBotCards(botHands[0], boards, 0);
+    updated.forEach((b) => {
+      expect(b.allBotCards[0].length).toBe(CARDS_PER_BOARD);
+      expect(b.allBotCards[1].length).toBe(0); // second bot not placed yet
+    });
+  });
+
+  it('places cards for multiple bots independently', () => {
+    const { boards, botHands } = initializeGameMulti(3);
+    let updated = placeSingleBotCards(botHands[0], boards, 0);
+    updated = placeSingleBotCards(botHands[1], updated, 1);
+    updated.forEach((b) => {
+      expect(b.allBotCards[0].length).toBe(CARDS_PER_BOARD);
+      expect(b.allBotCards[1].length).toBe(CARDS_PER_BOARD);
+    });
+  });
+
+  it('botIndex 0 also sets botCards for backward compat', () => {
+    const { boards, botHands } = initializeGameMulti(2);
+    const updated = placeSingleBotCards(botHands[0], boards, 0);
+    updated.forEach((b) => {
+      expect(b.botCards.length).toBe(CARDS_PER_BOARD);
+      expect(b.botCards).toEqual(b.allBotCards[0]);
+    });
+  });
+});
+
+describe('calculateHandResultsMulti', () => {
+  it('returns correct board count for 3 players', () => {
+    const { boards, playerHand, botHands } = initializeGameMulti(3);
+    let updated = boards;
+    botHands.forEach((h, i) => {
+      updated = placeSingleBotCards(h, updated, i);
+    });
+    const { boards: filledBoards } = autoFillPlayerCards(playerHand, updated);
+    const result = calculateHandResultsMulti(filledBoards, 3, DEFAULT_CONFIG);
+    expect(result.boardResults.length).toBe(3);
+    result.boardResults.forEach((r) => {
+      expect(['player', 'bot', 'tie']).toContain(r.winner);
+    });
+  });
+
+  it('returns allBotResults with correct shape', () => {
+    const { boards, playerHand, botHands } = initializeGameMulti(3);
+    let updated = boards;
+    botHands.forEach((h, i) => {
+      updated = placeSingleBotCards(h, updated, i);
+    });
+    const { boards: filledBoards } = autoFillPlayerCards(playerHand, updated);
+    const result = calculateHandResultsMulti(filledBoards, 3, DEFAULT_CONFIG);
+    expect(result.allBotResults.length).toBe(3); // one per board
+    result.allBotResults.forEach((botResults) => {
+      expect(botResults.length).toBe(2); // 2 bots
+      botResults.forEach((r) => expect(r.name).toBeTruthy());
+    });
+  });
+});
+
+describe('getBoardCount / getCardsPerPlayer', () => {
+  it('returns correct board counts', () => {
+    expect(getBoardCount(2)).toBe(4);
+    expect(getBoardCount(3)).toBe(3);
+    expect(getBoardCount(4)).toBe(2);
+  });
+
+  it('returns correct cards per player', () => {
+    expect(getCardsPerPlayer(2)).toBe(16);
+    expect(getCardsPerPlayer(3)).toBe(12);
+    expect(getCardsPerPlayer(4)).toBe(8);
   });
 });
 
