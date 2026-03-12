@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -330,20 +330,30 @@ const styles = StyleSheet.create({
   },
   active: {
     borderColor: COLORS.boardActive,
-    shadowColor: COLORS.neonBlue,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.neonBlue,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 10,
+      },
+      android: { elevation: 8 },
+      default: {},
+    }),
   },
   selected: {
     borderColor: COLORS.gold,
     borderWidth: 2.5,
-    shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 6,
+      },
+      android: { elevation: 6 },
+      default: {},
+    }),
   },
   playerWon: {
     borderColor: COLORS.neonGreen,

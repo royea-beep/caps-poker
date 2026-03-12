@@ -1,10 +1,5 @@
-import React, { useCallback } from 'react';
-import { Text, StyleSheet, ActivityIndicator, Pressable, ViewStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import React, { useRef, useCallback } from 'react';
+import { Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, ViewStyle, Platform } from 'react-native';
 import { COLORS } from '../constants/gameConfig';
 
 interface ButtonProps {
@@ -16,6 +11,25 @@ interface ButtonProps {
   style?: ViewStyle;
 }
 
+// Platform-aware shadow helper — returns iOS shadow, Android elevation, or web boxShadow
+function platformShadow(color: string, offsetY: number, opacity: number, radius: number, elevation: number): ViewStyle {
+  if (Platform.OS === 'web') {
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    return { boxShadow: `0px ${offsetY}px ${radius}px rgba(${r},${g},${b},${opacity})` } as ViewStyle;
+  }
+  if (Platform.OS === 'android') {
+    return { elevation };
+  }
+  return {
+    shadowColor: color,
+    shadowOffset: { width: 0, height: offsetY },
+    shadowOpacity: opacity,
+    shadowRadius: radius,
+  };
+}
+
 export function Button({
   title,
   onPress,
@@ -24,27 +38,23 @@ export function Button({
   loading = false,
   style,
 }: ButtonProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
     if (disabled) return;
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
-  }, [disabled, scale]);
+    Animated.timing(scaleAnim, { toValue: 0.95, duration: 80, useNativeDriver: true }).start();
+  }, [disabled, scaleAnim]);
 
   const handlePressOut = useCallback(() => {
     if (disabled) return;
-    scale.value = withSpring(1.0, { damping: 12, stiffness: 200 });
-  }, [disabled, scale]);
+    Animated.timing(scaleAnim, { toValue: 1.0, duration: 80, useNativeDriver: true }).start();
+  }, [disabled, scaleAnim]);
 
   const variantStyle =
     variant === 'gold'
-      ? styles.variantGold
+      ? [styles.variantGold, platformShadow(COLORS.gold, 4, 0.5, 8, 8)]
       : variant === 'secondary'
-      ? styles.variantSecondary
+      ? [styles.variantSecondary, platformShadow(COLORS.neonBlue, 0, 0.2, 6, 4)]
       : styles.variantGhost;
 
   const textStyle =
@@ -55,12 +65,13 @@ export function Button({
       : styles.textGhost;
 
   return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
+        activeOpacity={0.8}
         style={[
           styles.base,
           variantStyle,
@@ -69,17 +80,16 @@ export function Button({
         ]}
         accessibilityRole="button"
         accessibilityLabel={title}
-        accessibilityState={{ disabled: disabled || loading }}
       >
         {loading ? (
           <ActivityIndicator
-            color={variant === 'gold' ? '#000000' : COLORS.neonBlue}
+            color={variant === 'gold' ? COLORS.background : COLORS.neonBlue}
             size="small"
           />
         ) : (
           <Text style={[styles.text, textStyle]}>{title}</Text>
         )}
-      </Pressable>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -97,21 +107,11 @@ const styles = StyleSheet.create({
   },
   variantGold: {
     backgroundColor: COLORS.gold,
-    shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
   },
   variantSecondary: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: COLORS.neonBlue,
-    shadowColor: COLORS.neonBlue,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
   },
   variantGhost: {
     backgroundColor: 'transparent',
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   textGold: {
-    color: '#000000',
+    color: COLORS.background,
     fontSize: 16,
     fontWeight: '900',
   },
