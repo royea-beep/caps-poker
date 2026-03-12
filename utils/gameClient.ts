@@ -1,5 +1,14 @@
-import TcpSocket from 'react-native-tcp-socket';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
+
+// Lazy-load TcpSocket — crashes on web where native modules aren't available
+let TcpSocket: any = null;
+function getTcpSocket() {
+  if (!TcpSocket) {
+    if (Platform.OS === 'web') throw new Error('TCP not available on web');
+    TcpSocket = require('react-native-tcp-socket').default;
+  }
+  return TcpSocket;
+}
 import { v4 as uuidv4 } from 'uuid';
 import {
   NETWORK_CONFIG,
@@ -85,7 +94,7 @@ export class GameClient {
       }, NETWORK_CONFIG.connectionTimeoutMs);
 
       try {
-        this.socket = TcpSocket.createConnection(
+        this.socket = getTcpSocket().createConnection(
           { host: hostIP, port },
           () => {
             // Connected — send join request
