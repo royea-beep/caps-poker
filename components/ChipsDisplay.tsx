@@ -14,7 +14,7 @@ export default function ChipsDisplay({ amount, label, size = 'small' }: ChipsDis
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.chipRow}>
-        <Text style={[styles.chipIcon, isLarge && styles.chipIconLarge]}>{'\ud83e\ude99'}</Text>
+        <View style={[styles.chipDot, isLarge && styles.chipDotLarge]} />
         <Text style={[styles.amount, isLarge && styles.amountLarge]}>
           {amount.toLocaleString()}
         </Text>
@@ -40,11 +40,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  chipIcon: {
-    fontSize: 20,
+  chipDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#f0c040',
   },
-  chipIconLarge: {
-    fontSize: 28,
+  chipDotLarge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
   amount: {
     color: COLORS.gold,
