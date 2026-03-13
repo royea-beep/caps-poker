@@ -209,7 +209,7 @@ export default function SettingsScreen() {
         <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
         <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
 
-        <Text style={styles.sectionTitle}>AUDIO &amp; NOTIFICATIONS</Text>
+        <Text style={styles.sectionTitle}>AUDIO & NOTIFICATIONS</Text>
         <SoundToggle />
         <NotificationsToggle />
 
