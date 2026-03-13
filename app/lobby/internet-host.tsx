@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { useGameStore } from '../../store/gameStore';
-import { COLORS } from '../../constants/gameConfig';
+import { COLORS, getBoardCount } from '../../constants/gameConfig';
+import { dealCardsMultiplayer } from '../../utils/deck';
 import {
   RealtimeServer,
   generateOnlineRoomCode,
@@ -57,8 +58,43 @@ export default function InternetHostScreen() {
       Alert.alert('Need Players', 'Wait for at least one player to join.');
       return;
     }
-    router.push('/multiplayer-game' as any);
-  }, [players.length, router]);
+
+    const playerCount = Math.min(4, Math.max(2, players.length)) as 2 | 3 | 4;
+    const deal = dealCardsMultiplayer(playerCount);
+
+    // Broadcast cards to each player
+    players.forEach((p, idx) => {
+      if (idx === 0) return; // Host is index 0, skip broadcast to self
+      serverRef.current?.sendToPlayer(p.id, 'cards_dealt', {
+        playerCount,
+        yourCards: deal.playerHands[idx],
+        boards: deal.boards.map((b, i) => ({
+          boardIndex: i,
+          openCards: b.openCards,
+          closedCardCount: b.closedCards.length,
+        })),
+        playerIndex: idx,
+      });
+    });
+
+    // Navigate host to multiplayer game with params
+    router.replace({
+      pathname: '/multiplayer-game',
+      params: {
+        isHost: 'true',
+        playerIndex: '0',
+        playerCount: playerCount.toString(),
+        yourCards: JSON.stringify(deal.playerHands[0]),
+        boards: JSON.stringify(
+          deal.boards.map((b, i) => ({
+            boardIndex: i,
+            openCards: b.openCards,
+            closedCardCount: b.closedCards.length,
+          }))
+        ),
+      },
+    });
+  }, [players, router]);
 
   const handleCancel = useCallback(() => {
     if (serverRef.current) {

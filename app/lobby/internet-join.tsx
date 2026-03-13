@@ -38,6 +38,20 @@ export default function InternetJoinScreen() {
 
     client.onPresenceChange((p) => setPlayers(p));
 
+    // Listen for cards_dealt from host to navigate to game
+    client.onMessage('cards_dealt', (data) => {
+      router.replace({
+        pathname: '/multiplayer-game',
+        params: {
+          isHost: 'false',
+          playerIndex: String(data.playerIndex ?? 1),
+          playerCount: String(data.playerCount),
+          yourCards: JSON.stringify(data.yourCards),
+          boards: JSON.stringify(data.boards),
+        },
+      });
+    });
+
     const ok = await client.connect(trimmed, playerName);
     if (ok) {
       setStatus('connected');
