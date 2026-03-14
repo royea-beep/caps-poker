@@ -332,10 +332,10 @@ export default function Board({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(45, 31, 20, 0.7)',
+    backgroundColor: '#1f3a1a',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1.5,
+    borderColor: '#2d5a24',
     overflow: 'hidden',
   },
   pressableInner: {
@@ -390,11 +390,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   boardLabel: {
-    color: COLORS.textDim,
-    fontSize: 10,
-    fontWeight: '700',
+    color: '#c8a84b',
+    fontSize: 11,
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   rowLabel: {
     color: COLORS.textDim,
@@ -445,18 +445,19 @@ const styles = StyleSheet.create({
   emptySlot: {
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: '#c8a84b55',
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.12)',
   },
   dropTarget: {
-    borderColor: COLORS.gold,
+    borderColor: '#c8a84b',
     borderWidth: 2,
   },
   plusText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#c8a84b88',
     fontSize: 16,
   },
   handName: {

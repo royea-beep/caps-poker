@@ -1,4 +1,4 @@
-// Caps Poker Theme — Central Perk coffee shop aesthetic
+// Caps Poker Theme — Central Perk premium aesthetic
 
 // ─── Spacing ────────────────────────────────────────────────────────────────
 export const spacing = {
@@ -22,66 +22,67 @@ export const fontWeight = {
   black: '900' as const,
 };
 
-// ─── Colors (Espresso brown + orange accents) ───────────────────────────────
+// ─── Colors (Premium espresso + antique gold) ───────────────────────────────
 export const colors = {
-  // Core surfaces — espresso brown
-  background: '#1a0f0a',
-  surface: '#2d1f14',
-  surfaceRaised: '#3d2a1a',
-  border: '#4d3a2a',
+  // Core surfaces — darkest espresso
+  background: '#0d0600',
+  surface: '#1a0e06',
+  surfaceRaised: '#2a1a0e',
+  border: '#3d2a1a',
   overlay: 'rgba(0,0,0,0.85)',
 
-  // Orange accent (Central Perk couch)
-  gold: '#e8762b',
-  goldLight: '#f09040',
-  goldDim: '#b85a1a',
-  goldGlow: '#e8762b66',
+  // Primary accent — warm amber
+  gold: '#c96a1a',
+  goldLight: '#d4862e',
+  goldDim: '#8a4a10',
+  goldGlow: '#c96a1a66',
+  goldBright: '#c8a84b',
 
   // Warm accents
-  neonBlue: '#d4a843',    // warm gold instead of neon blue
-  neonPurple: '#a07850',  // mocha
-  neonGreen: '#5a8a3c',   // Central Perk green
-  neonRed: '#cc3333',     // warm red
+  neonBlue: '#c8a84b',    // antique gold
+  neonPurple: '#8a6a45',  // mocha
+  neonGreen: '#2d7a2d',   // forest green
+  neonRed: '#c0392b',     // warm red
 
-  // Text — cream/latte tones
-  text: '#f5e6d3',
-  textMuted: '#c4a882',
-  textDim: '#8a6a4a',
+  // Text — warm cream
+  text: '#f0dfc0',
+  textMuted: '#8a6a45',
+  textDim: '#6a5030',
 
   // Cards
-  cardRed: '#cc2233',
-  cardBlack: '#2a1a10',
-  cardBack: '#3d2a1a',
-  cardFace: '#f5e6d3',
+  cardRed: '#c0392b',
+  cardBlack: '#1a1a1a',
+  cardBack: '#2a1810',
+  cardFace: '#f5e6c8',
+  cardWhite: '#f5e6c8',
+  cardBackPattern: '#3d2a1a',
 
   // Semantic
-  success: '#5a8a3c',
-  error: '#cc3333',
-  danger: '#cc3333',
+  success: '#2d7a2d',
+  error: '#c0392b',
+  danger: '#c0392b',
 
-  // Board
-  boardBorder: '#4d3a2a',
-  boardActive: '#e8762b',
-  boardFull: '#5a8a3c',
+  // Board — dark poker green
+  boardBg: '#1f3a1a',
+  boardBorder: '#2d5a24',
+  boardActive: '#c96a1a',
+  boardFull: '#2d7a2d',
 
-  // Legacy aliases — backward compat
-  felt: '#1a0f0a',
-  feltLight: '#2d1f14',
-  goldBright: '#f09040',
-  cardWhite: '#f5e6d3',
-  cardBackPattern: '#4d3a2a',
-  red: '#cc3333',
-  black: '#2a1a10',
-  white: '#f5e6d3',
-  textPrimary: '#f5e6d3',
-  textSecondary: '#c4a882',
-  chipGreen: '#5a8a3c',
-  chipRed: '#cc3333',
+  // Legacy aliases
+  felt: '#0d0600',
+  feltLight: '#1a0e06',
+  red: '#c0392b',
+  black: '#1a1a1a',
+  white: '#f0dfc0',
+  textPrimary: '#f0dfc0',
+  textSecondary: '#8a6a45',
+  chipGreen: '#2d7a2d',
+  chipRed: '#c0392b',
 
   // Button
-  buttonPrimary: '#e8762b',
-  buttonSecondary: '#2d1f14',
-  buttonDanger: '#cc3333',
+  buttonPrimary: '#c96a1a',
+  buttonSecondary: '#1a0e06',
+  buttonDanger: '#8b1a1a',
 } as const;
 
 // ─── Unified THEME export ──────────────────────────────────────────────────

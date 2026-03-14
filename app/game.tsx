@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
@@ -36,6 +43,52 @@ const haptic = (style: any) => {
 const hapticNotify = (type: any) => {
   Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
+
+// Circular timer component
+function CircularTimer({ timeLeft, totalTime, size, color, pulsing }: { timeLeft: number; totalTime: number; size: number; color: string; pulsing: boolean }) {
+  const pulseScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (pulsing) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.12, { duration: 500 }),
+          withTiming(1, { duration: 500 }),
+        ),
+        -1,
+      );
+    } else {
+      pulseScale.value = withTiming(1, { duration: 200 });
+    }
+  }, [pulsing]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
+  const m = Math.floor(timeLeft / 60);
+  const s = timeLeft % 60;
+  const timeStr = `${m}:${s.toString().padStart(2, '0')}`;
+
+  return (
+    <Animated.View style={[timerStyles.container, { width: size, height: size, borderRadius: size / 2, borderColor: color }, animStyle]}>
+      <Text style={[timerStyles.text, { color, fontSize: size * 0.32 }]}>{timeStr}</Text>
+    </Animated.View>
+  );
+}
+
+const timerStyles = StyleSheet.create({
+  container: {
+    borderWidth: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  text: {
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+});
 
 // Layout constants (heights that don't depend on safe area)
 const TOP_BAR_H = 44;
@@ -285,17 +338,26 @@ export default function GameScreen() {
   }, [allBoardsFull, timer]);
 
   const handleBack = useCallback(() => {
+    const leave = () => {
+      // Always navigate to home — router.back() may fail if navigated via replace
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+    };
+
     if (isArranging || phase.type === 'waiting_for_bot') {
       Alert.alert(
         'Leave Game?',
         'You will lose your pot for this hand.',
         [
           { text: 'Stay', style: 'cancel' },
-          { text: 'Leave', style: 'destructive', onPress: () => router.back() },
+          { text: 'Leave', style: 'destructive', onPress: leave },
         ]
       );
     } else {
-      router.back();
+      leave();
     }
   }, [isArranging, phase.type, router]);
 
@@ -307,32 +369,34 @@ export default function GameScreen() {
 
   const displayTimeLeft = phase.type === 'arranging' ? phase.timeLeft : 0;
   const timerColor = displayTimeLeft > 30
-    ? COLORS.success
+    ? '#4CAF50'
     : displayTimeLeft > 15
-    ? COLORS.gold
-    : COLORS.danger;
+    ? '#FFC107'
+    : '#e74c3c';
+  const timerPulsing = displayTimeLeft <= 10 && displayTimeLeft > 0;
 
   const readyBotCount = botsReady.filter(Boolean).length;
   const cardsRemaining = playerHand.length;
 
+  // Circular timer dimensions
+  const TIMER_SIZE = 52;
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top bar */}
+      {/* Header bar */}
       <View style={styles.topBar}>
         <Pressable onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
-        <View style={styles.topInfo}>
+        <View style={styles.topCenter}>
           {isArranging && (
-            <View style={[
-              styles.timerContainer,
-              { borderColor: timerColor },
-              displayTimeLeft <= 15 && styles.timerUrgent,
-            ]}>
-              <Text style={[styles.timerText, { color: timerColor }]}>
-                {formatTime(displayTimeLeft)}
-              </Text>
-            </View>
+            <CircularTimer
+              timeLeft={displayTimeLeft}
+              totalTime={config.arrangementTime}
+              size={TIMER_SIZE}
+              color={timerColor}
+              pulsing={timerPulsing}
+            />
           )}
           {phase.type === 'waiting_for_bot' && (
             <Text style={styles.waitingText}>
@@ -388,15 +452,34 @@ export default function GameScreen() {
         />
       )}
 
-      {/* Ready button */}
+      {/* Floating action buttons */}
       {isArranging && (
-        <View style={styles.readySection}>
-          <Button
-            title={allBoardsFull ? 'READY' : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`}
-            variant="gold"
-            disabled={!allBoardsFull}
+        <View style={styles.floatingActions}>
+          <Pressable
+            style={[styles.floatingBtn, styles.undoBtn]}
+            onPress={() => {
+              // Remove last placed card from any board
+              for (let i = boards.length - 1; i >= 0; i--) {
+                if (boards[i].playerCards.length > 0) {
+                  const lastCard = boards[i].playerCards[boards[i].playerCards.length - 1];
+                  handleRemoveCardFromBoard(i, lastCard);
+                  break;
+                }
+              }
+            }}
+            disabled={boards.every((b) => b.playerCards.length === 0)}
+          >
+            <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>UNDO</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled]}
             onPress={handleReady}
-          />
+            disabled={!allBoardsFull}
+          >
+            <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
+              {allBoardsFull ? 'READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
+            </Text>
+          </Pressable>
         </View>
       )}
     </SafeAreaView>
@@ -416,34 +499,20 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 18,
   },
   backText: {
     color: COLORS.textSecondary,
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: '600',
   },
-  topInfo: {
+  topCenter: {
     alignItems: 'center',
-  },
-  timerContainer: {
-    backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
-  },
-  timerUrgent: {
-    borderColor: COLORS.danger,
-    backgroundColor: COLORS.neonRed + '26',
-  },
-  timerText: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
   },
   botSection: {
     alignItems: 'center',
@@ -461,13 +530,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 4,
   },
-  readySection: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
   waitingText: {
     color: COLORS.textSecondary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Floating action buttons
+  floatingActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  floatingBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: { elevation: 6 },
+      default: {},
+    }),
+  },
+  undoBtn: {
+    backgroundColor: '#3d2a1a',
+    borderWidth: 1,
+    borderColor: '#5a3d25',
+  },
+  placeBtn: {
+    backgroundColor: '#c8a84b',
+    flex: 1,
+    alignItems: 'center',
+  },
+  placeBtnDisabled: {
+    backgroundColor: '#5a4520',
+    opacity: 0.6,
+  },
+  floatingBtnText: {
+    color: '#f0dfc0',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  floatingBtnDisabled: {
+    opacity: 0.4,
+  },
+  placeBtnText: {
+    color: '#0d0600',
   },
 });

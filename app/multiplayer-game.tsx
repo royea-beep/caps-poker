@@ -537,17 +537,25 @@ export default function MultiplayerGameScreen() {
   }, [allBoardsFull, timer, boards, isHost, mpServer, mpClient]);
 
   const handleBack = useCallback(() => {
+    const leave = () => {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+    };
+
     if (phase === 'arranging' || phase === 'waiting') {
       Alert.alert(
         'Leave Game?',
         'You will forfeit this hand if you leave.',
         [
           { text: 'Stay', style: 'cancel' },
-          { text: 'Leave', style: 'destructive', onPress: () => router.back() },
+          { text: 'Leave', style: 'destructive', onPress: leave },
         ]
       );
     } else {
-      router.back();
+      leave();
     }
   }, [phase, router]);
 
