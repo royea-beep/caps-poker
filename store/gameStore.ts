@@ -15,6 +15,13 @@ interface GameStore {
   playerName: string;
   notificationsEnabled: boolean;
 
+  // Economy state (persisted)
+  lastDailyRewardClaim: string | null;
+  dailyRewardStreak: number;
+  lastFreeRefill: string | null;
+  totalChipsEarned: number;
+  totalChipsSpent: number;
+
   // Transient session state (NOT persisted)
   sessionStartChips: number;
 
@@ -43,6 +50,11 @@ interface GameStore {
   setNotificationsEnabled: (enabled: boolean) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
+  trackChipsSpent: (amount: number) => void;
+  trackChipsEarned: (amount: number) => void;
+  setLastDailyRewardClaim: (iso: string) => void;
+  setDailyRewardStreak: (streak: number) => void;
+  setLastFreeRefill: (iso: string) => void;
 
   // Session actions
   initSession: () => void;
@@ -75,6 +87,13 @@ export const useGameStore = create<GameStore>()(
       biggestWin: 0,
       playerName: '',
       notificationsEnabled: true,
+
+      // Economy state (persisted)
+      lastDailyRewardClaim: null,
+      dailyRewardStreak: 0,
+      lastFreeRefill: null,
+      totalChipsEarned: 0,
+      totalChipsSpent: 0,
 
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
@@ -122,6 +141,15 @@ export const useGameStore = create<GameStore>()(
           return { config: merged };
         }),
       resetConfig: () => set({ config: { ...DEFAULT_CONFIG } }),
+      trackChipsSpent: (amount: number) => set((state) => ({
+        totalChipsSpent: state.totalChipsSpent + Math.max(0, amount),
+      })),
+      trackChipsEarned: (amount: number) => set((state) => ({
+        totalChipsEarned: state.totalChipsEarned + Math.max(0, amount),
+      })),
+      setLastDailyRewardClaim: (iso: string) => set({ lastDailyRewardClaim: iso }),
+      setDailyRewardStreak: (streak: number) => set({ dailyRewardStreak: streak }),
+      setLastFreeRefill: (iso: string) => set({ lastFreeRefill: iso }),
 
       // Reveal actions
       setRevealData: (data) => set({ revealData: data }),
@@ -163,7 +191,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
     }
   )
 );

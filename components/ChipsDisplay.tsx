@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#f0c040',
+    backgroundColor: '#e8762b',
   },
   chipDotLarge: {
     width: 20,

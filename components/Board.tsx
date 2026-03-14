@@ -332,7 +332,7 @@ export default function Board({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(13, 74, 38, 0.7)',
+    backgroundColor: 'rgba(45, 31, 20, 0.7)',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',

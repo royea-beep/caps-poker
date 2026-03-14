@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { preloadSounds } from '../utils/sounds';
+import { WebContainer } from '../components/WebContainer';
 
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
@@ -22,13 +23,15 @@ export default function RootLayout() {
   return (
     <RootWrapper style={{ flex: 1 }}>
       <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: COLORS.background },
-          animation: 'fade',
-        }}
-      />
+      <WebContainer>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: COLORS.background },
+            animation: 'fade',
+          }}
+        />
+      </WebContainer>
     </RootWrapper>
   );
 }

@@ -89,7 +89,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     return (
       <View style={[styles.card, styles.faceDown, { width, height }]}>
         <View style={styles.backPattern}>
-          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2660'}</Text>
+          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2666'}</Text>
         </View>
       </View>
     );
@@ -103,7 +103,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
       {/* Back face */}
       <Animated.View style={[styles.card, styles.faceDown, { width, height }, backAnimStyle]}>
         <View style={styles.backPattern}>
-          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2660'}</Text>
+          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2666'}</Text>
         </View>
       </Animated.View>
 
@@ -161,8 +161,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: COLORS.cardBackPattern,
-    opacity: 0.5,
+    color: '#e8762b',
+    opacity: 0.6,
   },
   rank: {
     fontWeight: '900',

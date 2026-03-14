@@ -4,8 +4,11 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { useGameStore } from '../../store/gameStore';
-import { COLORS } from '../../constants/gameConfig';
+import { COLORS, getBoardCount } from '../../constants/gameConfig';
+import { ECONOMY_FLAGS } from '../../constants/economyConfig';
+import { getMatchCost, canAffordMatch } from '../../utils/economy';
 import { GameServer, ConnectedClient } from '../../utils/gameServer';
+import { CapsHooks } from '../../utils/learning';
 
 export default function HostLobbyScreen() {
   const router = useRouter();
@@ -84,6 +87,15 @@ export default function HostLobbyScreen() {
   const handleStartGame = useCallback(() => {
     if (!serverRef.current || !canStart) return;
 
+    // Affordability gate (only when economy match cost is enabled)
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      const cost = getMatchCost(config.potPerBoard, getBoardCount(connectedCount as 2 | 3 | 4));
+      if (!canAffordMatch(useGameStore.getState().chips, cost)) {
+        Alert.alert('Not Enough Chips', `You need ${cost} chips to start a game.`);
+        return;
+      }
+    }
+
     // Update store with player info
     setConnectedPlayers(
       players
@@ -98,6 +110,7 @@ export default function HostLobbyScreen() {
         }))
     );
 
+    CapsHooks.multiplayerJoined(serverRef.current.getRoomCode(), 'tcp');
     serverRef.current.startGame(config);
     const { boards, playerHands } = serverRef.current.getDealtCards();
 

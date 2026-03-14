@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -12,18 +12,83 @@ import Animated, {
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { COLORS } from '../constants/gameConfig';
+import { COLORS, getBoardCount } from '../constants/gameConfig';
+import { ECONOMY_FLAGS } from '../constants/economyConfig';
+import {
+  getMatchCost,
+  canAffordMatch,
+  canClaimDailyReward,
+  getNextStreak,
+  calculateDailyReward,
+  canUseFreeRefill,
+  getFreeRefillAmount,
+} from '../utils/economy';
+import { CapsHooks } from '../utils/learning';
 
 const isWeb = Platform.OS === 'web';
 
 export default function HomeScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
+  const config = useGameStore((s) => s.config);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
   const bestChips = useGameStore((s) => s.bestChips);
   const sessionStartChips = useGameStore((s) => s.sessionStartChips);
+  const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
+  const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
+  const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
 
   const sessionNet = chips - sessionStartChips;
+
+  useEffect(() => {
+    CapsHooks.screenViewed('home');
+  }, []);
+
+  const handleNewHand = useCallback(() => {
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
+      if (!canAffordMatch(chips, cost)) {
+        Alert.alert('Not Enough Chips', `You need ${cost} chips to play. Reset your chips or wait for a daily reward.`);
+        return;
+      }
+    }
+    router.push('/game' as any);
+  }, [chips, config, router]);
+
+  const handleClaimDailyReward = useCallback(() => {
+    const now = new Date();
+    if (!canClaimDailyReward(lastDailyRewardClaim, now)) {
+      Alert.alert('Already Claimed', 'Come back tomorrow for your next reward!');
+      return;
+    }
+    const nextStreak = getNextStreak(lastDailyRewardClaim, dailyRewardStreak, now);
+    const reward = calculateDailyReward(nextStreak);
+    const store = useGameStore.getState();
+    store.addChips(reward);
+    store.trackChipsEarned(reward);
+    store.setLastDailyRewardClaim(now.toISOString());
+    store.setDailyRewardStreak(nextStreak);
+    CapsHooks.dailyRewardClaimed(nextStreak, reward);
+    Alert.alert('Daily Reward!', `+${reward} chips${nextStreak > 1 ? ` (${nextStreak}-day streak!)` : ''}`);
+  }, [lastDailyRewardClaim, dailyRewardStreak]);
+
+  const handleFreeRefill = useCallback(() => {
+    const now = new Date();
+    if (!canUseFreeRefill(lastFreeRefill, now)) {
+      Alert.alert('Refill Cooldown', 'You can refill again later.');
+      return;
+    }
+    const amount = getFreeRefillAmount();
+    const store = useGameStore.getState();
+    store.addChips(amount);
+    store.trackChipsEarned(amount);
+    store.setLastFreeRefill(now.toISOString());
+    Alert.alert('Free Refill!', `+${amount} chips added to your balance.`);
+  }, [lastFreeRefill]);
+
+  // Daily reward availability (for button state)
+  const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
+  const canRefill = ECONOMY_FLAGS.freeRefillEnabled && canUseFreeRefill(lastFreeRefill);
 
   // Pulsing glow behind title (native only)
   const glowOpacity = useSharedValue(0.3);
@@ -43,6 +108,23 @@ export default function HomeScreen() {
     opacity: glowOpacity.value,
   }));
 
+  // Steam animation for coffee cups
+  const steamOpacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    steamOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.7, { duration: 2000 }),
+        withTiming(0.2, { duration: 2000 }),
+      ),
+      -1,
+    );
+  }, []);
+
+  const steamStyle = useAnimatedStyle(() => ({
+    opacity: steamOpacity.value,
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -52,9 +134,39 @@ export default function HomeScreen() {
           ) : (
             <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
           )}
+
+          {/* Couch scene — decorative background */}
+          <View style={styles.couchScene}>
+            <View style={styles.couchContainer}>
+              <View style={styles.couchArm} />
+              <View style={styles.cushion} />
+              <View style={styles.cushion} />
+              <View style={styles.cushion} />
+              <View style={styles.couchArm} />
+            </View>
+            <View style={styles.coffeeTable}>
+              <View style={styles.coffeeCupContainer}>
+                <View style={styles.coffeeCup} />
+                {!isWeb ? (
+                  <Animated.View style={[styles.steam, steamStyle]} />
+                ) : (
+                  <View style={[styles.steam, { opacity: 0.4 }]} />
+                )}
+              </View>
+              <View style={styles.coffeeCupContainer}>
+                <View style={styles.coffeeCup} />
+                {!isWeb ? (
+                  <Animated.View style={[styles.steam, steamStyle]} />
+                ) : (
+                  <View style={[styles.steam, { opacity: 0.4 }]} />
+                )}
+              </View>
+            </View>
+          </View>
+
           <Text style={styles.titleSmall}>{'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}</Text>
           <Text style={styles.title}>CAPS</Text>
-          <Text style={styles.titleSub}>POKER</Text>
+          <Text style={styles.titleSub}>The One Where You Play Poker</Text>
           <View style={styles.titleLine} />
         </View>
 
@@ -70,8 +182,18 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        {ECONOMY_FLAGS.dailyRewardEnabled && (
+          <Button
+            title={canClaim ? 'CLAIM DAILY REWARD' : 'REWARD CLAIMED'}
+            variant={canClaim ? 'gold' : 'ghost'}
+            disabled={!canClaim}
+            onPress={handleClaimDailyReward}
+            style={{ width: '100%' }}
+          />
+        )}
+
         <View style={styles.buttonSection}>
-          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={() => router.push('/game' as any)} />
+          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={handleNewHand} />
           <Button title="PLAY ONLINE" variant="secondary" onPress={() => router.push('/lobby/internet-host' as any)} />
           <Button title="HOST GAME (WiFi)" variant="secondary" onPress={() => router.push('/lobby/host' as any)} />
           <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join' as any)} />
@@ -79,11 +201,20 @@ export default function HomeScreen() {
           <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
         </View>
 
-        <Button
-          title="Reset Chips"
-          variant="ghost"
-          onPress={() => useGameStore.getState().setChips(useGameStore.getState().config.startingChips)}
-        />
+        {ECONOMY_FLAGS.freeRefillEnabled ? (
+          <Button
+            title={canRefill ? 'FREE REFILL' : 'REFILL USED'}
+            variant={canRefill ? 'secondary' : 'ghost'}
+            disabled={!canRefill}
+            onPress={handleFreeRefill}
+          />
+        ) : (
+          <Button
+            title="Reset Chips"
+            variant="ghost"
+            onPress={() => useGameStore.getState().setChips(useGameStore.getState().config.startingChips)}
+          />
+        )}
 
         {__DEV__ && (
           <Button
@@ -93,6 +224,8 @@ export default function HomeScreen() {
           />
         )}
       </View>
+
+      <Text style={styles.versionLabel}>v1.2.0</Text>
     </SafeAreaView>
   );
 }
@@ -108,10 +241,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     gap: 28,
-    ...Platform.select({
-      web: { maxWidth: 540, alignSelf: 'center' as const, width: '100%' },
-      default: {},
-    }),
   },
   titleSection: {
     alignItems: 'center',
@@ -139,8 +268,63 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  // Couch scene styles
+  couchScene: {
+    position: 'absolute',
+    top: 10,
+    alignSelf: 'center',
+    alignItems: 'center',
+    opacity: 0.35,
+    zIndex: -1,
+  },
+  couchContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  couchArm: {
+    width: 18,
+    height: 50,
+    backgroundColor: '#c06020',
+    borderRadius: 10,
+  },
+  cushion: {
+    width: 70,
+    height: 60,
+    backgroundColor: '#e8762b',
+    borderRadius: 20,
+  },
+  coffeeTable: {
+    width: 160,
+    height: 8,
+    backgroundColor: '#2d1f14',
+    borderRadius: 3,
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+  },
+  coffeeCupContainer: {
+    alignItems: 'center',
+    marginTop: -16,
+  },
+  coffeeCup: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#c4a882',
+    borderWidth: 1.5,
+    borderColor: '#2d1f14',
+  },
+  steam: {
+    width: 2,
+    height: 10,
+    backgroundColor: '#c4a882',
+    borderRadius: 1,
+    marginTop: -12,
+  },
   titleSmall: {
-    color: COLORS.gold,
+    color: '#c4a882',
     fontSize: 22,
     letterSpacing: 14,
     marginBottom: 8,
@@ -155,10 +339,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 40,
   },
   titleSub: {
-    fontSize: 26,
+    fontSize: 16,
     fontWeight: '300',
     color: COLORS.textMuted,
-    letterSpacing: 14,
+    letterSpacing: 4,
     marginTop: -4,
   },
   titleLine: {
@@ -186,9 +370,13 @@ const styles = StyleSheet.create({
   buttonSection: {
     width: '100%',
     gap: 12,
-    ...Platform.select({
-      web: { maxWidth: 480, alignSelf: 'center' as const },
-      default: {},
-    }),
+  },
+  versionLabel: {
+    position: 'absolute',
+    bottom: 12,
+    right: 16,
+    color: COLORS.textDim,
+    fontSize: 11,
+    fontWeight: '500',
   },
 });

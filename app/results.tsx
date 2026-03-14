@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -23,6 +23,10 @@ import { COLORS, getBoardCount } from '../constants/gameConfig';
 import { CardsDealtPayload } from '../constants/networkConfig';
 import { playSound } from '../utils/sounds';
 import { submitScore } from '../utils/leaderboard';
+import { WEB_MAX_WIDTH } from '../components/WebContainer';
+import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
+import { getMatchCost, canAffordMatch } from '../utils/economy';
+import { CapsHooks } from '../utils/learning';
 
 // Animation timing
 const BOARD_STAGGER = 250;
@@ -33,7 +37,8 @@ const BUTTONS_DELAY = 400;
 
 export default function ResultsScreen() {
   const router = useRouter();
-  const { width: SCREEN_W } = useWindowDimensions();
+  const { width: rawW } = useWindowDimensions();
+  const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const revealData = useGameStore((s) => s.revealData);
@@ -46,11 +51,14 @@ export default function ResultsScreen() {
   const mpServer = useGameStore((s) => s.mpServer);
   const mpClient = useGameStore((s) => s.mpClient);
   const connectedPlayers = useGameStore((s) => s.connectedPlayers);
+  const storeRoomCode = useGameStore((s) => s.roomCode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
   const [showButtons, setShowButtons] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
+  const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
+  const waitingTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const chipCountProgress = useSharedValue(0);
 
@@ -77,6 +85,14 @@ export default function ResultsScreen() {
     if (revealData.netChips > 0) {
       incrementHandsWon();
       updateBiggestWin(revealData.netChips);
+    }
+
+    // Track board results via learning hooks
+    revealData.boards.forEach((board, i) => {
+      CapsHooks.boardCompleted(i, board.playerHandName, board.winner === 'player');
+    });
+    if (revealData.isComplete && revealData.completeBonusAmount > 0) {
+      CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
     }
 
     // Submit to leaderboard (async, silent fail)
@@ -127,6 +143,22 @@ export default function ResultsScreen() {
     if (isMultiplayer) {
       setWaitingForNextHand(true);
 
+      // Start waiting timeout (CAPS 10)
+      waitingTimeoutRef.current = setTimeout(() => {
+        Alert.alert(
+          'Waiting Timed Out',
+          'No response from other players.',
+          [
+            { text: 'Keep Waiting', style: 'cancel' },
+            { text: 'Leave', style: 'destructive', onPress: () => {
+              useGameStore.getState().resetMultiplayer();
+              clearRevealData();
+              router.replace('/');
+            }},
+          ]
+        );
+      }, WAITING_STATE_TIMEOUT_MS);
+
       const navigateToMpGame = (
         isHost: boolean,
         pIndex: number,
@@ -151,6 +183,7 @@ export default function ResultsScreen() {
         // Host: update callback, then request
         mpServer.updateCallbacks({
           onNewHandDealt: () => {
+            if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
             const { boards: newBoards, playerHands } = mpServer.getDealtCards();
             const boardsData = newBoards.map((b: any, i: number) => ({
               boardIndex: i,
@@ -168,7 +201,44 @@ export default function ResultsScreen() {
         const mySeat = connectedPlayers.find((p) => p.id === myId)?.seat ?? 1;
         mpClient.updateCallbacks({
           onCardsDealt: (data: CardsDealtPayload) => {
+            if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
             navigateToMpGame(false, mySeat, data.playerCount, data.yourCards, data.boards);
+          },
+          // Host-lost detection while waiting for next hand (CAPS 10)
+          onHostLost: () => {
+            if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
+            setDisconnectMessage('Host disconnected');
+            Alert.alert(
+              'Host Disconnected',
+              'The host has left the game.',
+              [{ text: 'Leave', onPress: () => {
+                useGameStore.getState().resetMultiplayer();
+                clearRevealData();
+                router.replace('/');
+              }}]
+            );
+          },
+          // Connection lost with rejoin option (CAPS 12)
+          onDisconnected: () => {
+            if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
+            setDisconnectMessage('Connection lost');
+            const code = storeRoomCode;
+            Alert.alert(
+              'Connection Lost',
+              'Lost connection to the game room. You can try to rejoin.',
+              [
+                { text: 'Leave', style: 'cancel', onPress: () => {
+                  useGameStore.getState().resetMultiplayer();
+                  clearRevealData();
+                  router.replace('/');
+                }},
+                { text: 'Rejoin', onPress: () => {
+                  useGameStore.getState().resetMultiplayer();
+                  clearRevealData();
+                  router.replace({ pathname: '/lobby/internet-join', params: code ? { prefillCode: code } : {} } as any);
+                }},
+              ]
+            );
           },
         });
         mpClient.sendNextHandRequest();
@@ -178,7 +248,8 @@ export default function ResultsScreen() {
 
     // Single-player: navigate directly
     clearRevealData();
-    if (chips >= config.potPerBoard * boardCount) {
+    const matchCost = getMatchCost(config.potPerBoard, boardCount);
+    if (canAffordMatch(chips, matchCost)) {
       router.replace('/game');
     } else {
       router.replace('/gameover');
@@ -387,7 +458,21 @@ export default function ResultsScreen() {
           <Animated.View style={styles.buttons} entering={FadeIn.duration(400)}>
             {waitingForNextHand ? (
               <View style={styles.waitingNextHand}>
-                <Text style={styles.waitingNextHandText}>Waiting for other players...</Text>
+                <Text style={styles.waitingNextHandText}>
+                  {disconnectMessage || 'Waiting for other players...'}
+                </Text>
+                {disconnectMessage && (
+                  <Button
+                    title="LEAVE"
+                    variant="secondary"
+                    onPress={() => {
+                      useGameStore.getState().resetMultiplayer();
+                      clearRevealData();
+                      router.replace('/');
+                    }}
+                    style={{ marginTop: 8, width: '100%' }}
+                  />
+                )}
               </View>
             ) : (
               <>
@@ -455,10 +540,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 12,
     alignItems: 'center',
-    ...Platform.select({
-      web: { maxWidth: 480, alignSelf: 'center' as const, width: '100%' },
-      default: {},
-    }),
   },
   loadingContainer: {
     flex: 1,
