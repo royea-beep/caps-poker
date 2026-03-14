@@ -12,7 +12,6 @@ import Animated, {
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
-import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
@@ -25,7 +24,6 @@ import {
   calculateHandResultsMulti,
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
-import { useGameTimer } from '../hooks/useGameTimer';
 import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 
@@ -45,7 +43,7 @@ const hapticNotify = (type: any) => {
 };
 
 // Circular timer component
-function CircularTimer({ timeLeft, totalTime, size, color, pulsing }: { timeLeft: number; totalTime: number; size: number; color: string; pulsing: boolean }) {
+function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; size: number; color: string; pulsing: boolean }) {
   const pulseScale = useSharedValue(1);
 
   useEffect(() => {
@@ -66,9 +64,8 @@ function CircularTimer({ timeLeft, totalTime, size, color, pulsing }: { timeLeft
     transform: [{ scale: pulseScale.value }],
   }));
 
-  const m = Math.floor(timeLeft / 60);
   const s = timeLeft % 60;
-  const timeStr = `${m}:${s.toString().padStart(2, '0')}`;
+  const timeStr = `0:${s.toString().padStart(2, '0')}`;
 
   return (
     <Animated.View style={[timerStyles.container, { width: size, height: size, borderRadius: size / 2, borderColor: color }, animStyle]}>
@@ -90,7 +87,9 @@ const timerStyles = StyleSheet.create({
   },
 });
 
-// Layout constants (heights that don't depend on safe area)
+const COUNTDOWN_SECONDS = 30;
+
+// Layout constants
 const TOP_BAR_H = 44;
 const BOT_STATUS_H = 20;
 const PLAYER_HAND_H = 130;
@@ -110,19 +109,24 @@ export default function GameScreen() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
-  // Layout: boards share space above PlayerHand — use actual safe area insets
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
   const BOARD_CHROME = 20;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  // During arrangement: community row + player row = 2 rows per board
   const BOARD_CARD_H = Math.max(28, Math.min(52, Math.floor(boardSpace / 2)));
 
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [botsReady, setBotsReady] = useState<boolean[]>([]);
-  const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: config.arrangementTime });
+  const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: 0 });
+  const [playerReady, setPlayerReady] = useState(false);
+
+  // New timer logic: no timer at start, 30s countdown when first player finishes
+  const [countdownActive, setCountdownActive] = useState(false);
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [firstFinisher, setFirstFinisher] = useState<string | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const mountedRef = useRef(true);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -132,32 +136,57 @@ export default function GameScreen() {
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
 
-  const isArranging = phase.type === 'arranging';
+  const isArranging = phase.type === 'arranging' && !playerReady;
 
-  // Auto-fill and ready handler (timer expired)
-  const handleAutoFillAndReady = useCallback(() => {
-    setBoards((currentBoards) => {
-      const { boards: filledBoards, remainingHand } = autoFillPlayerCards(playerHandRef.current, currentBoards);
-      setPlayerHand(remainingHand);
-      return filledBoards;
-    });
-    setSelectedCardId(null);
-    setPhase({ type: 'waiting_for_bot' });
+  // Start 30s countdown
+  const startCountdown = useCallback((finisherName: string) => {
+    if (countdownRef.current) return; // already running
+    setFirstFinisher(finisherName);
+    setCountdownActive(true);
+    setCountdown(COUNTDOWN_SECONDS);
+    playSound('timerLow');
+
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }, []);
 
-  const timer = useGameTimer({
-    initialSeconds: config.arrangementTime,
-    onExpire: handleAutoFillAndReady,
-    autoStart: true,
-  });
+  // When countdown hits 0 — auto-place remaining cards randomly
+  useEffect(() => {
+    if (countdownActive && countdown === 0 && !playerReady) {
+      // Shuffle remaining hand and auto-fill
+      setBoards((currentBoards) => {
+        const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
+        const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, currentBoards);
+        setPlayerHand(remainingHand);
+        return filledBoards;
+      });
+      setSelectedCardId(null);
+      setPlayerReady(true);
+      setPhase({ type: 'waiting_for_bot' });
+    }
+  }, [countdownActive, countdown, playerReady]);
 
-  // Cleanup on unmount
+  // Cleanup
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       timeoutsRef.current.forEach((t) => clearTimeout(t));
       timeoutsRef.current = [];
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
     };
   }, []);
 
@@ -176,7 +205,7 @@ export default function GameScreen() {
       trackChipsSpent(buyIn);
     }
 
-    // Bot timers
+    // Bot timers — when first bot finishes, it triggers the countdown
     for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
       const delay = config.botSpeedMin + Math.random() * (config.botSpeedMax - config.botSpeedMin);
       const botCards = botHands[botIdx];
@@ -186,6 +215,11 @@ export default function GameScreen() {
         setBotsReady((prev) => {
           const updated = [...prev];
           updated[botIdx] = true;
+          // Check if this is the first finisher
+          const anyPrevReady = prev.some(Boolean);
+          if (!anyPrevReady) {
+            startCountdown(`Bot ${botIdx + 1}`);
+          }
           return updated;
         });
       }, delay);
@@ -193,24 +227,11 @@ export default function GameScreen() {
     }
   }, []);
 
-  // Sync timer into phase state + warning beep at 10s
-  const timerWarnedRef = useRef(false);
-  useEffect(() => {
-    if (isArranging) {
-      setPhase({ type: 'arranging', timeLeft: timer.timeLeft });
-      if (timer.timeLeft === 10 && !timerWarnedRef.current) {
-        timerWarnedRef.current = true;
-        playSound('timerLow');
-      }
-    }
-  }, [timer.timeLeft, isArranging]);
-
-  // Navigate to reveal when bots ready
+  // Navigate to reveal when all ready (player + bots)
   const navigateToReveal = useCallback((currentBoards: BoardState[]) => {
     if (!mountedRef.current) return;
     const results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
 
-    // Build reveal board data
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
       const result = results.boardResults[i];
       const playerHighlightIds = result ? result.playerResult.playerCardsUsed.map((c) => c.id) : [];
@@ -237,7 +258,6 @@ export default function GameScreen() {
       };
     });
 
-    // Credit chips won
     addChips(results.playerChipsWon);
 
     setRevealData({
@@ -261,10 +281,15 @@ export default function GameScreen() {
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
   useEffect(() => {
-    if (phase.type === 'waiting_for_bot' && allBotsReady) {
+    if (playerReady && allBotsReady) {
+      // Stop countdown if still running
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
       navigateToReveal(boardsRef.current);
     }
-  }, [phase.type, allBotsReady, navigateToReveal]);
+  }, [playerReady, allBotsReady, navigateToReveal]);
 
   // Tap card in hand → select it
   const handleSelectCard = useCallback(
@@ -284,7 +309,6 @@ export default function GameScreen() {
       const currentHand = playerHandRef.current;
       if (currentHand.length === 0) return;
 
-      // Find the selected card, or use first card if none selected
       const cardToPlace = selectedCardId
         ? currentHand.find((c) => c.id === selectedCardId)
         : currentHand[0];
@@ -308,7 +332,7 @@ export default function GameScreen() {
     [isArranging, selectedCardId]
   );
 
-  // Tap placed card → remove from board, return to hand
+  // Tap placed card → remove from board
   const handleRemoveCardFromBoard = useCallback(
     (boardIndex: number, card: Card) => {
       if (!isArranging) return;
@@ -332,14 +356,18 @@ export default function GameScreen() {
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
-    timer.stop();
     setSelectedCardId(null);
+    setPlayerReady(true);
     setPhase({ type: 'waiting_for_bot' });
-  }, [allBoardsFull, timer]);
+
+    // If no countdown started yet, player is the first finisher — start countdown for bots
+    if (!countdownActive) {
+      startCountdown('You');
+    }
+  }, [allBoardsFull, countdownActive, startCountdown]);
 
   const handleBack = useCallback(() => {
     const leave = () => {
-      // Always navigate to home — router.back() may fail if navigated via replace
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -361,24 +389,16 @@ export default function GameScreen() {
     }
   }, [isArranging, phase.type, router]);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const displayTimeLeft = phase.type === 'arranging' ? phase.timeLeft : 0;
-  const timerColor = displayTimeLeft > 30
+  // Timer display
+  const timerColor = countdown > 20
     ? '#4CAF50'
-    : displayTimeLeft > 15
+    : countdown > 10
     ? '#FFC107'
     : '#e74c3c';
-  const timerPulsing = displayTimeLeft <= 10 && displayTimeLeft > 0;
+  const timerPulsing = countdown <= 10 && countdown > 0;
 
   const readyBotCount = botsReady.filter(Boolean).length;
   const cardsRemaining = playerHand.length;
-
-  // Circular timer dimensions
   const TIMER_SIZE = 52;
 
   return (
@@ -389,16 +409,21 @@ export default function GameScreen() {
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topCenter}>
-          {isArranging && (
-            <CircularTimer
-              timeLeft={displayTimeLeft}
-              totalTime={config.arrangementTime}
-              size={TIMER_SIZE}
-              color={timerColor}
-              pulsing={timerPulsing}
-            />
+          {countdownActive && isArranging && (
+            <View style={styles.countdownSection}>
+              <CircularTimer
+                timeLeft={countdown}
+                size={TIMER_SIZE}
+                color={timerColor}
+                pulsing={timerPulsing}
+              />
+              <Text style={styles.countdownLabel}>{firstFinisher} finished!</Text>
+            </View>
           )}
-          {phase.type === 'waiting_for_bot' && (
+          {!countdownActive && isArranging && (
+            <Text style={styles.freePlayLabel}>Arrange freely</Text>
+          )}
+          {playerReady && !allBotsReady && (
             <Text style={styles.waitingText}>
               Waiting for bot{numberOfBots > 1 ? 's' : ''}...
             </Text>
@@ -420,7 +445,7 @@ export default function GameScreen() {
         )}
       </View>
 
-      {/* Boards — stacked vertically */}
+      {/* Boards */}
       <View style={styles.boardsColumn}>
         {boards.map((board, i) => (
           <Board
@@ -443,7 +468,7 @@ export default function GameScreen() {
         ))}
       </View>
 
-      {/* Player hand — face-up cards at bottom */}
+      {/* Player hand */}
       {isArranging && (
         <PlayerHand
           cards={playerHand}
@@ -458,7 +483,6 @@ export default function GameScreen() {
           <Pressable
             style={[styles.floatingBtn, styles.undoBtn]}
             onPress={() => {
-              // Remove last placed card from any board
               for (let i = boards.length - 1; i >= 0; i--) {
                 if (boards[i].playerCards.length > 0) {
                   const lastCard = boards[i].playerCards[boards[i].playerCards.length - 1];
@@ -514,6 +538,22 @@ const styles = StyleSheet.create({
   topCenter: {
     alignItems: 'center',
   },
+  countdownSection: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  countdownLabel: {
+    color: '#FFC107',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  freePlayLabel: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
   botSection: {
     alignItems: 'center',
     paddingVertical: 2,
@@ -535,7 +575,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  // Floating action buttons
   floatingActions: {
     flexDirection: 'row',
     justifyContent: 'center',

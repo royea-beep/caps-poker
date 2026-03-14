@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +27,7 @@ import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
+import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 
 // Animation timing
 const BOARD_STAGGER = 250;
@@ -286,6 +287,21 @@ export default function ResultsScreen() {
   const botWins = boards.filter((b) => b.winner === 'bot').length;
   const potPerBoardTotal = revealData.potPerBoard * numberOfPlayers;
 
+  // Efficiency analysis — memoized so it runs once
+  const efficiency = useMemo<EfficiencyResult | null>(() => {
+    if (!revealData || boards.length === 0) return null;
+    try {
+      const playerCardsByBoard = boards.map((b) => b.playerCards);
+      const boardCommunityCards = boards.map((b) => ({
+        openCards: b.openCards,
+        closedCards: b.closedCards,
+      }));
+      return analyzeEfficiency(playerCardsByBoard, boardCommunityCards);
+    } catch {
+      return null;
+    }
+  }, [revealData]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -421,6 +437,49 @@ export default function ResultsScreen() {
             </Animated.View>
           );
         })}
+
+        {/* Efficiency analysis */}
+        {efficiency && (
+          <Animated.View
+            entering={FadeIn.duration(400).delay(boards.length * BOARD_STAGGER + BOARD_FADE)}
+            style={{ width: '100%' }}
+          >
+            <View style={styles.efficiencyCard}>
+              <Text style={styles.efficiencyTitle}>PLACEMENT EFFICIENCY</Text>
+              <View style={styles.efficiencyScoreRow}>
+                <Text style={styles.efficiencyEmoji}>{efficiency.gradeEmoji}</Text>
+                <Text style={[
+                  styles.efficiencyPercent,
+                  { color: efficiency.percentage >= 90 ? '#4CAF50' : efficiency.percentage >= 75 ? '#c8a84b' : efficiency.percentage >= 60 ? '#FFC107' : COLORS.neonRed },
+                ]}>
+                  {efficiency.percentage}%
+                </Text>
+                <Text style={styles.efficiencyGrade}>{efficiency.grade}</Text>
+              </View>
+              {efficiency.percentage < 100 && (
+                <View style={styles.optimalSection}>
+                  <Text style={styles.optimalTitle}>Optimal arrangement:</Text>
+                  {efficiency.optimalAssignment.map((boardCards, i) => (
+                    <View key={i} style={styles.optimalRow}>
+                      <Text style={styles.optimalBoardLabel}>B{i + 1}</Text>
+                      <View style={styles.optimalCards}>
+                        {boardCards.map((c) => (
+                          <Text key={c.id} style={[
+                            styles.optimalCardText,
+                            { color: (c.suit === 'hearts' || c.suit === 'diamonds') ? '#c0392b' : '#f0dfc0' },
+                          ]}>
+                            {c.rank}{c.suit === 'hearts' ? '\u2665' : c.suit === 'diamonds' ? '\u2666' : c.suit === 'clubs' ? '\u2663' : '\u2660'}
+                          </Text>
+                        ))}
+                      </View>
+                      <Text style={styles.optimalHandName}>{efficiency.optimalHandNames[i]}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </Animated.View>
+        )}
 
         {/* Complete bonus */}
         {isComplete && completeBonusAmount > 0 && (
@@ -745,5 +804,79 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  // Efficiency analysis
+  efficiencyCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    gap: 10,
+  },
+  efficiencyTitle: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  efficiencyScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  efficiencyEmoji: {
+    fontSize: 24,
+  },
+  efficiencyPercent: {
+    fontSize: 36,
+    fontWeight: '900',
+  },
+  efficiencyGrade: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  optimalSection: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.boardBorder,
+    paddingTop: 8,
+    gap: 4,
+  },
+  optimalTitle: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  optimalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  optimalBoardLabel: {
+    color: '#c8a84b',
+    fontSize: 11,
+    fontWeight: '800',
+    width: 22,
+  },
+  optimalCards: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  optimalCardText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  optimalHandName: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
   },
 });
