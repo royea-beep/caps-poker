@@ -28,12 +28,22 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '\u2660',
 };
 
+// Premium card colors
+const CARD_FACE_BG = '#f5e6c8';
+const CARD_RED = '#c0392b';
+const CARD_BLACK = '#1a1a1a';
+const CARD_BACK_BG = '#2a1810';
+const CARD_BACK_PATTERN = '#3d2a1a';
+const CARD_BACK_DIAMOND = '#e8762b';
+const GOLD_BORDER = '#c8a84b';
+
 export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight }: CardProps) {
-  const width = cardWidth ?? (small ? 37 : 55);
-  const height = cardHeight ?? (small ? 53 : 80);
-  const rankSize = cardHeight ? Math.max(10, Math.floor(height * 0.30)) : (small ? 13 : 20);
-  const suitSize = cardHeight ? Math.max(11, Math.floor(height * 0.34)) : (small ? 14 : 22);
-  const backTextSize = cardHeight ? Math.max(14, Math.floor(height * 0.45)) : 24;
+  const width = cardWidth ?? (small ? 40 : 58);
+  const height = cardHeight ?? (small ? 56 : 84);
+  const cornerRankSize = cardHeight ? Math.max(9, Math.floor(height * 0.18)) : (small ? 10 : 13);
+  const cornerSuitSize = cardHeight ? Math.max(8, Math.floor(height * 0.14)) : (small ? 9 : 11);
+  const centerSuitSize = cardHeight ? Math.max(16, Math.floor(height * 0.38)) : (small ? 18 : 28);
+  const backDiamondSize = cardHeight ? Math.max(10, Math.floor(height * 0.22)) : 14;
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -75,36 +85,50 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   });
 
   const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: glowOpacity.value * 2.5,
-    borderColor: COLORS.goldBright,
-    shadowColor: COLORS.gold,
+    borderWidth: 1.5 + glowOpacity.value * 1.5,
+    borderColor: glowOpacity.value > 0.01 ? GOLD_BORDER : 'rgba(0,0,0,0.08)',
+    shadowColor: GOLD_BORDER,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: glowOpacity.value * 0.9,
-    shadowRadius: glowOpacity.value * 10,
-    elevation: glowOpacity.value * 10,
+    shadowOpacity: glowOpacity.value * 0.8,
+    shadowRadius: glowOpacity.value * 8,
+    elevation: glowOpacity.value * 8,
+    transform: [{ scale: 1 + glowOpacity.value * 0.04 }],
   }));
+
+  // Card back with diamond pattern
+  const renderBack = () => (
+    <View style={[styles.card, styles.faceDown, { width, height }]}>
+      <View style={styles.backInner}>
+        {/* 3x3 diamond grid */}
+        {[0, 1, 2].map((row) => (
+          <View key={row} style={styles.backRow}>
+            {[0, 1, 2].map((col) => (
+              <Text
+                key={col}
+                style={[styles.backDiamond, { fontSize: backDiamondSize }]}
+              >
+                {'\u2666'}
+              </Text>
+            ))}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 
   // No card data — static back
   if (!card) {
-    return (
-      <View style={[styles.card, styles.faceDown, { width, height }]}>
-        <View style={styles.backPattern}>
-          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2666'}</Text>
-        </View>
-      </View>
-    );
+    return renderBack();
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? COLORS.cardRed : COLORS.cardBlack;
+  const suitColor = isRed ? CARD_RED : CARD_BLACK;
 
   return (
     <View style={{ width, height }}>
       {/* Back face */}
-      <Animated.View style={[styles.card, styles.faceDown, { width, height }, backAnimStyle]}>
-        <View style={styles.backPattern}>
-          <Text style={[styles.backText, { fontSize: backTextSize }]}>{'\u2666'}</Text>
-        </View>
+      <Animated.View style={[{ width, height }, backAnimStyle]}>
+        {renderBack()}
       </Animated.View>
 
       {/* Front face */}
@@ -118,12 +142,30 @@ export default function CardComponent({ card, faceDown = false, small, highlight
           frontAnimStyle,
         ]}
       >
-        <Text style={[styles.rank, { color: suitColor, fontSize: rankSize }]}>
-          {card.rank}
-        </Text>
-        <Text style={[styles.suit, { color: suitColor, fontSize: suitSize }]}>
+        {/* Top-left corner: rank + suit */}
+        <View style={styles.cornerTL}>
+          <Text style={[styles.cornerRank, { color: suitColor, fontSize: cornerRankSize }]}>
+            {card.rank}
+          </Text>
+          <Text style={[styles.cornerSuit, { color: suitColor, fontSize: cornerSuitSize }]}>
+            {SUIT_SYMBOLS[card.suit]}
+          </Text>
+        </View>
+
+        {/* Center suit symbol */}
+        <Text style={[styles.centerSuit, { color: suitColor, fontSize: centerSuitSize }]}>
           {SUIT_SYMBOLS[card.suit]}
         </Text>
+
+        {/* Bottom-right corner: rank + suit (rotated) */}
+        <View style={styles.cornerBR}>
+          <Text style={[styles.cornerRank, { color: suitColor, fontSize: cornerRankSize }]}>
+            {card.rank}
+          </Text>
+          <Text style={[styles.cornerSuit, { color: suitColor, fontSize: cornerSuitSize }]}>
+            {SUIT_SYMBOLS[card.suit]}
+          </Text>
+        </View>
       </Animated.View>
     </View>
   );
@@ -137,40 +179,68 @@ const styles = StyleSheet.create({
     margin: 1,
   },
   faceUp: {
-    backgroundColor: COLORS.cardWhite,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: CARD_FACE_BG,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
         shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.4,
+        shadowOpacity: 0.25,
         shadowRadius: 5,
       },
-      android: { elevation: 6 },
-      default: {},
+      android: { elevation: 5 },
+      default: {
+        // Web shadow via boxShadow is not supported in RN StyleSheet,
+        // but elevation works as a fallback
+      },
     }),
   },
   faceDown: {
-    backgroundColor: COLORS.cardBack,
+    backgroundColor: CARD_BACK_BG,
     borderWidth: 1.5,
-    borderColor: COLORS.cardBackPattern,
+    borderColor: CARD_BACK_PATTERN,
+    overflow: 'hidden',
   },
-  backPattern: {
+  backInner: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 1,
+    opacity: 0.4,
   },
-  backText: {
-    color: '#e8762b',
-    opacity: 0.6,
+  backRow: {
+    flexDirection: 'row',
+    gap: 4,
   },
-  rank: {
-    fontWeight: '900',
-    marginBottom: -4,
+  backDiamond: {
+    color: CARD_BACK_DIAMOND,
   },
-  suit: {
-    marginTop: -2,
+  cornerTL: {
+    position: 'absolute',
+    top: 3,
+    left: 4,
+    alignItems: 'center',
+  },
+  cornerBR: {
+    position: 'absolute',
+    bottom: 3,
+    right: 4,
+    alignItems: 'center',
+    transform: [{ rotate: '180deg' }],
+  },
+  cornerRank: {
+    fontWeight: '800',
+    lineHeight: 14,
+  },
+  cornerSuit: {
     fontWeight: '600',
+    lineHeight: 12,
+    marginTop: -2,
+  },
+  centerSuit: {
+    fontWeight: '400',
+    opacity: 0.85,
   },
   dimmed: {
     opacity: 0.35,
