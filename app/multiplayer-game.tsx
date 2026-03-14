@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
@@ -13,12 +12,24 @@ import { useGameTimer } from '../hooks/useGameTimer';
 import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
+import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
+import { ECONOMY_FLAGS } from '../constants/economyConfig';
+import { getMatchCost } from '../utils/economy';
+import { CapsHooks } from '../utils/learning';
 
-const haptic = (style: Haptics.ImpactFeedbackStyle) => {
-  Haptics.impactAsync(style).catch(() => {});
+// Lazy-load expo-haptics — not available on web
+let Haptics: any = null;
+try {
+  Haptics = require('expo-haptics');
+} catch {
+  // expo-haptics not available (web) — haptics disabled
+}
+
+const haptic = (style: any) => {
+  Haptics?.impactAsync?.(style)?.catch?.(() => {});
 };
-const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
-  Haptics.notificationAsync(type).catch(() => {});
+const hapticNotify = (type: any) => {
+  Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
 
 // Layout constants
@@ -45,13 +56,16 @@ export default function MultiplayerGameScreen() {
     playerCount: string;
     yourCards: string;
     boards: string;
+    rejoinPhase?: string;
   }>();
 
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
+  const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
   const connectedPlayers = useGameStore((s) => s.connectedPlayers);
+  const storeRoomCode = useGameStore((s) => s.roomCode);
   const mpServer = useGameStore((s) => s.mpServer);
   const mpClient = useGameStore((s) => s.mpClient);
 
@@ -90,13 +104,17 @@ export default function MultiplayerGameScreen() {
   useEffect(() => { boardsRef.current = boards; }, [boards]);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>('arranging');
+  // If rejoining after disconnect and already auto-readied, start in waiting (CAPS 12)
+  const initialPhase = params.rejoinPhase === 'waiting' ? 'waiting' : 'arranging';
+  const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>(initialPhase);
+  const [disconnectBanner, setDisconnectBanner] = useState<string | null>(null);
 
   // Collected reveal data for guest
   const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
   const mountedRef = useRef(true);
 
   useEffect(() => {
+    CapsHooks.gameStarted('online');
     return () => { mountedRef.current = false; };
   }, []);
 
@@ -175,6 +193,88 @@ export default function MultiplayerGameScreen() {
     });
   }, [isHost, mpClient, playerIndex, playerCount, config, boardCount]);
 
+  // --- Guest: detect host loss / connection loss (CAPS 10, rejoin option CAPS 12) ---
+  useEffect(() => {
+    if (isHost || !mpClient) return;
+    const navigateToRejoin = () => {
+      const code = storeRoomCode;
+      useGameStore.getState().resetMultiplayer();
+      router.replace({ pathname: '/lobby/internet-join', params: code ? { prefillCode: code } : {} } as any);
+    };
+    const handleHostLost = () => {
+      if (!mountedRef.current) return;
+      setDisconnectBanner('Host disconnected');
+      Alert.alert(
+        'Host Disconnected',
+        'The host has left the game.',
+        [{ text: 'Leave', onPress: () => {
+          useGameStore.getState().resetMultiplayer();
+          router.replace('/');
+        }}]
+      );
+    };
+    const handleDisconnected = () => {
+      if (!mountedRef.current) return;
+      setDisconnectBanner('Connection lost');
+      Alert.alert(
+        'Connection Lost',
+        'Lost connection to the game room. You can try to rejoin.',
+        [
+          { text: 'Leave', style: 'cancel', onPress: () => {
+            useGameStore.getState().resetMultiplayer();
+            router.replace('/');
+          }},
+          { text: 'Rejoin', onPress: navigateToRejoin },
+        ]
+      );
+    };
+    mpClient.updateCallbacks({ onHostLost: handleHostLost, onDisconnected: handleDisconnected });
+  }, [isHost, mpClient, router, storeRoomCode]);
+
+  // --- Host: detect channel disconnect (CAPS 10) ---
+  useEffect(() => {
+    if (!isHost || !mpServer) return;
+    mpServer.updateCallbacks({
+      onDisconnected: () => {
+        if (!mountedRef.current) return;
+        setDisconnectBanner('Connection lost');
+        Alert.alert(
+          'Connection Lost',
+          'Lost connection to the game room.',
+          [{ text: 'Leave', onPress: () => {
+            useGameStore.getState().resetMultiplayer();
+            router.replace('/');
+          }}]
+        );
+      },
+    });
+  }, [isHost, mpServer, router]);
+
+  // --- Waiting-state timeout (CAPS 10, rejoin option CAPS 12) ---
+  useEffect(() => {
+    if (phase !== 'waiting') return;
+    const timeout = setTimeout(() => {
+      if (!mountedRef.current || phase !== 'waiting') return;
+      setDisconnectBanner('Waiting timed out');
+      const buttons: any[] = [
+        { text: 'Keep Waiting', style: 'cancel', onPress: () => setDisconnectBanner(null) },
+        { text: 'Leave', style: 'destructive', onPress: () => {
+          useGameStore.getState().resetMultiplayer();
+          router.replace('/');
+        }},
+      ];
+      if (!isHost && storeRoomCode) {
+        buttons.push({ text: 'Rejoin', onPress: () => {
+          const code = storeRoomCode;
+          useGameStore.getState().resetMultiplayer();
+          router.replace({ pathname: '/lobby/internet-join', params: { prefillCode: code } } as any);
+        }});
+      }
+      Alert.alert('Waiting Timed Out', 'No response from other players. The game may have ended.', buttons);
+    }, WAITING_STATE_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
+  }, [phase, router, isHost, storeRoomCode]);
+
   // Host: build RevealData from server evaluation results
   const buildRevealDataAndNavigate = useCallback((
     boardResults: any[],
@@ -219,6 +319,9 @@ export default function MultiplayerGameScreen() {
 
     const myDelta = handResult.chipDeltas[myIdx];
     addChips(myDelta);
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      trackChipsSpent(getMatchCost(config.potPerBoard, boardCount));
+    }
 
     setRevealData({
       boards: revealBoards,
@@ -237,9 +340,10 @@ export default function MultiplayerGameScreen() {
       boardCount,
     });
 
+    CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, config, boardCount, addChips, setRevealData, router]);
+  }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router]);
 
   // Guest: build RevealData from BOARD_REVEAL + HAND_COMPLETE payloads
   const buildGuestRevealDataAndNavigate = useCallback((result: HandCompletePayload) => {
@@ -298,6 +402,9 @@ export default function MultiplayerGameScreen() {
 
     const myDelta = result.chipDeltas[playerIndex] || 0;
     addChips(myDelta);
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      trackChipsSpent(getMatchCost(config.potPerBoard, boardCount));
+    }
 
     const completeWinnerIsMe = result.completeWinnerIndex === playerIndex;
 
@@ -318,9 +425,10 @@ export default function MultiplayerGameScreen() {
       boardCount,
     });
 
+    CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, playerCount, config, boardCount, addChips, setRevealData, router]);
+  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
@@ -363,7 +471,7 @@ export default function MultiplayerGameScreen() {
   // Card selection (same UX as game.tsx)
   const handleSelectCard = useCallback((card: Card) => {
     if (!isArranging) return;
-    haptic(Haptics.ImpactFeedbackStyle.Light);
+    haptic(Haptics?.ImpactFeedbackStyle?.Light);
     playSound('cardSelect');
     setSelectedCardId((prev) => (prev === card.id ? null : card.id));
   }, [isArranging]);
@@ -382,7 +490,7 @@ export default function MultiplayerGameScreen() {
     setBoards((prev) => {
       const board = prev[boardIndex];
       if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
-      haptic(Haptics.ImpactFeedbackStyle.Medium);
+      haptic(Haptics?.ImpactFeedbackStyle?.Medium);
       playSound('cardPlace');
       const updated = [...prev];
       updated[boardIndex] = {
@@ -398,7 +506,7 @@ export default function MultiplayerGameScreen() {
   // Remove card from board
   const handleRemoveCardFromBoard = useCallback((boardIndex: number, card: Card) => {
     if (!isArranging) return;
-    haptic(Haptics.ImpactFeedbackStyle.Light);
+    haptic(Haptics?.ImpactFeedbackStyle?.Light);
     setBoards((prev) => {
       if (!prev[boardIndex]) return prev;
       const updated = [...prev];
@@ -415,7 +523,7 @@ export default function MultiplayerGameScreen() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
-    hapticNotify(Haptics.NotificationFeedbackType.Success);
+    hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
     setSelectedCardId(null);
     setPhase('waiting');
@@ -483,6 +591,13 @@ export default function MultiplayerGameScreen() {
         </View>
         <ChipsDisplay amount={chips} />
       </View>
+
+      {/* Disconnect banner (CAPS 10) */}
+      {disconnectBanner && (
+        <View style={styles.disconnectBanner}>
+          <Text style={styles.disconnectText}>{disconnectBanner}</Text>
+        </View>
+      )}
 
       {/* Mode badge with player names */}
       <View style={styles.modeBadge}>
@@ -635,5 +750,19 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  disconnectBanner: {
+    backgroundColor: COLORS.neonRed + '33',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neonRed,
+  },
+  disconnectText: {
+    color: COLORS.neonRed,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

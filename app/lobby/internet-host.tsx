@@ -5,12 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { useGameStore } from '../../store/gameStore';
 import { COLORS, getBoardCount } from '../../constants/gameConfig';
-import { dealCardsMultiplayer } from '../../utils/deck';
+import { ECONOMY_FLAGS } from '../../constants/economyConfig';
+import { getMatchCost, canAffordMatch } from '../../utils/economy';
 import {
   RealtimeServer,
   generateOnlineRoomCode,
   isOnlineMultiplayerAvailable,
 } from '../../utils/realtimeMultiplayer';
+import { CapsHooks } from '../../utils/learning';
 
 export default function InternetHostScreen() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function InternetHostScreen() {
   const setMpServer = useGameStore((s) => s.setMpServer);
   const setMultiplayerMode = useGameStore((s) => s.setMultiplayerMode);
   const setRoomCode = useGameStore((s) => s.setRoomCode);
+  const setConnectedPlayers = useGameStore((s) => s.setConnectedPlayers);
 
   const [roomCode, setLocalRoomCode] = useState('');
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
@@ -30,52 +33,82 @@ export default function InternetHostScreen() {
       return;
     }
 
+    let cancelled = false;
     const server = new RealtimeServer();
     serverRef.current = server;
     const code = generateOnlineRoomCode();
     setLocalRoomCode(code);
 
-    server.onPresenceChange((p) => setPlayers(p));
+    server.onPresenceChange((p) => {
+      if (cancelled) return;
+      setPlayers(p);
+      // Use server's authoritative seat assignments (CAPS 09)
+      const clients = server.getClients();
+      setConnectedPlayers(
+        clients.map((c) => ({
+          id: c.id,
+          name: c.name,
+          isHost: c.isHost,
+          isReady: c.isReady,
+          seat: c.seat,
+          connected: c.connected,
+        }))
+      );
+    });
 
     server.start(code, playerName).then((ok) => {
+      if (cancelled) return;
       if (ok) {
         setStatus('waiting');
         setMpServer(server);
         setMultiplayerMode('host');
         setRoomCode(code);
       } else {
+        server.stop();
+        serverRef.current = null;
         setStatus('error');
       }
+    }).catch(() => {
+      if (cancelled) return;
+      server.stop();
+      serverRef.current = null;
+      setStatus('error');
     });
 
     return () => {
+      cancelled = true;
       // Don't stop server on unmount — it lives in Zustand
     };
   }, []);
 
   const handleStart = useCallback(() => {
+    const server = serverRef.current;
+    if (!server) return;
+
     if (players.length < 2) {
       Alert.alert('Need Players', 'Wait for at least one player to join.');
       return;
     }
 
-    const playerCount = Math.min(4, Math.max(2, players.length)) as 2 | 3 | 4;
-    const deal = dealCardsMultiplayer(playerCount);
+    const config = useGameStore.getState().config;
 
-    // Broadcast cards to each player
-    players.forEach((p, idx) => {
-      if (idx === 0) return; // Host is index 0, skip broadcast to self
-      serverRef.current?.sendToPlayer(p.id, 'cards_dealt', {
-        playerCount,
-        yourCards: deal.playerHands[idx],
-        boards: deal.boards.map((b, i) => ({
-          boardIndex: i,
-          openCards: b.openCards,
-          closedCardCount: b.closedCards.length,
-        })),
-        playerIndex: idx,
-      });
-    });
+    // Affordability gate (only when economy match cost is enabled)
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      const playerCount = Math.min(4, Math.max(2, players.length)) as 2 | 3 | 4;
+      const cost = getMatchCost(config.potPerBoard, getBoardCount(playerCount));
+      if (!canAffordMatch(useGameStore.getState().chips, cost)) {
+        Alert.alert('Not Enough Chips', `You need ${cost} chips to start a game.`);
+        return;
+      }
+    }
+
+    // Use server-driven game start — deals cards, broadcasts to guests
+    CapsHooks.multiplayerJoined(roomCode, 'realtime');
+    server.startGame(config);
+
+    // Read host's dealt data from server state
+    const { boards, playerHands } = server.getDealtCards();
+    const playerCount = Math.min(4, Math.max(2, players.length)) as 2 | 3 | 4;
 
     // Navigate host to multiplayer game with params
     router.replace({
@@ -84,9 +117,9 @@ export default function InternetHostScreen() {
         isHost: 'true',
         playerIndex: '0',
         playerCount: playerCount.toString(),
-        yourCards: JSON.stringify(deal.playerHands[0]),
+        yourCards: JSON.stringify(playerHands[0]),
         boards: JSON.stringify(
-          deal.boards.map((b, i) => ({
+          boards.map((b, i) => ({
             boardIndex: i,
             openCards: b.openCards,
             closedCardCount: b.closedCards.length,
@@ -105,15 +138,20 @@ export default function InternetHostScreen() {
   }, [router]);
 
   if (status === 'error') {
+    const hasSupabase = isOnlineMultiplayerAvailable();
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           <Text style={styles.errorText}>
-            Online multiplayer requires Supabase configuration.
+            {hasSupabase
+              ? 'Could not create room. Check your internet connection.'
+              : 'Online multiplayer requires Supabase configuration.'}
           </Text>
-          <Text style={styles.hintText}>
-            Add SUPABASE_URL and SUPABASE_ANON_KEY to .env
-          </Text>
+          {!hasSupabase && (
+            <Text style={styles.hintText}>
+              Add SUPABASE_URL and SUPABASE_ANON_KEY to .env
+            </Text>
+          )}
           <Button title="Back" variant="ghost" onPress={() => router.back()} />
         </View>
       </SafeAreaView>

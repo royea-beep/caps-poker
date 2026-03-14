@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
+import { CapsHooks } from '../utils/learning';
 
 interface SettingRowProps {
   label: string;
@@ -34,6 +35,7 @@ function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps)
     } else {
       setError(null);
       updateConfig({ [configKey]: num });
+      CapsHooks.settingsChanged(configKey, num);
     }
   };
 
@@ -105,7 +107,7 @@ function NotificationsToggle() {
         <Text style={styles.rowLabel}>Push Notifications</Text>
       </View>
       <Pressable
-        onPress={() => setEnabled(!enabled)}
+        onPress={() => { setEnabled(!enabled); CapsHooks.settingsChanged('notifications', !enabled); }}
         style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
       >
         <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
@@ -126,7 +128,7 @@ function SoundToggle() {
         <Text style={styles.rowLabel}>Sound Effects</Text>
       </View>
       <Pressable
-        onPress={() => updateConfig({ soundEnabled: !soundEnabled })}
+        onPress={() => { updateConfig({ soundEnabled: !soundEnabled }); CapsHooks.settingsChanged('soundEnabled', !soundEnabled); }}
         style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
       >
         <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
@@ -157,7 +159,7 @@ function PlayerCountSelector() {
         {([2, 3, 4] as const).map((n) => (
           <Pressable
             key={n}
-            onPress={() => updateConfig({ numberOfPlayers: n })}
+            onPress={() => { updateConfig({ numberOfPlayers: n }); CapsHooks.settingsChanged('numberOfPlayers', n); }}
             style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
           >
             <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>

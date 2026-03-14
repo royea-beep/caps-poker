@@ -1,28 +1,33 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { useGameStore } from '../../store/gameStore';
 import { COLORS } from '../../constants/gameConfig';
-import { RealtimeClient, isOnlineMultiplayerAvailable } from '../../utils/realtimeMultiplayer';
+import { RealtimeClient, isOnlineMultiplayerAvailable, GameStateSnapshot } from '../../utils/realtimeMultiplayer';
+import { CapsHooks } from '../../utils/learning';
 
 export default function InternetJoinScreen() {
   const router = useRouter();
+  const { prefillCode } = useLocalSearchParams<{ prefillCode?: string }>();
   const playerName = useGameStore((s) => s.playerName) || 'Guest';
   const setMpClient = useGameStore((s) => s.setMpClient);
   const setMultiplayerMode = useGameStore((s) => s.setMultiplayerMode);
   const setRoomCode = useGameStore((s) => s.setRoomCode);
+  const setConnectedPlayers = useGameStore((s) => s.setConnectedPlayers);
 
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(prefillCode || '');
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
   const clientRef = useRef<RealtimeClient | null>(null);
 
   const handleJoin = useCallback(async () => {
-    const trimmed = code.trim().toUpperCase();
-    if (trimmed.length < 4) {
-      Alert.alert('Invalid Code', 'Enter the room code from the host.');
+    const trimmed = code.trim();
+
+    // Validate room code format: 4-6 digits (matching generateOnlineRoomCode)
+    if (trimmed.length < 4 || !/^[0-9]{4,6}$/.test(trimmed)) {
+      Alert.alert('Invalid Code', 'Enter a valid room code (4-6 digits) from the host.');
       return;
     }
 
@@ -36,33 +41,87 @@ export default function InternetJoinScreen() {
     const client = new RealtimeClient();
     clientRef.current = client;
 
-    client.onPresenceChange((p) => setPlayers(p));
+    client.onPresenceChange((p) => {
+      setPlayers(p);
+    });
 
-    // Listen for cards_dealt from host to navigate to game
-    client.onMessage('cards_dealt', (data) => {
-      router.replace({
-        pathname: '/multiplayer-game',
-        params: {
-          isHost: 'false',
-          playerIndex: String(data.playerIndex ?? 1),
-          playerCount: String(data.playerCount),
-          yourCards: JSON.stringify(data.yourCards),
-          boards: JSON.stringify(data.boards),
-        },
-      });
+    // Register callbacks BEFORE connect to eliminate race window (CAPS 08)
+    client.updateCallbacks({
+      onCardsDealt: (data: any) => {
+        router.replace({
+          pathname: '/multiplayer-game',
+          params: {
+            isHost: 'false',
+            playerIndex: String(data.playerIndex ?? 1),
+            playerCount: String(data.playerCount),
+            yourCards: JSON.stringify(data.yourCards),
+            boards: JSON.stringify(data.boards),
+          },
+        });
+      },
+      // Consume host-authoritative seat mapping (CAPS 09)
+      onRoomState: (players: { id: string; name: string; seat: number; isHost: boolean }[]) => {
+        setConnectedPlayers(
+          players.map((p) => ({
+            id: p.id,
+            name: p.name,
+            isHost: p.isHost,
+            isReady: false,
+            seat: p.seat,
+            connected: true,
+          }))
+        );
+      },
+      // Mid-game rejoin via snapshot (CAPS 12)
+      onGameStateSnapshot: (snapshot: GameStateSnapshot) => {
+        if (snapshot.phase === 'arranging' || snapshot.phase === 'waiting') {
+          router.replace({
+            pathname: '/multiplayer-game',
+            params: {
+              isHost: 'false',
+              playerIndex: String(snapshot.playerIndex),
+              playerCount: String(snapshot.playerCount),
+              yourCards: JSON.stringify(snapshot.yourCards),
+              boards: JSON.stringify(snapshot.boards),
+              // Pass snapshot phase so game screen knows to skip to waiting if already ready
+              rejoinPhase: snapshot.alreadyReady ? 'waiting' : snapshot.phase,
+            },
+          });
+        }
+        // 'complete' phase: stay in lobby, wait for next CARDS_DEALT
+        // 'lobby' phase: server doesn't send snapshot (no-op)
+      },
+      // Host-lost detection in lobby (CAPS 10)
+      onHostLost: () => {
+        client.disconnect();
+        clientRef.current = null;
+        setStatus('error');
+        Alert.alert('Host Left', 'The host has closed the room.');
+      },
+      onDisconnected: () => {
+        client.disconnect();
+        clientRef.current = null;
+        setStatus('error');
+        Alert.alert('Connection Lost', 'Lost connection to the game room.');
+      },
     });
 
     const ok = await client.connect(trimmed, playerName);
+
     if (ok) {
       setStatus('connected');
       setMpClient(client);
       setMultiplayerMode('guest');
       setRoomCode(trimmed);
+      CapsHooks.multiplayerJoined(trimmed, 'realtime');
     } else {
+      // Clean up failed client
+      client.disconnect();
+      clientRef.current = null;
       setStatus('error');
-      Alert.alert('Connection Failed', 'Could not join room. Check the code and try again.');
+      Alert.alert('Room Not Found', 'Could not find that room. Check the code and make sure the host is online.');
     }
-  }, [code, playerName, setMpClient, setMultiplayerMode, setRoomCode]);
+  }, [code, playerName, setMpClient, setMultiplayerMode, setRoomCode, setConnectedPlayers, router]);
 
   const handleCancel = useCallback(() => {
     if (clientRef.current) {
@@ -90,10 +149,10 @@ export default function InternetJoinScreen() {
         <TextInput
           style={styles.codeInput}
           value={code}
-          onChangeText={(t) => setCode(t.toUpperCase().slice(0, 6))}
-          placeholder="ABCDEF"
+          onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+          placeholder="123456"
           placeholderTextColor={COLORS.textMuted}
-          autoCapitalize="characters"
+          keyboardType="number-pad"
           maxLength={6}
           autoFocus
         />

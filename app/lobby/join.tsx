@@ -6,6 +6,7 @@ import { Button } from '../../components/Button';
 import { useGameStore } from '../../store/gameStore';
 import { COLORS } from '../../constants/gameConfig';
 import { GameClient } from '../../utils/gameClient';
+import { CapsHooks } from '../../utils/learning';
 import {
   RoomJoinAckPayload,
   RoomStatePayload,
@@ -45,6 +46,7 @@ export default function JoinLobbyScreen() {
           setMultiplayerMode('guest');
           setRoomCode(ack.roomCode);
           setHostIP(hostIPInput.trim());
+          CapsHooks.multiplayerJoined(ack.roomCode, 'tcp');
         },
         onRoomState: (state: RoomStatePayload) => {
           setRoomState(state);

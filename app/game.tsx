@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
+import { ECONOMY_FLAGS } from '../constants/economyConfig';
+import { getMatchCost } from '../utils/economy';
 import {
   BoardState,
   initializeGameMulti,
@@ -19,12 +20,21 @@ import {
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { playSound } from '../utils/sounds';
+import { CapsHooks } from '../utils/learning';
 
-const haptic = (style: Haptics.ImpactFeedbackStyle) => {
-  Haptics.impactAsync(style).catch(() => {});
+// Lazy-load expo-haptics — not available on web
+let Haptics: any = null;
+try {
+  Haptics = require('expo-haptics');
+} catch {
+  // expo-haptics not available (web) — haptics disabled
+}
+
+const haptic = (style: any) => {
+  Haptics?.impactAsync?.(style)?.catch?.(() => {});
 };
-const hapticNotify = (type: Haptics.NotificationFeedbackType) => {
-  Haptics.notificationAsync(type).catch(() => {});
+const hapticNotify = (type: any) => {
+  Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
 
 // Layout constants (heights that don't depend on safe area)
@@ -40,6 +50,7 @@ export default function GameScreen() {
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
+  const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
 
   const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4;
@@ -103,9 +114,14 @@ export default function GameScreen() {
     setBoards(initialBoards);
     setPlayerHand(pHand);
     setBotsReady(new Array(numberOfBots).fill(false));
+    CapsHooks.gameStarted('solo');
 
     // Deduct buy-in
-    addChips(-(config.potPerBoard * boardCount));
+    const buyIn = getMatchCost(config.potPerBoard, boardCount);
+    addChips(-buyIn);
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      trackChipsSpent(buyIn);
+    }
 
     // Bot timers
     for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
@@ -186,6 +202,7 @@ export default function GameScreen() {
       boardCount,
     });
 
+    CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
     router.replace('/results');
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
@@ -200,7 +217,7 @@ export default function GameScreen() {
   const handleSelectCard = useCallback(
     (card: Card) => {
       if (!isArranging) return;
-      haptic(Haptics.ImpactFeedbackStyle.Light);
+      haptic(Haptics?.ImpactFeedbackStyle?.Light);
       playSound('cardSelect');
       setSelectedCardId((prev) => (prev === card.id ? null : card.id));
     },
@@ -223,7 +240,7 @@ export default function GameScreen() {
       setBoards((prev) => {
         const board = prev[boardIndex];
         if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
-        haptic(Haptics.ImpactFeedbackStyle.Medium);
+        haptic(Haptics?.ImpactFeedbackStyle?.Medium);
         playSound('cardPlace');
         const updated = [...prev];
         updated[boardIndex] = {
@@ -242,7 +259,7 @@ export default function GameScreen() {
   const handleRemoveCardFromBoard = useCallback(
     (boardIndex: number, card: Card) => {
       if (!isArranging) return;
-      haptic(Haptics.ImpactFeedbackStyle.Light);
+      haptic(Haptics?.ImpactFeedbackStyle?.Light);
       setBoards((prev) => {
         if (!prev[boardIndex]) return prev;
         const updated = [...prev];
@@ -261,7 +278,7 @@ export default function GameScreen() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
-    hapticNotify(Haptics.NotificationFeedbackType.Success);
+    hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
     setSelectedCardId(null);
     setPhase({ type: 'waiting_for_bot' });

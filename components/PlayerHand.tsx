@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
+import { WEB_MAX_WIDTH } from './WebContainer';
 
 interface PlayerHandProps {
   cards: Card[];
@@ -10,7 +11,8 @@ interface PlayerHandProps {
 }
 
 export default function PlayerHand({ cards, selectedCardId, onSelectCard }: PlayerHandProps) {
-  const { width: SCREEN_W } = useWindowDimensions();
+  const { width: rawW } = useWindowDimensions();
+  const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
 
   // Dynamic card sizing: fit 8 cards per row with gaps and padding
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
