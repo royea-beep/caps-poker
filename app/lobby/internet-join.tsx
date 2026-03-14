@@ -26,8 +26,8 @@ export default function InternetJoinScreen() {
     const trimmed = code.trim();
 
     // Validate room code format: 4-6 digits (matching generateOnlineRoomCode)
-    if (trimmed.length < 4 || !/^[0-9]{4,6}$/.test(trimmed)) {
-      Alert.alert('Invalid Code', 'Enter a valid room code (4-6 digits) from the host.');
+    if (trimmed.length !== 6 || !/^[0-9]{6}$/.test(trimmed)) {
+      Alert.alert('Invalid Code', 'Enter the 6-digit room code from the host.');
       return;
     }
 
@@ -162,7 +162,7 @@ export default function InternetJoinScreen() {
             title="JOIN"
             variant="gold"
             onPress={handleJoin}
-            disabled={code.trim().length < 4}
+            disabled={code.trim().length < 6}
             style={{ width: '100%', marginTop: 16 }}
           />
         )}

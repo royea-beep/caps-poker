@@ -155,10 +155,10 @@ export default function JoinLobbyScreen() {
                 style={[styles.input, styles.codeInput]}
                 value={roomCodeInput}
                 onChangeText={setRoomCodeInput}
-                placeholder="1234"
+                placeholder="123456"
                 placeholderTextColor={COLORS.textSecondary}
                 keyboardType="numeric"
-                maxLength={4}
+                maxLength={6}
                 editable={status !== 'connecting'}
               />
             </View>
