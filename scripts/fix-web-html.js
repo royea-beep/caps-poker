@@ -8,7 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const distDir = path.join(__dirname, '..', 'web-dist');
+// Check both possible output dirs (expo exports to 'dist' by default)
+const distDefault = path.join(__dirname, '..', 'dist');
+const distLegacy = path.join(__dirname, '..', 'web-dist');
+const distDir = fs.existsSync(path.join(distDefault, 'index.html')) ? distDefault : distLegacy;
 const htmlPath = path.join(distDir, 'index.html');
 
 if (!fs.existsSync(htmlPath)) {
