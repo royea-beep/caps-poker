@@ -27,7 +27,21 @@ html = html.replace(
   '<script type="module" src="$1"></script>'
 );
 
-// 2. Add error handler before main script if not already present
+// 2. Fix viewport for iOS Safari (replace existing, don't duplicate)
+html = html.replace(
+  /<meta name="viewport" content="[^"]*" \/>/,
+  '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />'
+);
+
+// 3. Add iOS Safari meta tags
+if (!html.includes('apple-mobile-web-app-capable')) {
+  html = html.replace(
+    '</head>',
+    '  <meta name="apple-mobile-web-app-capable" content="yes">\n  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n  </head>'
+  );
+}
+
+// 4. Add error handler before main script if not already present
 if (!html.includes('window.onerror')) {
   html = html.replace(
     '<script type="module"',
