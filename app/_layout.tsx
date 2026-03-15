@@ -8,6 +8,7 @@ import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { preloadSounds } from '../utils/sounds';
 import { WebContainer } from '../components/WebContainer';
+import { BugReporter } from '../components/BugReporter';
 
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
@@ -23,15 +24,17 @@ export default function RootLayout() {
   return (
     <RootWrapper style={{ flex: 1 }}>
       <StatusBar style="light" />
-      <WebContainer>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: COLORS.background },
-            animation: 'fade',
-          }}
-        />
-      </WebContainer>
+      <BugReporter>
+        <WebContainer>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: COLORS.background },
+              animation: 'fade',
+            }}
+          />
+        </WebContainer>
+      </BugReporter>
     </RootWrapper>
   );
 }
