@@ -4,6 +4,11 @@
  * FAB hidden when game overlays are showing (pointerEvents: 'none').
  */
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __bugReporterScreenshot: string | undefined;
+}
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
@@ -116,7 +121,7 @@ async function submitBugReport(
   if (typeof globalThis.__bugReporterScreenshot === 'string') {
     try {
       const fs = await import('expo-file-system');
-      const base64 = await fs.readAsStringAsync(globalThis.__bugReporterScreenshot, { encoding: fs.EncodingType.Base64 });
+      const base64 = await fs.readAsStringAsync(globalThis.__bugReporterScreenshot, { encoding: 'base64' });
       drivePayload.screenshot = `data:image/jpeg;base64,${base64}`;
     } catch { /* skip screenshot */ }
     globalThis.__bugReporterScreenshot = undefined;
