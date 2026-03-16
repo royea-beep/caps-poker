@@ -264,7 +264,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 90 : 70,
+    bottom: Platform.OS === 'ios' ? 110 : 80,
     left: 16,
     width: 44,
     height: 44,
@@ -272,12 +272,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#c96a1a',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 50, // Below game overlays (zIndex 100)
+    zIndex: 9999,
     shadowColor: '#c96a1a',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.4,
     shadowRadius: 6,
-    elevation: 6,
+    elevation: 999,
   },
   fabText: { fontSize: 20 },
 
