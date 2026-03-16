@@ -40,7 +40,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build for TestFlight
-        run: eas build --platform ios --profile testflight --non-interactive --wait
+        run: eas build --platform ios --profile production --non-interactive --wait
 
       - name: Submit to TestFlight
         run: eas submit --platform ios --profile ci --latest --non-interactive
