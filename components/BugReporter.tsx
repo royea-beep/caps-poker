@@ -16,6 +16,7 @@ import {
   Platform,
   Keyboard,
   KeyboardAvoidingView,
+  Image,
 } from 'react-native';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
@@ -104,11 +105,26 @@ async function submitBugReport(
   });
 
   if (!res.ok) throw new Error(`${res.status}`);
-  // Sync to Google Drive via Edge Function (fire-and-forget)
+  // Sync to Google Drive via Edge Function (fire-and-forget, with screenshot if available)
+  const drivePayload: Record<string, string> = {
+    description: `${title}${description ? ' — ' + description : ''}`,
+    severity: 'medium',
+    page: screen,
+    timestamp: new Date().toISOString(),
+  };
+  // Read screenshot file and convert to base64 data URI for Drive upload
+  if (typeof globalThis.__bugReporterScreenshot === 'string') {
+    try {
+      const fs = await import('expo-file-system');
+      const base64 = await fs.readAsStringAsync(globalThis.__bugReporterScreenshot, { encoding: fs.EncodingType.Base64 });
+      drivePayload.screenshot = `data:image/jpeg;base64,${base64}`;
+    } catch { /* skip screenshot */ }
+    globalThis.__bugReporterScreenshot = undefined;
+  }
   fetch(`${url}/functions/v1/sync-bugs-to-drive`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description: `${title}${description ? ' — ' + description : ''}`, severity: 'medium', page: screen, timestamp: new Date().toISOString() }),
+    body: JSON.stringify(drivePayload),
   }).catch(() => {});
 }
 
@@ -126,9 +142,18 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [description, setDescription] = useState('');
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
   const pathname = usePathname();
 
-  const openReporter = useCallback(() => {
+  const openReporter = useCallback(async () => {
+    // Capture screenshot BEFORE showing modal
+    try {
+      const { captureScreen } = await import('react-native-view-shot');
+      const uri = await captureScreen({ format: 'jpg', quality: 0.5 });
+      setScreenshotUri(uri);
+    } catch {
+      // Screenshot not available — continue without it
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setVisible(true);
     setTitle('');
@@ -149,6 +174,8 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     setStatus('idle');
 
     try {
+      // Pass screenshot URI to submitBugReport via global (consumed by Drive sync)
+      if (screenshotUri) (globalThis as any).__bugReporterScreenshot = screenshotUri;
       await submitBugReport(title.trim(), description.trim(), pathname || 'unknown');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setStatus('success');
@@ -198,6 +225,14 @@ export function BugReporter({ children, overlayActive = false }: Props) {
                     <Text style={styles.closeBtnText}>✕</Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* Screenshot preview */}
+                {screenshotUri && (
+                  <View style={{ marginBottom: 10, borderRadius: 8, overflow: 'hidden', opacity: 0.6 }}>
+                    <Image source={{ uri: screenshotUri }} style={{ width: '100%', height: 80 }} resizeMode="cover" />
+                    <Text style={{ position: 'absolute', top: 4, right: 6, color: '#4ecdc4', fontSize: 10, fontWeight: '700' }}>Screenshot captured ✓</Text>
+                  </View>
+                )}
 
                 {/* Meta info */}
                 <Text style={styles.meta}>
