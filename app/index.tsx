@@ -212,6 +212,10 @@ export default function HomeScreen() {
 
         <View style={styles.buttonSection}>
           <Button title="NEW HAND (vs Bot)" variant="gold" onPress={handleNewHand} />
+          <View style={styles.modeRow}>
+            <Button title="SIT & GO" variant="secondary" onPress={() => router.push('/sit-and-go' as any)} style={styles.modeButton} />
+            <Button title="TOURNAMENT" variant="secondary" onPress={() => router.push('/tournament' as any)} style={styles.modeButton} />
+          </View>
           <Button title="PLAY ONLINE" variant="secondary" onPress={() => router.push('/lobby/internet-host' as any)} />
           <Button title="HOST GAME (WiFi)" variant="secondary" onPress={() => router.push('/lobby/host' as any)} />
           <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join' as any)} />
@@ -410,6 +414,13 @@ const styles = StyleSheet.create({
   buttonSection: {
     width: '100%',
     gap: 12,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modeButton: {
+    flex: 1,
   },
   versionLabel: {
     position: 'absolute',
