@@ -36,6 +36,7 @@ interface BoardProps {
   selected?: boolean;
   flipDuration?: number;
   cardHeight?: number;
+  isWinner?: boolean;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -116,6 +117,7 @@ export default function Board({
   selected,
   flipDuration,
   cardHeight: cardHeightProp,
+  isWinner,
 }: BoardProps) {
   const ch = cardHeightProp ?? 46;
   const cw = Math.round(ch * 0.7);
@@ -180,6 +182,35 @@ export default function Board({
     };
   });
 
+  // Winner gold pulse — 2s repeating glow when isWinner is true
+  const winnerPulse = useSharedValue(0);
+  useEffect(() => {
+    if (isWinner) {
+      winnerPulse.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1000 }),
+          withTiming(0.3, { duration: 1000 }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      winnerPulse.value = withTiming(0, { duration: 200 });
+    }
+  }, [isWinner]);
+
+  const winnerPulseStyle = useAnimatedStyle(() => {
+    if (winnerPulse.value === 0) return {};
+    return {
+      borderColor: COLORS.gold,
+      shadowColor: COLORS.gold,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: winnerPulse.value * 0.8,
+      shadowRadius: winnerPulse.value * 14,
+      elevation: winnerPulse.value * 10,
+    };
+  });
+
   // Build bot card sets: use allBotCards if provided, otherwise fall back to single botCards
   const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : botCards.length > 0 ? [botCards] : [];
   const multiBot = botCardSets.length > 1;
@@ -194,6 +225,7 @@ export default function Board({
         winner === 'bot' && styles.botWon,
         active && pulseStyle,
         completePulseStyle,
+        isWinner && winnerPulseStyle,
       ]}
     >
       <Pressable onPress={onPress} style={styles.pressableInner}>
