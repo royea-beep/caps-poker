@@ -32,7 +32,9 @@ export default function HomeScreen() {
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
+  const handsWon = useGameStore((s) => s.handsWon);
   const bestChips = useGameStore((s) => s.bestChips);
+  const biggestWin = useGameStore((s) => s.biggestWin);
   const sessionStartChips = useGameStore((s) => s.sessionStartChips);
   const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
   const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
@@ -173,12 +175,28 @@ export default function HomeScreen() {
         <ChipsDisplay amount={chips} label="Your Balance" size="large" />
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>Hands Played: {handsPlayed}</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{handsPlayed}</Text>
+              <Text style={styles.statLabel}>Played</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{handsWon}</Text>
+              <Text style={styles.statLabel}>Won</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: COLORS.gold }]}>
+                {handsPlayed > 0 ? Math.round((handsWon / handsPlayed) * 100) : 0}%
+              </Text>
+              <Text style={styles.statLabel}>Win Rate</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: COLORS.gold }]}>{biggestWin}</Text>
+              <Text style={styles.statLabel}>Best Win</Text>
+            </View>
+          </View>
           <Text style={[styles.statText, { color: sessionNet >= 0 ? COLORS.success : COLORS.danger }]}>
             Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
-          </Text>
-          <Text style={[styles.statBest, { color: COLORS.gold }]}>
-            {'\u2605'} Best: {bestChips} chips
           </Text>
         </View>
 
@@ -355,17 +373,39 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    width: '100%',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 10,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  statItem: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  statValue: {
+    color: COLORS.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  statLabel: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   statText: {
     color: COLORS.textSecondary,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-  },
-  statBest: {
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   buttonSection: {
     width: '100%',
