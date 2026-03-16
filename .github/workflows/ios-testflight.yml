@@ -36,4 +36,6 @@ jobs:
         run: eas build --platform ios --profile testflight --non-interactive --wait
 
       - name: Submit to TestFlight
-        run: eas submit --platform ios --profile production --latest --non-interactive
+        run: eas submit --platform ios --profile ci --latest --non-interactive
+        env:
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
