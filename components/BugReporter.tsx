@@ -104,6 +104,12 @@ async function submitBugReport(
   });
 
   if (!res.ok) throw new Error(`${res.status}`);
+  // Sync to Google Drive via Edge Function (fire-and-forget)
+  fetch(`${url}/functions/v1/sync-bugs-to-drive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ description: `${title}${description ? ' — ' + description : ''}`, severity: 'medium', page: screen, timestamp: new Date().toISOString() }),
+  }).catch(() => {});
 }
 
 // ── Component ──
