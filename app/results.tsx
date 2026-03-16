@@ -17,6 +17,7 @@ import CardComponent from '../components/Card';
 import { Badge } from '../components/Badge';
 import ChipsDisplay from '../components/ChipsDisplay';
 import CompleteOverlay from '../components/CompleteOverlay';
+import RevealSequence from '../components/RevealSequence';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
@@ -55,6 +56,7 @@ export default function ResultsScreen() {
   const storeRoomCode = useGameStore((s) => s.roomCode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
+  const [showReveal, setShowReveal] = useState(true);
   const [showButtons, setShowButtons] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
@@ -556,6 +558,13 @@ export default function ResultsScreen() {
           onDone={handleCompleteDone}
         />
       )}
+
+      {/* Turn/River reveal sequence — full-screen modal, auto-dismisses */}
+      <RevealSequence
+        boards={boards}
+        visible={showReveal}
+        onDone={() => setShowReveal(false)}
+      />
     </SafeAreaView>
   );
 }

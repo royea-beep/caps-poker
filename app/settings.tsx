@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
+
+// Lazy haptics — web-safe
+let Haptics: typeof import('expo-haptics') | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    Haptics = require('expo-haptics');
+  } catch {}
+}
+
+function hapticLight() {
+  if (!Haptics) return;
+  try {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  } catch {}
+}
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
@@ -190,7 +205,7 @@ function CardThemePicker() {
         return (
           <Pressable
             key={id}
-            onPress={() => setCardTheme(id)}
+            onPress={() => { hapticLight(); setCardTheme(id); }}
             style={[themeStyles.themeBtn, active && themeStyles.themeBtnActive]}
           >
             <Text style={[themeStyles.themeBtnLabel, active && themeStyles.themeBtnLabelActive]}>
