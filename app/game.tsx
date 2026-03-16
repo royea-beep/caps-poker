@@ -598,21 +598,31 @@ const styles = StyleSheet.create({
     }),
   },
   undoBtn: {
-    backgroundColor: '#3d2a1a',
+    backgroundColor: COLORS.surfaceRaised,
     borderWidth: 1,
-    borderColor: '#5a3d25',
+    borderColor: COLORS.border,
   },
   placeBtn: {
-    backgroundColor: '#c8a84b',
+    backgroundColor: COLORS.gold,
     flex: 1,
     alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+      },
+      android: { elevation: 8 },
+      default: {},
+    }),
   },
   placeBtnDisabled: {
-    backgroundColor: '#5a4520',
+    backgroundColor: COLORS.goldDim,
     opacity: 0.6,
   },
   floatingBtnText: {
-    color: '#f0dfc0',
+    color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 2,
@@ -622,6 +632,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   placeBtnText: {
-    color: '#0d0600',
+    color: COLORS.background,
   },
 });

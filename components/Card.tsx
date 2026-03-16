@@ -28,14 +28,14 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '\u2660',
 };
 
-// Premium card colors
-const CARD_FACE_BG = '#f5e6c8';
-const CARD_RED = '#c0392b';
-const CARD_BLACK = '#1a1a1a';
-const CARD_BACK_BG = '#2a1810';
-const CARD_BACK_PATTERN = '#3d2a1a';
-const CARD_BACK_DIAMOND = '#e8762b';
-const GOLD_BORDER = '#c8a84b';
+// Premium 2026 card colors
+const CARD_FACE_BG = '#FFFFFF';
+const CARD_RED = '#CC2936';      // rich red
+const CARD_BLACK = '#1a1a2e';    // deep navy blue (not flat black)
+const CARD_BACK_BG = '#0f3460';  // deep navy blue back
+const CARD_BACK_PATTERN = '#16213e'; // darker navy for inner border
+const CARD_BACK_DIAMOND = '#C9A84C'; // gold diamonds
+const GOLD_BORDER = '#C9A84C';   // metallic gold
 
 export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight }: CardProps) {
   const width = cardWidth ?? (small ? 40 : 58);
@@ -84,20 +84,25 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     };
   });
 
+  // Selected card: gold border (up to 3px) + gold glow + lift translateY(-8)
   const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: 1.5 + glowOpacity.value * 1.5,
+    borderWidth: 1 + glowOpacity.value * 2,
     borderColor: glowOpacity.value > 0.01 ? GOLD_BORDER : 'rgba(0,0,0,0.08)',
     shadowColor: GOLD_BORDER,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: glowOpacity.value * 0.8,
-    shadowRadius: glowOpacity.value * 8,
-    elevation: glowOpacity.value * 8,
-    transform: [{ scale: 1 + glowOpacity.value * 0.04 }],
+    shadowOpacity: glowOpacity.value * 0.9,
+    shadowRadius: glowOpacity.value * 12,
+    elevation: glowOpacity.value * 10,
+    transform: [
+      { scale: 1 + glowOpacity.value * 0.03 },
+      { translateY: glowOpacity.value * -6 },
+    ],
   }));
 
-  // Card back with diamond pattern
+  // Card back: navy blue with gold border + diamond pattern
   const renderBack = () => (
     <View style={[styles.card, styles.faceDown, { width, height }]}>
+      {/* Gold outer border effect via inner view */}
       <View style={styles.backInner}>
         {/* 3x3 diamond grid */}
         {[0, 1, 2].map((row) => (
@@ -173,7 +178,7 @@ export default function CardComponent({ card, faceDown = false, small, highlight
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 1,
@@ -185,29 +190,36 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.28,
+        shadowRadius: 8,
       },
-      android: { elevation: 5 },
-      default: {
-        // Web shadow via boxShadow is not supported in RN StyleSheet,
-        // but elevation works as a fallback
-      },
+      android: { elevation: 6 },
+      default: {},
     }),
   },
   faceDown: {
     backgroundColor: CARD_BACK_BG,
-    borderWidth: 1.5,
-    borderColor: CARD_BACK_PATTERN,
+    borderWidth: 2,
+    borderColor: GOLD_BORDER,
     overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: { elevation: 5 },
+      default: {},
+    }),
   },
   backInner: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 1,
-    opacity: 0.4,
+    opacity: 0.65,
   },
   backRow: {
     flexDirection: 'row',
@@ -240,7 +252,7 @@ const styles = StyleSheet.create({
   },
   centerSuit: {
     fontWeight: '400',
-    opacity: 0.85,
+    opacity: 1.0,
   },
   dimmed: {
     opacity: 0.35,
