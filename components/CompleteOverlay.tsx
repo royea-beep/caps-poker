@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,10 +7,18 @@ import Animated, {
   withTiming,
   withDelay,
   withSequence,
-  runOnJS,
+  withRepeat,
 } from 'react-native-reanimated';
 import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
+
+// Lazy-load expo-haptics
+let Haptics: any = null;
+try {
+  Haptics = require('expo-haptics');
+} catch {
+  // not available on web
+}
 
 interface CompleteOverlayProps {
   winner: 'player' | 'bot';
@@ -19,27 +27,44 @@ interface CompleteOverlayProps {
   onDone: () => void;
 }
 
-const NUM_PARTICLES = 12;
+const NUM_PARTICLES = 20;
+
+const PARTICLE_COLORS = [
+  COLORS.gold,
+  COLORS.goldLight,
+  COLORS.goldBright,
+  '#FFFFFF',
+  '#E5C56A',
+  COLORS.neonGreen,
+];
 
 function Particle({ index }: { index: number }) {
-  const angle = (index / NUM_PARTICLES) * 2 * Math.PI;
-  const targetX = Math.cos(angle) * 120;
-  const targetY = Math.sin(angle) * 120;
+  // Wider, more random spread with varying radii and angles
+  const angle = (index / NUM_PARTICLES) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+  const radius = 80 + (index % 5) * 28; // 80, 108, 136, 164, 192
+  const targetX = Math.cos(angle) * radius;
+  const targetY = Math.sin(angle) * radius;
+  const particleSize = 5 + (index % 4) * 3; // 5, 8, 11, 14
+  const color = PARTICLE_COLORS[index % PARTICLE_COLORS.length];
+  const delay = 60 + (index % 6) * 40;
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const scale = useSharedValue(0.3);
 
   useEffect(() => {
-    translateX.value = withDelay(100, withSpring(targetX, { damping: 12, stiffness: 60 }));
-    translateY.value = withDelay(100, withSpring(targetY, { damping: 12, stiffness: 60 }));
-    opacity.value = withDelay(200, withTiming(0, { duration: 800 }));
+    translateX.value = withDelay(delay, withSpring(targetX, { damping: 10, stiffness: 50 }));
+    translateY.value = withDelay(delay, withSpring(targetY, { damping: 10, stiffness: 50 }));
+    scale.value = withDelay(delay, withSpring(1, { damping: 8, stiffness: 80 }));
+    opacity.value = withDelay(300 + delay, withTiming(0, { duration: 700 }));
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
+      { scale: scale.value },
     ],
     opacity: opacity.value,
   }));
@@ -48,6 +73,12 @@ function Particle({ index }: { index: number }) {
     <Animated.View
       style={[
         styles.particle,
+        {
+          width: particleSize,
+          height: particleSize,
+          borderRadius: particleSize / 2,
+          backgroundColor: color,
+        },
         animStyle,
       ]}
     />
@@ -58,14 +89,27 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
   // Timer-based auto-dismiss
   useEffect(() => {
     playSound('complete');
-    const timer = setTimeout(() => {
-      onDone();
-    }, duration * 1000);
+
+    // Haptics celebration sequence: heavy → medium → light
+    if (Haptics) {
+      Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Heavy)?.catch?.(() => {});
+      const t1 = setTimeout(() => {
+        Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
+      }, 300);
+      const t2 = setTimeout(() => {
+        Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
+      }, 600);
+      const done = setTimeout(() => { onDone(); }, duration * 1000);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(done); };
+    }
+
+    const timer = setTimeout(() => { onDone(); }, duration * 1000);
     return () => clearTimeout(timer);
   }, [duration, onDone]);
 
   // "COMPLETE!" text entrance: scale from 0 -> 1.15 -> 1.0
   const titleScale = useSharedValue(0);
+  const titlePulse = useSharedValue(1);
   // Sub text fade in
   const subOpacity = useSharedValue(0);
   // Bonus row slide up
@@ -73,14 +117,27 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
   const bonusOpacity = useSharedValue(0);
 
   useEffect(() => {
-    titleScale.value = withSpring(1, { damping: 8, stiffness: 100 });
+    titleScale.value = withSpring(1, { damping: 6, stiffness: 90 });
+    // Gentle pulse after entrance
+    titlePulse.value = withDelay(
+      600,
+      withRepeat(
+        withSequence(
+          withTiming(1.04, { duration: 800 }),
+          withTiming(1.0, { duration: 800 }),
+        ),
+        -1,
+      ),
+    );
     subOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
     bonusTranslateY.value = withDelay(500, withSpring(0, { damping: 10, stiffness: 100 }));
     bonusOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
   }, []);
 
   const titleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: titleScale.value }],
+    transform: [
+      { scale: titleScale.value * titlePulse.value },
+    ],
   }));
 
   const subStyle = useAnimatedStyle(() => ({
@@ -102,15 +159,20 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
       </View>
 
       <View style={styles.content}>
+        <Animated.Text style={[styles.trophyText, titleStyle]}>
+          {winner === 'player' ? '\uD83C\uDFC6' : '\uD83E\uDD16'}
+        </Animated.Text>
         <Animated.Text style={[styles.completeText, titleStyle]}>
-          COMPLETE!
+          {winner === 'player' ? 'COMPLETE!' : 'SWEPT!'}
         </Animated.Text>
         <Animated.Text style={[styles.subText, subStyle]}>
-          {winner === 'player' ? 'You swept' : 'Bot swept'} all boards!
+          {winner === 'player' ? 'You swept all boards!' : 'Bot swept all boards!'}
         </Animated.Text>
         <Animated.View style={[styles.bonusRow, bonusStyle]}>
           <Text style={styles.bonusLabel}>BONUS</Text>
-          <Text style={styles.bonusAmount}>+{bonusAmount} 🪙</Text>
+          <Text style={styles.bonusSeparator}>+</Text>
+          <Text style={styles.bonusAmount}>{bonusAmount}</Text>
+          <View style={styles.bonusChip} />
         </Animated.View>
       </View>
     </View>
@@ -120,7 +182,7 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0,0,0,0.88)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
@@ -140,46 +202,71 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.goldBright,
+  },
+  trophyText: {
+    fontSize: 48,
+    marginBottom: 8,
   },
   completeText: {
     fontSize: 52,
     fontWeight: '900',
-    color: COLORS.goldBright,
-    letterSpacing: 8,
+    color: COLORS.goldLight,
+    letterSpacing: 6,
     textShadowColor: COLORS.gold,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 30,
-    marginBottom: 16,
+    textShadowRadius: 24,
+    marginBottom: 12,
   },
   subText: {
-    fontSize: 18,
+    fontSize: 17,
     color: COLORS.textPrimary,
-    marginBottom: 24,
+    marginBottom: 28,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
   bonusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(212, 168, 67, 0.2)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    gap: 8,
+    backgroundColor: 'rgba(201,168,76,0.18)',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderColor: COLORS.gold,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+      },
+      android: { elevation: 6 },
+      default: {},
+    }),
   },
   bonusLabel: {
     color: COLORS.gold,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
     letterSpacing: 2,
   },
+  bonusSeparator: {
+    color: COLORS.goldLight,
+    fontSize: 24,
+    fontWeight: '900',
+  },
   bonusAmount: {
     color: COLORS.goldBright,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '900',
+  },
+  bonusChip: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: COLORS.gold,
+    borderWidth: 2,
+    borderColor: COLORS.background,
   },
 });

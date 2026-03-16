@@ -144,8 +144,8 @@ export default function Board({
       return {};
     }
     return {
-      borderColor: COLORS.boardActive,
-      shadowColor: COLORS.neonBlue,
+      borderColor: COLORS.gold,
+      shadowColor: COLORS.gold,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: pulseValue.value * 0.6,
       shadowRadius: pulseValue.value * 10,
@@ -332,11 +332,21 @@ export default function Board({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1f3a1a',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#2d5a24',
+    backgroundColor: COLORS.boardBg,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: COLORS.boardBorder,
     overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+      },
+      android: { elevation: 8 },
+      default: {},
+    }),
   },
   pressableInner: {
     flex: 1,
@@ -345,15 +355,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   active: {
-    borderColor: COLORS.boardActive,
+    borderColor: COLORS.gold,
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.neonBlue,
+        shadowColor: COLORS.gold,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 10,
+        shadowOpacity: 0.7,
+        shadowRadius: 12,
       },
-      android: { elevation: 8 },
+      android: { elevation: 10 },
       default: {},
     }),
   },
@@ -440,7 +450,12 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   communitySeparator: {
-    width: 3,
+    width: 1,
+    height: '80%',
+    backgroundColor: COLORS.gold,
+    opacity: 0.3,
+    marginHorizontal: 3,
+    alignSelf: 'center',
   },
   emptySlot: {
     borderRadius: 6,
@@ -479,9 +494,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '45%',
     alignSelf: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+      },
+      android: { elevation: 4 },
+      default: {},
+    }),
   },
   playerBadge: {
     backgroundColor: COLORS.neonGreen,
