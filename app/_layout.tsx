@@ -9,6 +9,7 @@ import { useGameStore } from '../store/gameStore';
 import { preloadSounds } from '../utils/sounds';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
+import { VersionBadge } from '../components/VersionBadge';
 
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
@@ -35,6 +36,7 @@ export default function RootLayout() {
           />
         </WebContainer>
       </BugReporter>
+      <VersionBadge />
     </RootWrapper>
   );
 }
