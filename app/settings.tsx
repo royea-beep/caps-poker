@@ -3,8 +3,10 @@ import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
+import CardComponent from '../components/Card';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
+import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { CapsHooks } from '../utils/learning';
 
 interface SettingRowProps {
@@ -172,6 +174,62 @@ function PlayerCountSelector() {
   );
 }
 
+// Preview cards: A♠ (face-up) + face-down
+const ACE_SPADES = { rank: 'A' as const, suit: 'spades' as const, id: 'preview-as' };
+const KING_HEARTS = { rank: 'K' as const, suit: 'hearts' as const, id: 'preview-kh' };
+
+function CardThemePicker() {
+  const cardTheme = useGameStore((s) => s.cardTheme);
+  const setCardTheme = useGameStore((s) => s.setCardTheme);
+
+  return (
+    <View style={themeStyles.pickerRow}>
+      {(['v1', 'v2', 'v3'] as CardThemeId[]).map((id) => {
+        const t = CARD_THEMES[id];
+        const active = cardTheme === id;
+        return (
+          <Pressable
+            key={id}
+            onPress={() => setCardTheme(id)}
+            style={[themeStyles.themeBtn, active && themeStyles.themeBtnActive]}
+          >
+            <Text style={[themeStyles.themeBtnLabel, active && themeStyles.themeBtnLabelActive]}>
+              {t.name}
+            </Text>
+            <View style={themeStyles.previewRow}>
+              <CardComponent
+                card={ACE_SPADES}
+                faceDown={false}
+                cardWidth={32}
+                cardHeight={46}
+                themeOverride={id}
+              />
+              <CardComponent
+                card={KING_HEARTS}
+                faceDown={false}
+                cardWidth={32}
+                cardHeight={46}
+                themeOverride={id}
+              />
+              <CardComponent
+                faceDown
+                cardWidth={32}
+                cardHeight={46}
+                themeOverride={id}
+              />
+            </View>
+            {active && (
+              <View style={themeStyles.activePill}>
+                <Text style={themeStyles.activePillText}>✓ Active</Text>
+              </View>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -200,6 +258,9 @@ export default function SettingsScreen() {
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
+
+        <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
+        <CardThemePicker />
 
         <Text style={styles.sectionTitle}>TIMING</Text>
         <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />
@@ -372,5 +433,54 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: COLORS.background,
+  },
+});
+
+const themeStyles = StyleSheet.create({
+  pickerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 6,
+  },
+  themeBtn: {
+    flex: 1,
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.boardBorder,
+    padding: 10,
+    alignItems: 'center',
+    gap: 8,
+  },
+  themeBtnActive: {
+    borderColor: COLORS.gold,
+    borderWidth: 2,
+  },
+  themeBtnLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  themeBtnLabelActive: {
+    color: COLORS.gold,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    gap: 3,
+    justifyContent: 'center',
+  },
+  activePill: {
+    backgroundColor: COLORS.gold,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  activePillText: {
+    color: COLORS.background,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });
