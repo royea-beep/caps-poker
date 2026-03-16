@@ -451,6 +451,11 @@ export default function SitAndGoScreen() {
           </View>
 
           <Text style={styles.lobbyCounter}>{lobbyCount} / {TOTAL_PLAYERS}</Text>
+
+          <View style={styles.multiplayerTeaser}>
+            <Text style={styles.teaserText}>Coming Soon: Play with Friends</Text>
+            <Text style={styles.teaserSubtext}>Real-time multiplayer is on the way!</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -467,15 +472,18 @@ export default function SitAndGoScreen() {
           <ChipsDisplay amount={PRIZE_POOL} label="Prize Pool Won" size="large" />
 
           <View style={styles.standingsList}>
-            {players
+            {[...players]
               .sort((a, b) => b.score - a.score)
               .map((p, i) => (
-                <View key={p.id} style={styles.standingRow}>
-                  <Text style={styles.standingRank}>#{i + 1}</Text>
+                <View key={p.id} style={[styles.standingRow, i === 0 && styles.standingChampion]}>
+                  <Text style={styles.standingRank}>
+                    {i === 0 ? '\u{1F451}' : `#${i + 1}`}
+                  </Text>
                   <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
                     {p.name}
                   </Text>
                   <Text style={styles.standingScore}>{p.score} pts</Text>
+                  {p.eliminated && <Text style={styles.eliminatedTag}>OUT</Text>}
                 </View>
               ))}
           </View>
@@ -506,7 +514,7 @@ export default function SitAndGoScreen() {
           </Text>
 
           <View style={styles.standingsList}>
-            {players
+            {[...players]
               .sort((a, b) => b.score - a.score)
               .map((p, i) => (
                 <View key={p.id} style={[styles.standingRow, p.eliminated && styles.standingEliminated]}>
@@ -792,5 +800,35 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 14,
     fontWeight: '600',
+  },
+  standingChampion: {
+    borderColor: COLORS.gold,
+    borderWidth: 2,
+    backgroundColor: 'rgba(201,168,76,0.08)',
+  },
+
+  // Multiplayer teaser
+  multiplayerTeaser: {
+    backgroundColor: 'rgba(201,168,76,0.06)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.goldDim,
+    borderStyle: 'dashed',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    width: '100%',
+    gap: 4,
+  },
+  teaserText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.goldLight,
+    letterSpacing: 1,
+  },
+  teaserSubtext: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textDim,
   },
 });

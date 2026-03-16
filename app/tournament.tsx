@@ -151,10 +151,16 @@ export default function TournamentScreen() {
 
   // ─── Simulate a bot-vs-bot match ───────────────────────────────────────
 
-  const simulateBotMatch = useCallback((match: BracketMatch): TournamentPlayer => {
-    // Random winner for bot-vs-bot
-    const winner = Math.random() < 0.5 ? match.player1! : match.player2!;
-    return winner;
+  const simulateBotMatch = useCallback((match: BracketMatch): { winner: TournamentPlayer; s1: number; s2: number } => {
+    // Random winner for bot-vs-bot, generate realistic best-of-3 scores
+    const isP1 = Math.random() < 0.5;
+    const winnerScore = WINS_NEEDED;
+    const loserScore = Math.floor(Math.random() * WINS_NEEDED); // 0 or 1
+    return {
+      winner: isP1 ? match.player1! : match.player2!,
+      s1: isP1 ? winnerScore : loserScore,
+      s2: isP1 ? loserScore : winnerScore,
+    };
   }, []);
 
   // ─── Start a match involving the human player ──────────────────────────
@@ -287,11 +293,13 @@ export default function TournamentScreen() {
   // ─── Resolve a match and advance bracket ────────────────────────────────
 
   const resolveMatch = useCallback((match: BracketMatch, winner: TournamentPlayer) => {
-    // Update the appropriate bracket round
+    // Update the appropriate bracket round, including match scores
+    const s1 = matchWins[0];
+    const s2 = matchWins[1];
     if (match.id.startsWith('qf_')) {
       setQuarterFinals((prev) => {
         const updated = prev.map((m) =>
-          m.id === match.id ? { ...m, winner } : m
+          m.id === match.id ? { ...m, winner, score1: s1, score2: s2 } : m
         );
 
         // Check if all quarter-finals are done
@@ -326,7 +334,7 @@ export default function TournamentScreen() {
     } else if (match.id.startsWith('sf_')) {
       setSemiFinals((prev) => {
         const updated = prev.map((m) =>
-          m.id === match.id ? { ...m, winner } : m
+          m.id === match.id ? { ...m, winner, score1: s1, score2: s2 } : m
         );
 
         const allDone = updated.every((m) => m.winner !== null);
@@ -346,7 +354,7 @@ export default function TournamentScreen() {
         return updated;
       });
     } else if (match.id === 'final') {
-      setFinal((prev) => prev ? { ...prev, winner } : null);
+      setFinal((prev) => prev ? { ...prev, winner, score1: s1, score2: s2 } : null);
       if (winner.isHuman) {
         addChips(PRIZE_POOL);
       }
@@ -373,9 +381,9 @@ export default function TournamentScreen() {
           return;
         } else {
           // Simulate bot match
-          const winner = simulateBotMatch(qf);
+          const { winner, s1, s2 } = simulateBotMatch(qf);
           setQuarterFinals((prev) =>
-            prev.map((m) => (m.id === qf.id ? { ...m, winner } : m))
+            prev.map((m) => (m.id === qf.id ? { ...m, winner, score1: s1, score2: s2 } : m))
           );
           return;
         }
@@ -393,9 +401,9 @@ export default function TournamentScreen() {
           startHumanMatch(match);
           return;
         } else {
-          const winner = simulateBotMatch(sf);
+          const { winner, s1, s2 } = simulateBotMatch(sf);
           setSemiFinals((prev) =>
-            prev.map((m) => (m.id === sf.id ? { ...m, winner } : m))
+            prev.map((m) => (m.id === sf.id ? { ...m, winner, score1: s1, score2: s2 } : m))
           );
           return;
         }
@@ -411,8 +419,8 @@ export default function TournamentScreen() {
           : { ...final, player1: final.player2, player2: final.player1 };
         startHumanMatch(match);
       } else {
-        const winner = simulateBotMatch(final);
-        setFinal((prev) => prev ? { ...prev, winner } : null);
+        const { winner, s1, s2 } = simulateBotMatch(final);
+        setFinal((prev) => prev ? { ...prev, winner, score1: s1, score2: s2 } : null);
       }
     }
   }, [quarterFinals, semiFinals, final, startHumanMatch, simulateBotMatch]);
@@ -600,6 +608,11 @@ export default function TournamentScreen() {
 
           {renderBracket()}
 
+          <View style={styles.multiplayerTeaser}>
+            <Text style={styles.teaserText}>Coming Soon: Play with Friends</Text>
+            <Text style={styles.teaserSubtext}>Invite friends for real-time tournament brackets!</Text>
+          </View>
+
           {humanEliminated ? (
             <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
           ) : (
@@ -615,54 +628,42 @@ export default function TournamentScreen() {
   // ─── Render helper: Bracket visualization ──────────────────────────────
 
   function renderBracket() {
+    const renderMatchCard = (m: BracketMatch, extraStyle?: object) => (
+      <View key={m.id} style={[styles.bracketMatch, extraStyle, m.winner && styles.bracketMatchDone]}>
+        <Text style={[
+          styles.bracketPlayer,
+          m.winner?.id === m.player1?.id && styles.bracketWinner,
+          m.player1?.isHuman && styles.bracketHuman,
+          m.winner && m.winner.id !== m.player1?.id && styles.bracketLoser,
+        ]}>
+          {m.winner?.id === m.player1?.id ? '\u2713 ' : ''}{m.player1?.name || '?'}
+        </Text>
+        <Text style={styles.bracketVs}>{m.winner ? `${m.score1} - ${m.score2}` : 'vs'}</Text>
+        <Text style={[
+          styles.bracketPlayer,
+          m.winner?.id === m.player2?.id && styles.bracketWinner,
+          m.player2?.isHuman && styles.bracketHuman,
+          m.winner && m.winner.id !== m.player2?.id && styles.bracketLoser,
+        ]}>
+          {m.winner?.id === m.player2?.id ? '\u2713 ' : ''}{m.player2?.name || '?'}
+        </Text>
+      </View>
+    );
+
     return (
       <View style={styles.bracketContainer}>
         {/* Quarter-finals */}
         <View style={styles.bracketColumn}>
           <Text style={styles.bracketRoundLabel}>QF</Text>
-          {quarterFinals.map((m) => (
-            <View key={m.id} style={styles.bracketMatch}>
-              <Text style={[
-                styles.bracketPlayer,
-                m.winner?.id === m.player1?.id && styles.bracketWinner,
-                m.player1?.isHuman && styles.bracketHuman,
-              ]}>
-                {m.player1?.name || '?'}
-              </Text>
-              <Text style={styles.bracketVs}>vs</Text>
-              <Text style={[
-                styles.bracketPlayer,
-                m.winner?.id === m.player2?.id && styles.bracketWinner,
-                m.player2?.isHuman && styles.bracketHuman,
-              ]}>
-                {m.player2?.name || '?'}
-              </Text>
-            </View>
-          ))}
+          {quarterFinals.map((m) => renderMatchCard(m))}
         </View>
 
         {/* Semi-finals */}
         <View style={styles.bracketColumn}>
           <Text style={styles.bracketRoundLabel}>SF</Text>
-          {semiFinals.length > 0 ? semiFinals.map((m) => (
-            <View key={m.id} style={[styles.bracketMatch, styles.bracketMatchLarge]}>
-              <Text style={[
-                styles.bracketPlayer,
-                m.winner?.id === m.player1?.id && styles.bracketWinner,
-                m.player1?.isHuman && styles.bracketHuman,
-              ]}>
-                {m.player1?.name || '?'}
-              </Text>
-              <Text style={styles.bracketVs}>vs</Text>
-              <Text style={[
-                styles.bracketPlayer,
-                m.winner?.id === m.player2?.id && styles.bracketWinner,
-                m.player2?.isHuman && styles.bracketHuman,
-              ]}>
-                {m.player2?.name || '?'}
-              </Text>
-            </View>
-          )) : (
+          {semiFinals.length > 0 ? semiFinals.map((m) =>
+            renderMatchCard(m, styles.bracketMatchLarge)
+          ) : (
             <View style={styles.bracketMatchEmpty}>
               <Text style={styles.bracketEmptyText}>TBD</Text>
             </View>
@@ -672,25 +673,7 @@ export default function TournamentScreen() {
         {/* Final */}
         <View style={styles.bracketColumn}>
           <Text style={styles.bracketRoundLabel}>F</Text>
-          {final ? (
-            <View style={[styles.bracketMatch, styles.bracketMatchFinal]}>
-              <Text style={[
-                styles.bracketPlayer,
-                final.winner?.id === final.player1?.id && styles.bracketWinner,
-                final.player1?.isHuman && styles.bracketHuman,
-              ]}>
-                {final.player1?.name || '?'}
-              </Text>
-              <Text style={styles.bracketVs}>vs</Text>
-              <Text style={[
-                styles.bracketPlayer,
-                final.winner?.id === final.player2?.id && styles.bracketWinner,
-                final.player2?.isHuman && styles.bracketHuman,
-              ]}>
-                {final.player2?.name || '?'}
-              </Text>
-            </View>
-          ) : (
+          {final ? renderMatchCard(final, styles.bracketMatchFinal) : (
             <View style={styles.bracketMatchEmpty}>
               <Text style={styles.bracketEmptyText}>TBD</Text>
             </View>
@@ -944,5 +927,38 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 14,
     fontWeight: '600',
+  },
+  bracketMatchDone: {
+    opacity: 0.85,
+  },
+  bracketLoser: {
+    color: COLORS.textDim,
+    fontWeight: '400',
+    textDecorationLine: 'line-through',
+  },
+
+  // Multiplayer teaser
+  multiplayerTeaser: {
+    backgroundColor: 'rgba(201,168,76,0.06)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.goldDim,
+    borderStyle: 'dashed',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    width: '100%',
+    gap: 4,
+  },
+  teaserText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.goldLight,
+    letterSpacing: 1,
+  },
+  teaserSubtext: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textDim,
   },
 });
