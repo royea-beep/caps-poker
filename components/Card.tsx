@@ -8,7 +8,9 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from 'react-native-reanimated';
-import { Card as CardType, COLORS } from '../constants/gameConfig';
+import { Card as CardType } from '../constants/gameConfig';
+import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
+import { useGameStore } from '../store/gameStore';
 
 interface CardProps {
   card?: CardType;
@@ -19,6 +21,7 @@ interface CardProps {
   flipDuration?: number;
   cardWidth?: number;
   cardHeight?: number;
+  themeOverride?: CardThemeId;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -28,16 +31,10 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '\u2660',
 };
 
-// Premium 2026 card colors
-const CARD_FACE_BG = '#FFFFFF';
-const CARD_RED = '#CC2936';      // rich red
-const CARD_BLACK = '#1a1a2e';    // deep navy blue (not flat black)
-const CARD_BACK_BG = '#0f3460';  // deep navy blue back
-const CARD_BACK_PATTERN = '#16213e'; // darker navy for inner border
-const CARD_BACK_DIAMOND = '#C9A84C'; // gold diamonds
-const GOLD_BORDER = '#C9A84C';   // metallic gold
+export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight, themeOverride }: CardProps) {
+  const storedTheme = useGameStore((s) => s.cardTheme);
+  const theme = CARD_THEMES[themeOverride ?? storedTheme];
 
-export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight }: CardProps) {
   const width = cardWidth ?? (small ? 40 : 58);
   const height = cardHeight ?? (small ? 56 : 84);
   const cornerRankSize = cardHeight ? Math.max(9, Math.floor(height * 0.18)) : (small ? 10 : 13);
@@ -84,33 +81,52 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     };
   });
 
-  // Selected card: gold border (up to 3px) + gold glow + lift translateY(-8)
+  // Selected card: theme-colored border + glow + lift
   const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: 1 + glowOpacity.value * 2,
-    borderColor: glowOpacity.value > 0.01 ? GOLD_BORDER : 'rgba(0,0,0,0.08)',
-    shadowColor: GOLD_BORDER,
+    borderWidth: theme.faceBorderWidth + glowOpacity.value * 2,
+    borderColor: glowOpacity.value > 0.01 ? theme.selectedBorderColor : theme.faceBorderColor,
+    shadowColor: theme.selectedGlowColor,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: glowOpacity.value * 0.9,
     shadowRadius: glowOpacity.value * 12,
     elevation: glowOpacity.value * 10,
     transform: [
       { scale: 1 + glowOpacity.value * 0.03 },
-      { translateY: glowOpacity.value * -6 },
+      { translateY: glowOpacity.value * theme.selectedTranslateY },
     ],
   }));
 
-  // Card back: navy blue with gold border + diamond pattern
+  // Card back
   const renderBack = () => (
-    <View style={[styles.card, styles.faceDown, { width, height }]}>
-      {/* Gold outer border effect via inner view */}
+    <View style={[
+      styles.card,
+      {
+        width,
+        height,
+        backgroundColor: theme.backBg,
+        borderRadius: theme.faceRadius,
+        borderWidth: theme.backBorderWidth,
+        borderColor: theme.backBorderColor,
+        overflow: 'hidden' as const,
+      },
+      Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.3,
+          shadowRadius: 6,
+        },
+        android: { elevation: 5 },
+        default: {},
+      }),
+    ]}>
       <View style={styles.backInner}>
-        {/* 3x3 diamond grid */}
         {[0, 1, 2].map((row) => (
           <View key={row} style={styles.backRow}>
             {[0, 1, 2].map((col) => (
               <Text
                 key={col}
-                style={[styles.backDiamond, { fontSize: backDiamondSize }]}
+                style={[styles.backDiamond, { fontSize: backDiamondSize, color: theme.backDiamond }]}
               >
                 {'\u2666'}
               </Text>
@@ -121,13 +137,23 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     </View>
   );
 
-  // No card data — static back
   if (!card) {
     return renderBack();
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? CARD_RED : CARD_BLACK;
+  const suitColor = isRed ? theme.redSuit : theme.blackSuit;
+
+  const faceUpStaticStyle = Platform.select({
+    ios: {
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: theme.faceBorderWidth === 0 ? 0.35 : 0.28,
+      shadowRadius: theme.faceBorderWidth === 0 ? 10 : 8,
+    } as any,
+    android: { elevation: theme.faceBorderWidth === 0 ? 8 : 6 } as any,
+    default: {} as any,
+  });
 
   return (
     <View style={{ width, height }}>
@@ -140,8 +166,13 @@ export default function CardComponent({ card, faceDown = false, small, highlight
       <Animated.View
         style={[
           styles.card,
-          styles.faceUp,
-          { width, height },
+          {
+            width,
+            height,
+            backgroundColor: theme.faceBg,
+            borderRadius: theme.faceRadius,
+          },
+          faceUpStaticStyle,
           highlightAnimStyle,
           dimmed && styles.dimmed,
           frontAnimStyle,
@@ -178,41 +209,9 @@ export default function CardComponent({ card, faceDown = false, small, highlight
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 1,
-  },
-  faceUp: {
-    backgroundColor: CARD_FACE_BG,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.28,
-        shadowRadius: 8,
-      },
-      android: { elevation: 6 },
-      default: {},
-    }),
-  },
-  faceDown: {
-    backgroundColor: CARD_BACK_BG,
-    borderWidth: 2,
-    borderColor: GOLD_BORDER,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-      },
-      android: { elevation: 5 },
-      default: {},
-    }),
   },
   backInner: {
     flex: 1,
@@ -226,7 +225,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   backDiamond: {
-    color: CARD_BACK_DIAMOND,
+    // color set inline
   },
   cornerTL: {
     position: 'absolute',

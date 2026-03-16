@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import ChipsDisplay from '../components/ChipsDisplay';
+import CardComponent from '../components/Card';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { simulateBatch, BatchSimulationResult, simulateHand, SimulationResult } from '../utils/simulate';
 
 interface SimResultDisplay extends BatchSimulationResult {
@@ -27,7 +29,9 @@ export default function SimulateScreen() {
   const config = useGameStore((s) => s.config);
   const [results, setResults] = useState<SimResultDisplay[]>([]);
   const [running, setRunning] = useState(false);
-  const [mode, setMode] = useState<'batch' | 'auto'>('batch');
+  const [mode, setMode] = useState<'batch' | 'auto' | 'cards'>('batch');
+  const cardTheme = useGameStore((s) => s.cardTheme);
+  const setCardTheme = useGameStore((s) => s.setCardTheme);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const stopRef = useRef(false);
 
@@ -179,6 +183,12 @@ export default function SimulateScreen() {
           title="AUTO-PLAY"
           variant={mode === 'auto' ? 'gold' : 'ghost'}
           onPress={() => setMode('auto')}
+          style={styles.tabBtn}
+        />
+        <Button
+          title="\uD83C\uDCCF CARDS"
+          variant={mode === 'cards' ? 'gold' : 'ghost'}
+          onPress={() => setMode('cards')}
           style={styles.tabBtn}
         />
       </View>
@@ -377,6 +387,71 @@ export default function SimulateScreen() {
           </ScrollView>
         </>
       )}
+
+      {mode === 'cards' && (
+        <ScrollView style={styles.resultsScroll} contentContainerStyle={styles.cardPickerContent}>
+          <Text style={styles.cardPickerTitle}>{'\uD83C\uDCCF'} בחר עיצוב קלף</Text>
+          <Text style={styles.cardPickerSub}>הבחירה נשמרת ומשפיעה על כל הקלפים במשחק</Text>
+
+          {(['v1', 'v2', 'v3'] as CardThemeId[]).map((themeId) => {
+            const t = CARD_THEMES[themeId];
+            const isActive = cardTheme === themeId;
+            return (
+              <Pressable
+                key={themeId}
+                onPress={() => setCardTheme(themeId)}
+                style={[styles.themeCard, isActive && styles.themeCardActive]}
+              >
+                {/* Theme name + badge */}
+                <View style={styles.themeHeader}>
+                  <Text style={[styles.themeName, isActive && styles.themeNameActive]}>
+                    {t.name}
+                  </Text>
+                  {isActive && (
+                    <View style={styles.activeBadge}>
+                      <Text style={styles.activeBadgeText}>ACTIVE</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Card preview row: A♠ K♥ Q♦ J♣ + 2 face-down + 1 selected */}
+                <View style={styles.cardPreviewRow}>
+                  {/* Face-up cards */}
+                  {[
+                    { rank: 'A' as const, suit: 'spades' as const, id: `${themeId}-as` },
+                    { rank: 'K' as const, suit: 'hearts' as const, id: `${themeId}-kh` },
+                    { rank: 'Q' as const, suit: 'diamonds' as const, id: `${themeId}-qd` },
+                    { rank: 'J' as const, suit: 'clubs' as const, id: `${themeId}-jc` },
+                  ].map((card) => (
+                    <CardComponent
+                      key={card.id}
+                      card={card}
+                      faceDown={false}
+                      cardWidth={42}
+                      cardHeight={60}
+                      themeOverride={themeId}
+                    />
+                  ))}
+
+                  {/* Face-down cards */}
+                  <CardComponent faceDown cardWidth={42} cardHeight={60} themeOverride={themeId} />
+                  <CardComponent faceDown cardWidth={42} cardHeight={60} themeOverride={themeId} />
+
+                  {/* Selected card (highlighted) */}
+                  <CardComponent
+                    card={{ rank: 'A' as const, suit: 'hearts' as const, id: `${themeId}-sel` }}
+                    faceDown={false}
+                    highlighted
+                    cardWidth={42}
+                    cardHeight={60}
+                    themeOverride={themeId}
+                  />
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -538,5 +613,69 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     flex: 1,
+  },
+  // ── Card Picker ──────────────────────────────────────────────────
+  cardPickerContent: {
+    gap: 16,
+    paddingBottom: 40,
+  },
+  cardPickerTitle: {
+    color: COLORS.goldBright,
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  cardPickerSub: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  themeCard: {
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  themeCardActive: {
+    borderColor: COLORS.gold,
+    borderWidth: 2,
+  },
+  themeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  themeName: {
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  themeNameActive: {
+    color: COLORS.gold,
+  },
+  activeBadge: {
+    backgroundColor: COLORS.gold,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  activeBadgeText: {
+    color: COLORS.background,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  cardPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    flexWrap: 'wrap',
   },
 });
