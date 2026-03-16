@@ -1,0 +1,796 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  useWindowDimensions,
+  Platform,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+} from 'react-native-reanimated';
+import Board from '../components/Board';
+import PlayerHand from '../components/PlayerHand';
+import ChipsDisplay from '../components/ChipsDisplay';
+import { Button } from '../components/Button';
+import { useGameStore } from '../store/gameStore';
+import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, getCardsPerPlayer } from '../constants/gameConfig';
+import {
+  BoardState,
+  initializeGameMulti,
+  placeSingleBotCards,
+  autoFillPlayerCards,
+  calculateHandResultsMulti,
+} from '../utils/gameLogic';
+import { GamePhase } from '../types/gameTypes';
+import { playSound } from '../utils/sounds';
+
+let Haptics: any = null;
+try {
+  Haptics = require('expo-haptics');
+} catch {
+  // not available on web
+}
+
+const haptic = (style: any) => {
+  Haptics?.impactAsync?.(style)?.catch?.(() => {});
+};
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface SitAndGoPlayer {
+  id: string;
+  name: string;
+  score: number;
+  eliminated: boolean;
+  isHuman: boolean;
+}
+
+type SitAndGoPhase =
+  | 'lobby'
+  | 'arranging'
+  | 'waiting'
+  | 'standings'
+  | 'eliminated'
+  | 'winner';
+
+const TOTAL_PLAYERS = 6;
+const TOTAL_ROUNDS = 5; // 6 players → 5 elimination rounds → 1 winner
+const BOT_NAMES = ['Joey', 'Monica', 'Ross', 'Phoebe', 'Chandler'];
+const COUNTDOWN_SECONDS = 30;
+const ENTRY_FEE = 150;
+const PRIZE_POOL = ENTRY_FEE * TOTAL_PLAYERS;
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export default function SitAndGoScreen() {
+  const router = useRouter();
+  const config = useGameStore((s) => s.config);
+  const chips = useGameStore((s) => s.chips);
+  const addChips = useGameStore((s) => s.addChips);
+
+  // Sit & Go state
+  const [phase, setPhase] = useState<SitAndGoPhase>('lobby');
+  const [round, setRound] = useState(1);
+  const [players, setPlayers] = useState<SitAndGoPlayer[]>([]);
+  const [lobbyCount, setLobbyCount] = useState(1);
+  const [eliminatedName, setEliminatedName] = useState<string | null>(null);
+
+  // Game round state (reused from game.tsx pattern)
+  const [boards, setBoards] = useState<BoardState[]>([]);
+  const [playerHand, setPlayerHand] = useState<Card[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | undefined>(undefined);
+  const [playerReady, setPlayerReady] = useState(false);
+  const [botsReady, setBotsReady] = useState<boolean[]>([]);
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [countdownActive, setCountdownActive] = useState(false);
+
+  const mountedRef = useRef(true);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const playerHandRef = useRef(playerHand);
+  const boardsRef = useRef(boards);
+
+  useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
+  useEffect(() => { boardsRef.current = boards; }, [boards]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      timeoutsRef.current.forEach((t) => clearTimeout(t));
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
+  // ─── Lobby animation ────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (phase !== 'lobby') return;
+
+    // Initialize players
+    const initial: SitAndGoPlayer[] = [
+      { id: 'human', name: 'You', score: 0, eliminated: false, isHuman: true },
+      ...BOT_NAMES.map((name, i) => ({
+        id: `bot_${i}`,
+        name,
+        score: 0,
+        eliminated: false,
+        isHuman: false,
+      })),
+    ];
+    setPlayers(initial);
+
+    // Animate bots joining
+    let count = 1;
+    const interval = setInterval(() => {
+      count++;
+      setLobbyCount(count);
+      if (count >= TOTAL_PLAYERS) {
+        clearInterval(interval);
+        // Auto-start after brief delay
+        setTimeout(() => {
+          if (mountedRef.current) {
+            addChips(-ENTRY_FEE);
+            startRound(initial, 1);
+          }
+        }, 1000);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // ─── Start a round ──────────────────────────────────────────────────────
+
+  const startRound = useCallback((currentPlayers: SitAndGoPlayer[], roundNum: number) => {
+    const alive = currentPlayers.filter((p) => !p.eliminated);
+    // Use 2 players for the game mechanic (simpler — each round is player vs field)
+    const numberOfPlayers = 2 as 2 | 3 | 4;
+    const boardCount = getBoardCount(numberOfPlayers);
+    const numberOfBots = numberOfPlayers - 1;
+
+    const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
+
+    const humanAlive = alive.find((p) => p.isHuman);
+    if (!humanAlive) {
+      // Human was eliminated — show game over
+      setPhase('eliminated');
+      return;
+    }
+
+    setBoards(initialBoards);
+    setPlayerHand(pHand);
+    setSelectedCardId(undefined);
+    setPlayerReady(false);
+    setBotsReady(new Array(numberOfBots).fill(false));
+    setCountdown(COUNTDOWN_SECONDS);
+    setCountdownActive(false);
+    setRound(roundNum);
+    setPhase('arranging');
+
+    // Bot placement timers
+    for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
+      const delay = 5000 + Math.random() * 15000;
+      const botCards = botHands[botIdx];
+      const timer = setTimeout(() => {
+        if (!mountedRef.current) return;
+        setBoards((prev) => placeSingleBotCards(botCards, prev, botIdx));
+        setBotsReady((prev) => {
+          const updated = [...prev];
+          updated[botIdx] = true;
+          if (!prev.some(Boolean)) {
+            startCountdown();
+          }
+          return updated;
+        });
+      }, delay);
+      timeoutsRef.current.push(timer);
+    }
+  }, []);
+
+  // ─── Countdown ──────────────────────────────────────────────────────────
+
+  const startCountdown = useCallback(() => {
+    if (countdownRef.current) return;
+    setCountdownActive(true);
+    setCountdown(COUNTDOWN_SECONDS);
+
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // Auto-fill when countdown hits 0
+  useEffect(() => {
+    if (countdownActive && countdown === 0 && !playerReady) {
+      setBoards((currentBoards) => {
+        const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
+        const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, currentBoards);
+        setPlayerHand(remainingHand);
+        return filledBoards;
+      });
+      setSelectedCardId(undefined);
+      setPlayerReady(true);
+      setPhase('waiting');
+    }
+  }, [countdownActive, countdown, playerReady]);
+
+  // ─── Evaluate round when all ready ──────────────────────────────────────
+
+  const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
+
+  useEffect(() => {
+    if (phase !== 'arranging' && phase !== 'waiting') return;
+    if (!playerReady || !allBotsReady) return;
+
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+
+    // Evaluate the round
+    const numberOfPlayers = 2 as 2 | 3 | 4;
+    const results = calculateHandResultsMulti(boardsRef.current, numberOfPlayers, config);
+
+    // Calculate player's board wins this round
+    const playerBoardWins = results.boardResults.filter((r) => r.winner === 'player').length;
+    const totalBoards = results.boardResults.length;
+
+    // Update scores for all alive players
+    setPlayers((prev) => {
+      const alive = prev.filter((p) => !p.eliminated);
+      return prev.map((p) => {
+        if (p.eliminated) return p;
+        if (p.isHuman) {
+          return { ...p, score: p.score + playerBoardWins };
+        }
+        // Bots get random scores (simulating their matches)
+        const botScore = Math.floor(Math.random() * (totalBoards + 1));
+        return { ...p, score: p.score + botScore };
+      });
+    });
+
+    // Show standings after a brief delay
+    const timer = setTimeout(() => {
+      if (mountedRef.current) {
+        setPhase('standings');
+      }
+    }, 1500);
+    timeoutsRef.current.push(timer);
+  }, [playerReady, allBotsReady, phase]);
+
+  // ─── Eliminate lowest scorer ────────────────────────────────────────────
+
+  const handleContinue = useCallback(() => {
+    setPlayers((prev) => {
+      const alive = prev.filter((p) => !p.eliminated);
+      if (alive.length <= 2) {
+        // Final showdown done — determine winner
+        const sorted = [...alive].sort((a, b) => b.score - a.score);
+        const winner = sorted[0];
+        if (winner.isHuman) {
+          addChips(PRIZE_POOL);
+          setPhase('winner');
+        } else {
+          setEliminatedName(winner.name);
+          setPhase('eliminated');
+        }
+        return prev;
+      }
+
+      // Find lowest scorer among alive (excluding ties with higher players)
+      const sorted = [...alive].sort((a, b) => a.score - b.score);
+      const lowestPlayer = sorted[0];
+
+      const updated = prev.map((p) =>
+        p.id === lowestPlayer.id ? { ...p, eliminated: true } : p
+      );
+
+      setEliminatedName(lowestPlayer.name);
+
+      const newAlive = updated.filter((p) => !p.eliminated);
+      if (lowestPlayer.isHuman) {
+        setPhase('eliminated');
+        return updated;
+      }
+
+      if (newAlive.length <= 1) {
+        // Human is last standing
+        addChips(PRIZE_POOL);
+        setPhase('winner');
+        return updated;
+      }
+
+      // Start next round
+      const nextRound = round + 1;
+      setTimeout(() => {
+        if (mountedRef.current) {
+          startRound(updated, nextRound);
+        }
+      }, 2000);
+
+      return updated;
+    });
+  }, [round, startRound, addChips]);
+
+  // ─── Card interaction handlers ──────────────────────────────────────────
+
+  const isArranging = phase === 'arranging' && !playerReady;
+
+  const handleSelectCard = useCallback(
+    (card: Card) => {
+      if (!isArranging) return;
+      haptic(Haptics?.ImpactFeedbackStyle?.Light);
+      playSound('cardSelect');
+      setSelectedCardId((prev) => (prev === card.id ? undefined : card.id));
+    },
+    [isArranging]
+  );
+
+  const handleBoardPress = useCallback(
+    (boardIndex: number) => {
+      if (!isArranging) return;
+      const currentHand = playerHandRef.current;
+      if (currentHand.length === 0) return;
+
+      const cardToPlace = selectedCardId
+        ? currentHand.find((c) => c.id === selectedCardId)
+        : currentHand[0];
+      if (!cardToPlace) return;
+
+      setBoards((prev) => {
+        const board = prev[boardIndex];
+        if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
+        haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+        playSound('cardPlace');
+        const updated = [...prev];
+        updated[boardIndex] = {
+          ...board,
+          playerCards: [...board.playerCards, cardToPlace],
+        };
+        setPlayerHand((hand) => hand.filter((c) => c.id !== cardToPlace.id));
+        setSelectedCardId(undefined);
+        return updated;
+      });
+    },
+    [isArranging, selectedCardId]
+  );
+
+  const handleRemoveCardFromBoard = useCallback(
+    (boardIndex: number, card: Card) => {
+      if (!isArranging) return;
+      haptic(Haptics?.ImpactFeedbackStyle?.Light);
+      setBoards((prev) => {
+        if (!prev[boardIndex]) return prev;
+        const updated = [...prev];
+        updated[boardIndex] = {
+          ...prev[boardIndex],
+          playerCards: prev[boardIndex].playerCards.filter((c) => c.id !== card.id),
+        };
+        return updated;
+      });
+      setPlayerHand((prev) => [...prev, card]);
+    },
+    [isArranging]
+  );
+
+  const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
+
+  const handleReady = useCallback(() => {
+    if (!allBoardsFull) return;
+    setSelectedCardId(undefined);
+    setPlayerReady(true);
+    setPhase('waiting');
+    if (!countdownActive) {
+      startCountdown();
+    }
+  }, [allBoardsFull, countdownActive, startCountdown]);
+
+  const handleBack = useCallback(() => {
+    if (phase === 'arranging' || phase === 'waiting') {
+      Alert.alert('Leave Sit & Go?', 'You will forfeit your entry fee.', [
+        { text: 'Stay', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: () => router.replace('/'),
+        },
+      ]);
+    } else {
+      router.replace('/');
+    }
+  }, [phase, router]);
+
+  // ─── Render ─────────────────────────────────────────────────────────────
+
+  // Lobby phase
+  if (phase === 'lobby') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.heading}>SIT & GO</Text>
+          <Text style={styles.subheading}>6 Players  |  Entry: {ENTRY_FEE} chips</Text>
+
+          <View style={styles.lobbyBox}>
+            <Text style={styles.lobbyTitle}>Waiting for players...</Text>
+            {Array.from({ length: TOTAL_PLAYERS }).map((_, i) => (
+              <View key={i} style={styles.lobbySlot}>
+                <View
+                  style={[
+                    styles.lobbyDot,
+                    i < lobbyCount ? styles.lobbyDotFilled : null,
+                  ]}
+                />
+                <Text style={[styles.lobbyName, i >= lobbyCount && styles.lobbyNameEmpty]}>
+                  {i === 0
+                    ? 'You'
+                    : i < lobbyCount
+                    ? BOT_NAMES[i - 1]
+                    : 'Waiting...'}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.lobbyCounter}>{lobbyCount} / {TOTAL_PLAYERS}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Winner phase
+  if (phase === 'winner') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.trophyEmoji}>{'\u2B50'}</Text>
+          <Text style={styles.heading}>YOU WIN!</Text>
+          <Text style={styles.subheading}>Sit & Go Champion</Text>
+          <ChipsDisplay amount={PRIZE_POOL} label="Prize Pool Won" size="large" />
+
+          <View style={styles.standingsList}>
+            {players
+              .sort((a, b) => b.score - a.score)
+              .map((p, i) => (
+                <View key={p.id} style={styles.standingRow}>
+                  <Text style={styles.standingRank}>#{i + 1}</Text>
+                  <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
+                    {p.name}
+                  </Text>
+                  <Text style={styles.standingScore}>{p.score} pts</Text>
+                </View>
+              ))}
+          </View>
+
+          <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Eliminated phase
+  if (phase === 'eliminated') {
+    const alive = players.filter((p) => !p.eliminated);
+    const humanPlayer = players.find((p) => p.isHuman);
+    const humanEliminated = humanPlayer?.eliminated;
+    const placement = humanEliminated
+      ? players.filter((p) => !p.eliminated).length + 1
+      : 1;
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.heading}>
+            {humanEliminated ? 'ELIMINATED' : 'GAME OVER'}
+          </Text>
+          <Text style={styles.subheading}>
+            You finished #{placement} of {TOTAL_PLAYERS}
+          </Text>
+
+          <View style={styles.standingsList}>
+            {players
+              .sort((a, b) => b.score - a.score)
+              .map((p, i) => (
+                <View key={p.id} style={[styles.standingRow, p.eliminated && styles.standingEliminated]}>
+                  <Text style={styles.standingRank}>#{i + 1}</Text>
+                  <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
+                    {p.name}
+                  </Text>
+                  <Text style={styles.standingScore}>{p.score} pts</Text>
+                  {p.eliminated && <Text style={styles.eliminatedTag}>OUT</Text>}
+                </View>
+              ))}
+          </View>
+
+          <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Standings phase (between rounds)
+  if (phase === 'standings') {
+    const alive = players.filter((p) => !p.eliminated);
+    const sorted = [...alive].sort((a, b) => b.score - a.score);
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.heading}>ROUND {round} RESULTS</Text>
+          <Text style={styles.subheading}>
+            {alive.length} players remaining  |  Lowest score eliminated
+          </Text>
+
+          <View style={styles.standingsList}>
+            {sorted.map((p, i) => (
+              <View
+                key={p.id}
+                style={[
+                  styles.standingRow,
+                  i === sorted.length - 1 && styles.standingDanger,
+                ]}
+              >
+                <Text style={styles.standingRank}>#{i + 1}</Text>
+                <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
+                  {p.name}
+                </Text>
+                <Text style={styles.standingScore}>{p.score} pts</Text>
+                {i === sorted.length - 1 && (
+                  <Text style={styles.eliminatedTag}>ELIM</Text>
+                )}
+              </View>
+            ))}
+          </View>
+
+          <Button title="CONTINUE" variant="gold" onPress={handleContinue} />
+          <Button title="LEAVE" variant="ghost" onPress={() => router.replace('/')} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Arranging / Waiting phase — the actual card game
+  const boardCount = getBoardCount(2);
+  const timerColor = countdown > 20 ? '#4CAF50' : countdown > 10 ? '#FFC107' : '#e74c3c';
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topBar}>
+        <Button title="BACK" variant="ghost" onPress={handleBack} style={{ paddingVertical: 8, paddingHorizontal: 12 }} />
+        <Text style={styles.roundLabel}>ROUND {round} / {TOTAL_ROUNDS}</Text>
+        {countdownActive && (
+          <Text style={[styles.timerText, { color: timerColor }]}>
+            0:{countdown.toString().padStart(2, '0')}
+          </Text>
+        )}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.gameArea}>
+        {boards.map((board, i) => (
+          <Board
+            key={i}
+            index={i}
+            openCards={board.openCards}
+            closedCards={board.closedCards}
+            playerCards={board.playerCards}
+            botCards={board.botCards}
+            allBotCards={board.allBotCards}
+            revealed={false}
+            active={isArranging}
+            potAmount={config.potPerBoard * 2}
+            onPress={() => handleBoardPress(i)}
+            onRemoveCard={(card: Card) => handleRemoveCardFromBoard(i, card)}
+            isArrangement={isArranging}
+            cardHeight={44}
+          />
+        ))}
+      </ScrollView>
+
+      <View style={styles.bottomArea}>
+        <PlayerHand
+          cards={playerHand}
+          selectedCardId={selectedCardId}
+          onSelectCard={handleSelectCard}
+        />
+
+        {isArranging && (
+          <Button
+            title={allBoardsFull ? 'READY' : 'Place all cards'}
+            variant={allBoardsFull ? 'gold' : 'ghost'}
+            disabled={!allBoardsFull}
+            onPress={handleReady}
+          />
+        )}
+
+        {phase === 'waiting' && (
+          <Text style={styles.waitingText}>Waiting for opponents...</Text>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 20,
+  },
+  heading: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: COLORS.gold,
+    letterSpacing: 6,
+    textAlign: 'center',
+  },
+  subheading: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  trophyEmoji: {
+    fontSize: 64,
+    textAlign: 'center',
+  },
+
+  // Lobby
+  lobbyBox: {
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  lobbyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.gold,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  lobbySlot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  lobbyDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    backgroundColor: 'transparent',
+  },
+  lobbyDotFilled: {
+    backgroundColor: COLORS.gold,
+  },
+  lobbyName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  lobbyNameEmpty: {
+    color: COLORS.textDim,
+    fontStyle: 'italic',
+  },
+  lobbyCounter: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 4,
+  },
+
+  // Standings
+  standingsList: {
+    width: '100%',
+    gap: 8,
+  },
+  standingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 8,
+    padding: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  standingDanger: {
+    borderColor: COLORS.danger,
+    backgroundColor: 'rgba(192,57,43,0.1)',
+  },
+  standingEliminated: {
+    opacity: 0.4,
+  },
+  standingRank: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.gold,
+    width: 32,
+  },
+  standingName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    flex: 1,
+  },
+  standingNameYou: {
+    color: COLORS.gold,
+  },
+  standingScore: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+  eliminatedTag: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.danger,
+    letterSpacing: 1,
+  },
+
+  // Game area
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  roundLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 2,
+  },
+  timerText: {
+    fontSize: 18,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  gameArea: {
+    flexGrow: 1,
+    padding: 12,
+    gap: 8,
+  },
+  bottomArea: {
+    padding: 12,
+    gap: 12,
+  },
+  waitingText: {
+    textAlign: 'center',
+    color: COLORS.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
