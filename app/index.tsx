@@ -220,6 +220,7 @@ export default function HomeScreen() {
           <Button title="HOST GAME (WiFi)" variant="secondary" onPress={() => router.push('/lobby/host' as any)} />
           <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join' as any)} />
           <Button title="LEADERBOARD" variant="ghost" onPress={() => router.push('/leaderboard' as any)} />
+          <Button title="HAND HISTORY" variant="ghost" onPress={() => router.push('/hand-history' as any)} />
           <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
         </View>
 

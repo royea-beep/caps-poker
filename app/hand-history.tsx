@@ -1,0 +1,405 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { Button } from '../components/Button';
+import { COLORS } from '../constants/gameConfig';
+import { getHandHistory, clearHandHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
+
+const SUIT_SYMBOLS: Record<string, string> = {
+  hearts: '\u2665',
+  diamonds: '\u2666',
+  clubs: '\u2663',
+  spades: '\u2660',
+};
+
+function formatCard(card: { rank: string; suit: string }): string {
+  return `${card.rank}${SUIT_SYMBOLS[card.suit] || '?'}`;
+}
+
+function isRedSuit(suit: string): boolean {
+  return suit === 'hearts' || suit === 'diamonds';
+}
+
+function formatTime(ts: number): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return 'Yesterday';
+  return `${diffDay}d ago`;
+}
+
+function HandCard({ hand, index }: { hand: HandRecord; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
+  const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
+  const isWin = hand.netChips >= 0;
+
+  return (
+    <Animated.View entering={FadeInDown.duration(300).delay(index * 80)}>
+      <TouchableOpacity
+        style={[styles.handCard, isWin ? styles.handCardWin : styles.handCardLose]}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        {/* Summary row */}
+        <View style={styles.handSummary}>
+          <View style={styles.handLeft}>
+            <Text style={styles.handTime}>{formatTime(hand.timestamp)}</Text>
+            <View style={styles.scoreRow}>
+              <Text style={[styles.scoreText, { color: COLORS.neonGreen }]}>{playerWins}</Text>
+              <Text style={styles.scoreDash}> - </Text>
+              <Text style={[styles.scoreText, { color: COLORS.neonRed }]}>{botWins}</Text>
+            </View>
+          </View>
+          <View style={styles.handRight}>
+            <Text style={[styles.netChips, { color: isWin ? COLORS.neonGreen : COLORS.neonRed }]}>
+              {isWin ? '+' : ''}{hand.netChips}
+            </Text>
+            {hand.isComplete && hand.completeBonusAmount > 0 && (
+              <Text style={styles.bonusTag}>+{hand.completeBonusAmount} bonus</Text>
+            )}
+          </View>
+          <Text style={styles.expandArrow}>{expanded ? '\u25B2' : '\u25BC'}</Text>
+        </View>
+
+        {/* Expanded board details */}
+        {expanded && (
+          <View style={styles.boardsDetail}>
+            {hand.boards.map((board, i) => (
+              <BoardDetail key={i} board={board} />
+            ))}
+            <View style={styles.metaRow}>
+              <Text style={styles.metaText}>
+                {hand.boardCount} boards | {hand.numberOfPlayers} players | {hand.potPerBoard}/board
+              </Text>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+function BoardDetail({ board }: { board: HandBoardRecord }) {
+  const winColor = board.winner === 'player' ? COLORS.neonGreen : board.winner === 'bot' ? COLORS.neonRed : COLORS.textDim;
+  const winLabel = board.winner === 'player' ? 'WIN' : board.winner === 'bot' ? 'LOSS' : 'TIE';
+
+  return (
+    <View style={styles.boardDetail}>
+      <View style={styles.boardDetailHeader}>
+        <Text style={styles.boardDetailLabel}>Board {board.boardIndex + 1}</Text>
+        <Text style={[styles.boardDetailBadge, { color: winColor }]}>{winLabel}</Text>
+      </View>
+
+      {/* Community cards */}
+      <View style={styles.cardRow}>
+        <Text style={styles.cardRowLabel}>Board</Text>
+        <View style={styles.cardsInline}>
+          {board.communityCards.map((c, i) => (
+            <Text key={i} style={[styles.cardText, isRedSuit(c.suit) && styles.cardTextRed]}>
+              {formatCard(c)}
+            </Text>
+          ))}
+        </View>
+      </View>
+
+      {/* Player hand */}
+      <View style={styles.cardRow}>
+        <Text style={[styles.cardRowLabel, board.winner === 'player' && { color: COLORS.neonGreen }]}>You</Text>
+        <View style={styles.cardsInline}>
+          {board.playerCards.map((c, i) => (
+            <Text key={i} style={[styles.cardText, isRedSuit(c.suit) && styles.cardTextRed]}>
+              {formatCard(c)}
+            </Text>
+          ))}
+        </View>
+        <Text style={[styles.handNameText, board.winner === 'player' && styles.handNameWin]}>
+          {board.playerHandName}
+        </Text>
+      </View>
+
+      {/* Bot hand */}
+      {board.botCards.length > 0 && (
+        <View style={styles.cardRow}>
+          <Text style={[styles.cardRowLabel, board.winner === 'bot' && { color: COLORS.neonRed }]}>Bot</Text>
+          <View style={styles.cardsInline}>
+            {board.botCards.map((c, i) => (
+              <Text key={i} style={[styles.cardText, isRedSuit(c.suit) && styles.cardTextRed]}>
+                {formatCard(c)}
+              </Text>
+            ))}
+          </View>
+          <Text style={[styles.handNameText, board.winner === 'bot' && styles.handNameWin]}>
+            {board.botHandName}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+export default function HandHistoryScreen() {
+  const router = useRouter();
+  const [history, setHistory] = useState<HandRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getHandHistory().then((h) => {
+      setHistory(h);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleClear = useCallback(() => {
+    Alert.alert('Clear History', 'Remove all hand records?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: async () => {
+          await clearHandHistory();
+          setHistory([]);
+        },
+      },
+    ]);
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
+          <Text style={styles.title}>HAND HISTORY</Text>
+          <Text style={styles.subtitle}>Last {MAX_DISPLAY} hands</Text>
+        </Animated.View>
+
+        {loading ? (
+          <Text style={styles.emptyText}>Loading...</Text>
+        ) : history.length === 0 ? (
+          <Animated.View entering={FadeIn.duration(400).delay(200)} style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>{'\u2660'}</Text>
+            <Text style={styles.emptyText}>No hands played yet</Text>
+            <Text style={styles.emptySubtext}>Play a hand and it will appear here</Text>
+          </Animated.View>
+        ) : (
+          <>
+            {history.map((hand, i) => (
+              <HandCard key={hand.id} hand={hand} index={i} />
+            ))}
+            <View style={styles.clearSection}>
+              <Button title="CLEAR HISTORY" variant="ghost" onPress={handleClear} />
+            </View>
+          </>
+        )}
+
+        <View style={styles.footer}>
+          <Button title="BACK" variant="secondary" onPress={() => router.back()} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const MAX_DISPLAY = 10;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
+    gap: 12,
+  },
+  header: {
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.gold,
+    letterSpacing: 6,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    fontWeight: '600',
+  },
+
+  // Hand card
+  handCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  handCardWin: {
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.neonGreen,
+  },
+  handCardLose: {
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.neonRed,
+  },
+  handSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  handLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  handTime: {
+    fontSize: 11,
+    color: COLORS.textDim,
+    fontWeight: '600',
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  scoreDash: {
+    fontSize: 14,
+    color: COLORS.textDim,
+    fontWeight: '600',
+  },
+  handRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+    marginRight: 8,
+  },
+  netChips: {
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  bonusTag: {
+    fontSize: 10,
+    color: COLORS.gold,
+    fontWeight: '700',
+  },
+  expandArrow: {
+    fontSize: 10,
+    color: COLORS.textDim,
+  },
+
+  // Expanded board details
+  boardsDetail: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.boardBorder,
+    paddingTop: 10,
+    gap: 10,
+  },
+  boardDetail: {
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 8,
+    padding: 8,
+    gap: 4,
+  },
+  boardDetailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  boardDetailLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.textMuted,
+    letterSpacing: 1,
+  },
+  boardDetailBadge: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cardRowLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.textDim,
+    width: 32,
+    letterSpacing: 1,
+  },
+  cardsInline: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  cardText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#f0dfc0',
+  },
+  cardTextRed: {
+    color: '#c0392b',
+  },
+  handNameText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginLeft: 4,
+  },
+  handNameWin: {
+    color: COLORS.goldLight,
+    fontWeight: '800',
+  },
+  metaRow: {
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  metaText: {
+    fontSize: 10,
+    color: COLORS.textDim,
+    fontWeight: '500',
+  },
+
+  // Empty state
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 8,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    color: COLORS.textDim,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.textMuted,
+    fontWeight: '700',
+  },
+  emptySubtext: {
+    fontSize: 13,
+    color: COLORS.textDim,
+    fontWeight: '500',
+  },
+
+  // Footer
+  clearSection: {
+    marginTop: 4,
+  },
+  footer: {
+    marginTop: 8,
+  },
+});

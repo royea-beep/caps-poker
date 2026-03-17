@@ -29,6 +29,7 @@ import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
+import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 
 // Animation timing
 const BOARD_STAGGER = 250;
@@ -107,6 +108,29 @@ export default function ResultsScreen() {
       store.handsWon,
       store.biggestWin,
     ).catch(() => {});
+
+    // Save hand to history (async, silent fail)
+    const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
+      boardIndex: i,
+      winner: b.winner,
+      playerHandName: b.playerHandName,
+      botHandName: b.botHandName,
+      playerCards: b.playerCards.map((c) => ({ rank: c.rank, suit: c.suit })),
+      botCards: (b.allBotCards[0] || []).map((c) => ({ rank: c.rank, suit: c.suit })),
+      communityCards: [...b.openCards, ...b.closedCards].map((c) => ({ rank: c.rank, suit: c.suit })),
+    }));
+    const handRecord: HandRecord = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: Date.now(),
+      boards: historyBoards,
+      netChips: revealData.netChips,
+      potPerBoard: revealData.potPerBoard,
+      numberOfPlayers: revealData.numberOfPlayers,
+      boardCount: revealData.boardCount,
+      isComplete: revealData.isComplete,
+      completeBonusAmount: revealData.completeBonusAmount,
+    };
+    saveHandToHistory(handRecord).catch(() => {});
 
     const lastBoardDelay = revealData.boardCount * BOARD_STAGGER;
     const chipsStart = lastBoardDelay + BOARD_FADE + CHIPS_DELAY;
