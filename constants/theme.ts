@@ -62,16 +62,16 @@ export const colors = {
   error: '#c0392b',
   danger: '#c0392b',
 
-  // Board — dark green felt (Monaco casino table)
-  boardBg: '#0d2b1a',
-  boardBorder: '#1e5c38',
+  // Board — deep red felt (5-0 poker style)
+  boardBg: '#6B0000',
+  boardBorder: '#8B0000',
   boardActive: '#c9a84c',
   boardFull: '#2ecc71',
 
   // Table / felt
-  felt: '#0d2b1a',
-  feltLight: '#163d26',
-  feltBorder: '#1e5c38',
+  felt: '#6B0000',
+  feltLight: '#8B0000',
+  feltBorder: '#a00000',
   tableEdge: '#0a0a0a',
 
   // Chip colors (denomination-based)
