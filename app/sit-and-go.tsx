@@ -7,6 +7,8 @@ import {
   ScrollView,
   useWindowDimensions,
   Platform,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -69,6 +71,18 @@ const COUNTDOWN_SECONDS = 30;
 const ENTRY_FEE = 150;
 const PRIZE_POOL = ENTRY_FEE * TOTAL_PLAYERS;
 
+// ─── Room Code Utils ─────────────────────────────────────────────────────────
+
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
+
+function generateRoomCode(): string {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
+  }
+  return code;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SitAndGoScreen() {
@@ -83,6 +97,11 @@ export default function SitAndGoScreen() {
   const [players, setPlayers] = useState<SitAndGoPlayer[]>([]);
   const [lobbyCount, setLobbyCount] = useState(1);
   const [eliminatedName, setEliminatedName] = useState<string | null>(null);
+
+  // Room code state (multiplayer prep — UI only for now)
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [showRoomPanel, setShowRoomPanel] = useState(false);
 
   // Game round state (reused from game.tsx pattern)
   const [boards, setBoards] = useState<BoardState[]>([]);
@@ -452,10 +471,64 @@ export default function SitAndGoScreen() {
 
           <Text style={styles.lobbyCounter}>{lobbyCount} / {TOTAL_PLAYERS}</Text>
 
-          <View style={styles.multiplayerTeaser}>
-            <Text style={styles.teaserText}>Coming Soon: Play with Friends</Text>
-            <Text style={styles.teaserSubtext}>Real-time multiplayer is on the way!</Text>
-          </View>
+          {/* ─── Multiplayer Room Code Panel ─── */}
+          {!showRoomPanel ? (
+            <TouchableOpacity
+              style={styles.multiplayerTeaser}
+              onPress={() => setShowRoomPanel(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.teaserText}>Coming Soon: Play with Friends Online</Text>
+              <Text style={styles.teaserSubtext}>Tap to preview room codes</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.roomPanel}>
+              <Text style={styles.roomPanelTitle}>Multiplayer Rooms</Text>
+              <Text style={styles.roomPanelSubtitle}>Online play coming soon — preview the room system</Text>
+
+              {/* Create Room */}
+              <TouchableOpacity
+                style={styles.roomButton}
+                onPress={() => setRoomCode(generateRoomCode())}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.roomButtonText}>Create Room</Text>
+              </TouchableOpacity>
+
+              {roomCode && (
+                <View style={styles.roomCodeDisplay}>
+                  <Text style={styles.roomCodeLabel}>Your Room Code</Text>
+                  <Text style={styles.roomCodeValue}>{roomCode}</Text>
+                  <Text style={styles.roomCodeHint}>Share this code with friends</Text>
+                </View>
+              )}
+
+              {/* Join Room */}
+              <View style={styles.joinRow}>
+                <TextInput
+                  style={styles.joinInput}
+                  value={joinCode}
+                  onChangeText={(t) => setJoinCode(t.toUpperCase().slice(0, 6))}
+                  placeholder="ROOM CODE"
+                  placeholderTextColor={COLORS.textDim}
+                  maxLength={6}
+                  autoCapitalize="characters"
+                />
+                <TouchableOpacity
+                  style={[styles.joinButton, joinCode.length < 6 && styles.joinButtonDisabled]}
+                  disabled={joinCode.length < 6}
+                  onPress={() => {
+                    Alert.alert('Coming Soon', 'Online multiplayer is not available yet. Stay tuned!');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.joinButtonText}>Join</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.comingSoonBadge}>ONLINE PLAY COMING SOON</Text>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -830,5 +903,109 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: COLORS.textDim,
+  },
+
+  // Room code panel
+  roomPanel: {
+    backgroundColor: 'rgba(201,168,76,0.06)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.goldDim,
+    padding: 16,
+    width: '100%',
+    gap: 12,
+    alignItems: 'center',
+  },
+  roomPanelTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.goldLight,
+    letterSpacing: 1,
+  },
+  roomPanelSubtitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textDim,
+    textAlign: 'center',
+  },
+  roomButton: {
+    backgroundColor: COLORS.goldDim,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+  },
+  roomButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+    letterSpacing: 1,
+  },
+  roomCodeDisplay: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    width: '100%',
+    gap: 4,
+  },
+  roomCodeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  roomCodeValue: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: COLORS.gold,
+    letterSpacing: 8,
+    fontVariant: ['tabular-nums'],
+  },
+  roomCodeHint: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: COLORS.textDim,
+  },
+  joinRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  joinInput: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 4,
+    textAlign: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  joinButton: {
+    backgroundColor: COLORS.goldDim,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
+  joinButtonDisabled: {
+    opacity: 0.4,
+  },
+  joinButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  comingSoonBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.goldDim,
+    letterSpacing: 3,
+    marginTop: 4,
   },
 });
