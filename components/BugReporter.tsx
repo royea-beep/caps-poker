@@ -25,7 +25,11 @@ import {
 } from 'react-native';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
-import * as Haptics from 'expo-haptics';
+// Lazy haptics — never crash on web
+let Haptics: typeof import('expo-haptics') | null = null;
+if (Platform.OS !== 'web') {
+  try { Haptics = require('expo-haptics'); } catch {}
+}
 
 const PROJECT = 'caps-poker';
 const VERSION = '1.3.3';
@@ -159,7 +163,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     } catch {
       // Screenshot not available — continue without it
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium)?.catch?.(() => {});
     setVisible(true);
     setTitle('');
     setDescription('');
@@ -182,7 +186,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
       // Pass screenshot URI to submitBugReport via global (consumed by Drive sync)
       if (screenshotUri) (globalThis as any).__bugReporterScreenshot = screenshotUri;
       await submitBugReport(title.trim(), description.trim(), pathname || 'unknown');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success)?.catch?.(() => {});
       setStatus('success');
       setTimeout(() => {
         setVisible(false);
