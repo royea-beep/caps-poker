@@ -25,6 +25,7 @@
       }
     },
     "production": {
+      "credentialsSource": "local",
       "ios": {
         "buildConfiguration": "Release",
         "autoIncrement": true

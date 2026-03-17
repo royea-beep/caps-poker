@@ -33,6 +33,12 @@ jobs:
           echo "SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
 
+      - name: Inject iOS distribution certificate
+        run: |
+          mkdir -p certs
+          echo "${{ secrets.DISTRIBUTION_P12_BASE64 }}" | base64 -d > certs/distribution.p12
+          echo "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 -d > certs/caps.mobileprovision
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
