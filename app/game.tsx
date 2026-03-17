@@ -113,7 +113,10 @@ export default function GameScreen() {
   const BOARD_GAPS = (boardCount - 1) * 4;
   const BOARD_CHROME = 20;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  const BOARD_CARD_H = Math.max(32, Math.min(68, Math.floor(boardSpace / 2)));
+  const BOARD_CARD_H = Platform.OS === 'web'
+    ? 72
+    : Math.max(32, Math.min(68, Math.floor(boardSpace / 2)));
+  const isWeb = Platform.OS === 'web';
 
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
@@ -446,25 +449,29 @@ export default function GameScreen() {
       </View>
 
       {/* Boards */}
-      <View style={styles.boardsColumn}>
+      <View style={[styles.boardsColumn, isWeb && styles.boardsGrid]}>
         {boards.map((board, i) => (
-          <Board
+          <View
             key={i}
-            index={i}
-            openCards={board.openCards}
-            closedCards={board.closedCards}
-            playerCards={board.playerCards}
-            botCards={board.allBotCards[0] || board.botCards}
-            allBotCards={board.allBotCards}
-            revealed={false}
-            active={false}
-            potAmount={config.potPerBoard * numberOfPlayers}
-            onPress={() => handleBoardPress(i)}
-            onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
-            isArrangement={isArranging}
-            selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-            cardHeight={BOARD_CARD_H}
-          />
+            style={isWeb ? (boardCount >= 4 ? styles.boardCellHalf : styles.boardCellThird) : styles.boardCellFull}
+          >
+            <Board
+              index={i}
+              openCards={board.openCards}
+              closedCards={board.closedCards}
+              playerCards={board.playerCards}
+              botCards={board.allBotCards[0] || board.botCards}
+              allBotCards={board.allBotCards}
+              revealed={false}
+              active={false}
+              potAmount={config.potPerBoard * numberOfPlayers}
+              onPress={() => handleBoardPress(i)}
+              onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
+              isArrangement={isArranging}
+              selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+              cardHeight={BOARD_CARD_H}
+            />
+          </View>
         ))}
       </View>
 
@@ -569,6 +576,24 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     paddingHorizontal: 16,
     gap: 4,
+  },
+  boardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+  },
+  boardCellFull: {
+    flex: 1,
+  },
+  boardCellHalf: {
+    width: '50%',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  boardCellThird: {
+    width: '33.33%',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   waitingText: {
     color: COLORS.textSecondary,
