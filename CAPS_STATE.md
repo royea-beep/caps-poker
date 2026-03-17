@@ -27,6 +27,14 @@
 - Build number auto-incremented
 - Distribution via TestFlight Friends group
 
-## Pending
+## SESSION LOG — March 17 2026
+
+### What was built today:
+1. **Hand History** — AsyncStorage-backed, last 10 hands persisted locally
+2. **Tournament Room Codes** — Room code generation and joining for tournament mode
+3. **TestFlight** — Build submitted and under review
+
+### Pending:
+- TestFlight approval
 - Room code multiplayer full wire-up
 - react-native-view-shot integration for BugReporter screenshots
