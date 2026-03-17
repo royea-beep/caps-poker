@@ -28,10 +28,10 @@ const WINNER_DELAY = 500;     // ms after river before winner shows
 const ADVANCE_DELAY = 10000;  // ms after winner before auto-advance
 
 // Card sizes — larger on web for readability
-const commCardW = Platform.OS === 'web' ? 60 : 46;
-const commCardH = Platform.OS === 'web' ? 86 : 66;
-const handCardW = Platform.OS === 'web' ? 50 : 38;
-const handCardH = Platform.OS === 'web' ? 72 : 54;
+const commCardW = Platform.OS === 'web' ? 64 : 46;
+const commCardH = Platform.OS === 'web' ? 90 : 66;
+const handCardW = Platform.OS === 'web' ? 54 : 38;
+const handCardH = Platform.OS === 'web' ? 76 : 54;
 
 interface RevealSequenceProps {
   boards: RevealBoardData[];
