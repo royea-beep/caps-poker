@@ -113,7 +113,7 @@ export default function GameScreen() {
   const BOARD_GAPS = (boardCount - 1) * 4;
   const BOARD_CHROME = 20;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  const BOARD_CARD_H = Math.max(28, Math.min(52, Math.floor(boardSpace / 2)));
+  const BOARD_CARD_H = Math.max(32, Math.min(68, Math.floor(boardSpace / 2)));
 
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);

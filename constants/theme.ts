@@ -1,4 +1,4 @@
-// Caps Poker Theme — Premium 2026 aesthetic
+// Caps Poker Theme — Monaco Casino 2026
 
 // ─── Spacing ────────────────────────────────────────────────────────────────
 export const spacing = {
@@ -22,77 +22,77 @@ export const fontWeight = {
   black: '900' as const,
 };
 
-// ─── Colors (Premium poker table — dark espresso app, green felt boards) ────
+// ─── Colors (Monaco Casino — deep black, rich gold, dark green felt) ─────────
 export const colors = {
-  // Core surfaces — dark espresso app background
-  background: '#0d0600',
-  surface: '#1a0e06',
-  surfaceRaised: '#2a1a0e',
-  border: '#3d2a1a',
-  overlay: 'rgba(0,0,0,0.85)',
+  // Core surfaces — deep black
+  background: '#0a0a0a',
+  surface: '#111111',
+  surfaceRaised: '#1a1a1a',
+  border: '#2a2a2a',
+  overlay: 'rgba(0,0,0,0.88)',
 
-  // Primary accent — metallic gold (PokerStars style)
-  gold: '#C9A84C',
-  goldLight: '#E5C56A',
-  goldDim: '#A07830',
+  // Primary accent — rich gold
+  gold: '#c9a84c',
+  goldLight: '#e8c96a',
+  goldDim: '#9a7a2e',
   goldGlow: 'rgba(201,168,76,0.4)',
-  goldBright: '#E5C56A',
+  goldBright: '#e8c96a',
 
   // Warm accents
-  neonBlue: '#C9A84C',    // gold alias (legacy)
-  neonPurple: '#8a6a45',  // mocha
-  neonGreen: '#2d7a2d',   // forest green
-  neonRed: '#c0392b',     // warm red
+  neonBlue: '#c9a84c',       // gold alias (legacy)
+  neonPurple: '#8a6a45',     // mocha
+  neonGreen: '#2ecc71',      // bright green for wins
+  neonRed: '#c0392b',        // rich crimson for losses
 
   // Text — warm cream
-  text: '#f0dfc0',
-  textMuted: '#8a6a45',
-  textDim: '#6a5030',
+  text: '#f0ead6',
+  textMuted: '#8a7a5a',
+  textDim: '#5a4a30',
 
-  // Cards
-  cardRed: '#CC2936',
-  cardBlack: '#1a1a2e',
+  // Cards — premium warm whites
+  cardRed: '#c0392b',        // rich crimson for hearts/diamonds
+  cardBlack: '#1a1a2e',      // dark navy for clubs/spades
   cardBack: '#0f3460',
-  cardFace: '#FFFFFF',
-  cardWhite: '#FFFFFF',
+  cardFace: '#f5f0e8',       // warm white face
+  cardWhite: '#f5f0e8',      // warm white
   cardBackPattern: '#16213e',
 
   // Semantic
-  success: '#2d7a2d',
+  success: '#2ecc71',
   error: '#c0392b',
   danger: '#c0392b',
 
-  // Board — premium poker green (felt)
-  boardBg: '#0d5c2e',
-  boardBorder: '#0a4a24',
-  boardActive: '#C9A84C',
-  boardFull: '#2d7a2d',
+  // Board — dark green felt (Monaco casino table)
+  boardBg: '#0d2b1a',
+  boardBorder: '#1e5c38',
+  boardActive: '#c9a84c',
+  boardFull: '#2ecc71',
 
   // Table / felt
-  felt: '#0d5c2e',
-  feltLight: '#1a0e06',   // espresso (used for UI panels — NOT felt green)
-  feltBorder: '#0a4a24',
-  tableEdge: '#2c1810',
+  felt: '#0d2b1a',
+  feltLight: '#163d26',
+  feltBorder: '#1e5c38',
+  tableEdge: '#0a0a0a',
 
   // Chip colors (denomination-based)
-  chip1: '#FFFFFF',
-  chip5: '#CC2936',
-  chip25: '#2E8B57',
+  chip1: '#f5f0e8',
+  chip5: '#c0392b',
+  chip25: '#2ecc71',
   chip100: '#1a1a2e',
   chip500: '#8B008B',
 
   // Legacy aliases
-  red: '#CC2936',
+  red: '#c0392b',
   black: '#1a1a2e',
-  white: '#f0dfc0',
-  textPrimary: '#f0dfc0',
-  textSecondary: '#8a6a45',
-  chipGreen: '#2d7a2d',
-  chipRed: '#CC2936',
+  white: '#f0ead6',
+  textPrimary: '#f0ead6',
+  textSecondary: '#8a7a5a',
+  chipGreen: '#2ecc71',
+  chipRed: '#c0392b',
 
   // Button
-  buttonPrimary: '#C9A84C',
-  buttonSecondary: '#1a0e06',
+  buttonPrimary: '#c9a84c',
+  buttonSecondary: '#111111',
   buttonDanger: '#8b1a1a',
 } as const;
 
