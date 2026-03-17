@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -67,6 +69,18 @@ const COUNTDOWN_SECONDS = 30;
 const BEST_OF = 3; // best of 3 rounds per match
 const WINS_NEEDED = 2;
 
+// ─── Room Code Utils ─────────────────────────────────────────────────────────
+
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
+
+function generateRoomCode(): string {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
+  }
+  return code;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function TournamentScreen() {
@@ -74,6 +88,11 @@ export default function TournamentScreen() {
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
+
+  // Room code state (multiplayer prep — UI only for now)
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [showRoomPanel, setShowRoomPanel] = useState(false);
 
   // Tournament state
   const [phase, setPhase] = useState<TournamentPhase>('bracket');
@@ -515,9 +534,34 @@ export default function TournamentScreen() {
     const champion = final?.winner;
     const isHumanChamp = champion?.isHuman;
 
+    // Build full results list: champion, finalist, semi-finalists, quarter-finalists
+    const resultsList: { name: string; round: string; isHuman: boolean; isChampion: boolean }[] = [];
+    if (champion) {
+      resultsList.push({ name: champion.name, round: 'Champion', isHuman: champion.isHuman, isChampion: true });
+    }
+    // Finalist (loser of final)
+    if (final) {
+      const finalist = final.winner?.id === final.player1?.id ? final.player2 : final.player1;
+      if (finalist) resultsList.push({ name: finalist.name, round: 'Finalist', isHuman: finalist.isHuman, isChampion: false });
+    }
+    // Semi-final losers
+    for (const sf of semiFinals) {
+      if (sf.winner) {
+        const loser = sf.winner.id === sf.player1?.id ? sf.player2 : sf.player1;
+        if (loser) resultsList.push({ name: loser.name, round: 'Semi-Final', isHuman: loser.isHuman, isChampion: false });
+      }
+    }
+    // Quarter-final losers
+    for (const qf of quarterFinals) {
+      if (qf.winner) {
+        const loser = qf.winner.id === qf.player1?.id ? qf.player2 : qf.player1;
+        if (loser) resultsList.push({ name: loser.name, round: 'Quarter-Final', isHuman: loser.isHuman, isChampion: false });
+      }
+    }
+
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
+        <ScrollView contentContainerStyle={styles.centered}>
           <Text style={styles.trophyEmoji}>{'\uD83C\uDFC6'}</Text>
           <Text style={styles.heading}>
             {isHumanChamp ? 'CHAMPION!' : `${champion?.name || 'Bot'} WINS`}
@@ -532,10 +576,66 @@ export default function TournamentScreen() {
             <ChipsDisplay amount={PRIZE_POOL} label="Prize Pool Won" size="large" />
           )}
 
+          {/* Full bracket visualization */}
           {renderBracket()}
 
-          <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
-        </View>
+          {/* Tournament results summary */}
+          <View style={styles.resultsSummary}>
+            <Text style={styles.resultsSummaryTitle}>TOURNAMENT RESULTS</Text>
+            {resultsList.map((r, i) => (
+              <View key={i} style={[styles.resultRow, r.isChampion && styles.resultRowChampion]}>
+                <Text style={styles.resultRank}>
+                  {r.isChampion ? '\uD83C\uDFC6' : `#${i + 1}`}
+                </Text>
+                <View style={styles.resultInfo}>
+                  <Text style={[styles.resultName, r.isHuman && styles.resultNameYou, r.isChampion && styles.resultNameChampion]}>
+                    {r.name}
+                  </Text>
+                  <Text style={styles.resultRound}>Eliminated: {r.isChampion ? 'Winner' : r.round}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <Button title="PLAY AGAIN" variant="gold" onPress={() => {
+            // Reset all state and start fresh
+            setPhase('bracket');
+            setQuarterFinals([]);
+            setSemiFinals([]);
+            setFinal(null);
+            setCurrentMatch(null);
+            setMatchWins([0, 0]);
+            setMatchRound(1);
+            setLastRoundResult(null);
+            // Re-trigger bracket initialization via key change would be ideal,
+            // but we can re-run the init logic inline:
+            const players: TournamentPlayer[] = [
+              { id: 'human', name: 'You', isHuman: true },
+              ...BOT_NAMES.map((name, i) => ({
+                id: `bot_${i}`,
+                name,
+                isHuman: false,
+              })),
+            ];
+            const shuffled = [...players].sort(() => Math.random() - 0.5);
+            setAllPlayers(shuffled);
+            const qf: BracketMatch[] = [];
+            for (let i = 0; i < 4; i++) {
+              qf.push({
+                id: `qf_${i}`,
+                player1: shuffled[i * 2],
+                player2: shuffled[i * 2 + 1],
+                winner: null,
+                roundLabel: 'Quarter-Final',
+                score1: 0,
+                score2: 0,
+              });
+            }
+            setQuarterFinals(qf);
+            addChips(-ENTRY_FEE);
+          }} />
+          <Button title="BACK TO HOME" variant="ghost" onPress={() => router.replace('/')} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -608,10 +708,64 @@ export default function TournamentScreen() {
 
           {renderBracket()}
 
-          <View style={styles.multiplayerTeaser}>
-            <Text style={styles.teaserText}>Coming Soon: Play with Friends</Text>
-            <Text style={styles.teaserSubtext}>Invite friends for real-time tournament brackets!</Text>
-          </View>
+          {/* ─── Multiplayer Room Code Panel ─── */}
+          {!showRoomPanel ? (
+            <TouchableOpacity
+              style={styles.multiplayerTeaser}
+              onPress={() => setShowRoomPanel(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.teaserText}>Coming Soon: Play with Friends Online</Text>
+              <Text style={styles.teaserSubtext}>Tap to preview room codes</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.roomPanel}>
+              <Text style={styles.roomPanelTitle}>Multiplayer Rooms</Text>
+              <Text style={styles.roomPanelSubtitle}>Online tournaments coming soon — preview the room system</Text>
+
+              {/* Create Room */}
+              <TouchableOpacity
+                style={styles.roomButton}
+                onPress={() => setRoomCode(generateRoomCode())}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.roomButtonText}>Create Room</Text>
+              </TouchableOpacity>
+
+              {roomCode && (
+                <View style={styles.roomCodeDisplay}>
+                  <Text style={styles.roomCodeLabel}>Your Room Code</Text>
+                  <Text style={styles.roomCodeValue}>{roomCode}</Text>
+                  <Text style={styles.roomCodeHint}>Share this code with friends</Text>
+                </View>
+              )}
+
+              {/* Join Room */}
+              <View style={styles.joinRow}>
+                <TextInput
+                  style={styles.joinInput}
+                  value={joinCode}
+                  onChangeText={(t) => setJoinCode(t.toUpperCase().slice(0, 6))}
+                  placeholder="ROOM CODE"
+                  placeholderTextColor={COLORS.textDim}
+                  maxLength={6}
+                  autoCapitalize="characters"
+                />
+                <TouchableOpacity
+                  style={[styles.joinButton, joinCode.length < 6 && styles.joinButtonDisabled]}
+                  disabled={joinCode.length < 6}
+                  onPress={() => {
+                    Alert.alert('Coming Soon', 'Online multiplayer tournaments are not available yet. Stay tuned!');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.joinButtonText}>Join</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.comingSoonBadge}>ONLINE PLAY COMING SOON</Text>
+            </View>
+          )}
 
           {humanEliminated ? (
             <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
@@ -958,6 +1112,170 @@ const styles = StyleSheet.create({
   },
   teaserSubtext: {
     fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textDim,
+  },
+
+  // Room code panel
+  roomPanel: {
+    backgroundColor: 'rgba(201,168,76,0.06)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.goldDim,
+    padding: 16,
+    width: '100%',
+    gap: 12,
+    alignItems: 'center',
+  },
+  roomPanelTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.goldLight,
+    letterSpacing: 1,
+  },
+  roomPanelSubtitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textDim,
+    textAlign: 'center',
+  },
+  roomButton: {
+    backgroundColor: COLORS.goldDim,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+  },
+  roomButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+    letterSpacing: 1,
+  },
+  roomCodeDisplay: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    width: '100%',
+    gap: 4,
+  },
+  roomCodeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  roomCodeValue: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: COLORS.gold,
+    letterSpacing: 8,
+    fontVariant: ['tabular-nums'],
+  },
+  roomCodeHint: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: COLORS.textDim,
+  },
+  joinRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  joinInput: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 4,
+    textAlign: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  joinButton: {
+    backgroundColor: COLORS.goldDim,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
+  joinButtonDisabled: {
+    opacity: 0.4,
+  },
+  joinButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  comingSoonBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.goldDim,
+    letterSpacing: 3,
+    marginTop: 4,
+  },
+
+  // Tournament results summary
+  resultsSummary: {
+    width: '100%',
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 12,
+    padding: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  resultsSummaryTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderRadius: 8,
+    padding: 10,
+    gap: 12,
+  },
+  resultRowChampion: {
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    backgroundColor: 'rgba(201,168,76,0.08)',
+  },
+  resultRank: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.gold,
+    width: 32,
+    textAlign: 'center',
+  },
+  resultInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  resultName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  resultNameYou: {
+    color: COLORS.goldLight,
+  },
+  resultNameChampion: {
+    fontWeight: '900',
+    color: COLORS.gold,
+  },
+  resultRound: {
+    fontSize: 10,
     fontWeight: '500',
     color: COLORS.textDim,
   },
