@@ -1,3 +1,4 @@
+// v-red-boards
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
