@@ -22,10 +22,16 @@ function haptic() {
 }
 
 // Timing constants
-const FLIP_DELAY = 600;      // ms before turn flips
-const BETWEEN_FLIPS = 750;   // ms between turn and river flip
-const WINNER_DELAY = 500;    // ms after river before winner shows
-const ADVANCE_DELAY = 1800;  // ms after winner before advancing to next board
+const FLIP_DELAY = 600;       // ms before turn flips
+const BETWEEN_FLIPS = 1500;   // ms between turn and river flip (suspense)
+const WINNER_DELAY = 500;     // ms after river before winner shows
+const ADVANCE_DELAY = 10000;  // ms after winner before auto-advance
+
+// Card sizes — larger on web for readability
+const commCardW = Platform.OS === 'web' ? 60 : 46;
+const commCardH = Platform.OS === 'web' ? 86 : 66;
+const handCardW = Platform.OS === 'web' ? 50 : 38;
+const handCardH = Platform.OS === 'web' ? 72 : 54;
 
 interface RevealSequenceProps {
   boards: RevealBoardData[];
@@ -38,6 +44,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const [turnRevealed, setTurnRevealed] = useState(false);
   const [riverRevealed, setRiverRevealed] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
+  const [showNextButton, setShowNextButton] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearTimers = useCallback(() => {
@@ -59,10 +66,24 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       setTurnRevealed(false);
       setRiverRevealed(false);
       setShowWinner(false);
+      setShowNextButton(false);
       setBoardIdx(nextIdx);
     },
     [boards.length, onDone],
   );
+
+  const handleNextBoard = useCallback(() => {
+    clearTimers();
+    advanceBoard(boardIdx + 1);
+  }, [clearTimers, advanceBoard, boardIdx]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((t) => clearTimeout(t));
+      timersRef.current = [];
+    };
+  }, []);
 
   // Run per-board reveal sequence whenever boardIdx changes
   useEffect(() => {
@@ -82,6 +103,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       // No closed cards — skip straight to winner
       addTimer(() => {
         setShowWinner(true);
+        setShowNextButton(true);
         addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
       }, 400);
       return;
@@ -98,12 +120,13 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       if (!hasRiver) {
         addTimer(() => {
           setShowWinner(true);
+          setShowNextButton(true);
           addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
         }, WINNER_DELAY);
         return;
       }
 
-      // Flip river
+      // 1.5s suspense pause, then flip river
       addTimer(() => {
         setRiverRevealed(true);
         haptic();
@@ -112,6 +135,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
         } catch {}
         addTimer(() => {
           setShowWinner(true);
+          setShowNextButton(true);
           addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
         }, WINNER_DELAY);
       }, BETWEEN_FLIPS);
@@ -128,6 +152,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       setTurnRevealed(false);
       setRiverRevealed(false);
       setShowWinner(false);
+      setShowNextButton(false);
     }
   }, [visible]);
 
@@ -144,6 +169,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const turnCard = board.closedCards[0];
   const riverCard = board.closedCards[1];
 
+  // Cards are fully revealed once river is shown (or turn if no river)
+  const allRevealed = riverRevealed || (turnRevealed && !riverCard);
+
   const winnerColor =
     board.winner === 'player'
       ? COLORS.neonGreen
@@ -153,6 +181,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
   const winnerLabel =
     board.winner === 'player' ? 'YOU WIN' : board.winner === 'bot' ? 'BOT WINS' : 'TIE';
+
+  const multiBot = board.allBotCards.length > 1;
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
@@ -171,49 +201,84 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 key={c.id}
                 card={c}
                 faceDown={false}
-                cardWidth={46}
-                cardHeight={66}
+                cardWidth={commCardW}
+                cardHeight={commCardH}
+                highlighted={allRevealed && board.boardHighlightIds.includes(c.id)}
+                dimmed={allRevealed && !board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
               />
             ))}
             {board.openCards.length > 0 && board.closedCards.length > 0 && (
-              <View style={styles.sep} />
+              <View style={[styles.sep, { height: commCardH * 0.8 }]} />
             )}
             {turnCard && (
               <CardComponent
                 card={turnCard}
                 faceDown={!turnRevealed}
-                cardWidth={46}
-                cardHeight={66}
+                cardWidth={commCardW}
+                cardHeight={commCardH}
                 flipDuration={350}
+                highlighted={allRevealed && board.boardHighlightIds.includes(turnCard.id)}
+                dimmed={allRevealed && !board.boardHighlightIds.includes(turnCard.id) && board.boardHighlightIds.length > 0}
               />
             )}
             {riverCard && (
               <CardComponent
                 card={riverCard}
                 faceDown={!riverRevealed}
-                cardWidth={46}
-                cardHeight={66}
+                cardWidth={commCardW}
+                cardHeight={commCardH}
                 flipDuration={350}
+                highlighted={allRevealed && board.boardHighlightIds.includes(riverCard.id)}
+                dimmed={allRevealed && !board.boardHighlightIds.includes(riverCard.id) && board.boardHighlightIds.length > 0}
               />
             )}
           </View>
 
           {/* Player hole cards */}
           <View style={styles.handRow}>
-            <Text style={styles.handLabel}>YOU</Text>
+            <Text style={[styles.handLabel, board.winner === 'player' && styles.winnerLabel]}>YOU</Text>
             {board.playerCards.map((c) => (
               <CardComponent
                 key={c.id}
                 card={c}
                 faceDown={false}
-                cardWidth={38}
-                cardHeight={54}
+                cardWidth={handCardW}
+                cardHeight={handCardH}
+                highlighted={allRevealed && board.playerHighlightIds.includes(c.id)}
+                dimmed={allRevealed && !board.playerHighlightIds.includes(c.id) && board.playerHighlightIds.length > 0}
               />
             ))}
             {board.playerHandName && turnRevealed && (
               <Text style={styles.handName}>{board.playerHandName}</Text>
             )}
           </View>
+
+          {/* Bot hole cards — shown face-up so user understands who won and why */}
+          {board.allBotCards.map((botCards, botIdx) =>
+            botCards.length > 0 ? (
+              <View key={`bot-${botIdx}`} style={styles.handRow}>
+                <Text style={[styles.handLabel, board.winner === 'bot' && styles.winnerLabel]}>
+                  {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
+                </Text>
+                {botCards.map((c) => (
+                  <CardComponent
+                    key={c.id}
+                    card={c}
+                    faceDown={false}
+                    cardWidth={handCardW}
+                    cardHeight={handCardH}
+                    highlighted={botIdx === 0 && allRevealed && board.botHighlightIds.includes(c.id)}
+                    dimmed={botIdx === 0 && allRevealed && !board.botHighlightIds.includes(c.id) && board.botHighlightIds.length > 0}
+                  />
+                ))}
+                {turnRevealed && (board.allBotHandNames[botIdx] || (botIdx === 0 && board.botHandName)) && (
+                  <Text style={styles.handName}>
+                    {board.allBotHandNames[botIdx] || board.botHandName}
+                  </Text>
+                )}
+              </View>
+            ) : null
+          )}
 
           {/* Winner banner — slides in after reveal */}
           {showWinner && (
@@ -222,6 +287,17 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
               style={[styles.winnerBanner, { borderColor: winnerColor }]}
             >
               <Text style={[styles.winnerText, { color: winnerColor }]}>{winnerLabel}</Text>
+            </Animated.View>
+          )}
+
+          {/* Next Board button — appears after winner banner, auto-advances after 10s */}
+          {showNextButton && (
+            <Animated.View entering={FadeIn.duration(300)} style={styles.nextBtnRow}>
+              <Pressable style={styles.nextBtn} onPress={handleNextBoard} hitSlop={8}>
+                <Text style={styles.nextBtnText}>
+                  {boardIdx + 1 < boards.length ? 'NEXT BOARD →' : 'DONE →'}
+                </Text>
+              </Pressable>
             </Animated.View>
           )}
         </Animated.View>
@@ -247,7 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 28,
     width: '88%',
-    maxWidth: 380,
+    maxWidth: 440,
     alignItems: 'center',
     gap: 14,
     borderWidth: 1,
@@ -275,7 +351,6 @@ const styles = StyleSheet.create({
   },
   sep: {
     width: 2,
-    height: 52,
     backgroundColor: COLORS.border,
     marginHorizontal: 4,
   },
@@ -283,12 +358,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   handLabel: {
     color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     marginRight: 4,
+    width: 36,
+    textAlign: 'center',
+  },
+  winnerLabel: {
+    color: COLORS.neonGreen,
   },
   handName: {
     color: COLORS.textSecondary,
@@ -308,6 +390,24 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+  nextBtnRow: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  nextBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    backgroundColor: 'rgba(200,168,75,0.12)',
+  },
+  nextBtnText: {
+    color: COLORS.gold,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   skipBtn: {
     marginTop: 28,
