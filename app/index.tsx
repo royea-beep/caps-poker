@@ -27,6 +27,12 @@ import { CapsHooks } from '../utils/learning';
 
 const isWeb = Platform.OS === 'web';
 
+// Playfair Display font family — loaded via Google Fonts on web, falls back to serif on native
+const DISPLAY_FONT = Platform.select({
+  web: 'Playfair Display, Georgia, serif',
+  default: undefined,
+});
+
 export default function HomeScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
@@ -88,19 +94,18 @@ export default function HomeScreen() {
     Alert.alert('Free Refill!', `+${amount} chips added to your balance.`);
   }, [lastFreeRefill]);
 
-  // Daily reward availability (for button state)
+  // Daily reward availability
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
   const canRefill = ECONOMY_FLAGS.freeRefillEnabled && canUseFreeRefill(lastFreeRefill);
 
-  // Pulsing glow behind title (native only)
-  const glowOpacity = useSharedValue(0.3);
+  // Pulsing gold glow behind title
+  const glowOpacity = useSharedValue(0.2);
 
   useEffect(() => {
-    if (isWeb) return;
     glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.6, { duration: 1500 }),
-        withTiming(0.3, { duration: 1500 }),
+        withTiming(0.5, { duration: 2000 }),
+        withTiming(0.2, { duration: 2000 }),
       ),
       -1,
     );
@@ -110,96 +115,67 @@ export default function HomeScreen() {
     opacity: glowOpacity.value,
   }));
 
-  // Steam animation for coffee cups
-  const steamOpacity = useSharedValue(0.3);
-
-  useEffect(() => {
-    steamOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.7, { duration: 2000 }),
-        withTiming(0.2, { duration: 2000 }),
-      ),
-      -1,
-    );
-  }, []);
-
-  const steamStyle = useAnimatedStyle(() => ({
-    opacity: steamOpacity.value,
-  }));
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Grain texture overlay (web only) */}
+      {isWeb && <View style={styles.grainOverlay} pointerEvents="none" />}
+
       <View style={styles.content}>
+        {/* Title section */}
         <View style={styles.titleSection}>
-          {isWeb ? (
-            <View style={[styles.titleGlow, styles.titleGlowWeb]} />
-          ) : (
-            <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
-          )}
+          <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
 
-          {/* Couch scene — decorative background */}
-          <View style={styles.couchScene}>
-            <View style={styles.couchContainer}>
-              <View style={styles.couchArm} />
-              <View style={styles.cushion} />
-              <View style={styles.cushion} />
-              <View style={styles.cushion} />
-              <View style={styles.couchArm} />
-            </View>
-            <View style={styles.coffeeTable}>
-              <View style={styles.coffeeCupContainer}>
-                <View style={styles.coffeeCup} />
-                {!isWeb ? (
-                  <Animated.View style={[styles.steam, steamStyle]} />
-                ) : (
-                  <View style={[styles.steam, { opacity: 0.4 }]} />
-                )}
-              </View>
-              <View style={styles.coffeeCupContainer}>
-                <View style={styles.coffeeCup} />
-                {!isWeb ? (
-                  <Animated.View style={[styles.steam, steamStyle]} />
-                ) : (
-                  <View style={[styles.steam, { opacity: 0.4 }]} />
-                )}
-              </View>
-            </View>
-          </View>
+          {/* Suit symbols */}
+          <Text style={styles.suitSymbols}>{'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}</Text>
 
-          <Text style={styles.titleSmall}>{'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}</Text>
-          <Text style={styles.title}>CAPS</Text>
-          <Text style={styles.titleSub}>The One Where You Play Poker</Text>
-          <View style={styles.titleLine} />
+          {/* Main title */}
+          <Text style={[styles.title, DISPLAY_FONT ? { fontFamily: DISPLAY_FONT } : {}]}>
+            CAPS
+          </Text>
+
+          <Text style={styles.titleSub}>The Game Where Every Board Counts</Text>
+
+          {/* Gold divider */}
+          <View style={styles.titleDivider} />
         </View>
 
+        {/* Balance */}
         <ChipsDisplay amount={chips} label="Your Balance" size="large" />
 
-        <View style={styles.statsRow}>
+        {/* Stats */}
+        <View style={styles.statsSection}>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{handsPlayed}</Text>
               <Text style={styles.statLabel}>Played</Text>
             </View>
+            <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{handsWon}</Text>
               <Text style={styles.statLabel}>Won</Text>
             </View>
+            <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: COLORS.gold }]}>
                 {handsPlayed > 0 ? Math.round((handsWon / handsPlayed) * 100) : 0}%
               </Text>
               <Text style={styles.statLabel}>Win Rate</Text>
             </View>
+            <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: COLORS.gold }]}>{biggestWin}</Text>
               <Text style={styles.statLabel}>Best Win</Text>
             </View>
           </View>
-          <Text style={[styles.statText, { color: sessionNet >= 0 ? COLORS.success : COLORS.danger }]}>
+          <Text style={[
+            styles.sessionText,
+            { color: sessionNet >= 0 ? COLORS.neonGreen : COLORS.neonRed },
+          ]}>
             Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
           </Text>
         </View>
 
+        {/* Daily reward */}
         {ECONOMY_FLAGS.dailyRewardEnabled && (
           <Button
             title={canClaim ? 'CLAIM DAILY REWARD' : 'REWARD CLAIMED'}
@@ -210,6 +186,7 @@ export default function HomeScreen() {
           />
         )}
 
+        {/* Action buttons */}
         <View style={styles.buttonSection}>
           <Button title="NEW HAND (vs Bot)" variant="gold" onPress={handleNewHand} />
           <View style={styles.modeRow}>
@@ -224,6 +201,7 @@ export default function HomeScreen() {
           <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
         </View>
 
+        {/* Refill / Reset */}
         {ECONOMY_FLAGS.freeRefillEnabled ? (
           <Button
             title={canRefill ? 'FREE REFILL' : 'REFILL USED'}
@@ -248,7 +226,8 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <Text style={styles.versionLabel}>v1.3.0</Text>
+      {/* Version badge — bottom-right, gold */}
+      <Text style={styles.versionLabel}>v1.9.1</Text>
     </SafeAreaView>
   );
 }
@@ -258,99 +237,60 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  // Subtle grain texture overlay — web only
+  grainOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0,
+    pointerEvents: 'none',
+    ...Platform.select({
+      web: {
+        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.75\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'300\' height=\'300\' filter=\'url(%23n)\' opacity=\'0.035\'/%3E%3C/svg%3E")',
+        backgroundRepeat: 'repeat',
+      } as any,
+      default: {},
+    }),
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    gap: 28,
+    gap: 24,
+    zIndex: 1,
   },
+
+  // Title section
   titleSection: {
     alignItems: 'center',
     position: 'relative',
+    gap: 4,
   },
   titleGlow: {
     position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
     backgroundColor: COLORS.gold,
-    top: -40,
+    top: -60,
     alignSelf: 'center',
     zIndex: -1,
-  },
-  titleGlowWeb: {
-    opacity: 0.25,
     ...Platform.select({
       web: {
-        background: `radial-gradient(circle, ${COLORS.gold}66 0%, ${COLORS.background}00 70%)`,
-        width: 280,
-        height: 280,
-        top: -60,
+        background: `radial-gradient(circle, rgba(201,168,76,0.35) 0%, rgba(10,10,10,0) 70%)`,
       } as any,
       default: {},
     }),
   },
-  // Couch scene styles
-  couchScene: {
-    position: 'absolute',
-    top: 10,
-    alignSelf: 'center',
-    alignItems: 'center',
-    opacity: 0.35,
-    zIndex: -1,
-  },
-  couchContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 3,
-  },
-  couchArm: {
-    width: 18,
-    height: 50,
-    backgroundColor: '#c06020',
-    borderRadius: 10,
-  },
-  cushion: {
-    width: 70,
-    height: 60,
-    backgroundColor: '#e8762b',
-    borderRadius: 20,
-  },
-  coffeeTable: {
-    width: 160,
-    height: 8,
-    backgroundColor: '#2d1f14',
-    borderRadius: 3,
-    marginTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-start',
-  },
-  coffeeCupContainer: {
-    alignItems: 'center',
-    marginTop: -16,
-  },
-  coffeeCup: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#c4a882',
-    borderWidth: 1.5,
-    borderColor: '#2d1f14',
-  },
-  steam: {
-    width: 2,
-    height: 10,
-    backgroundColor: '#c4a882',
-    borderRadius: 1,
-    marginTop: -12,
-  },
-  titleSmall: {
-    color: '#c4a882',
-    fontSize: 22,
-    letterSpacing: 14,
-    marginBottom: 8,
+  suitSymbols: {
+    color: COLORS.gold,
+    fontSize: 18,
+    letterSpacing: 12,
+    opacity: 0.7,
+    marginBottom: 4,
   },
   title: {
     fontSize: 80,
@@ -360,23 +300,34 @@ const styles = StyleSheet.create({
     textShadowColor: COLORS.goldGlow,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 40,
+    ...Platform.select({
+      web: {
+        background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      } as any,
+      default: {},
+    }),
   },
   titleSub: {
-    fontSize: 16,
-    fontWeight: '300',
+    fontSize: 13,
+    fontWeight: '400',
     color: COLORS.textMuted,
-    letterSpacing: 4,
-    marginTop: -4,
+    letterSpacing: 3,
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
-  titleLine: {
-    width: '60%',
+  titleDivider: {
+    width: 120,
     height: 1,
     backgroundColor: COLORS.gold,
-    marginTop: 16,
-    borderRadius: 1,
-    opacity: 0.4,
+    marginTop: 14,
+    opacity: 0.5,
   },
-  statsRow: {
+
+  // Stats section
+  statsSection: {
     alignItems: 'center',
     gap: 8,
     width: '100%',
@@ -384,51 +335,77 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
+    alignItems: 'center',
     width: '100%',
-    backgroundColor: COLORS.feltLight,
-    borderRadius: 10,
-    paddingVertical: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: COLORS.boardBorder,
+    borderColor: COLORS.border,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      } as any,
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+      },
+      android: { elevation: 8 },
+    }),
   },
   statItem: {
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
+    flex: 1,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: COLORS.border,
   },
   statValue: {
-    color: COLORS.textPrimary,
-    fontSize: 18,
+    color: COLORS.text,
+    fontSize: 20,
     fontWeight: '800',
   },
   statLabel: {
     color: COLORS.textMuted,
     fontSize: 10,
     fontWeight: '600',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-  statText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
+  sessionText: {
+    fontSize: 13,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
+
+  // Buttons
   buttonSection: {
     width: '100%',
-    gap: 12,
+    gap: 10,
   },
   modeRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   modeButton: {
     flex: 1,
   },
+
+  // Version
   versionLabel: {
     position: 'absolute',
-    bottom: 12,
-    right: 16,
-    color: COLORS.textDim,
+    bottom: 14,
+    right: 18,
+    color: COLORS.gold,
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
+    opacity: 0.7,
+    letterSpacing: 0.5,
   },
 });

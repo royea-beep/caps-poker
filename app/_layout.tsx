@@ -20,6 +20,14 @@ export default function RootLayout() {
   useEffect(() => {
     initSession();
     preloadSounds();
+
+    // Load Playfair Display from Google Fonts on web
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap';
+      document.head.appendChild(link);
+    }
   }, []);
 
   return (

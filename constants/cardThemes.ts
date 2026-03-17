@@ -29,22 +29,22 @@ const V1_CLASSIC: CardThemeConfig = {
   id: 'v1',
   name: 'Classic Poker',
   label: 'V1: Classic',
-  // Pure white face — PokerStars style
-  faceBg: '#FFFFFF',
-  faceRadius: 12,
+  // Warm white face — Monaco casino style
+  faceBg: '#f5f0e8',
+  faceRadius: 8,
   faceBorderWidth: 1,
-  faceBorderColor: 'rgba(0,0,0,0.08)',
-  redSuit: '#CC2936',
-  blackSuit: '#1a1a2e',
-  // Navy back with gold border
-  backBg: '#0f3460',
-  backBorderColor: '#C9A84C',
+  faceBorderColor: 'rgba(0,0,0,0.10)',
+  redSuit: '#c0392b',   // rich crimson
+  blackSuit: '#1a1a2e', // dark navy
+  // Deep navy back with gold border
+  backBg: '#0a0a1e',
+  backBorderColor: '#c9a84c',
   backBorderWidth: 2,
-  backDiamond: '#C9A84C',
+  backDiamond: '#c9a84c',
   // Gold selected
-  selectedBorderColor: '#C9A84C',
-  selectedGlowColor: '#C9A84C',
-  selectedTranslateY: -6,
+  selectedBorderColor: '#c9a84c',
+  selectedGlowColor: '#c9a84c',
+  selectedTranslateY: -8,
 };
 
 const V2_VEGAS: CardThemeConfig = {

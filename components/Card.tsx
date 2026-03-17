@@ -35,8 +35,8 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   const storedTheme = useGameStore((s) => s.cardTheme);
   const theme = CARD_THEMES[themeOverride ?? storedTheme];
 
-  const width = cardWidth ?? (small ? 40 : 58);
-  const height = cardHeight ?? (small ? 56 : 84);
+  const width = cardWidth ?? (small ? 46 : 68);
+  const height = cardHeight ?? (small ? 64 : 98);
   const cornerRankSize = cardHeight ? Math.max(9, Math.floor(height * 0.18)) : (small ? 10 : 13);
   const cornerSuitSize = cardHeight ? Math.max(8, Math.floor(height * 0.14)) : (small ? 9 : 11);
   const centerSuitSize = cardHeight ? Math.max(16, Math.floor(height * 0.38)) : (small ? 18 : 28);
