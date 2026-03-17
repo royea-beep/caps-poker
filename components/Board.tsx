@@ -119,7 +119,7 @@ export default function Board({
   cardHeight: cardHeightProp,
   isWinner,
 }: BoardProps) {
-  const ch = cardHeightProp ?? 64;
+  const ch = cardHeightProp ?? 80;
   const cw = Math.round(ch * 0.7);
   // Empty slots are ~30% smaller during arrangement
   const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 1,
+    gap: 6,
     paddingVertical: 1,
   },
   communitySeparator: {
