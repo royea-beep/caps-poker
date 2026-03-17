@@ -49,8 +49,10 @@ export default function CardComponent({
   const width = cardWidth ?? (small ? 52 : 58);
   const height = cardHeight ?? (small ? 74 : 82);
 
-  const rankSize = Math.floor(height * 0.40);
-  const suitSize = Math.floor(height * 0.28);
+  const cornerRankSize = Math.floor(height * 0.14);
+  const cornerSuitSize = Math.floor(height * 0.11);
+  const centerRankSize = Math.floor(height * 0.42);
+  const centerSuitSize = Math.floor(height * 0.32);
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -186,22 +188,22 @@ export default function CardComponent({
           frontAnimStyle,
         ]}
       >
-        {/* Top-left: large rank + suit below */}
+        {/* Top-left corner: small rank + suit */}
         <View style={styles.cornerTL}>
-          <Text style={[styles.rankText, { color: suitColor, fontSize: rankSize }]}>
+          <Text style={[styles.rankText, { color: suitColor, fontSize: cornerRankSize }]}>
             {card.rank}
           </Text>
-          <Text style={[styles.suitText, { color: suitColor, fontSize: suitSize }]}>
+          <Text style={[styles.suitText, { color: suitColor, fontSize: cornerSuitSize }]}>
             {SUIT_SYMBOLS[card.suit]}
           </Text>
         </View>
 
-        {/* Bottom-right: same, rotated 180° */}
-        <View style={[styles.cornerBR, { transform: [{ rotate: '180deg' }] }]}>
-          <Text style={[styles.rankText, { color: suitColor, fontSize: rankSize }]}>
+        {/* Center: large rank + suit below */}
+        <View style={styles.centerDisplay}>
+          <Text style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
             {card.rank}
           </Text>
-          <Text style={[styles.suitText, { color: suitColor, fontSize: suitSize }]}>
+          <Text style={[styles.centerSuitText, { color: suitColor, fontSize: centerSuitSize }]}>
             {SUIT_SYMBOLS[card.suit]}
           </Text>
         </View>
@@ -222,11 +224,21 @@ const styles = StyleSheet.create({
     left: 4,
     alignItems: 'center',
   },
-  cornerBR: {
-    position: 'absolute',
-    bottom: 2,
-    right: 4,
+  centerDisplay: {
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerRankText: {
+    fontWeight: '900',
+    lineHeight: undefined,
+    ...Platform.select({
+      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
+      default: {},
+    }),
+  },
+  centerSuitText: {
+    fontWeight: '700',
+    marginTop: -6,
   },
   rankText: {
     fontWeight: '900',
