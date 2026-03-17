@@ -35,12 +35,16 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   const storedTheme = useGameStore((s) => s.cardTheme);
   const theme = CARD_THEMES[themeOverride ?? storedTheme];
 
-  const width = cardWidth ?? (small ? 52 : 76);
-  const height = cardHeight ?? (small ? 74 : 108);
-  const cornerRankSize = cardHeight ? Math.max(9, Math.floor(height * 0.18)) : (small ? 10 : 13);
-  const cornerSuitSize = cardHeight ? Math.max(8, Math.floor(height * 0.14)) : (small ? 9 : 11);
-  const centerSuitSize = cardHeight ? Math.max(16, Math.floor(height * 0.38)) : (small ? 18 : 28);
-  const backDiamondSize = cardHeight ? Math.max(10, Math.floor(height * 0.22)) : 14;
+  const width = cardWidth ?? (small ? 60 : 82);
+  const height = cardHeight ?? (small ? 86 : 116);
+
+  // Corners are smaller — center carries the info now
+  const cornerRankSize = Math.max(8, Math.floor(height * 0.12));
+  const cornerSuitSize = Math.max(7, Math.floor(height * 0.10));
+  // Large center display
+  const centerRankSize = Math.floor(height * 0.35);
+  const centerSuitSize = Math.floor(height * 0.30);
+  const backDiamondSize = Math.max(10, Math.floor(height * 0.18));
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -81,15 +85,15 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     };
   });
 
-  // Selected card: theme-colored border + glow + lift
+  // Gold glow border when highlighted
   const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: theme.faceBorderWidth + glowOpacity.value * 2,
-    borderColor: glowOpacity.value > 0.01 ? theme.selectedBorderColor : theme.faceBorderColor,
-    shadowColor: theme.selectedGlowColor,
+    borderWidth: glowOpacity.value > 0.01 ? 2.5 : theme.faceBorderWidth,
+    borderColor: glowOpacity.value > 0.01 ? '#c9a84c' : theme.faceBorderColor,
+    shadowColor: '#c9a84c',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: glowOpacity.value * 0.9,
-    shadowRadius: glowOpacity.value * 12,
-    elevation: glowOpacity.value * 10,
+    shadowRadius: glowOpacity.value * 16,
+    elevation: glowOpacity.value * 12,
     transform: [
       { scale: 1 + glowOpacity.value * 0.03 },
       { translateY: glowOpacity.value * theme.selectedTranslateY },
@@ -112,12 +116,14 @@ export default function CardComponent({ card, faceDown = false, small, highlight
       Platform.select({
         ios: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.5,
+          shadowRadius: 8,
         },
-        android: { elevation: 5 },
-        default: {},
+        android: { elevation: 6 },
+        default: {
+          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+        } as any,
       }),
     ]}>
       <View style={styles.backInner}>
@@ -142,17 +148,19 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? theme.redSuit : theme.blackSuit;
+  const suitColor = isRed ? '#e63946' : '#1a1a2e';
 
   const faceUpStaticStyle = Platform.select({
     ios: {
       shadowColor: '#000000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: theme.faceBorderWidth === 0 ? 0.35 : 0.28,
-      shadowRadius: theme.faceBorderWidth === 0 ? 10 : 8,
+      shadowOpacity: 0.5,
+      shadowRadius: 8,
     } as any,
-    android: { elevation: theme.faceBorderWidth === 0 ? 8 : 6 } as any,
-    default: {} as any,
+    android: { elevation: 8 } as any,
+    default: {
+      boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+    } as any,
   });
 
   return (
@@ -188,10 +196,15 @@ export default function CardComponent({ card, faceDown = false, small, highlight
           </Text>
         </View>
 
-        {/* Center suit symbol */}
-        <Text style={[styles.centerSuit, { color: suitColor, fontSize: centerSuitSize }]}>
-          {SUIT_SYMBOLS[card.suit]}
-        </Text>
+        {/* Center: big rank + big suit below — the main display */}
+        <View style={styles.centerDisplay}>
+          <Text style={[styles.centerRank, { color: suitColor, fontSize: centerRankSize }]}>
+            {card.rank}
+          </Text>
+          <Text style={[styles.centerSuit, { color: suitColor, fontSize: centerSuitSize }]}>
+            {SUIT_SYMBOLS[card.suit]}
+          </Text>
+        </View>
 
         {/* Bottom-right corner: rank + suit (rotated) */}
         <View style={styles.cornerBR}>
@@ -242,16 +255,24 @@ const styles = StyleSheet.create({
   },
   cornerRank: {
     fontWeight: '800',
-    lineHeight: 14,
+    lineHeight: 13,
   },
   cornerSuit: {
     fontWeight: '600',
-    lineHeight: 12,
-    marginTop: -2,
+    lineHeight: 11,
+    marginTop: -1,
+  },
+  centerDisplay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerRank: {
+    fontWeight: '900',
+    lineHeight: undefined,
   },
   centerSuit: {
-    fontWeight: '400',
-    opacity: 1.0,
+    fontWeight: '700',
+    marginTop: -4,
   },
   dimmed: {
     opacity: 0.35,
