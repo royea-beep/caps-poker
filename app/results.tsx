@@ -69,7 +69,7 @@ export default function ResultsScreen() {
   // Dynamic card sizing: fit 5 community cards + separator in available width
   // Available = screenWidth - container padding (32) - board padding (20) - separator (6)
   const availableW = SCREEN_W - 32 - 20 - 6;
-  const CARD_W = Math.min(42, Math.max(28, Math.floor(availableW / 5.5)));
+  const CARD_W = Math.min(Platform.OS === 'web' ? 60 : 42, Math.max(28, Math.floor(availableW / 5.5)));
   const CARD_H = Math.round(CARD_W * 1.4);
 
   // Guard: no data → go home
@@ -289,11 +289,8 @@ export default function ResultsScreen() {
   }, [clearRevealData, router]);
 
   const chipCountStyle = useAnimatedStyle(() => {
-    const scale = chipCountProgress.value >= 0.95
-      ? withTiming(1, { duration: 150 })
-      : 0.9 + chipCountProgress.value * 0.1;
     return {
-      transform: [{ scale }],
+      transform: [{ scale: 0.9 + chipCountProgress.value * 0.1 }],
       opacity: chipCountProgress.value > 0 ? 1 : 0,
     };
   });
@@ -602,9 +599,9 @@ function AnimatedChipCount({
 }) {
   const [displayValue, setDisplayValue] = useState(0);
 
-  const updateDisplay = (val: number) => {
+  const updateDisplay = useCallback((val: number) => {
     setDisplayValue(val);
-  };
+  }, []);
 
   useDerivedValue(() => {
     const current = Math.round(progress.value * profit);
