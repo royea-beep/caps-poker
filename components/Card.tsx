@@ -9,8 +9,6 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { Card as CardType } from '../constants/gameConfig';
-import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
-import { useGameStore } from '../store/gameStore';
 
 interface CardProps {
   card?: CardType;
@@ -21,7 +19,7 @@ interface CardProps {
   flipDuration?: number;
   cardWidth?: number;
   cardHeight?: number;
-  themeOverride?: CardThemeId;
+  themeOverride?: string; // kept for prop compatibility
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -31,20 +29,28 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '\u2660',
 };
 
-export default function CardComponent({ card, faceDown = false, small, highlighted, dimmed, flipDuration = 800, cardWidth, cardHeight, themeOverride }: CardProps) {
-  const storedTheme = useGameStore((s) => s.cardTheme);
-  const theme = CARD_THEMES[themeOverride ?? storedTheme];
+// 5-0 Poker colors
+const RED_COLOR = '#E8192C';   // hearts + diamonds
+const BLACK_COLOR = '#000000'; // spades + clubs
+const CARD_FACE_BG = '#FFFFFF';
+const CARD_BACK_BG = '#0f1a3e';
+const CARD_BACK_BORDER = '#c9a84c';
 
-  const width = cardWidth ?? (small ? 60 : 82);
-  const height = cardHeight ?? (small ? 86 : 116);
+export default function CardComponent({
+  card,
+  faceDown = false,
+  small,
+  highlighted,
+  dimmed,
+  flipDuration = 800,
+  cardWidth,
+  cardHeight,
+}: CardProps) {
+  const width = cardWidth ?? (small ? 52 : 58);
+  const height = cardHeight ?? (small ? 74 : 82);
 
-  // Corners are smaller — center carries the info now
-  const cornerRankSize = Math.max(8, Math.floor(height * 0.12));
-  const cornerSuitSize = Math.max(7, Math.floor(height * 0.10));
-  // Large center display
-  const centerRankSize = Math.floor(height * 0.35);
-  const centerSuitSize = Math.floor(height * 0.30);
-  const backDiamondSize = Math.max(10, Math.floor(height * 0.18));
+  const rankSize = Math.floor(height * 0.40);
+  const suitSize = Math.floor(height * 0.28);
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -85,60 +91,54 @@ export default function CardComponent({ card, faceDown = false, small, highlight
     };
   });
 
-  // Gold glow border when highlighted
+  // Gold glow when selected/highlighted
   const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: glowOpacity.value > 0.01 ? 2.5 : theme.faceBorderWidth,
-    borderColor: glowOpacity.value > 0.01 ? '#c9a84c' : theme.faceBorderColor,
+    borderWidth: glowOpacity.value > 0.01 ? 2.5 : 1,
+    borderColor: glowOpacity.value > 0.01 ? '#c9a84c' : 'rgba(0,0,0,0.15)',
     shadowColor: '#c9a84c',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: glowOpacity.value * 0.9,
-    shadowRadius: glowOpacity.value * 16,
-    elevation: glowOpacity.value * 12,
+    shadowRadius: glowOpacity.value * 14,
+    elevation: glowOpacity.value * 10,
     transform: [
       { scale: 1 + glowOpacity.value * 0.03 },
-      { translateY: glowOpacity.value * theme.selectedTranslateY },
+      { translateY: glowOpacity.value * -6 },
     ],
   }));
 
-  // Card back
+  // Face-down back card
   const renderBack = () => (
     <View style={[
       styles.card,
       {
         width,
         height,
-        backgroundColor: theme.backBg,
-        borderRadius: theme.faceRadius,
-        borderWidth: theme.backBorderWidth,
-        borderColor: theme.backBorderColor,
+        backgroundColor: CARD_BACK_BG,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: CARD_BACK_BORDER,
         overflow: 'hidden' as const,
       },
       Platform.select({
         ios: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.5,
-          shadowRadius: 8,
+          shadowOffset: { width: 2, height: 3 },
+          shadowOpacity: 0.4,
+          shadowRadius: 6,
         },
-        android: { elevation: 6 },
+        android: { elevation: 5 },
         default: {
-          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
         } as any,
       }),
     ]}>
-      <View style={styles.backInner}>
-        {[0, 1, 2].map((row) => (
-          <View key={row} style={styles.backRow}>
-            {[0, 1, 2].map((col) => (
-              <Text
-                key={col}
-                style={[styles.backDiamond, { fontSize: backDiamondSize, color: theme.backDiamond }]}
-              >
-                {'\u2666'}
-              </Text>
-            ))}
-          </View>
-        ))}
+      {/* Subtle gradient effect via overlay */}
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.5, bottom: 0, top: '50%' }]} />
+      {/* Faint gold diamond center */}
+      <View style={styles.backCenter}>
+        <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.35) }]}>
+          {'\u2666'}
+        </Text>
       </View>
     </View>
   );
@@ -148,18 +148,18 @@ export default function CardComponent({ card, faceDown = false, small, highlight
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? '#e63946' : '#1a1a2e';
+  const suitColor = isRed ? RED_COLOR : BLACK_COLOR;
 
-  const faceUpStaticStyle = Platform.select({
+  const faceUpShadow = Platform.select({
     ios: {
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.5,
-      shadowRadius: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 2, height: 3 },
+      shadowOpacity: 0.4,
+      shadowRadius: 6,
     } as any,
-    android: { elevation: 8 } as any,
+    android: { elevation: 6 } as any,
     default: {
-      boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+      boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
     } as any,
   });
 
@@ -170,48 +170,38 @@ export default function CardComponent({ card, faceDown = false, small, highlight
         {renderBack()}
       </Animated.View>
 
-      {/* Front face */}
+      {/* Front face — 5-0 poker style */}
       <Animated.View
         style={[
           styles.card,
           {
             width,
             height,
-            backgroundColor: theme.faceBg,
-            borderRadius: theme.faceRadius,
+            backgroundColor: CARD_FACE_BG,
+            borderRadius: 8,
           },
-          faceUpStaticStyle,
+          faceUpShadow,
           highlightAnimStyle,
           dimmed && styles.dimmed,
           frontAnimStyle,
         ]}
       >
-        {/* Top-left corner: rank + suit */}
+        {/* Top-left: large rank + suit below */}
         <View style={styles.cornerTL}>
-          <Text style={[styles.cornerRank, { color: suitColor, fontSize: cornerRankSize }]}>
+          <Text style={[styles.rankText, { color: suitColor, fontSize: rankSize }]}>
             {card.rank}
           </Text>
-          <Text style={[styles.cornerSuit, { color: suitColor, fontSize: cornerSuitSize }]}>
+          <Text style={[styles.suitText, { color: suitColor, fontSize: suitSize }]}>
             {SUIT_SYMBOLS[card.suit]}
           </Text>
         </View>
 
-        {/* Center: big rank + big suit below — the main display */}
-        <View style={styles.centerDisplay}>
-          <Text style={[styles.centerRank, { color: suitColor, fontSize: centerRankSize }]}>
+        {/* Bottom-right: same, rotated 180° */}
+        <View style={[styles.cornerBR, { transform: [{ rotate: '180deg' }] }]}>
+          <Text style={[styles.rankText, { color: suitColor, fontSize: rankSize }]}>
             {card.rank}
           </Text>
-          <Text style={[styles.centerSuit, { color: suitColor, fontSize: centerSuitSize }]}>
-            {SUIT_SYMBOLS[card.suit]}
-          </Text>
-        </View>
-
-        {/* Bottom-right corner: rank + suit (rotated) */}
-        <View style={styles.cornerBR}>
-          <Text style={[styles.cornerRank, { color: suitColor, fontSize: cornerRankSize }]}>
-            {card.rank}
-          </Text>
-          <Text style={[styles.cornerSuit, { color: suitColor, fontSize: cornerSuitSize }]}>
+          <Text style={[styles.suitText, { color: suitColor, fontSize: suitSize }]}>
             {SUIT_SYMBOLS[card.suit]}
           </Text>
         </View>
@@ -226,53 +216,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     margin: 1,
   },
-  backInner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 1,
-    opacity: 0.65,
-  },
-  backRow: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  backDiamond: {
-    // color set inline
-  },
   cornerTL: {
     position: 'absolute',
-    top: 3,
+    top: 2,
     left: 4,
     alignItems: 'center',
   },
   cornerBR: {
     position: 'absolute',
-    bottom: 3,
+    bottom: 2,
     right: 4,
     alignItems: 'center',
-    transform: [{ rotate: '180deg' }],
   },
-  cornerRank: {
-    fontWeight: '800',
-    lineHeight: 13,
-  },
-  cornerSuit: {
-    fontWeight: '600',
-    lineHeight: 11,
-    marginTop: -1,
-  },
-  centerDisplay: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerRank: {
+  rankText: {
     fontWeight: '900',
     lineHeight: undefined,
+    ...Platform.select({
+      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
+      default: {},
+    }),
   },
-  centerSuit: {
+  suitText: {
     fontWeight: '700',
     marginTop: -4,
+    lineHeight: undefined,
+  },
+  backCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backDiamond: {
+    color: '#c9a84c',
+    opacity: 0.3,
   },
   dimmed: {
     opacity: 0.35,
