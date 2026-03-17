@@ -17,7 +17,7 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
   // Dynamic card sizing: fit 8 cards per row with gaps and padding
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
   const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
-  const cardW = Math.min(58, Math.max(42, maxCardW));
+  const cardW = Math.min(58, Math.max(44, maxCardW));
   const cardH = Math.round(cardW * 1.4);
 
   const midpoint = Math.ceil(cards.length / 2);

@@ -115,7 +115,7 @@ export default function GameScreen() {
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   const BOARD_CARD_H = Platform.OS === 'web'
     ? 88
-    : Math.max(40, Math.min(80, Math.floor(boardSpace / 2)));
+    : Math.max(44, Math.min(84, Math.floor(boardSpace / 2)));
   const isWeb = Platform.OS === 'web';
 
   const [boards, setBoards] = useState<BoardState[]>([]);
