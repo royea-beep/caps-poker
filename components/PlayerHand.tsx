@@ -14,10 +14,14 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
   const { width: rawW } = useWindowDimensions();
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
 
+  const isWeb = Platform.OS === 'web';
+
   // Dynamic card sizing: fit 8 cards per row with gaps and padding
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
   const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
-  const cardW = Math.min(58, Math.max(46, maxCardW));
+  const cardW = isWeb
+    ? Math.min(80, Math.max(64, maxCardW))
+    : Math.min(58, Math.max(46, maxCardW));
   const cardH = Math.round(cardW * 1.4);
 
   const midpoint = Math.ceil(cards.length / 2);
@@ -47,13 +51,21 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
       </Text>
       {cards.length > 0 ? (
         <View style={styles.grid}>
-          <View style={styles.row}>
-            {topRow.map(renderCard)}
-          </View>
-          {bottomRow.length > 0 && (
-            <View style={styles.row}>
-              {bottomRow.map(renderCard)}
+          {isWeb ? (
+            <View style={styles.webRow}>
+              {cards.map(renderCard)}
             </View>
+          ) : (
+            <>
+              <View style={styles.row}>
+                {topRow.map(renderCard)}
+              </View>
+              {bottomRow.length > 0 && (
+                <View style={styles.row}>
+                  {bottomRow.map(renderCard)}
+                </View>
+              )}
+            </>
           )}
         </View>
       ) : (
@@ -89,6 +101,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 3,
+  },
+  webRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 4,
   },
   cardWrapper: {
     borderRadius: 6,

@@ -114,7 +114,7 @@ export default function GameScreen() {
   const BOARD_CHROME = 20;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   const BOARD_CARD_H = Platform.OS === 'web'
-    ? 82
+    ? 110
     : Math.max(56, Math.min(82, Math.floor(boardSpace / 2)));
   const isWeb = Platform.OS === 'web';
 
