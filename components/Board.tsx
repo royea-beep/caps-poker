@@ -119,7 +119,7 @@ export default function Board({
   cardHeight: cardHeightProp,
   isWinner,
 }: BoardProps) {
-  const ch = cardHeightProp ?? 56;
+  const ch = cardHeightProp ?? 64;
   const cw = Math.round(ch * 0.7);
   // Empty slots are ~30% smaller during arrangement
   const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
