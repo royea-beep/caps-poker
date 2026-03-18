@@ -1,0 +1,56 @@
+name: Claude Auto-Fix
+
+on:
+  repository_dispatch:
+    types: [claude-fix]
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Claude Code fix
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          SUMMARY="${{ github.event.client_payload.summary }}"
+          PLAN="${{ github.event.client_payload.plan }}"
+          FILES="${{ github.event.client_payload.files }}"
+          claude --print "Read MEMORY.md. Iron Rules 1-8 confirmed. Standing Orders: Fix autonomously. Never give user commands.
+
+          TASK: $SUMMARY
+
+          PLAN:
+          $PLAN
+
+          FILES TO MODIFY: $FILES
+
+          Execute the plan. Fix the issue. Run tsc --noEmit after. Commit with message: fix: $SUMMARY [auto-fix]" --dangerously-skip-permissions
+
+      - name: Commit and push if changes
+        run: |
+          git config user.email "claude-bot@caps-poker.app"
+          git config user.name "Claude Bot"
+          git add -A
+          git diff --staged --quiet || git commit -m "fix: ${{ github.event.client_payload.summary }} [auto-fix]"
+          git push
+
+      - name: Report commit SHA
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "Auto-fix complete: $COMMIT"
