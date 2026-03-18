@@ -94,43 +94,6 @@ function findOptimalCard(
   return null;
 }
 
-// ─── Mini card badge shown next to each player's hand ─────────────────────────
-function MiniCardBadge({ rank, suit }: { rank: string; suit: string }) {
-  const isRed = suit === 'hearts' || suit === 'diamonds';
-  const textColor = isRed ? '#e53e3e' : '#1a1a1a';
-  return (
-    <View style={badgeStyles.wrapper}>
-      <Text style={badgeStyles.label}>BEST</Text>
-      <View style={badgeStyles.card}>
-        <Text style={[badgeStyles.rank, { color: textColor }]}>{rank}</Text>
-        <Text style={[badgeStyles.suit, { color: textColor }]}>{SUIT_SYMBOL[suit] ?? suit}</Text>
-      </View>
-    </View>
-  );
-}
-
-const badgeStyles = StyleSheet.create({
-  wrapper: { alignItems: 'center', marginLeft: 6 },
-  label: {
-    color: COLORS.gold,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  card: {
-    width: 28,
-    height: 40,
-    backgroundColor: '#fff',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rank: { fontSize: 12, fontWeight: '900', lineHeight: 15 },
-  suit: { fontSize: 10, lineHeight: 12 },
-});
 
 // ─── Main component ────────────────────────────────────────────────────────────
 interface RevealSequenceProps {
@@ -515,7 +478,10 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                         faceDown={false}
                         cardWidth={handCardW}
                         cardHeight={handCardH}
-                        highlighted={botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)}
+                        highlighted={
+                          (botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)) ||
+                          (botIdx === 0 && !allRevealed && showBadges && !!botOptimalHint && c.rank === botOptimalHint.rank && c.suit === botOptimalHint.suit)
+                        }
                         dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
                       />
                     ))}
@@ -523,9 +489,6 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                       <Text style={styles.handName}>
                         {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
                       </Text>
-                    )}
-                    {botIdx === 0 && showBadges && botOptimalHint && (
-                      <MiniCardBadge rank={botOptimalHint.rank} suit={botOptimalHint.suit} />
                     )}
                   </View>
                 ) : null
@@ -603,15 +566,15 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                     faceDown={false}
                     cardWidth={handCardW}
                     cardHeight={handCardH}
-                    highlighted={allRevealed && (board.playerHighlightIds ?? []).includes(c.id)}
+                    highlighted={
+                      (allRevealed && (board.playerHighlightIds ?? []).includes(c.id)) ||
+                      (!allRevealed && showBadges && !!playerOptimalHint && c.rank === playerOptimalHint.rank && c.suit === playerOptimalHint.suit)
+                    }
                     dimmed={allRevealed && !(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
                   />
                 ))}
                 {board.playerHandName && turnRevealed && (
                   <Text style={styles.handName}>{board.playerHandName}</Text>
-                )}
-                {showBadges && playerOptimalHint && (
-                  <MiniCardBadge rank={playerOptimalHint.rank} suit={playerOptimalHint.suit} />
                 )}
               </View>
             </View>
