@@ -294,7 +294,12 @@ export default function GameScreen() {
     });
 
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
-    router.replace('/results');
+    try {
+      router.replace('/results');
+    } catch (e) {
+      console.error('[navigateToReveal] router.replace /results threw:', e);
+      try { router.replace('/'); } catch {}
+    }
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
