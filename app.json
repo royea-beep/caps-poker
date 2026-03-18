@@ -15,6 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.capspoker.app",
+      "buildNumber": "90",
       "newArchEnabled": false,
       "infoPlist": {
         "UIRequiresFullScreen": true,
@@ -25,6 +26,7 @@
       }
     },
     "android": {
+      "versionCode": 90,
       "adaptiveIcon": {
         "backgroundColor": "#0d0600",
         "foregroundImage": "./assets/android-icon-foreground.png",
