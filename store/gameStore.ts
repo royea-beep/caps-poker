@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
 import { ConnectedPlayerInfo, GameSession, RevealData } from '../types/gameTypes';
 import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
+import { HomeThemeId, DEFAULT_HOME_THEME } from '../constants/homeThemes';
 
 interface GameStore {
   // Persisted state
@@ -16,6 +17,7 @@ interface GameStore {
   playerName: string;
   notificationsEnabled: boolean;
   cardTheme: CardThemeId;
+  homeTheme: HomeThemeId;
 
   // Economy state (persisted)
   lastDailyRewardClaim: string | null;
@@ -51,6 +53,7 @@ interface GameStore {
   setPlayerName: (name: string) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
   setCardTheme: (theme: CardThemeId) => void;
+  setHomeTheme: (theme: HomeThemeId) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
   trackChipsSpent: (amount: number) => void;
@@ -91,6 +94,7 @@ export const useGameStore = create<GameStore>()(
       playerName: '',
       notificationsEnabled: true,
       cardTheme: DEFAULT_CARD_THEME,
+      homeTheme: DEFAULT_HOME_THEME,
 
       // Economy state (persisted)
       lastDailyRewardClaim: null,
@@ -128,6 +132,7 @@ export const useGameStore = create<GameStore>()(
       setPlayerName: (name: string) => set({ playerName: name }),
       setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
       setCardTheme: (theme: CardThemeId) => set({ cardTheme: theme }),
+      setHomeTheme: (theme: HomeThemeId) => set({ homeTheme: theme }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
@@ -196,7 +201,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
     }
   )
 );

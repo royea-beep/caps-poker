@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
+import React, { useEffect, useCallback, useState } from 'react';
+import { View, Text, StyleSheet, Platform, Alert, Pressable, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
+import { HOME_THEMES, HOME_THEME_NAMES, HomeTheme } from '../constants/homeThemes';
 import {
   getMatchCost,
   canAffordMatch,
@@ -25,28 +26,105 @@ import {
   getFreeRefillAmount,
 } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
+import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 
 const isWeb = Platform.OS === 'web';
 
-// Playfair Display font family — loaded via Google Fonts on web, falls back to serif on native
 const DISPLAY_FONT = Platform.select({
   web: 'Playfair Display, Georgia, serif',
   default: undefined,
 });
 
+// Platform-aware floating shadow driven by accent color
+function accentShadow(accent: string, opacity = 0.4): ViewStyle {
+  if (Platform.OS === 'web') {
+    const r = parseInt(accent.slice(1, 3), 16);
+    const g = parseInt(accent.slice(3, 5), 16);
+    const b = parseInt(accent.slice(5, 7), 16);
+    return { boxShadow: `0 4px 20px rgba(${r},${g},${b},${opacity})` } as ViewStyle;
+  }
+  if (Platform.OS === 'android') return { elevation: 8 };
+  return {
+    shadowColor: accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: opacity,
+    shadowRadius: 12,
+  };
+}
+
+// ─── Themed button — used for primary + secondary CTAs on home screen ────────
+interface HomeBtnProps {
+  title: string;
+  onPress: () => void;
+  isPrimary?: boolean;
+  disabled?: boolean;
+  style?: ViewStyle;
+  theme: HomeTheme;
+}
+
+function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t }: HomeBtnProps) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={[
+        homeBtnBase,
+        {
+          backgroundColor: isPrimary ? t.buttonPrimary : t.buttonSecondaryBg,
+          borderColor: isPrimary ? t.buttonPrimary : t.buttonSecondaryBorder,
+          borderWidth: isPrimary ? 0 : 1.5,
+        },
+        accentShadow(t.accent, isPrimary ? 0.5 : 0.2),
+        disabled && { opacity: 0.5 },
+        pressed && { opacity: 0.82 },
+        style,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
+      <Text
+        style={{
+          color: isPrimary ? t.buttonPrimaryText : t.buttonSecondaryText,
+          fontSize: isPrimary ? 16 : 15,
+          fontWeight: '800',
+          letterSpacing: 2,
+        }}
+      >
+        {title}
+      </Text>
+    </Pressable>
+  );
+}
+
+const homeBtnBase: ViewStyle = {
+  width: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 16,
+  paddingHorizontal: 24,
+  borderRadius: 16,
+  minHeight: 52,
+};
+
+// ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
   const handsWon = useGameStore((s) => s.handsWon);
-  const bestChips = useGameStore((s) => s.bestChips);
   const biggestWin = useGameStore((s) => s.biggestWin);
   const sessionStartChips = useGameStore((s) => s.sessionStartChips);
   const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
   const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
+  const homeThemeId = useGameStore((s) => s.homeTheme);
+  const theme = HOME_THEMES[homeThemeId];
 
+  const user = useAuthUser();
   const sessionNet = chips - sessionStartChips;
 
   useEffect(() => {
@@ -57,7 +135,7 @@ export default function HomeScreen() {
     if (ECONOMY_FLAGS.matchCostEnabled) {
       const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
       if (!canAffordMatch(chips, cost)) {
-        Alert.alert('Not Enough Chips', `You need ${cost} chips to play. Reset your chips or wait for a daily reward.`);
+        Alert.alert('Not Enough Chips', `You need ${cost} chips to play.`);
         return;
       }
     }
@@ -92,16 +170,19 @@ export default function HomeScreen() {
     store.addChips(amount);
     store.trackChipsEarned(amount);
     store.setLastFreeRefill(now.toISOString());
-    Alert.alert('Free Refill!', `+${amount} chips added to your balance.`);
+    Alert.alert('Free Refill!', `+${amount} chips added.`);
   }, [lastFreeRefill]);
 
-  // Daily reward availability
+  const handleGoogleSignIn = useCallback(async () => {
+    const { error } = await signInWithGoogle();
+    if (error) Alert.alert('Sign-in failed', error.message);
+  }, []);
+
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
   const canRefill = ECONOMY_FLAGS.freeRefillEnabled && canUseFreeRefill(lastFreeRefill);
 
-  // Pulsing gold glow behind title
+  // Pulsing glow behind title
   const glowOpacity = useSharedValue(0.2);
-
   useEffect(() => {
     glowOpacity.value = withRepeat(
       withSequence(
@@ -111,98 +192,134 @@ export default function HomeScreen() {
       -1,
     );
   }, []);
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
 
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
+  // Web title gradient only for dark_gold
+  const webTitleGradient =
+    isWeb && homeThemeId === 'dark_gold'
+      ? ({
+          background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        } as any)
+      : {};
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Grain texture overlay (web only) */}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       {isWeb && <View style={styles.grainOverlay} />}
 
       <View style={styles.content}>
-        {/* Title section */}
+
+        {/* ── Title section ── */}
         <View style={styles.titleSection}>
-          <Animated.View style={[styles.titleGlow, glowStyle, { pointerEvents: 'none' }]} />
-
-          {/* Suit symbols */}
-          <Text style={styles.suitSymbols}>{'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}</Text>
-
-          {/* Main title */}
-          <Text style={[styles.title, DISPLAY_FONT ? { fontFamily: DISPLAY_FONT } : {}]}>
+          <Animated.View
+            style={[
+              styles.titleGlow,
+              glowStyle,
+              { backgroundColor: theme.accent },
+              { pointerEvents: 'none' } as any,
+            ]}
+          />
+          <Text style={[styles.suitSymbols, { color: theme.accent }]}>
+            {'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}
+          </Text>
+          <Text
+            style={[
+              styles.title,
+              { color: theme.titleColor },
+              DISPLAY_FONT ? { fontFamily: DISPLAY_FONT } : {},
+              webTitleGradient,
+            ]}
+          >
             CAPS
           </Text>
-
-          <Text style={styles.titleSub}>The Game Where Every Board Counts</Text>
-
-          {/* Gold divider */}
-          <View style={styles.titleDivider} />
+          <Text style={[styles.titleSub, { color: theme.subtitleColor }]}>
+            Outsmart the Board. Win Every Round.
+          </Text>
+          <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
         </View>
 
-        {/* Balance */}
+        {/* ── Balance ── */}
         <ChipsDisplay amount={chips} label="Your Balance" size="large" />
 
-        {/* Stats */}
+        {/* ── Stats ── */}
         <View style={styles.statsSection}>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{handsPlayed}</Text>
+              <Text style={[styles.statValue, { color: theme.accent }]}>{handsPlayed}</Text>
               <Text style={styles.statLabel}>Played</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{handsWon}</Text>
+              <Text style={[styles.statValue, { color: theme.accent }]}>{handsWon}</Text>
               <Text style={styles.statLabel}>Won</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: COLORS.gold }]}>
+              <Text style={[styles.statValue, { color: theme.accent }]}>
                 {handsPlayed > 0 ? Math.round((handsWon / handsPlayed) * 100) : 0}%
               </Text>
               <Text style={styles.statLabel}>Win Rate</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: COLORS.gold }]}>{biggestWin}</Text>
+              <Text style={[styles.statValue, { color: theme.accent }]}>{biggestWin}</Text>
               <Text style={styles.statLabel}>Best Win</Text>
             </View>
           </View>
-          <Text style={[
-            styles.sessionText,
-            { color: sessionNet >= 0 ? COLORS.neonGreen : COLORS.neonRed },
-          ]}>
+          <Text style={[styles.sessionText, { color: sessionNet >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
             Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
           </Text>
         </View>
 
-        {/* Daily reward */}
+        {/* ── Daily reward ── */}
         {ECONOMY_FLAGS.dailyRewardEnabled && (
-          <Button
+          <HomeBtn
             title={canClaim ? 'CLAIM DAILY REWARD' : 'REWARD CLAIMED'}
-            variant={canClaim ? 'gold' : 'ghost'}
+            theme={theme}
+            isPrimary={canClaim}
             disabled={!canClaim}
             onPress={handleClaimDailyReward}
-            style={{ width: '100%' }}
           />
         )}
 
-        {/* Action buttons */}
+        {/* ── Action buttons ── */}
         <View style={styles.buttonSection}>
-          <Button title="NEW HAND (vs Bot)" variant="gold" onPress={handleNewHand} />
+          <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} />
           <View style={styles.modeRow}>
-            <Button title="SIT & GO" variant="secondary" onPress={() => router.push('/sit-and-go' as any)} style={styles.modeButton} />
-            <Button title="TOURNAMENT" variant="secondary" onPress={() => router.push('/tournament' as any)} style={styles.modeButton} />
+            <HomeBtn title="SIT & GO" theme={theme} onPress={() => router.push('/sit-and-go' as any)} style={styles.modeButton} />
+            <HomeBtn title="TOURNAMENT" theme={theme} onPress={() => router.push('/tournament' as any)} style={styles.modeButton} />
           </View>
-          <Button title="PLAY ONLINE" variant="secondary" onPress={() => router.push('/lobby/internet-host' as any)} />
-          <Button title="HOST GAME (WiFi)" variant="secondary" onPress={() => router.push('/lobby/host' as any)} />
-          <Button title="JOIN GAME" variant="secondary" onPress={() => router.push('/lobby/join' as any)} />
+          <HomeBtn title="PLAY ONLINE" theme={theme} onPress={() => router.push('/lobby/internet-host' as any)} />
+          <HomeBtn title="HOST GAME (WiFi)" theme={theme} onPress={() => router.push('/lobby/host' as any)} />
+          <HomeBtn title="JOIN GAME" theme={theme} onPress={() => router.push('/lobby/join' as any)} />
           <Button title="LEADERBOARD" variant="ghost" onPress={() => router.push('/leaderboard' as any)} />
           <Button title="HAND HISTORY" variant="ghost" onPress={() => router.push('/hand-history' as any)} />
           <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
         </View>
 
-        {/* Refill / Reset */}
+        {/* ── Google sign-in ── */}
+        <View style={styles.authRow}>
+          {user ? (
+            <>
+              <Text style={[styles.authName, { color: theme.subtitleColor }]} numberOfLines={1}>
+                {user.user_metadata?.full_name ?? user.email ?? 'Signed in'}
+              </Text>
+              <Pressable onPress={signOut} hitSlop={8}>
+                <Text style={[styles.authAction, { color: theme.accent }]}>Sign out</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable onPress={handleGoogleSignIn} hitSlop={8}>
+              <Text style={[styles.authAction, { color: theme.subtitleColor }]}>
+                Sign in with Google
+              </Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* ── Refill / Reset ── */}
         {ECONOMY_FLAGS.freeRefillEnabled ? (
           <Button
             title={canRefill ? 'FREE REFILL' : 'REFILL USED'}
@@ -219,16 +336,13 @@ export default function HomeScreen() {
         )}
 
         {__DEV__ && (
-          <Button
-            title="SIMULATE"
-            variant="ghost"
-            onPress={() => router.push('/simulate' as any)}
-          />
+          <Button title="SIMULATE" variant="ghost" onPress={() => router.push('/simulate' as any)} />
         )}
       </View>
 
-      {/* Version badge — bottom-right, gold */}
-      <Text style={styles.versionLabel}>v{Constants.expoConfig?.version ?? '1.9.2'}</Text>
+      <Text style={[styles.versionLabel, { color: theme.accent }]}>
+        v{Constants.expoConfig?.version ?? '1.9.2'}
+      </Text>
     </SafeAreaView>
   );
 }
@@ -236,9 +350,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
-  // Subtle grain texture overlay — web only
   grainOverlay: {
     position: 'absolute',
     top: 0,
@@ -260,11 +372,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    gap: 24,
+    gap: 16,
     zIndex: 1,
   },
 
-  // Title section
+  // Title
   titleSection: {
     alignItems: 'center',
     position: 'relative',
@@ -272,62 +384,43 @@ const styles = StyleSheet.create({
   },
   titleGlow: {
     position: 'absolute',
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: COLORS.gold,
-    top: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    top: -50,
     alignSelf: 'center',
     zIndex: -1,
-    ...Platform.select({
-      web: {
-        background: `radial-gradient(circle, rgba(201,168,76,0.35) 0%, rgba(10,10,10,0) 70%)`,
-      } as any,
-      default: {},
-    }),
+    opacity: 0.15,
   },
   suitSymbols: {
-    color: COLORS.gold,
     fontSize: 18,
     letterSpacing: 12,
     opacity: 0.7,
     marginBottom: 4,
   },
   title: {
-    fontSize: 80,
+    fontSize: 64,
     fontWeight: '900',
-    color: COLORS.gold,
     letterSpacing: 20,
-    textShadowColor: COLORS.goldGlow,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 40,
-    ...Platform.select({
-      web: {
-        background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-      } as any,
-      default: {},
-    }),
+    textShadowRadius: 30,
   },
   titleSub: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
-    color: COLORS.textMuted,
-    letterSpacing: 3,
+    letterSpacing: 2,
     marginTop: 2,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   titleDivider: {
     width: 120,
     height: 1,
-    backgroundColor: COLORS.gold,
-    marginTop: 14,
+    marginTop: 12,
     opacity: 0.5,
   },
 
-  // Stats section
+  // Stats
   statsSection: {
     alignItems: 'center',
     gap: 8,
@@ -338,22 +431,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     alignItems: 'center',
     width: '100%',
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(255,255,255,0.07)',
     ...Platform.select({
-      web: {
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      } as any,
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.6,
-        shadowRadius: 12,
-      },
+      web: { boxShadow: '0 8px 32px rgba(0,0,0,0.6)' } as any,
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 12 },
       android: { elevation: 8 },
     }),
   },
@@ -365,10 +451,9 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 32,
-    backgroundColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   statValue: {
-    color: COLORS.gold,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -388,14 +473,33 @@ const styles = StyleSheet.create({
   // Buttons
   buttonSection: {
     width: '100%',
-    gap: 10,
+    gap: 8,
   },
   modeRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   modeButton: {
     flex: 1,
+  },
+
+  // Auth row
+  authRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    opacity: 0.8,
+  },
+  authName: {
+    fontSize: 12,
+    fontWeight: '500',
+    maxWidth: 180,
+  },
+  authAction: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textDecorationLine: 'underline',
   },
 
   // Version
@@ -403,7 +507,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 14,
     right: 18,
-    color: COLORS.gold,
     fontSize: 11,
     fontWeight: '600',
     opacity: 0.7,
