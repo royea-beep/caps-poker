@@ -293,7 +293,8 @@
       "mcp__claude_ai_Supabase__list_projects",
       "Bash(echo:*)",
       "Bash(gh run:*)",
-      "Bash(vercel --prod --yes)"
+      "Bash(vercel --prod --yes)",
+      "mcp__claude_ai_Supabase__get_advisors"
     ]
   }
 }
