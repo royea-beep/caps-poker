@@ -92,7 +92,7 @@ const COUNTDOWN_SECONDS = 30;
 // Layout constants
 const TOP_BAR_H = 44;
 const BOT_STATUS_H = 20;
-const PLAYER_HAND_H = 130;
+const PLAYER_HAND_H = 150;  // 2 rows of ~44px cards (height ~62px) + label + padding ≈ 148px
 const READY_BTN_H = 48;
 
 export default function GameScreen() {
@@ -490,6 +490,9 @@ export default function GameScreen() {
               Waiting for bot{numberOfBots > 1 ? 's' : ''}...
             </Text>
           )}
+          {playerReady && allBotsReady && !showContinueButton && (
+            <Text style={styles.calculatingText}>Calculating results...</Text>
+          )}
         </View>
         <ChipsDisplay amount={chips} />
       </View>
@@ -673,6 +676,12 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  calculatingText: {
+    color: COLORS.gold,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   floatingActions: {
     flexDirection: 'row',
