@@ -688,7 +688,7 @@ export default function SitAndGoScreen() {
       <View style={styles.bottomArea}>
         <PlayerHand
           cards={playerHand}
-          selectedCardId={selectedCardId}
+          selectedCardIds={selectedCardId ? [selectedCardId] : []}
           onSelectCard={handleSelectCard}
         />
 

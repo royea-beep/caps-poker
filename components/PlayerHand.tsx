@@ -6,11 +6,11 @@ import { WEB_MAX_WIDTH } from './WebContainer';
 
 interface PlayerHandProps {
   cards: Card[];
-  selectedCardId?: string;
+  selectedCardIds?: string[];
   onSelectCard: (card: Card) => void;
 }
 
-export default function PlayerHand({ cards, selectedCardId, onSelectCard }: PlayerHandProps) {
+export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
   const { width: rawW } = useWindowDimensions();
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
 
@@ -29,7 +29,8 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
   const bottomRow = cards.slice(midpoint);
 
   const renderCard = (card: Card) => {
-    const isSelected = selectedCardId === card.id;
+    const selIndex = selectedCardIds.indexOf(card.id);
+    const isSelected = selIndex >= 0;
     return (
       <Pressable
         key={card.id}
@@ -40,6 +41,11 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
         ]}
       >
         <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
+        {isSelected && (
+          <View style={styles.selBadge}>
+            <Text style={styles.selBadgeText}>{selIndex + 1}</Text>
+          </View>
+        )}
       </Pressable>
     );
   };
@@ -138,5 +144,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  selBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  selBadgeText: {
+    color: '#000',
+    fontSize: 9,
+    fontWeight: '900',
   },
 });

@@ -33,6 +33,7 @@ interface BoardProps {
   allBotHandNames?: string[];
   onPress?: () => void;
   onRemoveCard?: (card: Card) => void;
+  onAutoFill?: () => void;
   isArrangement?: boolean;
   selected?: boolean;
   flipDuration?: number;
@@ -114,6 +115,7 @@ export default function Board({
   allBotHandNames,
   onPress,
   onRemoveCard,
+  onAutoFill,
   isArrangement,
   selected,
   flipDuration,
@@ -310,6 +312,11 @@ export default function Board({
 
         {/* Player cards */}
         <View style={styles.cardRow}>
+          {isArrangement && playerCards.length === 0 && onAutoFill && (
+            <Pressable style={styles.autoBtn} onPress={onAutoFill}>
+              <Text style={styles.autoBtnText}>AUTO</Text>
+            </Pressable>
+          )}
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               isArrangement && onRemoveCard ? (
@@ -555,5 +562,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  autoBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(201,168,76,0.18)',
+    borderWidth: 1,
+    borderColor: '#c8a84b',
+    marginRight: 4,
+  },
+  autoBtnText: {
+    color: '#c8a84b',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
 });

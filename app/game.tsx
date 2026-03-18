@@ -120,8 +120,22 @@ export default function GameScreen() {
 
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [botsReady, setBotsReady] = useState<boolean[]>([]);
+  const [boardError, setBoardError] = useState<string | null>(null);
+  const boardErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Per-board shake animations (max 4 boards)
+  const shake0 = useSharedValue(0);
+  const shake1 = useSharedValue(0);
+  const shake2 = useSharedValue(0);
+  const shake3 = useSharedValue(0);
+  const shakeStyle0 = useAnimatedStyle(() => ({ transform: [{ translateX: shake0.value }] }));
+  const shakeStyle1 = useAnimatedStyle(() => ({ transform: [{ translateX: shake1.value }] }));
+  const shakeStyle2 = useAnimatedStyle(() => ({ transform: [{ translateX: shake2.value }] }));
+  const shakeStyle3 = useAnimatedStyle(() => ({ transform: [{ translateX: shake3.value }] }));
+  const boardShakes = [shake0, shake1, shake2, shake3];
+  const boardShakeStyles = [shakeStyle0, shakeStyle1, shakeStyle2, shakeStyle3];
   const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: 0 });
   const [playerReady, setPlayerReady] = useState(false);
 
@@ -182,7 +196,7 @@ export default function GameScreen() {
         setPlayerHand(remainingHand);
         return filledBoards;
       });
-      setSelectedCardId(null);
+      setSelectedCardIds([]);
       setPlayerReady(true);
       setPhase({ type: 'waiting_for_bot' });
     }
@@ -198,6 +212,10 @@ export default function GameScreen() {
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
+      }
+      if (boardErrorTimer.current) {
+        clearTimeout(boardErrorTimer.current);
+        boardErrorTimer.current = null;
       }
     };
   }, []);
@@ -353,45 +371,80 @@ export default function GameScreen() {
     return () => clearTimeout(fallbackTimer);
   }, [playerReady, allBotsReady]);
 
-  // Tap card in hand → select it
+  // Tap card in hand → toggle in selectedCardIds (up to 4)
   const handleSelectCard = useCallback(
     (card: Card) => {
       if (!isArranging) return;
       haptic(Haptics?.ImpactFeedbackStyle?.Light);
       playSound('cardSelect');
-      setSelectedCardId((prev) => (prev === card.id ? null : card.id));
+      setSelectedCardIds((prev) => {
+        if (prev.includes(card.id)) {
+          // Deselect
+          return prev.filter((id) => id !== card.id);
+        }
+        if (prev.length < 4) {
+          return [...prev, card.id];
+        }
+        // At max (4) — replace the last selected with new card
+        return [...prev.slice(0, 3), card.id];
+      });
     },
     [isArranging]
   );
 
-  // Tap board slot → place selected card there
+  // Tap board → place all selectedCardIds (or first hand card if none selected)
   const handleBoardPress = useCallback(
     (boardIndex: number) => {
       if (!isArranging) return;
       const currentHand = playerHandRef.current;
       if (currentHand.length === 0) return;
 
-      const cardToPlace = selectedCardId
-        ? currentHand.find((c) => c.id === selectedCardId)
-        : currentHand[0];
-      if (!cardToPlace) return;
-
       setBoards((prev) => {
         const board = prev[boardIndex];
-        if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
+        if (!board) return prev;
+
+        const emptySlots = CARDS_PER_BOARD - board.playerCards.length;
+        if (emptySlots <= 0) {
+          // Board full — shake + error
+          const sv = boardShakes[boardIndex];
+          if (sv) {
+            sv.value = withSequence(
+              withTiming(-6, { duration: 55 }),
+              withTiming(6, { duration: 55 }),
+              withTiming(-4, { duration: 55 }),
+              withTiming(0, { duration: 55 }),
+            );
+          }
+          if (boardErrorTimer.current) clearTimeout(boardErrorTimer.current);
+          setBoardError('Board is full');
+          boardErrorTimer.current = setTimeout(() => setBoardError(null), 1500);
+          return prev;
+        }
+
+        // Determine which cards to place
+        const cardsToPlace: Card[] = selectedCardIds.length > 0
+          ? selectedCardIds
+              .map((id) => currentHand.find((c) => c.id === id))
+              .filter((c): c is Card => c !== undefined)
+              .slice(0, emptySlots)
+          : currentHand.slice(0, 1); // fallback: place first card
+
+        if (cardsToPlace.length === 0) return prev;
+
         haptic(Haptics?.ImpactFeedbackStyle?.Medium);
         playSound('cardPlace');
+        const placedIds = new Set(cardsToPlace.map((c) => c.id));
         const updated = [...prev];
         updated[boardIndex] = {
           ...board,
-          playerCards: [...board.playerCards, cardToPlace],
+          playerCards: [...board.playerCards, ...cardsToPlace],
         };
-        setPlayerHand((hand) => hand.filter((c) => c.id !== cardToPlace.id));
-        setSelectedCardId(null);
+        setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+        setSelectedCardIds([]);
         return updated;
       });
     },
-    [isArranging, selectedCardId]
+    [isArranging, selectedCardIds]
   );
 
   // Tap placed card → remove from board
@@ -413,12 +466,37 @@ export default function GameScreen() {
     [isArranging]
   );
 
+  // AUTO fill — place first N available hand cards into an empty board
+  const handleAutoFill = useCallback(
+    (boardIndex: number) => {
+      if (!isArranging) return;
+      const currentHand = playerHandRef.current;
+      if (currentHand.length === 0) return;
+      setBoards((prev) => {
+        const board = prev[boardIndex];
+        if (!board || board.playerCards.length > 0) return prev;
+        const slots = CARDS_PER_BOARD - board.playerCards.length;
+        const cardsToPlace = currentHand.slice(0, slots);
+        if (cardsToPlace.length === 0) return prev;
+        haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+        playSound('cardPlace');
+        const placedIds = new Set(cardsToPlace.map((c) => c.id));
+        const updated = [...prev];
+        updated[boardIndex] = { ...board, playerCards: [...board.playerCards, ...cardsToPlace] };
+        setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+        setSelectedCardIds([]);
+        return updated;
+      });
+    },
+    [isArranging]
+  );
+
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
     setPlayerReady(true);
     setPhase({ type: 'waiting_for_bot' });
 
@@ -513,9 +591,12 @@ export default function GameScreen() {
       {/* Boards */}
       <View style={isWeb ? styles.boardsGrid : styles.boardsColumn}>
         {boards.map((board, i) => (
-          <View
+          <Animated.View
             key={i}
-            style={isWeb ? (boardCount === 3 ? styles.boardCellThird : styles.boardCellHalf) : styles.boardCellFull}
+            style={[
+              isWeb ? (boardCount === 3 ? styles.boardCellThird : styles.boardCellHalf) : styles.boardCellFull,
+              boardShakeStyles[i],
+            ]}
           >
             <Board
               index={i}
@@ -529,11 +610,12 @@ export default function GameScreen() {
               potAmount={config.potPerBoard * numberOfPlayers}
               onPress={() => handleBoardPress(i)}
               onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
+              onAutoFill={() => handleAutoFill(i)}
               isArrangement={isArranging}
               selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
               cardHeight={BOARD_CARD_H}
             />
-          </View>
+          </Animated.View>
         ))}
       </View>
 
@@ -554,9 +636,18 @@ export default function GameScreen() {
       {isArranging && (
         <PlayerHand
           cards={playerHand}
-          selectedCardId={selectedCardId ?? undefined}
+          selectedCardIds={selectedCardIds}
           onSelectCard={handleSelectCard}
         />
+      )}
+
+      {/* Selection hint / board error */}
+      {isArranging && (boardError || selectedCardIds.length > 0) && (
+        <Text style={boardError ? styles.boardErrorText : styles.selectionHint}>
+          {boardError
+            ? boardError
+            : `${selectedCardIds.length} card${selectedCardIds.length !== 1 ? 's' : ''} selected — tap a board`}
+        </Text>
       )}
 
       {/* Floating action buttons */}
@@ -682,6 +773,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  selectionHint: {
+    textAlign: 'center',
+    color: COLORS.gold,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    paddingVertical: 4,
+  },
+  boardErrorText: {
+    textAlign: 'center',
+    color: COLORS.neonRed,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    paddingVertical: 4,
   },
   floatingActions: {
     flexDirection: 'row',
