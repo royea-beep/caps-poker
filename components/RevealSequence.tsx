@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useDerivedValue,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import CardComponent from './Card';
 import { COLORS } from '../constants/gameConfig';
 import { RevealBoardData } from '../types/gameTypes';
@@ -22,12 +28,12 @@ function haptic() {
 }
 
 // Timing constants
-const FLIP_DELAY = 600;       // ms before turn flips
-const BETWEEN_FLIPS = 1500;   // ms between turn and river flip (suspense)
-const WINNER_DELAY = 500;     // ms after river before winner shows
-const ADVANCE_DELAY = 10000;  // ms after winner before auto-advance
+const BETWEEN_FLIPS = 700;    // pause after turn flip before river countdown starts
+const WINNER_DELAY = 600;     // after river flip before winner banner shows
+const ADVANCE_DELAY = 10000;  // auto-advance after winner
+const COUNTDOWN_STEP = 1000;  // 1 second per countdown number
 
-// Card sizes — smaller on native to fit 5 community cards in one row on all iPhone sizes
+// Card sizes — smaller on native to fit 5 community cards in one row
 const commCardW = Platform.OS === 'web' ? 58 : 48;
 const commCardH = Platform.OS === 'web' ? 82 : 68;
 const handCardW = Platform.OS === 'web' ? 52 : 42;
@@ -45,13 +51,19 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const [riverRevealed, setRiverRevealed] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [winProb, setWinProb] = useState<number | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // iOS-safe animations — avoid `entering` prop inside Modal (known Reanimated + Old Arch freeze)
+  // Animations
   const cardOpacity = useSharedValue(0);
   const winnerScale = useSharedValue(0);
   const winnerOpacity = useSharedValue(0);
   const nextBtnOpacity = useSharedValue(0);
+  const countdownOpacity = useSharedValue(0);
+  const countdownScale = useSharedValue(1);
+  const probPct = useSharedValue(50); // 0–100 representing player's win %
+  const probBotPct = useDerivedValue(() => 100 - probPct.value);
 
   const cardAnimStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
   const winnerAnimStyle = useAnimatedStyle(() => ({
@@ -59,6 +71,12 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     transform: [{ scale: winnerScale.value }],
   }));
   const nextBtnAnimStyle = useAnimatedStyle(() => ({ opacity: nextBtnOpacity.value }));
+  const countdownAnimStyle = useAnimatedStyle(() => ({
+    opacity: countdownOpacity.value,
+    transform: [{ scale: countdownScale.value }],
+  }));
+  const probPlayerStyle = useAnimatedStyle(() => ({ flex: probPct.value }));
+  const probBotStyle = useAnimatedStyle(() => ({ flex: probBotPct.value }));
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -80,6 +98,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       setRiverRevealed(false);
       setShowWinner(false);
       setShowNextButton(false);
+      setCountdown(null);
+      setWinProb(null);
+      probPct.value = 50;
       setBoardIdx(nextIdx);
     },
     [boards.length, onDone],
@@ -98,7 +119,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     };
   }, []);
 
-  // Fade card container in when modal becomes visible or board changes
+  // Fade card container in on visibility / board change
   useEffect(() => {
     if (visible) {
       cardOpacity.value = 0;
@@ -108,7 +129,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     }
   }, [visible, boardIdx]);
 
-  // Animate winner banner in when showWinner flips true
+  // Animate winner banner
   useEffect(() => {
     if (showWinner) {
       winnerScale.value = 0;
@@ -121,12 +142,31 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     }
   }, [showWinner]);
 
-  // Fade next button in
+  // Fade next button
   useEffect(() => {
     nextBtnOpacity.value = showNextButton ? withTiming(1, { duration: 300 }) : 0;
   }, [showNextButton]);
 
-  // Run per-board reveal sequence whenever boardIdx changes
+  // Countdown pop-in animation on each number
+  useEffect(() => {
+    if (countdown !== null) {
+      countdownOpacity.value = 0;
+      countdownScale.value = 1.6;
+      countdownOpacity.value = withTiming(1, { duration: 120 });
+      countdownScale.value = withSpring(1, { damping: 10, stiffness: 350 });
+    } else {
+      countdownOpacity.value = withTiming(0, { duration: 150 });
+    }
+  }, [countdown]);
+
+  // Animate probability bar when winProb changes
+  useEffect(() => {
+    if (winProb !== null) {
+      probPct.value = withTiming(winProb, { duration: 700 });
+    }
+  }, [winProb]);
+
+  // Main per-board reveal sequence
   useEffect(() => {
     if (!visible) return;
     clearTimers();
@@ -141,60 +181,85 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     const hasTurn = closedCards.length >= 1;
     const hasRiver = closedCards.length >= 2;
 
-    // Safety: if sequence gets stuck for 15s, force complete
-    const safetyTimer = setTimeout(() => {
-      onDone();
-    }, 15000);
+    // Safety: force complete after 22s (longer to accommodate countdown drama)
+    const safetyTimer = setTimeout(() => { onDone(); }, 22000);
 
     if (!hasTurn) {
-      // No closed cards — skip straight to winner
+      // All community cards already visible — show final prob and winner quickly
+      const finalProb = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
+      setWinProb(finalProb);
       addTimer(() => {
         setShowWinner(true);
         setShowNextButton(true);
         addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
-      }, 400);
-      return () => {
-        clearTimers();
-        clearTimeout(safetyTimer);
-      };
+      }, 600);
+      return () => { clearTimers(); clearTimeout(safetyTimer); };
     }
 
-    // Flip turn
+    // === Dramatic reveal: countdown → turn flip → countdown → river flip → winner ===
+
+    // Start at 50/50
+    setWinProb(50);
+    probPct.value = 50;
+
+    // Turn countdown: 3…2…1 starting at t=300
+    addTimer(() => setCountdown(3), 300);
+    addTimer(() => setCountdown(2), 300 + COUNTDOWN_STEP);
+    addTimer(() => setCountdown(1), 300 + COUNTDOWN_STEP * 2);
+
+    // Flip turn at t=3300
+    const turnFlipT = 300 + COUNTDOWN_STEP * 3;
     addTimer(() => {
+      setCountdown(null);
       setTurnRevealed(true);
       haptic();
-      try {
-        playSound('cardFlip');
-      } catch {}
+      try { playSound('cardFlip'); } catch {}
 
-      if (!hasRiver) {
-        addTimer(() => {
-          setShowWinner(true);
-          setShowNextButton(true);
-          addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
-        }, WINNER_DELAY);
-        return;
-      }
+      // Lean probability toward eventual winner
+      const intermediate =
+        board.winner === 'player'
+          ? 55 + Math.floor(Math.random() * 20)   // 55–74%
+          : board.winner === 'bot'
+            ? 26 + Math.floor(Math.random() * 19)  // 26–44%
+            : 50;
+      setWinProb(intermediate);
+    }, turnFlipT);
 
-      // 1.5s suspense pause, then flip river
+    if (!hasRiver) {
+      // No river — show winner shortly after turn
       addTimer(() => {
+        setShowWinner(true);
+        setShowNextButton(true);
+        addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+      }, turnFlipT + WINNER_DELAY);
+    } else {
+      // River countdown starts after BETWEEN_FLIPS pause
+      const riverCountdownStart = turnFlipT + BETWEEN_FLIPS;
+      addTimer(() => setCountdown(3), riverCountdownStart);
+      addTimer(() => setCountdown(2), riverCountdownStart + COUNTDOWN_STEP);
+      addTimer(() => setCountdown(1), riverCountdownStart + COUNTDOWN_STEP * 2);
+
+      // Flip river
+      const riverFlipT = riverCountdownStart + COUNTDOWN_STEP * 3;
+      addTimer(() => {
+        setCountdown(null);
         setRiverRevealed(true);
         haptic();
-        try {
-          playSound('cardFlip');
-        } catch {}
-        addTimer(() => {
-          setShowWinner(true);
-          setShowNextButton(true);
-          addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
-        }, WINNER_DELAY);
-      }, BETWEEN_FLIPS);
-    }, FLIP_DELAY);
+        try { playSound('cardFlip'); } catch {}
 
-    return () => {
-      clearTimers();
-      clearTimeout(safetyTimer);
-    };
+        // Final probability
+        const final = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
+        setWinProb(final);
+      }, riverFlipT);
+
+      addTimer(() => {
+        setShowWinner(true);
+        setShowNextButton(true);
+        addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+      }, riverFlipT + WINNER_DELAY);
+    }
+
+    return () => { clearTimers(); clearTimeout(safetyTimer); };
   }, [boardIdx, visible]);
 
   // Reset when modal closes
@@ -206,6 +271,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       setRiverRevealed(false);
       setShowWinner(false);
       setShowNextButton(false);
+      setCountdown(null);
+      setWinProb(null);
+      probPct.value = 50;
     }
   }, [visible]);
 
@@ -219,11 +287,20 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   let board = boards[boardIdx];
   if (!board) return null;
 
-  // Defensive: skip malformed board (missing required arrays) — advance to next
+  // Defensive: fix malformed board
   try {
     if (!Array.isArray(board.openCards) || !Array.isArray(board.closedCards) || !Array.isArray(board.playerCards)) {
-      console.warn('[RevealSequence] malformed board at index', boardIdx, '— skipping');
-      board = { ...board, openCards: board.openCards ?? [], closedCards: board.closedCards ?? [], playerCards: board.playerCards ?? [], allBotCards: board.allBotCards ?? [], boardHighlightIds: [], playerHighlightIds: [], botHighlightIds: [], allBotHandNames: [] };
+      board = {
+        ...board,
+        openCards: board.openCards ?? [],
+        closedCards: board.closedCards ?? [],
+        playerCards: board.playerCards ?? [],
+        allBotCards: board.allBotCards ?? [],
+        boardHighlightIds: [],
+        playerHighlightIds: [],
+        botHighlightIds: [],
+        allBotHandNames: [],
+      };
     }
   } catch (e) {
     console.error('[RevealSequence] board guard threw:', e);
@@ -232,45 +309,42 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
   const turnCard = (board.closedCards ?? [])[0];
   const riverCard = (board.closedCards ?? [])[1];
-
-  // Cards are fully revealed once river is shown (or turn if no river)
   const allRevealed = riverRevealed || (turnRevealed && !riverCard);
 
   const winnerColor =
-    board.winner === 'player'
-      ? COLORS.neonGreen
-      : board.winner === 'bot'
-        ? COLORS.neonRed
-        : COLORS.textSecondary;
-
+    board.winner === 'player' ? COLORS.neonGreen : board.winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
   const winnerLabel =
     board.winner === 'player' ? 'YOU WIN' : board.winner === 'bot' ? 'BOT WINS' : 'TIE';
 
   const allBotCards = board.allBotCards ?? [];
   const multiBot = allBotCards.length > 1;
 
+  // Probability display (snaps to target; bar animates smoothly)
+  const displayProb = winProb ?? 50;
+
   return (
     <Modal visible={visible} transparent={false} animationType="fade" statusBarTranslucent>
-      {/* Full-screen tappable area — tap anywhere to advance when ready */}
       <Pressable style={styles.overlay} onPress={showNextButton ? handleNextBoard : undefined}>
         <Animated.View style={[styles.screen, cardAnimStyle]}>
 
-          {/* ── Top bar: board progress + skip ── */}
+          {/* ── Top bar ── */}
           <View style={styles.topBar}>
-            <Text style={styles.boardTitle}>BOARD {boardIdx + 1} <Text style={styles.boardSub}>of {boards.length}</Text></Text>
+            <Text style={styles.boardTitle}>
+              BOARD {boardIdx + 1} <Text style={styles.boardSub}>of {boards.length}</Text>
+            </Text>
             <Pressable style={styles.skipBtn} onPress={handleSkip} hitSlop={16}>
               <Text style={styles.skipText}>SKIP</Text>
             </Pressable>
           </View>
 
-          {/* ── Middle: all cards — scrollable so BOT rows never get clipped ── */}
+          {/* ── Cards (scrollable) ── */}
           <ScrollView
             style={styles.cardsScroll}
             contentContainerStyle={styles.cardsSection}
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            {/* Community cards: flop (face up) | separator | turn/river (flip) */}
+            {/* Community cards */}
             <View style={styles.sectionBlock}>
               <Text style={styles.sectionLabel}>COMMUNITY</Text>
               <View style={styles.communityRow}>
@@ -313,7 +387,6 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
               </View>
             </View>
 
-            {/* Divider */}
             <View style={styles.divider} />
 
             {/* Player hole cards */}
@@ -367,20 +440,46 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
             )}
           </ScrollView>
 
-          {/* ── Bottom: winner + CTA ── */}
+          {/* ── Bottom: countdown | probability | winner + CTA ── */}
           <View style={styles.bottomSection}>
+
+            {/* 3…2…1 countdown */}
+            {countdown !== null && (
+              <Animated.View style={[styles.countdownBox, countdownAnimStyle]}>
+                <Text style={styles.countdownText}>{countdown}</Text>
+              </Animated.View>
+            )}
+
+            {/* Win probability bar — visible between flips, hidden during countdown + after winner */}
+            {winProb !== null && countdown === null && !showWinner && (
+              <View style={styles.probContainer}>
+                <Text style={styles.probLabel}>WIN PROBABILITY</Text>
+                <View style={styles.probTrack}>
+                  <Animated.View style={[styles.probFillPlayer, probPlayerStyle]} />
+                  <Animated.View style={[styles.probFillBot, probBotStyle]} />
+                </View>
+                <View style={styles.probNumbers}>
+                  <Text style={[styles.probNum, { color: COLORS.neonGreen }]}>YOU {displayProb}%</Text>
+                  <Text style={[styles.probNum, { color: COLORS.neonRed }]}>BOT {100 - displayProb}%</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Winner banner */}
             {showWinner && (
               <Animated.View style={[styles.winnerBanner, { borderColor: winnerColor }, winnerAnimStyle]}>
                 <Text style={[styles.winnerText, { color: winnerColor }]}>{winnerLabel}</Text>
               </Animated.View>
             )}
+
+            {/* CTA */}
             <Animated.View style={[styles.ctaRow, nextBtnAnimStyle]}>
               <Text style={styles.ctaText}>
                 {boardIdx + 1 < boards.length ? 'TAP TO CONTINUE →' : 'TAP TO SEE RESULTS →'}
               </Text>
             </Animated.View>
-          </View>
 
+          </View>
         </Animated.View>
       </Pressable>
     </Modal>
@@ -461,11 +560,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     justifyContent: 'center',
-    // NO flexWrap — all 5 cards must stay in one row. If they wrap, reduce card sizes above.
   },
   sep: {
     width: 1,
-    height: commCardH * 0.75,  // fixed px — percentage heights unreliable in flex rows
     backgroundColor: COLORS.gold,
     opacity: 0.35,
     marginHorizontal: 3,
@@ -494,9 +591,63 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     alignItems: 'center',
-    gap: 16,
-    paddingTop: 16,
+    gap: 12,
+    paddingTop: 12,
+    minHeight: 110,
   },
+  // Countdown
+  countdownBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countdownText: {
+    color: COLORS.gold,
+    fontSize: 72,
+    fontWeight: '900',
+    letterSpacing: 4,
+    lineHeight: 80,
+  },
+  // Probability bar
+  probContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 6,
+  },
+  probLabel: {
+    color: COLORS.textDim,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  probTrack: {
+    width: '100%',
+    height: 8,
+    borderRadius: 4,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    backgroundColor: COLORS.surface,
+  },
+  probFillPlayer: {
+    height: '100%',
+    backgroundColor: COLORS.neonGreen,
+  },
+  probFillBot: {
+    height: '100%',
+    backgroundColor: COLORS.neonRed,
+  },
+  probNumbers: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 2,
+  },
+  probNum: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  // Winner
   winnerBanner: {
     borderWidth: 2,
     borderRadius: 14,
