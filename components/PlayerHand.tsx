@@ -21,7 +21,7 @@ export default function PlayerHand({ cards, selectedCardId, onSelectCard }: Play
   const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
   const cardW = isWeb
     ? Math.min(80, Math.max(64, maxCardW))
-    : Math.min(58, Math.max(46, maxCardW));
+    : Math.min(44, Math.max(36, maxCardW));  // smaller on native: must fit 8 per row on iPhone SE
   const cardH = Math.round(cardW * 1.4);
 
   const midpoint = Math.ceil(cards.length / 2);

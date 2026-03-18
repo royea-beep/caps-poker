@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { COLORS } from '../constants/gameConfig';
@@ -27,11 +27,11 @@ const BETWEEN_FLIPS = 1500;   // ms between turn and river flip (suspense)
 const WINNER_DELAY = 500;     // ms after river before winner shows
 const ADVANCE_DELAY = 10000;  // ms after winner before auto-advance
 
-// Card sizes — larger on web for readability
-const commCardW = Platform.OS === 'web' ? 58 : 52;
-const commCardH = Platform.OS === 'web' ? 82 : 74;
-const handCardW = Platform.OS === 'web' ? 52 : 46;
-const handCardH = Platform.OS === 'web' ? 74 : 66;
+// Card sizes — smaller on native to fit 5 community cards in one row on all iPhone sizes
+const commCardW = Platform.OS === 'web' ? 58 : 48;
+const commCardH = Platform.OS === 'web' ? 82 : 68;
+const handCardW = Platform.OS === 'web' ? 52 : 42;
+const handCardH = Platform.OS === 'web' ? 74 : 60;
 
 interface RevealSequenceProps {
   boards: RevealBoardData[];
@@ -263,8 +263,13 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
             </Pressable>
           </View>
 
-          {/* ── Middle: all cards ── */}
-          <View style={styles.cardsSection}>
+          {/* ── Middle: all cards — scrollable so BOT rows never get clipped ── */}
+          <ScrollView
+            style={styles.cardsScroll}
+            contentContainerStyle={styles.cardsSection}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
             {/* Community cards: flop (face up) | separator | turn/river (flip) */}
             <View style={styles.sectionBlock}>
               <Text style={styles.sectionLabel}>COMMUNITY</Text>
@@ -360,7 +365,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 </View>
               ) : null
             )}
-          </View>
+          </ScrollView>
 
           {/* ── Bottom: winner + CTA ── */}
           <View style={styles.bottomSection}>
@@ -425,10 +430,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
-  cardsSection: {
+  cardsScroll: {
     flex: 1,
+  },
+  cardsSection: {
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
+    paddingVertical: 8,
+    flexGrow: 1,
   },
   sectionBlock: {
     alignItems: 'center',
@@ -450,14 +459,17 @@ const styles = StyleSheet.create({
   communityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    flexWrap: 'wrap',
+    gap: 4,
     justifyContent: 'center',
+    // NO flexWrap — all 5 cards must stay in one row. If they wrap, reduce card sizes above.
   },
   sep: {
-    width: 2,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 4,
+    width: 1,
+    height: commCardH * 0.75,  // fixed px — percentage heights unreliable in flex rows
+    backgroundColor: COLORS.gold,
+    opacity: 0.35,
+    marginHorizontal: 3,
+    alignSelf: 'center',
   },
   divider: {
     height: 1,
@@ -468,16 +480,17 @@ const styles = StyleSheet.create({
   handRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    flexWrap: 'wrap',
+    gap: 4,
     justifyContent: 'center',
   },
   handName: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginLeft: 6,
     flexShrink: 1,
+    flexWrap: 'wrap',
+    maxWidth: 100,
   },
   bottomSection: {
     alignItems: 'center',
