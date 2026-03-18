@@ -28,6 +28,7 @@ import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
+import { FriendsBg } from '../components/FriendsBg';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 
@@ -335,6 +336,7 @@ export default function ResultsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <FriendsBg />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.titleSection}>

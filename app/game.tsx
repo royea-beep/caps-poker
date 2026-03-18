@@ -26,6 +26,7 @@ import {
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
+import { FriendsBg } from '../components/FriendsBg';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -543,6 +544,7 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <FriendsBg />
       {/* Header bar */}
       <View style={styles.topBar}>
         <Pressable onPress={handleBack} style={styles.backButton}>

@@ -25,6 +25,7 @@ import {
 } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
+import { FriendsBg } from '../components/FriendsBg';
 
 const isWeb = Platform.OS === 'web';
 
@@ -284,6 +285,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+      <FriendsBg />
       {isWeb && <View style={styles.grainOverlay} />}
 
       <ScrollView
