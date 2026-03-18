@@ -119,12 +119,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Grain texture overlay (web only) */}
-      {isWeb && <View style={styles.grainOverlay} pointerEvents="none" />}
+      {isWeb && <View style={styles.grainOverlay} />}
 
       <View style={styles.content}>
         {/* Title section */}
         <View style={styles.titleSection}>
-          <Animated.View pointerEvents="none" style={[styles.titleGlow, glowStyle]} />
+          <Animated.View style={[styles.titleGlow, glowStyle, { pointerEvents: 'none' }]} />
 
           {/* Suit symbols */}
           <Text style={styles.suitSymbols}>{'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}</Text>

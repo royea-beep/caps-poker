@@ -9,7 +9,7 @@ const isBeta = Constants.expoConfig?.extra?.isBeta === true;
 export function VersionBadge() {
   if (!__DEV__ && !isBeta) return null;
   return (
-    <View style={styles.badge} pointerEvents="none">
+    <View style={[styles.badge, { pointerEvents: 'none' }]}>
       <Text style={styles.text}>
         v{version} ({build})
       </Text>
