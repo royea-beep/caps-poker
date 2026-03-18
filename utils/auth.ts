@@ -13,7 +13,7 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
 
   const redirectUrl = Platform.OS === 'web'
     ? 'https://caps.ftable.co.il'
-    : Linking.createURL('/');
+    : Linking.createURL('auth/callback');
 
   if (Platform.OS === 'web') {
     const { error } = await client.auth.signInWithOAuth({

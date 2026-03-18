@@ -182,8 +182,9 @@ const homeBtnBase: ViewStyle = {
 export default function HomeScreen() {
   const router = useRouter();
   const { height: screenH, width: screenW } = useWindowDimensions();
-  const btnHeight = Math.min(50, screenH * 0.065);
-  const btnFontSize = Math.min(16, screenH * 0.021);
+  const titleFontSize = Math.min(42, Math.floor(screenW * 0.105));
+  const btnHeight = Math.min(46, screenH * 0.06);
+  const btnFontSize = Math.min(14, screenH * 0.019);
   const btnGap = Math.min(8, screenH * 0.011);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
@@ -300,14 +301,20 @@ export default function HomeScreen() {
           <Text
             style={[
               styles.title,
-              { color: theme.titleColor },
+              { color: theme.titleColor, fontSize: titleFontSize },
               DISPLAY_FONT ? { fontFamily: DISPLAY_FONT } : {},
               webTitleGradient,
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
           >
             CAPS POKER
           </Text>
-          <Text style={[styles.titleSub, { color: theme.subtitleColor }]}>
+          <Text
+            style={[styles.titleSub, { color: theme.subtitleColor }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
             Outsmart the Board. Win Every Round.
           </Text>
           <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
@@ -490,20 +497,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   suitSymbols: {
-    fontSize: 16,
-    letterSpacing: 10,
+    fontSize: 14,
+    letterSpacing: 8,
     opacity: 0.7,
     marginBottom: 2,
   },
   title: {
-    fontSize: 42,
     fontWeight: '900',
-    letterSpacing: 6,
+    letterSpacing: 2,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 20,
   },
   titleSub: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '400',
     letterSpacing: 1.5,
     marginTop: 2,
@@ -530,7 +536,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
@@ -551,7 +557,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
   },
   statLabel: {
