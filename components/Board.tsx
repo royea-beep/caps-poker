@@ -258,7 +258,7 @@ export default function Board({
         {!isArrangement && botCardSets.map((botCardSet, botIdx) =>
           botCardSet.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              <Text style={styles.rowLabel}>{multiBot ? `B${botIdx + 1}` : 'BOT'}</Text>
+              <Text style={styles.rowLabel}>{multiBot ? `BOT${botIdx + 1}` : 'BOT'}</Text>
               {botCardSet.map((c) => (
                 <CardComponent
                   key={c.id}

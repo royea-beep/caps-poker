@@ -302,17 +302,22 @@ export default function GameScreen() {
     }
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
+  // Keep navigateToReveal in a ref so the trigger effect has no stale-closure risk.
+  // Without this, Zustand config rehydration creates a new navigateToReveal reference,
+  // which re-runs the effect mid-navigation and can double-fire or miss the call entirely.
+  const navigateToRevealRef = useRef(navigateToReveal);
+  useEffect(() => { navigateToRevealRef.current = navigateToReveal; }, [navigateToReveal]);
+
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
   useEffect(() => {
-    if (playerReady && allBotsReady) {
-      // Stop countdown if still running
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
-      navigateToReveal(boardsRef.current);
+    if (!playerReady || !allBotsReady) return;
+    console.log('[GAME] both ready — navigating to reveal');
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
     }
-  }, [playerReady, allBotsReady, navigateToReveal]);
+    navigateToRevealRef.current(boardsRef.current);
+  }, [playerReady, allBotsReady]);
 
   // Tap card in hand → select it
   const handleSelectCard = useCallback(
