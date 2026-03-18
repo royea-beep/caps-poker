@@ -46,7 +46,8 @@ function flush(): void {
   const batch = [...queue];
   queue = [];
 
-  // Send to API — fire and forget
+  // Relative URL only works on web — skip on native to avoid silent network errors
+  if (Platform.OS !== 'web') return;
   fetch('/api/learn', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
