@@ -197,9 +197,16 @@ const homeBtnBase: ViewStyle = {
 export default function HomeScreen() {
   const router = useRouter();
   const { height: screenH, width: screenW } = useWindowDimensions();
-  const titleFontSize = Math.min(42, Math.floor(screenW * 0.105));
-  const btnHeight = Math.min(46, screenH * 0.06);
-  const btnFontSize = Math.min(14, screenH * 0.019);
+  const isMobileWeb = Platform.OS === 'web' && screenW < 500;
+  const titleFontSize = isMobileWeb
+    ? Math.min(36, Math.floor(screenW * 0.09))
+    : Math.min(42, Math.floor(screenW * 0.105));
+  const btnHeight = isMobileWeb
+    ? Math.min(42, screenH * 0.055)
+    : Math.min(46, screenH * 0.06);
+  const btnFontSize = isMobileWeb
+    ? Math.min(13, screenH * 0.017)
+    : Math.min(14, screenH * 0.019);
   const btnGap = Math.min(8, screenH * 0.011);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
@@ -353,26 +360,26 @@ export default function HomeScreen() {
 
         {/* ── Stats ── */}
         <View style={styles.statsSection}>
-          <View style={styles.statsGrid}>
+          <View style={[styles.statsGrid, isMobileWeb && { paddingVertical: 6 }]}>
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }]}>{handsPlayed}</Text>
+              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>{handsPlayed}</Text>
               <Text style={styles.statLabel}>Played</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }]}>{handsWon}</Text>
+              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>{handsWon}</Text>
               <Text style={styles.statLabel}>Won</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }]}>
+              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>
                 {handsPlayed > 0 ? Math.round((handsWon / handsPlayed) * 100) : 0}%
               </Text>
               <Text style={styles.statLabel}>Win Rate</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }]}>{biggestWin}</Text>
+              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>{biggestWin}</Text>
               <Text style={styles.statLabel}>Best Win</Text>
             </View>
           </View>
