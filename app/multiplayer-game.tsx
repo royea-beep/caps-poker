@@ -640,7 +640,7 @@ export default function MultiplayerGameScreen() {
       {isArranging && (
         <PlayerHand
           cards={playerHand}
-          selectedCardId={selectedCardId ?? undefined}
+          selectedCardIds={selectedCardId ? [selectedCardId] : []}
           onSelectCard={handleSelectCard}
         />
       )}
