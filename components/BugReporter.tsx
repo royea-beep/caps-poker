@@ -155,7 +155,10 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
   const pathname = usePathname();
-  const isGameScreen = ['/game', '/multiplayer-game', '/sit-and-go', '/tournament'].includes(pathname ?? '');
+  const path = pathname ?? '';
+  const isGameScreen =
+    ['/game', '/multiplayer-game', '/sit-and-go', '/tournament'].includes(path) ||
+    path.startsWith('/lobby');
   const fabBottom = pathname === '/' ? insets.bottom + 60 : insets.bottom + 16;
 
   // Test ping on mount — confirms BugReporter + Supabase connection is working on this device
