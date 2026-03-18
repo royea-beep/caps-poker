@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,20 +35,30 @@ const DISPLAY_FONT = Platform.select({
   default: undefined,
 });
 
-// Platform-aware floating shadow driven by accent color
-function accentShadow(accent: string, opacity = 0.4): ViewStyle {
+// ─── Floating shadow helpers ──────────────────────────────────────────────────
+function primShadow(accent: string): ViewStyle {
   if (Platform.OS === 'web') {
-    const r = parseInt(accent.slice(1, 3), 16);
-    const g = parseInt(accent.slice(3, 5), 16);
-    const b = parseInt(accent.slice(5, 7), 16);
-    return { boxShadow: `0 4px 20px rgba(${r},${g},${b},${opacity})` } as ViewStyle;
+    return { boxShadow: `0 8px 32px ${accent}55, 0 2px 8px rgba(0,0,0,0.4)` } as ViewStyle;
   }
-  if (Platform.OS === 'android') return { elevation: 8 };
+  if (Platform.OS === 'android') return { elevation: 12 };
   return {
     shadowColor: accent,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+  };
+}
+
+function secShadow(): ViewStyle {
+  if (Platform.OS === 'web') {
+    return { boxShadow: '0 4px 16px rgba(0,0,0,0.3)' } as ViewStyle;
+  }
+  if (Platform.OS === 'android') return { elevation: 6 };
+  return {
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: opacity,
-    shadowRadius: 12,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   };
 }
 
@@ -96,52 +106,56 @@ function getHomeBtnColors(
 }
 
 function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t, btnHeight, btnFontSize }: HomeBtnProps) {
-  const [pressed, setPressed] = useState(false);
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const btnStyle = useGameStore((s) => s.buttonStyle);
   const colors = getHomeBtnColors(isPrimary, t, btnStyle);
-  const h = btnHeight ?? 52;
+  const h = btnHeight ?? 50;
   const fs = btnFontSize ?? (isPrimary ? 16 : 15);
   const paddingV = Math.max(8, (h - fs * 1.4) / 2);
-
   const webGlass = isWeb && btnStyle === 'glass'
     ? ({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } as any)
     : {};
+  const shadow = isPrimary ? primShadow(t.accent) : secShadow();
 
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      style={[
-        homeBtnBase,
-        {
-          backgroundColor: colors.bg,
-          borderColor: colors.borderColor,
-          borderWidth: colors.borderWidth,
-          minHeight: h,
-          paddingVertical: paddingV,
-        },
-        webGlass,
-        accentShadow(t.accent, isPrimary ? 0.5 : 0.2),
-        disabled && { opacity: 0.5 },
-        pressed && { opacity: 0.82 },
-        style,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
-      <Text
-        style={{
-          color: colors.textColor,
-          fontSize: fs,
-          fontWeight: '800',
-          letterSpacing: 2,
-        }}
+    <Animated.View style={[{ width: '100%' }, animStyle, style]}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        onPressIn={() => { scale.value = withTiming(0.96, { duration: 80 }); }}
+        onPressOut={() => { scale.value = withTiming(1.0, { duration: 150 }); }}
+        style={[
+          homeBtnBase,
+          {
+            backgroundColor: colors.bg,
+            borderColor: colors.borderColor,
+            borderWidth: colors.borderWidth,
+            minHeight: h,
+            paddingVertical: paddingV,
+          },
+          webGlass,
+          shadow,
+          disabled && { opacity: 0.5 },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={title}
       >
-        {title}
-      </Text>
-    </Pressable>
+        {isPrimary && (
+          <View style={styles.btnHighlight} pointerEvents="none" />
+        )}
+        <Text
+          style={{
+            color: colors.textColor,
+            fontSize: fs,
+            fontWeight: '800',
+            letterSpacing: 2,
+          }}
+        >
+          {title}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -151,15 +165,16 @@ const homeBtnBase: ViewStyle = {
   justifyContent: 'center',
   paddingHorizontal: 24,
   borderRadius: 16,
+  overflow: 'hidden',
 };
 
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
   const { height: screenH } = useWindowDimensions();
-  const btnHeight = Math.min(52, screenH * 0.07);
-  const btnFontSize = Math.min(16, screenH * 0.022);
-  const btnGap = Math.min(10, screenH * 0.013);
+  const btnHeight = Math.min(50, screenH * 0.065);
+  const btnFontSize = Math.min(16, screenH * 0.021);
+  const btnGap = Math.min(8, screenH * 0.011);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
@@ -273,7 +288,12 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       {isWeb && <View style={styles.grainOverlay} />}
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.contentScroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* ── Title section ── */}
         <View style={styles.titleSection}>
@@ -361,7 +381,7 @@ export default function HomeScreen() {
                 disabled={signingIn}
               >
                 <Text style={[styles.googleBtnText, { fontSize: btnFontSize }]}>
-                  {signingIn ? 'Signing in...' : '🔵  Sign in with Google'}
+                  {signingIn ? 'Signing in...' : '🔵  Continue with Google'}
                 </Text>
               </Pressable>
               {authError !== null && (
@@ -419,7 +439,7 @@ export default function HomeScreen() {
         {__DEV__ && (
           <Button title="SIMULATE" variant="ghost" onPress={() => router.push('/simulate' as any)} />
         )}
-      </View>
+      </ScrollView>
 
     </SafeAreaView>
   );
@@ -445,13 +465,16 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  content: {
+  contentScroll: {
     flex: 1,
+    zIndex: 1,
+  },
+  content: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    gap: 16,
-    zIndex: 1,
+    padding: 16,
+    gap: 10,
   },
 
   // Title
@@ -477,14 +500,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 52,
+    fontSize: 44,
     fontWeight: '900',
-    letterSpacing: 14,
+    letterSpacing: 10,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 30,
   },
   titleSub: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '400',
     letterSpacing: 2,
     marginTop: 2,
@@ -511,7 +534,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
@@ -553,6 +576,16 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 8,
   },
+  btnHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%' as any,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
   // Google sign-in button
   googleBtn: {
     width: '100%',
@@ -573,10 +606,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   googleBtnText: {
-    color: '#1a1a1a',
+    color: '#1f1f1f',
     fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   authError: {
     color: COLORS.neonRed,

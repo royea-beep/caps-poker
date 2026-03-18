@@ -1,6 +1,7 @@
 import 'react-native-reanimated';
 import { useEffect } from 'react';
 import { View, Text, Platform } from 'react-native';
+import * as Linking from 'expo-linking';
 import { Stack } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -11,6 +12,7 @@ import { preloadSounds } from '../utils/sounds';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
 import { VersionBadge } from '../components/VersionBadge';
+import { getSupabase } from '../utils/supabase';
 
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
@@ -53,6 +55,21 @@ export default function RootLayout() {
       link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap';
       document.head.appendChild(link);
     }
+  }, []);
+
+  // Handle OAuth deep link callbacks (native)
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const handleUrl = async (url: string) => {
+      const client = getSupabase();
+      if (!client) return;
+      if (url.includes('access_token') || url.includes('code=')) {
+        await client.auth.exchangeCodeForSession(url).catch(() => {});
+      }
+    };
+    Linking.getInitialURL().then((url) => { if (url) handleUrl(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => sub.remove();
   }, []);
 
   // Global unhandled error logger — web only
