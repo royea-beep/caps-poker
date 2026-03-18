@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { COLORS } from '../constants/gameConfig';
 import { RevealBoardData } from '../types/gameTypes';
@@ -47,6 +47,19 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const [showNextButton, setShowNextButton] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  // iOS-safe animations — avoid `entering` prop inside Modal (known Reanimated + Old Arch freeze)
+  const cardOpacity = useSharedValue(0);
+  const winnerScale = useSharedValue(0);
+  const winnerOpacity = useSharedValue(0);
+  const nextBtnOpacity = useSharedValue(0);
+
+  const cardAnimStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
+  const winnerAnimStyle = useAnimatedStyle(() => ({
+    opacity: winnerOpacity.value,
+    transform: [{ scale: winnerScale.value }],
+  }));
+  const nextBtnAnimStyle = useAnimatedStyle(() => ({ opacity: nextBtnOpacity.value }));
+
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
@@ -85,6 +98,34 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     };
   }, []);
 
+  // Fade card container in when modal becomes visible or board changes
+  useEffect(() => {
+    if (visible) {
+      cardOpacity.value = 0;
+      cardOpacity.value = withTiming(1, { duration: 250 });
+    } else {
+      cardOpacity.value = 0;
+    }
+  }, [visible, boardIdx]);
+
+  // Animate winner banner in when showWinner flips true
+  useEffect(() => {
+    if (showWinner) {
+      winnerScale.value = 0;
+      winnerOpacity.value = 0;
+      winnerScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+      winnerOpacity.value = withTiming(1, { duration: 200 });
+    } else {
+      winnerScale.value = 0;
+      winnerOpacity.value = 0;
+    }
+  }, [showWinner]);
+
+  // Fade next button in
+  useEffect(() => {
+    nextBtnOpacity.value = showNextButton ? withTiming(1, { duration: 300 }) : 0;
+  }, [showNextButton]);
+
   // Run per-board reveal sequence whenever boardIdx changes
   useEffect(() => {
     if (!visible) return;
@@ -96,8 +137,14 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       return;
     }
 
-    const hasTurn = board.closedCards.length >= 1;
-    const hasRiver = board.closedCards.length >= 2;
+    const closedCards = board.closedCards ?? [];
+    const hasTurn = closedCards.length >= 1;
+    const hasRiver = closedCards.length >= 2;
+
+    // Safety: if sequence gets stuck for 15s, force complete
+    const safetyTimer = setTimeout(() => {
+      onDone();
+    }, 15000);
 
     if (!hasTurn) {
       // No closed cards — skip straight to winner
@@ -106,7 +153,10 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
         setShowNextButton(true);
         addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
       }, 400);
-      return;
+      return () => {
+        clearTimers();
+        clearTimeout(safetyTimer);
+      };
     }
 
     // Flip turn
@@ -141,7 +191,10 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       }, BETWEEN_FLIPS);
     }, FLIP_DELAY);
 
-    return clearTimers;
+    return () => {
+      clearTimers();
+      clearTimeout(safetyTimer);
+    };
   }, [boardIdx, visible]);
 
   // Reset when modal closes
@@ -199,7 +252,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <View style={styles.overlay}>
-        <Animated.View entering={FadeIn.duration(250)} style={styles.card}>
+        <Animated.View style={[styles.card, cardAnimStyle]}>
           {/* Board header */}
           <Text style={styles.boardTitle}>BOARD {boardIdx + 1}</Text>
           <Text style={styles.boardSub}>
@@ -295,8 +348,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
           {/* Winner banner — slides in after reveal */}
           {showWinner && (
             <Animated.View
-              entering={ZoomIn.duration(300)}
-              style={[styles.winnerBanner, { borderColor: winnerColor }]}
+              style={[styles.winnerBanner, { borderColor: winnerColor }, winnerAnimStyle]}
             >
               <Text style={[styles.winnerText, { color: winnerColor }]}>{winnerLabel}</Text>
             </Animated.View>
@@ -304,7 +356,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
           {/* Next Board button — appears after winner banner, auto-advances after 10s */}
           {showNextButton && (
-            <Animated.View entering={FadeIn.duration(300)} style={styles.nextBtnRow}>
+            <Animated.View style={[styles.nextBtnRow, nextBtnAnimStyle]}>
               <Pressable style={styles.nextBtn} onPress={handleNextBoard} hitSlop={8}>
                 <Text style={styles.nextBtnText}>
                   {boardIdx + 1 < boards.length ? 'NEXT BOARD →' : 'DONE →'}
