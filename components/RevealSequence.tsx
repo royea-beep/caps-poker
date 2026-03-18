@@ -28,10 +28,10 @@ function haptic() {
 
 // Timing constants
 const TURN_FLIP_T = 3300;               // 300ms + 3×1000ms countdown
-const RIVER_FLIP_DELAY = 2500;          // after turn: show prob 2.5s → auto-flip river (no countdown)
-const WINNER_DELAY_AFTER_RIVER = 3000;  // after river: show prob 3s → show winner
-const ADVANCE_DELAY = 4000;             // auto-advance after winner shown
-const COUNTDOWN_STEP = 1000;            // 1 second per countdown number
+const RIVER_FLIP_DELAY = 2500;          // after turn: 2.5s then river (no countdown)
+const WINNER_DELAY_AFTER_RIVER = 3000;  // after river: show prob 3s then winner
+const ADVANCE_DELAY = 4000;             // auto-advance after winner
+const COUNTDOWN_STEP = 1000;
 
 // Card sizes
 const commCardW = Platform.OS === 'web' ? 58 : 48;
@@ -39,50 +39,45 @@ const commCardH = Platform.OS === 'web' ? 82 : 68;
 const handCardW = Platform.OS === 'web' ? 52 : 42;
 const handCardH = Platform.OS === 'web' ? 74 : 60;
 
-// Suit display symbols
+// Suit display symbols + colors
 const SUIT_SYMBOL: Record<string, string> = {
   spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣',
 };
-
-// Highest rank first for "best card" search
-const RANK_ORDER = [...RANKS].reverse(); // A, K, Q, J, 10, 9, ... 2
+const RANK_ORDER = [...RANKS].reverse(); // A, K, Q, J, 10, ..., 2
 
 /**
- * Find the best unused card that would have improved the player's hand.
- * Used for the "🎯 Best card" gimmick shown after river.
+ * Find the best card from the remaining deck that would improve a player's hand.
+ * Priority: flush draw completing card → pair with hole cards → highest unused.
  */
-function findOptimalCardHint(
-  playerCards: Card[],
-  openCards: Card[],
-  closedCards: Card[],
-  allBotCards: Card[][],
-): { card: string; benefit: string } | null {
-  const allCommunity = [...openCards, ...closedCards];
-  const allKnown = [...playerCards, ...allCommunity, ...allBotCards.flat()];
+function findOptimalCard(
+  holeCards: Card[],
+  communityCards: Card[],
+  allKnown: Card[],
+): { rank: string; suit: string } | null {
   const usedKeys = new Set(allKnown.map((c) => `${c.rank}-${c.suit}`));
+  const allCards = [...holeCards, ...communityCards];
 
-  // Check flush opportunity: 3+ community cards of same suit
+  // Flush draw: 4+ cards of same suit in hole + community → find completing card
   const suitCounts: Partial<Record<string, number>> = {};
-  for (const c of allCommunity) {
+  for (const c of allCards) {
     suitCounts[c.suit] = (suitCounts[c.suit] ?? 0) + 1;
   }
-  const flushEntry = Object.entries(suitCounts).find(([, count]) => (count ?? 0) >= 3);
-  if (flushEntry) {
-    const flushSuit = flushEntry[0];
+  const flushDrawSuit = Object.entries(suitCounts).find(([, n]) => (n ?? 0) >= 4)?.[0];
+  if (flushDrawSuit) {
     for (const rank of RANK_ORDER) {
-      if (!usedKeys.has(`${rank}-${flushSuit}`)) {
-        return { card: `${rank}${SUIT_SYMBOL[flushSuit] ?? '?'}`, benefit: 'a Flush' };
+      if (!usedKeys.has(`${rank}-${flushDrawSuit}`)) {
+        return { rank, suit: flushDrawSuit };
       }
     }
   }
 
-  // Pair opportunity: highest rank not already on the board
-  const communityRanks = new Set(allCommunity.map((c) => c.rank));
+  // Pair with hole cards: find highest hole card rank that has an unused partner
+  const holeRanks = holeCards.map((c) => c.rank);
   for (const rank of RANK_ORDER) {
-    if (!communityRanks.has(rank)) {
+    if (holeRanks.includes(rank)) {
       for (const suit of SUITS) {
         if (!usedKeys.has(`${rank}-${suit}`)) {
-          return { card: `${rank}${SUIT_SYMBOL[suit]}`, benefit: 'a high pair' };
+          return { rank, suit };
         }
       }
     }
@@ -92,13 +87,52 @@ function findOptimalCardHint(
   for (const rank of RANK_ORDER) {
     for (const suit of SUITS) {
       if (!usedKeys.has(`${rank}-${suit}`)) {
-        return { card: `${rank}${SUIT_SYMBOL[suit]}`, benefit: 'a stronger hand' };
+        return { rank, suit };
       }
     }
   }
   return null;
 }
 
+// ─── Mini card badge shown next to each player's hand ─────────────────────────
+function MiniCardBadge({ rank, suit }: { rank: string; suit: string }) {
+  const isRed = suit === 'hearts' || suit === 'diamonds';
+  const textColor = isRed ? '#e53e3e' : '#1a1a1a';
+  return (
+    <View style={badgeStyles.wrapper}>
+      <Text style={badgeStyles.label}>BEST</Text>
+      <View style={badgeStyles.card}>
+        <Text style={[badgeStyles.rank, { color: textColor }]}>{rank}</Text>
+        <Text style={[badgeStyles.suit, { color: textColor }]}>{SUIT_SYMBOL[suit] ?? suit}</Text>
+      </View>
+    </View>
+  );
+}
+
+const badgeStyles = StyleSheet.create({
+  wrapper: { alignItems: 'center', marginLeft: 6 },
+  label: {
+    color: COLORS.gold,
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  card: {
+    width: 28,
+    height: 40,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rank: { fontSize: 12, fontWeight: '900', lineHeight: 15 },
+  suit: { fontSize: 10, lineHeight: 12 },
+});
+
+// ─── Main component ────────────────────────────────────────────────────────────
 interface RevealSequenceProps {
   boards: RevealBoardData[];
   visible: boolean;
@@ -112,10 +146,11 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const [showWinner, setShowWinner] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [winProb, setWinProb] = useState<number | null>(null);
+  const [winProb, setWinProb] = useState<number>(50);
   const [probDelta, setProbDelta] = useState<number | null>(null);
   const [displayedProb, setDisplayedProb] = useState(50);
-  const [optimalHint, setOptimalHint] = useState<{ card: string; benefit: string } | null>(null);
+  const [playerOptimalHint, setPlayerOptimalHint] = useState<{ rank: string; suit: string } | null>(null);
+  const [botOptimalHint, setBotOptimalHint] = useState<{ rank: string; suit: string } | null>(null);
 
   const prevProbRef = useRef<number>(50);
   const displayedProbRef = useRef<number>(50);
@@ -161,9 +196,10 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       setShowWinner(false);
       setShowNextButton(false);
       setCountdown(null);
-      setWinProb(null);
+      setWinProb(50);
       setProbDelta(null);
-      setOptimalHint(null);
+      setPlayerOptimalHint(null);
+      setBotOptimalHint(null);
       setDisplayedProb(50);
       prevProbRef.current = 50;
       displayedProbRef.current = 50;
@@ -227,11 +263,6 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
   // Smooth count-up animation for probability text
   useEffect(() => {
-    if (winProb === null) {
-      displayedProbRef.current = 50;
-      setDisplayedProb(50);
-      return;
-    }
     const target = Math.round(winProb);
     const start = displayedProbRef.current;
     const diff = target - start;
@@ -247,6 +278,22 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     return () => clearInterval(timer);
   }, [winProb]);
 
+  // Helper: compute hints for both players given currently revealed community cards
+  const computeHints = useCallback((
+    board: RevealBoardData,
+    revealedCommunity: Card[],
+  ) => {
+    const allBotFlat = (board.allBotCards ?? []).flat();
+    const allKnown = [...(board.playerCards ?? []), ...allBotFlat, ...revealedCommunity];
+    const pHint = findOptimalCard(board.playerCards ?? [], revealedCommunity, allKnown);
+    const firstBot = (board.allBotCards ?? [])[0] ?? [];
+    const bHint = firstBot.length > 0
+      ? findOptimalCard(firstBot, revealedCommunity, allKnown)
+      : null;
+    setPlayerOptimalHint(pHint);
+    setBotOptimalHint(bHint);
+  }, []);
+
   // Main per-board reveal sequence
   useEffect(() => {
     if (!visible) return;
@@ -261,12 +308,19 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     const closedCards = board.closedCards ?? [];
     const hasTurn = closedCards.length >= 1;
     const hasRiver = closedCards.length >= 2;
+    const turnCard = closedCards[0];
 
     // Safety: force complete after 15s
     const safetyTimer = setTimeout(() => { onDone(); }, 15000);
 
+    // Show initial probability (50/50) + compute hints from flop
+    setWinProb(50);
+    prevProbRef.current = 50;
+    displayedProbRef.current = 50;
+    setDisplayedProb(50);
+    computeHints(board, board.openCards ?? []);
+
     if (!hasTurn) {
-      // All community cards already visible — show winner quickly
       const finalProb = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
       setWinProb(finalProb);
       addTimer(() => {
@@ -278,17 +332,10 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     }
 
     // === TURN: dramatic 3-2-1 countdown → flip ===
-    setWinProb(50);
-    prevProbRef.current = 50;
-    displayedProbRef.current = 50;
-    setDisplayedProb(50);
-
-    // Turn countdown: 3→2→1
     addTimer(() => setCountdown(3), 300);
     addTimer(() => setCountdown(2), 300 + COUNTDOWN_STEP);
     addTimer(() => setCountdown(1), 300 + COUNTDOWN_STEP * 2);
 
-    // Flip turn card
     addTimer(() => {
       setCountdown(null);
       setTurnRevealed(true);
@@ -297,19 +344,23 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
       const intermediate =
         board.winner === 'player'
-          ? 55 + Math.floor(Math.random() * 20)  // 55–74%
+          ? 55 + Math.floor(Math.random() * 20)
           : board.winner === 'bot'
-            ? 26 + Math.floor(Math.random() * 19) // 26–44%
+            ? 26 + Math.floor(Math.random() * 19)
             : 50;
 
       const delta = intermediate - prevProbRef.current;
       setProbDelta(delta);
       prevProbRef.current = intermediate;
       setWinProb(intermediate);
+
+      // Update hints with turn card now visible
+      if (turnCard) {
+        computeHints(board, [...(board.openCards ?? []), turnCard]);
+      }
     }, TURN_FLIP_T);
 
     if (!hasRiver) {
-      // No river — show winner 1.5s after turn
       addTimer(() => {
         setShowWinner(true);
         setShowNextButton(true);
@@ -317,7 +368,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       }, TURN_FLIP_T + 1500);
     } else {
       // === RIVER: smooth auto-flip 2.5s after turn (no countdown) ===
+      const riverCard = closedCards[1];
       const riverFlipT = TURN_FLIP_T + RIVER_FLIP_DELAY;
+
       addTimer(() => {
         setRiverRevealed(true);
         haptic();
@@ -329,17 +382,14 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
         prevProbRef.current = final;
         setWinProb(final);
 
-        // Optimal card hint
-        const hint = findOptimalCardHint(
-          board.playerCards ?? [],
-          board.openCards ?? [],
-          board.closedCards ?? [],
-          board.allBotCards ?? [],
-        );
-        setOptimalHint(hint);
+        // Update hints with all community cards
+        const allComm = [...(board.openCards ?? [])];
+        if (turnCard) allComm.push(turnCard);
+        if (riverCard) allComm.push(riverCard);
+        computeHints(board, allComm);
       }, riverFlipT);
 
-      // === WINNER: show 3s after river (give time to see final probability) ===
+      // === WINNER: 3s after river ===
       addTimer(() => {
         setShowWinner(true);
         setShowNextButton(true);
@@ -360,9 +410,10 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       setShowWinner(false);
       setShowNextButton(false);
       setCountdown(null);
-      setWinProb(null);
+      setWinProb(50);
       setProbDelta(null);
-      setOptimalHint(null);
+      setPlayerOptimalHint(null);
+      setBotOptimalHint(null);
       setDisplayedProb(50);
       prevProbRef.current = 50;
       displayedProbRef.current = 50;
@@ -411,8 +462,6 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const allBotCards = board.allBotCards ?? [];
   const multiBot = allBotCards.length > 1;
 
-  // Probability display
-  const showProb = winProb !== null;
   const deltaColor = probDelta !== null
     ? probDelta >= 0 ? COLORS.neonGreen : COLORS.neonRed
     : undefined;
@@ -422,8 +471,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       : `↓-${Math.round(Math.abs(probDelta))}%`
     : null;
 
-  // Community label changes as cards are revealed
   const communityLabel = !turnRevealed ? 'FLOP' : !riverRevealed ? 'TURN' : 'RIVER';
+  const showBadges = !showWinner;
 
   return (
     <Modal visible={visible} transparent={false} animationType="fade" statusBarTranslucent>
@@ -452,11 +501,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 ]}>
                   {multiBot ? 'BOTS' : 'BOT'}
                 </Text>
-                {showProb && (
-                  <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
-                    {100 - displayedProb}%
-                  </Text>
-                )}
+                <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
+                  {100 - displayedProb}%
+                </Text>
               </View>
               {allBotCards.map((botCards, botIdx) =>
                 botCards && botCards.length > 0 ? (
@@ -465,10 +512,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                       <CardComponent
                         key={c.id}
                         card={c}
-                        faceDown={!allRevealed}
+                        faceDown={false}
                         cardWidth={handCardW}
                         cardHeight={handCardH}
-                        flipDuration={350}
                         highlighted={botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)}
                         dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
                       />
@@ -477,6 +523,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                       <Text style={styles.handName}>
                         {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
                       </Text>
+                    )}
+                    {botIdx === 0 && showBadges && botOptimalHint && (
+                      <MiniCardBadge rank={botOptimalHint.rank} suit={botOptimalHint.suit} />
                     )}
                   </View>
                 ) : null
@@ -524,12 +573,6 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                   />
                 )}
               </View>
-              {/* 🎯 Optimal card hint — shown after river */}
-              {optimalHint && riverRevealed && (
-                <Text style={styles.optimalHint}>
-                  🎯 Best card: {optimalHint.card} would have given you {optimalHint.benefit}
-                </Text>
-              )}
             </View>
 
             {/* BOTTOM 40% — YOU section */}
@@ -541,18 +584,16 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 ]}>
                   YOU
                 </Text>
-                {showProb && (
-                  <View style={styles.probRow}>
-                    <Text style={[styles.probInline, { color: COLORS.neonGreen }]}>
-                      {displayedProb}%
+                <View style={styles.probRow}>
+                  <Text style={[styles.probInline, { color: COLORS.neonGreen }]}>
+                    {displayedProb}%
+                  </Text>
+                  {deltaStr && (
+                    <Text style={[styles.deltaText, { color: deltaColor }]}>
+                      {' '}{deltaStr}
                     </Text>
-                    {deltaStr && (
-                      <Text style={[styles.deltaText, { color: deltaColor }]}>
-                        {' '}{deltaStr}
-                      </Text>
-                    )}
-                  </View>
-                )}
+                  )}
+                </View>
               </View>
               <View style={styles.handRow}>
                 {(board.playerCards ?? []).map((c) => (
@@ -568,6 +609,9 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 ))}
                 {board.playerHandName && turnRevealed && (
                   <Text style={styles.handName}>{board.playerHandName}</Text>
+                )}
+                {showBadges && playerOptimalHint && (
+                  <MiniCardBadge rank={playerOptimalHint.rank} suit={playerOptimalHint.suit} />
                 )}
               </View>
             </View>
@@ -642,7 +686,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // ─── 3-section main layout ───────────────────────────────────────────────
+  // ─── 3-section main layout ────────────────────────────────────────────────
   mainContent: {
     flex: 1,
   },
@@ -669,7 +713,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  // ─── Section headers with inline probability ──────────────────────────────
+  // ─── Section headers ──────────────────────────────────────────────────────
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -682,12 +726,8 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
-  winnerSectionLabel: {
-    color: COLORS.neonGreen,
-  },
-  loserSectionLabel: {
-    color: COLORS.neonRed,
-  },
+  winnerSectionLabel: { color: COLORS.neonGreen },
+  loserSectionLabel: { color: COLORS.neonRed },
   probRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -741,17 +781,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexWrap: 'wrap',
     maxWidth: 100,
-  },
-
-  // ─── Optimal card hint ────────────────────────────────────────────────────
-  optimalHint: {
-    color: '#c9a84c',
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textAlign: 'center',
-    marginTop: 4,
-    opacity: 0.9,
   },
 
   // ─── Footer ───────────────────────────────────────────────────────────────
