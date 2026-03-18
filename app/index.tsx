@@ -38,14 +38,14 @@ const DISPLAY_FONT = Platform.select({
 // ─── Floating shadow helpers ──────────────────────────────────────────────────
 function primShadow(accent: string): ViewStyle {
   if (Platform.OS === 'web') {
-    return { boxShadow: `0 8px 32px ${accent}55, 0 2px 8px rgba(0,0,0,0.4)` } as ViewStyle;
+    return { boxShadow: `0 10px 40px ${accent}60, 0 2px 8px rgba(0,0,0,0.4)` } as ViewStyle;
   }
-  if (Platform.OS === 'android') return { elevation: 12 };
+  if (Platform.OS === 'android') return { elevation: 16 };
   return {
     shadowColor: accent,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
   };
 }
 
@@ -57,8 +57,8 @@ function secShadow(): ViewStyle {
   return {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
   };
 }
 
@@ -97,9 +97,9 @@ function getHomeBtnColors(
     case 'solid':
     default:
       return {
-        bg: isPrimary ? t.buttonPrimary : t.buttonSecondaryBg,
-        borderColor: isPrimary ? t.buttonPrimary : t.buttonSecondaryBorder,
-        borderWidth: isPrimary ? 0 : 1.5,
+        bg: isPrimary ? t.buttonPrimary : 'rgba(255,255,255,0.05)',
+        borderColor: isPrimary ? t.buttonPrimary : t.accent + '60',
+        borderWidth: isPrimary ? 0 : 1,
         textColor: isPrimary ? t.buttonPrimaryText : t.buttonSecondaryText,
       };
   }
@@ -107,12 +107,17 @@ function getHomeBtnColors(
 
 function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t, btnHeight, btnFontSize }: HomeBtnProps) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const opacity = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
   const btnStyle = useGameStore((s) => s.buttonStyle);
   const colors = getHomeBtnColors(isPrimary, t, btnStyle);
   const h = btnHeight ?? 50;
   const fs = btnFontSize ?? (isPrimary ? 16 : 15);
-  const paddingV = Math.max(8, (h - fs * 1.4) / 2);
+  const paddingV = isPrimary ? 16 : Math.max(8, (h - fs * 1.4) / 2);
+  const borderR = isPrimary ? 18 : 14;
   const webGlass = isWeb && btnStyle === 'glass'
     ? ({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } as any)
     : {};
@@ -123,14 +128,21 @@ function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, t
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        onPressIn={() => { scale.value = withTiming(0.96, { duration: 80 }); }}
-        onPressOut={() => { scale.value = withTiming(1.0, { duration: 150 }); }}
+        onPressIn={() => {
+          scale.value = withTiming(0.96, { duration: 80 });
+          opacity.value = withTiming(0.9, { duration: 80 });
+        }}
+        onPressOut={() => {
+          scale.value = withTiming(1.0, { duration: 150 });
+          opacity.value = withTiming(1.0, { duration: 150 });
+        }}
         style={[
           homeBtnBase,
           {
             backgroundColor: colors.bg,
             borderColor: colors.borderColor,
             borderWidth: colors.borderWidth,
+            borderRadius: borderR,
             minHeight: h,
             paddingVertical: paddingV,
           },
@@ -413,11 +425,23 @@ export default function HomeScreen() {
 
           <HomeBtn title="TOURNAMENT" theme={theme} onPress={() => router.push('/tournament' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
           <HomeBtn title="PLAY ONLINE" theme={theme} onPress={() => router.push('/lobby/internet-host' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
-          <HomeBtn title="HOST GAME (WiFi)" theme={theme} onPress={() => router.push('/lobby/host' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
-          <HomeBtn title="JOIN GAME" theme={theme} onPress={() => router.push('/lobby/join' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
-          <Button title="LEADERBOARD" variant="ghost" onPress={() => router.push('/leaderboard' as any)} />
-          <Button title="HAND HISTORY" variant="ghost" onPress={() => router.push('/hand-history' as any)} />
-          <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
+          <View style={[styles.rowPair, { gap: btnGap }]}>
+            <HomeBtn title="HOST GAME" theme={theme} style={{ flex: 1, width: undefined }} onPress={() => router.push('/lobby/host' as any)} btnHeight={btnHeight} btnFontSize={Math.min(14, btnFontSize ?? 14)} />
+            <HomeBtn title="JOIN GAME" theme={theme} style={{ flex: 1, width: undefined }} onPress={() => router.push('/lobby/join' as any)} btnHeight={btnHeight} btnFontSize={Math.min(14, btnFontSize ?? 14)} />
+          </View>
+          <View style={styles.linkRow}>
+            <Pressable onPress={() => router.push('/leaderboard' as any)} hitSlop={8}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]}>LEADERBOARD</Text>
+            </Pressable>
+            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
+            <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]}>HAND HISTORY</Text>
+            </Pressable>
+            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
+            <Pressable onPress={() => router.push('/settings' as any)} hitSlop={8}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]}>SETTINGS</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* ── Refill / Reset ── */}
@@ -500,9 +524,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 44,
+    fontSize: 56,
     fontWeight: '900',
-    letterSpacing: 10,
+    letterSpacing: 8,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 30,
   },
@@ -575,6 +599,26 @@ const styles = StyleSheet.create({
   buttonSection: {
     width: '100%',
     gap: 8,
+  },
+  rowPair: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  linkText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  linkDot: {
+    fontSize: 14,
+    fontWeight: '400',
   },
   btnHighlight: {
     position: 'absolute',
