@@ -291,7 +291,9 @@
       "Bash(cp:*)",
       "WebSearch",
       "mcp__claude_ai_Supabase__list_projects",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(gh run:*)",
+      "Bash(vercel --prod --yes)"
     ]
   }
 }
