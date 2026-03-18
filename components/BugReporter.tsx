@@ -32,7 +32,7 @@ if (Platform.OS !== 'web') {
 }
 
 const PROJECT = 'caps-poker';
-const VERSION = '1.3.3';
+const VERSION = Constants.expoConfig?.version ?? '1.9.2';
 
 // ── Shake Detection ──
 
@@ -153,6 +153,15 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
   const pathname = usePathname();
+
+  // Test ping on mount — confirms BugReporter + Supabase connection is working on this device
+  useEffect(() => {
+    submitBugReport(
+      `[ping] app opened v${typeof VERSION === 'string' ? VERSION : '?'}`,
+      '',
+      'mount',
+    ).catch(() => {});
+  }, []);
 
   const openReporter = useCallback(async () => {
     // Capture screenshot BEFORE showing modal
