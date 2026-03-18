@@ -29,6 +29,20 @@ import { FriendsBg } from '../components/FriendsBg';
 
 const isWeb = Platform.OS === 'web';
 
+const TAGLINES = [
+  "4 Boards. One Winner. No Excuses.",
+  "Every Card Counts. Every Board Matters.",
+  "Omaha Like You've Never Played It.",
+  "Stack the Boards. Take the Chips.",
+  "Play All 4. Win the Night.",
+  "Think Ahead. Play All Boards.",
+  "The Poker Game That Never Sleeps.",
+  "More Boards. More Action. More Fun.",
+  "Deal. Place. Dominate.",
+  "Where Every Board Is a Battle.",
+];
+let taglineMountCount = 0;
+
 const DISPLAY_FONT = Platform.select({
   web: 'Playfair Display, Georgia, serif',
   default: undefined,
@@ -204,6 +218,18 @@ export default function HomeScreen() {
   const [authError, setAuthError] = useState<string | null>(null);
   const sessionNet = chips - sessionStartChips;
 
+  // Rotating tagline — different one each mount, cycles through all 10
+  const [tagline] = useState<string>(() => {
+    const idx = taglineMountCount % TAGLINES.length;
+    taglineMountCount++;
+    return TAGLINES[idx];
+  });
+  const taglineOpacity = useSharedValue(0);
+  useEffect(() => {
+    taglineOpacity.value = withTiming(1, { duration: 800 });
+  }, []);
+  const taglineAnimStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
+
   useEffect(() => {
     CapsHooks.screenViewed('home');
   }, []);
@@ -312,13 +338,13 @@ export default function HomeScreen() {
           >
             CAPS POKER
           </Text>
-          <Text
-            style={[styles.titleSub, { color: theme.subtitleColor }]}
+          <Animated.Text
+            style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
             numberOfLines={1}
             adjustsFontSizeToFit
           >
-            Outsmart the Board. Win Every Round.
-          </Text>
+            {tagline}
+          </Animated.Text>
           <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
         </View>
 
