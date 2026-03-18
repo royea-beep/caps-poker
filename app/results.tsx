@@ -116,8 +116,8 @@ export default function ResultsScreen() {
       playerHandName: b.playerHandName,
       botHandName: b.botHandName,
       playerCards: b.playerCards.map((c) => ({ rank: c.rank, suit: c.suit })),
-      botCards: (b.allBotCards[0] || []).map((c) => ({ rank: c.rank, suit: c.suit })),
-      communityCards: [...b.openCards, ...b.closedCards].map((c) => ({ rank: c.rank, suit: c.suit })),
+      botCards: ((b.allBotCards ?? [])[0] ?? []).map((c) => ({ rank: c.rank, suit: c.suit })),
+      communityCards: [...(b.openCards ?? []), ...(b.closedCards ?? [])].map((c) => ({ rank: c.rank, suit: c.suit })),
     }));
     const handRecord: HandRecord = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -356,7 +356,7 @@ export default function ResultsScreen() {
             : board.winner === 'bot'
             ? COLORS.neonRed
             : COLORS.textDim;
-          const multiBot = board.allBotCards.length > 1;
+          const multiBot = (board.allBotCards ?? []).length > 1;
 
           return (
             <Animated.View
@@ -384,27 +384,27 @@ export default function ResultsScreen() {
 
                 {/* Community cards — single centered row */}
                 <View style={styles.cardsRow}>
-                  {board.openCards.map((c) => (
+                  {(board.openCards ?? []).map((c) => (
                     <CardComponent
                       key={c.id}
                       card={c}
                       faceDown={false}
                       cardWidth={CARD_W}
                       cardHeight={CARD_H}
-                      highlighted={board.boardHighlightIds.includes(c.id)}
-                      dimmed={!board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
+                      highlighted={(board.boardHighlightIds ?? []).includes(c.id)}
+                      dimmed={!(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
                     />
                   ))}
                   <View style={styles.cardSeparator} />
-                  {board.closedCards.map((c) => (
+                  {(board.closedCards ?? []).map((c) => (
                     <CardComponent
                       key={c.id}
                       card={c}
                       faceDown={false}
                       cardWidth={CARD_W}
                       cardHeight={CARD_H}
-                      highlighted={board.boardHighlightIds.includes(c.id)}
-                      dimmed={!board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
+                      highlighted={(board.boardHighlightIds ?? []).includes(c.id)}
+                      dimmed={!(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
                     />
                   ))}
                 </View>
@@ -413,15 +413,15 @@ export default function ResultsScreen() {
                 <View style={styles.handRowVertical}>
                   <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>YOU</Text>
                   <View style={styles.cardsRow}>
-                    {board.playerCards.map((c) => (
+                    {(board.playerCards ?? []).map((c) => (
                       <CardComponent
                         key={c.id}
                         card={c}
                         faceDown={false}
                         cardWidth={CARD_W}
                         cardHeight={CARD_H}
-                        highlighted={board.playerHighlightIds.includes(c.id)}
-                        dimmed={!board.playerHighlightIds.includes(c.id) && board.playerHighlightIds.length > 0}
+                        highlighted={(board.playerHighlightIds ?? []).includes(c.id)}
+                        dimmed={!(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
                       />
                     ))}
                     <Text style={[styles.handName, board.winner === 'player' && styles.handNameWin]}>
@@ -431,8 +431,8 @@ export default function ResultsScreen() {
                 </View>
 
                 {/* Bot hand rows — one per bot, stacked vertically */}
-                {board.allBotCards.map((botCards, botIdx) =>
-                  botCards.length > 0 ? (
+                {(board.allBotCards ?? []).map((botCards, botIdx) =>
+                  botCards && botCards.length > 0 ? (
                     <View key={`bot-${botIdx}`} style={styles.handRowVertical}>
                       <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
                         {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
@@ -445,12 +445,12 @@ export default function ResultsScreen() {
                             faceDown={false}
                             cardWidth={CARD_W}
                             cardHeight={CARD_H}
-                            highlighted={botIdx === 0 && board.botHighlightIds.includes(c.id)}
-                            dimmed={botIdx === 0 && !board.botHighlightIds.includes(c.id) && board.botHighlightIds.length > 0}
+                            highlighted={botIdx === 0 && (board.botHighlightIds ?? []).includes(c.id)}
+                            dimmed={botIdx === 0 && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
                           />
                         ))}
                         <Text style={[styles.handName, board.winner === 'bot' && styles.handNameWin]}>
-                          {board.allBotHandNames[botIdx] || board.botHandName}
+                          {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
                         </Text>
                       </View>
                     </View>
