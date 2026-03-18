@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Platform, Alert, Pressable, ViewStyle } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -125,11 +125,22 @@ export default function HomeScreen() {
   const theme = HOME_THEMES[homeThemeId];
 
   const user = useAuthUser();
+  const [signingIn, setSigningIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const sessionNet = chips - sessionStartChips;
 
   useEffect(() => {
     CapsHooks.screenViewed('home');
   }, []);
+
+  // Auto-save display name to store when user signs in
+  useEffect(() => {
+    if (user?.user_metadata?.full_name) {
+      useGameStore.getState().setPlayerName(
+        String(user.user_metadata.full_name).slice(0, 20)
+      );
+    }
+  }, [user?.id]);
 
   const handleNewHand = useCallback(() => {
     if (ECONOMY_FLAGS.matchCostEnabled) {
@@ -174,8 +185,13 @@ export default function HomeScreen() {
   }, [lastFreeRefill]);
 
   const handleGoogleSignIn = useCallback(async () => {
+    setSigningIn(true);
+    setAuthError(null);
     const { error } = await signInWithGoogle();
-    if (error) Alert.alert('Sign-in failed', error.message);
+    setSigningIn(false);
+    if (error) {
+      setAuthError(error.message);
+    }
   }, []);
 
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
@@ -287,6 +303,46 @@ export default function HomeScreen() {
         {/* ── Action buttons ── */}
         <View style={styles.buttonSection}>
           <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} />
+
+          {/* ── Google sign-in / signed-in row ── */}
+          {!user ? (
+            <View>
+              <Pressable
+                style={[styles.googleBtn, signingIn && styles.googleBtnLoading]}
+                onPress={handleGoogleSignIn}
+                disabled={signingIn}
+              >
+                <Text style={styles.googleBtnText}>
+                  {signingIn ? 'Signing in...' : '🔵  Sign in with Google'}
+                </Text>
+              </Pressable>
+              {authError !== null && (
+                <Text style={styles.authError}>{authError}</Text>
+              )}
+            </View>
+          ) : (
+            <View style={styles.signedInRow}>
+              {user.user_metadata?.avatar_url ? (
+                <Image
+                  source={{ uri: String(user.user_metadata.avatar_url) }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatarPlaceholder, { backgroundColor: theme.accent }]}>
+                  <Text style={styles.avatarInitial}>
+                    {String(user.user_metadata?.full_name ?? user.email ?? '?').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <Text style={[styles.signedInName, { color: theme.subtitleColor }]} numberOfLines={1}>
+                {String(user.user_metadata?.full_name ?? user.email ?? 'Signed in')}
+              </Text>
+              <Pressable onPress={signOut} hitSlop={8}>
+                <Text style={[styles.signOutText, { color: theme.accent }]}>Sign out</Text>
+              </Pressable>
+            </View>
+          )}
+
           <View style={styles.modeRow}>
             <HomeBtn title="SIT & GO" theme={theme} onPress={() => router.push('/sit-and-go' as any)} style={styles.modeButton} />
             <HomeBtn title="TOURNAMENT" theme={theme} onPress={() => router.push('/tournament' as any)} style={styles.modeButton} />
@@ -297,26 +353,6 @@ export default function HomeScreen() {
           <Button title="LEADERBOARD" variant="ghost" onPress={() => router.push('/leaderboard' as any)} />
           <Button title="HAND HISTORY" variant="ghost" onPress={() => router.push('/hand-history' as any)} />
           <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
-        </View>
-
-        {/* ── Google sign-in ── */}
-        <View style={styles.authRow}>
-          {user ? (
-            <>
-              <Text style={[styles.authName, { color: theme.subtitleColor }]} numberOfLines={1}>
-                {user.user_metadata?.full_name ?? user.email ?? 'Signed in'}
-              </Text>
-              <Pressable onPress={signOut} hitSlop={8}>
-                <Text style={[styles.authAction, { color: theme.accent }]}>Sign out</Text>
-              </Pressable>
-            </>
-          ) : (
-            <Pressable onPress={handleGoogleSignIn} hitSlop={8}>
-              <Text style={[styles.authAction, { color: theme.subtitleColor }]}>
-                Sign in with Google
-              </Text>
-            </Pressable>
-          )}
         </View>
 
         {/* ── Refill / Reset ── */}
@@ -483,23 +519,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Auth row
-  authRow: {
+  // Google sign-in button
+  googleBtn: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    ...Platform.select({
+      web: { boxShadow: '0 2px 12px rgba(0,0,0,0.25)' } as any,
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 6 },
+      android: { elevation: 4 },
+    }),
+  },
+  googleBtnLoading: {
+    opacity: 0.6,
+  },
+  googleBtnText: {
+    color: '#1a1a1a',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  authError: {
+    color: COLORS.neonRed,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  // Signed-in row
+  signedInRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    opacity: 0.8,
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    width: '100%',
   },
-  authName: {
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  avatarPlaceholder: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    color: '#000',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  signedInName: {
+    flex: 1,
     fontSize: 12,
     fontWeight: '500',
-    maxWidth: 180,
   },
-  authAction: {
+  signOutText: {
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
-    textDecorationLine: 'underline',
   },
 
   // Version
