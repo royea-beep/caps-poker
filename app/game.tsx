@@ -150,6 +150,14 @@ export default function GameScreen() {
     playSound('timerLow');
 
     countdownRef.current = setInterval(() => {
+      // Guard: component may have unmounted between ticks (iOS New Architecture)
+      if (!mountedRef.current) {
+        if (countdownRef.current) {
+          clearInterval(countdownRef.current);
+          countdownRef.current = null;
+        }
+        return;
+      }
       setCountdown((prev) => {
         if (prev <= 1) {
           if (countdownRef.current) {
@@ -456,11 +464,11 @@ export default function GameScreen() {
       </View>
 
       {/* Boards */}
-      <View style={[styles.boardsColumn, isWeb && styles.boardsGrid]}>
+      <View style={isWeb ? styles.boardsGrid : styles.boardsColumn}>
         {boards.map((board, i) => (
           <View
             key={i}
-            style={isWeb ? (boardCount >= 4 ? styles.boardCellHalf : styles.boardCellThird) : styles.boardCellFull}
+            style={isWeb ? (boardCount === 3 ? styles.boardCellThird : styles.boardCellHalf) : styles.boardCellFull}
           >
             <Board
               index={i}
@@ -588,6 +596,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
+    paddingHorizontal: 8,
+    width: '100%',
   },
   boardCellFull: {
     flex: 1,
@@ -595,7 +605,7 @@ const styles = StyleSheet.create({
   boardCellHalf: {
     width: '50%',
     paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
   boardCellThird: {
     width: '33.33%',
