@@ -22,6 +22,7 @@ import CardComponent from '../components/Card';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
 import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
+import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId } from '../constants/homeThemes';
 import { CapsHooks } from '../utils/learning';
 
 interface SettingRowProps {
@@ -245,6 +246,37 @@ function CardThemePicker() {
   );
 }
 
+function HomeThemePicker() {
+  const homeTheme = useGameStore((s) => s.homeTheme);
+  const setHomeTheme = useGameStore((s) => s.setHomeTheme);
+
+  return (
+    <View style={homeThemeStyles.row}>
+      {(Object.keys(HOME_THEMES) as HomeThemeId[]).map((id) => {
+        const t = HOME_THEMES[id];
+        const active = homeTheme === id;
+        return (
+          <Pressable
+            key={id}
+            onPress={() => { hapticLight(); setHomeTheme(id); }}
+            style={[
+              homeThemeStyles.swatch,
+              { borderColor: active ? t.accent : 'rgba(255,255,255,0.12)' },
+              active && { borderWidth: 2.5 },
+            ]}
+          >
+            <View style={[homeThemeStyles.swatchDot, { backgroundColor: t.accent }]} />
+            <Text style={[homeThemeStyles.swatchLabel, { color: active ? t.accent : COLORS.textSecondary }]}>
+              {HOME_THEME_NAMES[id]}
+            </Text>
+            {active && <Text style={[homeThemeStyles.check, { color: t.accent }]}>✓</Text>}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -273,6 +305,9 @@ export default function SettingsScreen() {
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
+
+        <Text style={styles.sectionTitle}>🏠 HOME THEME</Text>
+        <HomeThemePicker />
 
         <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
         <CardThemePicker />
@@ -497,5 +532,37 @@ const themeStyles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.5,
+  },
+});
+
+const homeThemeStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 6,
+  },
+  swatch: {
+    flex: 1,
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    padding: 10,
+    alignItems: 'center',
+    gap: 6,
+  },
+  swatchDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  swatchLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  check: {
+    fontSize: 11,
+    fontWeight: '900',
   },
 });

@@ -323,8 +323,8 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 110 : 80,
-    left: 16,
+    bottom: 80,
+    right: 16,
     width: 44,
     height: 44,
     borderRadius: 22,
