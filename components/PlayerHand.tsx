@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
+import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 import { WEB_MAX_WIDTH } from './WebContainer';
@@ -13,16 +14,21 @@ interface PlayerHandProps {
 export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
   const { width: rawW } = useWindowDimensions();
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
-
-  const isWeb = Platform.OS === 'web';
+  const device = getDevice(SCREEN_W, 0);
 
   // Dynamic card sizing: fit 8 cards per row with gaps and padding
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
   const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
-  const cardW = isWeb
-    ? Math.min(80, Math.max(64, maxCardW))
-    : Math.min(36, Math.max(28, maxCardW));  // smaller on native: must fit 8 per row on iPhone SE
+  const cardW = (() => {
+    if (Platform.OS !== 'web') return Math.min(36, Math.max(28, maxCardW));
+    if (device.isMobileWeb)  return Math.min(52, Math.max(40, maxCardW));
+    if (device.isTabletWeb)  return Math.min(64, Math.max(52, maxCardW));
+    return Math.min(80, Math.max(64, maxCardW));
+  })();
   const cardH = Math.round(cardW * 1.4);
+
+  // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
+  const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
 
   const midpoint = Math.ceil(cards.length / 2);
   const topRow = cards.slice(0, midpoint);
@@ -57,11 +63,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
       </Text>
       {cards.length > 0 ? (
         <View style={styles.grid}>
-          {isWeb ? (
-            <View style={styles.webRow}>
-              {cards.map(renderCard)}
-            </View>
-          ) : (
+          {useTwoRows ? (
             <>
               <View style={styles.row}>
                 {topRow.map(renderCard)}
@@ -72,6 +74,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
                 </View>
               )}
             </>
+          ) : (
+            <View style={styles.webRow}>
+              {cards.map(renderCard)}
+            </View>
           )}
         </View>
       ) : (

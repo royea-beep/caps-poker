@@ -27,6 +27,7 @@ import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
+import { rv } from '../constants/deviceBreakpoints';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -98,7 +99,7 @@ const READY_BTN_H = 48;
 
 export default function GameScreen() {
   const router = useRouter();
-  const { height: SCREEN_H } = useWindowDimensions();
+  const { height: SCREEN_H, width: screenW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
@@ -114,9 +115,13 @@ export default function GameScreen() {
   const BOARD_GAPS = (boardCount - 1) * 4;
   const BOARD_CHROME = 20;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  const BOARD_CARD_H = Platform.OS === 'web'
-    ? 82
-    : Math.max(48, Math.min(68, Math.floor(boardSpace / 2)));
+  const BOARD_CARD_H = rv(
+    screenW,
+    56,   // mobile web (iPhone Safari)
+    72,   // tablet web
+    100,  // desktop web
+    Math.max(52, Math.min(82, Math.floor(boardSpace / 2))),  // native
+  );
   const isWeb = Platform.OS === 'web';
 
   const [boards, setBoards] = useState<BoardState[]>([]);
@@ -597,6 +602,7 @@ export default function GameScreen() {
             key={i}
             style={[
               isWeb ? (boardCount === 3 ? styles.boardCellThird : styles.boardCellHalf) : styles.boardCellFull,
+              isWeb && screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
               boardShakeStyles[i],
             ]}
           >

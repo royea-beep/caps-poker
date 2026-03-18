@@ -1,6 +1,6 @@
 // v-red-boards
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,6 +12,7 @@ import Animated, {
 import CardComponent from './Card';
 import { Badge } from './Badge';
 import { Card, COLORS, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { rv } from '../constants/deviceBreakpoints';
 import { getHandHint } from '../utils/handHint';
 
 interface BoardProps {
@@ -122,7 +123,8 @@ export default function Board({
   cardHeight: cardHeightProp,
   isWinner,
 }: BoardProps) {
-  const ch = cardHeightProp ?? 80;
+  const { width: screenW } = useWindowDimensions();
+  const ch = cardHeightProp ?? rv(screenW, 56, 72, 90, 64);
   const cw = Math.round(ch * 0.7);
   // Empty slots are ~30% smaller during arrangement
   const slotH = isArrangement ? Math.round(ch * 0.7) : ch;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { COLORS, SUITS, RANKS, Card } from '../constants/gameConfig';
+import { rv } from '../constants/deviceBreakpoints';
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
 
@@ -33,11 +34,6 @@ const WINNER_DELAY_AFTER_RIVER = 3000;  // after river: show prob 3s then winner
 const ADVANCE_DELAY = 4000;             // auto-advance after winner
 const COUNTDOWN_STEP = 1000;
 
-// Card sizes
-const commCardW = Platform.OS === 'web' ? 58 : 48;
-const commCardH = Platform.OS === 'web' ? 82 : 68;
-const handCardW = Platform.OS === 'web' ? 52 : 42;
-const handCardH = Platform.OS === 'web' ? 74 : 60;
 
 // Suit display symbols + colors
 const SUIT_SYMBOL: Record<string, string> = {
@@ -103,6 +99,13 @@ interface RevealSequenceProps {
 }
 
 export default function RevealSequence({ boards, visible, onDone }: RevealSequenceProps) {
+  const { width: screenW } = useWindowDimensions();
+  // Card sizes — responsive across mobile web / tablet / desktop / native
+  const commCardW = rv(screenW, 44, 54, 58, 48);
+  const commCardH = rv(screenW, 62, 76, 82, 68);
+  const handCardW = rv(screenW, 38, 46, 52, 42);
+  const handCardH = rv(screenW, 54, 66, 74, 60);
+
   const [boardIdx, setBoardIdx] = useState(0);
   const [turnRevealed, setTurnRevealed] = useState(false);
   const [riverRevealed, setRiverRevealed] = useState(false);
