@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
+import * as Linking from 'expo-linking';
 import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -11,16 +11,19 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
   const client = getSupabase();
   if (!client) return { error: new Error('Supabase not configured') };
 
+  const redirectUrl = Platform.OS === 'web'
+    ? 'https://caps.ftable.co.il'
+    : Linking.createURL('/');
+
   if (Platform.OS === 'web') {
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://caps.ftable.co.il' },
+      options: { redirectTo: redirectUrl },
     });
     return { error: error as Error | null };
   }
 
-  // Native: deep-link redirect via expo-auth-session
-  const redirectUrl = AuthSession.makeRedirectUri({ scheme: 'caps' });
+  // Native: open browser with skipBrowserRedirect so we can capture the result
   const { data, error } = await client.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
@@ -29,14 +32,22 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
   if (data?.url) {
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
     if (result.type === 'success') {
-      const url = new URL(result.url);
-      const accessToken = url.searchParams.get('access_token');
-      const refreshToken = url.searchParams.get('refresh_token');
-      if (accessToken) {
-        await client.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken ?? '',
-        });
+      // PKCE: exchange code for session
+      const { error: exchError } = await client.auth.exchangeCodeForSession(result.url);
+      if (exchError) {
+        // Fallback: implicit flow — tokens in hash fragment
+        const normalized = result.url.replace('#', '?');
+        try {
+          const params = new URL(normalized).searchParams;
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          if (accessToken) {
+            await client.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken ?? '',
+            });
+          }
+        } catch {}
       }
     }
   }
