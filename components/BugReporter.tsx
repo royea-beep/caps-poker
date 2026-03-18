@@ -23,6 +23,7 @@ import {
   KeyboardAvoidingView,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 // Lazy haptics — never crash on web
@@ -146,6 +147,7 @@ interface Props {
 }
 
 export function BugReporter({ children, overlayActive = false }: Props) {
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -214,7 +216,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
       {/* FAB — hidden when overlay active or modal open */}
       {!visible && !overlayActive && (
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, { bottom: insets.bottom + 16 }]}
           onPress={openReporter}
           activeOpacity={0.7}
           accessibilityLabel="Report a bug"

@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
-import { HOME_THEMES, HOME_THEME_NAMES, HomeTheme } from '../constants/homeThemes';
+import { HOME_THEMES, HomeTheme, ButtonStyle } from '../constants/homeThemes';
 import {
   getMatchCost,
   canAffordMatch,
@@ -60,10 +60,53 @@ interface HomeBtnProps {
   disabled?: boolean;
   style?: ViewStyle;
   theme: HomeTheme;
+  btnHeight?: number;
+  btnFontSize?: number;
 }
 
-function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t }: HomeBtnProps) {
+function getHomeBtnColors(
+  isPrimary: boolean,
+  t: HomeTheme,
+  btnStyle: ButtonStyle,
+): { bg: string; borderColor: string; borderWidth: number; textColor: string } {
+  switch (btnStyle) {
+    case 'glass':
+      return {
+        bg: isPrimary ? t.accent + '30' : t.accent + '14',
+        borderColor: t.accent,
+        borderWidth: 1.5,
+        textColor: t.accent,
+      };
+    case 'outline':
+      return {
+        bg: 'transparent',
+        borderColor: t.accent,
+        borderWidth: 1.5,
+        textColor: t.accent,
+      };
+    case 'solid':
+    default:
+      return {
+        bg: isPrimary ? t.buttonPrimary : t.buttonSecondaryBg,
+        borderColor: isPrimary ? t.buttonPrimary : t.buttonSecondaryBorder,
+        borderWidth: isPrimary ? 0 : 1.5,
+        textColor: isPrimary ? t.buttonPrimaryText : t.buttonSecondaryText,
+      };
+  }
+}
+
+function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t, btnHeight, btnFontSize }: HomeBtnProps) {
   const [pressed, setPressed] = useState(false);
+  const btnStyle = useGameStore((s) => s.buttonStyle);
+  const colors = getHomeBtnColors(isPrimary, t, btnStyle);
+  const h = btnHeight ?? 52;
+  const fs = btnFontSize ?? (isPrimary ? 16 : 15);
+  const paddingV = Math.max(8, (h - fs * 1.4) / 2);
+
+  const webGlass = isWeb && btnStyle === 'glass'
+    ? ({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } as any)
+    : {};
+
   return (
     <Pressable
       onPress={onPress}
@@ -73,10 +116,13 @@ function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, t
       style={[
         homeBtnBase,
         {
-          backgroundColor: isPrimary ? t.buttonPrimary : t.buttonSecondaryBg,
-          borderColor: isPrimary ? t.buttonPrimary : t.buttonSecondaryBorder,
-          borderWidth: isPrimary ? 0 : 1.5,
+          backgroundColor: colors.bg,
+          borderColor: colors.borderColor,
+          borderWidth: colors.borderWidth,
+          minHeight: h,
+          paddingVertical: paddingV,
         },
+        webGlass,
         accentShadow(t.accent, isPrimary ? 0.5 : 0.2),
         disabled && { opacity: 0.5 },
         pressed && { opacity: 0.82 },
@@ -87,8 +133,8 @@ function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, t
     >
       <Text
         style={{
-          color: isPrimary ? t.buttonPrimaryText : t.buttonSecondaryText,
-          fontSize: isPrimary ? 16 : 15,
+          color: colors.textColor,
+          fontSize: fs,
           fontWeight: '800',
           letterSpacing: 2,
         }}
@@ -103,15 +149,17 @@ const homeBtnBase: ViewStyle = {
   width: '100%',
   alignItems: 'center',
   justifyContent: 'center',
-  paddingVertical: 16,
   paddingHorizontal: 24,
   borderRadius: 16,
-  minHeight: 52,
 };
 
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
+  const { height: screenH } = useWindowDimensions();
+  const btnHeight = Math.min(52, screenH * 0.07);
+  const btnFontSize = Math.min(16, screenH * 0.022);
+  const btnGap = Math.min(10, screenH * 0.013);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
@@ -248,7 +296,7 @@ export default function HomeScreen() {
               webTitleGradient,
             ]}
           >
-            CAPS
+            CAPS POKER
           </Text>
           <Text style={[styles.titleSub, { color: theme.subtitleColor }]}>
             Outsmart the Board. Win Every Round.
@@ -301,18 +349,18 @@ export default function HomeScreen() {
         )}
 
         {/* ── Action buttons ── */}
-        <View style={styles.buttonSection}>
-          <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} />
+        <View style={[styles.buttonSection, { gap: btnGap }]}>
+          <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} btnHeight={btnHeight} btnFontSize={btnFontSize} />
 
           {/* ── Google sign-in / signed-in row ── */}
           {!user ? (
             <View>
               <Pressable
-                style={[styles.googleBtn, signingIn && styles.googleBtnLoading]}
+                style={[styles.googleBtn, signingIn && styles.googleBtnLoading, { minHeight: btnHeight }]}
                 onPress={handleGoogleSignIn}
                 disabled={signingIn}
               >
-                <Text style={styles.googleBtnText}>
+                <Text style={[styles.googleBtnText, { fontSize: btnFontSize }]}>
                   {signingIn ? 'Signing in...' : '🔵  Sign in with Google'}
                 </Text>
               </Pressable>
@@ -343,13 +391,10 @@ export default function HomeScreen() {
             </View>
           )}
 
-          <View style={styles.modeRow}>
-            <HomeBtn title="SIT & GO" theme={theme} onPress={() => router.push('/sit-and-go' as any)} style={styles.modeButton} />
-            <HomeBtn title="TOURNAMENT" theme={theme} onPress={() => router.push('/tournament' as any)} style={styles.modeButton} />
-          </View>
-          <HomeBtn title="PLAY ONLINE" theme={theme} onPress={() => router.push('/lobby/internet-host' as any)} />
-          <HomeBtn title="HOST GAME (WiFi)" theme={theme} onPress={() => router.push('/lobby/host' as any)} />
-          <HomeBtn title="JOIN GAME" theme={theme} onPress={() => router.push('/lobby/join' as any)} />
+          <HomeBtn title="TOURNAMENT" theme={theme} onPress={() => router.push('/tournament' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
+          <HomeBtn title="PLAY ONLINE" theme={theme} onPress={() => router.push('/lobby/internet-host' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
+          <HomeBtn title="HOST GAME (WiFi)" theme={theme} onPress={() => router.push('/lobby/host' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
+          <HomeBtn title="JOIN GAME" theme={theme} onPress={() => router.push('/lobby/join' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
           <Button title="LEADERBOARD" variant="ghost" onPress={() => router.push('/leaderboard' as any)} />
           <Button title="HAND HISTORY" variant="ghost" onPress={() => router.push('/hand-history' as any)} />
           <Button title="SETTINGS" variant="ghost" onPress={() => router.push('/settings' as any)} />
@@ -376,9 +421,6 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <Text style={[styles.versionLabel, { color: theme.accent }]}>
-        v{Constants.expoConfig?.version ?? '1.9.2'}
-      </Text>
     </SafeAreaView>
   );
 }
@@ -435,9 +477,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 64,
+    fontSize: 52,
     fontWeight: '900',
-    letterSpacing: 20,
+    letterSpacing: 14,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 30,
   },
@@ -511,14 +553,6 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 8,
   },
-  modeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  modeButton: {
-    flex: 1,
-  },
-
   // Google sign-in button
   googleBtn: {
     width: '100%',
@@ -591,14 +625,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Version
-  versionLabel: {
-    position: 'absolute',
-    bottom: 14,
-    right: 18,
-    fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.7,
-    letterSpacing: 0.5,
-  },
 });

@@ -22,7 +22,7 @@ import CardComponent from '../components/Card';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
 import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
-import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId } from '../constants/homeThemes';
+import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId, ButtonStyle } from '../constants/homeThemes';
 import { CapsHooks } from '../utils/learning';
 
 interface SettingRowProps {
@@ -249,27 +249,82 @@ function CardThemePicker() {
 function HomeThemePicker() {
   const homeTheme = useGameStore((s) => s.homeTheme);
   const setHomeTheme = useGameStore((s) => s.setHomeTheme);
+  const allIds = Object.keys(HOME_THEMES) as HomeThemeId[];
+  const rows = [allIds.slice(0, 5), allIds.slice(5, 10)];
 
   return (
-    <View style={homeThemeStyles.row}>
-      {(Object.keys(HOME_THEMES) as HomeThemeId[]).map((id) => {
-        const t = HOME_THEMES[id];
-        const active = homeTheme === id;
+    <View style={homeThemeStyles.container}>
+      {rows.map((row, rowIdx) => (
+        <View key={rowIdx} style={homeThemeStyles.swatchRow}>
+          {row.map((id) => {
+            const t = HOME_THEMES[id];
+            const active = homeTheme === id;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => { hapticLight(); setHomeTheme(id); }}
+                style={homeThemeStyles.swatchItem}
+              >
+                <View
+                  style={[
+                    homeThemeStyles.swatchCircle,
+                    { backgroundColor: t.accent },
+                    active && homeThemeStyles.swatchCircleActive,
+                  ]}
+                >
+                  {active && <Text style={homeThemeStyles.swatchCheck}>✓</Text>}
+                </View>
+                <Text style={[homeThemeStyles.swatchLabel, { color: active ? t.accent : COLORS.textMuted }]}>
+                  {HOME_THEME_NAMES[id]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ButtonStylePicker() {
+  const buttonStyle = useGameStore((s) => s.buttonStyle);
+  const setButtonStyle = useGameStore((s) => s.setButtonStyle);
+  const homeTheme = useGameStore((s) => s.homeTheme);
+  const t = HOME_THEMES[homeTheme];
+
+  const options: { id: ButtonStyle; label: string }[] = [
+    { id: 'solid', label: 'Solid' },
+    { id: 'glass', label: 'Glass' },
+    { id: 'outline', label: 'Outline' },
+  ];
+
+  return (
+    <View style={btnStyleStyles.row}>
+      {options.map(({ id, label }) => {
+        const active = buttonStyle === id;
+        const previewBg =
+          id === 'solid' ? t.accent
+          : id === 'glass' ? t.accent + '30'
+          : 'transparent';
+        const previewBorder = id === 'solid' ? undefined : t.accent;
+        const previewText = id === 'solid' ? t.buttonPrimaryText : t.accent;
         return (
           <Pressable
             key={id}
-            onPress={() => { hapticLight(); setHomeTheme(id); }}
-            style={[
-              homeThemeStyles.swatch,
-              { borderColor: active ? t.accent : 'rgba(255,255,255,0.12)' },
-              active && { borderWidth: 2.5 },
-            ]}
+            onPress={() => { hapticLight(); setButtonStyle(id); }}
+            style={[btnStyleStyles.option, active && { borderColor: t.accent, borderWidth: 2 }]}
           >
-            <View style={[homeThemeStyles.swatchDot, { backgroundColor: t.accent }]} />
-            <Text style={[homeThemeStyles.swatchLabel, { color: active ? t.accent : COLORS.textSecondary }]}>
-              {HOME_THEME_NAMES[id]}
+            <View style={[
+              btnStyleStyles.preview,
+              { backgroundColor: previewBg },
+              previewBorder ? { borderColor: previewBorder, borderWidth: 1.5 } : undefined,
+            ]}>
+              <Text style={[btnStyleStyles.previewText, { color: previewText }]}>BTN</Text>
+            </View>
+            <Text style={[btnStyleStyles.label, { color: active ? t.accent : COLORS.textSecondary }]}>
+              {label}
             </Text>
-            {active && <Text style={[homeThemeStyles.check, { color: t.accent }]}>✓</Text>}
+            {active && <Text style={[btnStyleStyles.check, { color: t.accent }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -308,6 +363,9 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>🏠 HOME THEME</Text>
         <HomeThemePicker />
+
+        <Text style={styles.sectionTitle}>🎨 BUTTON STYLE</Text>
+        <ButtonStylePicker />
 
         <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
         <CardThemePicker />
@@ -536,33 +594,78 @@ const themeStyles = StyleSheet.create({
 });
 
 const homeThemeStyles = StyleSheet.create({
+  container: {
+    gap: 8,
+    marginBottom: 6,
+  },
+  swatchRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  swatchItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  swatchCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchCircleActive: {
+    borderWidth: 3,
+    borderColor: '#ffffff',
+  },
+  swatchCheck: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#000000',
+  },
+  swatchLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+});
+
+const btnStyleStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: 6,
   },
-  swatch: {
+  option: {
     flex: 1,
     backgroundColor: COLORS.feltLight,
     borderRadius: 10,
     borderWidth: 1.5,
-    padding: 10,
+    borderColor: COLORS.boardBorder,
+    padding: 12,
     alignItems: 'center',
     gap: 6,
   },
-  swatchDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  preview: {
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  swatchLabel: {
+  previewText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  label: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
-    textAlign: 'center',
   },
   check: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
 });
