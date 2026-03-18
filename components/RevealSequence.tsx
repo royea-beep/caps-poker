@@ -166,8 +166,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const board = boards[boardIdx];
   if (!board) return null;
 
-  const turnCard = board.closedCards[0];
-  const riverCard = board.closedCards[1];
+  const turnCard = (board.closedCards ?? [])[0];
+  const riverCard = (board.closedCards ?? [])[1];
 
   // Cards are fully revealed once river is shown (or turn if no river)
   const allRevealed = riverRevealed || (turnRevealed && !riverCard);
@@ -182,7 +182,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
   const winnerLabel =
     board.winner === 'player' ? 'YOU WIN' : board.winner === 'bot' ? 'BOT WINS' : 'TIE';
 
-  const multiBot = board.allBotCards.length > 1;
+  const allBotCards = board.allBotCards ?? [];
+  const multiBot = allBotCards.length > 1;
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
@@ -196,18 +197,18 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
           {/* Community cards: flop (face up) | separator | turn/river (flip) */}
           <View style={styles.communityRow}>
-            {board.openCards.map((c) => (
+            {(board.openCards ?? []).map((c) => (
               <CardComponent
                 key={c.id}
                 card={c}
                 faceDown={false}
                 cardWidth={commCardW}
                 cardHeight={commCardH}
-                highlighted={allRevealed && board.boardHighlightIds.includes(c.id)}
-                dimmed={allRevealed && !board.boardHighlightIds.includes(c.id) && board.boardHighlightIds.length > 0}
+                highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(c.id)}
+                dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
               />
             ))}
-            {board.openCards.length > 0 && board.closedCards.length > 0 && (
+            {(board.openCards ?? []).length > 0 && (board.closedCards ?? []).length > 0 && (
               <View style={[styles.sep, { height: commCardH * 0.8 }]} />
             )}
             {turnCard && (
@@ -217,8 +218,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 cardWidth={commCardW}
                 cardHeight={commCardH}
                 flipDuration={350}
-                highlighted={allRevealed && board.boardHighlightIds.includes(turnCard.id)}
-                dimmed={allRevealed && !board.boardHighlightIds.includes(turnCard.id) && board.boardHighlightIds.length > 0}
+                highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(turnCard.id)}
+                dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(turnCard.id) && (board.boardHighlightIds ?? []).length > 0}
               />
             )}
             {riverCard && (
@@ -228,8 +229,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 cardWidth={commCardW}
                 cardHeight={commCardH}
                 flipDuration={350}
-                highlighted={allRevealed && board.boardHighlightIds.includes(riverCard.id)}
-                dimmed={allRevealed && !board.boardHighlightIds.includes(riverCard.id) && board.boardHighlightIds.length > 0}
+                highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(riverCard.id)}
+                dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(riverCard.id) && (board.boardHighlightIds ?? []).length > 0}
               />
             )}
           </View>
@@ -237,15 +238,15 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
           {/* Player hole cards */}
           <View style={styles.handRow}>
             <Text style={[styles.handLabel, board.winner === 'player' && styles.winnerLabel]}>YOU</Text>
-            {board.playerCards.map((c) => (
+            {(board.playerCards ?? []).map((c) => (
               <CardComponent
                 key={c.id}
                 card={c}
                 faceDown={false}
                 cardWidth={handCardW}
                 cardHeight={handCardH}
-                highlighted={allRevealed && board.playerHighlightIds.includes(c.id)}
-                dimmed={allRevealed && !board.playerHighlightIds.includes(c.id) && board.playerHighlightIds.length > 0}
+                highlighted={allRevealed && (board.playerHighlightIds ?? []).includes(c.id)}
+                dimmed={allRevealed && !(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
               />
             ))}
             {board.playerHandName && turnRevealed && (
@@ -254,8 +255,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
           </View>
 
           {/* Bot hole cards — shown face-up so user understands who won and why */}
-          {board.allBotCards.map((botCards, botIdx) =>
-            botCards.length > 0 ? (
+          {allBotCards.map((botCards, botIdx) =>
+            botCards && botCards.length > 0 ? (
               <View key={`bot-${botIdx}`} style={styles.handRow}>
                 <Text style={[styles.handLabel, board.winner === 'bot' && styles.winnerLabel]}>
                   {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
@@ -267,13 +268,13 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                     faceDown={false}
                     cardWidth={handCardW}
                     cardHeight={handCardH}
-                    highlighted={botIdx === 0 && allRevealed && board.botHighlightIds.includes(c.id)}
-                    dimmed={botIdx === 0 && allRevealed && !board.botHighlightIds.includes(c.id) && board.botHighlightIds.length > 0}
+                    highlighted={botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)}
+                    dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
                   />
                 ))}
-                {turnRevealed && (board.allBotHandNames[botIdx] || (botIdx === 0 && board.botHandName)) && (
+                {turnRevealed && ((board.allBotHandNames ?? [])[botIdx] || (botIdx === 0 && board.botHandName)) && (
                   <Text style={styles.handName}>
-                    {board.allBotHandNames[botIdx] || board.botHandName}
+                    {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
                   </Text>
                 )}
               </View>

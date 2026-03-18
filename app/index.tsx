@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -227,7 +228,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Version badge — bottom-right, gold */}
-      <Text style={styles.versionLabel}>v1.9.1</Text>
+      <Text style={styles.versionLabel}>v{Constants.expoConfig?.version ?? '1.9.2'}</Text>
     </SafeAreaView>
   );
 }
@@ -367,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
   },
   statValue: {
-    color: COLORS.text,
+    color: COLORS.gold,
     fontSize: 20,
     fontWeight: '800',
   },
