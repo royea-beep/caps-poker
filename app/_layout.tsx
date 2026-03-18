@@ -16,14 +16,18 @@ import { VersionBadge } from '../components/VersionBadge';
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
 
 // expo-router error boundary — catches JS errors in any screen
+// Shows full crash details on screen so we can read them on device
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
-    <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-      <Text style={{ color: '#c9a84c', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>
-        Something went wrong
+    <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <Text style={{ color: '#ff4444', fontSize: 16, fontWeight: '700', marginBottom: 10, textAlign: 'center' }}>
+        CRASH DETAILS:
       </Text>
-      <Text style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 24 }}>
-        {error.message}
+      <Text style={{ color: '#fff', fontSize: 13, textAlign: 'center', marginBottom: 8 }}>
+        {error?.message ?? 'Unknown error'}
+      </Text>
+      <Text style={{ color: '#aaa', fontSize: 10, textAlign: 'center', marginBottom: 20 }}>
+        {error?.stack?.slice(0, 600) ?? ''}
       </Text>
       <Text
         onPress={retry}
@@ -48,6 +52,17 @@ export default function RootLayout() {
       link.rel = 'stylesheet';
       link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap';
       document.head.appendChild(link);
+    }
+  }, []);
+
+  // Global unhandled error logger — logs to console so we can see in Xcode/Metro
+  useEffect(() => {
+    const handler = (event: ErrorEvent) => {
+      console.error('[GLOBAL ERROR]', event.message, event.error?.stack ?? '');
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('error', handler);
+      return () => window.removeEventListener('error', handler);
     }
   }, []);
 
