@@ -55,15 +55,17 @@ export default function RootLayout() {
     }
   }, []);
 
-  // Global unhandled error logger — logs to console so we can see in Xcode/Metro
+  // Global unhandled error logger — web only
+  // IMPORTANT: window.addEventListener does not exist on iOS/Android (Hermes global ≠ DOM Window)
+  // Must guard with Platform.OS === 'web', not just typeof window !== 'undefined'
   useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
     const handler = (event: ErrorEvent) => {
       console.error('[GLOBAL ERROR]', event.message, event.error?.stack ?? '');
     };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('error', handler);
-      return () => window.removeEventListener('error', handler);
-    }
+    window.addEventListener('error', handler);
+    return () => window.removeEventListener('error', handler);
   }, []);
 
   return (
