@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
+// CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
 // Lazy haptics — web-safe
 let Haptics: typeof import('expo-haptics') | null = null;
@@ -23,6 +24,7 @@ import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
 import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId, ButtonStyle } from '../constants/homeThemes';
+import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
 import { CapsHooks } from '../utils/learning';
 
 interface SettingRowProps {
@@ -332,6 +334,49 @@ function ButtonStylePicker() {
   );
 }
 
+const BG_OPTIONS: { id: FriendsBgId; label: string; hint: string }[] = [
+  { id: 'none', label: 'None', hint: 'No bg' },
+  { id: 'sofa', label: 'Sofa', hint: 'Central Perk' },
+  { id: 'logo', label: 'Logo', hint: 'C. Perk sign' },
+  { id: 'fountain', label: 'Fountain', hint: 'NYC fountain' },
+];
+
+function FriendsBgPicker() {
+  const friendsBg = useGameStore((s) => s.friendsBg ?? 'none');
+  const setFriendsBg = useGameStore((s) => s.setFriendsBg);
+
+  return (
+    <View style={bgPickerStyles.row}>
+      {BG_OPTIONS.map(({ id, label, hint }) => {
+        const active = friendsBg === id;
+        const entry = id !== 'none' ? FRIENDS_BGS[id as Exclude<FriendsBgId, 'none'>] : null;
+        return (
+          <Pressable
+            key={id}
+            onPress={() => { hapticLight(); setFriendsBg(id); }}
+            style={[bgPickerStyles.tile, active && bgPickerStyles.tileActive]}
+          >
+            {Platform.OS === 'web' && entry ? (
+              <img
+                alt={label}
+                src={`data:image/svg+xml;utf8,${encodeURIComponent(entry.svg('#c8a84b'))}`}
+                style={{ width: 48, height: 28, opacity: 0.9 } as React.CSSProperties}
+              />
+            ) : (
+              <View style={bgPickerStyles.noPreview} />
+            )}
+            <Text style={[bgPickerStyles.tileLabel, active && bgPickerStyles.tileLabelActive]}>
+              {label}
+            </Text>
+            <Text style={bgPickerStyles.tileHint}>{hint}</Text>
+            {active && <Text style={[bgPickerStyles.check, { color: COLORS.gold }]}>✓</Text>}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -352,6 +397,9 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionTitle}>🖼️ BACKGROUND THEME</Text>
+        <FriendsBgPicker />
+
         <Text style={styles.sectionTitle}>PROFILE</Text>
         <PlayerNameInput />
 
@@ -628,6 +676,52 @@ const homeThemeStyles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
     textAlign: 'center',
+  },
+});
+
+const bgPickerStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 6,
+  },
+  tile: {
+    flex: 1,
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.boardBorder,
+    padding: 10,
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  tileActive: {
+    borderColor: COLORS.gold,
+    borderWidth: 2,
+  },
+  noPreview: {
+    width: 48,
+    height: 28,
+  },
+  tileLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  tileLabelActive: {
+    color: COLORS.gold,
+  },
+  tileHint: {
+    color: COLORS.textMuted,
+    fontSize: 8,
+    textAlign: 'center',
+  },
+  check: {
+    fontSize: 10,
+    fontWeight: '900',
   },
 });
 
