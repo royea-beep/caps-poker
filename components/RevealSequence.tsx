@@ -163,8 +163,19 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
   if (!visible || boards.length === 0) return null;
 
-  const board = boards[boardIdx];
+  let board = boards[boardIdx];
   if (!board) return null;
+
+  // Defensive: skip malformed board (missing required arrays) — advance to next
+  try {
+    if (!Array.isArray(board.openCards) || !Array.isArray(board.closedCards) || !Array.isArray(board.playerCards)) {
+      console.warn('[RevealSequence] malformed board at index', boardIdx, '— skipping');
+      board = { ...board, openCards: board.openCards ?? [], closedCards: board.closedCards ?? [], playerCards: board.playerCards ?? [], allBotCards: board.allBotCards ?? [], boardHighlightIds: [], playerHighlightIds: [], botHighlightIds: [], allBotHandNames: [] };
+    }
+  } catch (e) {
+    console.error('[RevealSequence] board guard threw:', e);
+    return null;
+  }
 
   const turnCard = (board.closedCards ?? [])[0];
   const riverCard = (board.closedCards ?? [])[1];

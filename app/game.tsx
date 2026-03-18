@@ -233,7 +233,14 @@ export default function GameScreen() {
   // Navigate to reveal when all ready (player + bots)
   const navigateToReveal = useCallback((currentBoards: BoardState[]) => {
     if (!mountedRef.current) return;
-    const results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
+    let results;
+    try {
+      results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
+    } catch (e) {
+      console.error('[navigateToReveal] calculateHandResultsMulti threw:', e);
+      router.replace('/');
+      return;
+    }
 
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
       const result = results.boardResults[i];
