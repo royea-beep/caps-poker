@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
 import { ConnectedPlayerInfo, GameSession, RevealData } from '../types/gameTypes';
 import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
-import { HomeThemeId, DEFAULT_HOME_THEME } from '../constants/homeThemes';
+import { HomeThemeId, DEFAULT_HOME_THEME, ButtonStyle } from '../constants/homeThemes';
 
 interface GameStore {
   // Persisted state
@@ -18,6 +18,7 @@ interface GameStore {
   notificationsEnabled: boolean;
   cardTheme: CardThemeId;
   homeTheme: HomeThemeId;
+  buttonStyle: ButtonStyle;
 
   // Economy state (persisted)
   lastDailyRewardClaim: string | null;
@@ -54,6 +55,7 @@ interface GameStore {
   setNotificationsEnabled: (enabled: boolean) => void;
   setCardTheme: (theme: CardThemeId) => void;
   setHomeTheme: (theme: HomeThemeId) => void;
+  setButtonStyle: (style: ButtonStyle) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
   trackChipsSpent: (amount: number) => void;
@@ -95,6 +97,7 @@ export const useGameStore = create<GameStore>()(
       notificationsEnabled: true,
       cardTheme: DEFAULT_CARD_THEME,
       homeTheme: DEFAULT_HOME_THEME,
+      buttonStyle: 'solid' as ButtonStyle,
 
       // Economy state (persisted)
       lastDailyRewardClaim: null,
@@ -133,6 +136,7 @@ export const useGameStore = create<GameStore>()(
       setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
       setCardTheme: (theme: CardThemeId) => set({ cardTheme: theme }),
       setHomeTheme: (theme: HomeThemeId) => set({ homeTheme: theme }),
+      setButtonStyle: (style: ButtonStyle) => set({ buttonStyle: style }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
@@ -201,7 +205,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
     }
   )
 );
