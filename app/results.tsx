@@ -72,9 +72,17 @@ export default function ResultsScreen() {
   const CARD_W = Math.min(Platform.OS === 'web' ? 60 : 42, Math.max(28, Math.floor(availableW / 5.5)));
   const CARD_H = Math.round(CARD_W * 1.4);
 
+  // Debug: log on mount
+  useEffect(() => {
+    console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
+    console.log('[RESULTS] showReveal:', showReveal);
+  }, []);
+
   // Guard: no data → go home
   useEffect(() => {
+    console.log('[RESULTS] revealData guard — revealData:', revealData ? 'present' : 'null');
     if (!revealData) {
+      console.warn('[RESULTS] no revealData — redirecting to /');
       router.replace('/');
     }
   }, [revealData, router]);

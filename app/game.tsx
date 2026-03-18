@@ -135,6 +135,7 @@ export default function GameScreen() {
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const playerHandRef = useRef(playerHand);
   const boardsRef = useRef(boards);
+  const [showContinueButton, setShowContinueButton] = useState(false);
 
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
@@ -240,10 +241,16 @@ export default function GameScreen() {
 
   // Navigate to reveal when all ready (player + bots)
   const navigateToReveal = useCallback((currentBoards: BoardState[]) => {
-    if (!mountedRef.current) return;
+    console.log('[navigateToReveal] called — mountedRef:', mountedRef.current, 'boards:', currentBoards.length);
+    if (!mountedRef.current) {
+      console.warn('[navigateToReveal] aborted — component unmounted');
+      return;
+    }
     let results;
     try {
+      console.log('[navigateToReveal] calling calculateHandResultsMulti...');
       results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
+      console.log('[navigateToReveal] calculateHandResultsMulti OK — playerChipsWon:', results.playerChipsWon);
     } catch (e) {
       console.error('[navigateToReveal] calculateHandResultsMulti threw:', e);
       router.replace('/');
@@ -278,6 +285,7 @@ export default function GameScreen() {
 
     addChips(results.playerChipsWon);
 
+    console.log('[navigateToReveal] calling setRevealData...');
     setRevealData({
       boards: revealBoards,
       netChips: results.playerChipsWon - config.potPerBoard * boardCount,
@@ -292,13 +300,21 @@ export default function GameScreen() {
       numberOfPlayers,
       boardCount,
     });
+    console.log('[navigateToReveal] setRevealData done — calling router.replace /results...');
 
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
     try {
-      router.replace('/results');
+      router.replace('/results' as any);
+      console.log('[navigateToReveal] router.replace /results called OK');
     } catch (e) {
       console.error('[navigateToReveal] router.replace /results threw:', e);
-      try { router.replace('/'); } catch {}
+      try {
+        console.log('[navigateToReveal] trying router.push /results...');
+        router.push('/results' as any);
+        console.log('[navigateToReveal] router.push /results called OK');
+      } catch (e2) {
+        console.error('[navigateToReveal] router.push also failed:', e2);
+      }
     }
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
@@ -309,14 +325,32 @@ export default function GameScreen() {
   useEffect(() => { navigateToRevealRef.current = navigateToReveal; }, [navigateToReveal]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
+
+  // Log state changes for debugging
   useEffect(() => {
+    console.log('[GAME] playerReady changed:', playerReady);
+  }, [playerReady]);
+  useEffect(() => {
+    console.log('[GAME] allBotsReady changed:', allBotsReady, '| botsReady:', JSON.stringify(botsReady));
+  }, [allBotsReady]);
+
+  useEffect(() => {
+    console.log('[GAME] ready effect fired — playerReady:', playerReady, 'allBotsReady:', allBotsReady);
     if (!playerReady || !allBotsReady) return;
-    console.log('[GAME] both ready — navigating to reveal');
+    console.log('[GAME] both ready — starting navigation to reveal');
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
       countdownRef.current = null;
     }
+    // Show fallback button after 3s in case auto-navigation fails
+    const fallbackTimer = setTimeout(() => {
+      if (mountedRef.current) {
+        console.log('[GAME] fallback button showing — auto-nav may have failed');
+        setShowContinueButton(true);
+      }
+    }, 3000);
     navigateToRevealRef.current(boardsRef.current);
+    return () => clearTimeout(fallbackTimer);
   }, [playerReady, allBotsReady]);
 
   // Tap card in hand → select it
@@ -499,6 +533,19 @@ export default function GameScreen() {
           </View>
         ))}
       </View>
+
+      {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
+      {playerReady && allBotsReady && showContinueButton && (
+        <Pressable
+          style={styles.continueBtn}
+          onPress={() => {
+            console.log('[GAME] fallback button pressed — calling navigateToReveal manually');
+            navigateToRevealRef.current(boardsRef.current);
+          }}
+        >
+          <Text style={styles.continueBtnText}>TAP TO CONTINUE →</Text>
+        </Pressable>
+      )}
 
       {/* Player hand */}
       {isArranging && (
@@ -685,5 +732,30 @@ const styles = StyleSheet.create({
   },
   placeBtnText: {
     color: COLORS.background,
+  },
+  continueBtn: {
+    position: 'absolute',
+    bottom: 100,
+    alignSelf: 'center',
+    backgroundColor: COLORS.gold,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+      },
+      android: { elevation: 8 },
+      default: {},
+    }),
+  },
+  continueBtnText: {
+    color: COLORS.background,
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 2,
   },
 });
