@@ -6,9 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
   withTiming,
-  withSequence,
 } from 'react-native-reanimated';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
@@ -183,7 +181,7 @@ const homeBtnBase: ViewStyle = {
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
-  const { height: screenH } = useWindowDimensions();
+  const { height: screenH, width: screenW } = useWindowDimensions();
   const btnHeight = Math.min(50, screenH * 0.065);
   const btnFontSize = Math.min(16, screenH * 0.021);
   const btnGap = Math.min(8, screenH * 0.011);
@@ -272,19 +270,6 @@ export default function HomeScreen() {
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
   const canRefill = ECONOMY_FLAGS.freeRefillEnabled && canUseFreeRefill(lastFreeRefill);
 
-  // Pulsing glow behind title
-  const glowOpacity = useSharedValue(0.2);
-  useEffect(() => {
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.5, { duration: 2000 }),
-        withTiming(0.2, { duration: 2000 }),
-      ),
-      -1,
-    );
-  }, []);
-  const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
-
   // Web title gradient only for dark_gold
   const webTitleGradient =
     isWeb && homeThemeId === 'dark_gold'
@@ -309,14 +294,6 @@ export default function HomeScreen() {
 
         {/* ── Title section ── */}
         <View style={styles.titleSection}>
-          <Animated.View
-            style={[
-              styles.titleGlow,
-              glowStyle,
-              { backgroundColor: theme.accent },
-              { pointerEvents: 'none' } as any,
-            ]}
-          />
           <Text style={[styles.suitSymbols, { color: theme.accent }]}>
             {'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}
           </Text>
@@ -463,6 +440,12 @@ export default function HomeScreen() {
         {__DEV__ && (
           <Button title="SIMULATE" variant="ghost" onPress={() => router.push('/simulate' as any)} />
         )}
+
+        {__DEV__ && (
+          <Text style={styles.debugInfo}>
+            theme: {homeThemeId} · btn: {useGameStore.getState().buttonStyle} · {Math.round(screenW)}×{Math.round(screenH)}
+          </Text>
+        )}
       </ScrollView>
 
     </SafeAreaView>
@@ -504,36 +487,25 @@ const styles = StyleSheet.create({
   // Title
   titleSection: {
     alignItems: 'center',
-    position: 'relative',
     gap: 4,
   },
-  titleGlow: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    top: -50,
-    alignSelf: 'center',
-    zIndex: -1,
-    opacity: 0.15,
-  },
   suitSymbols: {
-    fontSize: 18,
-    letterSpacing: 12,
+    fontSize: 16,
+    letterSpacing: 10,
     opacity: 0.7,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 56,
+    fontSize: 42,
     fontWeight: '900',
-    letterSpacing: 8,
+    letterSpacing: 6,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 30,
+    textShadowRadius: 20,
   },
   titleSub: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     marginTop: 2,
     textTransform: 'uppercase',
     textAlign: 'center',
@@ -700,6 +672,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  debugInfo: {
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: 10,
+    fontWeight: '400',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    marginTop: 4,
   },
 
 });

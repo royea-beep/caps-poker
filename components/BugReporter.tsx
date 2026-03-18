@@ -155,6 +155,8 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
   const pathname = usePathname();
+  const isGameScreen = ['/game', '/multiplayer-game', '/sit-and-go', '/tournament'].includes(pathname ?? '');
+  const fabBottom = pathname === '/' ? insets.bottom + 60 : insets.bottom + 16;
 
   // Test ping on mount — confirms BugReporter + Supabase connection is working on this device
   useEffect(() => {
@@ -213,10 +215,10 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     <View style={{ flex: 1 }}>
       {children}
 
-      {/* FAB — hidden when overlay active or modal open */}
-      {!visible && !overlayActive && (
+      {/* FAB — hidden when overlay active, modal open, or on game screens */}
+      {!visible && !overlayActive && !isGameScreen && (
         <TouchableOpacity
-          style={[styles.fab, { bottom: insets.bottom + 16 }]}
+          style={[styles.fab, { bottom: fabBottom }]}
           onPress={openReporter}
           activeOpacity={0.7}
           accessibilityLabel="Report a bug"
