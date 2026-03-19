@@ -160,6 +160,7 @@ export default function GameScreen() {
   const playerHandRef = useRef(playerHand);
   const boardsRef = useRef(boards);
   const [showContinueButton, setShowContinueButton] = useState(false);
+  const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
 
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
@@ -195,6 +196,23 @@ export default function GameScreen() {
       });
     }, 1000);
   }, []);
+
+  // Pre-calculate results in background as soon as countdown starts (first finisher done)
+  // By the time both are ready, results are already computed → zero-wait navigation
+  useEffect(() => {
+    if (!countdownActive) return;
+    const t = setTimeout(() => {
+      if (!mountedRef.current) return;
+      try {
+        precalculatedResultsRef.current = calculateHandResultsMulti(boardsRef.current, numberOfPlayers, config);
+        console.log('[GAME] pre-calculation done during countdown');
+      } catch (e) {
+        console.warn('[GAME] pre-calculation failed — will recalculate on navigate:', e);
+        precalculatedResultsRef.current = null;
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [countdownActive]);
 
   // When countdown hits 0 — auto-place remaining cards randomly
   useEffect(() => {
@@ -276,9 +294,15 @@ export default function GameScreen() {
     }
     let results;
     try {
-      console.log('[navigateToReveal] calling calculateHandResultsMulti...');
-      results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
-      console.log('[navigateToReveal] calculateHandResultsMulti OK — playerChipsWon:', results.playerChipsWon);
+      if (precalculatedResultsRef.current) {
+        console.log('[navigateToReveal] using pre-calculated results');
+        results = precalculatedResultsRef.current;
+        precalculatedResultsRef.current = null;
+      } else {
+        console.log('[navigateToReveal] calculating results now (no pre-calc available)...');
+        results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
+      }
+      console.log('[navigateToReveal] results ready — playerChipsWon:', results.playerChipsWon);
     } catch (e) {
       console.error('[navigateToReveal] calculateHandResultsMulti threw:', e);
       router.replace('/');
