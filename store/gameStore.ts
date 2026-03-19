@@ -21,6 +21,7 @@ interface GameStore {
   homeTheme: HomeThemeId;
   buttonStyle: ButtonStyle;
   friendsBg: FriendsBgId;
+  fourColorSuits: boolean;
 
   // Economy state (persisted)
   lastDailyRewardClaim: string | null;
@@ -59,6 +60,7 @@ interface GameStore {
   setHomeTheme: (theme: HomeThemeId) => void;
   setButtonStyle: (style: ButtonStyle) => void;
   setFriendsBg: (bg: FriendsBgId) => void;
+  setFourColorSuits: (v: boolean) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
   trackChipsSpent: (amount: number) => void;
@@ -102,6 +104,7 @@ export const useGameStore = create<GameStore>()(
       homeTheme: DEFAULT_HOME_THEME,
       buttonStyle: 'solid' as ButtonStyle,
       friendsBg: 'none' as FriendsBgId,
+      fourColorSuits: false,
 
       // Economy state (persisted)
       lastDailyRewardClaim: null,
@@ -142,6 +145,7 @@ export const useGameStore = create<GameStore>()(
       setHomeTheme: (theme: HomeThemeId) => set({ homeTheme: theme }),
       setButtonStyle: (style: ButtonStyle) => set({ buttonStyle: style }),
       setFriendsBg: (bg: FriendsBgId) => set({ friendsBg: bg }),
+      setFourColorSuits: (v: boolean) => set({ fourColorSuits: v }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
@@ -210,7 +214,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent }),
     }
   )
 );

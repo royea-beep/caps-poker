@@ -338,7 +338,9 @@
       "Bash(gh secret:*)",
       "Bash(gh auth:*)",
       "Read(//c/Users/royea/AppData/Local/com.vercel.cli/**)",
-      "Read(//c/Users/royea/AppData/Roaming//**)"
+      "Read(//c/Users/royea/AppData/Roaming//**)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''version:'''', d[''''expo''''][''''version'''']\\); print\\(''''buildNumber:'''', d[''''expo''''].get\\(''''ios'''',{}\\).get\\(''''buildNumber'''',''''not set''''\\)\\); print\\(''''versionCode:'''', d[''''expo''''].get\\(''''android'''',{}\\).get\\(''''versionCode'''',''''not set''''\\)\\)\")",
+      "mcp__claude_ai_Supabase__list_migrations"
     ]
   }
 }

@@ -192,6 +192,34 @@ function PlayerCountSelector() {
   );
 }
 
+function FourColorSuitsToggle() {
+  const fourColorSuits = useGameStore((s) => s.fourColorSuits);
+  const setFourColorSuits = useGameStore((s) => s.setFourColorSuits);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Suit Colors</Text>
+        <Text style={styles.rowHint}>{fourColorSuits ? '4-color: ♥red ♦blue ♠black ♣green' : '2-color: red / black'}</Text>
+      </View>
+      <View style={styles.selectorRow}>
+        <Pressable
+          onPress={() => { hapticLight(); setFourColorSuits(false); }}
+          style={[styles.selectorBtn, !fourColorSuits && styles.selectorBtnActive]}
+        >
+          <Text style={[styles.selectorText, !fourColorSuits && styles.selectorTextActive]}>2</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { hapticLight(); setFourColorSuits(true); }}
+          style={[styles.selectorBtn, fourColorSuits && styles.selectorBtnActive]}
+        >
+          <Text style={[styles.selectorText, fourColorSuits && styles.selectorTextActive]}>4</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 // Preview cards: A♠ (face-up) + face-down
 const ACE_SPADES = { rank: 'A' as const, suit: 'spades' as const, id: 'preview-as' };
 const KING_HEARTS = { rank: 'K' as const, suit: 'hearts' as const, id: 'preview-kh' };
@@ -417,6 +445,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
         <CardThemePicker />
+        <FourColorSuitsToggle />
 
         <Text style={styles.sectionTitle}>TIMING</Text>
         <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />
