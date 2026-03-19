@@ -147,12 +147,13 @@ async function generatePlan(input: string): Promise<ClaudePlan> {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       system: `You are the Caps Poker dev assistant. Caps Poker is a React Native + Expo app (SDK 55) for Omaha poker. Analyze this bug report or feature request.
+CRITICAL: Respond ONLY in Hebrew (עברית). All text in your response must be in Hebrew.
 Respond in this EXACT format (no extra text):
 TYPE: BUG|FEATURE|QUESTION
-SUMMARY: (1 line, max 100 chars)
+SUMMARY: (תיאור קצר בעברית, עד 100 תווים)
 PLAN:
-1. (change 1)
-2. (change 2)
+1. (שינוי 1 בעברית)
+2. (שינוי 2 בעברית)
 FILES: file1.tsx, file2.ts
 EFFORT: LOW|MEDIUM|HIGH`,
       messages: [{ role: 'user', content: input }],
@@ -209,20 +210,22 @@ async function triggerGitHubAction(plan: ClaudePlan): Promise<void> {
 
 function formatPlanReply(plan: ClaudePlan): string {
   const typeEmoji = plan.type === 'BUG' ? '🐛' : plan.type === 'FEATURE' ? '✨' : '❓';
+  const typeHe = plan.type === 'BUG' ? 'באג' : plan.type === 'FEATURE' ? 'פיצ\'ר' : 'שאלה';
+  const effortHe = plan.effort === 'LOW' ? 'נמוך' : plan.effort === 'HIGH' ? 'גבוה' : 'בינוני';
   const planText = plan.plan.map((s, i) => `${i + 1}. ${s}`).join('\n');
-  return `${typeEmoji} TYPE: ${plan.type}
+  return `${typeEmoji} סוג: ${typeHe}
 
 ${plan.summary}
 
-Plan:
+תכנית:
 ${planText}
 
-Files: ${plan.files.join(', ')}
-Effort: ${plan.effort}
+קבצים: ${plan.files.join(', ')}
+מאמץ: ${effortHe}
 
-Reply APPROVE to proceed
-Reply CANCEL to abort
-(Auto-cancels in 30 min)`;
+השב APPROVE לאישור
+השב CANCEL לביטול
+(מתבטל אוטומטית תוך 30 דקות)`;
 }
 
 // ── Main handler ────────────────────────────────────────────────────────────
@@ -274,13 +277,13 @@ serve(async (req: Request) => {
       .single();
 
     if (!session) {
-      await sendWhatsApp(from, 'No pending request found. Send a bug report or feature request first.');
+      await sendWhatsApp(from, 'לא נמצאה בקשה ממתינה. שלח דיווח באג קודם.');
       return new Response('OK', { status: 200 });
     }
 
     if (upperBody === 'CANCEL') {
       await supabase.from('whatsapp_sessions').update({ status: 'cancelled' }).eq('id', session.id);
-      await sendWhatsApp(from, '❌ Aborted. No changes made.');
+      await sendWhatsApp(from, '❌ בוטל. לא בוצעו שינויים.');
       return new Response('OK', { status: 200 });
     }
 
@@ -288,7 +291,7 @@ serve(async (req: Request) => {
     await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
     const plan = session.claude_plan as ClaudePlan;
     await triggerGitHubAction(plan);
-    await sendWhatsApp(from, '⚙️ Running fix... I\'ll notify you when the commit lands.');
+    await sendWhatsApp(from, '⚙️ מריץ תיקון... אעדכן אותך כשהcommit יעלה.');
     return new Response('OK', { status: 200 });
   }
 
@@ -309,7 +312,7 @@ serve(async (req: Request) => {
           inputText = msgBody || '[Voice note received — transcription unavailable]';
         }
       } else {
-        inputText = msgBody || '[Voice note received — no transcription key configured]';
+        inputText = msgBody || '[הודעה קולית התקבלה — שירות התמלול אינו מוגדר. שלח טקסט במקום]';
       }
     } else if (mediaType.startsWith('image/')) {
       detectedMediaType = 'image';
@@ -329,7 +332,7 @@ serve(async (req: Request) => {
 
   // Only reject if truly empty (no text AND no media)
   if (!inputText) {
-    await sendWhatsApp(from, '⚠️ Empty message. Send a bug description, voice note, or screenshot.');
+    await sendWhatsApp(from, '⚠️ הודעה ריקה. שלח תיאור באג, הודעה קולית, או צילום מסך.');
     return new Response('OK', { status: 200 });
   }
 
@@ -338,7 +341,7 @@ serve(async (req: Request) => {
   try {
     plan = await generatePlan(inputText);
   } catch {
-    await sendWhatsApp(from, '❌ Claude API error. Try again shortly.');
+    await sendWhatsApp(from, '❌ שגיאה ב-Claude API. נסה שוב בעוד רגע.');
     return new Response('OK', { status: 200 });
   }
 
