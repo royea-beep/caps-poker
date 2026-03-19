@@ -11,7 +11,48 @@ const GITHUB_TOKEN = Deno.env.get('GITHUB_TOKEN')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const GITHUB_REPO = 'royea-beep/caps-poker';
+// ── Multi-project routing ───────────────────────────────────────────────────
+
+const REPO_MAP: Record<string, string> = {
+  'caps-poker':       'royea-beep/caps-poker',
+  'wingman':          'royea-beep/wingman',
+  'keydrop':          'royea-beep/KeyDrop',
+  'analyzer':         'royea-beep/analyzer-standalone',
+  'explainit':        'royea-beep/ExplainIt',
+  'postpilot':        'royea-beep/PostPilot',
+  'ftable':           'royea-beep/ftable',
+  'letsmakebillions': 'royea-beep/letsmakebillions',
+};
+
+const PROJECT_KEYWORDS: Record<string, string[]> = {
+  'caps-poker':       ['caps', 'poker', 'קלפים', 'קפס', 'בורד', 'board', 'omaha'],
+  'wingman':          ['wingman', 'ווינגמן', 'שידוך', 'dating', 'מינגמן'],
+  'keydrop':          ['keydrop', 'key drop', 'מפתח', 'קיידרופ', 'credentials'],
+  'analyzer':         ['analyzer', 'אנלייזר', 'מנתח', 'analyse', 'analyze', 'product'],
+  'explainit':        ['explainit', 'explain', 'הסבר', 'אקספליין', 'video', 'וידאו'],
+  'postpilot':        ['postpilot', 'post pilot', 'פוסט', 'social', 'scheduler'],
+  'ftable':           ['ftable', 'פנטזי', 'fantasy', 'football', 'שולחן'],
+  'letsmakebillions': ['billions', 'ביליונים', 'crypto', 'קריפטו', 'trading', 'whale'],
+};
+
+const PROJECT_STACKS: Record<string, string> = {
+  'caps-poker':       'React Native + Expo SDK 55, Omaha poker game',
+  'wingman':          'Next.js + Supabase, social matchmaking app',
+  'keydrop':          'Next.js + Prisma + Neon, encrypted one-time credential links',
+  'analyzer':         'Next.js + Claude Vision + LemonSqueezy, product analyzer',
+  'explainit':        'Next.js + Playwright, explainer video generator',
+  'postpilot':        'Next.js + Prisma, social media post scheduler',
+  'ftable':           'Vanilla JS, fantasy football table game',
+  'letsmakebillions': 'Python + Railway, crypto trading bot',
+};
+
+function detectProject(text: string): string {
+  const lower = text.toLowerCase();
+  for (const [project, keywords] of Object.entries(PROJECT_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) return project;
+  }
+  return 'caps-poker'; // default
+}
 
 // ── Twilio signature verification ──────────────────────────────────────────
 
@@ -20,7 +61,6 @@ async function verifyTwilioSignature(
   params: Record<string, string>,
   signature: string,
 ): Promise<boolean> {
-  // Sort params alphabetically and concatenate
   const sortedKeys = Object.keys(params).sort();
   let str = url;
   for (const key of sortedKeys) {
@@ -62,7 +102,6 @@ async function sendWhatsApp(to: string, body: string): Promise<void> {
 // ── Transcribe audio via OpenAI Whisper ────────────────────────────────────
 
 async function transcribeAudio(mediaUrl: string): Promise<string> {
-  // Fetch audio from Twilio (needs auth)
   const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
   const audioRes = await fetch(mediaUrl, {
     headers: { Authorization: `Basic ${creds}` },
@@ -72,7 +111,7 @@ async function transcribeAudio(mediaUrl: string): Promise<string> {
   const form = new FormData();
   form.append('file', audioBlob, 'audio.ogg');
   form.append('model', 'whisper-1');
-  form.append('language', 'he'); // Hebrew default, Whisper auto-detects
+  form.append('language', 'he');
 
   const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST',
@@ -90,9 +129,7 @@ async function describeImage(mediaUrl: string): Promise<string> {
   const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
   const imgRes = await fetch(mediaUrl, {
-    headers: {
-      'Authorization': `Basic ${creds}`,
-    },
+    headers: { 'Authorization': `Basic ${creds}` },
   });
 
   console.log('[whatsapp-bot] Image fetch status:', imgRes.status, imgRes.headers.get('content-type'));
@@ -104,7 +141,6 @@ async function describeImage(mediaUrl: string): Promise<string> {
   const imgBuf = await imgRes.arrayBuffer();
   const uint8 = new Uint8Array(imgBuf);
 
-  // Convert to base64 in chunks to avoid stack overflow on large images
   let binary = '';
   const chunkSize = 8192;
   for (let i = 0; i < uint8.length; i += chunkSize) {
@@ -157,9 +193,12 @@ interface ClaudePlan {
   plan: string[];
   files: string[];
   effort: 'LOW' | 'MEDIUM' | 'HIGH';
+  project?: string;
 }
 
-async function generatePlan(input: string): Promise<ClaudePlan> {
+async function generatePlan(input: string, project: string): Promise<ClaudePlan> {
+  const stack = PROJECT_STACKS[project] ?? PROJECT_STACKS['caps-poker'];
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -170,7 +209,7 @@ async function generatePlan(input: string): Promise<ClaudePlan> {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
-      system: `You are the Caps Poker dev assistant. Caps Poker is a React Native + Expo app (SDK 55) for Omaha poker. Analyze this bug report or feature request.
+      system: `You are a dev assistant for the project: ${project} (${stack}). Analyze this bug report or feature request.
 CRITICAL: Respond ONLY in Hebrew (עברית). All text in your response must be in Hebrew.
 Respond in this EXACT format (no extra text):
 TYPE: BUG|FEATURE|QUESTION
@@ -186,7 +225,6 @@ EFFORT: LOW|MEDIUM|HIGH`,
   const data = await res.json();
   const text: string = data.content?.[0]?.text ?? '';
 
-  // Parse structured response
   const typeMatch = text.match(/TYPE:\s*(BUG|FEATURE|QUESTION)/);
   const summaryMatch = text.match(/SUMMARY:\s*(.+)/);
   const planMatch = text.match(/PLAN:\n([\s\S]*?)(?=FILES:|$)/);
@@ -204,13 +242,15 @@ EFFORT: LOW|MEDIUM|HIGH`,
     plan: planLines,
     files: (filesMatch?.[1] ?? '').split(',').map((f) => f.trim()).filter(Boolean),
     effort: (effortMatch?.[1] ?? 'MEDIUM') as ClaudePlan['effort'],
+    project,
   };
 }
 
 // ── Trigger GitHub Actions ──────────────────────────────────────────────────
 
-async function triggerGitHubAction(plan: ClaudePlan): Promise<void> {
-  await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+async function triggerGitHubAction(plan: ClaudePlan, project: string): Promise<void> {
+  const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
+  await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -225,6 +265,7 @@ async function triggerGitHubAction(plan: ClaudePlan): Promise<void> {
         files: plan.files.join(', '),
         effort: plan.effort,
         type: plan.type,
+        project,
       },
     }),
   });
@@ -237,7 +278,8 @@ function formatPlanReply(plan: ClaudePlan): string {
   const typeHe = plan.type === 'BUG' ? 'באג' : plan.type === 'FEATURE' ? 'פיצ\'ר' : 'שאלה';
   const effortHe = plan.effort === 'LOW' ? 'נמוך' : plan.effort === 'HIGH' ? 'גבוה' : 'בינוני';
   const planText = plan.plan.map((s, i) => `${i + 1}. ${s}`).join('\n');
-  return `${typeEmoji} סוג: ${typeHe}
+  const projectDisplay = plan.project ?? 'caps-poker';
+  return `${typeEmoji} סוג: ${typeHe} | פרויקט: ${projectDisplay}
 
 ${plan.summary}
 
@@ -273,7 +315,6 @@ serve(async (req: Request) => {
   if (twilioSignature) {
     const valid = await verifyTwilioSignature(req.url, params, twilioSignature);
     if (!valid) {
-      // Log mismatch but continue — sandbox URL forwarding often breaks signatures
       console.warn('[whatsapp-bot] Signature mismatch — proceeding in sandbox mode');
     }
   } else {
@@ -316,13 +357,13 @@ serve(async (req: Request) => {
     // APPROVE
     await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
     const plan = session.claude_plan as ClaudePlan;
-    await triggerGitHubAction(plan);
-    await sendWhatsApp(from, '⚙️ מריץ תיקון... אעדכן אותך כשהcommit יעלה.');
+    const project = plan.project ?? 'caps-poker';
+    await triggerGitHubAction(plan, project);
+    await sendWhatsApp(from, `⚙️ מריץ תיקון על ${project}... אעדכן אותך כשהcommit יעלה.`);
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
   // ── New report: determine input type and extract text ─────────────────────
-  // Media-first: forwarded messages have Body="" but NumMedia=1 — never reject before checking media
   let inputText = '';
   let detectedMediaType = 'text';
 
@@ -347,7 +388,6 @@ serve(async (req: Request) => {
         inputText = msgBody ? `${msgBody}\n\nצילום מסך: ${imageDesc}` : `צילום מסך: ${imageDesc}`;
       } catch (e) {
         console.error('[whatsapp-bot] Image description failed:', e);
-        // Still process — user may have added text description
         inputText = msgBody || 'קיבלתי צילום מסך אך לא הצלחתי לנתח אותו. אנא תאר את הבעיה בטקסט.';
       }
     } else {
@@ -357,16 +397,18 @@ serve(async (req: Request) => {
     inputText = msgBody;
   }
 
-  // Only reject if truly empty (no text AND no media)
   if (!inputText) {
     await sendWhatsApp(from, '⚠️ הודעה ריקה. שלח תיאור באג, הודעה קולית, או צילום מסך.');
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
-  // ── Generate plan ─────────────────────────────────────────────────────────
+  // ── Detect project + Generate plan ───────────────────────────────────────
+  const project = detectProject(inputText);
+  console.log('[whatsapp-bot] Detected project:', project);
+
   let plan: ClaudePlan;
   try {
-    plan = await generatePlan(inputText);
+    plan = await generatePlan(inputText, project);
   } catch {
     await sendWhatsApp(from, '❌ שגיאה ב-Claude API. נסה שוב בעוד רגע.');
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
