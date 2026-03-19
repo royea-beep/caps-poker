@@ -247,8 +247,8 @@ ${planText}
 קבצים: ${plan.files.join(', ')}
 מאמץ: ${effortHe}
 
-השב APPROVE לאישור
-השב CANCEL לביטול
+השב *1* לאישור ✅
+השב *2* לביטול ❌
 (מתבטל אוטומטית תוך 30 דקות)`;
 }
 
@@ -288,9 +288,11 @@ serve(async (req: Request) => {
   const mediaType = params['MediaContentType0'] ?? '';
 
   // ── Handle APPROVE / CANCEL replies ──────────────────────────────────────
-  const upperBody = msgBody.toUpperCase();
+  const upperBody = msgBody.trim().toUpperCase();
+  const isApprove = ['1', 'APPROVE', 'כן', 'אשר'].includes(upperBody);
+  const isCancel  = ['2', 'CANCEL',  'לא', 'בטל'].includes(upperBody);
 
-  if (upperBody === 'APPROVE' || upperBody === 'CANCEL') {
+  if (isApprove || isCancel) {
     const { data: session } = await supabase
       .from('whatsapp_sessions')
       .select('*')
@@ -302,13 +304,13 @@ serve(async (req: Request) => {
 
     if (!session) {
       await sendWhatsApp(from, 'לא נמצאה בקשה ממתינה. שלח דיווח באג קודם.');
-      return new Response('OK', { status: 200 });
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
     }
 
-    if (upperBody === 'CANCEL') {
+    if (isCancel) {
       await supabase.from('whatsapp_sessions').update({ status: 'cancelled' }).eq('id', session.id);
       await sendWhatsApp(from, '❌ בוטל. לא בוצעו שינויים.');
-      return new Response('OK', { status: 200 });
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
     }
 
     // APPROVE
@@ -316,7 +318,7 @@ serve(async (req: Request) => {
     const plan = session.claude_plan as ClaudePlan;
     await triggerGitHubAction(plan);
     await sendWhatsApp(from, '⚙️ מריץ תיקון... אעדכן אותך כשהcommit יעלה.');
-    return new Response('OK', { status: 200 });
+    return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
   // ── New report: determine input type and extract text ─────────────────────
@@ -358,7 +360,7 @@ serve(async (req: Request) => {
   // Only reject if truly empty (no text AND no media)
   if (!inputText) {
     await sendWhatsApp(from, '⚠️ הודעה ריקה. שלח תיאור באג, הודעה קולית, או צילום מסך.');
-    return new Response('OK', { status: 200 });
+    return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
   // ── Generate plan ─────────────────────────────────────────────────────────
@@ -367,8 +369,15 @@ serve(async (req: Request) => {
     plan = await generatePlan(inputText);
   } catch {
     await sendWhatsApp(from, '❌ שגיאה ב-Claude API. נסה שוב בעוד רגע.');
-    return new Response('OK', { status: 200 });
+    return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
+
+  // ── Auto-cancel any existing pending sessions for this user ──────────────
+  await supabase
+    .from('whatsapp_sessions')
+    .update({ status: 'cancelled' })
+    .eq('from_number', from)
+    .eq('status', 'pending_approval');
 
   // ── Store session ─────────────────────────────────────────────────────────
   await supabase.from('whatsapp_sessions').insert({
@@ -383,5 +392,5 @@ serve(async (req: Request) => {
   // ── Send reply ────────────────────────────────────────────────────────────
   await sendWhatsApp(from, formatPlanReply(plan));
 
-  return new Response('OK', { status: 200 });
+  return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
 });
