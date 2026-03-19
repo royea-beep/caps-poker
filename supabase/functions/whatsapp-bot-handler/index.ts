@@ -86,13 +86,35 @@ async function transcribeAudio(mediaUrl: string): Promise<string> {
 // ── Describe image via Claude Vision ───────────────────────────────────────
 
 async function describeImage(mediaUrl: string): Promise<string> {
+  console.log('[whatsapp-bot] Fetching image from:', mediaUrl);
   const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+
   const imgRes = await fetch(mediaUrl, {
-    headers: { Authorization: `Basic ${creds}` },
+    headers: {
+      'Authorization': `Basic ${creds}`,
+    },
   });
+
+  console.log('[whatsapp-bot] Image fetch status:', imgRes.status, imgRes.headers.get('content-type'));
+
+  if (!imgRes.ok) {
+    throw new Error(`Image fetch failed: ${imgRes.status}`);
+  }
+
   const imgBuf = await imgRes.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)));
+  const uint8 = new Uint8Array(imgBuf);
+
+  // Convert to base64 in chunks to avoid stack overflow on large images
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < uint8.length; i += chunkSize) {
+    const chunk = uint8.slice(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  const base64 = btoa(binary);
+
   const contentType = imgRes.headers.get('content-type') ?? 'image/jpeg';
+  console.log('[whatsapp-bot] Image size:', imgBuf.byteLength, 'bytes, type:', contentType);
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -114,14 +136,16 @@ async function describeImage(mediaUrl: string): Promise<string> {
             },
             {
               type: 'text',
-              text: 'Describe this screenshot for a bug report. Focus on what is visible on screen, any errors, UI issues, or unexpected behavior. Be concise.',
+              text: 'תאר את צילום המסך הזה לדיווח באג. התמקד במה שגלוי על המסך, שגיאות, בעיות UI, או התנהגות לא צפויה. היה תמציתי בעברית.',
             },
           ],
         },
       ],
     }),
   });
+
   const data = await res.json();
+  console.log('[whatsapp-bot] Vision response:', JSON.stringify(data).slice(0, 200));
   return data.content?.[0]?.text ?? '';
 }
 
@@ -318,10 +342,11 @@ serve(async (req: Request) => {
       detectedMediaType = 'image';
       try {
         const imageDesc = await describeImage(mediaUrl);
-        inputText = msgBody ? `${msgBody}\n\nScreenshot: ${imageDesc}` : `Screenshot: ${imageDesc}`;
+        inputText = msgBody ? `${msgBody}\n\nצילום מסך: ${imageDesc}` : `צילום מסך: ${imageDesc}`;
       } catch (e) {
         console.error('[whatsapp-bot] Image description failed:', e);
-        inputText = msgBody || '[Image received — description unavailable]';
+        // Still process — user may have added text description
+        inputText = msgBody || 'קיבלתי צילום מסך אך לא הצלחתי לנתח אותו. אנא תאר את הבעיה בטקסט.';
       }
     } else {
       inputText = msgBody || `[Media received: ${mediaType}]`;
