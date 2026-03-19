@@ -379,6 +379,11 @@ export default function Board({
             <Text style={styles.winnerText}>
               {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
             </Text>
+            {winner === 'player' && playerHandName ? (
+              <Text style={styles.bannerHandName}>{playerHandName}</Text>
+            ) : winner === 'bot' && botHandName ? (
+              <Text style={styles.bannerHandName}>{botHandName}</Text>
+            ) : null}
           </Animated.View>
         )}
       </Pressable>
@@ -581,6 +586,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+  bannerHandName: {
+    color: COLORS.background,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    opacity: 0.85,
   },
   autoBtn: {
     paddingHorizontal: 10,

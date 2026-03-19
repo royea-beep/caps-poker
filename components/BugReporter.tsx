@@ -79,8 +79,10 @@ async function submitBugReport(
   description: string,
   screen: string,
 ): Promise<void> {
-  const url = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  // Read Supabase creds — prefer env vars, fall back to app.json extra (Expo managed workflow)
+  const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || extra?.supabaseUrl;
+  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || extra?.supabaseAnonKey;
 
   if (!url || !key) {
     console.warn('[BugReporter] Supabase not configured');
@@ -157,7 +159,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const pathname = usePathname();
   const path = pathname ?? '';
   const isGameScreen =
-    ['/game', '/multiplayer-game', '/sit-and-go', '/tournament'].includes(path) ||
+    ['/game', '/multiplayer-game', '/sit-and-go', '/tournament', '/orientation-pick'].includes(path) ||
     path.startsWith('/lobby');
   const fabBottom = pathname === '/' ? insets.bottom + 60 : insets.bottom + 16;
 

@@ -345,18 +345,16 @@ export default function ResultsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.titleSection}>
-          <Text style={styles.title}>RESULTS</Text>
-          <View style={styles.scoreRow}>
-            <View style={styles.scoreItem}>
-              <Text style={styles.scoreLabel}>YOU</Text>
-              <Text style={[styles.scoreNum, { color: COLORS.neonGreen }]}>{playerWins}</Text>
-            </View>
-            <Text style={styles.scoreDivider}>{'\u2014'}</Text>
-            <View style={styles.scoreItem}>
-              <Text style={styles.scoreLabel}>{numberOfPlayers > 2 ? 'BOTS' : 'BOT'}</Text>
-              <Text style={[styles.scoreNum, { color: COLORS.neonRed }]}>{botWins}</Text>
-            </View>
-          </View>
+          <Text style={[styles.title, {
+            color: playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold,
+          }]}>
+            {playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
+          </Text>
+          <Text style={styles.scoreDisplay}>
+            <Text style={{ color: COLORS.neonGreen }}>{playerWins}</Text>
+            <Text style={styles.scoreSep}> — </Text>
+            <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
+          </Text>
         </Animated.View>
 
         {/* Board results — stacked vertically */}
@@ -670,28 +668,14 @@ const styles = StyleSheet.create({
     color: COLORS.gold,
     letterSpacing: 6,
   },
-  scoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-  },
-  scoreItem: {
-    alignItems: 'center',
-  },
-  scoreLabel: {
-    color: COLORS.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-  scoreNum: {
-    fontSize: 32,
+  scoreDisplay: {
+    fontSize: 42,
     fontWeight: '900',
   },
-  scoreDivider: {
+  scoreSep: {
     color: COLORS.textDim,
-    fontSize: 18,
-    marginTop: 10,
+    fontSize: 32,
+    fontWeight: '300',
   },
 
   // Board card — vertical layout
