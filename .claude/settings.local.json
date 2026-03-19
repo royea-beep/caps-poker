@@ -336,7 +336,9 @@
       "Bash(git -C:*)",
       "mcp__claude_ai_Supabase__get_logs",
       "Bash(gh secret:*)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "Read(//c/Users/royea/AppData/Local/com.vercel.cli/**)",
+      "Read(//c/Users/royea/AppData/Roaming//**)"
     ]
   }
 }

@@ -580,6 +580,11 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                   <Text style={styles.handName}>{board.playerHandName}</Text>
                 )}
               </View>
+              {allRevealed && playerOptimalHint && (
+                <Text style={styles.optimalHint}>
+                  Best unused: {playerOptimalHint.rank}{SUIT_SYMBOL[playerOptimalHint.suit]}
+                </Text>
+              )}
             </View>
 
           </View>
@@ -747,6 +752,14 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexWrap: 'wrap',
     maxWidth: 100,
+  },
+  optimalHint: {
+    color: COLORS.gold,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    opacity: 0.75,
+    marginTop: 2,
   },
 
   // ─── Footer ───────────────────────────────────────────────────────────────

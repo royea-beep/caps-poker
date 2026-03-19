@@ -9,8 +9,8 @@ export const DEFAULT_CONFIG = {
   potPerBoard: 25,
   completeBonusPercent: 50,
   numberOfPlayers: 2,
-  botSpeedMin: 5000,
-  botSpeedMax: 30000,
+  botSpeedMin: 1500,
+  botSpeedMax: 4000,
   soundEnabled: true as boolean,
 };
 

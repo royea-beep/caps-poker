@@ -96,7 +96,7 @@ const TOP_BAR_H = 44;
 const BOT_STATUS_H = 24;       // label + paddingVertical ≈ 24px
 const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical:12×2 + text ≈ 68px
 const HINT_H = 26;             // selectionHint / boardError bar
-const BOARD_CHROME = 28;       // per-board non-card overhead: header + inner padding + row gaps
+const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + header(18) + cardRow gaps(6) + margins
 
 export default function GameScreen() {
   const router = useRouter();
@@ -114,7 +114,7 @@ export default function GameScreen() {
 
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones → smaller cards → shorter hand section
-  const PLAYER_HAND_H = SCREEN_H < 700 ? 115 : SCREEN_H < 800 ? 128 : 140;
+  const PLAYER_HAND_H = SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -124,7 +124,7 @@ export default function GameScreen() {
     56,   // mobile web (iPhone Safari)
     72,   // tablet web
     100,  // desktop web
-    Math.max(36, Math.min(82, Math.floor(boardSpace / 2))),  // native – min lowered for small screens
+    Math.max(32, Math.min(92, Math.floor(boardSpace / 2))),  // native – min 32, max raised to 92
   );
   const isWeb = Platform.OS === 'web';
 
