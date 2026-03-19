@@ -293,34 +293,41 @@ serve(async (req: Request) => {
   }
 
   // ── New report: determine input type and extract text ─────────────────────
+  // Media-first: forwarded messages have Body="" but NumMedia=1 — never reject before checking media
   let inputText = '';
   let detectedMediaType = 'text';
 
   if (numMedia > 0 && mediaUrl) {
     if (mediaType.startsWith('audio/')) {
       detectedMediaType = 'audio';
-      try {
-        inputText = await transcribeAudio(mediaUrl);
-      } catch {
-        await sendWhatsApp(from, '❌ Could not transcribe audio. Please send as text.');
-        return new Response('OK', { status: 200 });
+      if (OPENAI_API_KEY) {
+        try {
+          inputText = await transcribeAudio(mediaUrl);
+          if (msgBody) inputText = msgBody + '\n\n[Voice note]: ' + inputText;
+        } catch (e) {
+          console.error('[whatsapp-bot] Audio transcription failed:', e);
+          inputText = msgBody || '[Voice note received — transcription unavailable]';
+        }
+      } else {
+        inputText = msgBody || '[Voice note received — no transcription key configured]';
       }
     } else if (mediaType.startsWith('image/')) {
       detectedMediaType = 'image';
       try {
-        inputText = await describeImage(mediaUrl);
-        // Prepend user text if any
-        if (msgBody) inputText = `${msgBody}\n\nScreenshot: ${inputText}`;
-      } catch {
-        inputText = msgBody || 'Image could not be processed';
+        const imageDesc = await describeImage(mediaUrl);
+        inputText = msgBody ? `${msgBody}\n\nScreenshot: ${imageDesc}` : `Screenshot: ${imageDesc}`;
+      } catch (e) {
+        console.error('[whatsapp-bot] Image description failed:', e);
+        inputText = msgBody || '[Image received — description unavailable]';
       }
     } else {
-      inputText = msgBody || 'Unknown media type';
+      inputText = msgBody || `[Media received: ${mediaType}]`;
     }
   } else {
     inputText = msgBody;
   }
 
+  // Only reject if truly empty (no text AND no media)
   if (!inputText) {
     await sendWhatsApp(from, '⚠️ Empty message. Send a bug description, voice note, or screenshot.');
     return new Response('OK', { status: 200 });
