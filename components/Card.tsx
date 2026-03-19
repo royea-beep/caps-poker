@@ -41,7 +41,7 @@ const CARD_BACK_BORDER = '#c9a84c';
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
   diamonds: '#1E90FF',
-  spades:   '#000000',
+  spades:   '#1a1a2e',
   clubs:    '#228B22',
 };
 
