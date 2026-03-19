@@ -449,16 +449,16 @@ export default function HomeScreen() {
             <HomeBtn title="JOIN GAME" theme={theme} style={{ flex: 1, width: undefined }} onPress={() => router.push('/lobby/join' as any)} btnHeight={btnHeight} btnFontSize={Math.min(14, btnFontSize ?? 14)} />
           </View>
           <View style={styles.linkRow}>
-            <Pressable onPress={() => router.push('/leaderboard' as any)} hitSlop={8}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]}>LEADERBOARD</Text>
+            <Pressable onPress={() => router.push('/leaderboard' as any)} hitSlop={8} style={styles.linkItem}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>LEADERBOARD</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]}>HAND HISTORY</Text>
+            <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8} style={styles.linkItem}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>HAND HISTORY</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => router.push('/settings' as any)} hitSlop={8}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]}>SETTINGS</Text>
+            <Pressable onPress={() => router.push('/settings' as any)} hitSlop={8} style={styles.linkItem}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>SETTINGS</Text>
             </Pressable>
           </View>
         </View>
@@ -624,10 +624,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 4,
   },
+  linkItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
   linkText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 1.5,
+    letterSpacing: 0.8,
+    textAlign: 'center',
   },
   linkDot: {
     fontSize: 14,

@@ -1,6 +1,7 @@
 import 'react-native-reanimated';
-import { useEffect } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, Platform, StyleSheet } from 'react-native';
+import Animated, { useSharedValue, withTiming, withSequence, withDelay, useAnimatedStyle } from 'react-native-reanimated';
 import * as Linking from 'expo-linking';
 import { Stack } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
@@ -41,8 +42,55 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
+function SplashOverlay({ onDone }: { onDone: () => void }) {
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.88);
+
+  useEffect(() => {
+    opacity.value = withSequence(
+      withTiming(1, { duration: 600 }),
+      withDelay(2400, withTiming(0, { duration: 500 })),
+    );
+    scale.value = withTiming(1, { duration: 600 });
+    const t = setTimeout(onDone, 3500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <View style={splashStyles.container}>
+      <Animated.View style={[splashStyles.content, animStyle]}>
+        <Text style={splashStyles.suits}>♠ ♥ ♦ ♣</Text>
+        <Text style={splashStyles.title}>CAPS POKER</Text>
+        <Text style={splashStyles.sub}>4 Boards. One Winner.</Text>
+        <View style={splashStyles.divider} />
+      </Animated.View>
+    </View>
+  );
+}
+
+const splashStyles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0a0a0a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+  },
+  content: { alignItems: 'center' },
+  suits: { fontSize: 22, color: '#c9a84c', letterSpacing: 10, marginBottom: 18, opacity: 0.8 },
+  title: { fontSize: 40, fontWeight: '900', color: '#c9a84c', letterSpacing: 5 },
+  sub: { fontSize: 13, color: '#888', letterSpacing: 3, marginTop: 8, textTransform: 'uppercase' },
+  divider: { width: 60, height: 2, backgroundColor: '#c9a84c', marginTop: 20, opacity: 0.4 },
+});
+
 export default function RootLayout() {
   const initSession = useGameStore((s) => s.initSession);
+  const [splashDone, setSplashDone] = useState(Platform.OS === 'web');
 
   useEffect(() => {
     initSession();
@@ -100,6 +148,7 @@ export default function RootLayout() {
         </WebContainer>
       </BugReporter>
       <VersionBadge />
+      {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
   );
 }
