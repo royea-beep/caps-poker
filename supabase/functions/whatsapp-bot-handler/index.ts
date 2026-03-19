@@ -273,13 +273,14 @@ async function triggerGitHubAction(plan: ClaudePlan, project: string): Promise<v
 
 // ── Format reply message ────────────────────────────────────────────────────
 
-function formatPlanReply(plan: ClaudePlan): string {
+function formatPlanReply(plan: ClaudePlan, transcript?: string): string {
   const typeEmoji = plan.type === 'BUG' ? '🐛' : plan.type === 'FEATURE' ? '✨' : '❓';
   const typeHe = plan.type === 'BUG' ? 'באג' : plan.type === 'FEATURE' ? 'פיצ\'ר' : 'שאלה';
   const effortHe = plan.effort === 'LOW' ? 'נמוך' : plan.effort === 'HIGH' ? 'גבוה' : 'בינוני';
   const planText = plan.plan.map((s, i) => `${i + 1}. ${s}`).join('\n');
   const projectDisplay = plan.project ?? 'caps-poker';
-  return `${typeEmoji} סוג: ${typeHe} | פרויקט: ${projectDisplay}
+  const transcriptSection = transcript ? `🎤 שמעתי: "${transcript}"\n\n` : '';
+  return `${transcriptSection}${typeEmoji} סוג: ${typeHe} | פרויקט: ${projectDisplay}
 
 ${plan.summary}
 
@@ -366,14 +367,15 @@ serve(async (req: Request) => {
   // ── New report: determine input type and extract text ─────────────────────
   let inputText = '';
   let detectedMediaType = 'text';
+  let audioTranscript: string | undefined;
 
   if (numMedia > 0 && mediaUrl) {
     if (mediaType.startsWith('audio/')) {
       detectedMediaType = 'audio';
       if (OPENAI_API_KEY) {
         try {
-          inputText = await transcribeAudio(mediaUrl);
-          if (msgBody) inputText = msgBody + '\n\n[Voice note]: ' + inputText;
+          audioTranscript = await transcribeAudio(mediaUrl);
+          inputText = msgBody ? msgBody + '\n\n[Voice note]: ' + audioTranscript : audioTranscript;
         } catch (e) {
           console.error('[whatsapp-bot] Audio transcription failed:', e);
           inputText = msgBody || '[Voice note received — transcription unavailable]';
@@ -432,7 +434,7 @@ serve(async (req: Request) => {
   });
 
   // ── Send reply ────────────────────────────────────────────────────────────
-  await sendWhatsApp(from, formatPlanReply(plan));
+  await sendWhatsApp(from, formatPlanReply(plan, audioTranscript));
 
   return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
 });
