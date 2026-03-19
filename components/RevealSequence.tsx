@@ -11,6 +11,7 @@ import { COLORS, SUITS, RANKS, Card } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
+import { computeOmahaEquity } from '../utils/handEvaluator';
 
 // Lazy haptics — never crash on web
 let Haptics: typeof import('expo-haptics') | null = null;
@@ -279,11 +280,16 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     // Safety: force complete after 15s
     const safetyTimer = setTimeout(() => { onDone(); }, 15000);
 
-    // Show initial probability (50/50) + compute hints from flop
-    setWinProb(50);
-    prevProbRef.current = 50;
-    displayedProbRef.current = 50;
-    setDisplayedProb(50);
+    // Show initial probability based on actual equity at flop + compute hints
+    const flopEquity = computeOmahaEquity(
+      board.playerCards ?? [],
+      board.allBotCards ?? [],
+      board.openCards ?? [],
+    );
+    setWinProb(flopEquity);
+    prevProbRef.current = flopEquity;
+    displayedProbRef.current = flopEquity;
+    setDisplayedProb(flopEquity);
     computeHints(board, board.openCards ?? []);
 
     if (!hasTurn) {
@@ -308,12 +314,12 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       haptic();
       try { playSound('cardFlip'); } catch {}
 
-      const intermediate =
-        board.winner === 'player'
-          ? 55 + Math.floor(Math.random() * 20)
-          : board.winner === 'bot'
-            ? 26 + Math.floor(Math.random() * 19)
-            : 50;
+      const turnCommunity = [...(board.openCards ?? []), ...(turnCard ? [turnCard] : [])];
+      const intermediate = computeOmahaEquity(
+        board.playerCards ?? [],
+        board.allBotCards ?? [],
+        turnCommunity,
+      );
 
       const delta = intermediate - prevProbRef.current;
       setProbDelta(delta);
