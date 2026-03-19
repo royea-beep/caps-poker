@@ -1,4 +1,4 @@
-import { Card, Rank, RANKS } from '../constants/gameConfig';
+import { Card, Rank, RANKS, SUITS } from '../constants/gameConfig';
 
 const RANK_VALUES: Record<Rank, number> = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
@@ -203,4 +203,66 @@ export function evaluateOmahaHand(playerCards: Card[], boardCards: Card[]): Hand
 
 export function compareHands(result1: HandResult, result2: HandResult): number {
   return result1.score - result2.score;
+}
+
+/**
+ * Compute pre-flop / post-flop equity for player vs one or more bots using Omaha rules.
+ * Enumerates all possible remaining community cards (turn+river, or just river) from the deck.
+ * Returns player's win percentage (0–100).
+ */
+export function computeOmahaEquity(
+  playerCards: Card[],
+  allBotCards: Card[][],
+  communityCards: Card[], // already-known board cards (e.g. flop, or flop+turn)
+): number {
+  if (playerCards.length < 2) return 50;
+  const activeBots = allBotCards.filter((bc) => bc.length >= 2);
+  if (activeBots.length === 0) return 50;
+
+  // Build the set of known cards to exclude from the remaining deck
+  const knownKeys = new Set<string>([
+    ...playerCards,
+    ...activeBots.flat(),
+    ...communityCards,
+  ].map((c) => `${c.rank}-${c.suit}`));
+
+  // Build remaining deck
+  const remaining: Card[] = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      const key = `${rank}-${suit}`;
+      if (!knownKeys.has(key)) {
+        remaining.push({ rank, suit, id: key });
+      }
+    }
+  }
+
+  const neededCards = 5 - communityCards.length;
+
+  // If all community cards are already known, evaluate directly
+  if (neededCards <= 0) {
+    const pScore = evaluateOmahaHand(playerCards, communityCards).score;
+    const maxBotScore = Math.max(...activeBots.map((bc) => evaluateOmahaHand(bc, communityCards).score));
+    if (pScore > maxBotScore) return 100;
+    if (pScore === maxBotScore) return 50;
+    return 0;
+  }
+
+  // Enumerate all combinations of neededCards from the remaining deck
+  let wins = 0;
+  let ties = 0;
+  let total = 0;
+
+  const extras = combinations(remaining, neededCards);
+  for (const extra of extras) {
+    const board = [...communityCards, ...extra];
+    const pScore = evaluateOmahaHand(playerCards, board).score;
+    const maxBotScore = Math.max(...activeBots.map((bc) => evaluateOmahaHand(bc, board).score));
+    if (pScore > maxBotScore) wins++;
+    else if (pScore === maxBotScore) ties++;
+    total++;
+  }
+
+  if (total === 0) return 50;
+  return Math.round(((wins + ties * 0.5) / total) * 100);
 }
