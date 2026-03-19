@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -60,6 +61,7 @@ export default function ResultsScreen() {
 
   const [showReveal, setShowReveal] = useState(true);
   const [showButtons, setShowButtons] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
@@ -152,11 +154,15 @@ export default function ResultsScreen() {
 
     const playerWon = revealData.netChips >= 0;
     const soundTimer = setTimeout(() => playSound(playerWon ? 'chipsWin' : 'lose'), chipsStart);
+    const playerWinsCount = revealData.boards.filter((b) => b.winner === 'player').length;
     const btnTimer = setTimeout(() => {
       if (revealData.isComplete && revealData.completeWinner) {
         setShowComplete(true);
       } else {
         setShowButtons(true);
+      }
+      if (playerWinsCount === revealData.boards.length && revealData.boards.length > 0) {
+        setShowConfetti(true);
       }
     }, buttonsShow);
 
@@ -319,9 +325,10 @@ export default function ResultsScreen() {
     );
   }
 
-  const { boards, netChips, isComplete, completeBonusAmount, numberOfPlayers } = revealData;
+  const { boards, netChips, isComplete, completeBonusAmount, numberOfPlayers, boardCount } = revealData;
   const playerWins = boards.filter((b) => b.winner === 'player').length;
   const botWins = boards.filter((b) => b.winner === 'bot').length;
+  const isPerfectGame = playerWins === boards.length && boards.length > 0;
   const potPerBoardTotal = revealData.potPerBoard * numberOfPlayers;
 
   // Efficiency analysis — memoized so it runs once
@@ -346,9 +353,9 @@ export default function ResultsScreen() {
         {/* Title + score */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.titleSection}>
           <Text style={[styles.title, {
-            color: playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold,
+            color: isPerfectGame ? COLORS.gold : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold,
           }]}>
-            {playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
+            {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
           </Text>
           <Text style={styles.scoreDisplay}>
             <Text style={{ color: COLORS.neonGreen }}>{playerWins}</Text>
@@ -604,6 +611,18 @@ export default function ResultsScreen() {
         visible={showReveal}
         onDone={() => setShowReveal(false)}
       />
+
+      {/* Confetti — fires once on perfect game (all boards won) */}
+      {showConfetti && (
+        <ConfettiCannon
+          count={180}
+          origin={{ x: 0, y: 0 }}
+          autoStart
+          fadeOut
+          onAnimationEnd={() => setShowConfetti(false)}
+          colors={['#c9a84c', '#4ecdc4', '#e8192c', '#1E90FF', '#00c875', '#ff6b35']}
+        />
+      )}
     </SafeAreaView>
   );
 }

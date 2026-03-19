@@ -101,11 +101,15 @@ interface RevealSequenceProps {
 
 export default function RevealSequence({ boards, visible, onDone }: RevealSequenceProps) {
   const { width: screenW } = useWindowDimensions();
-  // Card sizes — responsive across mobile web / tablet / desktop / native
-  const commCardW = rv(screenW, 44, 54, 58, 48);
-  const commCardH = rv(screenW, 62, 76, 82, 68);
-  const handCardW = rv(screenW, 38, 46, 52, 42);
-  const handCardH = rv(screenW, 54, 66, 74, 60);
+  // Five-O vertical layout: community cards in a left column, hands on the right
+  // Community column = ~32% of screen width
+  const commColW = Math.round(screenW * 0.32);
+  const commCardH = rv(screenW, 68, 80, 90, 76);
+  const commCardW = Math.round(commCardH * 0.7);
+  // Hand cards fit 4 across in remaining width
+  const handsColW = screenW - commColW - 40;
+  const handCardW = Math.min(54, Math.round((handsColW - 3 * 5) / 4));
+  const handCardH = Math.round(handCardW / 0.7);
 
   const [boardIdx, setBoardIdx] = useState(0);
   const [turnRevealed, setTurnRevealed] = useState(false);
@@ -461,138 +465,142 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
             </Pressable>
           </View>
 
-          {/* ── Main 3-section layout (40% / 20% / 40%) ── */}
+          {/* ── Five-O style: community column left, hands right ── */}
           <View style={styles.mainContent}>
 
-            {/* TOP 40% — BOT section */}
-            <View style={styles.botSection}>
-              <View style={styles.sectionHeader}>
-                <Text style={[
-                  styles.sectionLabel,
-                  board.winner === 'bot' ? styles.loserSectionLabel : null,
-                ]}>
-                  {multiBot ? 'BOTS' : 'BOT'}
-                </Text>
-                <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
-                  {100 - displayedProb}%
-                </Text>
+            {/* LEFT — Community cards stacked vertically */}
+            <View style={[styles.communityCol, { width: commColW }]}>
+              <Text style={styles.communityLabel}>{communityLabel}</Text>
+              {(board.openCards ?? []).map((c) => (
+                <CardComponent
+                  key={c.id}
+                  card={c}
+                  faceDown={false}
+                  cardWidth={commCardW}
+                  cardHeight={commCardH}
+                  highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(c.id)}
+                  dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
+                />
+              ))}
+              {(board.openCards ?? []).length > 0 && (board.closedCards ?? []).length > 0 && (
+                <View style={styles.verticalSep} />
+              )}
+              {turnCard && (
+                <CardComponent
+                  card={turnCard}
+                  faceDown={!turnRevealed}
+                  cardWidth={commCardW}
+                  cardHeight={commCardH}
+                  flipDuration={350}
+                  highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(turnCard.id)}
+                  dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(turnCard.id) && (board.boardHighlightIds ?? []).length > 0}
+                />
+              )}
+              {riverCard && (
+                <CardComponent
+                  card={riverCard}
+                  faceDown={!riverRevealed}
+                  cardWidth={commCardW}
+                  cardHeight={commCardH}
+                  flipDuration={350}
+                  highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(riverCard.id)}
+                  dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(riverCard.id) && (board.boardHighlightIds ?? []).length > 0}
+                />
+              )}
+            </View>
+
+            {/* RIGHT — BOT on top, YOU on bottom */}
+            <View style={styles.handsCol}>
+
+              {/* BOT section */}
+              <View style={styles.botSection}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[
+                    styles.sectionLabel,
+                    board.winner === 'bot' ? styles.loserSectionLabel : null,
+                  ]}>
+                    {multiBot ? 'BOTS' : 'BOT'}
+                  </Text>
+                  <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
+                    {100 - displayedProb}%
+                  </Text>
+                </View>
+                {allBotCards.map((botCards, botIdx) =>
+                  botCards && botCards.length > 0 ? (
+                    <View key={`bot-${botIdx}`} style={styles.handRow}>
+                      {botCards.map((c) => (
+                        <CardComponent
+                          key={c.id}
+                          card={c}
+                          faceDown={false}
+                          cardWidth={handCardW}
+                          cardHeight={handCardH}
+                          highlighted={
+                            (botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)) ||
+                            (botIdx === 0 && !allRevealed && showBadges && !!botOptimalHint && c.rank === botOptimalHint.rank && c.suit === botOptimalHint.suit)
+                          }
+                          dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
+                        />
+                      ))}
+                      {allRevealed && ((board.allBotHandNames ?? [])[botIdx] || (botIdx === 0 && board.botHandName)) && (
+                        <Text style={styles.handName}>
+                          {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
+                        </Text>
+                      )}
+                    </View>
+                  ) : null
+                )}
               </View>
-              {allBotCards.map((botCards, botIdx) =>
-                botCards && botCards.length > 0 ? (
-                  <View key={`bot-${botIdx}`} style={styles.handRow}>
-                    {botCards.map((c) => (
-                      <CardComponent
-                        key={c.id}
-                        card={c}
-                        faceDown={false}
-                        cardWidth={handCardW}
-                        cardHeight={handCardH}
-                        highlighted={
-                          (botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)) ||
-                          (botIdx === 0 && !allRevealed && showBadges && !!botOptimalHint && c.rank === botOptimalHint.rank && c.suit === botOptimalHint.suit)
-                        }
-                        dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
-                      />
-                    ))}
-                    {allRevealed && ((board.allBotHandNames ?? [])[botIdx] || (botIdx === 0 && board.botHandName)) && (
-                      <Text style={styles.handName}>
-                        {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
+
+              <View style={styles.handsDivider} />
+
+              {/* YOU section */}
+              <View style={styles.playerSection}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[
+                    styles.sectionLabel,
+                    board.winner === 'player' ? styles.winnerSectionLabel : null,
+                  ]}>
+                    YOU
+                  </Text>
+                  <View style={styles.probRow}>
+                    <Text style={[styles.probInline, { color: COLORS.neonGreen }]}>
+                      {displayedProb}%
+                    </Text>
+                    {deltaStr && (
+                      <Text style={[styles.deltaText, { color: deltaColor }]}>
+                        {' '}{deltaStr}
                       </Text>
                     )}
                   </View>
-                ) : null
-              )}
-            </View>
-
-            {/* MIDDLE 20% — Community cards */}
-            <View style={styles.commSection}>
-              <Text style={styles.communityLabel}>{communityLabel}</Text>
-              <View style={styles.communityRow}>
-                {(board.openCards ?? []).map((c) => (
-                  <CardComponent
-                    key={c.id}
-                    card={c}
-                    faceDown={false}
-                    cardWidth={commCardW}
-                    cardHeight={commCardH}
-                    highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(c.id)}
-                    dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
-                  />
-                ))}
-                {(board.openCards ?? []).length > 0 && (board.closedCards ?? []).length > 0 && (
-                  <View style={[styles.sep, { height: commCardH * 0.8 }]} />
-                )}
-                {turnCard && (
-                  <CardComponent
-                    card={turnCard}
-                    faceDown={!turnRevealed}
-                    cardWidth={commCardW}
-                    cardHeight={commCardH}
-                    flipDuration={350}
-                    highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(turnCard.id)}
-                    dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(turnCard.id) && (board.boardHighlightIds ?? []).length > 0}
-                  />
-                )}
-                {riverCard && (
-                  <CardComponent
-                    card={riverCard}
-                    faceDown={!riverRevealed}
-                    cardWidth={commCardW}
-                    cardHeight={commCardH}
-                    flipDuration={350}
-                    highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(riverCard.id)}
-                    dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(riverCard.id) && (board.boardHighlightIds ?? []).length > 0}
-                  />
-                )}
-              </View>
-            </View>
-
-            {/* BOTTOM 40% — YOU section */}
-            <View style={styles.playerSection}>
-              <View style={styles.sectionHeader}>
-                <Text style={[
-                  styles.sectionLabel,
-                  board.winner === 'player' ? styles.winnerSectionLabel : null,
-                ]}>
-                  YOU
-                </Text>
-                <View style={styles.probRow}>
-                  <Text style={[styles.probInline, { color: COLORS.neonGreen }]}>
-                    {displayedProb}%
-                  </Text>
-                  {deltaStr && (
-                    <Text style={[styles.deltaText, { color: deltaColor }]}>
-                      {' '}{deltaStr}
-                    </Text>
+                </View>
+                <View style={styles.handRow}>
+                  {(board.playerCards ?? []).map((c) => (
+                    <CardComponent
+                      key={c.id}
+                      card={c}
+                      faceDown={false}
+                      cardWidth={handCardW}
+                      cardHeight={handCardH}
+                      highlighted={
+                        (allRevealed && (board.playerHighlightIds ?? []).includes(c.id)) ||
+                        (!allRevealed && showBadges && !!playerOptimalHint && c.rank === playerOptimalHint.rank && c.suit === playerOptimalHint.suit)
+                      }
+                      dimmed={allRevealed && !(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
+                    />
+                  ))}
+                  {board.playerHandName && turnRevealed && (
+                    <Text style={styles.handName}>{board.playerHandName}</Text>
                   )}
                 </View>
-              </View>
-              <View style={styles.handRow}>
-                {(board.playerCards ?? []).map((c) => (
-                  <CardComponent
-                    key={c.id}
-                    card={c}
-                    faceDown={false}
-                    cardWidth={handCardW}
-                    cardHeight={handCardH}
-                    highlighted={
-                      (allRevealed && (board.playerHighlightIds ?? []).includes(c.id)) ||
-                      (!allRevealed && showBadges && !!playerOptimalHint && c.rank === playerOptimalHint.rank && c.suit === playerOptimalHint.suit)
-                    }
-                    dimmed={allRevealed && !(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
-                  />
-                ))}
-                {board.playerHandName && turnRevealed && (
-                  <Text style={styles.handName}>{board.playerHandName}</Text>
+                {allRevealed && playerOptimalHint && (
+                  <Text style={styles.optimalHint}>
+                    Best: {playerOptimalHint.rank}{SUIT_SYMBOL[playerOptimalHint.suit]}
+                  </Text>
                 )}
               </View>
-              {allRevealed && playerOptimalHint && (
-                <Text style={styles.optimalHint}>
-                  Best unused: {playerOptimalHint.rank}{SUIT_SYMBOL[playerOptimalHint.suit]}
-                </Text>
-              )}
-            </View>
 
+            </View>
           </View>
 
           {/* ── Footer: countdown | winner banner | CTA ── */}
@@ -663,31 +671,51 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // ─── 3-section main layout ────────────────────────────────────────────────
+  // ─── Five-O: community col left, hands col right ──────────────────────────
   mainContent: {
     flex: 1,
+    flexDirection: 'row',
+    gap: 0,
+  },
+  communityCol: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 4,
+    paddingBottom: 4,
+    paddingHorizontal: 6,
+    gap: 4,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: COLORS.border,
+  },
+  handsCol: {
+    flex: 1,
+    flexDirection: 'column',
+    paddingHorizontal: 12,
+  },
+  handsDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.border,
+    marginVertical: 8,
+  },
+  verticalSep: {
+    width: 24,
+    height: 1,
+    backgroundColor: COLORS.gold,
+    opacity: 0.35,
+    alignSelf: 'center',
+    marginVertical: 2,
   },
   botSection: {
-    flex: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  commSection: {
-    flex: 2,
-    alignItems: 'center',
+    flex: 1,
+    alignItems: 'flex-start',
     justifyContent: 'center',
     gap: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border,
-    paddingVertical: 8,
   },
   playerSection: {
-    flex: 4,
-    alignItems: 'center',
+    flex: 1,
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
 
   // ─── Section headers ──────────────────────────────────────────────────────
@@ -720,26 +748,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // ─── Community cards ──────────────────────────────────────────────────────
+  // ─── Community column label ────────────────────────────────────────────────
   communityLabel: {
     color: COLORS.textDim,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
-    letterSpacing: 3,
+    letterSpacing: 2,
     textTransform: 'uppercase',
-  },
-  communityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    justifyContent: 'center',
-  },
-  sep: {
-    width: 1,
-    backgroundColor: COLORS.gold,
-    opacity: 0.35,
-    marginHorizontal: 3,
-    alignSelf: 'center',
+    marginBottom: 2,
   },
 
   // ─── Hand rows ────────────────────────────────────────────────────────────

@@ -53,14 +53,24 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 function SplashOverlay({ onDone }: { onDone: () => void }) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.88);
+  const isWeb = Platform.OS === 'web';
+  const duration = isWeb ? 1000 : 3500;
 
   useEffect(() => {
-    opacity.value = withSequence(
-      withTiming(1, { duration: 600 }),
-      withDelay(2400, withTiming(0, { duration: 500 })),
-    );
-    scale.value = withTiming(1, { duration: 600 });
-    const t = setTimeout(onDone, 3500);
+    if (isWeb) {
+      opacity.value = withSequence(
+        withTiming(1, { duration: 300 }),
+        withDelay(400, withTiming(0, { duration: 300 })),
+      );
+      scale.value = withTiming(1.02, { duration: 400 });
+    } else {
+      opacity.value = withSequence(
+        withTiming(1, { duration: 600 }),
+        withDelay(2400, withTiming(0, { duration: 500 })),
+      );
+      scale.value = withTiming(1, { duration: 600 });
+    }
+    const t = setTimeout(onDone, duration);
     return () => clearTimeout(t);
   }, []);
 
@@ -100,7 +110,7 @@ export default function RootLayout() {
   const router = useRouter();
   const initSession = useGameStore((s) => s.initSession);
   const orientation = useGameStore((s) => s.orientation);
-  const [splashDone, setSplashDone] = useState(Platform.OS === 'web');
+  const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
     initSession();
