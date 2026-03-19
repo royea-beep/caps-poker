@@ -297,6 +297,11 @@ export default function ResultsScreen() {
     router.replace('/');
   }, [clearRevealData, router]);
 
+  const handleRematch = useCallback(() => {
+    clearRevealData();
+    router.replace('/game');
+  }, [clearRevealData, router]);
+
   const chipCountStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: 0.9 + chipCountProgress.value * 0.1 }],
@@ -573,7 +578,12 @@ export default function ResultsScreen() {
                   variant="gold"
                   onPress={handleNextHand}
                 />
-                <Button title="HOME" variant="secondary" onPress={handleHome} />
+                <View style={styles.rematchRow}>
+                  {!isMultiplayer && (
+                    <Button title="REMATCH" variant="secondary" onPress={handleRematch} style={{ flex: 1 }} />
+                  )}
+                  <Button title="HOME" variant="secondary" onPress={handleHome} style={!isMultiplayer ? { flex: 1 } : {}} />
+                </View>
               </>
             )}
           </Animated.View>
@@ -831,6 +841,10 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 10,
     marginTop: 4,
+  },
+  rematchRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   waitingNextHand: {
     backgroundColor: COLORS.feltLight,

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useGameStore } from '../store/gameStore';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -36,6 +37,14 @@ const CARD_FACE_BG = '#FFFFFF';
 const CARD_BACK_BG = '#0f1a3e';
 const CARD_BACK_BORDER = '#c9a84c';
 
+// 4-color suit system
+const SUIT_COLORS_4: Record<string, string> = {
+  hearts:   '#E8192C',
+  diamonds: '#1E90FF',
+  spades:   '#000000',
+  clubs:    '#228B22',
+};
+
 export default function CardComponent({
   card,
   faceDown = false,
@@ -48,6 +57,7 @@ export default function CardComponent({
 }: CardProps) {
   const width = cardWidth ?? (small ? 52 : 58);
   const height = cardHeight ?? (small ? 74 : 82);
+  const fourColorSuits = useGameStore((s) => s.fourColorSuits);
 
   const cornerRankSize = Math.floor(height * 0.14);
   const cornerSuitSize = Math.floor(height * 0.11);
@@ -108,9 +118,9 @@ export default function CardComponent({
     ],
   }));
 
-  // Face-down back card
-  const renderBack = () => (
-    <View style={[
+  // Face-down back card — diamond lattice pattern
+  const renderBack = () => {
+    const cardStyle = [
       styles.card,
       {
         width,
@@ -133,24 +143,65 @@ export default function CardComponent({
           boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
         } as any,
       }),
-    ]}>
-      {/* Subtle gradient effect via overlay */}
-      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.5, bottom: 0, top: '50%' }]} />
-      {/* Faint gold diamond center */}
-      <View style={styles.backCenter}>
-        <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.35) }]}>
-          {'\u2666'}
-        </Text>
+    ];
+
+    if (Platform.OS === 'web') {
+      const svgStr = `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.22' transform='rotate(45 6 1.5)'/></svg>`;
+      return (
+        <View style={cardStyle}>
+          <View style={[StyleSheet.absoluteFillObject, {
+            backgroundImage: `url("data:image/svg+xml,${svgStr}")`,
+            backgroundRepeat: 'repeat',
+          } as any]} />
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.3, bottom: 0, top: '55%' }]} />
+          <View style={styles.backCenter}>
+            <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.3) }]}>{'\u2666'}</Text>
+          </View>
+        </View>
+      );
+    }
+
+    // Native: grid of small rotated diamonds
+    const cols = Math.ceil(width / 12);
+    const rows = Math.ceil(height / 12);
+    const dots: React.ReactElement[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        dots.push(
+          <View
+            key={`${r}-${c}`}
+            style={{
+              position: 'absolute',
+              width: 4,
+              height: 4,
+              backgroundColor: '#c9a84c',
+              opacity: 0.18,
+              left: c * 12 + (r % 2 === 0 ? 0 : 6) - 2,
+              top: r * 10 - 2,
+              transform: [{ rotate: '45deg' }],
+            }}
+          />
+        );
+      }
+    }
+
+    return (
+      <View style={cardStyle}>
+        <View style={StyleSheet.absoluteFillObject}>{dots}</View>
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.25, bottom: 0, top: '55%' }]} />
+        <View style={styles.backCenter}>
+          <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.3) }]}>{'\u2666'}</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   if (!card) {
     return renderBack();
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = isRed ? RED_COLOR : BLACK_COLOR;
+  const suitColor = fourColorSuits ? (SUIT_COLORS_4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
 
   const faceUpShadow = Platform.select({
     ios: {

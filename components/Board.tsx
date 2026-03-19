@@ -187,6 +187,21 @@ export default function Board({
     };
   });
 
+  // WIN banner — animate in when winner is set
+  const bannerProgress = useSharedValue(0);
+  useEffect(() => {
+    if (winner) {
+      bannerProgress.value = withDelay(350, withTiming(1, { duration: 350 }));
+    } else {
+      bannerProgress.value = 0;
+    }
+  }, [winner]);
+
+  const bannerAnimStyle = useAnimatedStyle(() => ({
+    opacity: bannerProgress.value,
+    transform: [{ scale: 0.7 + bannerProgress.value * 0.3 }],
+  }));
+
   // Winner gold pulse — 2s repeating glow when isWinner is true
   const winnerPulse = useSharedValue(0);
   useEffect(() => {
@@ -360,11 +375,11 @@ export default function Board({
         </View>
 
         {winner && (
-          <View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge]}>
+          <Animated.View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge, bannerAnimStyle]}>
             <Text style={styles.winnerText}>
-              {winner === 'player' ? 'YOU WIN' : winner === 'bot' ? 'BOT WINS' : 'TIE'}
+              {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
             </Text>
-          </View>
+          </Animated.View>
         )}
       </Pressable>
     </Animated.View>
@@ -534,17 +549,19 @@ const styles = StyleSheet.create({
   },
   winnerBadge: {
     position: 'absolute',
-    top: '45%',
-    alignSelf: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingVertical: 5,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    alignItems: 'center',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.4,
+        shadowRadius: 3,
       },
       android: { elevation: 4 },
       default: {},
@@ -561,9 +578,9 @@ const styles = StyleSheet.create({
   },
   winnerText: {
     color: COLORS.background,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 2,
   },
   autoBtn: {
     paddingHorizontal: 10,
