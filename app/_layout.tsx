@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, Platform, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, withTiming, withSequence, withDelay, useAnimatedStyle } from 'react-native-reanimated';
 import * as Linking from 'expo-linking';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -14,6 +14,14 @@ import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
 import { VersionBadge } from '../components/VersionBadge';
 import { getSupabase } from '../utils/supabase';
+
+// Lazy-load expo-screen-orientation (not available on web)
+let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    ScreenOrientation = require('expo-screen-orientation');
+  } catch {}
+}
 
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
@@ -89,7 +97,9 @@ const splashStyles = StyleSheet.create({
 });
 
 export default function RootLayout() {
+  const router = useRouter();
   const initSession = useGameStore((s) => s.initSession);
+  const orientation = useGameStore((s) => s.orientation);
   const [splashDone, setSplashDone] = useState(Platform.OS === 'web');
 
   useEffect(() => {
@@ -104,6 +114,22 @@ export default function RootLayout() {
       document.head.appendChild(link);
     }
   }, []);
+
+  // Lock screen orientation based on user choice
+  useEffect(() => {
+    if (!ScreenOrientation || !orientation) return;
+    const lock = orientation === 'landscape'
+      ? ScreenOrientation.OrientationLock.LANDSCAPE
+      : ScreenOrientation.OrientationLock.PORTRAIT_UP;
+    ScreenOrientation.lockAsync(lock).catch(() => {});
+  }, [orientation]);
+
+  // On first launch (orientation not chosen yet), redirect to picker after splash
+  useEffect(() => {
+    if (splashDone && orientation === null) {
+      router.replace('/orientation-pick');
+    }
+  }, [splashDone, orientation]);
 
   // Handle OAuth deep link callbacks (native)
   useEffect(() => {
