@@ -26,6 +26,15 @@ import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId, ButtonStyle } from '../constants/homeThemes';
 import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
 import { CapsHooks } from '../utils/learning';
+import { OrientationType } from '../store/gameStore';
+
+// Lazy-load screen orientation (not available on web)
+let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    ScreenOrientation = require('expo-screen-orientation');
+  } catch {}
+}
 
 interface SettingRowProps {
   label: string;
@@ -188,6 +197,48 @@ function PlayerCountSelector() {
           </Pressable>
         ))}
       </View>
+    </View>
+  );
+}
+
+function OrientationPicker() {
+  const orientation = useGameStore((s) => s.orientation);
+  const setOrientation = useGameStore((s) => s.setOrientation);
+
+  const pick = async (choice: OrientationType) => {
+    hapticLight();
+    setOrientation(choice);
+    if (ScreenOrientation) {
+      try {
+        const lock = choice === 'landscape'
+          ? ScreenOrientation.OrientationLock.LANDSCAPE
+          : ScreenOrientation.OrientationLock.PORTRAIT_UP;
+        await ScreenOrientation.lockAsync(lock);
+      } catch {}
+    }
+  };
+
+  const opts: { id: OrientationType; label: string; icon: string }[] = [
+    { id: 'portrait', label: 'Portrait', icon: '📱' },
+    { id: 'landscape', label: 'Widescreen', icon: '🖥️' },
+  ];
+
+  return (
+    <View style={orientationStyles.row}>
+      {opts.map(({ id, label, icon }) => {
+        const active = orientation === id;
+        return (
+          <Pressable
+            key={id}
+            onPress={() => pick(id)}
+            style={[orientationStyles.tile, active && orientationStyles.tileActive]}
+          >
+            <Text style={orientationStyles.tileIcon}>{icon}</Text>
+            <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
+            {active && <Text style={[orientationStyles.check, { color: COLORS.gold }]}>✓</Text>}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -425,6 +476,9 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionTitle}>📱 ORIENTATION</Text>
+        <OrientationPicker />
+
         <Text style={styles.sectionTitle}>🖼️ BACKGROUND THEME</Text>
         <FriendsBgPicker />
 
@@ -747,6 +801,46 @@ const bgPickerStyles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 8,
     textAlign: 'center',
+  },
+  check: {
+    fontSize: 10,
+    fontWeight: '900',
+  },
+});
+
+const orientationStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 6,
+  },
+  tile: {
+    flex: 1,
+    backgroundColor: COLORS.feltLight,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.boardBorder,
+    padding: 14,
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  tileActive: {
+    borderColor: COLORS.gold,
+    borderWidth: 2,
+  },
+  tileIcon: {
+    fontSize: 24,
+  },
+  tileLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  tileLabelActive: {
+    color: COLORS.gold,
   },
   check: {
     fontSize: 10,

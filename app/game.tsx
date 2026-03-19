@@ -28,6 +28,7 @@ import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
 import { rv } from '../constants/deviceBreakpoints';
+import { OrientationType } from '../store/gameStore';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -104,6 +105,8 @@ export default function GameScreen() {
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
+  const storeOrientation = useGameStore((s) => s.orientation);
+  const isLandscape = storeOrientation === 'landscape' || (Platform.OS === 'web' && screenW > SCREEN_H);
   const addChips = useGameStore((s) => s.addChips);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
@@ -575,6 +578,125 @@ export default function GameScreen() {
   const cardsRemaining = playerHand.length;
   const TIMER_SIZE = 52;
 
+  // ── Landscape / widescreen layout ──────────────────────────────────────────
+  if (isLandscape) {
+    return (
+      <SafeAreaView style={[styles.container, landscapeStyles.root]}>
+        <FriendsBg />
+
+        {/* LEFT — Your hand */}
+        <View style={landscapeStyles.leftPanel}>
+          <Text style={landscapeStyles.panelTitle}>YOUR HAND</Text>
+          {isArranging && (
+            <PlayerHand
+              cards={playerHand}
+              selectedCardIds={selectedCardIds}
+              onSelectCard={handleSelectCard}
+            />
+          )}
+          {isArranging && (boardError || selectedCardIds.length > 0) && (
+            <Text style={boardError ? styles.boardErrorText : styles.selectionHint}>
+              {boardError
+                ? boardError
+                : `${selectedCardIds.length} selected`}
+            </Text>
+          )}
+          {isArranging && (
+            <Pressable
+              style={[styles.floatingBtn, styles.undoBtn, { marginTop: 8 }]}
+              onPress={() => {
+                for (let i = boards.length - 1; i >= 0; i--) {
+                  if (boards[i].playerCards.length > 0) {
+                    const last = boards[i].playerCards[boards[i].playerCards.length - 1];
+                    handleRemoveCardFromBoard(i, last);
+                    break;
+                  }
+                }
+              }}
+              disabled={boards.every((b) => b.playerCards.length === 0)}
+            >
+              <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>UNDO</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* CENTER — boards grid */}
+        <View style={landscapeStyles.centerPanel}>
+          {/* Mini top bar */}
+          <View style={styles.topBar}>
+            <Pressable onPress={handleBack} style={styles.backButton}>
+              <Text style={styles.backText}>{'\u2715'}</Text>
+            </Pressable>
+            <View style={styles.topCenter}>
+              {countdownActive && isArranging && (
+                <CircularTimer timeLeft={countdown} size={44} color={timerColor} pulsing={timerPulsing} />
+              )}
+              {!countdownActive && isArranging && (
+                <Text style={styles.freePlayLabel}>Arrange freely</Text>
+              )}
+              {playerReady && !allBotsReady && (
+                <Text style={styles.waitingText}>Waiting for bots...</Text>
+              )}
+            </View>
+            <ChipsDisplay amount={chips} />
+          </View>
+
+          {/* Boards — 2 columns */}
+          <View style={[landscapeStyles.boardsGrid]}>
+            {boards.map((board, i) => (
+              <Animated.View key={i} style={[landscapeStyles.boardCell, boardShakeStyles[i]]}>
+                <Board
+                  index={i}
+                  openCards={board.openCards}
+                  closedCards={board.closedCards}
+                  playerCards={board.playerCards}
+                  botCards={board.allBotCards[0] || board.botCards}
+                  allBotCards={board.allBotCards}
+                  revealed={false}
+                  active={false}
+                  potAmount={config.potPerBoard * numberOfPlayers}
+                  onPress={() => handleBoardPress(i)}
+                  onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
+                  onAutoFill={() => handleAutoFill(i)}
+                  isArrangement={isArranging}
+                  selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+                  cardHeight={BOARD_CARD_H}
+                />
+              </Animated.View>
+            ))}
+          </View>
+        </View>
+
+        {/* RIGHT — bot + ready */}
+        <View style={landscapeStyles.rightPanel}>
+          <Text style={landscapeStyles.panelTitle}>
+            {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
+          </Text>
+          <Text style={[styles.botLabel, { textAlign: 'center' }]}>
+            {allBotsReady ? '✓ READY' : '...'}
+          </Text>
+          {isArranging && (
+            <Pressable
+              style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, landscapeStyles.readyBtn]}
+              onPress={handleReady}
+              disabled={!allBoardsFull}
+            >
+              <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
+                {allBoardsFull ? 'READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
+              </Text>
+            </Pressable>
+          )}
+          {playerReady && allBotsReady && showContinueButton && (
+            <Pressable style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => navigateToRevealRef.current(boardsRef.current)}>
+              <Text style={styles.continueBtnText}>CONTINUE →</Text>
+            </Pressable>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+  // ── End landscape layout ────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={styles.container}>
       <FriendsBg />
@@ -909,5 +1031,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+});
+
+const landscapeStyles = StyleSheet.create({
+  root: {
+    flexDirection: 'row',
+  },
+  leftPanel: {
+    width: '22%',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: COLORS.boardBorder,
+    gap: 6,
+  },
+  centerPanel: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  boardsGrid: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 6,
+    gap: 4,
+  },
+  boardCell: {
+    width: '49%',
+    flex: undefined,
+    minHeight: 120,
+  },
+  rightPanel: {
+    width: '18%',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: COLORS.boardBorder,
+    gap: 8,
+  },
+  panelTitle: {
+    color: COLORS.gold,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  readyBtn: {
+    marginTop: 'auto' as any,
+    width: '100%',
+    paddingHorizontal: 8,
+    alignItems: 'center',
   },
 });
