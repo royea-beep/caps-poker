@@ -93,9 +93,10 @@ const COUNTDOWN_SECONDS = 30;
 
 // Layout constants
 const TOP_BAR_H = 44;
-const BOT_STATUS_H = 20;
-const PLAYER_HAND_H = 150;  // 2 rows of ~44px cards (height ~62px) + label + padding ≈ 148px
-const READY_BTN_H = 48;
+const BOT_STATUS_H = 24;       // label + paddingVertical ≈ 24px
+const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical:12×2 + text ≈ 68px
+const HINT_H = 26;             // selectionHint / boardError bar
+const BOARD_CHROME = 28;       // per-board non-card overhead: header + inner padding + row gaps
 
 export default function GameScreen() {
   const router = useRouter();
@@ -111,16 +112,19 @@ export default function GameScreen() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
+  // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
+  // Approximate by screen height bracket: smaller phones → smaller cards → shorter hand section
+  const PLAYER_HAND_H = SCREEN_H < 700 ? 115 : SCREEN_H < 800 ? 128 : 140;
+
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
-  const BOARD_CHROME = 20;
-  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   const BOARD_CARD_H = rv(
     screenW,
     56,   // mobile web (iPhone Safari)
     72,   // tablet web
     100,  // desktop web
-    Math.max(52, Math.min(82, Math.floor(boardSpace / 2))),  // native
+    Math.max(36, Math.min(82, Math.floor(boardSpace / 2))),  // native – min lowered for small screens
   );
   const isWeb = Platform.OS === 'web';
 

@@ -35,8 +35,9 @@ const hapticNotify = (type: any) => {
 // Layout constants
 const TOP_BAR_H = 44;
 const MODE_BADGE_H = 24;
-const PLAYER_HAND_H = 130;
-const READY_BTN_H = 48;
+const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical:12×2 + text ≈ 68px
+const HINT_H = 26;             // selectionHint / boardError bar
+const BOARD_CHROME = 28;       // per-board non-card overhead: header + inner padding + row gaps
 
 interface BoardDisplay {
   openCards: Card[];
@@ -82,11 +83,11 @@ export default function MultiplayerGameScreen() {
   const boardCount = boardsParam.length;
 
   // Dynamic card sizing (same formula as game.tsx)
+  const PLAYER_HAND_H = SCREEN_H < 700 ? 115 : SCREEN_H < 800 ? 128 : 140;
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
-  const BOARD_CHROME = 20;
-  const boardSpace = (safeH - TOP_BAR_H - MODE_BADGE_H - PLAYER_HAND_H - READY_BTN_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  const BOARD_CARD_H = Math.max(28, Math.min(52, Math.floor(boardSpace / 2)));
+  const boardSpace = (safeH - TOP_BAR_H - MODE_BADGE_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  const BOARD_CARD_H = Math.max(28, Math.min(82, Math.floor(boardSpace / 2)));
 
   // State
   const [boards, setBoards] = useState<BoardDisplay[]>(() =>
