@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 
 const version = Constants.expoConfig?.version ?? '?';
-const build = Constants.expoConfig?.ios?.buildNumber ?? '?';
+const build = Constants.expoConfig?.extra?.buildNumber ?? Constants.expoConfig?.ios?.buildNumber ?? '?';
 const isBeta = Constants.expoConfig?.extra?.isBeta === true;
 
 export function VersionBadge() {
