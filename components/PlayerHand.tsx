@@ -4,6 +4,8 @@ import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 import { WEB_MAX_WIDTH } from './WebContainer';
+import { getTheme } from '../constants/visualThemes';
+import { useGameStore } from '../store/gameStore';
 
 interface PlayerHandProps {
   cards: Card[];
@@ -13,6 +15,8 @@ interface PlayerHandProps {
 
 export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
   const { width: rawW } = useWindowDimensions();
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const theme = getTheme(visualTheme);
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const device = getDevice(SCREEN_W, 0);
 
@@ -57,7 +61,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.surface, borderTopColor: theme.boardBorder }]}>
       <Text style={styles.label}>
         YOUR HAND ({cards.length} remaining)
       </Text>

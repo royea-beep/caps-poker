@@ -244,6 +244,7 @@ export default function Board({
       style={[
         styles.container,
         { backgroundColor: theme.boardBg, borderColor: theme.boardBorder },
+        Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
         active && styles.active,
         selected && styles.selected,
         winner === 'player' && styles.playerWon,
@@ -400,19 +401,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.boardBg,
-    borderRadius: 14,
-    borderWidth: 2,
+    borderRadius: 18,
+    borderWidth: 3,
     borderColor: COLORS.boardBorder,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
       },
-      android: { elevation: 8 },
-      default: {},
+      android: { elevation: 10 },
+      default: {
+        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+      } as any,
     }),
   },
   pressableInner: {

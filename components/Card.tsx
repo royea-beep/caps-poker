@@ -70,7 +70,7 @@ export default function CardComponent({
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
 
-  const cornerRankSize = Math.floor(height * 0.14);
+  const cornerRankSize = Math.floor(height * 0.165);
   const cornerSuitSize = Math.floor(height * 0.11);
   const centerRankSize = Math.floor(height * 0.42);
   const centerSuitSize = Math.floor(height * 0.32);
@@ -215,18 +215,31 @@ export default function CardComponent({
   const activeSuitColors4 = visualTheme === 'fiveo' ? SUIT_COLORS_4_FIVEO : SUIT_COLORS_4;
   const suitColor = fourColorSuits ? (activeSuitColors4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
 
-  const faceUpShadow = Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 2, height: 3 },
-      shadowOpacity: 0.4,
-      shadowRadius: 6,
-    } as any,
-    android: { elevation: 6 } as any,
-    default: {
-      boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
-    } as any,
-  });
+  const faceUpShadow = visualTheme === 'fiveo'
+    ? Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 4 },
+          shadowOpacity: 0.65,
+          shadowRadius: 10,
+        } as any,
+        android: { elevation: 10 } as any,
+        default: {
+          boxShadow: '2px 4px 14px rgba(0,0,0,0.70)',
+        } as any,
+      })
+    : Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 3 },
+          shadowOpacity: 0.4,
+          shadowRadius: 6,
+        } as any,
+        android: { elevation: 6 } as any,
+        default: {
+          boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
+        } as any,
+      });
 
   return (
     <View style={{ width, height }}>
