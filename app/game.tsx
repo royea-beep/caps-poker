@@ -13,6 +13,7 @@ import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { useGameStore } from '../store/gameStore';
+import { getTheme } from '../constants/visualThemes';
 import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
@@ -106,6 +107,8 @@ export default function GameScreen() {
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const storeOrientation = useGameStore((s) => s.orientation);
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const theme = getTheme(visualTheme);
   const isLandscape = storeOrientation === 'landscape' || (Platform.OS === 'web' && screenW > SCREEN_H);
   const addChips = useGameStore((s) => s.addChips);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
@@ -581,9 +584,13 @@ export default function GameScreen() {
   // ── Landscape / widescreen layout ──────────────────────────────────────────
   if (isLandscape) {
     return (
-      <SafeAreaView style={[styles.container, landscapeStyles.root]}>
+      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }]}>
         <FriendsBg />
-
+        {visualTheme === 'fiveo' && (
+          <View pointerEvents="none" style={styles.fiveoWatermark}>
+            <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
+          </View>
+        )}
         {/* LEFT — Your hand */}
         <View style={landscapeStyles.leftPanel}>
           <Text style={landscapeStyles.panelTitle}>YOUR HAND</Text>
@@ -698,8 +705,13 @@ export default function GameScreen() {
   // ── End landscape layout ────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
+      {visualTheme === 'fiveo' && (
+        <View pointerEvents="none" style={styles.fiveoWatermark}>
+          <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
+        </View>
+      )}
       {/* Header bar */}
       <View style={styles.topBar}>
         <Pressable onPress={handleBack} style={styles.backButton}>
@@ -845,6 +857,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  fiveoWatermark: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0,
+    pointerEvents: 'none' as any,
+  },
+  fiveoWatermarkText: {
+    fontSize: 52,
+    fontWeight: '900',
+    letterSpacing: 8,
+    color: 'rgba(255,255,255,0.045)',
+    textTransform: 'uppercase' as any,
+    textAlign: 'center' as any,
   },
   topBar: {
     flexDirection: 'row',
