@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.capspoker.app",
-      "buildNumber": "113",
+      "buildNumber": "114",
       "newArchEnabled": false,
       "infoPlist": {
         "UIRequiresFullScreen": true,

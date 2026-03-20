@@ -101,14 +101,12 @@ interface RevealSequenceProps {
 
 export default function RevealSequence({ boards, visible, onDone }: RevealSequenceProps) {
   const { width: screenW } = useWindowDimensions();
-  // Five-O vertical layout: community cards in a left column, hands on the right
-  // Community column = ~32% of screen width
-  const commColW = Math.round(screenW * 0.32);
-  const commCardH = rv(screenW, 68, 80, 90, 76);
-  const commCardW = Math.round(commCardH * 0.7);
-  // Hand cards fit 4 across in remaining width
-  const handsColW = screenW - commColW - 40;
-  const handCardW = Math.min(54, Math.round((handsColW - 3 * 5) / 4));
+  // Centered layout: community as horizontal row, hands below centered
+  // Content fits in max 680px container
+  const contentW = Math.min(screenW, 680) - 40;
+  const commCardW = Math.min(76, Math.floor((contentW - 4 * 6) / 5));
+  const commCardH = Math.round(commCardW / 0.7);
+  const handCardW = Math.min(60, Math.floor((contentW - 3 * 4) / 4.5));
   const handCardH = Math.round(handCardW / 0.7);
 
   const [boardIdx, setBoardIdx] = useState(0);
@@ -465,52 +463,51 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
             </Pressable>
           </View>
 
-          {/* ── Five-O style: community column left, hands right ── */}
+          {/* ── Centered: community row top, bot below, you below ── */}
           <View style={styles.mainContent}>
+            <View style={styles.contentContainer}>
 
-            {/* LEFT — Community cards stacked vertically */}
-            <View style={[styles.communityCol, { width: commColW }]}>
-              <Text style={styles.communityLabel}>{communityLabel}</Text>
-              {(board.openCards ?? []).map((c) => (
-                <CardComponent
-                  key={c.id}
-                  card={c}
-                  faceDown={false}
-                  cardWidth={commCardW}
-                  cardHeight={commCardH}
-                  highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(c.id)}
-                  dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
-                />
-              ))}
-              {(board.openCards ?? []).length > 0 && (board.closedCards ?? []).length > 0 && (
-                <View style={styles.verticalSep} />
-              )}
-              {turnCard && (
-                <CardComponent
-                  card={turnCard}
-                  faceDown={!turnRevealed}
-                  cardWidth={commCardW}
-                  cardHeight={commCardH}
-                  flipDuration={350}
-                  highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(turnCard.id)}
-                  dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(turnCard.id) && (board.boardHighlightIds ?? []).length > 0}
-                />
-              )}
-              {riverCard && (
-                <CardComponent
-                  card={riverCard}
-                  faceDown={!riverRevealed}
-                  cardWidth={commCardW}
-                  cardHeight={commCardH}
-                  flipDuration={350}
-                  highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(riverCard.id)}
-                  dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(riverCard.id) && (board.boardHighlightIds ?? []).length > 0}
-                />
-              )}
-            </View>
+              {/* Community cards — horizontal row, centered */}
+              <View style={styles.communitySection}>
+                <Text style={styles.communityLabel}>{communityLabel}</Text>
+                <View style={styles.communityRow}>
+                  {(board.openCards ?? []).map((c) => (
+                    <CardComponent
+                      key={c.id}
+                      card={c}
+                      faceDown={false}
+                      cardWidth={commCardW}
+                      cardHeight={commCardH}
+                      highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(c.id)}
+                      dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
+                    />
+                  ))}
+                  {turnCard && (
+                    <CardComponent
+                      card={turnCard}
+                      faceDown={!turnRevealed}
+                      cardWidth={commCardW}
+                      cardHeight={commCardH}
+                      flipDuration={350}
+                      highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(turnCard.id)}
+                      dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(turnCard.id) && (board.boardHighlightIds ?? []).length > 0}
+                    />
+                  )}
+                  {riverCard && (
+                    <CardComponent
+                      card={riverCard}
+                      faceDown={!riverRevealed}
+                      cardWidth={commCardW}
+                      cardHeight={commCardH}
+                      flipDuration={350}
+                      highlighted={allRevealed && (board.boardHighlightIds ?? []).includes(riverCard.id)}
+                      dimmed={allRevealed && !(board.boardHighlightIds ?? []).includes(riverCard.id) && (board.boardHighlightIds ?? []).length > 0}
+                    />
+                  )}
+                </View>
+              </View>
 
-            {/* RIGHT — BOT on top, YOU on bottom */}
-            <View style={styles.handsCol}>
+              <View style={styles.handsDivider} />
 
               {/* BOT section */}
               <View style={styles.botSection}>
@@ -671,57 +668,49 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // ─── Five-O: community col left, hands col right ──────────────────────────
+  // ─── Centered: community row top, bot + you below ─────────────────────────
   mainContent: {
     flex: 1,
-    flexDirection: 'row',
-    gap: 0,
-  },
-  communityCol: {
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingHorizontal: 6,
-    gap: 4,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: COLORS.border,
+    justifyContent: 'center',
   },
-  handsCol: {
-    flex: 1,
-    flexDirection: 'column',
-    paddingHorizontal: 12,
+  contentContainer: {
+    width: '100%',
+    maxWidth: 680,
+  },
+  communitySection: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  communityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
   handsDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: COLORS.border,
-    marginVertical: 8,
-  },
-  verticalSep: {
-    width: 24,
-    height: 1,
-    backgroundColor: COLORS.gold,
-    opacity: 0.35,
-    alignSelf: 'center',
-    marginVertical: 2,
+    marginVertical: 6,
+    width: '100%',
   },
   botSection: {
-    flex: 1,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: 6,
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 8,
   },
   playerSection: {
-    flex: 1,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: 6,
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 8,
   },
 
   // ─── Section headers ──────────────────────────────────────────────────────
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
   sectionLabel: {
@@ -748,14 +737,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // ─── Community column label ────────────────────────────────────────────────
+  // ─── Community section label ───────────────────────────────────────────────
   communityLabel: {
     color: COLORS.textDim,
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    marginBottom: 2,
   },
 
   // ─── Hand rows ────────────────────────────────────────────────────────────
