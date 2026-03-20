@@ -38,12 +38,20 @@ const CARD_FACE_BG = '#FFFFFF';
 const CARD_BACK_BG = '#0f1a3e';
 const CARD_BACK_BORDER = '#c9a84c';
 
-// 4-color suit system
+// 4-color suit system — Classic
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
   diamonds: '#1E90FF',
   spades:   '#1a1a2e',
   clubs:    '#228B22',
+};
+
+// 4-color suit system — Five-O (clubs = deep teal-green, matching reference)
+const SUIT_COLORS_4_FIVEO: Record<string, string> = {
+  hearts:   '#E8192C',
+  diamonds: '#1E90FF',
+  spades:   '#1a1a2e',
+  clubs:    '#006644',
 };
 
 export default function CardComponent({
@@ -204,7 +212,8 @@ export default function CardComponent({
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-  const suitColor = fourColorSuits ? (SUIT_COLORS_4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
+  const activeSuitColors4 = visualTheme === 'fiveo' ? SUIT_COLORS_4_FIVEO : SUIT_COLORS_4;
+  const suitColor = fourColorSuits ? (activeSuitColors4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
 
   const faceUpShadow = Platform.select({
     ios: {

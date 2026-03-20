@@ -41,23 +41,23 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     loseColor: '#ef4444',
   },
   fiveo: {
-    background: '#1a1a2e',
-    surface: '#16213e',
-    boardBg: '#5c0000',
-    boardBorder: '#8B0000',
+    background: '#6B0F1A',      // deep felt red — full-screen table atmosphere
+    surface: '#1A1A2E',         // dark navy — panels, modals, overlays
+    boardBg: '#9B1B30',         // casino red felt — board surface
+    boardBorder: '#8B5E3C',     // warm wood brown — poker table rail
     textPrimary: '#ffffff',
     textSecondary: '#FFD700',
     textMuted: '#aaaaaa',
     accent: '#FFD700',
     accentText: '#000000',
-    cardFace: '#f8f8f8',
-    cardBorder: '#cccccc',
-    cardShadow: 'rgba(0,0,0,0.5)',
+    cardFace: '#F5F5F5',
+    cardBorder: 'rgba(0,0,0,0.18)',
+    cardShadow: 'rgba(0,0,0,0.55)',
     primaryBtn: '#FFD700',
-    primaryBtnText: '#000000',
+    primaryBtnText: '#1A1A2E',
     primaryBtnRadius: 8,
-    winColor: '#00cc44',
-    loseColor: '#cc0000',
+    winColor: '#28A745',        // green badge — Match Five-O WIN style
+    loseColor: '#CC0000',
   },
 };
 
