@@ -48,6 +48,8 @@ function flush(): void {
 
   // Relative URL only works on web — skip on native to avoid silent network errors
   if (Platform.OS !== 'web') return;
+  // SPA deployment (Vercel static) has no /api/learn endpoint — suppress silently
+  return;
   fetch('/api/learn', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -56,15 +58,16 @@ function flush(): void {
 }
 
 // Flush on web page unload
-if (Platform.OS === 'web' && typeof window !== 'undefined') {
-  window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && queue.length > 0) {
-      const blob = new Blob([JSON.stringify({ events: queue })], { type: 'application/json' });
-      navigator.sendBeacon('/api/learn', blob);
-      queue = [];
-    }
-  });
-}
+// SPA deployment has no /api/learn endpoint — beacon suppressed
+// if (Platform.OS === 'web' && typeof window !== 'undefined') {
+//   window.addEventListener('visibilitychange', () => {
+//     if (document.visibilityState === 'hidden' && queue.length > 0) {
+//       const blob = new Blob([JSON.stringify({ events: queue })], { type: 'application/json' });
+//       navigator.sendBeacon('/api/learn', blob);
+//       queue = [];
+//     }
+//   });
+// }
 
 export const CapsHooks = {
   gameStarted: (mode: 'solo' | 'multiplayer' | 'online') =>

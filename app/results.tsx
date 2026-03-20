@@ -22,6 +22,7 @@ import RevealSequence from '../components/RevealSequence';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
+import { getTheme } from '../constants/visualThemes';
 import { CardsDealtPayload } from '../constants/networkConfig';
 import { playSound } from '../utils/sounds';
 import { submitScore } from '../utils/leaderboard';
@@ -44,6 +45,8 @@ export default function ResultsScreen() {
   const router = useRouter();
   const { width: rawW } = useWindowDimensions();
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const theme = getTheme(visualTheme);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
   const revealData = useGameStore((s) => s.revealData);
@@ -317,7 +320,7 @@ export default function ResultsScreen() {
 
   if (!revealData) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
@@ -347,7 +350,7 @@ export default function ResultsScreen() {
   }, [revealData]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
@@ -386,6 +389,7 @@ export default function ResultsScreen() {
             >
               <View style={[
                 styles.boardCard,
+                { backgroundColor: theme.surface, borderColor: theme.boardBorder },
                 board.winner === 'player' && styles.boardCardWin,
                 board.winner === 'bot' && styles.boardCardLose,
               ]}>
