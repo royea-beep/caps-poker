@@ -1,5 +1,6 @@
 # Caps Poker — Full Conversation Timeline
 **Last updated:** 2026-03-20 | **Covers:** 2026-03-17 to 2026-03-20
+**Timezone:** All times are Israel Standard Time (UTC+2). Summer time (UTC+3) begins last Sunday of March (~2026-03-29).
 
 > Each entry: [Date] [Type] [Summary] → [Reference]
 

@@ -1,4 +1,5 @@
 # App Store Submission Checklist
+> ⏸️ **TRACK PAUSED** — Do not act on this file until Roye explicitly says "resume App Store". Never mention App Store proactively.
 
 ## Current State (2026-03-14)
 - **Build 15** (v1.1.0, production profile) — FINISHED, ready for submission
