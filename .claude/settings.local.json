@@ -341,7 +341,12 @@
       "Read(//c/Users/royea/AppData/Roaming//**)",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''version:'''', d[''''expo''''][''''version'''']\\); print\\(''''buildNumber:'''', d[''''expo''''].get\\(''''ios'''',{}\\).get\\(''''buildNumber'''',''''not set''''\\)\\); print\\(''''versionCode:'''', d[''''expo''''].get\\(''''android'''',{}\\).get\\(''''versionCode'''',''''not set''''\\)\\)\")",
       "mcp__claude_ai_Supabase__list_migrations",
-      "Bash(expo install:*)"
+      "Bash(expo install:*)",
+      "Read(//c/Projects/Caps/$APPDATA/**)",
+      "Read(//c/Projects/Caps/$LOCALAPPDATA/**)",
+      "Bash(sqlite3 ~/AppData/Roaming/ZProjectManager/data.db \"SELECT name FROM sqlite_master WHERE type=''table'';\")",
+      "Bash(cmd /c \"cd C:\\\\Projects\\\\ZProjectManager && node -e \\\\\"const db = require\\('./node_modules/better-sqlite3'\\); console.log\\('ok'\\)\\\\\" 2>&1\")",
+      "Bash(cmd /c \"cd /d C:\\\\Projects\\\\ZProjectManager && node -e \\\\\"const db = require\\('./node_modules/better-sqlite3'\\); console.log\\('ok'\\)\\\\\"\" 2>&1)"
     ]
   }
 }
