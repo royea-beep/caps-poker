@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
     fontSize: 52,
     fontWeight: '900',
     letterSpacing: 8,
-    color: 'rgba(255,255,255,0.045)',
+    color: 'rgba(255,255,255,0.06)',
     textTransform: 'uppercase' as any,
     textAlign: 'center' as any,
   },
