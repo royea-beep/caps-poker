@@ -220,11 +220,20 @@ export default function GameScreen() {
 
   // Pre-calculate results in background as soon as countdown starts (first finisher done)
   // By the time both are ready, results are already computed → zero-wait navigation
+  // IMPORTANT: only pre-calc if ALL bots have already placed cards — otherwise evaluator
+  // sees empty allBotCards and returns "High Card" for every bot hand (stale result bug)
   useEffect(() => {
     if (!countdownActive) return;
     const t = setTimeout(() => {
       if (!mountedRef.current) return;
       try {
+        const botsDone = boardsRef.current.every((b) =>
+          b.allBotCards.every((bc) => bc.length >= CARDS_PER_BOARD)
+        );
+        if (!botsDone) {
+          console.log('[GAME] pre-calc skipped — bot cards not ready yet, will calc on navigate');
+          return;
+        }
         precalculatedResultsRef.current = calculateHandResultsMulti(boardsRef.current, numberOfPlayers, config);
         console.log('[GAME] pre-calculation done during countdown');
       } catch (e) {
@@ -570,6 +579,12 @@ export default function GameScreen() {
       }
     };
 
+    // On web, Alert.alert uses window.confirm which is unreliable — navigate directly
+    if (Platform.OS === 'web') {
+      leave();
+      return;
+    }
+
     if (isArranging || phase.type === 'waiting_for_bot') {
       Alert.alert(
         'Leave Game?',
@@ -888,7 +903,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
-    pointerEvents: 'none' as any,
     ...Platform.select({
       default: { userSelect: 'none' } as any,
     }),
@@ -916,6 +930,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 18,
+    ...Platform.select({ web: { cursor: 'pointer' } as any }),
   },
   backText: {
     color: COLORS.textSecondary,
