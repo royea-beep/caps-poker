@@ -406,7 +406,34 @@ export default function ResultsScreen() {
                   <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>
                 </View>
 
-                {/* Community cards — single centered row */}
+                {/* Bot hand rows — top (opponent across the table) */}
+                {(board.allBotCards ?? []).map((botCards, botIdx) =>
+                  botCards && botCards.length > 0 ? (
+                    <View key={`bot-${botIdx}`} style={styles.handRowVertical}>
+                      <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
+                        {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
+                      </Text>
+                      <View style={styles.cardsRow}>
+                        {botCards.map((c) => (
+                          <CardComponent
+                            key={c.id}
+                            card={c}
+                            faceDown={false}
+                            cardWidth={CARD_W}
+                            cardHeight={CARD_H}
+                            highlighted={botIdx === 0 && (board.botHighlightIds ?? []).includes(c.id)}
+                            dimmed={botIdx === 0 && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
+                          />
+                        ))}
+                        <Text style={[styles.handName, board.winner === 'bot' && styles.handNameWin]}>
+                          {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null
+                )}
+
+                {/* Community cards — center row */}
                 <View style={styles.cardsRow}>
                   {(board.openCards ?? []).map((c) => (
                     <CardComponent
@@ -433,7 +460,7 @@ export default function ResultsScreen() {
                   ))}
                 </View>
 
-                {/* Player hand row */}
+                {/* Player hand row — bottom (your side of the table) */}
                 <View style={styles.handRowVertical}>
                   <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>YOU</Text>
                   <View style={styles.cardsRow}>
@@ -453,33 +480,6 @@ export default function ResultsScreen() {
                     </Text>
                   </View>
                 </View>
-
-                {/* Bot hand rows — one per bot, stacked vertically */}
-                {(board.allBotCards ?? []).map((botCards, botIdx) =>
-                  botCards && botCards.length > 0 ? (
-                    <View key={`bot-${botIdx}`} style={styles.handRowVertical}>
-                      <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
-                        {multiBot ? `BOT ${botIdx + 1}` : 'BOT'}
-                      </Text>
-                      <View style={styles.cardsRow}>
-                        {botCards.map((c) => (
-                          <CardComponent
-                            key={c.id}
-                            card={c}
-                            faceDown={false}
-                            cardWidth={CARD_W}
-                            cardHeight={CARD_H}
-                            highlighted={botIdx === 0 && (board.botHighlightIds ?? []).includes(c.id)}
-                            dimmed={botIdx === 0 && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
-                          />
-                        ))}
-                        <Text style={[styles.handName, board.winner === 'bot' && styles.handNameWin]}>
-                          {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : null
-                )}
               </View>
             </Animated.View>
           );

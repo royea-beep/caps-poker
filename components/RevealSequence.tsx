@@ -463,9 +463,51 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
             </Pressable>
           </View>
 
-          {/* ── Centered: community row top, bot below, you below ── */}
+          {/* ── Poker table: bot top, community middle, player bottom ── */}
           <View style={styles.mainContent}>
             <View style={styles.contentContainer}>
+
+              {/* BOT section — top (opponent across the table) */}
+              <View style={styles.botSection}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[
+                    styles.sectionLabel,
+                    board.winner === 'bot' ? styles.loserSectionLabel : null,
+                  ]}>
+                    {multiBot ? 'BOTS' : 'BOT'}
+                  </Text>
+                  <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
+                    {100 - displayedProb}%
+                  </Text>
+                </View>
+                {allBotCards.map((botCards, botIdx) =>
+                  botCards && botCards.length > 0 ? (
+                    <View key={`bot-${botIdx}`} style={styles.handRow}>
+                      {botCards.map((c) => (
+                        <CardComponent
+                          key={c.id}
+                          card={c}
+                          faceDown={false}
+                          cardWidth={handCardW}
+                          cardHeight={handCardH}
+                          highlighted={
+                            (botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)) ||
+                            (botIdx === 0 && !allRevealed && showBadges && !!botOptimalHint && c.rank === botOptimalHint.rank && c.suit === botOptimalHint.suit)
+                          }
+                          dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
+                        />
+                      ))}
+                      {allRevealed && ((board.allBotHandNames ?? [])[botIdx] || (botIdx === 0 && board.botHandName)) && (
+                        <Text style={styles.handName}>
+                          {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
+                        </Text>
+                      )}
+                    </View>
+                  ) : null
+                )}
+              </View>
+
+              <View style={styles.handsDivider} />
 
               {/* Community cards — horizontal row, centered */}
               <View style={styles.communitySection}>
@@ -509,49 +551,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
               <View style={styles.handsDivider} />
 
-              {/* BOT section */}
-              <View style={styles.botSection}>
-                <View style={styles.sectionHeader}>
-                  <Text style={[
-                    styles.sectionLabel,
-                    board.winner === 'bot' ? styles.loserSectionLabel : null,
-                  ]}>
-                    {multiBot ? 'BOTS' : 'BOT'}
-                  </Text>
-                  <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
-                    {100 - displayedProb}%
-                  </Text>
-                </View>
-                {allBotCards.map((botCards, botIdx) =>
-                  botCards && botCards.length > 0 ? (
-                    <View key={`bot-${botIdx}`} style={styles.handRow}>
-                      {botCards.map((c) => (
-                        <CardComponent
-                          key={c.id}
-                          card={c}
-                          faceDown={false}
-                          cardWidth={handCardW}
-                          cardHeight={handCardH}
-                          highlighted={
-                            (botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)) ||
-                            (botIdx === 0 && !allRevealed && showBadges && !!botOptimalHint && c.rank === botOptimalHint.rank && c.suit === botOptimalHint.suit)
-                          }
-                          dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
-                        />
-                      ))}
-                      {allRevealed && ((board.allBotHandNames ?? [])[botIdx] || (botIdx === 0 && board.botHandName)) && (
-                        <Text style={styles.handName}>
-                          {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
-                        </Text>
-                      )}
-                    </View>
-                  ) : null
-                )}
-              </View>
-
-              <View style={styles.handsDivider} />
-
-              {/* YOU section */}
+              {/* YOU section — bottom (your side of the table) */}
               <View style={styles.playerSection}>
                 <View style={styles.sectionHeader}>
                   <Text style={[
