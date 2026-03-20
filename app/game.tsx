@@ -887,8 +887,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 0,
+    zIndex: 1,
     pointerEvents: 'none' as any,
+    ...Platform.select({
+      default: { userSelect: 'none' } as any,
+    }),
   },
   fiveoWatermarkText: {
     fontSize: 52,
@@ -904,6 +907,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 4,
+    zIndex: 10,
   },
   backButton: {
     width: 36,
@@ -948,6 +952,7 @@ const styles = StyleSheet.create({
   botSection: {
     paddingVertical: 4,
     paddingHorizontal: 12,
+    zIndex: 10,
   },
   botStatusRow: {
     flexDirection: 'row',
@@ -1060,6 +1065,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,
+    zIndex: 10,
   },
   floatingBtn: {
     paddingVertical: 12,
