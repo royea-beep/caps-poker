@@ -1,5 +1,5 @@
 # CAPS POKER — Master Knowledge Base v2
-**Date:** 2026-03-20 | **Version:** v1.9.3 b104 | **Tests:** 115/115
+**Date:** 2026-03-20 | **Version:** v1.9.3 | Code b104 | EAS #117 | **Tests:** 115/115
 
 ---
 
