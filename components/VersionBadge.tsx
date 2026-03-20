@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 9,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.22)',
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },

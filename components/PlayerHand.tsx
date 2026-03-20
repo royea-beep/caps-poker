@@ -62,9 +62,12 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.surface, borderTopColor: theme.boardBorder }]}>
-      <Text style={styles.label}>
-        YOUR HAND ({cards.length} remaining)
-      </Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>YOUR HAND</Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countBadgeText}>{cards.length}</Text>
+        </View>
+      </View>
       {cards.length > 0 ? (
         <View style={styles.grid}>
           {useTwoRows ? (
@@ -100,14 +103,32 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 12,
+    marginBottom: 3,
+    gap: 6,
+  },
   label: {
     color: COLORS.neonBlue,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 2,
-    marginLeft: 12,
-    marginBottom: 3,
     textTransform: 'uppercase',
+  },
+  countBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countBadgeText: {
+    color: '#000',
+    fontSize: 10,
+    fontWeight: '900',
   },
   grid: {
     paddingHorizontal: 8,

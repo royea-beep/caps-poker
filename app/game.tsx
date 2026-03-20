@@ -46,7 +46,7 @@ const hapticNotify = (type: any) => {
   Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
 
-// Circular timer component
+// Circular timer component — depleting ring on web, pulsing circle on native
 function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; size: number; color: string; pulsing: boolean }) {
   const pulseScale = useSharedValue(1);
 
@@ -71,6 +71,21 @@ function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; s
   const s = timeLeft % 60;
   const timeStr = `0:${s.toString().padStart(2, '0')}`;
 
+  if (Platform.OS === 'web') {
+    const progress = Math.max(0, Math.min(timeLeft / 60, 1));
+    const deg = Math.round(progress * 360);
+    return (
+      <Animated.View style={[{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }, animStyle]}>
+        {/* Depleting ring via conic-gradient */}
+        <View style={[{ position: 'absolute', width: size, height: size, borderRadius: size / 2 },
+          { background: `conic-gradient(${color} ${deg}deg, rgba(40,40,40,0.85) ${deg}deg)` } as any]} />
+        {/* Inner dark mask to create ring */}
+        <View style={{ position: 'absolute', width: size - 8, height: size - 8, borderRadius: (size - 8) / 2, backgroundColor: 'rgba(8,8,8,0.9)' }} />
+        <Text style={[timerStyles.text, { color, fontSize: size * 0.30, zIndex: 1 }]}>{timeStr}</Text>
+      </Animated.View>
+    );
+  }
+
   return (
     <Animated.View style={[timerStyles.container, { width: size, height: size, borderRadius: size / 2, borderColor: color }, animStyle]}>
       <Text style={[timerStyles.text, { color, fontSize: size * 0.32 }]}>{timeStr}</Text>
@@ -86,7 +101,7 @@ const timerStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   text: {
-    fontWeight: '800',
+    fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
 });
@@ -109,7 +124,7 @@ export default function GameScreen() {
   const storeOrientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
-  const isLandscape = storeOrientation === 'landscape' || (Platform.OS === 'web' && screenW > SCREEN_H);
+  const isLandscape = storeOrientation === 'landscape' && Platform.OS !== 'web';
   const addChips = useGameStore((s) => s.addChips);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
@@ -679,9 +694,11 @@ export default function GameScreen() {
           <Text style={landscapeStyles.panelTitle}>
             {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
           </Text>
-          <Text style={[styles.botLabel, { textAlign: 'center' }]}>
-            {allBotsReady ? '✓ READY' : '...'}
-          </Text>
+          <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
+            <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
+              {allBotsReady ? '✓ READY' : '…'}
+            </Text>
+          </View>
           {isArranging && (
             <Pressable
               style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, landscapeStyles.readyBtn]}
@@ -744,17 +761,19 @@ export default function GameScreen() {
         <ChipsDisplay amount={chips} />
       </View>
 
-      {/* Bot status */}
-      <View style={styles.botSection}>
-        {numberOfBots === 1 ? (
-          <Text style={styles.botLabel}>
-            BOT {allBotsReady ? '\u2713 READY' : ''}
+      {/* Bot status bar */}
+      <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]}>
+        <View style={styles.botStatusRow}>
+          <Text style={styles.botEmoji}>🤖</Text>
+          <Text style={styles.botNameLabel}>
+            {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
           </Text>
-        ) : (
-          <Text style={styles.botLabel}>
-            BOTS {readyBotCount}/{numberOfBots} READY
-          </Text>
-        )}
+          <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
+            <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
+              {allBotsReady ? '✓ READY' : '…'}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Boards */}
@@ -912,13 +931,63 @@ const styles = StyleSheet.create({
   },
   freePlayLabel: {
     color: COLORS.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-    fontStyle: 'italic',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+    textTransform: 'uppercase' as any,
   },
   botSection: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  botStatusRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  botEmoji: {
+    fontSize: 14,
+  },
+  botNameLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase' as any,
+  },
+  botStatusPill: {
+    paddingHorizontal: 8,
     paddingVertical: 2,
+    borderRadius: 10,
+  },
+  botReadyPill: {
+    backgroundColor: 'rgba(40,167,69,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(40,167,69,0.5)',
+  },
+  botThinkingPill: {
+    backgroundColor: 'rgba(255,193,7,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,193,7,0.4)',
+  },
+  botStatusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  botReadyText: {
+    color: '#28A745',
+  },
+  botThinkingText: {
+    color: '#FFC107',
   },
   botLabel: {
     color: COLORS.textSecondary,
@@ -936,16 +1005,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
-    paddingHorizontal: 8,
+    paddingHorizontal: Platform.OS === 'web' ? 12 : 8,
     width: '100%',
+    flex: 1,
   },
   boardCellFull: {
     flex: 1,
   },
   boardCellHalf: {
     width: '50%',
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    paddingHorizontal: Platform.OS === 'web' ? 6 : 4,
+    paddingVertical: Platform.OS === 'web' ? 6 : 4,
   },
   boardCellThird: {
     width: '33.33%',

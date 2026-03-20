@@ -68,7 +68,7 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
   return (
     <Pressable onPress={onPress}>
       <Animated.View style={[styles.emptySlot, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, animStyle]}>
-        <Text style={styles.plusText}>+</Text>
+        {isArrangement && <Text style={styles.plusText}>♦</Text>}
       </Animated.View>
     </Pressable>
   );
@@ -337,7 +337,7 @@ export default function Board({
         <View style={styles.cardRow}>
           {isArrangement && playerCards.length === 0 && onAutoFill && (
             <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText}>AUTO</Text>
+              <Text style={styles.autoBtnText}>⚡ AUTO</Text>
             </Pressable>
           )}
           {playerCards.length > 0 ? (
@@ -470,11 +470,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   boardLabel: {
-    color: '#c8a84b',
-    fontSize: 11,
-    fontWeight: '800',
+    color: '#0a0a0a',
+    fontSize: 10,
+    fontWeight: '900',
     textTransform: 'uppercase',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
+    backgroundColor: '#c8a84b',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
   rowLabel: {
     color: COLORS.textDim,
@@ -528,22 +533,24 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   emptySlot: {
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#c8a84b55',
+    borderColor: '#c8a84b44',
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   dropTarget: {
     borderColor: '#c8a84b',
     borderWidth: 2,
+    backgroundColor: 'rgba(201,168,76,0.08)',
   },
   plusText: {
-    color: '#c8a84b88',
-    fontSize: 16,
+    color: '#c8a84b55',
+    fontSize: 10,
+    fontWeight: '700',
   },
   handName: {
     color: COLORS.textMuted,
@@ -604,15 +611,27 @@ const styles = StyleSheet.create({
   },
   autoBtn: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'rgba(201,168,76,0.18)',
-    borderWidth: 1,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(201,168,76,0.22)',
+    borderWidth: 1.5,
     borderColor: '#c8a84b',
     marginRight: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#c8a84b',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
+      },
+      android: { elevation: 4 },
+      default: {
+        boxShadow: '0 2px 8px rgba(201,168,76,0.35)',
+      } as any,
+    }),
   },
   autoBtnText: {
-    color: '#c8a84b',
+    color: '#e8c96a',
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 1.5,
