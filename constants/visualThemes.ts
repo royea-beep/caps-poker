@@ -41,18 +41,18 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     loseColor: '#ef4444',
   },
   fiveo: {
-    background: '#2D0A0E',      // near-black red — dimly lit casino atmosphere
+    background: '#1C0508',      // very dark red-black — pure red hue, dimly lit casino
     surface: '#1A1A2E',         // dark navy — panels, modals, overlays
-    boardBg: '#5C1018',         // dark casino red felt — board surface
-    boardBorder: '#3D2415',     // dark wood brown — subtle table rail
+    boardBg: '#6B1520',         // brighter than background — boards must POP
+    boardBorder: '#8B6914',     // warm golden-brown — visible table rail
     textPrimary: '#ffffff',
     textSecondary: '#FFD700',
-    textMuted: '#aaaaaa',
+    textMuted: '#bbbbbb',
     accent: '#FFD700',
     accentText: '#000000',
-    cardFace: '#F5F5F5',
-    cardBorder: 'rgba(0,0,0,0.18)',
-    cardShadow: 'rgba(0,0,0,0.55)',
+    cardFace: '#FAFAFA',        // pure white cards
+    cardBorder: 'rgba(0,0,0,0.25)',
+    cardShadow: 'rgba(0,0,0,0.6)',
     primaryBtn: '#FFD700',
     primaryBtnText: '#1A1A2E',
     primaryBtnRadius: 8,
