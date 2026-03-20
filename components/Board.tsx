@@ -258,7 +258,12 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { color: theme.accent }]}>B{index + 1}</Text>
+            <Text style={[styles.boardLabel, { backgroundColor: theme.accent }]}>B{index + 1}</Text>
+            {isArrangement && boardFull && (
+              <View style={styles.boardFullBadge}>
+                <Text style={styles.boardFullText}>✓</Text>
+              </View>
+            )}
             {winner && (
               <Badge
                 label={winner === 'player' ? 'W' : winner === 'bot' ? 'L' : 'T'}
@@ -468,6 +473,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     flex: 1,
+  },
+  boardFullBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#28A745',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  boardFullText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '900',
   },
   boardLabel: {
     color: '#0a0a0a',

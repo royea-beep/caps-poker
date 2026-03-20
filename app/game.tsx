@@ -701,12 +701,12 @@ export default function GameScreen() {
           </View>
           {isArranging && (
             <Pressable
-              style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, landscapeStyles.readyBtn]}
+              style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady, landscapeStyles.readyBtn]}
               onPress={handleReady}
               disabled={!allBoardsFull}
             >
               <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-                {allBoardsFull ? 'READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
+                {allBoardsFull ? '✓ READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
               </Text>
             </Pressable>
           )}
@@ -747,7 +747,9 @@ export default function GameScreen() {
             </View>
           )}
           {!countdownActive && isArranging && (
-            <Text style={styles.freePlayLabel}>Arrange freely</Text>
+            <Text style={styles.freePlayLabel}>
+              {cardsRemaining === 0 ? '✓ ALL PLACED' : `ARRANGE ${cardsRemaining} CARDS`}
+            </Text>
           )}
           {playerReady && !allBotsReady && (
             <Text style={styles.waitingText}>
@@ -858,12 +860,12 @@ export default function GameScreen() {
             <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>UNDO</Text>
           </Pressable>
           <Pressable
-            style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled]}
+            style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady]}
             onPress={handleReady}
             disabled={!allBoardsFull}
           >
             <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-              {allBoardsFull ? 'READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
+              {allBoardsFull ? '✓ READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
             </Text>
           </Pressable>
         </View>
@@ -1004,8 +1006,10 @@ const styles = StyleSheet.create({
   boardsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
+    alignContent: 'stretch',
     paddingHorizontal: Platform.OS === 'web' ? 12 : 8,
+    paddingVertical: Platform.OS === 'web' ? 8 : 0,
     width: '100%',
     flex: 1,
   },
@@ -1014,8 +1018,9 @@ const styles = StyleSheet.create({
   },
   boardCellHalf: {
     width: '50%',
+    minHeight: Platform.OS === 'web' ? 200 : undefined,
     paddingHorizontal: Platform.OS === 'web' ? 6 : 4,
-    paddingVertical: Platform.OS === 'web' ? 6 : 4,
+    paddingVertical: Platform.OS === 'web' ? 4 : 4,
   },
   boardCellThird: {
     width: '33.33%',
@@ -1094,6 +1099,21 @@ const styles = StyleSheet.create({
   placeBtnDisabled: {
     backgroundColor: COLORS.goldDim,
     opacity: 0.6,
+  },
+  placeBtnReady: {
+    backgroundColor: '#28A745',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#28A745',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.6,
+        shadowRadius: 10,
+      },
+      android: { elevation: 10 },
+      default: {
+        boxShadow: '0 4px 16px rgba(40,167,69,0.55)',
+      } as any,
+    }),
   },
   floatingBtnText: {
     color: COLORS.textPrimary,
