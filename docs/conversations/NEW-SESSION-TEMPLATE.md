@@ -1,6 +1,7 @@
-# Session Log — [DATE] [TIME IL]
+# Session Log — [DATE] [TIME IL UTC+2]
 **Build at start:** v[X.X.X] | Code b[NNN] | EAS #[NNN]
 **Commit at start:** [hash]
+**Time (IL UTC+2):** HH:MM — HH:MM
 
 ---
 
