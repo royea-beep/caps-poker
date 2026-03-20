@@ -584,7 +584,7 @@ export default function GameScreen() {
   // ── Landscape / widescreen layout ──────────────────────────────────────────
   if (isLandscape) {
     return (
-      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
         <FriendsBg />
         {visualTheme === 'fiveo' && (
           <View pointerEvents="none" style={styles.fiveoWatermark}>
@@ -592,7 +592,7 @@ export default function GameScreen() {
           </View>
         )}
         {/* LEFT — Your hand */}
-        <View style={landscapeStyles.leftPanel}>
+        <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <Text style={landscapeStyles.panelTitle}>YOUR HAND</Text>
           {isArranging && (
             <PlayerHand
@@ -675,7 +675,7 @@ export default function GameScreen() {
         </View>
 
         {/* RIGHT — bot + ready */}
-        <View style={landscapeStyles.rightPanel}>
+        <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <Text style={landscapeStyles.panelTitle}>
             {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
           </Text>
@@ -705,7 +705,7 @@ export default function GameScreen() {
   // ── End landscape layout ────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
       <FriendsBg />
       {visualTheme === 'fiveo' && (
         <View pointerEvents="none" style={styles.fiveoWatermark}>
@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
     fontSize: 52,
     fontWeight: '900',
     letterSpacing: 8,
-    color: 'rgba(255,255,255,0.06)',
+    color: 'rgba(255,120,120,0.10)',
     textTransform: 'uppercase' as any,
     textAlign: 'center' as any,
   },
