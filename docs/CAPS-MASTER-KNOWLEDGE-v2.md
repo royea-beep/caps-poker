@@ -1,306 +1,216 @@
-# CAPS POKER — Master Knowledge File v2
-*Updated: 2026-03-18 | Full session summary*
+# CAPS POKER — Master Knowledge Base v2
+**Date:** 2026-03-20 | **Version:** v1.9.3 b104 | **Tests:** 115/115
 
 ---
 
-## 1. PROJECT STATE
-
-| Key | Value |
-|-----|-------|
-| Version | 1.9.3 |
-| Build | #88 (TestFlight) |
-| Tests | 115/115 |
-| Web | caps.ftable.co.il (Vercel) |
-| Repo | github.com/royea-beep/caps-poker |
-| Stack | React Native + Expo SDK 55 |
-| New Architecture | **DISABLED** (`newArchEnabled: false`) |
-| Last commit | a9f90b1 — rotating tagline |
+## 1. PROJECT IDENTITY
+- **Name:** Caps Poker
+- **Type:** React Native Omaha poker game (iOS + web)
+- **Stack:** React Native + Expo SDK 55 + TypeScript + Zustand + Supabase + Vercel
+- **Repo:** royea-beep/caps-poker (private)
+- **Web:** https://caps.ftable.co.il
+- **iOS:** TestFlight via EAS + GitHub Actions CI
+- **Supabase:** gxrpunvhjcrzqnitbqah (Frankfurt eu-central-1)
 
 ---
 
-## 2. IRON RULES (LOCKED)
-
-1. React Native + Expo only
-2. iOS portrait only
-3. All params runtime-configurable
-4. Full Omaha evaluation (best 2 of 4, selected at evaluation)
-5. Bot = random only
-6. No backend for single-player
+## 2. IRON RULES (LOCKED — never change without explicit "UNLOCK [rule]")
+1. React Native + Expo only — no bare workflow, no Capacitor
+2. **UNLOCKED (2026-03-19):** iOS supports portrait AND landscape. User picks on first launch or via Settings.
+3. All game params runtime-configurable via Settings — never hardcoded
+4. Hand evaluation: full Omaha — exactly 2 player cards + 3 board cards
+5. Bot is random only — no strategy, testing purposes only
+6. No backend for single-player — local storage only
 7. Local multiplayer via react-native-tcp-socket
-8. Internet multiplayer via Supabase Realtime (Phase 2)
+8. Internet multiplayer via Supabase Realtime (implemented Sprint-42)
 
 ---
 
-## 3. DEPLOY — CRITICAL
+## 3. GAME RULES (LOCKED)
+- 2 players: 4 boards, 16 cards each
+- 3 players: 3 boards, 12 cards each
+- 4 players: 2 boards, 8 cards each
+- Community: 3 open (flop) + 2 closed (turn/river) per board
+- Best 2 of 4 hole cards selected during evaluation (not pre-assigned)
+- UX: tap-to-select → tap-to-place (no drag), multi-select up to 4 cards
 
+---
+
+## 4. KEY CREDENTIALS
+- **Expo:** royea | **Apple Team:** 3K9KJNGL9U | **Bundle:** com.capspoker.app
+- **Supabase:** gxrpunvhjcrzqnitbqah.supabase.co (Frankfurt) | **URL in:** app.json extra + .env + supabase.ts
+- **Vercel:** prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP | team_ayrePMw5z8jSPhRe67RiBD0k
+- **GitHub:** royea-beep/caps-poker
+- **Twilio SID:** ACf82650af617731b2252e87eb83b31f2a | Sandbox: +14155238886
+- **WhatsApp webhook:** https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler
+
+---
+
+## 5. DEPLOY COMMANDS
+
+### Web
 ```bash
-# Web (ALWAYS Vercel, NEVER FTP)
 npx expo export --platform web --clear
 node scripts/fix-web-html.js
 cd dist && vercel --prod --yes
-
-# iOS (auto via CI)
-git push origin main  # triggers GitHub Actions → EAS → TestFlight
 ```
 
-**NEVER use FTP for caps.ftable.co.il** — DNS points to Vercel (76.76.21.21)
-
----
-
-## 4. VAMOS METHODOLOGY
-
-### Prompt file naming
+### iOS (CI — automatic on git push)
 ```
-vamos-caps-[task]-v[version]-b[build]-YYYY-MM-DD-HHMM.md
-Example: vamos-caps-ios-crash-fix-v1.9.3-b85-2026-03-18-1100.md
+git push origin main → GitHub Actions → EAS Build → TestFlight
 ```
 
-### Every prompt must start with
-```
-## Current state: v[X.X.X] build #[NN] | commit [hash]
-Read MEMORY.md. Iron Rules 1-8 confirmed.
-Standing Orders: Fix autonomously. Never give user commands.
+### Manual iOS
+```bash
+eas build --platform ios --profile production --non-interactive
 ```
 
-### Every prompt must end with
-```
-1. npx tsc --noEmit — 0 errors
-2. npx jest --silent — all pass
-3. npx expo export --platform web --clear
-4. node scripts/fix-web-html.js
-5. cd dist && vercel --prod --yes
-6. git add -A && git commit -m "..."
-7. git push origin main
-8. Update MEMORY.md
-9. Report table
-```
-
-### Agent naming pattern
-```
-Agent: crash-hunter / reveal-fixer / home-agent / auth-agent / etc.
-```
-
-### Communication pattern
-- User speaks **Hebrew** to Claude (this assistant)
-- Claude writes prompts in **English** for Claude Bot
-- Claude Bot does all code changes autonomously
-- User only copies prompt file to Claude Bot
-- Minimum 3 agents per sprint for complex tasks
-
----
-
-## 5. CARD DESIGN (5-0 Poker Clone — FINAL)
-
-```
-Face: #FFFFFF pure white
-Border: 1px rgba(0,0,0,0.15), borderRadius 8
-Layout:
-  - Top-left corner: small rank (14%) + suit (11%)
-  - CENTER: large rank (42%) + suit below (32%)
-  - NO bottom-right corner
-Hearts/Diamonds: #E8192C
-Spades/Clubs: #000000
-Back: #0f1a3e navy, 1.5px gold #c9a84c border, faint ♦ 30% opacity
-Normal: 58×82, Small: 52×74
+### TypeScript check + tests (before every deploy)
+```bash
+npx tsc --noEmit       # must be 0 errors
+npx jest --silent      # must be 115/115
 ```
 
 ---
 
-## 6. BOARD DESIGN
+## 6. KEY FILES
 
-```
-Background: #6B0000 (deep red felt)
-Border: #8B0000
-Active board: #c9a84c gold border
-```
-
----
-
-## 7. HOME SCREEN
-
-- Title: "CAPS POKER" — responsive fontSize Math.min(42, screenW*0.105)
-- 10 rotating taglines (cycle on each mount, fade-in 800ms)
-- 10 color themes switchable in Settings
-- 3 button styles: solid / glass / outline
-- Friends TV show background (sofa/logo/fountain) — web only, opacity 5-8%
-- Google Sign-In button (white, below NEW HAND)
-
----
-
-## 8. REVEAL SEQUENCE
-
-- One board at a time, full screen
-- Layout: TOP 40% (BOT) / MIDDLE 20% (COMMUNITY) / BOTTOM 40% (YOU)
-- Bot cards: always face-up from start
-- Win probability: shown from start (50/50), updates after TURN and RIVER
-- TURN: 3→2→1 countdown then flip
-- RIVER: smooth auto-flip 2.5s after turn (no countdown)
-- BEST card: gold glow highlight on optimal card in hand
-- Auto-advance: 4s after winner shown
-- TAP TO CONTINUE for immediate skip
+| File | Purpose |
+|------|---------|
+| `app/_layout.tsx` | Splash, deep links, orientation lock, first-launch flow (theme→orientation→home) |
+| `app/index.tsx` | Home screen, 10 themes, taglines, FriendsBg |
+| `app/game.tsx` | Main game, portrait+landscape layouts, pre-calc during countdown |
+| `app/results.tsx` | YOU WIN/LOSE score, confetti on PERFECT! |
+| `app/theme-pick.tsx` | First-launch visual theme choice (Classic/Five-O) |
+| `app/orientation-pick.tsx` | First-launch orientation choice |
+| `app/settings.tsx` | All settings, orientation/theme toggle, visual style section |
+| `app/lobby/host.tsx` | TCP local multiplayer host |
+| `app/lobby/internet-host.tsx` | Supabase Realtime internet host |
+| `components/Card.tsx` | 5-0 poker style, 4-color suits, diamond lattice back, flip anim |
+| `components/Board.tsx` | Red felt, WIN/LOSE/TIE banners with hand name, theme tokens |
+| `components/RevealSequence.tsx` | Five-O vertical layout, probability, delta, BEST card glow |
+| `components/BugReporter.tsx` | Shake/FAB → Supabase bug_reports, hidden on game screens |
+| `constants/visualThemes.ts` | Classic/Five-O token system (boardBg, accent, cardFace, etc.) |
+| `constants/gameConfig.ts` | botSpeedMin:1500, botSpeedMax:4000, all game params |
+| `constants/deviceBreakpoints.ts` | `rv()` responsive helper, `getDevice()` factory |
+| `store/gameStore.ts` | All persisted state (Zustand + AsyncStorage + partialize) |
+| `supabase/functions/whatsapp-bot-handler/index.ts` | v15, multi-project routing, Claude+Whisper |
+| `.github/workflows/claude-fix.yml` | WhatsApp bot → auto fix → TestFlight + web deploy |
+| `scripts/fix-web-html.js` | Patches index.html: type="module", error handler, vercel.json |
 
 ---
 
-## 9. GAME SCREEN
+## 7. ARCHITECTURE DECISIONS
 
-- Multi-select: tap up to 4 cards → tap board → all placed at once
-- Gold numbered badges (1-4) on selected cards
-- AUTO button per board — fills all 4 slots instantly
-- Board shake animation when full
-
----
-
-## 10. GOOGLE AUTH
-
-```typescript
-// Web
-supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://caps.ftable.co.il' } })
-
-// Native
-redirectUrl = Linking.createURL('auth/callback')  // caps-poker://auth/callback
-```
-
-Supabase project: gxrpunvhjcrzqnitbqah
-Google OAuth: enabled (Client ID: 133353581092-dgg78...)
-user_profiles table: exists with RLS
-
----
-
-## 11. iOS CRASH HISTORY (ALL FIXED)
-
-| # | Crash | Root Cause | Fix |
-|---|-------|-----------|-----|
-| 1 | Launch crash | expo-haptics static import | Lazy require() |
-| 2 | New Arch crash | pointerEvents as JSX prop | style.pointerEvents |
-| 3 | setState after unmount | setInterval tick after clearInterval | mountedRef.current guard |
-| 4 | Reveal undefined | RevealBoardData fields not guarded | ?? [] everywhere |
-| 5 | Launch crash | window.addEventListener on iOS | Platform.OS === 'web' guard |
-| 6 | Stuck at READY | navigateToReveal in useEffect deps | navigateToRevealRef pattern |
-| 7 | Reveal freeze | entering={FadeIn} in Modal | useSharedValue + withTiming |
-| 8 | General crashes | New Architecture ON by default | newArchEnabled: false |
-
----
-
-## 12. PLATFORM GOTCHAS
-
-```typescript
-// ❌ WRONG — Hermes defines window but not DOM methods
-if (typeof window !== 'undefined') {
-  window.addEventListener(...)  // CRASH on iOS
-}
-
-// ✅ CORRECT
-if (Platform.OS === 'web') {
-  window.addEventListener(...)
-}
-
-// ❌ WRONG — New Arch rejects JSX prop
-<View pointerEvents="none">
-
-// ✅ CORRECT
-<View style={{ pointerEvents: 'none' }}>
-
-// ❌ WRONG — entering prop in Modal crashes Old Arch
-<Animated.View entering={FadeIn}>
-
-// ✅ CORRECT
-const opacity = useSharedValue(0);
-useEffect(() => { opacity.value = withTiming(1); }, []);
-
-// ❌ WRONG — function reference changes on re-render
-useEffect(() => { navigateToReveal(); }, [navigateToReveal]);
-
-// ✅ CORRECT — use ref
-const navigateToRevealRef = useRef(navigateToReveal);
-useEffect(() => { navigateToRevealRef.current = navigateToReveal; });
-useEffect(() => { if (ready) navigateToRevealRef.current(); }, [ready]);
-```
-
----
-
-## 13. WHATSAPP BOT — DESIGN READY
-
-Full design at: `C:/Projects/Caps/docs/whatsapp-bot-design.md`
-
-**Architecture:**
-```
-User sends WhatsApp (text/image/audio)
-  → Twilio webhook → Supabase Edge Function
-  → Whisper (audio) / Claude Vision (image) / direct (text)
-  → Claude API → generates plan
-  → WhatsApp reply: "I'll do X,Y,Z — Reply APPROVE"
-  → APPROVE → GitHub repository_dispatch → Claude Bot → commit + push
-  → WhatsApp: "✅ Done! Build #89 triggered"
-```
-
-**Cost:** ~$0.25/month for 10 bug reports
-**Setup time:** ~3 hours (Phase 1)
-**Required:** Twilio account + ANTHROPIC_API_KEY on GitHub
-
----
-
-## 14. BUGREPORTER (CURRENT STATE)
-
-- Trigger: shake phone OR tap 🐛 FAB
-- Captures: screenshot (JPG), title, description, screen path, device info
-- Sends to: Supabase bug_reports table
-- Ping on mount: every app open sends "[ping] app opened v1.9.3"
-- FAB: hidden on game screens, shown on home/settings
-- Does NOT capture: audio, video, stack traces
-
----
-
-## 15. CREDENTIALS
-
-```
-Expo: royea / royearguan@gmail.com
-Apple Team: 3K9KJNGL9U
-Bundle: com.capspoker.app
-Expo Project ID: 114b97d5-5cb3-4798-9a97-8233a6a37c07
-Vercel: prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP
-GitHub: royea-beep/caps-poker
-Supabase: gxrpunvhjcrzqnitbqah.supabase.co
-```
-
----
-
-## 16. OPEN ITEMS
-
-| Priority | Item |
+| Decision | Rule |
 |----------|------|
-| 🔴 HIGH | WhatsApp bot — Phase 1 implementation |
-| 🟡 MED | Google OAuth on iOS — test after build #88 |
-| 🟡 MED | App icon — still placeholder |
-| 🟡 MED | Friends bg on native (needs react-native-svg) |
-| 🟢 LOW | Cancel Expo Additional Concurrency billing |
-| 🟢 LOW | Supabase multiplayer (Phase 2) |
+| `rv(W, mobileWeb, tablet, desktop, native)` | Responsive helper — W from `useWindowDimensions()`, NEVER module-level |
+| `Platform.OS === 'web'` | NOT `typeof window !== 'undefined'` — Hermes trap on iOS/Android |
+| `pointerEvents` | As style prop NOT JSX prop (New Arch compat) |
+| No `entering=` in Modal | Old Arch crash: `Animated.View` with `entering={FadeIn}` inside Modal freezes iOS |
+| `credentialsSource: remote` | In eas.json — no local .mobileprovision needed on CI |
+| Pre-calculate during countdown | `setTimeout` in game.tsx computes results in background → zero-wait navigation |
+| `newArchEnabled: false` | SDK 55 compat — New Architecture breaks too many libs |
+| `getSupabase()` | NOT `import { supabase }` — lazy singleton getter in utils/supabase.ts |
+| `output: "single"` | In app.json web config — SPA mode for Vercel, never "static" |
+| `extra.buildNumber` | VersionBadge reads from here (works on web), fallback to ios.buildNumber |
+| `Constants.expoConfig.extra` | Source for Supabase URL/key in Expo managed workflow (not process.env) |
 
 ---
 
-## 17. WORKFLOW — HOW WE COMMUNICATE
+## 8. SUPABASE TABLES (all RLS enabled)
 
-### The pattern we developed:
-1. **You describe** what you want (Hebrew, text/audio/screenshot)
-2. **I analyze** → identify bugs/features → write English prompt
-3. **Prompt file** named with version+build+timestamp
-4. **You send** to Claude Bot (copy-paste)
-5. **Bot executes** autonomously — reads MEMORY.md, fixes, deploys
-6. **You test** on TestFlight/web → send screenshot
-7. **I analyze** screenshot → identify next issue → repeat
-
-### Screenshot feedback loop:
-- You send screenshot → I describe what's wrong → new prompt
-- Images numbered (Image 1, 2, 3) for reference in discussion
-
-### Audio feedback:
-- Bot transcribes with Whisper (already installed)
-- Hebrew audio → transcript → implement changes
-
-### Build tracking:
-- Every prompt includes current version + build number
-- File name includes version + build for easy reference
-- Status check prompt available: `vamos-caps-status-check-...md`
+| Table | Rows (approx) | Purpose |
+|-------|--------------|---------|
+| leaderboard | 17 | Global scores |
+| user_profiles | — | OAuth user data |
+| sit_and_go_sessions | — | SNG game state |
+| sit_and_go_players | — | SNG participants |
+| tournaments | — | Tournament data |
+| learning_events | — | SecretSauce analytics |
+| whatsapp_sessions | 16+ | Bot conversation state |
+| error_logs | — | JS errors from client |
+| bug_reports | 62+ | BugReporter submissions |
 
 ---
 
-*End of Master Knowledge File v2 | 2026-03-18*
+## 9. WHATSAPP BOT
+
+**Edge Function:** whatsapp-bot-handler (v15, verify_jwt=false)
+
+**Multi-project routing (8 repos):**
+caps-poker, wingman, keydrop, analyzer, explainit, postpilot, ftable, letsmakebillions
+
+**Features:**
+- Hebrew AI responses (Claude Sonnet)
+- Image analysis (Claude Vision)
+- Audio transcription (OpenAI Whisper)
+- Approval flow (אישור/ביטול)
+- Auto GitHub dispatch → EAS build → TestFlight
+- Auto Vercel deploy after fix
+- Completion WhatsApp notification
+
+**Secrets set on Supabase:**
+ANTHROPIC_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM, GITHUB_TOKEN, OPENAI_API_KEY ✅
+
+**Secrets set on GitHub:**
+ANTHROPIC_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, VERCEL_TOKEN, VERCEL_PROJECT_ID, VERCEL_ORG_ID ✅
+
+**ONLY MISSING:** Twilio Console webhook URL (manual 30s step):
+→ Twilio Console → Sandbox → "WHEN A MESSAGE COMES IN" → paste webhook URL
+
+---
+
+## 10. VISUAL THEME SYSTEM (b104)
+
+**Type:** `VisualTheme = 'classic' | 'fiveo'`
+
+**Usage:**
+```typescript
+import { getTheme } from '../constants/visualThemes';
+const visualTheme = useGameStore((s) => s.visualTheme);
+const theme = getTheme(visualTheme); // null-safe, falls back to classic
+```
+
+**Token categories:** background, surface, boardBg, boardBorder, textPrimary/Secondary/Muted, accent, accentText, cardFace, cardBorder, cardShadow, primaryBtn, primaryBtnText, primaryBtnRadius, winColor, loseColor
+
+**Classic:** dark black bg, deep brown felt, gold accent, white cards
+**Five-O:** navy bg, dark red felt, yellow accent, off-white cards, less-rounded buttons
+
+**First-launch flow:** theme-pick → orientation-pick → home (both null-gated in _layout.tsx)
+
+---
+
+## 11. PERFORMANCE
+
+| Metric | Value |
+|--------|-------|
+| Hand evaluation speed | ~2.1ms/hand (500 hands × 2 players) |
+| Pre-calc timing | During 3s countdown — zero-wait navigation to results |
+| Web bundle | 2.6MB main + 207KB chunk + 2×14KB chunks |
+| Tests | 115/115, ~32s total |
+| TypeScript | 0 errors strict mode |
+
+---
+
+## 12. CURRENT STATUS
+
+| Stage | Status |
+|-------|--------|
+| 1. Concept | ✅ Done |
+| 2. Research | ✅ Done |
+| 3. Architecture | ✅ Done |
+| 4. Setup | ✅ Done |
+| 5. Development | ✅ Done |
+| 6. Content & Assets | ✅ Done |
+| 7. Launch Prep | ✅ Done |
+| 8. Live & Optimization | 🔄 In Progress |
+
+**Health:** 92/100 | **Build:** #104 | **Tests:** 115/115
+
+**Pending (all non-blocking):**
+1. Set Twilio webhook URL in Console (30s manual step)
+2. Enable Google OAuth in Supabase dashboard
+3. Device QA: Five-O theme, landscape layout, multiplayer, WhatsApp audio
+4. LemonSqueezy variants — publish in dashboard
+5. EAS iOS build b104
