@@ -44,6 +44,16 @@ describe('evaluateOmahaHand', () => {
     expect(result.rank).toBe(HandRank.FullHouse);
   });
 
+  test('Full House — 4s full of 7s (regression: pre-calc stale bot cards showed High Card)', () => {
+    // Exact cards from bug report: bot 2♦,7♥,4♠,Q♥ vs community 4♣,7♦,A♥,6♣,4♦
+    // Best: 7♥+4♠ (hand) + 4♣+7♦+4♦ (board) → trips 4s + pair 7s = Full House
+    const player = [card('2', 'd'), card('7', 'h'), card('4', 's'), card('Q', 'h')];
+    const board = [card('4', 'c'), card('7', 'd'), card('A', 'h'), card('6', 'c'), card('4', 'd')];
+    const result = evaluateOmahaHand(player, board);
+    expect(result.rank).toBe(HandRank.FullHouse);
+    expect(result.name).toBe('Full House');
+  });
+
   test('Flush', () => {
     const player = [card('A', 'h'), card('3', 'h'), card('2', 'c'), card('4', 'd')];
     const board = [card('K', 'h'), card('J', 'h'), card('9', 'h'), card('2', 's'), card('3', 's')];
