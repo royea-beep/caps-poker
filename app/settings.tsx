@@ -26,7 +26,8 @@ import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId, ButtonStyle } from '../constants/homeThemes';
 import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
 import { CapsHooks } from '../utils/learning';
-import { OrientationType } from '../store/gameStore';
+import { OrientationType, VisualTheme } from '../store/gameStore';
+import { getTheme, VISUAL_THEMES } from '../constants/visualThemes';
 
 // Lazy-load screen orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -456,6 +457,94 @@ function FriendsBgPicker() {
   );
 }
 
+function VisualThemePicker() {
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const setVisualTheme = useGameStore((s) => s.setVisualTheme);
+  const current = visualTheme ?? 'classic';
+
+  const options: { id: VisualTheme; label: string; tag: string; bg: string; accent: string }[] = [
+    { id: 'classic', label: 'CLASSIC', tag: 'Timeless', bg: '#1a0800', accent: '#c9a84c' },
+    { id: 'fiveo',   label: 'FIVE-O',  tag: 'Arcade',   bg: '#5c0000', accent: '#FFD700' },
+  ];
+
+  return (
+    <View style={vtStyles.container}>
+      <Text style={vtStyles.sectionLabel}>🎨 VISUAL STYLE</Text>
+      <View style={vtStyles.row}>
+        {options.map((opt) => (
+          <Pressable
+            key={opt.id}
+            style={[vtStyles.tile, current === opt.id && { borderColor: opt.accent, borderWidth: 2 }]}
+            onPress={() => { hapticLight(); setVisualTheme(opt.id); }}
+          >
+            <View style={[vtStyles.preview, { backgroundColor: opt.bg, borderColor: opt.accent }]}>
+              <Text style={[vtStyles.previewSymbol, { color: opt.accent }]}>♠</Text>
+            </View>
+            <Text style={[vtStyles.tileLabel, current === opt.id && { color: opt.accent }]}>{opt.label}</Text>
+            <Text style={vtStyles.tileTag}>{opt.tag}</Text>
+            {current === opt.id && <Text style={[vtStyles.check, { color: opt.accent }]}>✓</Text>}
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const vtStyles = StyleSheet.create({
+  container: {
+    marginBottom: 24,
+  },
+  sectionLabel: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  tile: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    padding: 12,
+    alignItems: 'center',
+    gap: 4,
+  },
+  preview: {
+    width: 44,
+    height: 36,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  previewSymbol: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  tileLabel: {
+    color: COLORS.textPrimary,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  tileTag: {
+    color: COLORS.textMuted,
+    fontSize: 9,
+    fontWeight: '600',
+  },
+  check: {
+    fontSize: 12,
+    fontWeight: '900',
+  },
+});
+
 export default function SettingsScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -476,6 +565,7 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <VisualThemePicker />
         <Text style={styles.sectionTitle}>📱 ORIENTATION</Text>
         <OrientationPicker />
 

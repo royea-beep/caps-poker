@@ -14,6 +14,8 @@ import { Badge } from './Badge';
 import { Card, COLORS, CARDS_PER_BOARD } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { getHandHint } from '../utils/handHint';
+import { getTheme } from '../constants/visualThemes';
+import { useGameStore } from '../store/gameStore';
 
 interface BoardProps {
   index: number;
@@ -124,6 +126,8 @@ export default function Board({
   isWinner,
 }: BoardProps) {
   const { width: screenW } = useWindowDimensions();
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const theme = getTheme(visualTheme);
   const ch = cardHeightProp ?? rv(screenW, 56, 72, 90, 64);
   const cw = Math.round(ch * 0.7);
   // Empty slots are ~30% smaller during arrangement
@@ -151,8 +155,8 @@ export default function Board({
       return {};
     }
     return {
-      borderColor: COLORS.gold,
-      shadowColor: COLORS.gold,
+      borderColor: theme.accent,
+      shadowColor: theme.accent,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: pulseValue.value * 0.6,
       shadowRadius: pulseValue.value * 10,
@@ -222,8 +226,8 @@ export default function Board({
   const winnerPulseStyle = useAnimatedStyle(() => {
     if (winnerPulse.value === 0) return {};
     return {
-      borderColor: COLORS.gold,
-      shadowColor: COLORS.gold,
+      borderColor: theme.accent,
+      shadowColor: theme.accent,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: winnerPulse.value * 0.8,
       shadowRadius: winnerPulse.value * 14,
@@ -239,6 +243,7 @@ export default function Board({
     <Animated.View
       style={[
         styles.container,
+        { backgroundColor: theme.boardBg, borderColor: theme.boardBorder },
         active && styles.active,
         selected && styles.selected,
         winner === 'player' && styles.playerWon,
@@ -252,7 +257,7 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.boardLabel}>B{index + 1}</Text>
+            <Text style={[styles.boardLabel, { color: theme.accent }]}>B{index + 1}</Text>
             {winner && (
               <Badge
                 label={winner === 'player' ? 'W' : winner === 'bot' ? 'L' : 'T'}
@@ -266,8 +271,8 @@ export default function Board({
           </View>
           <View style={styles.potArea}>
             <View style={styles.potRow}>
-              <Text style={styles.potLabel}>{potAmount}</Text>
-              <View style={styles.potDot} />
+              <Text style={[styles.potLabel, { color: theme.accent }]}>{potAmount}</Text>
+              <View style={[styles.potDot, { backgroundColor: theme.accent }]} />
             </View>
             {winner && <FloatingChips amount={potAmount} winner={winner} />}
           </View>

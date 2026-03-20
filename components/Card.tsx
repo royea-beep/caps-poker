@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useGameStore } from '../store/gameStore';
+import { getTheme } from '../constants/visualThemes';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -58,6 +59,8 @@ export default function CardComponent({
   const width = cardWidth ?? (small ? 52 : 58);
   const height = cardHeight ?? (small ? 74 : 82);
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const theme = getTheme(visualTheme);
 
   const cornerRankSize = Math.floor(height * 0.14);
   const cornerSuitSize = Math.floor(height * 0.11);
@@ -230,7 +233,7 @@ export default function CardComponent({
           {
             width,
             height,
-            backgroundColor: CARD_FACE_BG,
+            backgroundColor: theme.cardFace,
             borderRadius: 8,
           },
           faceUpShadow,
