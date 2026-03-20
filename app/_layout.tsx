@@ -110,6 +110,7 @@ export default function RootLayout() {
   const router = useRouter();
   const initSession = useGameStore((s) => s.initSession);
   const orientation = useGameStore((s) => s.orientation);
+  const visualTheme = useGameStore((s) => s.visualTheme);
   const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
@@ -134,12 +135,15 @@ export default function RootLayout() {
     ScreenOrientation.lockAsync(lock).catch(() => {});
   }, [orientation]);
 
-  // On first launch (orientation not chosen yet), redirect to picker after splash
+  // First-launch flow: theme pick → orientation pick → home
   useEffect(() => {
-    if (splashDone && orientation === null) {
+    if (!splashDone) return;
+    if (visualTheme === null) {
+      router.replace('/theme-pick');
+    } else if (orientation === null) {
       router.replace('/orientation-pick');
     }
-  }, [splashDone, orientation]);
+  }, [splashDone, visualTheme, orientation]);
 
   // Handle OAuth deep link callbacks (native)
   useEffect(() => {
