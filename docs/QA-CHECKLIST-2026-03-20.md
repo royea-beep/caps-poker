@@ -21,6 +21,7 @@
 
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
+| **2-player READY→reveal timing** | High | ⚠️ Status unknown | Reported 2026-03-18 8:53 PM: "pressing READY opens reveal immediately without waiting" — verify if fixed |
 | Five-O theme visual check on device | High | ⏳ Pending | Dark navy + gold, board red/crimson |
 | Classic theme visual check on device | Medium | ⏳ Pending | Black + gold felt |
 | Portrait layout — single player | Medium | ⏳ Pending | Standard orientation |
