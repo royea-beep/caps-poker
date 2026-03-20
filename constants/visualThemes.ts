@@ -41,10 +41,10 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     loseColor: '#ef4444',
   },
   fiveo: {
-    background: '#6B0F1A',      // deep felt red — full-screen table atmosphere
+    background: '#2D0A0E',      // near-black red — dimly lit casino atmosphere
     surface: '#1A1A2E',         // dark navy — panels, modals, overlays
-    boardBg: '#9B1B30',         // casino red felt — board surface
-    boardBorder: '#8B5E3C',     // warm wood brown — poker table rail
+    boardBg: '#5C1018',         // dark casino red felt — board surface
+    boardBorder: '#3D2415',     // dark wood brown — subtle table rail
     textPrimary: '#ffffff',
     textSecondary: '#FFD700',
     textMuted: '#aaaaaa',
