@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Badge } from './Badge';
-import { Card, COLORS, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
@@ -42,6 +42,7 @@ interface BoardProps {
   flipDuration?: number;
   cardHeight?: number;
   isWinner?: boolean;
+  communityScale?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -124,12 +125,16 @@ export default function Board({
   flipDuration,
   cardHeight: cardHeightProp,
   isWinner,
+  communityScale = 1,
 }: BoardProps) {
   const { width: screenW } = useWindowDimensions();
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const ch = cardHeightProp ?? rv(screenW, 56, 72, 90, 64);
   const cw = Math.round(ch * 0.7);
+  // Community cards are slightly larger for better readability
+  const commH = Math.round(ch * communityScale);
+  const commW = Math.round(commH * 0.7);
   // Empty slots are ~30% smaller during arrangement
   const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
   const slotW = Math.round(slotH * 0.7);
@@ -239,11 +244,13 @@ export default function Board({
   const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : botCards.length > 0 ? [botCards] : [];
   const multiBot = botCardSets.length > 1;
 
+  const boardAccent = BOARD_COLORS[index % BOARD_COLORS.length];
+
   return (
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: theme.boardBg, borderColor: theme.boardBorder },
+        { backgroundColor: theme.boardBg, borderColor: boardAccent },
         Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
         active && styles.active,
         selected && styles.selected,
@@ -258,7 +265,7 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: theme.accent }]}>B{index + 1}</Text>
+            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>B{index + 1}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
@@ -310,27 +317,27 @@ export default function Board({
           ) : null
         )}
 
-        {/* Community cards: flop + turn/river */}
+        {/* Community cards: flop + turn/river (slightly larger for readability) */}
         <View style={styles.cardRow}>
           {openCards.map((c) => (
             <CardComponent
               key={c.id}
               card={c}
               faceDown={false}
-              cardWidth={cw}
-              cardHeight={ch}
+              cardWidth={commW}
+              cardHeight={commH}
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
-          <View style={styles.communitySeparator} />
+          <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
           {closedCards.map((c) => (
             <CardComponent
               key={c.id}
               card={c}
               faceDown={!revealed}
-              cardWidth={cw}
-              cardHeight={ch}
+              cardWidth={commW}
+              cardHeight={commH}
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               flipDuration={flipDuration}

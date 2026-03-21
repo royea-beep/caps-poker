@@ -49,5 +49,20 @@ export function getCardsPerPlayer(numberOfPlayers: number): number {
   return 16;
 }
 
+/** Unique board accent colors — gives each board visual identity */
+export const BOARD_COLORS = [
+  '#FFD700', // Board 1 — gold
+  '#4FC3F7', // Board 2 — blue
+  '#81C784', // Board 3 — green
+  '#FF8A65', // Board 4 — orange
+] as const;
+
+/** Card sizing based on player count (more players = fewer boards = bigger cards) */
+export const CARD_SCALE: Record<number, { cardHeight: number; communityScale: number }> = {
+  2: { cardHeight: 60, communityScale: 1.15 },  // 4 boards — tightest, needs biggest relative boost
+  3: { cardHeight: 66, communityScale: 1.1  },  // 3 boards
+  4: { cardHeight: 74, communityScale: 1.1  },  // 2 boards — most space
+};
+
 // Re-export for backward compatibility
 export const COLORS = THEME.colors;

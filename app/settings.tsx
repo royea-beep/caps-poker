@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
+import { PRO_QUOTES_ENABLED_KEY } from '../components/ProQuoteBanner';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
 // Lazy haptics — web-safe
@@ -545,6 +548,34 @@ const vtStyles = StyleSheet.create({
   },
 });
 
+function ProQuotesToggle() {
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PRO_QUOTES_ENABLED_KEY).then(val => {
+      setEnabled(val !== 'false');
+    }).catch(() => {});
+  }, []);
+
+  const toggle = () => {
+    const next = !enabled;
+    setEnabled(next);
+    AsyncStorage.setItem(PRO_QUOTES_ENABLED_KEY, next ? 'true' : 'false').catch(() => {});
+  };
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>🎭 Pro Quotes (AI Simulation)</Text>
+        <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
+      </View>
+      <Pressable onPress={toggle} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}>
+        <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>{enabled ? 'ON' : 'OFF'}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -606,6 +637,16 @@ export default function SettingsScreen() {
         <NotificationsToggle />
 
         <Text style={styles.sectionTitle}>TOOLS</Text>
+        <ProQuotesToggle />
+        <Button
+          title="📖 Show Tutorial Again"
+          variant="secondary"
+          onPress={() => {
+            AsyncStorage.removeItem(TUTORIAL_SEEN_KEY).catch(() => {});
+            Alert.alert('Tutorial Reset', 'Tutorial will show on next app launch.');
+          }}
+          style={{ marginBottom: 12 }}
+        />
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
 
         <Button

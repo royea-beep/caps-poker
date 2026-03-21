@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -26,6 +27,8 @@ import {
 import { CapsHooks } from '../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 import { FriendsBg } from '../components/FriendsBg';
+import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
+import ProQuoteBanner from '../components/ProQuoteBanner';
 
 const isWeb = Platform.OS === 'web';
 
@@ -223,6 +226,7 @@ export default function HomeScreen() {
   const user = useAuthUser();
   const [signingIn, setSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
   const sessionNet = chips - sessionStartChips;
 
   // Rotating tagline — different one each mount, cycles through all 10
@@ -239,6 +243,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     CapsHooks.screenViewed('home');
+    AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
+      if (!val) setShowTutorial(true);
+    }).catch(() => {});
   }, []);
 
   // Auto-save display name to store when user signs in
@@ -320,6 +327,7 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       <FriendsBg />
       {isWeb && <View style={styles.grainOverlay} />}
+      {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
 
       <ScrollView
         style={styles.contentScroll}
@@ -399,6 +407,9 @@ export default function HomeScreen() {
           />
         )}
 
+        {/* ── Pro quote ── */}
+        <ProQuoteBanner context="home" rotating rotateInterval={8000} />
+
         {/* ── Action buttons ── */}
         <View style={[styles.buttonSection, { gap: btnGap }]}>
           <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} btnHeight={btnHeight} btnFontSize={btnFontSize} />
@@ -453,8 +464,8 @@ export default function HomeScreen() {
               <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>LEADERBOARD</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>HAND HISTORY</Text>
+            <Pressable onPress={() => setShowTutorial(true)} hitSlop={8} style={styles.linkItem}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>📖 HOW TO PLAY</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => router.push('/settings' as any)} hitSlop={8} style={styles.linkItem}>

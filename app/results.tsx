@@ -31,6 +31,7 @@ import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
+import ProQuoteBanner from '../components/ProQuoteBanner';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 
@@ -558,6 +559,9 @@ export default function ResultsScreen() {
         >
           <ChipsDisplay amount={chips} label="Current Balance" size="large" />
         </Animated.View>
+
+        {/* Pro quote */}
+        {showButtons && <ProQuoteBanner context="summary" />}
 
         {/* Buttons */}
         {showButtons && (
