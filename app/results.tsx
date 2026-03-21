@@ -12,6 +12,8 @@ import Animated, {
   withRepeat,
   useDerivedValue,
   FadeIn,
+  FadeInDown,
+  FadeInUp,
   Easing,
   runOnJS,
   SharedValue,
@@ -465,7 +467,7 @@ export default function ResultsScreen() {
           return (
             <Animated.View
               key={i}
-              entering={FadeIn.duration(BOARD_FADE).delay(BOARD_STAGGER * (i + 1))}
+              entering={FadeInDown.duration(BOARD_FADE).delay(BOARD_STAGGER * (i + 1))}
               style={{ width: '100%' }}
             >
               <Animated.View style={[
@@ -562,6 +564,18 @@ export default function ResultsScreen() {
                     </Text>
                   </View>
                 </View>
+
+                {/* Result label at bottom */}
+                <View style={styles.boardResultRow}>
+                  <Text style={[
+                    styles.boardResultLabel,
+                    board.winner === 'player' ? styles.boardResultWin
+                    : board.winner === 'bot' ? styles.boardResultLose
+                    : styles.boardResultTie,
+                  ]}>
+                    {board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE'}
+                  </Text>
+                </View>
               </Animated.View>
             </Animated.View>
           );
@@ -610,14 +624,48 @@ export default function ResultsScreen() {
           </Animated.View>
         )}
 
+        {/* Best hand highlight */}
+        {boards.length > 0 && (() => {
+          const HAND_ORDER = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair','High Card'];
+          let bestRank = 99; let bestName = ''; let bestBoard = 0;
+          boards.forEach((b, i) => {
+            if (!b.playerHandName) return;
+            const r = HAND_ORDER.indexOf(b.playerHandName);
+            if (r >= 0 && r < bestRank) { bestRank = r; bestName = b.playerHandName; bestBoard = i + 1; }
+          });
+          if (!bestName) return null;
+          return (
+            <Animated.View
+              entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE + 50)}
+              style={styles.bestHandRow}
+            >
+              <Text style={styles.bestHandText}>⭐ Best hand: {bestName} on Board {bestBoard}</Text>
+            </Animated.View>
+          );
+        })()}
+
+        {/* Stats row */}
+        <Animated.View
+          entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE + 100)}
+          style={styles.statsRow}
+        >
+          <Text style={styles.statItem}>Boards: {playerWins}/{boards.length}</Text>
+          <Text style={styles.statSep}>|</Text>
+          <Text style={[styles.statItem, { color: netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
+            Net: {netChips >= 0 ? '+' : ''}{netChips}
+          </Text>
+          <Text style={styles.statSep}>|</Text>
+          <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
+        </Animated.View>
+
         {/* Complete bonus */}
         {isComplete && completeBonusAmount > 0 && (
           <Animated.View
             entering={FadeIn.duration(400).delay(boards.length * BOARD_STAGGER + BOARD_FADE)}
             style={styles.completeRow}
           >
-            <Text style={styles.completeLabel}>COMPLETE BONUS!</Text>
-            <Text style={styles.completeAmount}>+{completeBonusAmount}</Text>
+            <Text style={styles.completeLabel}>🏆 COMPLETE! +50% BONUS</Text>
+            <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips</Text>
           </Animated.View>
         )}
 
@@ -646,7 +694,7 @@ export default function ResultsScreen() {
 
         {/* Buttons */}
         {showButtons && (
-          <Animated.View style={styles.buttons} entering={FadeIn.duration(400)}>
+          <Animated.View style={styles.buttons} entering={FadeInUp.duration(400).delay(boards.length * BOARD_STAGGER + BOARD_FADE + 200)}>
             {waitingForNextHand ? (
               <View style={styles.waitingNextHand}>
                 <Text style={styles.waitingNextHandText}>
@@ -888,25 +936,36 @@ const styles = StyleSheet.create({
   // Complete bonus
   completeRow: {
     width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(240, 192, 64, 0.12)',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.gold,
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    gap: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#FFD700',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: { elevation: 6 },
+      default: { boxShadow: '0px 0px 16px rgba(255,215,0,0.3)' } as any,
+    }),
   },
   completeLabel: {
-    color: COLORS.gold,
-    fontSize: 14,
-    fontWeight: '800',
+    color: '#FFD700',
+    fontSize: 20,
+    fontWeight: '900',
     letterSpacing: 2,
+    textAlign: 'center' as any,
   },
   completeAmount: {
     color: COLORS.goldLight,
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center' as any,
   },
 
   // Net result
@@ -1025,5 +1084,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     textAlign: 'right',
+  },
+
+  // Board result label
+  boardResultRow: {
+    alignItems: 'center',
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    marginTop: 4,
+  },
+  boardResultLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  boardResultWin: { color: '#FFD700' },
+  boardResultLose: { color: COLORS.neonRed },
+  boardResultTie: { color: COLORS.textMuted },
+
+  // Best hand highlight
+  bestHandRow: {
+    width: '100%',
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+  },
+  bestHandText: {
+    color: '#FFD700',
+    fontSize: 13,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+
+  // Stats row
+  statsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  statItem: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+  },
+  statSep: {
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: 12,
   },
 });
