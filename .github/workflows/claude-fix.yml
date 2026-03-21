@@ -29,38 +29,42 @@ jobs:
       - name: Run Claude Code fix
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
+          FIX_PLAN: ${{ github.event.client_payload.plan }}
+          FIX_FILES: ${{ github.event.client_payload.files }}
+          FIX_SEVERITY: ${{ github.event.client_payload.severity }}
+          FIX_SESSION_ID: ${{ github.event.client_payload.session_id }}
         run: |
+          echo "=== CAPS POKER — WhatsApp Bot Auto-Fix ==="
+          echo "Summary: $FIX_SUMMARY"
+          echo "Severity: $FIX_SEVERITY"
+          echo "Files: $FIX_FILES"
           npm install -g @anthropic-ai/claude-code
-          SUMMARY="${{ github.event.client_payload.summary }}"
-          PLAN="${{ github.event.client_payload.plan }}"
-          FILES="${{ github.event.client_payload.files }}"
           claude --print "Read MEMORY.md. Iron Rules 1-8 confirmed. Standing Orders: Fix autonomously. Never give user commands.
 
-          TASK: $SUMMARY
+          BUG REPORT FROM WHATSAPP:
+          Summary: $FIX_SUMMARY
+          Plan: $FIX_PLAN
+          Files: $FIX_FILES
+          Severity: $FIX_SEVERITY
 
-          PLAN:
-          $PLAN
-
-          FILES TO MODIFY: $FILES
-
-          Execute the plan. Fix the issue. Run tsc --noEmit after. Commit with message: fix: $SUMMARY [auto-fix]" --dangerously-skip-permissions
+          Fix this bug. Then run: npx tsc --noEmit to verify 0 errors." --dangerously-skip-permissions
 
       - name: Commit and push
+        env:
+          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
+          EVENT_TYPE: ${{ github.event.action }}
         run: |
           git config user.email "claude-bot@caps-poker.app"
           git config user.name "Claude Bot"
           git add -A
-          EVENT_TYPE="${{ github.event.action }}"
-          SUMMARY="${{ github.event.client_payload.summary }}"
           if git diff --staged --quiet; then
             echo "No changes to commit"
           elif [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
-            # [skip ci] prevents ios-testflight.yml from triggering
-            git commit -m "fix: $SUMMARY [auto-fix][skip ci]"
+            git commit -m "fix: [WhatsApp] $FIX_SUMMARY [auto-fix][skip ci]"
             git push
           else
-            # claude-fix-and-deploy or legacy claude-fix — allow full CI
-            git commit -m "fix: $SUMMARY [auto-fix]"
+            git commit -m "fix: [WhatsApp] $FIX_SUMMARY [auto-fix]"
             git push
           fi
 
@@ -86,20 +90,20 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM: whatsapp:+14155238886
           TWILIO_TO: whatsapp:+972504141513
+          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
+          EVENT_TYPE: ${{ github.event.action }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           if [ -z "$TWILIO_ACCOUNT_SID" ] || [ -z "$TWILIO_AUTH_TOKEN" ]; then
             echo "Twilio secrets not set — skipping WhatsApp notification"
             exit 0
           fi
           COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-          STATUS="${{ job.status }}"
-          SUMMARY="${{ github.event.client_payload.summary }}"
-          EVENT_TYPE="${{ github.event.action }}"
-          if [ "$STATUS" = "success" ]; then
+          if [ "$JOB_STATUS" = "success" ]; then
             if [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
-              MSG="✅ תיקון הושלם! commit: $COMMIT — $SUMMARY (לא עלתה גרסה)"
+              MSG="✅ תיקון הושלם! commit: $COMMIT — $FIX_SUMMARY (לא עלתה גרסה)"
             else
-              MSG="✅ תיקון הושלם! commit: $COMMIT — $SUMMARY (build ל-TestFlight בדרך...)"
+              MSG="✅ תיקון הושלם! commit: $COMMIT — $FIX_SUMMARY (build ל-TestFlight בדרך...)"
             fi
           else
             MSG="❌ תיקון נכשל. בדוק GitHub Actions לפרטים."

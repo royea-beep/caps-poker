@@ -698,19 +698,27 @@ serve(async (req: Request) => {
     }
   }
 
-  // ── First message: store as pending_merge, ask for more context ───────────
+  // ── First message: media ──────────────────────────────────────────────────
   if (numMedia > 0) {
-    // Media message → store as pending_merge and wait
-    await supabase.from('whatsapp_sessions').insert({
-      message_sid: messageSid,
-      from_number: from,
-      raw_input:   inputText,
-      media_type:  detectedMediaType,
-      claude_plan: null,
-      status:      'pending_merge',
-    });
-    const typeLabel = detectedMediaType === 'image' ? '📸 צילום מסך' : '🎤 הודעה קולית';
-    await sendWhatsApp(from, `${typeLabel} התקבל/ה ✓\n\nשולח עוד הקשר? (תמונה נוספת / הודעה קולית / טקסט)\nשלח תוך 60 שניות — אצרף הכל לדו״ח אחד.\n\nאחרת — שלח שוב ואעבד לבד.`);
+    const isAudio = detectedMediaType === 'audio';
+    const hasCaption = msgBody.length > 0;
+    const processImmediately = isAudio || (detectedMediaType === 'image' && hasCaption);
+
+    if (processImmediately) {
+      // Image+caption or audio → complete report, process now
+      await generateAndSendPlan(supabase, from, inputText, detectedMediaType, messageSid, audioTranscript);
+    } else {
+      // Image only, no caption → wait for context (user may send description)
+      await supabase.from('whatsapp_sessions').insert({
+        message_sid: messageSid,
+        from_number: from,
+        raw_input:   inputText,
+        media_type:  detectedMediaType,
+        claude_plan: null,
+        status:      'pending_merge',
+      });
+      await sendWhatsApp(from, `📸 צילום מסך התקבל ✓\n\nשולח תיאור? (טקסט / הודעה קולית)\nשלח תוך 60 שניות ואצרף לדו״ח אחד.`);
+    }
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
