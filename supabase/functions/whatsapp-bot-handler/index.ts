@@ -431,6 +431,89 @@ ${planText}
 ${recText}`;
 }
 
+// ── Merge window (60s) ──────────────────────────────────────────────────────
+// When media arrives, we store it as 'pending_merge' and wait for more context.
+// If a second message arrives within MERGE_WINDOW_MS, we combine them into one plan.
+const MERGE_WINDOW_MS = 60_000;
+const AUTO_CANCEL_STALE_MS = 5 * 60_000; // Only cancel old sessions (>5 min)
+
+async function findPendingMerge(
+  supabase: ReturnType<typeof createClient>,
+  from: string,
+): Promise<Record<string, unknown> | null> {
+  const windowStart = new Date(Date.now() - MERGE_WINDOW_MS).toISOString();
+  const { data } = await supabase
+    .from('whatsapp_sessions')
+    .select('*')
+    .eq('from_number', from)
+    .eq('status', 'pending_merge')
+    .gte('created_at', windowStart)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  return data?.[0] ?? null;
+}
+
+async function generateAndSendPlan(
+  supabase: ReturnType<typeof createClient>,
+  from: string,
+  inputText: string,
+  detectedMediaType: string,
+  messageSid: string,
+  audioTranscript: string | undefined,
+  sessionId?: string, // if merging into existing session
+): Promise<void> {
+  const project = detectProject(inputText);
+  const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
+  const [manifest, ...fetchedFiles] = await Promise.all([
+    fetchFileFromGitHub(repo, 'docs/PROJECT_MANIFEST.md'),
+    ...getRelevantFiles(inputText).map(async (path) => {
+      const content = await fetchFileFromGitHub(repo, path);
+      if (!content) return null;
+      const truncated = content.split('\n').slice(0, 200).join('\n');
+      return `\n--- FILE: ${path} ---\n${truncated}`;
+    }),
+  ]);
+  const relevantFileContents = fetchedFiles.filter((f): f is string => f !== null);
+
+  let plan: ClaudePlan;
+  try {
+    plan = await generatePlan(inputText, project, manifest, relevantFileContents);
+  } catch {
+    await sendWhatsApp(from, '❌ שגיאה ב-Claude API. נסה שוב בעוד רגע.');
+    return;
+  }
+
+  const pendingFixes = await countPendingFixes(supabase, project);
+
+  if (sessionId) {
+    // Merging — update the existing pending_merge session
+    await supabase
+      .from('whatsapp_sessions')
+      .update({ raw_input: inputText, media_type: detectedMediaType, claude_plan: plan, status: 'pending_approval' })
+      .eq('id', sessionId);
+  } else {
+    // Cancel stale pending_approval sessions (older than 5 min)
+    const staleThreshold = new Date(Date.now() - AUTO_CANCEL_STALE_MS).toISOString();
+    await supabase
+      .from('whatsapp_sessions')
+      .update({ status: 'cancelled' })
+      .eq('from_number', from)
+      .eq('status', 'pending_approval')
+      .lt('created_at', staleThreshold);
+
+    await supabase.from('whatsapp_sessions').insert({
+      message_sid: messageSid,
+      from_number: from,
+      raw_input:   inputText,
+      media_type:  detectedMediaType,
+      claude_plan: plan,
+      status:      'pending_approval',
+    });
+  }
+
+  await sendWhatsApp(from, formatPlanReply(plan, pendingFixes, audioTranscript));
+}
+
 // ── Main handler ────────────────────────────────────────────────────────────
 
 serve(async (req: Request) => {
@@ -465,13 +548,28 @@ serve(async (req: Request) => {
   const mediaUrl   = params['MediaUrl0'];
   const mediaType  = params['MediaContentType0'] ?? '';
 
-  // ── Handle approval replies ───────────────────────────────────────────────
+  // ── Handle approval replies (1/2/3) ──────────────────────────────────────
   const upperBody  = msgBody.trim().toUpperCase();
   const isFixOnly  = ['1', 'FIX', 'תקן'].includes(upperBody);
   const isFixBuild = ['2', 'BUILD', 'בנה', 'APPROVE', 'כן', 'אשר'].includes(upperBody);
   const isCancel   = ['3', 'CANCEL', 'לא', 'בטל'].includes(upperBody);
 
   if (isFixOnly || isFixBuild || isCancel) {
+    // Check if there's a stale pending_merge that never got a second message → promote it first
+    const staleMerge = await findPendingMerge(supabase, from);
+    if (staleMerge) {
+      console.log('[whatsapp-bot] Found stale pending_merge — promoting to pending_approval before handling approval');
+      await generateAndSendPlan(
+        supabase, from,
+        String(staleMerge['raw_input'] ?? ''),
+        String(staleMerge['media_type'] ?? 'text'),
+        String(staleMerge['message_sid'] ?? ''),
+        undefined,
+        String(staleMerge['id']),
+      );
+      // Now the merge is promoted — find it again as pending_approval
+    }
+
     const { data: session } = await supabase
       .from('whatsapp_sessions')
       .select('*')
@@ -496,10 +594,8 @@ serve(async (req: Request) => {
     const project = plan.project ?? 'caps-poker';
 
     if (isFixOnly) {
-      // Fix only — no EAS build
       await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
       await triggerGitHubAction(plan, project, 'claude-fix-no-build');
-      // Track in deploy_tracker
       await supabase.from('deploy_tracker').insert({
         project,
         fix_summary: plan.summary,
@@ -509,13 +605,10 @@ serve(async (req: Request) => {
       const pending = await countPendingFixes(supabase, project);
       await sendWhatsApp(from, `⚙️ תיקון בביצוע על ${project}. לא עולה גרסה.\n(סה״כ ${pending} תיקונים ממתינים)`);
     } else {
-      // Fix + build + deploy
       await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
       await triggerGitHubAction(plan, project, 'claude-fix-and-deploy');
-      // Count pending before marking deployed
       const pendingBefore = await countPendingFixes(supabase, project);
-      const totalDeployed = pendingBefore + 1; // +1 for current fix
-      // Mark all pending as deployed
+      const totalDeployed = pendingBefore + 1;
       await supabase
         .from('deploy_tracker')
         .update({ deployed_at: new Date().toISOString() })
@@ -527,7 +620,7 @@ serve(async (req: Request) => {
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
-  // ── New report: determine input type and extract text ─────────────────────
+  // ── Extract text from new message ─────────────────────────────────────────
   let inputText = '';
   let detectedMediaType = 'text';
   let audioTranscript: string | undefined;
@@ -567,54 +660,62 @@ serve(async (req: Request) => {
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
-  // ── Detect project + Generate plan ───────────────────────────────────────
-  const project = detectProject(inputText);
-  console.log('[whatsapp-bot] Detected project:', project);
+  // ── Check for pending_merge (multi-input window) ───────────────────────────
+  const pendingMerge = await findPendingMerge(supabase, from);
 
-  // Fetch manifest + relevant source files for code-aware plan generation
-  const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
-  const [manifest, ...fetchedFiles] = await Promise.all([
-    fetchFileFromGitHub(repo, 'docs/PROJECT_MANIFEST.md'),
-    ...getRelevantFiles(inputText).map(async (path) => {
-      const content = await fetchFileFromGitHub(repo, path);
-      if (!content) return null;
-      const truncated = content.split('\n').slice(0, 200).join('\n');
-      return `\n--- FILE: ${path} ---\n${truncated}`;
-    }),
-  ]);
-  const relevantFileContents = fetchedFiles.filter((f): f is string => f !== null);
-  console.log('[whatsapp-bot] Manifest fetched:', !!manifest, '| Files:', relevantFileContents.length);
-
-  let plan: ClaudePlan;
-  try {
-    plan = await generatePlan(inputText, project, manifest, relevantFileContents);
-  } catch {
-    await sendWhatsApp(from, '❌ שגיאה ב-Claude API. נסה שוב בעוד רגע.');
+  if (pendingMerge) {
+    // Merge: combine the first message's content with this new one
+    const combined = `${String(pendingMerge['raw_input'] ?? '')}\n\n---\n${inputText}`;
+    const mergedType = `${String(pendingMerge['media_type'] ?? 'text')}+${detectedMediaType}`;
+    console.log('[whatsapp-bot] Merging into session', pendingMerge['id']);
+    await generateAndSendPlan(
+      supabase, from, combined, mergedType, messageSid, audioTranscript,
+      String(pendingMerge['id']),
+    );
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
-  // ── Count pending fixes ───────────────────────────────────────────────────
-  const pendingFixes = await countPendingFixes(supabase, project);
+  // ── Check for free-text addition to existing pending_approval ─────────────
+  // e.g., "List both fixes please" → append context and regenerate
+  if (numMedia === 0 && msgBody.length > 3) {
+    const { data: existingSession } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('from_number', from)
+      .eq('status', 'pending_approval')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-  // ── Auto-cancel any existing pending sessions for this user ──────────────
-  await supabase
-    .from('whatsapp_sessions')
-    .update({ status: 'cancelled' })
-    .eq('from_number', from)
-    .eq('status', 'pending_approval');
+    if (existingSession) {
+      const augmented = `${String(existingSession['raw_input'] ?? '')}\n\n[הוספת הקשר]: ${inputText}`;
+      console.log('[whatsapp-bot] Appending context to existing session', existingSession['id']);
+      await generateAndSendPlan(
+        supabase, from, augmented, String(existingSession['media_type'] ?? 'text'),
+        messageSid, audioTranscript, String(existingSession['id']),
+      );
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+    }
+  }
 
-  // ── Store session ─────────────────────────────────────────────────────────
-  await supabase.from('whatsapp_sessions').insert({
-    message_sid:  messageSid,
-    from_number:  from,
-    raw_input:    inputText,
-    media_type:   detectedMediaType,
-    claude_plan:  plan,
-    status:       'pending_approval',
-  });
+  // ── First message: store as pending_merge, ask for more context ───────────
+  if (numMedia > 0) {
+    // Media message → store as pending_merge and wait
+    await supabase.from('whatsapp_sessions').insert({
+      message_sid: messageSid,
+      from_number: from,
+      raw_input:   inputText,
+      media_type:  detectedMediaType,
+      claude_plan: null,
+      status:      'pending_merge',
+    });
+    const typeLabel = detectedMediaType === 'image' ? '📸 צילום מסך' : '🎤 הודעה קולית';
+    await sendWhatsApp(from, `${typeLabel} התקבל/ה ✓\n\nשולח עוד הקשר? (תמונה נוספת / הודעה קולית / טקסט)\nשלח תוך 60 שניות — אצרף הכל לדו״ח אחד.\n\nאחרת — שלח שוב ואעבד לבד.`);
+    return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+  }
 
-  // ── Send reply ────────────────────────────────────────────────────────────
-  await sendWhatsApp(from, formatPlanReply(plan, pendingFixes, audioTranscript));
+  // ── Pure text new report: generate plan immediately ───────────────────────
+  await generateAndSendPlan(supabase, from, inputText, 'text', messageSid, undefined);
 
   return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
 });
