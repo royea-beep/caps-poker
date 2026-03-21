@@ -304,11 +304,16 @@ export default function GameScreen() {
     return () => clearTimeout(t);
   }, [countdownActive]);
 
-  // Countdown sound escalation
+  // Countdown sound escalation: timerLow at 10s (from startCountdown), per-second at 5–1, timerLow at 0
   useEffect(() => {
     if (!countdownActive) return;
-    if (countdown === 5) playSound('timerLow');
-    if (countdown === 0) playSound('lose');
+    // Per-second ticks from 5s down to 1s (escalating urgency)
+    if (countdown <= 5 && countdown >= 1) playSound('timerLow');
+    // Time up: timerLow as buzzer placeholder (TODO: add dedicated buzzer.wav)
+    if (countdown === 0) {
+      playSound('timerLow');
+      haptic(Haptics?.ImpactFeedbackStyle?.Heavy);
+    }
   }, [countdownActive, countdown]);
 
   // When countdown hits 0 — auto-place remaining cards randomly
@@ -640,7 +645,7 @@ export default function GameScreen() {
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
-    playSound('chipsWin');
+    playSound('cardSelect');
     setSelectedCardIds([]);
     setPlayerReady(true);
     setPhase({ type: 'waiting_for_bot' });

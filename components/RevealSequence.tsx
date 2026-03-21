@@ -268,6 +268,11 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     if (!visible) return;
     clearTimers();
 
+    // Play tension sound at the start of each board reveal
+    if (boardIdx === 0) {
+      try { playSound('revealStart'); } catch {}
+    }
+
     const board = boards[boardIdx];
     if (!board) {
       onDone();

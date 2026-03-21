@@ -183,8 +183,14 @@ export default function RootLayout() {
               headerShown: false,
               contentStyle: { backgroundColor: COLORS.background },
               animation: 'fade',
+              animationDuration: 250,
             }}
-          />
+          >
+            <Stack.Screen name="index" options={{ animation: 'fade' }} />
+            <Stack.Screen name="game" options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="results" options={{ animation: 'fade_from_bottom' }} />
+            <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+          </Stack>
         </WebContainer>
       </BugReporter>
       <VersionBadge />

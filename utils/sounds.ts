@@ -11,7 +11,8 @@ export type SoundName =
   | 'chipsWin'
   | 'lose'
   | 'complete'
-  | 'timerLow';
+  | 'timerLow'
+  | 'revealStart'; // TODO: replace with a real tension/drum-roll sound file
 
 let Audio: any = null;
 try {
@@ -28,6 +29,7 @@ const soundFiles: Record<SoundName, ReturnType<typeof require> | null> = {
   lose: null,
   complete: null,
   timerLow: null,
+  revealStart: null, // TODO: add assets/sounds/revealStart.wav (tension build sound)
 };
 
 // Try to load sound files — they may not exist in all environments
@@ -38,6 +40,7 @@ try { soundFiles.chipsWin = require('../assets/sounds/chipsWin.wav'); } catch {}
 try { soundFiles.lose = require('../assets/sounds/lose.wav'); } catch {}
 try { soundFiles.complete = require('../assets/sounds/complete.wav'); } catch {}
 try { soundFiles.timerLow = require('../assets/sounds/timerLow.wav'); } catch {}
+// revealStart: no WAV yet — falls back to silent (null) until asset added
 
 const loadedSounds: Partial<Record<SoundName, any>> = {};
 
