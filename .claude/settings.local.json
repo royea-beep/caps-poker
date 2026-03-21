@@ -352,7 +352,14 @@
       "Bash(powershell.exe -NoProfile -Command \"\ntry {\n  Add-Type -AssemblyName 'Windows.Security.Credentials' -ErrorAction Stop\n} catch {}\ntry {\n  [void][Windows.Security.Credentials.PasswordVault,Windows.Security.Credentials,ContentType=WindowsRuntime]\n  \\\\$vault = New-Object Windows.Security.Credentials.PasswordVault\n  \\\\$all = \\\\$vault.RetrieveAll\\(\\)\n  \\\\$all | Where-Object { \\\\$_.Resource -like '*supabase*' -or \\\\$_.Resource -like '*Supabase*' } | ForEach-Object {\n    \\\\$_.RetrievePassword\\(\\)\n    Write-Output \\\\$_.Password\n  }\n} catch { Write-Output 'vault error: ' + \\\\$_.Exception.Message }\n\" 2>&1)",
       "Bash(powershell.exe -NoProfile -Command \"\nAdd-Type -TypeDefinition @'\nusing System;\nusing System.Runtime.InteropServices;\nusing System.Text;\npublic class CredMan {\n  [StructLayout\\(LayoutKind.Sequential, CharSet=CharSet.Unicode\\)]\n  public struct CREDENTIAL {\n    public uint Flags;\n    public uint Type;\n    [MarshalAs\\(UnmanagedType.LPWStr\\)] public string TargetName;\n    [MarshalAs\\(UnmanagedType.LPWStr\\)] public string Comment;\n    public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;\n    public uint CredentialBlobSize;\n    public IntPtr CredentialBlob;\n    public uint Persist;\n    public uint AttributeCount;\n    public IntPtr Attributes;\n    [MarshalAs\\(UnmanagedType.LPWStr\\)] public string TargetAlias;\n    [MarshalAs\\(UnmanagedType.LPWStr\\)] public string UserName;\n  }\n  [DllImport\\(\\\\\"advapi32.dll\\\\\", CharSet=CharSet.Unicode, SetLastError=true\\)]\n  public static extern bool CredRead\\(string target, uint type, uint flags, out IntPtr ptr\\);\n  [DllImport\\(\\\\\"advapi32.dll\\\\\"\\)] public static extern void CredFree\\(IntPtr ptr\\);\n  public static string GetPassword\\(string target\\) {\n    IntPtr ptr;\n    if \\(!CredRead\\(target, 1, 0, out ptr\\)\\) return null;\n    var c = \\(CREDENTIAL\\)Marshal.PtrToStructure\\(ptr, typeof\\(CREDENTIAL\\)\\);\n    var pw = Marshal.PtrToStringUni\\(c.CredentialBlob, \\(int\\)c.CredentialBlobSize/2\\);\n    CredFree\\(ptr\\);\n    return pw;\n  }\n}\n'@\n[CredMan]::GetPassword\\('Supabase CLI:supabase'\\)\n\" 2>&1)",
       "Bash(TOKEN=\"sbp_6e3be3b79a93fb2355a98236aaa8c62875a127b9\" curl -s \"https://api.supabase.com/v1/projects/gxrpunvhjcrzqnitbqah/config/auth\" -H \"Authorization: Bearer $TOKEN\")",
-      "Bash(supabase functions:*)"
+      "Bash(supabase functions:*)",
+      "Bash(cat:*)",
+      "Bash(2)",
+      "Bash(yt-dlp --version)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''Plan:'''', d.get\\(''''subscription'''',{}\\).get\\(''''tier'''',''''?''''\\)\\); print\\(''''Chars used:'''', d.get\\(''''subscription'''',{}\\).get\\(''''character_count'''',''''?''''\\)\\); print\\(''''Chars limit:'''', d.get\\(''''subscription'''',{}\\).get\\(''''character_limit'''',''''?''''\\)\\)\")",
+      "Bash(python scripts/auto_voice_pipeline.py)",
+      "Bash(PYTHONIOENCODING=utf-8 python scripts/auto_voice_pipeline.py)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \":*)"
     ]
   }
 }

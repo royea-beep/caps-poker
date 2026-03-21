@@ -115,6 +115,51 @@ const timerStyles = StyleSheet.create({
   },
 });
 
+// Horizontal progress bar — shrinks left-to-right as time passes
+function TimerBar({ countdown, total, color }: { countdown: number; total: number; color: string }) {
+  const progress = useSharedValue(countdown / total);
+  const pulseOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    progress.value = withTiming(Math.max(0, countdown / total), { duration: 850 });
+  }, [countdown]);
+
+  useEffect(() => {
+    if (countdown <= 3 && countdown > 0) {
+      pulseOpacity.value = withRepeat(
+        withSequence(withTiming(0.4, { duration: 250 }), withTiming(1, { duration: 250 })),
+        -1, false,
+      );
+    } else {
+      pulseOpacity.value = withTiming(1, { duration: 100 });
+    }
+  }, [countdown <= 3]);
+
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${Math.max(0, progress.value * 100)}%` as any,
+    opacity: pulseOpacity.value,
+  }));
+
+  return (
+    <View style={timerBarStyles.track}>
+      <Animated.View style={[timerBarStyles.fill, { backgroundColor: color }, barStyle]} />
+    </View>
+  );
+}
+
+const timerBarStyles = StyleSheet.create({
+  track: {
+    width: '100%',
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  fill: {
+    height: 3,
+    borderRadius: 1.5,
+  },
+});
+
 const COUNTDOWN_SECONDS = 30;
 
 // Layout constants
@@ -819,6 +864,11 @@ export default function GameScreen() {
           </View>
         </View>
       </View>
+
+      {/* Timer progress bar — thin bar below bot section, only during countdown */}
+      {countdownActive && isArranging && (
+        <TimerBar countdown={countdown} total={COUNTDOWN_SECONDS} color={timerColor} />
+      )}
 
       {/* Boards */}
       <View style={isWeb ? styles.boardsGrid : styles.boardsColumn}>
