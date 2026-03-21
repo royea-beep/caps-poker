@@ -8,6 +8,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
+  withSequence,
+  withRepeat,
   useDerivedValue,
   FadeIn,
   Easing,
@@ -72,6 +74,11 @@ export default function ResultsScreen() {
   const waitingTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const chipCountProgress = useSharedValue(0);
+  const goldPulse = useSharedValue(0); // 0=off, 1=gold border active
+  const goldPulseStyle = useAnimatedStyle(() => ({
+    borderColor: goldPulse.value > 0.5 ? '#FFD700' : undefined,
+    borderWidth: goldPulse.value > 0.5 ? 3 : undefined,
+  }));
 
   // Dynamic card sizing: fit 5 community cards + separator in available width
   // Available = screenWidth - container padding (32) - board padding (20) - separator (6)
@@ -161,7 +168,16 @@ export default function ResultsScreen() {
     const playerWinsCount = revealData.boards.filter((b) => b.winner === 'player').length;
     const btnTimer = setTimeout(() => {
       if (revealData.isComplete && revealData.completeWinner) {
-        setShowComplete(true);
+        // Gold pulse all boards 3 times, then show CompleteOverlay
+        goldPulse.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 200 }),
+            withTiming(0, { duration: 200 }),
+          ),
+          3,
+          false,
+        );
+        setTimeout(() => setShowComplete(true), 1200);
       } else {
         setShowButtons(true);
       }
@@ -388,11 +404,12 @@ export default function ResultsScreen() {
               entering={FadeIn.duration(BOARD_FADE).delay(BOARD_STAGGER * (i + 1))}
               style={{ width: '100%' }}
             >
-              <View style={[
+              <Animated.View style={[
                 styles.boardCard,
                 { backgroundColor: theme.surface, borderColor: theme.boardBorder },
                 board.winner === 'player' && styles.boardCardWin,
                 board.winner === 'bot' && styles.boardCardLose,
+                revealData?.isComplete && goldPulseStyle,
               ]}>
                 {/* Header: BOARD X + badge + chip amount */}
                 <View style={styles.boardHeader}>
@@ -481,7 +498,7 @@ export default function ResultsScreen() {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </Animated.View>
             </Animated.View>
           );
         })}

@@ -9,6 +9,7 @@ import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import { getMatchCost, canAffordMatch } from '../../utils/economy';
 import { GameServer, ConnectedClient } from '../../utils/gameServer';
 import { CapsHooks } from '../../utils/learning';
+import ProQuoteBanner from '../../components/ProQuoteBanner';
 
 export default function HostLobbyScreen() {
   const router = useRouter();
@@ -189,10 +190,13 @@ export default function HostLobbyScreen() {
               </View>
             ))}
           {connectedCount < maxPlayers && (
-            <Text style={styles.waitingText}>
-              Waiting for {maxPlayers - connectedCount} more player
-              {maxPlayers - connectedCount > 1 ? 's' : ''}...
-            </Text>
+            <>
+              <Text style={styles.waitingText}>
+                Waiting for {maxPlayers - connectedCount} more player
+                {maxPlayers - connectedCount > 1 ? 's' : ''}...
+              </Text>
+              <ProQuoteBanner context="waiting" rotating rotateInterval={6000} />
+            </>
           )}
         </View>
 
