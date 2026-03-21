@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,7 +38,7 @@ import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
-import { SingleBoardShareCard, FullGameShareCard } from '../components/ShareCard';
+import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../components/ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 
 let Haptics: any = null;
@@ -142,7 +142,9 @@ export default function ResultsScreen() {
   const [sharingBoardIdx, setSharingBoardIdx] = useState<number | null>(null);
   const [sharingGame, setSharingGame] = useState(false);
   const boardShareRefs = useRef<React.RefObject<any>[]>([]);
+  const boardStoryRefs = useRef<React.RefObject<any>[]>([]);
   const gameShareRef = useRef<any>(null);
+  const gameStoryRef = useRef<any>(null);
 
   const chipCountProgress = useSharedValue(0);
   const goldPulse = useSharedValue(0); // 0=off, 1=gold border active
@@ -429,6 +431,9 @@ export default function ResultsScreen() {
   while (boardShareRefs.current.length < boards.length) {
     boardShareRefs.current.push(React.createRef<any>());
   }
+  while (boardStoryRefs.current.length < boards.length) {
+    boardStoryRefs.current.push(React.createRef<any>());
+  }
 
   const shareData: ShareData = {
     boards,
@@ -441,10 +446,9 @@ export default function ResultsScreen() {
     numberOfPlayers,
   };
 
-  const handleShareBoard = async (idx: number) => {
+  const doShareBoard = async (idx: number, ref: React.RefObject<any>) => {
     setSharingBoardIdx(idx);
-    await new Promise((r) => setTimeout(r, 150)); // let offscreen card render
-    const ref = boardShareRefs.current[idx];
+    await new Promise((r) => setTimeout(r, 150));
     if (!ref) { setSharingBoardIdx(null); return; }
     const url = await saveHandForWebReplay(shareData).catch(() => null);
     const text = generateShareText(shareData, url);
@@ -452,13 +456,63 @@ export default function ResultsScreen() {
     setSharingBoardIdx(null);
   };
 
-  const handleShareGame = async () => {
+  const handleShareBoard = (idx: number) => {
+    const imageRef = boardShareRefs.current[idx];
+    const storyRef = boardStoryRefs.current[idx];
+    const doCopy = async () => {
+      const url = await saveHandForWebReplay(shareData).catch(() => null);
+      if (url) { await copyToClipboard(url); Alert.alert('Link copied!', url); }
+    };
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', 'Share Image', 'Share as Story', 'Copy Replay Link'], cancelButtonIndex: 0 },
+        (i) => {
+          if (i === 1) doShareBoard(idx, imageRef);
+          else if (i === 2) doShareBoard(idx, storyRef);
+          else if (i === 3) doCopy();
+        }
+      );
+    } else {
+      Alert.alert('Share Board', undefined, [
+        { text: 'Share Image', onPress: () => doShareBoard(idx, imageRef) },
+        { text: 'Share as Story', onPress: () => doShareBoard(idx, storyRef) },
+        { text: 'Copy Replay Link', onPress: doCopy },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  };
+
+  const doShareGame = async (ref: React.RefObject<any> | React.MutableRefObject<any>) => {
     setSharingGame(true);
     await new Promise((r) => setTimeout(r, 150));
     const url = await saveHandForWebReplay(shareData).catch(() => null);
     const text = generateShareText(shareData, url);
-    await captureAndShare(gameShareRef, text);
+    await captureAndShare(ref, text);
     setSharingGame(false);
+  };
+
+  const handleShareGame = () => {
+    const doCopy = async () => {
+      const url = await saveHandForWebReplay(shareData).catch(() => null);
+      if (url) { await copyToClipboard(url); Alert.alert('Link copied!', url); }
+    };
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', 'Share Image', 'Share as Story', 'Copy Replay Link'], cancelButtonIndex: 0 },
+        (i) => {
+          if (i === 1) doShareGame(gameShareRef);
+          else if (i === 2) doShareGame(gameStoryRef);
+          else if (i === 3) doCopy();
+        }
+      );
+    } else {
+      Alert.alert('Share Game', undefined, [
+        { text: 'Share Image', onPress: () => doShareGame(gameShareRef) },
+        { text: 'Share as Story', onPress: () => doShareGame(gameStoryRef) },
+        { text: 'Copy Replay Link', onPress: doCopy },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   };
 
   const handleCopyReplayLink = async () => {
@@ -555,19 +609,16 @@ export default function ResultsScreen() {
                   </View>
                 </View>
 
-                {/* Offscreen SingleBoardShareCard for capture */}
+                {/* Offscreen share cards (image + story) */}
                 {Platform.OS !== 'web' && (
-                  <View
-                    ref={boardShareRefs.current[i] as any}
-                    style={styles.offscreen}
-                    pointerEvents="none"
-                  >
-                    <SingleBoardShareCard
-                      board={board}
-                      boardIndex={i}
-                      potAmount={potPerBoardTotal}
-                    />
-                  </View>
+                  <>
+                    <View ref={boardShareRefs.current[i] as any} style={styles.offscreen} pointerEvents="none">
+                      <SingleBoardShareCard board={board} boardIndex={i} potAmount={potPerBoardTotal} />
+                    </View>
+                    <View ref={boardStoryRefs.current[i] as any} style={styles.offscreen} pointerEvents="none">
+                      <StoryShareCard board={board} boardIndex={i} potAmount={potPerBoardTotal} isComplete={isComplete} completeBonusAmount={completeBonusAmount} />
+                    </View>
+                  </>
                 )}
 
                 {/* Bot hand rows — top (opponent across the table) */}
@@ -680,14 +731,10 @@ export default function ResultsScreen() {
               </Pressable>
             </View>
             <View ref={gameShareRef as any} style={styles.offscreen} pointerEvents="none">
-              <FullGameShareCard
-                boards={boards}
-                netChips={netChips}
-                isComplete={isComplete}
-                completeBonusAmount={completeBonusAmount}
-                potPerBoard={revealData.potPerBoard}
-                numberOfPlayers={numberOfPlayers}
-              />
+              <FullGameShareCard boards={boards} netChips={netChips} isComplete={isComplete} completeBonusAmount={completeBonusAmount} potPerBoard={revealData.potPerBoard} numberOfPlayers={numberOfPlayers} />
+            </View>
+            <View ref={gameStoryRef as any} style={styles.offscreen} pointerEvents="none">
+              <StoryShareCard boards={boards} netChips={netChips} isComplete={isComplete} completeBonusAmount={completeBonusAmount} potPerBoard={revealData.potPerBoard} numberOfPlayers={numberOfPlayers} />
             </View>
           </Animated.View>
         )}

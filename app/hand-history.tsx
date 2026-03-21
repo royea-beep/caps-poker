@@ -1,11 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Button } from '../components/Button';
-import { COLORS } from '../constants/gameConfig';
+import { COLORS, Card } from '../constants/gameConfig';
 import { getHandHistory, clearHandHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
+import { FullGameShareCard } from '../components/ShareCard';
+import { captureAndShare, generateShareText, ShareData } from '../utils/shareHand';
+import { RevealBoardData } from '../types/gameTypes';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -36,11 +39,55 @@ function formatTime(ts: number): string {
   return `${diffDay}d ago`;
 }
 
+function handRecordToShareData(hand: HandRecord): ShareData {
+  const boards: RevealBoardData[] = hand.boards.map((b, i) => {
+    const toCard = (c: { rank: string; suit: string }, idx: number): Card =>
+      ({ id: `h-${i}-${idx}`, rank: c.rank as Card['rank'], suit: c.suit as Card['suit'] });
+    const community = b.communityCards.map(toCard);
+    return {
+      openCards: community.slice(0, 3),
+      closedCards: community.slice(3),
+      playerCards: b.playerCards.map(toCard),
+      allBotCards: b.botCards.length > 0 ? [b.botCards.map(toCard)] : [],
+      allBotHandNames: b.botHandName ? [b.botHandName] : [],
+      playerHandName: b.playerHandName,
+      botHandName: b.botHandName,
+      winner: b.winner as RevealBoardData['winner'],
+      playerHighlightIds: [],
+      botHighlightIds: [],
+      boardHighlightIds: [],
+      potAmount: hand.potPerBoard * hand.numberOfPlayers,
+    };
+  });
+  const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
+  return {
+    boards,
+    netChips: hand.netChips,
+    isComplete: hand.isComplete,
+    completeBonusAmount: hand.completeBonusAmount,
+    boardsWon: playerWins,
+    totalBoards: hand.boardCount,
+    potPerBoard: hand.potPerBoard,
+    numberOfPlayers: hand.numberOfPlayers,
+  };
+}
+
 function HandCard({ hand, index }: { hand: HandRecord; index: number }) {
   const [expanded, setExpanded] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const shareRef = useRef<any>(null);
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
   const isWin = hand.netChips >= 0;
+
+  const handleShare = useCallback(async () => {
+    setSharing(true);
+    await new Promise((r) => setTimeout(r, 150));
+    const sd = handRecordToShareData(hand);
+    const text = generateShareText(sd);
+    await captureAndShare(shareRef, text);
+    setSharing(false);
+  }, [hand]);
 
   return (
     <Animated.View entering={FadeInDown.duration(300).delay(index * 80)}>
@@ -67,8 +114,32 @@ function HandCard({ hand, index }: { hand: HandRecord; index: number }) {
               <Text style={styles.bonusTag}>+{hand.completeBonusAmount} bonus</Text>
             )}
           </View>
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation(); handleShare(); }}
+              style={styles.historyShareBtn}
+              disabled={sharing}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.historyShareBtnText}>{sharing ? '…' : '📸'}</Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.expandArrow}>{expanded ? '\u25B2' : '\u25BC'}</Text>
         </View>
+
+        {/* Offscreen share card */}
+        {Platform.OS !== 'web' && (
+          <View ref={shareRef} style={styles.offscreen} pointerEvents="none">
+            <FullGameShareCard
+              boards={handRecordToShareData(hand).boards}
+              netChips={hand.netChips}
+              isComplete={hand.isComplete}
+              completeBonusAmount={hand.completeBonusAmount}
+              potPerBoard={hand.potPerBoard}
+              numberOfPlayers={hand.numberOfPlayers}
+            />
+          </View>
+        )}
 
         {/* Expanded board details */}
         {expanded && (
@@ -401,5 +472,20 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 8,
+  },
+
+  // Share
+  historyShareBtn: {
+    padding: 4,
+    marginRight: 8,
+  },
+  historyShareBtnText: {
+    fontSize: 18,
+  },
+  offscreen: {
+    position: 'absolute',
+    left: -9999,
+    opacity: 0,
+    zIndex: -1,
   },
 });
