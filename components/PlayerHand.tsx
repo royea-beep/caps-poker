@@ -76,20 +76,22 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const device = getDevice(SCREEN_W, 0);
 
-  // Dynamic card sizing: fit 8 cards per row with gaps and padding
-  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
-  const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
+  // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
+  const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
+
+  // Dynamic card sizing: fit actual cards-per-row, accounting for wrapper overhead
+  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
+  const cardsPerRow = Math.max(1, useTwoRows ? Math.ceil(cards.length / 2) : cards.length);
+  // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
+  const CARD_WRAPPER_OVERHEAD = 12;
+  const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   const cardW = (() => {
-    // Hand cards are ~1.3x board card size for better readability
-    if (Platform.OS !== 'web') return Math.min(44, Math.max(34, maxCardW));
-    if (device.isMobileWeb)  return Math.min(60, Math.max(46, maxCardW));
+    if (Platform.OS !== 'web') return Math.min(44, Math.max(28, maxCardW));
+    if (device.isMobileWeb)  return Math.min(60, Math.max(40, maxCardW));
     if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
     return Math.min(88, Math.max(70, maxCardW));
   })();
   const cardH = Math.round(cardW * 1.4);
-
-  // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
-  const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
 
   const midpoint = Math.ceil(cards.length / 2);
   const topRow = cards.slice(0, midpoint);
