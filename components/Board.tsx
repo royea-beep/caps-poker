@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Badge } from './Badge';
+import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { getHandHint } from '../utils/handHint';
@@ -389,6 +390,9 @@ export default function Board({
           }
           {isArrangement && playerCards.length === CARDS_PER_BOARD && (
             <Text style={styles.hintText}>{getHandHint(playerCards)}</Text>
+          )}
+          {revealed && playerHandName && (
+            <HandNameOverlay handName={playerHandName} isWinner={winner === 'player'} />
           )}
         </View>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -8,11 +8,15 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
+  withDelay,
 } from 'react-native-reanimated';
+import CardComponent from '../components/Card';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { COLORS, getBoardCount } from '../constants/gameConfig';
+import { COLORS, getBoardCount, Card } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { HOME_THEMES, HomeTheme, ButtonStyle } from '../constants/homeThemes';
 import {
@@ -31,6 +35,114 @@ import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 
 const isWeb = Platform.OS === 'web';
+
+// ─── Floating suit particles ──────────────────────────────────────────────────
+const PARTICLE_CONFIG = [
+  { x: 0.05, suit: '♠', size: 22, opacity: 0.045, dur: 14000, delay: 0 },
+  { x: 0.12, suit: '♦', size: 18, opacity: 0.035, dur: 11000, delay: 2500 },
+  { x: 0.22, suit: '♣', size: 28, opacity: 0.05,  dur: 13000, delay: 1000 },
+  { x: 0.30, suit: '♥', size: 20, opacity: 0.04,  dur: 10000, delay: 4000 },
+  { x: 0.42, suit: '♠', size: 16, opacity: 0.03,  dur: 15000, delay: 700 },
+  { x: 0.55, suit: '♦', size: 24, opacity: 0.055, dur: 12000, delay: 3200 },
+  { x: 0.65, suit: '♥', size: 32, opacity: 0.04,  dur: 16000, delay: 1800 },
+  { x: 0.73, suit: '♣', size: 19, opacity: 0.035, dur: 11500, delay: 5000 },
+  { x: 0.82, suit: '♠', size: 26, opacity: 0.05,  dur: 13500, delay: 400 },
+  { x: 0.88, suit: '♦', size: 21, opacity: 0.04,  dur: 10500, delay: 2100 },
+  { x: 0.95, suit: '♥', size: 18, opacity: 0.03,  dur: 14500, delay: 6000 },
+  { x: 0.38, suit: '♣', size: 15, opacity: 0.025, dur: 12500, delay: 3700 },
+  { x: 0.60, suit: '♠', size: 30, opacity: 0.045, dur: 15500, delay: 900 },
+  { x: 0.18, suit: '♥', size: 23, opacity: 0.035, dur: 11200, delay: 4500 },
+  { x: 0.78, suit: '♦', size: 17, opacity: 0.03,  dur: 13200, delay: 2800 },
+];
+
+function FloatingParticle({ x, suit, size, opacity, dur, delay, screenW, screenH }: {
+  x: number; suit: string; size: number; opacity: number; dur: number; delay: number;
+  screenW: number; screenH: number;
+}) {
+  const translateY = useSharedValue(screenH + 50);
+
+  useEffect(() => {
+    translateY.value = withDelay(
+      delay,
+      withRepeat(withTiming(-80, { duration: dur }), -1, false),
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.Text
+      style={[
+        {
+          position: 'absolute',
+          left: Math.floor(x * screenW),
+          fontSize: size,
+          color: '#c9a84c',
+          opacity,
+        },
+        animStyle,
+      ]}
+      pointerEvents="none"
+    >
+      {suit}
+    </Animated.Text>
+  );
+}
+
+// ─── Hero card fan ────────────────────────────────────────────────────────────
+const FAN_CARDS: Card[] = [
+  { suit: 'spades',   rank: 'A',  id: 'fan-0' },
+  { suit: 'hearts',   rank: 'K',  id: 'fan-1' },
+  { suit: 'diamonds', rank: 'Q',  id: 'fan-2' },
+  { suit: 'clubs',    rank: 'J',  id: 'fan-3' },
+  { suit: 'spades',   rank: '10', id: 'fan-4' },
+];
+const FAN_ROTATIONS = [-16, -8, 0, 8, 16];
+const FAN_TRANSLATE_Y = [10, 4, 0, 4, 10];
+
+function HeroCardFan() {
+  const breatheScale = useSharedValue(1);
+
+  useEffect(() => {
+    breatheScale.value = withRepeat(
+      withSequence(
+        withTiming(1.025, { duration: 2200 }),
+        withTiming(1.0,   { duration: 2200 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const breatheStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: breatheScale.value }],
+  }));
+
+  const CARD_W = 38;
+  const CARD_H = 53;
+
+  return (
+    <Animated.View style={[{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10, marginBottom: 2 }, breatheStyle]}>
+      {FAN_CARDS.map((card, i) => (
+        <View
+          key={card.id}
+          style={{
+            marginLeft: i === 0 ? 0 : -16,
+            transform: [
+              { rotate: `${FAN_ROTATIONS[i]}deg` },
+              { translateY: FAN_TRANSLATE_Y[i] },
+            ],
+            zIndex: i === 2 ? 5 : i < 2 ? i + 1 : 5 - i,
+          }}
+        >
+          <CardComponent card={card} cardWidth={CARD_W} cardHeight={CARD_H} />
+        </View>
+      ))}
+    </Animated.View>
+  );
+}
 
 const TAGLINES = [
   "4 Boards. One Winner. No Excuses.",
@@ -124,9 +236,30 @@ function getHomeBtnColors(
 function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t, btnHeight, btnFontSize }: HomeBtnProps) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const glowOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (isPrimary && !disabled) {
+      glowOpacity.value = withDelay(
+        1200,
+        withRepeat(
+          withSequence(
+            withTiming(0.7, { duration: 1400 }),
+            withTiming(0.1, { duration: 1400 }),
+          ),
+          -1,
+          false,
+        ),
+      );
+    }
+  }, [isPrimary, disabled]);
+
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
+  }));
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
   }));
   const btnStyle = useGameStore((s) => s.buttonStyle);
   const colors = getHomeBtnColors(isPrimary, t, btnStyle);
@@ -171,6 +304,16 @@ function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, t
       >
         {isPrimary && (
           <View style={styles.btnHighlight} pointerEvents="none" />
+        )}
+        {isPrimary && !disabled && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFillObject,
+              { borderRadius: 18, backgroundColor: colors.borderColor },
+              glowStyle,
+            ]}
+          />
         )}
         <Text
           style={{
@@ -326,6 +469,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       <FriendsBg />
+      {/* Floating suit particles — decorative background */}
+      <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+        {PARTICLE_CONFIG.map((p, i) => (
+          <FloatingParticle key={i} {...p} screenW={screenW} screenH={screenH} />
+        ))}
+      </View>
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
       {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
@@ -357,6 +506,7 @@ export default function HomeScreen() {
           <Text style={[styles.titlePoker, { color: theme.subtitleColor }]}>
             POKER
           </Text>
+          <HeroCardFan />
           <Animated.Text
             style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
             numberOfLines={1}

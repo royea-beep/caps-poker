@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
@@ -34,6 +35,18 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
 
   // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
   const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
+
+  // Deal animation: cards slide up + fade in on mount
+  const dealOpacity = useSharedValue(0);
+  const dealTranslateY = useSharedValue(12);
+  useEffect(() => {
+    dealOpacity.value = withTiming(1, { duration: 350 });
+    dealTranslateY.value = withTiming(0, { duration: 280 });
+  }, []);
+  const dealStyle = useAnimatedStyle(() => ({
+    opacity: dealOpacity.value,
+    transform: [{ translateY: dealTranslateY.value }],
+  }));
 
   const midpoint = Math.ceil(cards.length / 2);
   const topRow = cards.slice(0, midpoint);
@@ -70,7 +83,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
         </View>
       </View>
       {cards.length > 0 ? (
-        <View style={styles.grid}>
+        <Animated.View style={[styles.grid, dealStyle]}>
           {useTwoRows ? (
             <>
               <View style={styles.row}>
@@ -87,7 +100,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
               {cards.map(renderCard)}
             </View>
           )}
-        </View>
+        </Animated.View>
       ) : (
         <View style={styles.emptyRow}>
           <Text style={styles.emptyText}>All cards placed!</Text>
