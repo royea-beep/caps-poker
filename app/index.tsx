@@ -464,6 +464,10 @@ export default function HomeScreen() {
               <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>LEADERBOARD</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
+            <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8} style={styles.linkItem}>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>HISTORY</Text>
+            </Pressable>
+            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => setShowTutorial(true)} hitSlop={8} style={styles.linkItem}>
               <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>📖 HOW TO PLAY</Text>
             </Pressable>

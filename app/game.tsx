@@ -29,6 +29,14 @@ import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const GAMES_PLAYED_KEY = 'caps_games_played';
+const HINT_TEXTS = [
+  '👆 Tap a card from your hand, then tap a board to place it',
+  '🎯 Try to win ALL boards for the COMPLETE bonus!',
+  '💡 Tip: Tap a placed card to remove it and try a different board',
+];
 import { rv } from '../constants/deviceBreakpoints';
 import { OrientationType } from '../store/gameStore';
 
@@ -153,6 +161,7 @@ export default function GameScreen() {
   );
   const isWeb = Platform.OS === 'web';
 
+  const [gamesPlayed, setGamesPlayed] = useState(99); // default high so hint is hidden until loaded
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -282,6 +291,13 @@ export default function GameScreen() {
     };
   }, []);
 
+  // Load games-played counter for first-time hints
+  useEffect(() => {
+    AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
+      setGamesPlayed(parseInt(val ?? '0', 10));
+    }).catch(() => {});
+  }, []);
+
   // Initialize game
   useEffect(() => {
     const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
@@ -389,6 +405,11 @@ export default function GameScreen() {
     console.log('[navigateToReveal] setRevealData done — calling router.replace /results...');
 
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
+    // Increment games-played counter for first-time hints
+    AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
+      const count = parseInt(val ?? '0', 10);
+      AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
+    }).catch(() => {});
     try {
       router.replace('/results' as any);
       console.log('[navigateToReveal] router.replace /results called OK');
@@ -862,8 +883,15 @@ export default function GameScreen() {
         </Text>
       )}
 
-      {/* Pro quote tip during arrangement — strategy hints */}
-      {isArranging && !boardError && selectedCardIds.length === 0 && (
+      {/* First-time hint bar (first 3 games only) */}
+      {isArranging && !boardError && gamesPlayed < 3 && (
+        <View style={styles.firstTimeHint}>
+          <Text style={styles.firstTimeHintText}>{HINT_TEXTS[Math.min(gamesPlayed, 2)]}</Text>
+        </View>
+      )}
+
+      {/* Pro quote tip during arrangement — shown after 3 games */}
+      {isArranging && !boardError && selectedCardIds.length === 0 && gamesPlayed >= 3 && (
         <ProQuoteBanner context="tutorial" />
       )}
 
@@ -1076,6 +1104,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     paddingVertical: 4,
+  },
+  firstTimeHint: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginHorizontal: 4,
+    borderRadius: 8,
+  },
+  firstTimeHintText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   boardErrorText: {
     textAlign: 'center',

@@ -24,10 +24,11 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side
   const maxCardW = Math.floor((availableW - 7 * 3) / 8); // 8 cards, 7 gaps of 3px
   const cardW = (() => {
-    if (Platform.OS !== 'web') return Math.min(36, Math.max(28, maxCardW));
-    if (device.isMobileWeb)  return Math.min(52, Math.max(40, maxCardW));
-    if (device.isTabletWeb)  return Math.min(64, Math.max(52, maxCardW));
-    return Math.min(80, Math.max(64, maxCardW));
+    // Hand cards are ~1.3x board card size for better readability
+    if (Platform.OS !== 'web') return Math.min(44, Math.max(34, maxCardW));
+    if (device.isMobileWeb)  return Math.min(60, Math.max(46, maxCardW));
+    if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
+    return Math.min(88, Math.max(70, maxCardW));
   })();
   const cardH = Math.round(cardW * 1.4);
 
