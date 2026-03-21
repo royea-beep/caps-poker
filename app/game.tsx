@@ -8,6 +8,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  FadeIn,
 } from 'react-native-reanimated';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
@@ -303,6 +304,13 @@ export default function GameScreen() {
     return () => clearTimeout(t);
   }, [countdownActive]);
 
+  // Countdown sound escalation
+  useEffect(() => {
+    if (!countdownActive) return;
+    if (countdown === 5) playSound('timerLow');
+    if (countdown === 0) playSound('lose');
+  }, [countdownActive, countdown]);
+
   // When countdown hits 0 — auto-place remaining cards randomly
   useEffect(() => {
     if (countdownActive && countdown === 0 && !playerReady) {
@@ -587,6 +595,7 @@ export default function GameScreen() {
     (boardIndex: number, card: Card) => {
       if (!isArranging) return;
       haptic(Haptics?.ImpactFeedbackStyle?.Light);
+      playSound('cardSelect');
       setBoards((prev) => {
         if (!prev[boardIndex]) return prev;
         const updated = [...prev];
@@ -631,6 +640,7 @@ export default function GameScreen() {
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
+    playSound('chipsWin');
     setSelectedCardIds([]);
     setPlayerReady(true);
     setPhase({ type: 'waiting_for_bot' });
@@ -816,6 +826,7 @@ export default function GameScreen() {
           <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
         </View>
       )}
+      <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
       {/* Header bar */}
       <View style={styles.topBar}>
         <Pressable onPress={handleBack} style={styles.backButton}>
@@ -975,6 +986,7 @@ export default function GameScreen() {
           </Pressable>
         </View>
       )}
+      </Animated.View>
     </SafeAreaView>
   );
 }

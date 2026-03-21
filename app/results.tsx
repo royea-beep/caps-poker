@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,6 +39,64 @@ import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHis
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
+
+// DEAL ME IN button with idle gold glow pulse
+function DealMeInButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const glow = useSharedValue(0.15);
+  useEffect(() => {
+    glow.value = withRepeat(
+      withSequence(
+        withTiming(0.7, { duration: 900 }),
+        withTiming(0.15, { duration: 900 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+  const glowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: glow.value,
+    ...Platform.select({
+      web: { boxShadow: `0px 0px 20px rgba(255,215,0,${glow.value})` } as any,
+      default: {},
+    }),
+  }));
+  return (
+    <Animated.View style={[dealMeInStyles.btn, glowStyle]}>
+      <Pressable onPress={onPress} style={dealMeInStyles.inner}>
+        <Text style={dealMeInStyles.text}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+const dealMeInStyles = StyleSheet.create({
+  btn: {
+    borderRadius: 16,
+    backgroundColor: '#FFD700',
+    marginHorizontal: 16,
+    height: 64,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#FFD700',
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 16,
+      },
+      android: { elevation: 8 },
+      default: {},
+    }),
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+  text: {
+    color: '#000',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+});
 
 // Animation timing
 const BOARD_STAGGER = 250;
@@ -609,9 +667,8 @@ export default function ResultsScreen() {
               </View>
             ) : (
               <>
-                <Button
-                  title={chips >= config.potPerBoard * revealData.boardCount ? 'NEXT HAND' : 'GAME OVER'}
-                  variant="gold"
+                <DealMeInButton
+                  label={chips >= config.potPerBoard * revealData.boardCount ? 'DEAL ME IN' : 'GAME OVER'}
                   onPress={handleNextHand}
                 />
                 <View style={styles.rematchRow}>
@@ -739,13 +796,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   boardCardWin: {
-    borderColor: COLORS.neonGreen,
+    borderColor: 'rgba(255,215,0,0.4)',
+    borderLeftColor: '#FFD700',
+    borderLeftWidth: 3,
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.neonGreen,
+        shadowColor: '#FFD700',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
       },
       android: { elevation: 4 },
       default: {},
