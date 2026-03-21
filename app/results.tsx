@@ -551,9 +551,9 @@ export default function ResultsScreen() {
           }]}>
             {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
           </Text>
-          <Text style={styles.scoreDisplay}>
+          <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
             <Text style={{ color: COLORS.neonGreen }}>{playerWins}</Text>
-            <Text style={styles.scoreSep}> — </Text>
+            <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
             <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
           </Text>
         </Animated.View>
@@ -751,7 +751,8 @@ export default function ResultsScreen() {
                 <Text style={styles.efficiencyEmoji}>{efficiency.gradeEmoji}</Text>
                 <Text style={[
                   styles.efficiencyPercent,
-                  { color: efficiency.percentage >= 90 ? '#4CAF50' : efficiency.percentage >= 75 ? '#c8a84b' : efficiency.percentage >= 60 ? '#FFC107' : COLORS.neonRed },
+                  { color: efficiency.percentage >= 90 ? '#4CAF50' : efficiency.percentage >= 75 ? '#c8a84b' : efficiency.percentage >= 60 ? '#FFC107' : COLORS.neonRed,
+                    fontSize: Math.min(36, Math.floor(SCREEN_W * 0.09)) },
                 ]}>
                   {efficiency.percentage}%
                 </Text>
