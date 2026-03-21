@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { preloadSounds } from '../utils/sounds';
+import { registerAndSavePushToken } from '../utils/notifications';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
 import { VersionBadge } from '../components/VersionBadge';
@@ -116,6 +117,9 @@ export default function RootLayout() {
   useEffect(() => {
     initSession();
     preloadSounds();
+    if (Platform.OS !== 'web') {
+      registerAndSavePushToken().catch(() => {});
+    }
 
     // Load Playfair Display from Google Fonts on web
     if (Platform.OS === 'web' && typeof document !== 'undefined') {

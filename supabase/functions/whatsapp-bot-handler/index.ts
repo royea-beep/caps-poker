@@ -519,6 +519,20 @@ async function generateAndSendPlan(
 serve(async (req: Request) => {
   console.log('[whatsapp-bot] Request received:', req.method, req.url);
 
+  // Meta Cloud API webhook verification (GET)
+  if (req.method === 'GET') {
+    const url = new URL(req.url);
+    const mode = url.searchParams.get('hub.mode');
+    const token = url.searchParams.get('hub.verify_token');
+    const challenge = url.searchParams.get('hub.challenge');
+    const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN') ?? 'caps-whatsapp-verify-2026';
+    if (mode === 'subscribe' && token === verifyToken && challenge) {
+      console.log('[whatsapp-bot] Webhook verified');
+      return new Response(challenge, { status: 200 });
+    }
+    return new Response('Forbidden', { status: 403 });
+  }
+
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
   }
