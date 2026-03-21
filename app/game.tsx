@@ -747,7 +747,7 @@ export default function GameScreen() {
               disabled={!allBoardsFull}
             >
               <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-                {allBoardsFull ? '✓ READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
+                {allBoardsFull ? '✓ READY' : `${cardsRemaining} left`}
               </Text>
             </Pressable>
           )}
@@ -919,7 +919,7 @@ export default function GameScreen() {
             disabled={!allBoardsFull}
           >
             <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-              {allBoardsFull ? '✓ READY' : `${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} left`}
+              {allBoardsFull ? '✓ READY' : `${cardsRemaining} left`}
             </Text>
           </Pressable>
         </View>
