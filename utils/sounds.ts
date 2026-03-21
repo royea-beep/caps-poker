@@ -43,6 +43,16 @@ const loadedSounds: Partial<Record<SoundName, any>> = {};
 
 export async function preloadSounds(): Promise<void> {
   if (!Audio) return;
+  try {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,  // Play even when iPhone silent switch is on
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    });
+  } catch {
+    // Audio mode config not supported in this environment — continue
+  }
   for (const [name, file] of Object.entries(soundFiles)) {
     if (!file) continue;
     try {
