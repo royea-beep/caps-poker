@@ -1,4 +1,6 @@
 import { Platform } from 'react-native';
+import { getSupabase } from './supabase';
+import { getDeviceId } from './leaderboard';
 
 // expo-notifications is part of Expo SDK but may not be installed
 // Import dynamically to avoid crash if missing
@@ -126,4 +128,35 @@ export async function cancelReengagement(): Promise<void> {
 /** Check if notifications module is available */
 export function isNotificationsAvailable(): boolean {
   return Notifications !== null;
+}
+
+/**
+ * Register for push notifications and save the token to Supabase.
+ * Uses device_id as identifier (no user auth in Caps).
+ */
+export async function registerAndSavePushToken(): Promise<string | null> {
+  const token = await getExpoPushToken();
+  if (!token) return null;
+
+  const deviceId = await getDeviceId();
+
+  const client = getSupabase();
+  if (client) {
+    client
+      .from('push_tokens')
+      .upsert(
+        {
+          device_id: deviceId,
+          token,
+          platform: Platform.OS,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'device_id,token' },
+      )
+      .then(({ error }: { error: { message: string } | null }) => {
+        if (error) console.warn('[push_tokens] upsert failed:', error.message);
+      });
+  }
+
+  return token;
 }
