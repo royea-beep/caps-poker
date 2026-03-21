@@ -241,6 +241,8 @@ export default function CardComponent({
         } as any,
       });
 
+  const suitBorderColor = isRed ? 'rgba(211,47,47,0.28)' : 'rgba(80,80,80,0.22)';
+
   return (
     <View style={{ width, height }}>
       {/* Back face */}
@@ -255,13 +257,13 @@ export default function CardComponent({
           {
             width,
             height,
-            backgroundColor: theme.cardFace,
+            backgroundColor: '#FFFFFF',
             borderRadius: 9,
+            borderWidth: 1,
+            borderColor: suitBorderColor,
           },
           Platform.OS === 'web' && {
-            background: `linear-gradient(160deg, #ffffff 0%, #f4f4f0 100%)`,
-            borderWidth: 1,
-            borderColor: 'rgba(0,0,0,0.10)',
+            background: `linear-gradient(160deg, #ffffff 0%, #f6f6f2 100%)`,
           } as any,
           faceUpShadow,
           highlightAnimStyle,
@@ -274,7 +276,13 @@ export default function CardComponent({
           <Text style={[styles.rankText, { color: suitColor, fontSize: cornerRankSize }]}>
             {card.rank}
           </Text>
-          <Text style={[styles.suitText, { color: suitColor, fontSize: cornerSuitSize }]}>
+          <Text style={[styles.suitText, {
+            color: suitColor,
+            fontSize: cornerSuitSize,
+            textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 4,
+          }]}>
             {SUIT_SYMBOLS[card.suit]}
           </Text>
         </View>
@@ -284,7 +292,13 @@ export default function CardComponent({
           <Text style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
             {card.rank}
           </Text>
-          <Text style={[styles.centerSuitText, { color: suitColor, fontSize: centerSuitSize }]}>
+          <Text style={[styles.centerSuitText, {
+            color: suitColor,
+            fontSize: centerSuitSize,
+            textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 6,
+          }]}>
             {SUIT_SYMBOLS[card.suit]}
           </Text>
         </View>
