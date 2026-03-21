@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
-import { PRO_QUOTES_ENABLED_KEY } from '../components/ProQuoteBanner';
+import { PRO_QUOTES_ENABLED_KEY, PRO_VOICES_ENABLED_KEY } from '../components/ProQuoteBanner';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
 // Lazy haptics — web-safe
@@ -550,29 +550,57 @@ const vtStyles = StyleSheet.create({
 
 function ProQuotesToggle() {
   const [enabled, setEnabled] = useState(true);
+  const [voicesEnabled, setVoicesEnabled] = useState(true);
 
   useEffect(() => {
     AsyncStorage.getItem(PRO_QUOTES_ENABLED_KEY).then(val => {
       setEnabled(val !== 'false');
     }).catch(() => {});
+    AsyncStorage.getItem(PRO_VOICES_ENABLED_KEY).then(val => {
+      setVoicesEnabled(val !== 'false');
+    }).catch(() => {});
   }, []);
 
-  const toggle = () => {
+  const toggleQuotes = () => {
     const next = !enabled;
     setEnabled(next);
     AsyncStorage.setItem(PRO_QUOTES_ENABLED_KEY, next ? 'true' : 'false').catch(() => {});
+    // If quotes OFF → voices also OFF
+    if (!next) {
+      setVoicesEnabled(false);
+      AsyncStorage.setItem(PRO_VOICES_ENABLED_KEY, 'false').catch(() => {});
+    }
+  };
+
+  const toggleVoices = () => {
+    if (!enabled) return; // Can't enable voices without quotes
+    const next = !voicesEnabled;
+    setVoicesEnabled(next);
+    AsyncStorage.setItem(PRO_VOICES_ENABLED_KEY, next ? 'true' : 'false').catch(() => {});
   };
 
   return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>🎭 Pro Quotes (AI Simulation)</Text>
-        <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
+    <>
+      <View style={styles.row}>
+        <View style={styles.rowLeft}>
+          <Text style={styles.rowLabel}>🎭 Pro Quotes (AI Simulation)</Text>
+          <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
+        </View>
+        <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}>
+          <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>{enabled ? 'ON' : 'OFF'}</Text>
+        </Pressable>
       </View>
-      <Pressable onPress={toggle} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}>
-        <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>{enabled ? 'ON' : 'OFF'}</Text>
-      </Pressable>
-    </View>
+      <View style={[styles.row, !enabled && { opacity: 0.4 }]}>
+        <View style={styles.rowLeft}>
+          <Text style={styles.rowLabel}>🔊 Pro Voice Clips (AI-Generated)</Text>
+          <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
+          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: 9 }]}>⚠️ Not real player voices</Text>
+        </View>
+        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]}>
+          <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 
@@ -655,6 +683,14 @@ export default function SettingsScreen() {
           onPress={resetConfig}
           style={{ marginBottom: 24 }}
         />
+
+        <Text style={styles.sectionTitle}>CREDITS</Text>
+        <View style={styles.creditsBox}>
+          <Text style={styles.creditsText}>🤖 Pro Quotes: AI digital simulation — fictional quotes</Text>
+          <Text style={styles.creditsText}>🔊 Voice Clips: AI-generated voices via ElevenLabs</Text>
+          <Text style={styles.creditsText}>⚠️ Not affiliated with any poker player mentioned</Text>
+          <Text style={styles.creditsText}>Voices are parody / entertainment only</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -725,6 +761,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 10,
     marginTop: 2,
+  },
+  creditsBox: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 24,
+    gap: 4,
+  },
+  creditsText: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 10,
+    lineHeight: 16,
   },
   rowError: {
     color: COLORS.danger,
