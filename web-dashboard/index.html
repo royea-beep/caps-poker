@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐛 CAPS Bug Reports</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080808;
+      color: #e8e8e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0a0a0a 0%, #111116 100%);
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #c9a84c;
+      letter-spacing: 1px;
+    }
+
+    .badge {
+      background: rgba(201,168,76,0.15);
+      border: 1px solid rgba(201,168,76,0.3);
+      color: #c9a84c;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #e8e8e8;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    select:focus { outline: none; border-color: rgba(201,168,76,0.5); }
+
+    .refresh-info {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    #countdown { color: rgba(201,168,76,0.7); }
+
+    main { padding: 20px 24px; }
+
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 12px 20px;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 24px;
+      font-weight: 800;
+      color: #c9a84c;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    thead th {
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    td {
+      padding: 12px 14px;
+      vertical-align: top;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .td-time {
+      white-space: nowrap;
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+    }
+
+    .td-title {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .td-desc {
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+      max-width: 220px;
+    }
+
+    .td-screen {
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(201,168,76,0.7);
+    }
+
+    .td-device {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      white-space: nowrap;
+    }
+
+    .status-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .status-open {
+      background: rgba(255,180,0,0.12);
+      color: #ffb400;
+      border: 1px solid rgba(255,180,0,0.25);
+    }
+
+    .status-fixed {
+      background: rgba(0,200,117,0.12);
+      color: #00c875;
+      border: 1px solid rgba(0,200,117,0.25);
+    }
+
+    .status-wontfix {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1px solid;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button:hover { opacity: 0.85; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .btn-fix {
+      background: rgba(0,200,117,0.1);
+      border-color: rgba(0,200,117,0.4);
+      color: #00c875;
+    }
+
+    .btn-wa {
+      background: rgba(37,211,102,0.1);
+      border-color: rgba(37,211,102,0.3);
+      color: #25d166;
+    }
+
+    .btn-wontfix {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.35);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: rgba(255,255,255,0.3);
+      font-size: 16px;
+    }
+
+    .error-msg {
+      background: rgba(232,25,44,0.1);
+      border: 1px solid rgba(232,25,44,0.3);
+      border-radius: 8px;
+      padding: 16px 20px;
+      color: #e8192c;
+      margin-bottom: 20px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a1a22;
+      border: 1px solid rgba(201,168,76,0.4);
+      color: #c9a84c;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 18px;
+      border-radius: 8px;
+      transform: translateY(80px);
+      transition: transform 0.3s;
+      z-index: 100;
+    }
+
+    .toast.show { transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>🐛 CAPS Bug Reports</h1>
+    <span class="badge">LIVE</span>
+  </div>
+  <div class="header-right">
+    <select id="filterStatus" onchange="applyFilters()">
+      <option value="all">All statuses</option>
+      <option value="open" selected>Open</option>
+      <option value="fixed">Fixed</option>
+      <option value="wontfix">Won't Fix</option>
+    </select>
+    <select id="filterDate" onchange="applyFilters()">
+      <option value="all">All time</option>
+      <option value="today" selected>Today</option>
+      <option value="week">This week</option>
+    </select>
+    <span class="refresh-info">Auto-refresh in <span id="countdown">30</span>s</span>
+  </div>
+</header>
+
+<main>
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num" id="statOpen">—</div><div class="stat-label">Open</div></div>
+    <div class="stat-card"><div class="stat-num" id="statFixed">—</div><div class="stat-label">Fixed</div></div>
+    <div class="stat-card"><div class="stat-num" id="statToday">—</div><div class="stat-label">Today</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Time (IST)</th>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Screen</th>
+          <th>Device / Version</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="7" class="loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cnB1bnZoamNyenFuaXRicWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTc5OTksImV4cCI6MjA4ODkzMzk5OX0.MLHYIbU4saCHq0eQbwUzyfAl_q9TLgepKf8iNDDav-Q';
+
+  let allBugs = [];
+  let countdownVal = 30;
+  let countdownTimer = null;
+
+  const IST_OFFSET = 2; // UTC+2 (will be +3 after DST, ~Mar 29)
+
+  function toIST(isoStr) {
+    const d = new Date(isoStr);
+    const utc = d.getTime();
+    const ist = new Date(utc + IST_OFFSET * 3600 * 1000);
+    const hh = String(ist.getUTCHours()).padStart(2, '0');
+    const mm = String(ist.getUTCMinutes()).padStart(2, '0');
+    const dd = String(ist.getUTCDate()).padStart(2, '0');
+    const mo = String(ist.getUTCMonth() + 1).padStart(2, '0');
+    return `${hh}:${mm}  ${dd}/${mo}`;
+  }
+
+  function isToday(isoStr) {
+    const d = new Date(isoStr);
+    const now = new Date();
+    return d.toDateString() === now.toDateString();
+  }
+
+  function isThisWeek(isoStr) {
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diff = now - d;
+    return diff < 7 * 24 * 3600 * 1000;
+  }
+
+  function statusBadge(status) {
+    const map = {
+      open: '<span class="status-badge status-open">🟡 Open</span>',
+      fixed: '<span class="status-badge status-fixed">✅ Fixed</span>',
+      wontfix: '<span class="status-badge status-wontfix">⛔ Won\'t Fix</span>',
+    };
+    return map[status] || map['open'];
+  }
+
+  function escHtml(str) {
+    if (!str) return '<span style="color:rgba(255,255,255,0.2)">—</span>';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  async function apiHeaders() {
+    return {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+    };
+  }
+
+  async function fetchBugs() {
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?order=created_at.desc&limit=200';
+    const res = await fetch(url, { headers: await apiHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + await res.text());
+    return res.json();
+  }
+
+  async function markStatus(id, status) {
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?id=eq.' + id;
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { ...(await apiHeaders()), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('PATCH failed: ' + res.status);
+  }
+
+  function copyWAFormat(bug) {
+    const lines = [
+      '🐛 *CAPS Bug Report*',
+      `📱 Screen: ${bug.screen || '/'}`,
+      `📌 Title: ${bug.title || '—'}`,
+      bug.description ? `📝 Desc: ${bug.description}` : null,
+      `📱 Device: ${bug.device_info || '—'} | v${bug.app_version || '—'}`,
+      `🕐 Time: ${toIST(bug.created_at)} IST`,
+    ].filter(Boolean).join('\n');
+    navigator.clipboard.writeText(lines).then(() => showToast('Copied for WhatsApp ✓'));
+  }
+
+  function applyFilters() {
+    const statusF = document.getElementById('filterStatus').value;
+    const dateF = document.getElementById('filterDate').value;
+
+    const filtered = allBugs.filter(b => {
+      const status = b.status || 'open';
+      if (statusF !== 'all' && status !== statusF) return false;
+      if (dateF === 'today' && !isToday(b.created_at)) return false;
+      if (dateF === 'week' && !isThisWeek(b.created_at)) return false;
+      return true;
+    });
+
+    renderTable(filtered);
+  }
+
+  function renderTable(bugs) {
+    const tbody = document.getElementById('tableBody');
+    if (!bugs.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No bug reports found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = bugs.map(b => {
+      const status = b.status || 'open';
+      const isFixed = status === 'fixed';
+      return `
+        <tr>
+          <td class="td-time">${toIST(b.created_at)}</td>
+          <td class="td-title">${escHtml(b.title)}</td>
+          <td class="td-desc">${escHtml(b.description)}</td>
+          <td class="td-screen">${escHtml(b.screen)}</td>
+          <td class="td-device">${escHtml(b.device_info)}<br>${escHtml(b.app_version)}</td>
+          <td>${statusBadge(status)}</td>
+          <td>
+            <div class="actions">
+              ${!isFixed ? `<button class="btn-fix" onclick="handleMark('${b.id}','fixed')">✅ Mark Fixed</button>` : ''}
+              ${status !== 'wontfix' ? `<button class="btn-wontfix" onclick="handleMark('${b.id}','wontfix')">⛔ Won't Fix</button>` : ''}
+              <button class="btn-wa" onclick='handleWA(${JSON.stringify(b)})'>📱 WA</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateStats() {
+    const today = allBugs.filter(b => isToday(b.created_at)).length;
+    const open = allBugs.filter(b => !b.status || b.status === 'open').length;
+    const fixed = allBugs.filter(b => b.status === 'fixed').length;
+    document.getElementById('statTotal').textContent = allBugs.length;
+    document.getElementById('statOpen').textContent = open;
+    document.getElementById('statFixed').textContent = fixed;
+    document.getElementById('statToday').textContent = today;
+  }
+
+  async function handleMark(id, status) {
+    try {
+      await markStatus(id, status);
+      const bug = allBugs.find(b => b.id === id);
+      if (bug) bug.status = status;
+      showToast(status === 'fixed' ? '✅ Marked as fixed' : '⛔ Marked won\'t fix');
+      updateStats();
+      applyFilters();
+    } catch(e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  function handleWA(bug) {
+    copyWAFormat(bug);
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠️ ' + msg;
+    box.style.display = 'block';
+  }
+
+  async function load() {
+    document.getElementById('errorBox').style.display = 'none';
+    try {
+      allBugs = await fetchBugs();
+      updateStats();
+      applyFilters();
+    } catch(e) {
+      showError(e.message);
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="empty">Failed to load</td></tr>';
+    }
+  }
+
+  function startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownVal = 30;
+    document.getElementById('countdown').textContent = countdownVal;
+    countdownTimer = setInterval(() => {
+      countdownVal--;
+      document.getElementById('countdown').textContent = countdownVal;
+      if (countdownVal <= 0) {
+        countdownVal = 30;
+        load();
+      }
+    }, 1000);
+  }
+
+  load();
+  startCountdown();
+</script>
+</body>
+</html>
