@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAPS Poker — Hand Replay</title>
+  <meta property="og:title" content="CAPS Poker — Hand Replay" />
+  <meta property="og:description" content="Watch an animated replay of this CAPS Poker hand" />
+  <meta property="og:image" content="https://caps.ftable.co.il/favicon.ico" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1a;
+      --surface: #12192e;
+      --gold: #FFD700;
+      --red: #ff4444;
+      --green: #00e5a0;
+      --text: rgba(255,255,255,0.85);
+      --muted: rgba(255,255,255,0.4);
+      --border: rgba(255,215,0,0.25);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 50% 30%, #1a2540 0%, #0a0f1a 70%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    .logo {
+      color: var(--gold);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .logo-sub {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .hand-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .board-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .board-card.visible { opacity: 1; transform: translateY(0); }
+    .board-card.win { border-left: 3px solid var(--gold); }
+    .board-card.lose { border-left: 3px solid var(--red); opacity: 0.8; }
+
+    .board-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .board-label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+    .board-result { font-size: 13px; font-weight: 800; letter-spacing: 1px; }
+    .board-result.win { color: var(--gold); }
+    .board-result.lose { color: var(--red); }
+    .board-result.tie { color: var(--muted); }
+
+    .hand-section { margin-bottom: 8px; }
+    .hand-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .cards-row { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    /* Card rendering */
+    .card {
+      width: 44px;
+      height: 62px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-weight: 900;
+      font-size: 14px;
+      position: relative;
+      border: 1px solid rgba(0,0,0,0.2);
+      transform-style: preserve-3d;
+      perspective: 400px;
+      cursor: default;
+    }
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 6px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+    }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 6px;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .card-front { background: #fff; }
+    .card-back {
+      background: #1a1a3e;
+      border: 1px solid var(--gold);
+      transform: rotateY(180deg);
+      font-size: 10px;
+      color: rgba(255,215,0,0.4);
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .card.red .card-front { color: #c0392b; }
+    .card.black .card-front { color: #1a1a2e; }
+    .card-rank { font-size: 16px; font-weight: 900; line-height: 1; }
+    .card-suit { font-size: 14px; line-height: 1; }
+
+    .hand-name {
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      transform: translateX(10px);
+      transition: opacity 0.3s ease 0.2s, transform 0.3s ease 0.2s;
+    }
+    .hand-name.visible { opacity: 1; transform: translateX(0); }
+    .hand-name.win { color: var(--gold); }
+    .hand-name.lose { color: var(--muted); }
+
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+      margin: 10px 0;
+    }
+
+    .stats-row {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+      flex-wrap: wrap;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .stats-row.visible { opacity: 1; }
+    .stat-val { color: var(--text); font-weight: 700; }
+    .stat-val.positive { color: var(--gold); }
+    .stat-val.negative { color: var(--red); }
+
+    .complete-banner {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(255,215,0,0.08);
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      color: var(--gold);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .complete-banner.visible { opacity: 1; }
+
+    .cta-section {
+      margin-top: 32px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .cta-btn {
+      background: var(--gold);
+      color: #000;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      padding: 16px 40px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 0 20px rgba(255,215,0,0.4);
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .cta-btn:hover { transform: scale(1.04); box-shadow: 0 0 32px rgba(255,215,0,0.6); }
+    .cta-sub { color: var(--muted); font-size: 12px; }
+
+    .error-msg {
+      color: var(--muted);
+      text-align: center;
+      font-size: 15px;
+      margin-top: 60px;
+    }
+    .loading-msg {
+      color: var(--muted);
+      text-align: center;
+      font-size: 15px;
+      margin-top: 60px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+  </style>
+</head>
+<body>
+  <div class="logo">♠ CAPS POKER ♦</div>
+  <div class="logo-sub">HAND REPLAY</div>
+
+  <div id="root" class="hand-container">
+    <div class="loading-msg">Loading hand...</div>
+  </div>
+
+  <div class="cta-section" id="cta" style="display:none">
+    <a class="cta-btn" href="https://caps.ftable.co.il">PLAY CAPS POKER</a>
+    <div class="cta-sub">Free to play · caps.ftable.co.il</div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cnB1bnZoamNyenFuaXRicWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTc5OTksImV4cCI6MjA4ODkzMzk5OX0.MLHYIbU4saCHq0eQbwUzyfAl_q9TLgepKf8iNDDav-Q';
+
+    const SUIT_SYMBOL = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+    const RED_SUITS = new Set(['hearts', 'diamonds']);
+
+    function getHandId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id') || window.location.pathname.split('/').filter(Boolean).pop();
+    }
+
+    function makeCard(c, faceDown = false) {
+      const isRed = RED_SUITS.has(c.suit);
+      const div = document.createElement('div');
+      div.className = `card ${isRed ? 'red' : 'black'}`;
+      div.innerHTML = `
+        <div class="card-inner${faceDown ? '' : ' flipped'}">
+          <div class="card-back">CAPS</div>
+          <div class="card-front">
+            <div class="card-rank">${c.rank}</div>
+            <div class="card-suit">${SUIT_SYMBOL[c.suit] || c.suit}</div>
+          </div>
+        </div>`;
+      return div;
+    }
+
+    function flipCard(cardEl, delayMs) {
+      setTimeout(() => {
+        const inner = cardEl.querySelector('.card-inner');
+        if (inner) inner.classList.add('flipped');
+      }, delayMs);
+    }
+
+    function renderHand(data) {
+      const root = document.getElementById('root');
+      root.innerHTML = '';
+
+      const boards = data.boards || [];
+      const boardsWon = boards.filter(b => b.winner === 'player').length;
+      const netChips = data.netChips ?? 0;
+
+      let stagger = 200;
+
+      boards.forEach((board, i) => {
+        const communityCards = [...(board.openCards || []), ...(board.closedCards || [])];
+        const botCards = (board.allBotCards || [])[0] || [];
+        const chipDelta = board.winner === 'player'
+          ? `+${board.potAmount || '?'}`
+          : board.winner === 'bot' ? `-${board.potAmount || '?'}` : '±0';
+
+        const card = document.createElement('div');
+        card.className = `board-card ${board.winner === 'player' ? 'win' : board.winner === 'bot' ? 'lose' : ''}`;
+
+        const header = document.createElement('div');
+        header.className = 'board-header';
+        header.innerHTML = `
+          <span class="board-label">BOARD ${i + 1}</span>
+          <span class="board-result ${board.winner === 'player' ? 'win' : board.winner === 'bot' ? 'lose' : 'tie'}">
+            ${board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE'}
+            &nbsp;${chipDelta}
+          </span>`;
+        card.appendChild(header);
+
+        // Community
+        const commSection = document.createElement('div');
+        commSection.className = 'hand-section';
+        commSection.innerHTML = '<div class="hand-label">Community</div>';
+        const commRow = document.createElement('div');
+        commRow.className = 'cards-row';
+        const closedStart = (board.openCards || []).length;
+        communityCards.forEach((c, ci) => {
+          const cardEl = makeCard(c, ci >= closedStart); // closed cards start face-down
+          commRow.appendChild(cardEl);
+          if (ci >= closedStart) {
+            flipCard(cardEl, 600 + (ci - closedStart) * 400);
+          }
+        });
+        commSection.appendChild(commRow);
+        card.appendChild(commSection);
+
+        card.appendChild(Object.assign(document.createElement('div'), { className: 'divider' }));
+
+        // Player
+        const playerSection = document.createElement('div');
+        playerSection.className = 'hand-section';
+        playerSection.innerHTML = '<div class="hand-label">You</div>';
+        const playerRow = document.createElement('div');
+        playerRow.className = 'cards-row';
+        (board.playerCards || []).forEach(c => playerRow.appendChild(makeCard(c)));
+        playerSection.appendChild(playerRow);
+        const playerHandName = document.createElement('div');
+        playerHandName.className = `hand-name ${board.winner === 'player' ? 'win' : 'lose'}`;
+        playerHandName.textContent = board.playerHandName || '';
+        playerSection.appendChild(playerHandName);
+        card.appendChild(playerSection);
+
+        // Bot
+        const botSection = document.createElement('div');
+        botSection.className = 'hand-section';
+        botSection.innerHTML = '<div class="hand-label">Opponent</div>';
+        const botRow = document.createElement('div');
+        botRow.className = 'cards-row';
+        botCards.forEach(c => botRow.appendChild(makeCard(c)));
+        botSection.appendChild(botRow);
+        const botHandName = document.createElement('div');
+        botHandName.className = `hand-name ${board.winner === 'bot' ? 'win' : 'lose'}`;
+        botHandName.textContent = board.botHandName || '';
+        botSection.appendChild(botHandName);
+        card.appendChild(botSection);
+
+        root.appendChild(card);
+
+        // Animate in
+        setTimeout(() => {
+          card.classList.add('visible');
+          setTimeout(() => {
+            playerHandName.classList.add('visible');
+            botHandName.classList.add('visible');
+          }, 800);
+        }, stagger);
+        stagger += 350;
+      });
+
+      // Stats
+      setTimeout(() => {
+        const statsRow = document.createElement('div');
+        statsRow.className = 'stats-row';
+        statsRow.innerHTML = `
+          <span>Boards: <span class="stat-val">${boardsWon}/${boards.length}</span></span>
+          <span>|</span>
+          <span>Net: <span class="stat-val ${netChips >= 0 ? 'positive' : 'negative'}">${netChips >= 0 ? '+' : ''}${netChips}</span></span>`;
+        root.appendChild(statsRow);
+        setTimeout(() => statsRow.classList.add('visible'), 100);
+      }, stagger);
+
+      // COMPLETE banner
+      if (data.isComplete && data.completeBonusAmount > 0) {
+        setTimeout(() => {
+          const banner = document.createElement('div');
+          banner.className = 'complete-banner';
+          banner.textContent = `🏆 COMPLETE! +50% BONUS (+${data.completeBonusAmount})`;
+          root.appendChild(banner);
+          setTimeout(() => banner.classList.add('visible'), 100);
+        }, stagger + 200);
+      }
+
+      // Show CTA
+      setTimeout(() => {
+        document.getElementById('cta').style.display = 'flex';
+      }, stagger + 400);
+    }
+
+    async function loadHand(id) {
+      try {
+        // Increment views
+        fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_hand_views`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hand_id: id }),
+        }).catch(() => {});
+
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/shared_hands?id=eq.${encodeURIComponent(id)}&select=data,expires_at`,
+          { headers: { 'apikey': SUPABASE_ANON, 'Accept': 'application/json' } }
+        );
+        const rows = await res.json();
+        if (!rows || rows.length === 0) {
+          document.getElementById('root').innerHTML = '<div class="error-msg">Hand not found or expired.</div>';
+          document.getElementById('cta').style.display = 'flex';
+          return;
+        }
+        const row = rows[0];
+        if (row.expires_at && new Date(row.expires_at) < new Date()) {
+          document.getElementById('root').innerHTML = '<div class="error-msg">This hand replay has expired (30 days).</div>';
+          document.getElementById('cta').style.display = 'flex';
+          return;
+        }
+        renderHand(row.data);
+      } catch (e) {
+        document.getElementById('root').innerHTML = '<div class="error-msg">Failed to load hand. Check your connection.</div>';
+        document.getElementById('cta').style.display = 'flex';
+      }
+    }
+
+    const handId = getHandId();
+    if (handId && handId !== 'hand') {
+      loadHand(handId);
+    } else {
+      document.getElementById('root').innerHTML = '<div class="error-msg">No hand ID provided.</div>';
+      document.getElementById('cta').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

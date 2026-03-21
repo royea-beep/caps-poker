@@ -38,6 +38,8 @@ import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
+import { SingleBoardShareCard, FullGameShareCard } from '../components/ShareCard';
+import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -135,6 +137,12 @@ export default function ResultsScreen() {
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
   const waitingTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Share state
+  const [sharingBoardIdx, setSharingBoardIdx] = useState<number | null>(null);
+  const [sharingGame, setSharingGame] = useState(false);
+  const boardShareRefs = useRef<React.RefObject<any>[]>([]);
+  const gameShareRef = useRef<any>(null);
 
   const chipCountProgress = useSharedValue(0);
   const goldPulse = useSharedValue(0); // 0=off, 1=gold border active
@@ -417,6 +425,52 @@ export default function ResultsScreen() {
   const isPerfectGame = playerWins === boards.length && boards.length > 0;
   const potPerBoardTotal = revealData.potPerBoard * numberOfPlayers;
 
+  // Ensure board share refs are allocated
+  while (boardShareRefs.current.length < boards.length) {
+    boardShareRefs.current.push(React.createRef<any>());
+  }
+
+  const shareData: ShareData = {
+    boards,
+    netChips,
+    isComplete,
+    completeBonusAmount,
+    boardsWon: playerWins,
+    totalBoards: boards.length,
+    potPerBoard: revealData.potPerBoard,
+    numberOfPlayers,
+  };
+
+  const handleShareBoard = async (idx: number) => {
+    setSharingBoardIdx(idx);
+    await new Promise((r) => setTimeout(r, 150)); // let offscreen card render
+    const ref = boardShareRefs.current[idx];
+    if (!ref) { setSharingBoardIdx(null); return; }
+    const url = await saveHandForWebReplay(shareData).catch(() => null);
+    const text = generateShareText(shareData, url);
+    await captureAndShare(ref, text);
+    setSharingBoardIdx(null);
+  };
+
+  const handleShareGame = async () => {
+    setSharingGame(true);
+    await new Promise((r) => setTimeout(r, 150));
+    const url = await saveHandForWebReplay(shareData).catch(() => null);
+    const text = generateShareText(shareData, url);
+    await captureAndShare(gameShareRef, text);
+    setSharingGame(false);
+  };
+
+  const handleCopyReplayLink = async () => {
+    const url = await saveHandForWebReplay(shareData).catch(() => null);
+    if (url) {
+      await copyToClipboard(url);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Link copied!', url);
+      }
+    }
+  };
+
   // Efficiency analysis — memoized so it runs once
   const efficiency = useMemo<EfficiencyResult | null>(() => {
     if (!revealData || boards.length === 0) return null;
@@ -487,8 +541,34 @@ export default function ResultsScreen() {
                       small
                     />
                   </View>
-                  <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>
+                  <View style={styles.boardHeaderRight}>
+                    <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>
+                    {Platform.OS !== 'web' && (
+                      <Pressable
+                        onPress={() => handleShareBoard(i)}
+                        style={styles.shareBtn}
+                        disabled={sharingBoardIdx === i}
+                      >
+                        <Text style={styles.shareBtnText}>{sharingBoardIdx === i ? '...' : '📸'}</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
+
+                {/* Offscreen SingleBoardShareCard for capture */}
+                {Platform.OS !== 'web' && (
+                  <View
+                    ref={boardShareRefs.current[i] as any}
+                    style={styles.offscreen}
+                    pointerEvents="none"
+                  >
+                    <SingleBoardShareCard
+                      board={board}
+                      boardIndex={i}
+                      potAmount={potPerBoardTotal}
+                    />
+                  </View>
+                )}
 
                 {/* Bot hand rows — top (opponent across the table) */}
                 {(board.allBotCards ?? []).map((botCards, botIdx) =>
@@ -580,6 +660,37 @@ export default function ResultsScreen() {
             </Animated.View>
           );
         })}
+
+        {/* Share Game button + offscreen FullGameShareCard */}
+        {Platform.OS !== 'web' && (
+          <Animated.View
+            entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE)}
+            style={{ width: '100%', gap: 8 }}
+          >
+            <View style={styles.shareGameRow}>
+              <Pressable
+                onPress={handleShareGame}
+                style={[styles.shareGameBtn, sharingGame && styles.shareBtnLoading]}
+                disabled={sharingGame}
+              >
+                <Text style={styles.shareGameBtnText}>{sharingGame ? 'Generating...' : '📸 Share Game'}</Text>
+              </Pressable>
+              <Pressable onPress={handleCopyReplayLink} style={styles.copyLinkBtn}>
+                <Text style={styles.copyLinkText}>📋 Copy Replay Link</Text>
+              </Pressable>
+            </View>
+            <View ref={gameShareRef as any} style={styles.offscreen} pointerEvents="none">
+              <FullGameShareCard
+                boards={boards}
+                netChips={netChips}
+                isComplete={isComplete}
+                completeBonusAmount={completeBonusAmount}
+                potPerBoard={revealData.potPerBoard}
+                numberOfPlayers={numberOfPlayers}
+              />
+            </View>
+          </Animated.View>
+        )}
 
         {/* Efficiency analysis */}
         {efficiency && (
@@ -1084,6 +1195,67 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     textAlign: 'right',
+  },
+
+  // Share buttons
+  boardHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  shareBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
+  },
+  shareBtnText: {
+    fontSize: 13,
+  },
+  shareGameRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  shareGameBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.35)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  shareBtnLoading: {
+    opacity: 0.5,
+  },
+  shareGameBtnText: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  copyLinkBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  copyLinkText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  offscreen: {
+    position: 'absolute',
+    left: -9999,
+    top: 0,
+    opacity: 0,
+    zIndex: -1,
   },
 
   // Board result label
