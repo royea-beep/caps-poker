@@ -185,6 +185,62 @@ async function describeImage(mediaUrl: string): Promise<string> {
   return data.content?.[0]?.text ?? '';
 }
 
+// ── GitHub file fetcher ────────────────────────────────────────────────────
+
+async function fetchFileFromGitHub(repo: string, path: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/contents/${path}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3.raw',
+        },
+      },
+    );
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+const KEYWORD_FILES: Record<string, string[]> = {
+  'קלף':         ['components/Card.tsx'],
+  'card':         ['components/Card.tsx'],
+  'בורד':         ['components/Board.tsx'],
+  'board':        ['components/Board.tsx'],
+  'סאונד':        ['utils/sounds.ts'],
+  'sound':        ['utils/sounds.ts'],
+  'audio':        ['utils/sounds.ts'],
+  'quote':        ['components/ProQuoteBanner.tsx', 'constants/proQuotes.ts'],
+  'ציטוט':       ['components/ProQuoteBanner.tsx', 'constants/proQuotes.ts'],
+  'משפט':        ['components/ProQuoteBanner.tsx', 'constants/proQuotes.ts'],
+  'שחקן':        ['components/ProQuoteBanner.tsx'],
+  'complete':     ['components/CompleteOverlay.tsx'],
+  'reveal':       ['hooks/useRevealSequence.ts'],
+  'timer':        ['app/game.tsx'],
+  'tutorial':     ['components/Tutorial.tsx'],
+  'setting':      ['app/settings.tsx'],
+  'הגדר':        ['app/settings.tsx'],
+  'multiplayer':  ['utils/realtimeMultiplayer.ts'],
+  'lobby':        ['app/lobby/host.tsx', 'app/lobby/internet-join.tsx'],
+  'leaderboard':  ['app/leaderboard.tsx'],
+  'chip':         ['components/ChipsDisplay.tsx', 'utils/economy.ts'],
+  "צ'יפ":        ['components/ChipsDisplay.tsx', 'utils/economy.ts'],
+};
+
+function getRelevantFiles(message: string): string[] {
+  const files = new Set<string>();
+  const lower = message.toLowerCase();
+  for (const [keyword, paths] of Object.entries(KEYWORD_FILES)) {
+    if (lower.includes(keyword)) {
+      paths.forEach((p) => files.add(p));
+    }
+  }
+  return Array.from(files).slice(0, 3);
+}
+
 // ── Generate plan via Claude ────────────────────────────────────────────────
 
 interface ClaudePlan {
@@ -197,8 +253,44 @@ interface ClaudePlan {
   project?: string;
 }
 
-async function generatePlan(input: string, project: string): Promise<ClaudePlan> {
+async function generatePlan(
+  input: string,
+  project: string,
+  manifest: string | null,
+  relevantFileContents: string[],
+): Promise<ClaudePlan> {
   const stack = PROJECT_STACKS[project] ?? PROJECT_STACKS['caps-poker'];
+  const manifestSection = manifest
+    ? `PROJECT MANIFEST (source of truth — trust this over assumptions):\n${manifest}`
+    : 'PROJECT MANIFEST: Not available';
+  const filesSection = relevantFileContents.length > 0
+    ? `RELEVANT SOURCE FILES (actual code from the repo):\n${relevantFileContents.join('\n')}`
+    : 'RELEVANT SOURCE FILES: None fetched';
+
+  const systemPrompt = `You are a dev assistant for the project: ${project} (${stack}).
+
+${manifestSection}
+
+${filesSection}
+
+RULES:
+- Base your plan ONLY on what you see in the manifest and source files above
+- If a feature is described as "text only" in the manifest, do NOT suggest audio fixes
+- If you can't find evidence of something in the code, say so explicitly
+- Do NOT assume files or features exist — check the manifest first
+
+Analyze this bug report or feature request.
+CRITICAL: Respond ONLY in Hebrew (עברית). All text in your response must be in Hebrew.
+Respond in this EXACT format (no extra text):
+TYPE: BUG|FEATURE|QUESTION
+SUMMARY: (תיאור קצר בעברית, עד 100 תווים)
+SEVERITY: CRITICAL|MEDIUM|LOW
+(CRITICAL = קריסה/שבירת gameplay, MEDIUM = בעיית UX/ויזואל, LOW = שיפור/polish)
+PLAN:
+1. (שינוי 1 בעברית)
+2. (שינוי 2 בעברית)
+FILES: file1.tsx, file2.ts
+EFFORT: LOW|MEDIUM|HIGH`;
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -210,19 +302,7 @@ async function generatePlan(input: string, project: string): Promise<ClaudePlan>
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
-      system: `You are a dev assistant for the project: ${project} (${stack}). Analyze this bug report or feature request.
-CRITICAL: Respond ONLY in Hebrew (עברית). All text in your response must be in Hebrew.
-IMPORTANT: Only reference features and files that actually exist in the codebase. Do not assume features exist if they are not mentioned.
-Respond in this EXACT format (no extra text):
-TYPE: BUG|FEATURE|QUESTION
-SUMMARY: (תיאור קצר בעברית, עד 100 תווים)
-SEVERITY: CRITICAL|MEDIUM|LOW
-(CRITICAL = קריסה/שבירת gameplay, MEDIUM = בעיית UX/ויזואל, LOW = שיפור/polish)
-PLAN:
-1. (שינוי 1 בעברית)
-2. (שינוי 2 בעברית)
-FILES: file1.tsx, file2.ts
-EFFORT: LOW|MEDIUM|HIGH`,
+      system: systemPrompt,
       messages: [{ role: 'user', content: input }],
     }),
   });
@@ -491,9 +571,23 @@ serve(async (req: Request) => {
   const project = detectProject(inputText);
   console.log('[whatsapp-bot] Detected project:', project);
 
+  // Fetch manifest + relevant source files for code-aware plan generation
+  const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
+  const [manifest, ...fetchedFiles] = await Promise.all([
+    fetchFileFromGitHub(repo, 'docs/PROJECT_MANIFEST.md'),
+    ...getRelevantFiles(inputText).map(async (path) => {
+      const content = await fetchFileFromGitHub(repo, path);
+      if (!content) return null;
+      const truncated = content.split('\n').slice(0, 200).join('\n');
+      return `\n--- FILE: ${path} ---\n${truncated}`;
+    }),
+  ]);
+  const relevantFileContents = fetchedFiles.filter((f): f is string => f !== null);
+  console.log('[whatsapp-bot] Manifest fetched:', !!manifest, '| Files:', relevantFileContents.length);
+
   let plan: ClaudePlan;
   try {
-    plan = await generatePlan(inputText, project);
+    plan = await generatePlan(inputText, project, manifest, relevantFileContents);
   } catch {
     await sendWhatsApp(from, '❌ שגיאה ב-Claude API. נסה שוב בעוד רגע.');
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
