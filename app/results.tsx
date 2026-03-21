@@ -37,6 +37,9 @@ import ProQuoteBanner from '../components/ProQuoteBanner';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
+
 // Animation timing
 const BOARD_STAGGER = 250;
 const BOARD_FADE = 350;
@@ -177,6 +180,9 @@ export default function ResultsScreen() {
           3,
           false,
         );
+        setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 0);
+        setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 400);
+        setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 800);
         setTimeout(() => setShowComplete(true), 1200);
       } else {
         setShowButtons(true);

@@ -461,11 +461,11 @@ export default function HomeScreen() {
           </View>
           <View style={styles.linkRow}>
             <Pressable onPress={() => router.push('/leaderboard' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>LEADERBOARD</Text>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>LEADERBOARD</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>HISTORY</Text>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>HAND HISTORY</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => setShowTutorial(true)} hitSlop={8} style={styles.linkItem}>
