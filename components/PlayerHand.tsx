@@ -1,17 +1,72 @@
 import React, { useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
 import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 import { WEB_MAX_WIDTH } from './WebContainer';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
+import { playSound } from '../utils/sounds';
 
 interface PlayerHandProps {
   cards: Card[];
   selectedCardIds?: string[];
   onSelectCard: (card: Card) => void;
+}
+
+// Per-card animated slot — each mounts with its own deal animation
+function AnimatedCardSlot({
+  card,
+  index,
+  selIndex,
+  onSelectCard,
+  cardW,
+  cardH,
+}: {
+  card: Card;
+  index: number;
+  selIndex: number;
+  onSelectCard: (card: Card) => void;
+  cardW: number;
+  cardH: number;
+}) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(-200);
+
+  useEffect(() => {
+    const delay = index * 60;
+    opacity.value = withDelay(delay, withTiming(1, { duration: 280 }));
+    translateY.value = withDelay(
+      delay,
+      withTiming(0, { duration: 280 }, (finished) => {
+        // Play cardPlace sound every 4 cards (enough to feel like a deal, not spammy)
+        if (finished && index % 4 === 0) runOnJS(playSound)('cardPlace');
+      }),
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const isSelected = selIndex >= 0;
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={() => onSelectCard(card)}
+        style={[styles.cardWrapper, isSelected && styles.selected]}
+      >
+        <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
+        {isSelected && (
+          <View style={styles.selBadge}>
+            <Text style={styles.selBadgeText}>{selIndex + 1}</Text>
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
+  );
 }
 
 export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
@@ -36,43 +91,21 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
   const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
 
-  // Deal animation: cards slide up + fade in on mount
-  const dealOpacity = useSharedValue(0);
-  const dealTranslateY = useSharedValue(12);
-  useEffect(() => {
-    dealOpacity.value = withTiming(1, { duration: 350 });
-    dealTranslateY.value = withTiming(0, { duration: 280 });
-  }, []);
-  const dealStyle = useAnimatedStyle(() => ({
-    opacity: dealOpacity.value,
-    transform: [{ translateY: dealTranslateY.value }],
-  }));
-
   const midpoint = Math.ceil(cards.length / 2);
   const topRow = cards.slice(0, midpoint);
   const bottomRow = cards.slice(midpoint);
 
-  const renderCard = (card: Card) => {
-    const selIndex = selectedCardIds.indexOf(card.id);
-    const isSelected = selIndex >= 0;
-    return (
-      <Pressable
-        key={card.id}
-        onPress={() => onSelectCard(card)}
-        style={[
-          styles.cardWrapper,
-          isSelected && styles.selected,
-        ]}
-      >
-        <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
-        {isSelected && (
-          <View style={styles.selBadge}>
-            <Text style={styles.selBadgeText}>{selIndex + 1}</Text>
-          </View>
-        )}
-      </Pressable>
-    );
-  };
+  const renderCard = (card: Card, globalIndex: number) => (
+    <AnimatedCardSlot
+      key={card.id}
+      card={card}
+      index={globalIndex}
+      selIndex={selectedCardIds.indexOf(card.id)}
+      onSelectCard={onSelectCard}
+      cardW={cardW}
+      cardH={cardH}
+    />
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.surface, borderTopColor: theme.boardBorder }]}>
@@ -83,24 +116,24 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
         </View>
       </View>
       {cards.length > 0 ? (
-        <Animated.View style={[styles.grid, dealStyle]}>
+        <View style={styles.grid}>
           {useTwoRows ? (
             <>
               <View style={styles.row}>
-                {topRow.map(renderCard)}
+                {topRow.map((card, i) => renderCard(card, i))}
               </View>
               {bottomRow.length > 0 && (
                 <View style={styles.row}>
-                  {bottomRow.map(renderCard)}
+                  {bottomRow.map((card, i) => renderCard(card, midpoint + i))}
                 </View>
               )}
             </>
           ) : (
             <View style={styles.webRow}>
-              {cards.map(renderCard)}
+              {cards.map((card, i) => renderCard(card, i))}
             </View>
           )}
-        </Animated.View>
+        </View>
       ) : (
         <View style={styles.emptyRow}>
           <Text style={styles.emptyText}>All cards placed!</Text>

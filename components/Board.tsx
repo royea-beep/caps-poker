@@ -82,8 +82,8 @@ function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 300 });
-    translateY.value = withTiming(-16, { duration: 1200 });
-    opacity.value = withDelay(800, withTiming(0, { duration: 400 }));
+    translateY.value = withTiming(-40, { duration: 1200 });
+    opacity.value = withDelay(700, withTiming(0, { duration: 500 }));
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -92,7 +92,7 @@ function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 
   }));
 
   const text = winner === 'tie' ? '\u00b10' : winner === 'player' ? `+${amount}` : `-${amount}`;
-  const color = winner === 'player' ? COLORS.neonGreen : winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
+  const color = winner === 'player' ? '#FFD700' : winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
 
   return (
     <Animated.Text style={[styles.floatingChips, { color }, animStyle]}>
