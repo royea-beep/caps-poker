@@ -7,6 +7,7 @@ import { useGameStore } from '../../store/gameStore';
 import { COLORS } from '../../constants/gameConfig';
 import { RealtimeClient, isOnlineMultiplayerAvailable, GameStateSnapshot } from '../../utils/realtimeMultiplayer';
 import { CapsHooks } from '../../utils/learning';
+import ProQuoteBanner from '../../components/ProQuoteBanner';
 
 export default function InternetJoinScreen() {
   const router = useRouter();
@@ -181,6 +182,7 @@ export default function InternetJoinScreen() {
               </View>
             ))}
             <Text style={styles.statusText}>Waiting for host to start...</Text>
+            <ProQuoteBanner context="waiting" rotating rotateInterval={6000} />
           </>
         )}
 
