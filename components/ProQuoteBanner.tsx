@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   withSequence,
   withRepeat,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PRO_QUOTES, getRandomQuote, ProQuote } from '../constants/proQuotes';
@@ -128,8 +129,10 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
         -1, true,
       );
     } else {
+      cancelAnimation(speakerPulse);
       speakerPulse.value = withTiming(1, { duration: 200 });
     }
+    return () => { cancelAnimation(speakerPulse); };
   }, [isPlayingVoice]);
 
   // Play voice on quote change

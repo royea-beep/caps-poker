@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   withSequence,
   withDelay,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Badge } from './Badge';
@@ -152,8 +153,10 @@ export default function Board({
         -1,
       );
     } else {
+      cancelAnimation(pulseValue);
       pulseValue.value = withTiming(0, { duration: 200 });
     }
+    return () => { cancelAnimation(pulseValue); };
   }, [active]);
 
   const pulseStyle = useAnimatedStyle(() => {

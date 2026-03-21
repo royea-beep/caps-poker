@@ -9,9 +9,11 @@ import Animated, {
   withSequence,
   withTiming,
   FadeIn,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
@@ -132,8 +134,10 @@ function TimerBar({ countdown, total, color }: { countdown: number; total: numbe
         -1, false,
       );
     } else {
+      cancelAnimation(pulseOpacity);
       pulseOpacity.value = withTiming(1, { duration: 100 });
     }
+    return () => { cancelAnimation(pulseOpacity); };
   }, [countdown <= 3]);
 
   const barStyle = useAnimatedStyle(() => ({
@@ -170,7 +174,7 @@ const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical
 const HINT_H = 26;             // selectionHint / boardError bar
 const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + header(18) + cardRow gaps(6) + margins
 
-export default function GameScreen() {
+function GameScreenInner() {
   const router = useRouter();
   const { height: SCREEN_H, width: screenW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -1350,3 +1354,11 @@ const landscapeStyles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+export default function GameScreen() {
+  return (
+    <ErrorBoundary>
+      <GameScreenInner />
+    </ErrorBoundary>
+  );
+}
