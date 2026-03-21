@@ -14,7 +14,7 @@ import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
-import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE, getCardDimensions } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import {
@@ -151,13 +151,14 @@ export default function GameScreen() {
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   // Mobile web card height scales with board count — more boards = tighter = needs clarity boost
   const mobileWebCardH = CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60;
-  const communityScale = CARD_SCALE[numberOfPlayers]?.communityScale ?? 1.1;
+  const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
+  const communityScale = nativeCardDims.communityScale;
   const BOARD_CARD_H = rv(
     screenW,
-    mobileWebCardH, // mobile web (iPhone Safari) — now board-count aware
-    72,             // tablet web
-    100,            // desktop web
-    Math.max(32, Math.min(92, Math.floor(boardSpace / 2))),  // native – min 32, max raised to 92
+    mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
+    72,                          // tablet web
+    100,                         // desktop web
+    nativeCardDims.cardHeight,   // native — width-based, readable on all iPhones
   );
   const isWeb = Platform.OS === 'web';
 

@@ -70,8 +70,8 @@ export default function CardComponent({
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
 
-  const cornerRankSize = Math.floor(height * 0.165);
-  const cornerSuitSize = Math.floor(height * 0.11);
+  const cornerRankSize = Math.max(10, Math.floor(height * 0.165));
+  const cornerSuitSize = Math.max(8, Math.floor(height * 0.11));
   const centerRankSize = Math.floor(height * 0.42);
   const centerSuitSize = Math.floor(height * 0.32);
 

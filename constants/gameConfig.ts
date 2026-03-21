@@ -64,5 +64,28 @@ export const CARD_SCALE: Record<number, { cardHeight: number; communityScale: nu
   4: { cardHeight: 74, communityScale: 1.1  },  // 2 boards — most space
 };
 
+/**
+ * Responsive card sizing for native — derived from screen width so cards are
+ * readable on ALL iPhones (375pt SE/mini through 430pt Plus/Max).
+ *
+ * Width-based approach: fit 5 community cards in a row with realistic overhead,
+ * then scale player card height proportionally.
+ *
+ * overhead breakdown:
+ *   boardsColumn paddingHorizontal(16×2=32) + pressableInner padding(16) +
+ *   rowLabel width(20) + 4 card gaps(6×4=24) + separator(~8) = 100px
+ */
+export function getCardDimensions(
+  screenWidth: number,
+  numberOfPlayers: 2 | 3 | 4,
+): { cardHeight: number; cardWidth: number; communityScale: number } {
+  const communityScale = CARD_SCALE[numberOfPlayers]?.communityScale ?? 1.1;
+  const overhead = 100;
+  const commW = Math.floor((screenWidth - overhead) / 5);
+  const commH = Math.round(commW / 0.7);
+  const cardH = Math.max(38, Math.min(88, Math.round(commH / communityScale)));
+  return { cardHeight: cardH, cardWidth: Math.round(cardH * 0.7), communityScale };
+}
+
 // Re-export for backward compatibility
 export const COLORS = THEME.colors;
