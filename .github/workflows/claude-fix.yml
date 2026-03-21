@@ -2,7 +2,7 @@ name: Claude Auto-Fix
 
 on:
   repository_dispatch:
-    types: [claude-fix]
+    types: [claude-fix-no-build, claude-fix-and-deploy, claude-fix]
 
 permissions:
   contents: write
@@ -45,13 +45,24 @@ jobs:
 
           Execute the plan. Fix the issue. Run tsc --noEmit after. Commit with message: fix: $SUMMARY [auto-fix]" --dangerously-skip-permissions
 
-      - name: Commit and push if changes
+      - name: Commit and push
         run: |
           git config user.email "claude-bot@caps-poker.app"
           git config user.name "Claude Bot"
           git add -A
-          git diff --staged --quiet || git commit -m "fix: ${{ github.event.client_payload.summary }} [auto-fix]"
-          git push
+          EVENT_TYPE="${{ github.event.action }}"
+          SUMMARY="${{ github.event.client_payload.summary }}"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          elif [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
+            # [skip ci] prevents ios-testflight.yml from triggering
+            git commit -m "fix: $SUMMARY [auto-fix][skip ci]"
+            git push
+          else
+            # claude-fix-and-deploy or legacy claude-fix — allow full CI
+            git commit -m "fix: $SUMMARY [auto-fix]"
+            git push
+          fi
 
       - name: Deploy web to Vercel
         env:
@@ -83,8 +94,13 @@ jobs:
           COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
           STATUS="${{ job.status }}"
           SUMMARY="${{ github.event.client_payload.summary }}"
+          EVENT_TYPE="${{ github.event.action }}"
           if [ "$STATUS" = "success" ]; then
-            MSG="✅ תיקון הושלם! commit: $COMMIT — $SUMMARY"
+            if [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
+              MSG="✅ תיקון הושלם! commit: $COMMIT — $SUMMARY (לא עלתה גרסה)"
+            else
+              MSG="✅ תיקון הושלם! commit: $COMMIT — $SUMMARY (build ל-TestFlight בדרך...)"
+            fi
           else
             MSG="❌ תיקון נכשל. בדוק GitHub Actions לפרטים."
           fi

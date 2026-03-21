@@ -190,6 +190,7 @@ async function describeImage(mediaUrl: string): Promise<string> {
 interface ClaudePlan {
   type: 'BUG' | 'FEATURE' | 'QUESTION';
   summary: string;
+  severity: 'CRITICAL' | 'MEDIUM' | 'LOW';
   plan: string[];
   files: string[];
   effort: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -211,9 +212,12 @@ async function generatePlan(input: string, project: string): Promise<ClaudePlan>
       max_tokens: 1024,
       system: `You are a dev assistant for the project: ${project} (${stack}). Analyze this bug report or feature request.
 CRITICAL: Respond ONLY in Hebrew (עברית). All text in your response must be in Hebrew.
+IMPORTANT: Only reference features and files that actually exist in the codebase. Do not assume features exist if they are not mentioned.
 Respond in this EXACT format (no extra text):
 TYPE: BUG|FEATURE|QUESTION
 SUMMARY: (תיאור קצר בעברית, עד 100 תווים)
+SEVERITY: CRITICAL|MEDIUM|LOW
+(CRITICAL = קריסה/שבירת gameplay, MEDIUM = בעיית UX/ויזואל, LOW = שיפור/polish)
 PLAN:
 1. (שינוי 1 בעברית)
 2. (שינוי 2 בעברית)
@@ -225,11 +229,12 @@ EFFORT: LOW|MEDIUM|HIGH`,
   const data = await res.json();
   const text: string = data.content?.[0]?.text ?? '';
 
-  const typeMatch = text.match(/TYPE:\s*(BUG|FEATURE|QUESTION)/);
-  const summaryMatch = text.match(/SUMMARY:\s*(.+)/);
-  const planMatch = text.match(/PLAN:\n([\s\S]*?)(?=FILES:|$)/);
-  const filesMatch = text.match(/FILES:\s*(.+)/);
-  const effortMatch = text.match(/EFFORT:\s*(LOW|MEDIUM|HIGH)/);
+  const typeMatch     = text.match(/TYPE:\s*(BUG|FEATURE|QUESTION)/);
+  const summaryMatch  = text.match(/SUMMARY:\s*(.+)/);
+  const severityMatch = text.match(/SEVERITY:\s*(CRITICAL|MEDIUM|LOW)/);
+  const planMatch     = text.match(/PLAN:\n([\s\S]*?)(?=FILES:|$)/);
+  const filesMatch    = text.match(/FILES:\s*(.+)/);
+  const effortMatch   = text.match(/EFFORT:\s*(LOW|MEDIUM|HIGH)/);
 
   const planLines = planMatch?.[1]
     ?.split('\n')
@@ -237,18 +242,49 @@ EFFORT: LOW|MEDIUM|HIGH`,
     .filter(Boolean) ?? [];
 
   return {
-    type: (typeMatch?.[1] ?? 'BUG') as ClaudePlan['type'],
-    summary: summaryMatch?.[1]?.trim() ?? 'Unknown issue',
-    plan: planLines,
-    files: (filesMatch?.[1] ?? '').split(',').map((f) => f.trim()).filter(Boolean),
-    effort: (effortMatch?.[1] ?? 'MEDIUM') as ClaudePlan['effort'],
+    type:     (typeMatch?.[1]     ?? 'BUG')    as ClaudePlan['type'],
+    summary:   summaryMatch?.[1]?.trim()        ?? 'Unknown issue',
+    severity: (severityMatch?.[1] ?? 'MEDIUM') as ClaudePlan['severity'],
+    plan:      planLines,
+    files:    (filesMatch?.[1]    ?? '').split(',').map((f) => f.trim()).filter(Boolean),
+    effort:   (effortMatch?.[1]   ?? 'MEDIUM') as ClaudePlan['effort'],
     project,
   };
 }
 
+// ── Count pending fixes since last deploy ──────────────────────────────────
+
+async function countPendingFixes(supabase: ReturnType<typeof createClient>, project: string): Promise<number> {
+  const { count } = await supabase
+    .from('deploy_tracker')
+    .select('*', { count: 'exact', head: true })
+    .eq('project', project)
+    .is('deployed_at', null);
+  return count ?? 0;
+}
+
+// ── Bot recommendation logic ───────────────────────────────────────────────
+
+function getBotRecommendation(severity: string, pendingFixes: number): { option: number; reason: string } {
+  if (severity === 'CRITICAL') {
+    return { option: 2, reason: 'באג קריטי — מומלץ לעדכן גרסה מיד' };
+  }
+  if (pendingFixes >= 5) {
+    return { option: 2, reason: `כבר ${pendingFixes} תיקונים ממתינים — מומלץ לעדכן גרסה` };
+  }
+  if (pendingFixes >= 3 && severity === 'MEDIUM') {
+    return { option: 2, reason: `${pendingFixes} תיקונים + באג בינוני — שווה לעדכן` };
+  }
+  return { option: 1, reason: 'תיקון קטן — שווה לצבור עוד לפני build חדש' };
+}
+
 // ── Trigger GitHub Actions ──────────────────────────────────────────────────
 
-async function triggerGitHubAction(plan: ClaudePlan, project: string): Promise<void> {
+async function triggerGitHubAction(
+  plan: ClaudePlan,
+  project: string,
+  eventType: 'claude-fix-no-build' | 'claude-fix-and-deploy',
+): Promise<void> {
   const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
   await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
     method: 'POST',
@@ -258,13 +294,14 @@ async function triggerGitHubAction(plan: ClaudePlan, project: string): Promise<v
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      event_type: 'claude-fix',
+      event_type: eventType,
       client_payload: {
-        summary: plan.summary,
-        plan: plan.plan.join('\n'),
-        files: plan.files.join(', '),
-        effort: plan.effort,
-        type: plan.type,
+        summary:  plan.summary,
+        plan:     plan.plan.join('\n'),
+        files:    plan.files.join(', '),
+        effort:   plan.effort,
+        severity: plan.severity,
+        type:     plan.type,
         project,
       },
     }),
@@ -273,26 +310,45 @@ async function triggerGitHubAction(plan: ClaudePlan, project: string): Promise<v
 
 // ── Format reply message ────────────────────────────────────────────────────
 
-function formatPlanReply(plan: ClaudePlan, transcript?: string): string {
+function formatPlanReply(
+  plan: ClaudePlan,
+  pendingFixes: number,
+  transcript?: string,
+): string {
   const typeEmoji = plan.type === 'BUG' ? '🐛' : plan.type === 'FEATURE' ? '✨' : '❓';
-  const typeHe = plan.type === 'BUG' ? 'באג' : plan.type === 'FEATURE' ? 'פיצ\'ר' : 'שאלה';
-  const effortHe = plan.effort === 'LOW' ? 'נמוך' : plan.effort === 'HIGH' ? 'גבוה' : 'בינוני';
+  const typeHe    = plan.type === 'BUG' ? 'באג' : plan.type === 'FEATURE' ? 'פיצ\'ר' : 'שאלה';
+  const effortHe  = plan.effort === 'LOW' ? 'נמוך' : plan.effort === 'HIGH' ? 'גבוה' : 'בינוני';
+  const sevEmoji  = plan.severity === 'CRITICAL' ? '🔴' : plan.severity === 'MEDIUM' ? '🟡' : '🟢';
+
   const planText = plan.plan.map((s, i) => `${i + 1}. ${s}`).join('\n');
   const projectDisplay = plan.project ?? 'caps-poker';
   const transcriptSection = transcript ? `🎤 שמעתי: "${transcript}"\n\n` : '';
+
+  const { option: recOption, reason: recReason } = getBotRecommendation(plan.severity, pendingFixes);
+  const recText = recOption === 1
+    ? `💡 המלצה: 1️⃣ (תיקון בלבד) — ${recReason}`
+    : `💡 המלצה: 2️⃣ (תיקון + build) — ${recReason}`;
+
   return `${transcriptSection}${typeEmoji} סוג: ${typeHe} | פרויקט: ${projectDisplay}
+חומרה: ${sevEmoji} ${plan.severity}
 
 ${plan.summary}
 
-תכנית:
+תוכנית:
 ${planText}
 
 קבצים: ${plan.files.join(', ')}
 מאמץ: ${effortHe}
 
-השב *1* לאישור ✅
-השב *2* לביטול ❌
-(מתבטל אוטומטית תוך 30 דקות)`;
+═══════════════════
+📊 תיקונים ממתינים מאז הגרסה האחרונה: ${pendingFixes}
+═══════════════════
+
+השב 1️⃣ לתיקון בלבד (commit, בלי build חדש)
+השב 2️⃣ לתיקון + build חדש ל-TestFlight
+השב 3️⃣ לביטול ❌
+
+${recText}`;
 }
 
 // ── Main handler ────────────────────────────────────────────────────────────
@@ -322,19 +378,20 @@ serve(async (req: Request) => {
     console.log('[whatsapp-bot] No signature header — sandbox mode');
   }
 
-  const from = params['From'] ?? '';
-  const msgBody = params['Body']?.trim() ?? '';
+  const from       = params['From'] ?? '';
+  const msgBody    = params['Body']?.trim() ?? '';
   const messageSid = params['MessageSid'] ?? '';
-  const numMedia = parseInt(params['NumMedia'] ?? '0', 10);
-  const mediaUrl = params['MediaUrl0'];
-  const mediaType = params['MediaContentType0'] ?? '';
+  const numMedia   = parseInt(params['NumMedia'] ?? '0', 10);
+  const mediaUrl   = params['MediaUrl0'];
+  const mediaType  = params['MediaContentType0'] ?? '';
 
-  // ── Handle APPROVE / CANCEL replies ──────────────────────────────────────
-  const upperBody = msgBody.trim().toUpperCase();
-  const isApprove = ['1', 'APPROVE', 'כן', 'אשר'].includes(upperBody);
-  const isCancel  = ['2', 'CANCEL',  'לא', 'בטל'].includes(upperBody);
+  // ── Handle approval replies ───────────────────────────────────────────────
+  const upperBody  = msgBody.trim().toUpperCase();
+  const isFixOnly  = ['1', 'FIX', 'תקן'].includes(upperBody);
+  const isFixBuild = ['2', 'BUILD', 'בנה', 'APPROVE', 'כן', 'אשר'].includes(upperBody);
+  const isCancel   = ['3', 'CANCEL', 'לא', 'בטל'].includes(upperBody);
 
-  if (isApprove || isCancel) {
+  if (isFixOnly || isFixBuild || isCancel) {
     const { data: session } = await supabase
       .from('whatsapp_sessions')
       .select('*')
@@ -355,12 +412,38 @@ serve(async (req: Request) => {
       return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
     }
 
-    // APPROVE
-    await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
-    const plan = session.claude_plan as ClaudePlan;
+    const plan    = session.claude_plan as ClaudePlan;
     const project = plan.project ?? 'caps-poker';
-    await triggerGitHubAction(plan, project);
-    await sendWhatsApp(from, `⚙️ מריץ תיקון על ${project}... אעדכן אותך כשהcommit יעלה.`);
+
+    if (isFixOnly) {
+      // Fix only — no EAS build
+      await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
+      await triggerGitHubAction(plan, project, 'claude-fix-no-build');
+      // Track in deploy_tracker
+      await supabase.from('deploy_tracker').insert({
+        project,
+        fix_summary: plan.summary,
+        severity:    plan.severity ?? 'MEDIUM',
+        session_id:  session.id,
+      });
+      const pending = await countPendingFixes(supabase, project);
+      await sendWhatsApp(from, `⚙️ תיקון בביצוע על ${project}. לא עולה גרסה.\n(סה״כ ${pending} תיקונים ממתינים)`);
+    } else {
+      // Fix + build + deploy
+      await supabase.from('whatsapp_sessions').update({ status: 'approved' }).eq('id', session.id);
+      await triggerGitHubAction(plan, project, 'claude-fix-and-deploy');
+      // Count pending before marking deployed
+      const pendingBefore = await countPendingFixes(supabase, project);
+      const totalDeployed = pendingBefore + 1; // +1 for current fix
+      // Mark all pending as deployed
+      await supabase
+        .from('deploy_tracker')
+        .update({ deployed_at: new Date().toISOString() })
+        .eq('project', project)
+        .is('deployed_at', null);
+      await sendWhatsApp(from, `🚀 תיקון + build חדש ל-TestFlight!\n(${totalDeployed} תיקונים עולים בגרסה הזאת)`);
+    }
+
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
@@ -416,6 +499,9 @@ serve(async (req: Request) => {
     return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
   }
 
+  // ── Count pending fixes ───────────────────────────────────────────────────
+  const pendingFixes = await countPendingFixes(supabase, project);
+
   // ── Auto-cancel any existing pending sessions for this user ──────────────
   await supabase
     .from('whatsapp_sessions')
@@ -425,16 +511,16 @@ serve(async (req: Request) => {
 
   // ── Store session ─────────────────────────────────────────────────────────
   await supabase.from('whatsapp_sessions').insert({
-    message_sid: messageSid,
-    from_number: from,
-    raw_input: inputText,
-    media_type: detectedMediaType,
-    claude_plan: plan,
-    status: 'pending_approval',
+    message_sid:  messageSid,
+    from_number:  from,
+    raw_input:    inputText,
+    media_type:   detectedMediaType,
+    claude_plan:  plan,
+    status:       'pending_approval',
   });
 
   // ── Send reply ────────────────────────────────────────────────────────────
-  await sendWhatsApp(from, formatPlanReply(plan, audioTranscript));
+  await sendWhatsApp(from, formatPlanReply(plan, pendingFixes, audioTranscript));
 
   return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
 });
