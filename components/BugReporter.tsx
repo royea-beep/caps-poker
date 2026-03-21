@@ -111,20 +111,46 @@ async function submitBugReport(
       'Content-Type': 'application/json',
       apikey: key,
       Authorization: `Bearer ${key}`,
-      Prefer: 'return=minimal',
+      Prefer: 'return=headers-only',
     },
     body: JSON.stringify(row),
   });
 
   if (!res.ok) throw new Error(`${res.status}`);
-  // Sync to Google Drive via Edge Function (fire-and-forget, with screenshot if available)
+
+  // Get inserted ID from location header (Prefer: return=headers-only)
+  const location = res.headers.get('location') || '';
+  const idMatch = location.match(/id=eq\.([^&]+)/);
+  const bugReportId = idMatch ? idMatch[1] : null;
+
+  // Call analyze-bug-report Edge Function (fire-and-forget)
+  fetch(`${url}/functions/v1/analyze-bug-report`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: key,
+    },
+    body: JSON.stringify({
+      bug_report_id: bugReportId,
+      description: `${title}${description ? ' — ' + description : ''}`,
+      report_type: 'text',
+      tester_name: 'Anonymous',
+      app_version: VERSION,
+      language: 'he',
+      project_name: 'Caps',
+      github_repo: 'royea-beep/caps',
+      breadcrumbs: [],
+      base_url: 'https://caps.ftable.co.il',
+    }),
+  }).catch(() => {});
+
+  // Sync to Google Drive (fire-and-forget)
   const drivePayload: Record<string, string> = {
     description: `${title}${description ? ' — ' + description : ''}`,
     severity: 'medium',
     page: screen,
     timestamp: new Date().toISOString(),
   };
-  // Read screenshot file and convert to base64 data URI for Drive upload
   if (typeof globalThis.__bugReporterScreenshot === 'string') {
     try {
       const fs = await import('expo-file-system');
@@ -163,11 +189,12 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     path.startsWith('/lobby');
   const fabBottom = pathname === '/' ? insets.bottom + 60 : insets.bottom + 16;
 
-  // Test ping on mount — confirms BugReporter + Supabase connection is working on this device
+  // Dev-only ping on mount — confirms Supabase connection (disabled in production to avoid junk rows)
   useEffect(() => {
+    if (!__DEV__) return;
     submitBugReport(
       `[ping] app opened v${typeof VERSION === 'string' ? VERSION : '?'}`,
-      '',
+      '[dev ping — not a real bug]',
       'mount',
     ).catch(() => {});
   }, []);
