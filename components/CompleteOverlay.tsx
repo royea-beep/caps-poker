@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
+import ProQuoteBanner from './ProQuoteBanner';
 
 // Lazy-load expo-haptics
 let Haptics: any = null;
@@ -27,7 +28,7 @@ interface CompleteOverlayProps {
   onDone: () => void;
 }
 
-const NUM_PARTICLES = 20;
+const NUM_PARTICLES = 40;
 
 const PARTICLE_COLORS = [
   COLORS.gold,
@@ -86,9 +87,17 @@ function Particle({ index }: { index: number }) {
 }
 
 export default function CompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
+  const flashOpacity = useSharedValue(0);
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flashOpacity.value }));
+
   // Timer-based auto-dismiss
   useEffect(() => {
     playSound('complete');
+    // Screen flash
+    flashOpacity.value = withSequence(
+      withTiming(0.7, { duration: 80 }),
+      withTiming(0, { duration: 220 }),
+    );
 
     // Haptics celebration sequence: heavy → medium → light
     if (Haptics) {
@@ -151,6 +160,8 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
 
   return (
     <View style={styles.overlay}>
+      {/* Screen flash */}
+      <Animated.View style={[StyleSheet.absoluteFillObject, styles.flashLayer, flashStyle]} pointerEvents="none" />
       {/* Particles */}
       <View style={styles.particleContainer}>
         {Array.from({ length: NUM_PARTICLES }).map((_, i) => (
@@ -174,6 +185,11 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
           <Text style={styles.bonusAmount}>{bonusAmount}</Text>
           <View style={styles.bonusChip} />
         </Animated.View>
+        {winner === 'player' && (
+          <Animated.View style={[{ marginTop: 16, width: '100%' }, bonusStyle]}>
+            <ProQuoteBanner context="complete" />
+          </Animated.View>
+        )}
       </View>
     </View>
   );
@@ -208,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   completeText: {
-    fontSize: 52,
+    fontSize: 58,
     fontWeight: '900',
     color: COLORS.goldLight,
     letterSpacing: 6,
@@ -268,5 +284,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gold,
     borderWidth: 2,
     borderColor: COLORS.background,
+  },
+  flashLayer: {
+    backgroundColor: '#FFFFFF',
+    zIndex: 200,
   },
 });

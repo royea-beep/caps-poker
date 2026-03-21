@@ -14,7 +14,7 @@ import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
-import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import {
@@ -28,6 +28,7 @@ import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
+import ProQuoteBanner from '../components/ProQuoteBanner';
 import { rv } from '../constants/deviceBreakpoints';
 import { OrientationType } from '../store/gameStore';
 
@@ -140,11 +141,14 @@ export default function GameScreen() {
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  // Mobile web card height scales with board count — more boards = tighter = needs clarity boost
+  const mobileWebCardH = CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60;
+  const communityScale = CARD_SCALE[numberOfPlayers]?.communityScale ?? 1.1;
   const BOARD_CARD_H = rv(
     screenW,
-    56,   // mobile web (iPhone Safari)
-    72,   // tablet web
-    100,  // desktop web
+    mobileWebCardH, // mobile web (iPhone Safari) — now board-count aware
+    72,             // tablet web
+    100,            // desktop web
     Math.max(32, Math.min(92, Math.floor(boardSpace / 2))),  // native – min 32, max raised to 92
   );
   const isWeb = Platform.OS === 'web';
@@ -698,6 +702,7 @@ export default function GameScreen() {
                   isArrangement={isArranging}
                   selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
                   cardHeight={BOARD_CARD_H}
+                  communityScale={communityScale}
                 />
               </Animated.View>
             ))}
@@ -820,6 +825,7 @@ export default function GameScreen() {
               isArrangement={isArranging}
               selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
               cardHeight={BOARD_CARD_H}
+              communityScale={communityScale}
             />
           </Animated.View>
         ))}
@@ -854,6 +860,11 @@ export default function GameScreen() {
             ? boardError
             : `${selectedCardIds.length} card${selectedCardIds.length !== 1 ? 's' : ''} selected — tap a board`}
         </Text>
+      )}
+
+      {/* Pro quote tip during arrangement — strategy hints */}
+      {isArranging && !boardError && selectedCardIds.length === 0 && (
+        <ProQuoteBanner context="tutorial" />
       )}
 
       {/* Floating action buttons */}
