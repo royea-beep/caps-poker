@@ -326,6 +326,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       <FriendsBg />
+      {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
       {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
 
@@ -343,7 +344,7 @@ export default function HomeScreen() {
           </Text>
           <Text
             style={[
-              styles.title,
+              styles.titleCaps,
               { color: theme.titleColor, fontSize: titleFontSize },
               DISPLAY_FONT ? { fontFamily: DISPLAY_FONT } : {},
               webTitleGradient,
@@ -351,7 +352,10 @@ export default function HomeScreen() {
             numberOfLines={1}
             adjustsFontSizeToFit
           >
-            CAPS POKER
+            CAPS
+          </Text>
+          <Text style={[styles.titlePoker, { color: theme.subtitleColor }]}>
+            POKER
           </Text>
           <Animated.Text
             style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
@@ -513,6 +517,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  gradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0,
+    pointerEvents: 'none',
+    ...Platform.select({
+      web: {
+        backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.25) 100%)',
+      } as any,
+      default: {},
+    }),
+  },
   grainOverlay: {
     position: 'absolute',
     top: 0,
@@ -544,33 +563,42 @@ const styles = StyleSheet.create({
   // Title
   titleSection: {
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   suitSymbols: {
-    fontSize: 14,
-    letterSpacing: 8,
-    opacity: 0.7,
-    marginBottom: 2,
+    fontSize: 16,
+    letterSpacing: 10,
+    opacity: 0.6,
+    marginBottom: 4,
   },
-  title: {
+  titleCaps: {
     fontWeight: '900',
-    letterSpacing: 2,
+    letterSpacing: 8,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    textShadowRadius: 24,
+  },
+  titlePoker: {
+    fontSize: 13,
+    fontWeight: '400',
+    letterSpacing: 16,
+    textTransform: 'uppercase',
+    opacity: 0.55,
+    marginTop: -2,
+    marginBottom: 2,
   },
   titleSub: {
     fontSize: 11,
     fontWeight: '400',
     letterSpacing: 1.5,
-    marginTop: 2,
+    marginTop: 6,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
   titleDivider: {
-    width: 120,
+    width: 80,
     height: 1,
-    marginTop: 12,
-    opacity: 0.5,
+    marginTop: 10,
+    opacity: 0.4,
   },
 
   // Stats
