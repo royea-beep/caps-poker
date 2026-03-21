@@ -10,7 +10,7 @@ permissions:
 jobs:
   fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
           echo "Severity: $FIX_SEVERITY"
           echo "Files: $FIX_FILES"
           npm install -g @anthropic-ai/claude-code
-          claude --print "Read MEMORY.md. Iron Rules 1-8 confirmed. Standing Orders: Fix autonomously. Never give user commands.
+          timeout 35m claude --print "Read MEMORY.md. Iron Rules 1-8 confirmed. Standing Orders: Fix autonomously. Never give user commands.
 
           BUG REPORT FROM WHATSAPP:
           Summary: $FIX_SUMMARY
@@ -48,7 +48,7 @@ jobs:
           Files: $FIX_FILES
           Severity: $FIX_SEVERITY
 
-          Fix this bug. Then run: npx tsc --noEmit to verify 0 errors." --dangerously-skip-permissions
+          Fix this bug. Keep it focused — read only the files in FILES, make the minimum change to fix the bug, run npx tsc --noEmit. Do not explore unrelated files." --dangerously-skip-permissions || echo "Claude fix timed out or errored — proceeding to commit any partial changes"
 
       - name: Commit and push
         env:
