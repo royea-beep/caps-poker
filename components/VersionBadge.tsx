@@ -1,18 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { rf, rs } from '../utils/responsive';
 import Constants from 'expo-constants';
 
 const version = Constants.expoConfig?.version ?? '?';
 const build = Constants.expoConfig?.extra?.buildNumber ?? Constants.expoConfig?.ios?.buildNumber ?? '?';
-const isBeta = Constants.expoConfig?.extra?.isBeta === true;
+
+function getOtaInfo(): string {
+  if (Platform.OS === 'web') return '';
+  try {
+    const Updates = require('expo-updates');
+    if (Updates.isEmbeddedLaunch) return 'build';
+    const id: string | null = Updates.updateId ?? null;
+    return id ? `OTA:${id.slice(0, 8)}` : 'OTA:?';
+  } catch {
+    return '';
+  }
+}
+
+// Computed once at module init (expo-updates is ready before JS runs)
+const otaInfo = getOtaInfo();
 
 export function VersionBadge() {
-  if (!__DEV__ && !isBeta) return null;
+  // Always show — lets us confirm OTA status in TestFlight + production
+  // Badge is extremely subtle (opacity 0.22) so real users won't notice
   return (
-    <View style={[styles.badge, { pointerEvents: 'none' }]}>
+    <View style={[styles.badge, { pointerEvents: 'none' } as any]}>
       <Text style={styles.text}>
-        v{version} ({build})
+        v{version} ({build}){otaInfo ? ` | ${otaInfo}` : ''}
       </Text>
     </View>
   );

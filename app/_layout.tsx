@@ -123,13 +123,17 @@ export default function RootLayout() {
     if (!__DEV__ && Platform.OS !== 'web') {
       (async () => {
         try {
+          console.log('[OTA] checking... isEmbedded:', Updates.isEmbeddedLaunch, 'updateId:', Updates.updateId?.slice(0, 8) ?? 'none');
           const update = await Updates.checkForUpdateAsync();
+          console.log('[OTA] isAvailable:', update.isAvailable);
           if (update.isAvailable) {
+            console.log('[OTA] fetching update...');
             await Updates.fetchUpdateAsync();
+            console.log('[OTA] reloading app...');
             await Updates.reloadAsync();
           }
-        } catch {
-          // Silent — never crash the app for a failed update check
+        } catch (e) {
+          console.log('[OTA] check failed (non-fatal):', String(e));
         }
       })();
     }

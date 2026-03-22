@@ -51,5 +51,18 @@ jobs:
         env:
           EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
 
+      - name: Log build to Supabase deploy_log
+        if: always()
+        run: |
+          VERSION=$(node -e "console.log(require('./app.json').expo.version)" 2>/dev/null || echo "?")
+          BUILD=$(node -e "console.log(require('./app.json').expo.extra?.buildNumber || '?')" 2>/dev/null || echo "?")
+          STATUS="${{ job.status }}"
+          curl -s -X POST "${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}/rest/v1/deploy_log" \
+            -H "apikey: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"type\":\"build\",\"version\":\"${VERSION}\",\"build_number\":\"${BUILD}\",\"commit_hash\":\"${{ github.sha }}\",\"message\":\"${{ github.event.head_commit.message }} [${STATUS}]\"}" \
+            > /dev/null || echo "Supabase log failed (non-fatal)"
+
       # Web deploy: handled by Vercel native GitHub integration (auto-deploys on push)
       # No token needed. vercel.json in repo root configures the build.
