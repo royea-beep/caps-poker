@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, InteractionManager } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -273,6 +273,7 @@ function GameScreenInner() {
   const boardsRef = useRef(boards);
   const [showContinueButton, setShowContinueButton] = useState(false);
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
+  const hasNavigatedRef = useRef(false);
 
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
@@ -429,56 +430,43 @@ function GameScreenInner() {
     }
   }, []);
 
-  // Navigate to reveal when all ready (player + bots)
-  const navigateToReveal = useCallback((currentBoards: BoardState[]) => {
-    console.log('[navigateToReveal] called — mountedRef:', mountedRef.current, 'boards:', currentBoards.length);
-    if (!mountedRef.current) {
-      console.warn('[navigateToReveal] aborted — component unmounted');
-      return;
+  // Navigate to reveal — DIRECT (no InteractionManager, no async chain)
+  // Called as soon as both player and all bots are ready.
+  const doNavigate = useCallback((currentBoards: BoardState[]) => {
+    if (hasNavigatedRef.current || !mountedRef.current) return;
+    hasNavigatedRef.current = true;
+
+    debugLog('🚀 doNavigate: START');
+    void logStep('doNavigate_start');
+
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
     }
 
-    // Run AFTER all pending animations/interactions settle — prevents Reanimated worklet crash
-    // when JS thread gets blocked by hand evaluation during active animations
-    InteractionManager.runAfterInteractions(() => {
-    if (!mountedRef.current) {
-      console.warn('[navigateToReveal] aborted after InteractionManager — component unmounted');
-      return;
-    }
-
-    void logStep('A:interactionManager_done');
-    debugLog('A: InteractionManager done');
+    void logStep('A:start_calculate');
+    debugLog('A: calculating');
 
     let results;
     try {
       if (precalculatedResultsRef.current) {
-        console.log('[navigateToReveal] using pre-calculated results');
         results = precalculatedResultsRef.current;
         precalculatedResultsRef.current = null;
       } else {
-        console.log('[navigateToReveal] calculating results now (no pre-calc available)...');
         results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
       }
-      console.log('[navigateToReveal] results ready — playerChipsWon:', results.playerChipsWon);
     } catch (e) {
-      console.error('[navigateToReveal] calculateHandResultsMulti threw:', e);
-      void logStep('CRASH:calculateHandResultsMulti', String(e));
+      debugLog(`A: CRASH: ${String(e)}`, 'error');
+      void logStep('CRASH:A', String(e));
       router.replace('/');
       return;
     }
 
     void logStep('B:calculate_done', `boards=${currentBoards.length} won=${results.playerChipsWon}`);
-    debugLog(`B: calculate done — won=${results.playerChipsWon} complete=${results.isComplete}`);
+    debugLog(`B: done — won=${results.playerChipsWon}`);
 
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
       const result = results.boardResults[i];
-      const playerHighlightIds = result ? result.playerResult.playerCardsUsed.map((c) => c.id) : [];
-      const botHighlightIds = result ? result.botResult.playerCardsUsed.map((c) => c.id) : [];
-      const boardHighlightIds = result ? [
-        ...result.playerResult.boardCardsUsed.map((c) => c.id),
-        ...result.botResult.boardCardsUsed.map((c) => c.id),
-      ] : [];
-      const allBotHandNames = results.allBotResults[i]?.map((br) => br.name) || [];
-
       return {
         openCards: board.openCards,
         closedCards: board.closedCards,
@@ -487,16 +475,19 @@ function GameScreenInner() {
         winner: result ? result.winner : ('tie' as const),
         playerHandName: result?.playerResult.name || '',
         botHandName: result?.botResult.name || '',
-        allBotHandNames,
-        playerHighlightIds,
-        botHighlightIds,
-        boardHighlightIds,
+        allBotHandNames: results.allBotResults[i]?.map((br) => br.name) || [],
+        playerHighlightIds: result ? result.playerResult.playerCardsUsed.map((c) => c.id) : [],
+        botHighlightIds: result ? result.botResult.playerCardsUsed.map((c) => c.id) : [],
+        boardHighlightIds: result ? [
+          ...result.playerResult.boardCardsUsed.map((c) => c.id),
+          ...result.botResult.boardCardsUsed.map((c) => c.id),
+        ] : [],
         potAmount: config.potPerBoard * numberOfPlayers,
       };
     });
 
     void logStep('C:revealBoards_built');
-    debugLog(`C: revealBoards built (${revealBoards.length})`);
+    debugLog(`C: revealBoards (${revealBoards.length})`);
 
     addChips(results.playerChipsWon);
     void logStep('D:addChips_done');
@@ -520,65 +511,33 @@ function GameScreenInner() {
     debugLog('E: setRevealData done');
 
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
-    // Increment games-played counter for first-time hints
     AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
       const count = parseInt(val ?? '0', 10);
       AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
     }).catch(() => {});
 
     void logStep('F:before_router_replace');
-    debugLog('F: 🟡 router.replace /results START');
+    debugLog('F: router.replace /results');
     try {
       router.replace('/results' as any);
       void logStep('G:router_replace_called');
-      debugLog('G: 🟢 router.replace called OK');
-      console.log('[navigateToReveal] router.replace /results called OK');
+      debugLog('G: ✅ done');
     } catch (e) {
-      console.error('[navigateToReveal] router.replace /results threw:', e);
-      try {
-        console.log('[navigateToReveal] trying router.push /results...');
-        router.push('/results' as any);
-        console.log('[navigateToReveal] router.push /results called OK');
-      } catch (e2) {
-        console.error('[navigateToReveal] router.push also failed:', e2);
-      }
+      debugLog(`G: CRASH: ${String(e)}`, 'error');
+      try { router.push('/results' as any); } catch { /* ignore */ }
     }
-    }); // end InteractionManager.runAfterInteractions
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
-  // Keep navigateToReveal in a ref so the trigger effect has no stale-closure risk.
-  // Without this, Zustand config rehydration creates a new navigateToReveal reference,
-  // which re-runs the effect mid-navigation and can double-fire or miss the call entirely.
-  const navigateToRevealRef = useRef(navigateToReveal);
-  useEffect(() => { navigateToRevealRef.current = navigateToReveal; }, [navigateToReveal]);
+  // Keep doNavigate in a ref so bot timers always call the latest version
+  const doNavigateRef = useRef(doNavigate);
+  useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
 
-  // Log state changes for debugging
+  // When BOTH player and all bots are ready: navigate directly (no InteractionManager)
   useEffect(() => {
-    console.log('[GAME] playerReady changed:', playerReady);
-  }, [playerReady]);
-  useEffect(() => {
-    console.log('[GAME] allBotsReady changed:', allBotsReady, '| botsReady:', JSON.stringify(botsReady));
-  }, [allBotsReady]);
-
-  useEffect(() => {
-    console.log('[GAME] ready effect fired — playerReady:', playerReady, 'allBotsReady:', allBotsReady);
     if (!playerReady || !allBotsReady) return;
-    console.log('[GAME] both ready — starting navigation to reveal');
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
-    }
-    // Show fallback button after 3s in case auto-navigation fails
-    const fallbackTimer = setTimeout(() => {
-      if (mountedRef.current) {
-        console.log('[GAME] fallback button showing — auto-nav may have failed');
-        setShowContinueButton(true);
-      }
-    }, 3000);
-    navigateToRevealRef.current(boardsRef.current);
-    return () => clearTimeout(fallbackTimer);
+    doNavigateRef.current(boardsRef.current);
   }, [playerReady, allBotsReady]);
 
   // Tap card in hand → toggle in selectedCardIds (up to 4)
@@ -911,7 +870,7 @@ function GameScreenInner() {
             </Pressable>
           )}
           {playerReady && allBotsReady && showContinueButton && (
-            <Pressable style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => navigateToRevealRef.current(boardsRef.current)}>
+            <Pressable style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
               <Text style={styles.continueBtnText}>CONTINUE →</Text>
             </Pressable>
           )}
@@ -1022,8 +981,8 @@ function GameScreenInner() {
         <Pressable
           style={styles.continueBtn}
           onPress={() => {
-            console.log('[GAME] fallback button pressed — calling navigateToReveal manually');
-            navigateToRevealRef.current(boardsRef.current);
+            console.log('[GAME] fallback button pressed — calling doNavigate manually');
+            doNavigateRef.current(boardsRef.current);
           }}
         >
           <Text style={styles.continueBtnText}>TAP TO CONTINUE →</Text>
