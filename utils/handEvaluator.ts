@@ -177,6 +177,7 @@ export function evaluateOmahaHand(playerCards: Card[], boardCards: Card[]): Hand
 
     let bestResult: HandResult | null = null;
 
+    outer:
     for (const pc of playerCombos) {
       for (const bc of boardCombos) {
         const hand = [...pc, ...bc];
@@ -191,6 +192,8 @@ export function evaluateOmahaHand(playerCards: Card[], boardCards: Card[]): Hand
             boardCardsUsed: bc,
             name: HAND_RANK_NAMES[rank],
           };
+          // Early exit: Royal Flush is unbeatable
+          if (rank === HandRank.RoyalFlush) break outer;
         }
       }
     }
@@ -207,13 +210,14 @@ export function compareHands(result1: HandResult, result2: HandResult): number {
 
 /**
  * Compute pre-flop / post-flop equity for player vs one or more bots using Omaha rules.
- * Enumerates all possible remaining community cards (turn+river, or just river) from the deck.
+ * Uses Monte Carlo sampling when combinations exceed maxSamples to keep it fast (<20ms).
  * Returns player's win percentage (0–100).
  */
 export function computeOmahaEquity(
   playerCards: Card[],
   allBotCards: Card[][],
   communityCards: Card[], // already-known board cards (e.g. flop, or flop+turn)
+  maxSamples = 200,       // cap for performance — 200 samples ≈ ±4% accuracy
 ): number {
   if (playerCards.length < 2) return 50;
   const activeBots = allBotCards.filter((bc) => bc.length >= 2);
@@ -248,12 +252,25 @@ export function computeOmahaEquity(
     return 0;
   }
 
-  // Enumerate all combinations of neededCards from the remaining deck
+  // For turn (1 card needed): all combos are fast enough (~40 cards), no sampling needed
+  // For flop (2 cards needed): C(37-41, 2) = 666-820 combos → cap at maxSamples via random sampling
+  const allExtras = combinations(remaining, neededCards);
+  let extras = allExtras;
+  if (allExtras.length > maxSamples) {
+    // Fisher-Yates partial shuffle to get maxSamples random combos without copying full array
+    const arr = allExtras;
+    const limit = maxSamples;
+    for (let i = 0; i < limit; i++) {
+      const j = i + Math.floor(Math.random() * (arr.length - i));
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    extras = arr.slice(0, limit);
+  }
+
   let wins = 0;
   let ties = 0;
   let total = 0;
 
-  const extras = combinations(remaining, neededCards);
   for (const extra of extras) {
     const board = [...communityCards, ...extra];
     const pScore = evaluateOmahaHand(playerCards, board).score;
