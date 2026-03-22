@@ -679,11 +679,20 @@ export default function SettingsScreen() {
         />
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
         <Button
-          title="🐛 Run Debug Simulation"
+          title="🐛 Debug 1 Hand"
           variant="secondary"
           onPress={() => {
-            debugLog('🤖 AUTO-SIM: starting from settings');
-            router.push('/game?autoSim=true' as any);
+            debugLog('🤖 AUTO-SIM: 1 hand');
+            router.push('/game?autoSim=true&autoSimCount=1&currentSimHand=1' as any);
+          }}
+          style={{ marginBottom: 8, borderColor: '#00ff00', opacity: 0.7 }}
+        />
+        <Button
+          title="🐛 Debug Marathon (10 hands)"
+          variant="secondary"
+          onPress={() => {
+            debugLog('🤖 AUTO-SIM: 10-hand marathon');
+            router.push('/game?autoSim=true&autoSimCount=10&currentSimHand=1' as any);
           }}
           style={{ marginBottom: 12, borderColor: '#00ff00', opacity: 0.7 }}
         />

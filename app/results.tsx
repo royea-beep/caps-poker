@@ -46,6 +46,7 @@ import { rf, rs, rb, rv, UI } from '../utils/responsive';
 import { KILL_results } from '../utils/animationKill';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
+import { useLocalSearchParams } from 'expo-router';
 
 async function logResultsStep(step: string, extra?: string) {
   console.log(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
@@ -134,6 +135,7 @@ const BUTTONS_DELAY = 400;
 
 export default function ResultsScreen() {
   const router = useRouter();
+  const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
   const { width: rawW } = useWindowDimensions();
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const visualTheme = useGameStore((s) => s.visualTheme);
@@ -188,6 +190,22 @@ export default function ResultsScreen() {
     debugLog(`H: 🟢 results.tsx mounted — ${revealData ? `${revealData.boards.length} boards` : 'NO DATA'}`);
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
   }, []);
+
+  // Auto-sim marathon: auto-start next hand after a brief pause
+  useEffect(() => {
+    if (autoSim !== 'true') return;
+    const total = parseInt(autoSimCount ?? '1', 10);
+    const current = parseInt(currentSimHand ?? '1', 10);
+    if (current < total) {
+      debugLog(`🤖 AUTO-SIM: hand ${current}/${total} done — next in 2s`);
+      const t = setTimeout(() => {
+        router.replace(`/game?autoSim=true&autoSimCount=${total}&currentSimHand=${current + 1}` as any);
+      }, 2000);
+      return () => clearTimeout(t);
+    } else {
+      debugLog(`🤖 AUTO-SIM: ✅ ${total}/${total} hands complete — NO CRASH!`);
+    }
+  }, [autoSim]);
 
   // Guard: no data → go home
   useEffect(() => {

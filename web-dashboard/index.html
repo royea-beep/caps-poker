@@ -364,6 +364,7 @@
   <div class="tabs">
     <button class="tab-btn active" id="tabBugs" onclick="switchTab('bugs')">🐛 Bugs</button>
     <button class="tab-btn" id="tabDeploys" onclick="switchTab('deploys')">🚀 Deploys</button>
+    <button class="tab-btn" id="tabCrashes" onclick="switchTab('crashes')">💥 Crashes</button>
   </div>
 
   <div id="errorBox" class="error-msg" style="display:none"></div>
@@ -420,6 +421,18 @@
           <tr><td colspan="5" class="loading">Loading…</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- CRASHES TAB -->
+  <div id="sectionCrashes" style="display:none">
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-num" id="crStatTotal">—</div><div class="stat-label">Crashes</div></div>
+      <div class="stat-card"><div class="stat-num" id="crStatToday">—</div><div class="stat-label">Today</div></div>
+      <div class="stat-card"><div class="stat-num" id="crStatVideos">—</div><div class="stat-label">With Video</div></div>
+    </div>
+    <div id="crashCards" style="padding:16px 24px;display:flex;flex-wrap:wrap;gap:16px;">
+      <div class="loading">Loading…</div>
     </div>
   </div>
 </main>
@@ -600,14 +613,81 @@
   let currentTab = 'bugs';
   let allDeploys = [];
 
+  let allCrashes = [];
+
   function switchTab(tab) {
     currentTab = tab;
     document.getElementById('sectionBugs').style.display = tab === 'bugs' ? '' : 'none';
     document.getElementById('sectionDeploys').style.display = tab === 'deploys' ? '' : 'none';
+    document.getElementById('sectionCrashes').style.display = tab === 'crashes' ? '' : 'none';
     document.getElementById('bugFilters').style.display = tab === 'bugs' ? '' : 'none';
     document.getElementById('tabBugs').classList.toggle('active', tab === 'bugs');
     document.getElementById('tabDeploys').classList.toggle('active', tab === 'deploys');
+    document.getElementById('tabCrashes').classList.toggle('active', tab === 'crashes');
     if (tab === 'deploys' && allDeploys.length === 0) loadDeploys();
+    if (tab === 'crashes' && allCrashes.length === 0) loadCrashes();
+  }
+
+  async function fetchCrashes() {
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?title=like.[CRASH]*&order=created_at.desc&limit=50';
+    const res = await fetch(url, { headers: await apiHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  function renderCrashes(crashes) {
+    const container = document.getElementById('crashCards');
+    if (!crashes.length) {
+      container.innerHTML = '<div class="empty" style="width:100%">No crashes recorded yet 🎉</div>';
+      return;
+    }
+    const today = new Date().toDateString();
+    let withVideo = 0;
+    let todayCount = 0;
+    container.innerHTML = crashes.map(c => {
+      const meta = (() => { try { return typeof c.metadata === 'string' ? JSON.parse(c.metadata) : (c.metadata ?? {}); } catch { return {}; } })();
+      const videoUrl = meta.videoUrl ?? c.screenshot_url ?? null;
+      if (videoUrl) withVideo++;
+      if (new Date(c.created_at).toDateString() === today) todayCount++;
+      const lastStep = meta.lastStep ?? c.title ?? 'unknown';
+      const logs = (meta.debugLogs ?? []).join('\n');
+      return `
+        <div style="background:#111;border:1px solid rgba(255,80,80,0.25);border-radius:10px;padding:14px;min-width:280px;max-width:420px;flex:1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="color:#ff4444;font-size:11px;font-weight:700;">💥 CRASH</span>
+            <span style="color:#666;font-size:10px;">${toIST(c.created_at)}</span>
+          </div>
+          <div style="color:#fff;font-size:12px;font-weight:600;margin-bottom:4px;">${escHtml(lastStep.slice(0, 80))}</div>
+          <div style="color:#aaa;font-size:11px;margin-bottom:8px;">
+            Build ${escHtml(meta.build ?? '?')} | ${escHtml(meta.version ?? '?')} | ${escHtml(meta.device ?? 'unknown')}
+          </div>
+          ${videoUrl ? `
+            <video controls width="100%" style="border-radius:6px;margin-bottom:6px;" preload="none">
+              <source src="${escHtml(videoUrl)}" type="video/mp4">
+            </video>
+            <a href="${escHtml(videoUrl)}" target="_blank" style="color:#c9a84c;font-size:10px;">🎥 Open video</a>
+          ` : '<span style="color:#555;font-size:10px;">No video</span>'}
+          ${logs ? `
+            <details style="margin-top:8px;">
+              <summary style="color:#666;font-size:10px;cursor:pointer;">Debug logs (${meta.debugLogs?.length ?? 0})</summary>
+              <pre style="color:#0f0;font-size:8px;white-space:pre-wrap;max-height:120px;overflow:auto;margin-top:4px;">${escHtml(logs)}</pre>
+            </details>
+          ` : ''}
+        </div>`;
+    }).join('');
+    document.getElementById('crStatTotal').textContent = crashes.length;
+    document.getElementById('crStatToday').textContent = todayCount;
+    document.getElementById('crStatVideos').textContent = withVideo;
+    allCrashes = crashes;
+  }
+
+  async function loadCrashes() {
+    try {
+      const crashes = await fetchCrashes();
+      renderCrashes(crashes);
+    } catch (e) {
+      document.getElementById('crashCards').innerHTML = '<div class="empty">Failed to load crashes</div>';
+    }
   }
 
   async function fetchDeploys() {
