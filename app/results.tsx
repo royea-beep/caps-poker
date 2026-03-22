@@ -45,6 +45,7 @@ import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboa
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
 import { KILL_results } from '../utils/animationKill';
 import { getSupabase } from '../utils/supabase';
+import { debugLog } from '../components/DebugOverlay';
 
 async function logResultsStep(step: string, extra?: string) {
   console.log(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
@@ -184,6 +185,7 @@ export default function ResultsScreen() {
   // Debug: log on mount — Supabase log so we see it even after native crash
   useEffect(() => {
     console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
+    debugLog(`H: 🟢 results.tsx mounted — ${revealData ? `${revealData.boards.length} boards` : 'NO DATA'}`);
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
   }, []);
 

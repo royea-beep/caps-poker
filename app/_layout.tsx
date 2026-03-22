@@ -19,6 +19,7 @@ import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
 import { VersionBadge } from '../components/VersionBadge';
 import { getSupabase } from '../utils/supabase';
+import DebugOverlay, { debugLog } from '../components/DebugOverlay';
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -117,6 +118,8 @@ export default function RootLayout() {
   const orientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const [splashDone, setSplashDone] = useState(false);
+
+  useEffect(() => { debugLog('🔵 app started'); }, []);
 
   // OTA update check — runs on every app open (production only)
   useEffect(() => {
@@ -223,6 +226,7 @@ export default function RootLayout() {
         </WebContainer>
       </BugReporter>
       <VersionBadge />
+      <DebugOverlay />
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
   );
