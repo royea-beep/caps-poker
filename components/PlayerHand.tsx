@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
+import { rf, rs, rv } from '../utils/responsive';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
 import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
@@ -147,7 +148,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 3,
+    paddingVertical: rs(3),
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
@@ -155,56 +156,56 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 12,
-    marginBottom: 3,
-    gap: 6,
+    marginLeft: rs(12),
+    marginBottom: rs(3),
+    gap: rs(6),
   },
   label: {
     color: COLORS.neonBlue,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '800',
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
   countBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: rv(20),
+    height: rv(20),
+    borderRadius: rv(10),
     backgroundColor: COLORS.gold,
     justifyContent: 'center',
     alignItems: 'center',
   },
   countBadgeText: {
     color: '#000',
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '900',
   },
   grid: {
-    paddingHorizontal: 8,
-    gap: 2,
+    paddingHorizontal: rs(8),
+    gap: rs(2),
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 3,
+    gap: rs(3),
   },
   webRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 4,
+    gap: rs(4),
   },
   cardWrapper: {
-    borderRadius: 6,
+    borderRadius: rv(6),
     borderWidth: 2,
     borderColor: 'transparent',
     padding: 1,
-    paddingHorizontal: 4,
+    paddingHorizontal: rs(4),
   },
   selected: {
     borderColor: COLORS.gold,
     transform: [{ translateY: -4 }, { scale: 1.06 }],
-    borderRadius: 6,
+    borderRadius: rv(6),
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
@@ -218,11 +219,11 @@ const styles = StyleSheet.create({
   },
   emptyRow: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: rs(10),
   },
   emptyText: {
     color: COLORS.neonGreen,
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '700',
     letterSpacing: 1,
   },
@@ -230,9 +231,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: rv(16),
+    height: rv(16),
+    borderRadius: rv(8),
     backgroundColor: COLORS.gold,
     alignItems: 'center',
     justifyContent: 'center',
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
   },
   selBadgeText: {
     color: '#000',
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '900',
   },
 });

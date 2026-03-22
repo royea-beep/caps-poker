@@ -15,6 +15,7 @@ import { Badge } from './Badge';
 import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
+import { rf, rs } from '../utils/responsive';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
@@ -439,8 +440,8 @@ const styles = StyleSheet.create({
   },
   pressableInner: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: rs(8),
+    paddingVertical: rs(4),
     justifyContent: 'center',
   },
   active: {
@@ -480,12 +481,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: rs(2),
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: rs(4),
     flex: 1,
   },
   boardFullBadge: {
@@ -498,24 +499,24 @@ const styles = StyleSheet.create({
   },
   boardFullText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '900',
   },
   boardLabel: {
     color: '#0a0a0a',
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     backgroundColor: '#c8a84b',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingHorizontal: rs(6),
+    paddingVertical: rs(1),
     borderRadius: 6,
     overflow: 'hidden',
   },
   rowLabel: {
     color: COLORS.textDim,
-    fontSize: 7,
+    fontSize: rf(7),
     fontWeight: '700',
     letterSpacing: 0.5,
     width: 20,
@@ -524,16 +525,16 @@ const styles = StyleSheet.create({
   potArea: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: rs(4),
   },
   potRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: rs(4),
   },
   potLabel: {
     color: COLORS.gold,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
   },
   potDot: {
@@ -543,7 +544,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gold,
   },
   floatingChips: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     position: 'absolute',
     right: -4,
@@ -553,7 +554,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
     paddingVertical: 1,
   },
   communitySeparator: {
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
     height: '80%',
     backgroundColor: COLORS.gold,
     opacity: 0.3,
-    marginHorizontal: 3,
+    marginHorizontal: rs(3),
     alignSelf: 'center',
   },
   emptySlot: {
@@ -581,12 +582,12 @@ const styles = StyleSheet.create({
   },
   plusText: {
     color: '#c8a84b55',
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
   },
   handName: {
     color: COLORS.textMuted,
-    fontSize: 8,
+    fontSize: rf(8),
     fontWeight: '600',
   },
   winnerHandName: {
@@ -594,9 +595,9 @@ const styles = StyleSheet.create({
   },
   hintText: {
     color: COLORS.textMuted,
-    fontSize: 7,
+    fontSize: rf(7),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: rs(4),
     opacity: 0.7,
   },
   winnerBadge: {
@@ -604,7 +605,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: 5,
+    paddingVertical: rs(5),
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
     alignItems: 'center',
@@ -630,25 +631,25 @@ const styles = StyleSheet.create({
   },
   winnerText: {
     color: COLORS.background,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '900',
     letterSpacing: 2,
   },
   bannerHandName: {
     color: COLORS.background,
-    fontSize: 8,
+    fontSize: rf(8),
     fontWeight: '700',
     letterSpacing: 0.5,
     opacity: 0.85,
   },
   autoBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: rs(10),
+    paddingVertical: rs(5),
     borderRadius: 10,
     backgroundColor: 'rgba(201,168,76,0.22)',
     borderWidth: 1.5,
     borderColor: '#c8a84b',
-    marginRight: 4,
+    marginRight: rs(4),
     ...Platform.select({
       ios: {
         shadowColor: '#c8a84b',
@@ -664,7 +665,7 @@ const styles = StyleSheet.create({
   },
   autoBtnText: {
     color: '#e8c96a',
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '900',
     letterSpacing: 1.5,
   },

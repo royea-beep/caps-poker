@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { rf, rs, rv } from '../utils/responsive';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
@@ -142,44 +143,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(12),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.boardBorder,
   },
   title: {
     color: COLORS.goldBright,
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
   },
   listContent: {
-    padding: 16,
-    gap: 6,
+    padding: rs(16),
+    gap: rs(6),
   },
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 4,
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(8),
+    marginBottom: rs(4),
   },
   colHeader: {
     color: COLORS.textSecondary,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 1,
-    width: 30,
+    width: rv(30),
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.feltLight,
-    padding: 12,
-    borderRadius: 8,
+    padding: rs(12),
+    borderRadius: rv(8),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    gap: 8,
+    gap: rs(8),
   },
   rowHighlight: {
     borderColor: COLORS.gold,
@@ -187,9 +188,9 @@ const styles = StyleSheet.create({
   },
   rank: {
     color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '800',
-    width: 30,
+    width: rv(30),
     textAlign: 'center',
   },
   nameCol: {
@@ -197,17 +198,17 @@ const styles = StyleSheet.create({
   },
   name: {
     color: COLORS.textPrimary,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
   },
   stats: {
     color: COLORS.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: rf(11),
+    marginTop: rs(2),
   },
   chips: {
     color: COLORS.gold,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '800',
     fontFamily: 'monospace',
   },
@@ -218,18 +219,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: rs(40),
   },
   emptyText: {
     color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
     textAlign: 'center',
   },
   emptyHint: {
     color: COLORS.textMuted,
-    fontSize: 13,
-    marginTop: 8,
+    fontSize: rf(13),
+    marginTop: rs(8),
     textAlign: 'center',
   },
 });

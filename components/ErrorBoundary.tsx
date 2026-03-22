@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { rv, rf, rs, rb } from '../utils/responsive';
 
 interface Props {
   children: React.ReactNode;
@@ -77,42 +78,42 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B0E18',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
-    gap: 16,
+    padding: rs(32),
+    gap: rs(16),
   },
   emoji: {
-    fontSize: 56,
+    fontSize: rf(56),
   },
   title: {
     color: '#fff',
-    fontSize: 22,
+    fontSize: rf(22),
     fontWeight: '900',
     textAlign: 'center',
     letterSpacing: 1,
   },
   subtitle: {
     color: 'rgba(255,255,255,0.55)',
-    fontSize: 14,
+    fontSize: rf(14),
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
   errorText: {
     color: 'rgba(255,80,80,0.7)',
-    fontSize: 11,
+    fontSize: rf(11),
     textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    maxWidth: 320,
+    maxWidth: rv(320),
   },
   button: {
-    marginTop: 8,
+    marginTop: rs(8),
     backgroundColor: '#c8a84b',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingHorizontal: rs(32),
+    paddingVertical: rs(14),
+    borderRadius: rv(8),
   },
   buttonText: {
     color: '#000',
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '900',
     letterSpacing: 2,
   },

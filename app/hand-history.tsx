@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { rv, rf, rs } from '../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Button } from '../components/Button';
@@ -286,23 +287,23 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 12,
+    padding: rs(16),
+    paddingBottom: rs(32),
+    gap: rs(12),
   },
   header: {
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
+    gap: rs(4),
+    marginBottom: rs(8),
   },
   title: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: '900',
     color: COLORS.gold,
     letterSpacing: 6,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: rf(13),
     color: COLORS.textMuted,
     fontWeight: '600',
   },
@@ -310,8 +311,8 @@ const styles = StyleSheet.create({
   // Hand card
   handCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: rv(10),
+    padding: rs(12),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
@@ -329,10 +330,10 @@ const styles = StyleSheet.create({
   },
   handLeft: {
     flex: 1,
-    gap: 2,
+    gap: rs(2),
   },
   handTime: {
-    fontSize: 11,
+    fontSize: rf(11),
     color: COLORS.textDim,
     fontWeight: '600',
   },
@@ -341,82 +342,82 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreText: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '900',
   },
   scoreDash: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: COLORS.textDim,
     fontWeight: '600',
   },
   handRight: {
     alignItems: 'flex-end',
-    gap: 2,
-    marginRight: 8,
+    gap: rs(2),
+    marginRight: rs(8),
   },
   netChips: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: '900',
   },
   bonusTag: {
-    fontSize: 10,
+    fontSize: rf(10),
     color: COLORS.gold,
     fontWeight: '700',
   },
   expandArrow: {
-    fontSize: 10,
+    fontSize: rf(10),
     color: COLORS.textDim,
   },
 
   // Expanded board details
   boardsDetail: {
-    marginTop: 10,
+    marginTop: rs(10),
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
-    paddingTop: 10,
-    gap: 10,
+    paddingTop: rs(10),
+    gap: rs(10),
   },
   boardDetail: {
     backgroundColor: COLORS.feltLight,
-    borderRadius: 8,
-    padding: 8,
-    gap: 4,
+    borderRadius: rv(8),
+    padding: rs(8),
+    gap: rs(4),
   },
   boardDetailHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: rs(2),
   },
   boardDetailLabel: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     color: COLORS.textMuted,
     letterSpacing: 1,
   },
   boardDetailBadge: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '900',
     letterSpacing: 1,
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
   },
   cardRowLabel: {
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '700',
     color: COLORS.textDim,
-    width: 32,
+    width: rv(32),
     letterSpacing: 1,
   },
   cardsInline: {
     flexDirection: 'row',
-    gap: 4,
+    gap: rs(4),
   },
   cardText: {
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     color: '#f0dfc0',
   },
@@ -424,10 +425,10 @@ const styles = StyleSheet.create({
     color: '#c0392b',
   },
   handNameText: {
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '600',
     color: COLORS.textMuted,
-    marginLeft: 4,
+    marginLeft: rs(4),
   },
   handNameWin: {
     color: COLORS.goldLight,
@@ -435,10 +436,10 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: rs(2),
   },
   metaText: {
-    fontSize: 10,
+    fontSize: rf(10),
     color: COLORS.textDim,
     fontWeight: '500',
   },
@@ -447,40 +448,40 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 8,
+    paddingVertical: rs(60),
+    gap: rs(8),
   },
   emptyIcon: {
-    fontSize: 48,
+    fontSize: rf(48),
     color: COLORS.textDim,
-    marginBottom: 8,
+    marginBottom: rs(8),
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: COLORS.textMuted,
     fontWeight: '700',
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: rf(13),
     color: COLORS.textDim,
     fontWeight: '500',
   },
 
   // Footer
   clearSection: {
-    marginTop: 4,
+    marginTop: rs(4),
   },
   footer: {
-    marginTop: 8,
+    marginTop: rs(8),
   },
 
   // Share
   historyShareBtn: {
-    padding: 4,
-    marginRight: 8,
+    padding: rs(4),
+    marginRight: rs(8),
   },
   historyShareBtnText: {
-    fontSize: 18,
+    fontSize: rf(18),
   },
   offscreen: {
     position: 'absolute',

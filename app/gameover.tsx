@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { rf, rs } from '../utils/responsive';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -108,10 +109,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   title: {
-    fontSize: 42,
+    fontSize: rf(42, 28, 50),
     fontWeight: '900',
     color: COLORS.neonRed,
     letterSpacing: 6,
@@ -120,13 +121,13 @@ const styles = StyleSheet.create({
     textShadowRadius: 20,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: COLORS.textSecondary,
     fontWeight: '600',
   },
   buttons: {
     width: '100%',
-    gap: 10,
-    marginTop: 24,
+    gap: rs(10),
+    marginTop: rs(24),
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { rf, rs } from '../utils/responsive';
 import Constants from 'expo-constants';
 
 const version = Constants.expoConfig?.version ?? '?';
@@ -24,12 +25,12 @@ const styles = StyleSheet.create({
     right: 6,
     backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: rs(7),
+    paddingVertical: rs(3),
     zIndex: 9999,
   },
   text: {
-    fontSize: 9,
+    fontSize: rf(9),
     color: 'rgba(255,255,255,0.22)',
     fontWeight: '600',
     fontVariant: ['tabular-nums'],

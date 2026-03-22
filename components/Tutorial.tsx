@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../constants/gameConfig';
+import { rv, rf, rs, rb } from '../utils/responsive';
 
 export const TUTORIAL_SEEN_KEY = 'caps_tutorial_seen';
 
@@ -90,18 +91,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 500,
-    padding: 24,
+    padding: rs(24),
   },
   card: {
     backgroundColor: '#1a1a2e',
-    borderRadius: 20,
+    borderRadius: rv(20),
     borderWidth: 1.5,
     borderColor: COLORS.gold,
-    padding: 28,
+    padding: rs(28),
     alignItems: 'center',
     width: '100%',
     maxWidth: 360,
-    gap: 12,
+    gap: rs(12),
     ...Platform.select({
       ios: { shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 20 },
       android: { elevation: 12 },
@@ -109,51 +110,51 @@ const styles = StyleSheet.create({
     }),
   },
   icon: {
-    fontSize: 48,
+    fontSize: rf(48),
   },
   visual: {
-    fontSize: 28,
+    fontSize: rf(28),
     letterSpacing: 8,
     color: COLORS.gold,
     fontWeight: '900',
   },
   title: {
     color: COLORS.goldBright,
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: '900',
     letterSpacing: 0.5,
     textAlign: 'center',
   },
   body: {
     color: COLORS.textPrimary,
-    fontSize: 15,
+    fontSize: rf(15),
     fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: rf(22),
     opacity: 0.9,
   },
   dots: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
+    gap: rs(8),
+    marginTop: rs(4),
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: rv(8),
+    height: rv(8),
+    borderRadius: rv(4),
     backgroundColor: COLORS.boardBorder,
   },
   dotActive: {
     backgroundColor: COLORS.gold,
-    width: 20,
-    borderRadius: 4,
+    width: rv(20),
+    borderRadius: rv(4),
   },
   btn: {
     backgroundColor: COLORS.gold,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 14,
-    marginTop: 8,
+    paddingHorizontal: rs(32),
+    paddingVertical: rs(14),
+    borderRadius: rv(14),
+    marginTop: rs(8),
     width: '100%',
     alignItems: 'center',
   },
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: '#0a0a0a',
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '900',
     letterSpacing: 1,
   },

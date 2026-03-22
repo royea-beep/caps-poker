@@ -33,6 +33,7 @@ import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import ProQuoteBanner from '../components/ProQuoteBanner';
+import { rf, rs, rb, rv, UI } from '../utils/responsive';
 
 const isWeb = Platform.OS === 'web';
 
@@ -706,8 +707,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    gap: 10,
+    padding: rs(16),
+    gap: rs(10),
   },
 
   // Title
@@ -716,10 +717,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   suitSymbols: {
-    fontSize: 16,
+    fontSize: rf(16),
     letterSpacing: 10,
     opacity: 0.6,
-    marginBottom: 4,
+    marginBottom: rs(4),
   },
   titleCaps: {
     fontWeight: '900',
@@ -728,7 +729,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 24,
   },
   titlePoker: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '400',
     letterSpacing: 16,
     textTransform: 'uppercase',
@@ -737,24 +738,24 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   titleSub: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '400',
     letterSpacing: 1.5,
-    marginTop: 6,
+    marginTop: rs(6),
     textTransform: 'uppercase',
     textAlign: 'center',
   },
   titleDivider: {
     width: 80,
     height: 1,
-    marginTop: 10,
+    marginTop: rs(10),
     opacity: 0.4,
   },
 
   // Stats
   statsSection: {
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
     width: '100%',
   },
   statsGrid: {
@@ -763,9 +764,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    borderRadius: rv(12),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(8),
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
     ...Platform.select({
@@ -776,7 +777,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    gap: 4,
+    gap: rs(4),
     flex: 1,
   },
   statDivider: {
@@ -785,18 +786,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   statValue: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '800',
   },
   statLabel: {
     color: COLORS.textMuted,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '600',
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   sessionText: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '600',
     letterSpacing: 0.5,
   },
@@ -804,7 +805,7 @@ const styles = StyleSheet.create({
   // Buttons
   buttonSection: {
     width: '100%',
-    gap: 8,
+    gap: rs(8),
   },
   rowPair: {
     flexDirection: 'row',
@@ -814,21 +815,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 4,
+    gap: rs(6),
+    paddingVertical: rs(4),
   },
   linkItem: {
     flex: 1,
     alignItems: 'center',
   },
   linkText: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 0.8,
     textAlign: 'center',
   },
   linkDot: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '400',
   },
   btnHighlight: {
@@ -838,16 +839,16 @@ const styles = StyleSheet.create({
     right: 0,
     height: '50%' as any,
     backgroundColor: 'rgba(255,255,255,0.12)',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: rv(16),
+    borderTopRightRadius: rv(16),
   },
   // Google sign-in button
   googleBtn: {
     width: '100%',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    borderRadius: rv(12),
+    paddingVertical: rs(14),
+    paddingHorizontal: rs(20),
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 52,
@@ -862,27 +863,27 @@ const styles = StyleSheet.create({
   },
   googleBtnText: {
     color: '#1f1f1f',
-    fontSize: 15,
+    fontSize: rf(15),
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   authError: {
     color: COLORS.neonRed,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: rs(4),
   },
 
   // Signed-in row
   signedInRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
     backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    borderRadius: rv(12),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(14),
     width: '100%',
   },
   avatar: {
@@ -899,26 +900,26 @@ const styles = StyleSheet.create({
   },
   avatarInitial: {
     color: '#000',
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '800',
   },
   signedInName: {
     flex: 1,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '500',
   },
   signOutText: {
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   debugInfo: {
     color: 'rgba(255,255,255,0.2)',
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '400',
     textAlign: 'center',
     letterSpacing: 0.5,
-    marginTop: 4,
+    marginTop: rs(4),
   },
 
 });

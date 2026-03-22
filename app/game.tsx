@@ -40,7 +40,8 @@ const HINT_TEXTS = [
   '🎯 Try to win ALL boards for the COMPLETE bonus!',
   '💡 Tip: Tap a placed card to remove it and try a different board',
 ];
-import { rv } from '../constants/deviceBreakpoints';
+import { rv as rvOld } from '../constants/deviceBreakpoints';
+import { rf, rs, rb, rv } from '../utils/responsive';
 import { OrientationType } from '../store/gameStore';
 
 // Lazy-load expo-haptics — not available on web
@@ -203,7 +204,7 @@ function GameScreenInner() {
   const mobileWebCardH = CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60;
   const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
   const communityScale = nativeCardDims.communityScale;
-  const BOARD_CARD_H = rv(
+  const BOARD_CARD_H = rvOld(
     screenW,
     mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
     72,                          // tablet web
@@ -1019,7 +1020,7 @@ const styles = StyleSheet.create({
     }),
   },
   fiveoWatermarkText: {
-    fontSize: 52,
+    fontSize: rf(52),
     fontWeight: '900',
     letterSpacing: 8,
     color: 'rgba(255,120,120,0.10)',
@@ -1030,8 +1031,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(4),
     zIndex: 10,
   },
   backButton: {
@@ -1045,7 +1046,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
   },
   topCenter: {
@@ -1057,18 +1058,18 @@ const styles = StyleSheet.create({
   },
   countdownLabel: {
     color: '#FFC107',
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 1,
   },
   freePlayLabel: {
     color: COLORS.textMuted,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 1.5,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(4),
+    borderRadius: rv(12),
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
@@ -1076,30 +1077,30 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase' as any,
   },
   botSection: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
     zIndex: 10,
   },
   botStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   botEmoji: {
-    fontSize: 14,
+    fontSize: rf(14),
   },
   botNameLabel: {
     color: COLORS.textSecondary,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1.5,
     textTransform: 'uppercase' as any,
   },
   botStatusPill: {
-    paddingHorizontal: 8,
+    paddingHorizontal: rs(8),
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: rv(10),
   },
   botReadyPill: {
     backgroundColor: 'rgba(40,167,69,0.2)',
@@ -1112,7 +1113,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,193,7,0.4)',
   },
   botStatusText: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1124,15 +1125,15 @@ const styles = StyleSheet.create({
   },
   botLabel: {
     color: COLORS.textSecondary,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 1,
   },
   boardsColumn: {
     flex: 1,
     flexDirection: 'column',
-    paddingHorizontal: 16,
-    gap: 4,
+    paddingHorizontal: rs(16),
+    gap: rs(4),
   },
   boardsGrid: {
     flexDirection: 'row',
@@ -1155,62 +1156,62 @@ const styles = StyleSheet.create({
   },
   boardCellThird: {
     width: '33.33%',
-    paddingHorizontal: 4,
+    paddingHorizontal: rs(4),
     paddingVertical: 2,
   },
   waitingText: {
     color: COLORS.textSecondary,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '600',
   },
   calculatingText: {
     color: COLORS.gold,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
     letterSpacing: 1,
   },
   selectionHint: {
     textAlign: 'center',
     color: COLORS.gold,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 0.5,
-    paddingVertical: 4,
+    paddingVertical: rs(4),
   },
   firstTimeHint: {
     backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
     alignItems: 'center',
-    marginHorizontal: 4,
-    borderRadius: 8,
+    marginHorizontal: rs(4),
+    borderRadius: rv(8),
   },
   firstTimeHintText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '500',
     textAlign: 'center',
   },
   boardErrorText: {
     textAlign: 'center',
     color: COLORS.neonRed,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 0.5,
-    paddingVertical: 4,
+    paddingVertical: rs(4),
   },
   floatingActions: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    gap: rs(12),
+    paddingHorizontal: rs(20),
+    paddingVertical: rs(10),
     zIndex: 10,
   },
   floatingBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 24,
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(28),
+    borderRadius: rv(24),
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -1263,7 +1264,7 @@ const styles = StyleSheet.create({
   },
   floatingBtnText: {
     color: COLORS.textPrimary,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '800',
     letterSpacing: 2,
     textAlign: 'center',
@@ -1279,9 +1280,9 @@ const styles = StyleSheet.create({
     bottom: 100,
     alignSelf: 'center',
     backgroundColor: COLORS.gold,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 24,
+    paddingVertical: rs(14),
+    paddingHorizontal: rs(40),
+    borderRadius: rv(24),
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
@@ -1295,7 +1296,7 @@ const styles = StyleSheet.create({
   },
   continueBtnText: {
     color: COLORS.background,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '900',
     letterSpacing: 2,
   },
@@ -1307,12 +1308,12 @@ const landscapeStyles = StyleSheet.create({
   },
   leftPanel: {
     width: '22%',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: rs(8),
+    paddingVertical: rs(8),
     alignItems: 'center',
     borderRightWidth: 1,
     borderRightColor: COLORS.boardBorder,
-    gap: 6,
+    gap: rs(6),
   },
   centerPanel: {
     flex: 1,
@@ -1322,8 +1323,8 @@ const landscapeStyles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 6,
-    gap: 4,
+    paddingHorizontal: rs(6),
+    gap: rs(4),
   },
   boardCell: {
     width: '49%',
@@ -1332,16 +1333,16 @@ const landscapeStyles = StyleSheet.create({
   },
   rightPanel: {
     width: '18%',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: rs(8),
+    paddingVertical: rs(8),
     alignItems: 'center',
     borderLeftWidth: 1,
     borderLeftColor: COLORS.boardBorder,
-    gap: 8,
+    gap: rs(8),
   },
   panelTitle: {
     color: COLORS.gold,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '900',
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -1350,7 +1351,7 @@ const landscapeStyles = StyleSheet.create({
   readyBtn: {
     marginTop: 'auto' as any,
     width: '100%',
-    paddingHorizontal: 8,
+    paddingHorizontal: rs(8),
     alignItems: 'center',
   },
 });

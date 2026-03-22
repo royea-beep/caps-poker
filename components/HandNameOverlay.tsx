@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
+import { rv, rf, rs } from '../utils/responsive';
 
 interface HandNameOverlayProps {
   handName: string;
@@ -38,13 +39,13 @@ const styles = StyleSheet.create({
   pill: {
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.65)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginTop: 3,
+    borderRadius: rv(8),
+    paddingHorizontal: rs(10),
+    paddingVertical: rs(3),
+    marginTop: rs(3),
   },
   text: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '900',
     letterSpacing: 0.5,
   },
