@@ -5,6 +5,7 @@ import { rv, rf, rs, rb } from '../utils/responsive';
 
 interface Props {
   children: React.ReactNode;
+  onError?: (error: Error) => void;
 }
 
 interface State {
@@ -25,6 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary] caught:', error.message);
     console.error('[ErrorBoundary] stack:', error.stack?.slice(0, 500));
+    this.props.onError?.(error);
     // Log to Supabase bug_reports silently
     try {
       const { getSupabase } = require('../utils/supabase');

@@ -268,6 +268,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     if (!visible) return;
     clearTimers();
 
+    console.log(`[REVEAL] board ${boardIdx} effect start — boards.length=${boards.length}`);
+
     // Play tension sound at the start of each board reveal
     if (boardIdx === 0) {
       try { playSound('revealStart'); } catch {}
@@ -275,6 +277,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
 
     const board = boards[boardIdx];
     if (!board) {
+      console.warn(`[REVEAL] board ${boardIdx} is null — calling onDone`);
       onDone();
       return;
     }
@@ -284,21 +287,34 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     const hasRiver = closedCards.length >= 2;
     const turnCard = closedCards[0];
 
+    console.log(`[REVEAL] board ${boardIdx} — hasTurn=${hasTurn} hasRiver=${hasRiver} playerCards=${board.playerCards?.length} allBotCards=${board.allBotCards?.length} openCards=${board.openCards?.length}`);
+
     // Safety: force complete after 15s
-    const safetyTimer = setTimeout(() => { onDone(); }, 15000);
+    const safetyTimer = setTimeout(() => {
+      console.warn(`[REVEAL] SAFETY TIMER fired — board ${boardIdx} took >15s, calling onDone`);
+      clearTimers();
+      onDone();
+    }, 15000);
 
     // Defer equity calculation so the UI frame renders first (avoids JS thread freeze)
     const equityTimer = setTimeout(() => {
-      const flopEquity = computeOmahaEquity(
-        board.playerCards ?? [],
-        board.allBotCards ?? [],
-        board.openCards ?? [],
-      );
-      setWinProb(flopEquity);
-      prevProbRef.current = flopEquity;
-      displayedProbRef.current = flopEquity;
-      setDisplayedProb(flopEquity);
-      computeHints(board, board.openCards ?? []);
+      try {
+        console.log(`[REVEAL] board ${boardIdx} — computing flop equity`);
+        const flopEquity = computeOmahaEquity(
+          board.playerCards ?? [],
+          board.allBotCards ?? [],
+          board.openCards ?? [],
+        );
+        console.log(`[REVEAL] board ${boardIdx} — flop equity=${flopEquity}`);
+        setWinProb(flopEquity);
+        prevProbRef.current = flopEquity;
+        displayedProbRef.current = flopEquity;
+        setDisplayedProb(flopEquity);
+        computeHints(board, board.openCards ?? []);
+        console.log(`[REVEAL] board ${boardIdx} — flop equity + hints done`);
+      } catch (e) {
+        console.error(`[REVEAL] board ${boardIdx} — flop equity CRASHED:`, e);
+      }
     }, 0);
     timersRef.current.push(equityTimer);
 
@@ -306,9 +322,15 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       const finalProb = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
       setWinProb(finalProb);
       addTimer(() => {
-        setShowWinner(true);
-        setShowNextButton(true);
-        addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+        try {
+          console.log(`[REVEAL] board ${boardIdx} — no-turn: showing winner`);
+          setShowWinner(true);
+          setShowNextButton(true);
+          addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+        } catch (e) {
+          console.error(`[REVEAL] board ${boardIdx} no-turn winner CRASHED:`, e);
+          clearTimers(); clearTimeout(safetyTimer); onDone();
+        }
       }, 600);
       return () => { clearTimers(); clearTimeout(safetyTimer); };
     }
@@ -319,37 +341,56 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     addTimer(() => setCountdown(1), 300 + COUNTDOWN_STEP * 2);
 
     addTimer(() => {
-      setCountdown(null);
-      setTurnRevealed(true);
-      haptic();
-      try { playSound('cardFlip'); } catch {}
+      try {
+        console.log(`[REVEAL] board ${boardIdx} — TURN flip (${TURN_FLIP_T}ms)`);
+        setCountdown(null);
+        setTurnRevealed(true);
+        haptic();
+        try { playSound('cardFlip'); } catch {}
 
-      const turnCommunity = [...(board.openCards ?? []), ...(turnCard ? [turnCard] : [])];
-      // Defer so card flip animation renders before calculation
-      setTimeout(() => {
-        const intermediate = computeOmahaEquity(
-          board.playerCards ?? [],
-          board.allBotCards ?? [],
-          turnCommunity,
-        );
+        const turnCommunity = [...(board.openCards ?? []), ...(turnCard ? [turnCard] : [])];
+        // Defer so card flip animation renders before calculation
+        setTimeout(() => {
+          try {
+            console.log(`[REVEAL] board ${boardIdx} — computing turn equity`);
+            const intermediate = computeOmahaEquity(
+              board.playerCards ?? [],
+              board.allBotCards ?? [],
+              turnCommunity,
+            );
+            console.log(`[REVEAL] board ${boardIdx} — turn equity=${intermediate}`);
+            const delta = intermediate - prevProbRef.current;
+            setProbDelta(delta);
+            prevProbRef.current = intermediate;
+            setWinProb(intermediate);
+          } catch (e) {
+            console.error(`[REVEAL] board ${boardIdx} — turn equity CRASHED:`, e);
+          }
+        }, 0);
 
-        const delta = intermediate - prevProbRef.current;
-        setProbDelta(delta);
-        prevProbRef.current = intermediate;
-        setWinProb(intermediate);
-      }, 0);
-
-      // Update hints with turn card now visible
-      if (turnCard) {
-        computeHints(board, [...(board.openCards ?? []), turnCard]);
+        // Update hints with turn card now visible
+        console.log(`[REVEAL] board ${boardIdx} — computing turn hints`);
+        if (turnCard) {
+          computeHints(board, [...(board.openCards ?? []), turnCard]);
+        }
+        console.log(`[REVEAL] board ${boardIdx} — TURN flip done`);
+      } catch (e) {
+        console.error(`[REVEAL] board ${boardIdx} — TURN flip CRASHED:`, e);
+        clearTimers(); clearTimeout(safetyTimer); onDone();
       }
     }, TURN_FLIP_T);
 
     if (!hasRiver) {
       addTimer(() => {
-        setShowWinner(true);
-        setShowNextButton(true);
-        addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+        try {
+          console.log(`[REVEAL] board ${boardIdx} — no-river: showing winner`);
+          setShowWinner(true);
+          setShowNextButton(true);
+          addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+        } catch (e) {
+          console.error(`[REVEAL] board ${boardIdx} no-river winner CRASHED:`, e);
+          clearTimers(); clearTimeout(safetyTimer); onDone();
+        }
       }, TURN_FLIP_T + 1500);
     } else {
       // === RIVER: smooth auto-flip 2.5s after turn (no countdown) ===
@@ -357,28 +398,47 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       const riverFlipT = TURN_FLIP_T + RIVER_FLIP_DELAY;
 
       addTimer(() => {
-        setRiverRevealed(true);
-        haptic();
-        try { playSound('cardFlip'); } catch {}
+        try {
+          console.log(`[REVEAL] board ${boardIdx} — RIVER flip (${riverFlipT}ms)`);
+          setRiverRevealed(true);
+          haptic();
+          try { playSound('cardFlip'); } catch {}
 
-        const final = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
-        const delta = final - prevProbRef.current;
-        setProbDelta(delta);
-        prevProbRef.current = final;
-        setWinProb(final);
+          console.log(`[REVEAL] board ${boardIdx} — setting final prob, winner=${board.winner}`);
+          const final = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
+          const delta = final - prevProbRef.current;
+          setProbDelta(delta);
+          prevProbRef.current = final;
+          setWinProb(final);
 
-        // Update hints with all community cards
-        const allComm = [...(board.openCards ?? [])];
-        if (turnCard) allComm.push(turnCard);
-        if (riverCard) allComm.push(riverCard);
-        computeHints(board, allComm);
+          // Update hints with all community cards
+          console.log(`[REVEAL] board ${boardIdx} — computing river hints`);
+          const allComm = [...(board.openCards ?? [])];
+          if (turnCard) allComm.push(turnCard);
+          if (riverCard) allComm.push(riverCard);
+          computeHints(board, allComm);
+          console.log(`[REVEAL] board ${boardIdx} — RIVER flip done`);
+        } catch (e) {
+          console.error(`[REVEAL] board ${boardIdx} — RIVER flip CRASHED:`, e);
+          clearTimers(); clearTimeout(safetyTimer); onDone();
+        }
       }, riverFlipT);
 
       // === WINNER: 3s after river ===
       addTimer(() => {
-        setShowWinner(true);
-        setShowNextButton(true);
-        addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
+        try {
+          console.log(`[REVEAL] board ${boardIdx} — showing winner banner`);
+          setShowWinner(true);
+          setShowNextButton(true);
+          addTimer(() => {
+            console.log(`[REVEAL] board ${boardIdx} — auto-advancing to board ${boardIdx + 1}`);
+            advanceBoard(boardIdx + 1);
+          }, ADVANCE_DELAY);
+          console.log(`[REVEAL] board ${boardIdx} — winner banner + advance timer set`);
+        } catch (e) {
+          console.error(`[REVEAL] board ${boardIdx} — winner banner CRASHED:`, e);
+          clearTimers(); clearTimeout(safetyTimer); onDone();
+        }
       }, riverFlipT + WINNER_DELAY_AFTER_RIVER);
     }
 
