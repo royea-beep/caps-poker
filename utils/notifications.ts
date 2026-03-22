@@ -2,17 +2,12 @@ import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 import { getDeviceId } from './leaderboard';
 
-// expo-notifications is part of Expo SDK but may not be installed
-// Import dynamically to avoid crash if missing
-let Notifications: any = null;
-
-try {
-  if (Platform.OS !== 'web') {
-    Notifications = require('expo-notifications');
-  }
-} catch {
-  // expo-notifications not available — all functions gracefully no-op
-}
+// expo-notifications is not installed — all functions are stubs.
+// Push notification support can be added in a future session by:
+//   1. npx expo install expo-notifications
+//   2. Adding "expo-notifications" to plugins in app.json
+//   3. Running: eas credentials --platform ios (to regenerate provisioning profile with Push Notifications)
+const Notifications = null;
 
 /** Request notification permissions. Returns true if granted. */
 export async function requestPermissions(): Promise<boolean> {
