@@ -562,58 +562,73 @@ function GameScreenInner() {
   );
 
   // Tap board → place all selectedCardIds (or first hand card if none selected)
+  // FIX: compute cardsToPlace outside setBoards updater; call setPlayerHand separately
+  // in same event handler so React batches all three setState calls together, eliminating
+  // the intermediate render where a card appears in both the board and the hand.
   const handleBoardPress = useCallback(
     (boardIndex: number) => {
       if (!isArranging) return;
       const currentHand = playerHandRef.current;
       if (currentHand.length === 0) return;
 
-      setBoards((prev) => {
-        const board = prev[boardIndex];
-        if (!board) return prev;
+      // Read board from current closure — safe since boards is a dep of this callback
+      const board = boards[boardIndex];
+      if (!board) return;
 
-        const emptySlots = CARDS_PER_BOARD - board.playerCards.length;
-        if (emptySlots <= 0) {
-          // Board full — shake + error
-          const sv = boardShakes[boardIndex];
-          if (sv) {
-            sv.value = withSequence(
-              withTiming(-6, { duration: 55 }),
-              withTiming(6, { duration: 55 }),
-              withTiming(-4, { duration: 55 }),
-              withTiming(0, { duration: 55 }),
-            );
-          }
-          if (boardErrorTimer.current) clearTimeout(boardErrorTimer.current);
-          setBoardError('Board is full');
-          boardErrorTimer.current = setTimeout(() => setBoardError(null), 1500);
-          return prev;
+      const emptySlots = CARDS_PER_BOARD - board.playerCards.length;
+      if (emptySlots <= 0) {
+        // Board full — shake + error
+        const sv = boardShakes[boardIndex];
+        if (sv) {
+          sv.value = withSequence(
+            withTiming(-6, { duration: 55 }),
+            withTiming(6, { duration: 55 }),
+            withTiming(-4, { duration: 55 }),
+            withTiming(0, { duration: 55 }),
+          );
         }
+        if (boardErrorTimer.current) clearTimeout(boardErrorTimer.current);
+        setBoardError('Board is full');
+        boardErrorTimer.current = setTimeout(() => setBoardError(null), 1500);
+        return;
+      }
 
-        // Determine which cards to place
-        const cardsToPlace: Card[] = selectedCardIds.length > 0
-          ? selectedCardIds
-              .map((id) => currentHand.find((c) => c.id === id))
-              .filter((c): c is Card => c !== undefined)
-              .slice(0, emptySlots)
-          : currentHand.slice(0, 1); // fallback: place first card
+      // Determine which cards to place
+      const cardsToPlace: Card[] = selectedCardIds.length > 0
+        ? selectedCardIds
+            .map((id) => currentHand.find((c) => c.id === id))
+            .filter((c): c is Card => c !== undefined)
+            .slice(0, emptySlots)
+        : currentHand.slice(0, 1); // fallback: place first card
 
-        if (cardsToPlace.length === 0) return prev;
+      if (cardsToPlace.length === 0) return;
 
-        haptic(Haptics?.ImpactFeedbackStyle?.Medium);
-        playSound('cardPlace');
-        const placedIds = new Set(cardsToPlace.map((c) => c.id));
+      haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+      playSound('cardPlace');
+      const placedIds = new Set(cardsToPlace.map((c) => c.id));
+
+      // All three setState calls are in the same synchronous event handler —
+      // React 18 batches them into one render, preventing duplicate-card flicker
+      setBoards((prev) => {
+        const prevBoard = prev[boardIndex];
+        if (!prevBoard) return prev;
+        // Re-validate slots in updater to guard against stale closure
+        const slots = CARDS_PER_BOARD - prevBoard.playerCards.length;
+        const validCards = cardsToPlace.filter((c) =>
+          !prevBoard.playerCards.some((pc) => pc.id === c.id)
+        ).slice(0, slots);
+        if (validCards.length === 0) return prev;
         const updated = [...prev];
         updated[boardIndex] = {
-          ...board,
-          playerCards: [...board.playerCards, ...cardsToPlace],
+          ...prevBoard,
+          playerCards: [...prevBoard.playerCards, ...validCards],
         };
-        setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
-        setSelectedCardIds([]);
         return updated;
       });
+      setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+      setSelectedCardIds([]);
     },
-    [isArranging, selectedCardIds]
+    [isArranging, selectedCardIds, boards]
   );
 
   // Tap placed card → remove from board
@@ -637,28 +652,31 @@ function GameScreenInner() {
   );
 
   // AUTO fill — place first N available hand cards into an empty board
+  // FIX: same batched setState approach as handleBoardPress
   const handleAutoFill = useCallback(
     (boardIndex: number) => {
       if (!isArranging) return;
       const currentHand = playerHandRef.current;
       if (currentHand.length === 0) return;
+      const board = boards[boardIndex];
+      if (!board || board.playerCards.length > 0) return;
+      const slots = CARDS_PER_BOARD - board.playerCards.length;
+      const cardsToPlace = currentHand.slice(0, slots);
+      if (cardsToPlace.length === 0) return;
+      haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+      playSound('cardPlace');
+      const placedIds = new Set(cardsToPlace.map((c) => c.id));
       setBoards((prev) => {
-        const board = prev[boardIndex];
-        if (!board || board.playerCards.length > 0) return prev;
-        const slots = CARDS_PER_BOARD - board.playerCards.length;
-        const cardsToPlace = currentHand.slice(0, slots);
-        if (cardsToPlace.length === 0) return prev;
-        haptic(Haptics?.ImpactFeedbackStyle?.Medium);
-        playSound('cardPlace');
-        const placedIds = new Set(cardsToPlace.map((c) => c.id));
+        const prevBoard = prev[boardIndex];
+        if (!prevBoard || prevBoard.playerCards.length > 0) return prev;
         const updated = [...prev];
-        updated[boardIndex] = { ...board, playerCards: [...board.playerCards, ...cardsToPlace] };
-        setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
-        setSelectedCardIds([]);
+        updated[boardIndex] = { ...prevBoard, playerCards: [...prevBoard.playerCards, ...cardsToPlace] };
         return updated;
       });
+      setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+      setSelectedCardIds([]);
     },
-    [isArranging]
+    [isArranging, boards]
   );
 
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
