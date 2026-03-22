@@ -24,6 +24,7 @@ import { Badge } from '../components/Badge';
 import ChipsDisplay from '../components/ChipsDisplay';
 import CompleteOverlay from '../components/CompleteOverlay';
 import RevealSequence from '../components/RevealSequence';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount } from '../constants/gameConfig';
@@ -910,11 +911,13 @@ export default function ResultsScreen() {
       )}
 
       {/* Turn/River reveal sequence — full-screen modal, auto-dismisses */}
-      <RevealSequence
-        boards={boards}
-        visible={showReveal}
-        onDone={() => setShowReveal(false)}
-      />
+      <ErrorBoundary onError={(e) => { console.error('[RESULTS] RevealSequence ErrorBoundary caught:', e); setShowReveal(false); }}>
+        <RevealSequence
+          boards={boards}
+          visible={showReveal}
+          onDone={() => setShowReveal(false)}
+        />
+      </ErrorBoundary>
 
       {/* Confetti — fires once on perfect game (all boards won) */}
       {showConfetti && (
