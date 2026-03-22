@@ -73,8 +73,10 @@ function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; s
         -1,
       );
     } else {
+      cancelAnimation(pulseScale);
       pulseScale.value = withTiming(1, { duration: 200 });
     }
+    return () => { cancelAnimation(pulseScale); };
   }, [pulsing]);
 
   const animStyle = useAnimatedStyle(() => ({
