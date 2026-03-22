@@ -1,0 +1,49 @@
+name: TestFlight Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action: add-to-group | list-groups'
+        required: true
+        default: 'list-groups'
+      group_name:
+        description: 'TestFlight internal group name (for add-to-group)'
+        required: false
+        default: 'External Testers'
+
+jobs:
+  manage:
+    name: Manage TestFlight Distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Add build to TestFlight group
+        if: inputs.action == 'add-to-group'
+        run: eas submit --platform ios --profile ci --latest --non-interactive --groups "${{ inputs.group_name }}"
+        env:
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+
+      - name: Install Python deps
+        run: pip install PyJWT requests cryptography
+
+      - name: List TestFlight groups (ASC API)
+        if: inputs.action == 'list-groups'
+        run: python scripts/asc_api.py groups
