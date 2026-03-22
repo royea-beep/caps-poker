@@ -31,6 +31,11 @@ interface CompleteOverlayProps {
   onDone: () => void;
 }
 
+// SAFE_MODE: disable particles + pulse
+// Root cause: 40 particles × 4 shared values = 160 simultaneous Reanimated worklets
+// → Hermes watchdog kills the app. Static display until a safe particle approach is built.
+const SAFE_MODE = true;
+
 const NUM_PARTICLES = 40;
 
 const PARTICLE_COLORS = [
@@ -43,12 +48,11 @@ const PARTICLE_COLORS = [
 ];
 
 function Particle({ index }: { index: number }) {
-  // Wider, more random spread with varying radii and angles
   const angle = (index / NUM_PARTICLES) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
-  const radius = 80 + (index % 5) * 28; // 80, 108, 136, 164, 192
+  const radius = 80 + (index % 5) * 28;
   const targetX = Math.cos(angle) * radius;
   const targetY = Math.sin(angle) * radius;
-  const particleSize = 5 + (index % 4) * 3; // 5, 8, 11, 14
+  const particleSize = 5 + (index % 4) * 3;
   const color = PARTICLE_COLORS[index % PARTICLE_COLORS.length];
   const delay = 60 + (index % 6) * 40;
 
@@ -89,20 +93,51 @@ function Particle({ index }: { index: number }) {
   );
 }
 
-export default function CompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
+// Static safe version — no animations
+function SafeCompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
+  useEffect(() => {
+    playSound('complete');
+    if (Haptics) {
+      Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Heavy)?.catch?.(() => {});
+    }
+    const timer = setTimeout(() => { onDone(); }, duration * 1000);
+    return () => clearTimeout(timer);
+  }, [duration, onDone]);
+
+  return (
+    <View style={styles.overlay}>
+      <View style={styles.content}>
+        <Text style={styles.trophyText}>{winner === 'player' ? '🏆' : '🤖'}</Text>
+        <Text style={styles.completeText}>{winner === 'player' ? 'COMPLETE!' : 'SWEPT!'}</Text>
+        <Text style={styles.subText}>{winner === 'player' ? 'You swept all boards!' : 'Bot swept all boards!'}</Text>
+        <View style={styles.bonusRow}>
+          <Text style={styles.bonusLabel}>BONUS</Text>
+          <Text style={styles.bonusSeparator}>+</Text>
+          <Text style={styles.bonusAmount}>{bonusAmount}</Text>
+          <View style={styles.bonusChip} />
+        </View>
+        {winner === 'player' && (
+          <View style={{ marginTop: rs(16), width: '100%' }}>
+            <ProQuoteBanner context="complete" />
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// Full animated version (disabled while SAFE_MODE = true)
+function AnimatedCompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
   const flashOpacity = useSharedValue(0);
   const flashStyle = useAnimatedStyle(() => ({ opacity: flashOpacity.value }));
 
-  // Timer-based auto-dismiss
   useEffect(() => {
     playSound('complete');
-    // Screen flash
     flashOpacity.value = withSequence(
       withTiming(0.7, { duration: 80 }),
       withTiming(0, { duration: 220 }),
     );
 
-    // Haptics celebration sequence: heavy → medium → light
     if (Haptics) {
       Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Heavy)?.catch?.(() => {});
       const t1 = setTimeout(() => {
@@ -119,18 +154,14 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
     return () => clearTimeout(timer);
   }, [duration, onDone]);
 
-  // "COMPLETE!" text entrance: scale from 0 -> 1.15 -> 1.0
   const titleScale = useSharedValue(0);
   const titlePulse = useSharedValue(1);
-  // Sub text fade in
   const subOpacity = useSharedValue(0);
-  // Bonus row slide up
   const bonusTranslateY = useSharedValue(30);
   const bonusOpacity = useSharedValue(0);
 
   useEffect(() => {
     titleScale.value = withSpring(1, { damping: 6, stiffness: 90 });
-    // Gentle pulse after entrance
     if (!KILL_CompleteOverlay) {
       titlePulse.value = withDelay(
         600,
@@ -150,15 +181,9 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
   }, []);
 
   const titleStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: titleScale.value * titlePulse.value },
-    ],
+    transform: [{ scale: titleScale.value * titlePulse.value }],
   }));
-
-  const subStyle = useAnimatedStyle(() => ({
-    opacity: subOpacity.value,
-  }));
-
+  const subStyle = useAnimatedStyle(() => ({ opacity: subOpacity.value }));
   const bonusStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: bonusTranslateY.value }],
     opacity: bonusOpacity.value,
@@ -166,15 +191,12 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
 
   return (
     <View style={styles.overlay}>
-      {/* Screen flash */}
       <Animated.View style={[StyleSheet.absoluteFillObject, styles.flashLayer, flashStyle]} pointerEvents="none" />
-      {/* Particles */}
       <View style={styles.particleContainer}>
         {Array.from({ length: NUM_PARTICLES }).map((_, i) => (
           <Particle key={i} index={i} />
         ))}
       </View>
-
       <View style={styles.content}>
         <Animated.Text style={[styles.trophyText, titleStyle]}>
           {winner === 'player' ? '\uD83C\uDFC6' : '\uD83E\uDD16'}
@@ -199,6 +221,10 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
       </View>
     </View>
   );
+}
+
+export default function CompleteOverlay(props: CompleteOverlayProps) {
+  return SAFE_MODE ? <SafeCompleteOverlay {...props} /> : <AnimatedCompleteOverlay {...props} />;
 }
 
 const styles = StyleSheet.create({
