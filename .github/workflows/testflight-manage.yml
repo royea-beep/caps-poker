@@ -1,49 +1,134 @@
-name: TestFlight Management
+name: Manage TestFlight
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Action: add-to-group | list-groups'
+        description: 'Action to perform'
         required: true
-        default: 'list-groups'
-      group_name:
-        description: 'TestFlight internal group name (for add-to-group)'
+        type: choice
+        options:
+          - enable-public-link
+          - add-tester
+          - list-testers
+          - list-builds
+      email:
+        description: 'Tester email (for add-tester action)'
         required: false
-        default: 'External Testers'
+        type: string
 
 jobs:
   manage:
-    name: Manage TestFlight Distribution
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          node-version: 20
-          cache: npm
+          ruby-version: '3.2'
+          bundler-cache: true
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install fastlane
+        run: gem install fastlane
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Add build to TestFlight group
-        if: inputs.action == 'add-to-group'
-        run: eas submit --platform ios --profile ci --latest --non-interactive --groups "${{ inputs.group_name }}"
+      - name: Run TestFlight management
         env:
-          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          FASTLANE_USER: royearguan@gmail.com
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_IDENTIFIER: com.capspoker.app
+          APPLE_TEAM_ID: 3K9KJNGL9U
+          ASC_APP_ID: "6760429619"
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          EMAIL="${{ github.event.inputs.email }}"
 
-      - name: Install Python deps
-        run: pip install PyJWT requests cryptography
+          case "$ACTION" in
+            "enable-public-link")
+              ruby -e '
+                require "spaceship"
 
-      - name: List TestFlight groups (ASC API)
-        if: inputs.action == 'list-groups'
-        run: python scripts/asc_api.py groups
+                puts "Logging in to App Store Connect..."
+                Spaceship::ConnectAPI.login(ENV["FASTLANE_USER"])
+
+                puts "Finding app..."
+                app = Spaceship::ConnectAPI::App.find("com.capspoker.app")
+                puts "Found app: #{app.name} (#{app.id})"
+
+                puts "Fetching beta groups..."
+                groups = app.get_beta_groups
+                puts "Groups found: #{groups.map(&:name).join(", ")}"
+
+                external = groups.find { |g| !g.is_internal_group }
+                if external.nil?
+                  external = groups.first
+                end
+
+                if external.nil?
+                  puts "No groups found — creating Public Testers group..."
+                  external = Spaceship::ConnectAPI::BetaGroup.create(
+                    app_id: app.id,
+                    group_name: "Public Testers",
+                    public_link_enabled: true,
+                    public_link_limit_enabled: false
+                  )
+                  puts "Created group: #{external.name}"
+                else
+                  puts "Enabling public link on group: #{external.name}..."
+                  external = external.update(attributes: {
+                    publicLinkEnabled: true,
+                    publicLinkLimitEnabled: false
+                  })
+                end
+
+                puts "Public link enabled: #{external.public_link_enabled}"
+                puts "Public link: #{external.public_link}"
+              '
+              ;;
+
+            "add-tester")
+              if [ -z "$EMAIL" ]; then
+                echo "ERROR: email required for add-tester"
+                exit 1
+              fi
+              ruby -e '
+                require "spaceship"
+
+                email = ENV["TESTER_EMAIL"]
+                puts "Logging in..."
+                Spaceship::ConnectAPI.login(ENV["FASTLANE_USER"])
+
+                app = Spaceship::ConnectAPI::App.find("com.capspoker.app")
+                groups = app.get_beta_groups
+                group = groups.find { |g| !g.is_internal_group } || groups.first
+
+                puts "Adding #{email} to group #{group.name}..."
+                tester = Spaceship::ConnectAPI::BetaTester.find_or_create(email: email)
+                group.post_bulk_beta_tester_assignments(beta_testers: [tester])
+                puts "Tester added: #{email}"
+              ' TESTER_EMAIL="$EMAIL"
+              ;;
+
+            "list-testers")
+              ruby -e '
+                require "spaceship"
+
+                Spaceship::ConnectAPI.login(ENV["FASTLANE_USER"])
+                app = Spaceship::ConnectAPI::App.find("com.capspoker.app")
+                testers = Spaceship::ConnectAPI::BetaTester.all(filter: { apps: app.id })
+                testers.each do |t|
+                  puts "#{t.first_name} #{t.last_name} — #{t.email} (#{t.invite_type})"
+                end
+              '
+              ;;
+
+            "list-builds")
+              fastlane pilot builds \
+                -u "$FASTLANE_USER" \
+                -a "$APP_IDENTIFIER" 2>&1
+              ;;
+          esac
+
+      - name: Output result
+        if: always()
+        run: echo "Action completed. Check logs above for the public link URL."
