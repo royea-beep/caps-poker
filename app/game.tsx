@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, InteractionManager } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -406,6 +406,14 @@ function GameScreenInner() {
       console.warn('[navigateToReveal] aborted — component unmounted');
       return;
     }
+
+    // Run AFTER all pending animations/interactions settle — prevents Reanimated worklet crash
+    // when JS thread gets blocked by hand evaluation during active animations
+    InteractionManager.runAfterInteractions(() => {
+    if (!mountedRef.current) {
+      console.warn('[navigateToReveal] aborted after InteractionManager — component unmounted');
+      return;
+    }
     let results;
     try {
       if (precalculatedResultsRef.current) {
@@ -487,6 +495,7 @@ function GameScreenInner() {
         console.error('[navigateToReveal] router.push also failed:', e2);
       }
     }
+    }); // end InteractionManager.runAfterInteractions
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
 
   // Keep navigateToReveal in a ref so the trigger effect has no stale-closure risk.

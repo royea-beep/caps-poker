@@ -179,18 +179,26 @@ describe('computeOmahaEquity — performance', () => {
     return ranks.map((r, i) => ({ rank: r as Card['rank'], suit: suitMap[suits[i]] as Card['suit'], id: `${r}_${suitMap[suits[i]]}` }));
   }
 
-  test('480 evaluations (4 boards × 2 players × 60 combos) complete in < 100ms', () => {
-    const playerCards = makeHand(['A', 'K', 'Q', 'J'], ['h', 'd', 'c', 's']);
-    const botCards = [makeHand(['2', '3', '4', '5'], ['h', 'd', 'c', 's'])];
-    const openCards = makeHand(['9', '8', '7'], ['h', 'd', 'c']);
+  test('960 evaluations (4 boards × 4 players × 60 combos) complete in < 30ms', () => {
+    // Simulates worst-case: 4 players, 4 boards, full 5-card board
+    const hands = [
+      makeHand(['A', 'K', 'Q', 'J'], ['h', 'd', 'c', 's']),
+      makeHand(['2', '3', '4', '5'], ['h', 'd', 'c', 's']),
+      makeHand(['6', '7', '8', '9'], ['h', 'd', 'c', 's']),
+      makeHand(['10', 'J', 'Q', 'K'], ['h', 'd', 'c', 's']),
+    ];
+    const board = makeHand(['9', '8', '7', '6', '5'], ['h', 'd', 'c', 's', 'h']);
 
     const start = Date.now();
-    for (let i = 0; i < 4; i++) {
-      evaluateOmahaHand(playerCards, [...openCards, ...makeHand(['6', '5'], ['s', 'h'])]);
-      evaluateOmahaHand(botCards[0], [...openCards, ...makeHand(['6', '5'], ['s', 'h'])]);
+    for (let b = 0; b < 4; b++) {
+      for (const hand of hands) {
+        evaluateOmahaHand(hand, board);
+      }
     }
     const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(100);
+    // Node.js on Windows is slower than iPhone — threshold is generous
+    expect(elapsed).toBeLessThan(30);
+    console.log(`[PERF] 960 evaluations in ${elapsed}ms (${(elapsed/960).toFixed(3)}ms each)`);
   });
 
   test('computeOmahaEquity flop call (2 unknowns) completes in < 50ms', () => {
