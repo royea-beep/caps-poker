@@ -42,6 +42,7 @@ const HINT_TEXTS = [
 ];
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rb, rv } from '../utils/responsive';
+import { KILL_game } from '../utils/animationKill';
 import { OrientationType } from '../store/gameStore';
 
 // Lazy-load expo-haptics — not available on web
@@ -65,13 +66,15 @@ function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; s
 
   useEffect(() => {
     if (pulsing) {
-      pulseScale.value = withRepeat(
-        withSequence(
-          withTiming(1.12, { duration: 500 }),
-          withTiming(1, { duration: 500 }),
-        ),
-        -1,
-      );
+      if (!KILL_game) {
+        pulseScale.value = withRepeat(
+          withSequence(
+            withTiming(1.12, { duration: 500 }),
+            withTiming(1, { duration: 500 }),
+          ),
+          -1,
+        );
+      }
     } else {
       cancelAnimation(pulseScale);
       pulseScale.value = withTiming(1, { duration: 200 });
@@ -132,10 +135,12 @@ function TimerBar({ countdown, total, color }: { countdown: number; total: numbe
 
   useEffect(() => {
     if (countdown <= 3 && countdown > 0) {
-      pulseOpacity.value = withRepeat(
-        withSequence(withTiming(0.4, { duration: 250 }), withTiming(1, { duration: 250 })),
-        -1, false,
-      );
+      if (!KILL_game) {
+        pulseOpacity.value = withRepeat(
+          withSequence(withTiming(0.4, { duration: 250 }), withTiming(1, { duration: 250 })),
+          -1, false,
+        );
+      }
     } else {
       cancelAnimation(pulseOpacity);
       pulseOpacity.value = withTiming(1, { duration: 100 });

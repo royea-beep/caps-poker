@@ -8,11 +8,13 @@ import Animated, {
   withDelay,
   withSequence,
   withRepeat,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import ProQuoteBanner from './ProQuoteBanner';
 import { rv, rf, rs } from '../utils/responsive';
+import { KILL_CompleteOverlay } from '../utils/animationKill';
 
 // Lazy-load expo-haptics
 let Haptics: any = null;
@@ -129,19 +131,22 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
   useEffect(() => {
     titleScale.value = withSpring(1, { damping: 6, stiffness: 90 });
     // Gentle pulse after entrance
-    titlePulse.value = withDelay(
-      600,
-      withRepeat(
-        withSequence(
-          withTiming(1.04, { duration: 800 }),
-          withTiming(1.0, { duration: 800 }),
+    if (!KILL_CompleteOverlay) {
+      titlePulse.value = withDelay(
+        600,
+        withRepeat(
+          withSequence(
+            withTiming(1.04, { duration: 800 }),
+            withTiming(1.0, { duration: 800 }),
+          ),
+          -1,
         ),
-        -1,
-      ),
-    );
+      );
+    }
     subOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
     bonusTranslateY.value = withDelay(500, withSpring(0, { damping: 10, stiffness: 100 }));
     bonusOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
+    return () => { cancelAnimation(titlePulse); };
   }, []);
 
   const titleStyle = useAnimatedStyle(() => ({

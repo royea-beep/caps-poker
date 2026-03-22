@@ -19,6 +19,7 @@ import { rf, rs } from '../utils/responsive';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
+import { KILL_Board } from '../utils/animationKill';
 
 interface BoardProps {
   index: number;
@@ -53,16 +54,20 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
 
   useEffect(() => {
     if (isArrangement) {
-      pulseOpacity.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 1000 }),
-          withTiming(0.4, { duration: 1000 }),
-        ),
-        -1,
-      );
+      if (!KILL_Board) {
+        pulseOpacity.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 1000 }),
+            withTiming(0.4, { duration: 1000 }),
+          ),
+          -1,
+        );
+      }
     } else {
+      cancelAnimation(pulseOpacity);
       pulseOpacity.value = withTiming(0.6, { duration: 200 });
     }
+    return () => { cancelAnimation(pulseOpacity); };
   }, [isArrangement]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -146,13 +151,15 @@ export default function Board({
 
   useEffect(() => {
     if (active) {
-      pulseValue.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 800 }),
-          withTiming(0.4, { duration: 800 }),
-        ),
-        -1,
-      );
+      if (!KILL_Board) {
+        pulseValue.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 800 }),
+            withTiming(0.4, { duration: 800 }),
+          ),
+          -1,
+        );
+      }
     } else {
       cancelAnimation(pulseValue);
       pulseValue.value = withTiming(0, { duration: 200 });
@@ -220,17 +227,21 @@ export default function Board({
   const winnerPulse = useSharedValue(0);
   useEffect(() => {
     if (isWinner) {
-      winnerPulse.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 1000 }),
-          withTiming(0.3, { duration: 1000 }),
-        ),
-        -1,
-        false,
-      );
+      if (!KILL_Board) {
+        winnerPulse.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 1000 }),
+            withTiming(0.3, { duration: 1000 }),
+          ),
+          -1,
+          false,
+        );
+      }
     } else {
+      cancelAnimation(winnerPulse);
       winnerPulse.value = withTiming(0, { duration: 200 });
     }
+    return () => { cancelAnimation(winnerPulse); };
   }, [isWinner]);
 
   const winnerPulseStyle = useAnimatedStyle(() => {

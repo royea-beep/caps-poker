@@ -12,6 +12,7 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PRO_QUOTES, getRandomQuote, ProQuote } from '../constants/proQuotes';
 import { getSupabase } from '../utils/supabase';
+import { KILL_ProQuoteBanner } from '../utils/animationKill';
 
 export const PRO_QUOTES_ENABLED_KEY = 'caps_show_pro_quotes';
 export const PRO_VOICES_ENABLED_KEY = 'caps_pro_voices_enabled';
@@ -125,10 +126,12 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
   // Speaker pulse animation while playing
   useEffect(() => {
     if (isPlayingVoice) {
-      speakerPulse.value = withRepeat(
-        withSequence(withTiming(0.3, { duration: 600 }), withTiming(1, { duration: 600 })),
-        -1, true,
-      );
+      if (!KILL_ProQuoteBanner) {
+        speakerPulse.value = withRepeat(
+          withSequence(withTiming(0.3, { duration: 600 }), withTiming(1, { duration: 600 })),
+          -1, true,
+        );
+      }
     } else {
       cancelAnimation(speakerPulse);
       speakerPulse.value = withTiming(1, { duration: 200 });
