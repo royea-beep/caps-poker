@@ -10,6 +10,7 @@ import Animated, {
   withDelay,
   withSequence,
   withRepeat,
+  cancelAnimation,
   useDerivedValue,
   FadeIn,
   FadeInDown,
@@ -41,6 +42,7 @@ import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHis
 import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../components/ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
+import { KILL_results } from '../utils/animationKill';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -49,14 +51,17 @@ try { Haptics = require('expo-haptics'); } catch {}
 function DealMeInButton({ label, onPress }: { label: string; onPress: () => void }) {
   const glow = useSharedValue(0.15);
   useEffect(() => {
-    glow.value = withRepeat(
-      withSequence(
-        withTiming(0.7, { duration: 900 }),
-        withTiming(0.15, { duration: 900 }),
-      ),
-      -1,
-      false,
-    );
+    if (!KILL_results) {
+      glow.value = withRepeat(
+        withSequence(
+          withTiming(0.7, { duration: 900 }),
+          withTiming(0.15, { duration: 900 }),
+        ),
+        -1,
+        false,
+      );
+    }
+    return () => { cancelAnimation(glow); };
   }, []);
   const glowStyle = useAnimatedStyle(() => ({
     shadowOpacity: glow.value,
@@ -243,14 +248,16 @@ export default function ResultsScreen() {
     const btnTimer = setTimeout(() => {
       if (revealData.isComplete && revealData.completeWinner) {
         // Gold pulse all boards 3 times, then show CompleteOverlay
-        goldPulse.value = withRepeat(
-          withSequence(
-            withTiming(1, { duration: 200 }),
-            withTiming(0, { duration: 200 }),
-          ),
-          3,
-          false,
-        );
+        if (!KILL_results) {
+          goldPulse.value = withRepeat(
+            withSequence(
+              withTiming(1, { duration: 200 }),
+              withTiming(0, { duration: 200 }),
+            ),
+            3,
+            false,
+          );
+        }
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 0);
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 400);
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 800);
@@ -266,6 +273,7 @@ export default function ResultsScreen() {
     return () => {
       clearTimeout(soundTimer);
       clearTimeout(btnTimer);
+      cancelAnimation(goldPulse);
     };
   }, []);
 
