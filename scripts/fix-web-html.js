@@ -74,4 +74,22 @@ if (fs.existsSync(privacySrc)) {
   console.log('✓ privacy.html copied');
 }
 
+// 6. Copy bug dashboard → dist/bugs/index.html
+const bugsDashSrc = path.join(__dirname, '..', 'web-dashboard', 'index.html');
+const bugsDashDst = path.join(distDir, 'bugs', 'index.html');
+if (fs.existsSync(bugsDashSrc)) {
+  if (!fs.existsSync(path.dirname(bugsDashDst))) fs.mkdirSync(path.dirname(bugsDashDst), { recursive: true });
+  fs.copyFileSync(bugsDashSrc, bugsDashDst);
+  console.log('✓ bugs/index.html copied');
+}
+
+// 7. Copy hand replay → dist/hand/index.html
+const handReplaySrc = path.join(__dirname, '..', 'web-replay', 'index.html');
+const handReplayDst = path.join(distDir, 'hand', 'index.html');
+if (fs.existsSync(handReplaySrc)) {
+  if (!fs.existsSync(path.dirname(handReplayDst))) fs.mkdirSync(path.dirname(handReplayDst), { recursive: true });
+  fs.copyFileSync(handReplaySrc, handReplayDst);
+  console.log('✓ hand/index.html copied');
+}
+
 console.log('\nReady to deploy: cd web-dist && vercel --prod --yes');
