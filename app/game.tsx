@@ -274,6 +274,8 @@ function GameScreenInner() {
   const [showContinueButton, setShowContinueButton] = useState(false);
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
+  const playerReadyRef = useRef(false);
+  const botsReadyCountRef = useRef(0);
 
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
@@ -348,19 +350,19 @@ function GameScreenInner() {
     }
   }, [countdownActive, countdown]);
 
-  // When countdown hits 0 — auto-place remaining cards randomly
+  // When countdown hits 0 — auto-place remaining cards and navigate directly
   useEffect(() => {
     if (countdownActive && countdown === 0 && !playerReady) {
-      // Shuffle remaining hand and auto-fill
-      setBoards((currentBoards) => {
-        const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
-        const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, currentBoards);
-        setPlayerHand(remainingHand);
-        return filledBoards;
-      });
+      const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
+      const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, boardsRef.current);
+      setBoards(filledBoards);
+      setPlayerHand(remainingHand);
       setSelectedCardIds([]);
       setPlayerReady(true);
       setPhase({ type: 'waiting_for_bot' });
+      playerReadyRef.current = true;
+      // Navigate directly with the filled boards
+      doNavigateRef.current(filledBoards);
     }
   }, [countdownActive, countdown, playerReady]);
 
@@ -399,6 +401,9 @@ function GameScreenInner() {
     setBoards(initialBoards);
     setPlayerHand(pHand);
     setBotsReady(new Array(numberOfBots).fill(false));
+    botsReadyCountRef.current = 0;
+    playerReadyRef.current = false;
+    hasNavigatedRef.current = false;
     CapsHooks.gameStarted('solo');
 
     // Deduct buy-in
@@ -418,13 +423,15 @@ function GameScreenInner() {
         setBotsReady((prev) => {
           const updated = [...prev];
           updated[botIdx] = true;
-          // Check if this is the first finisher
           const anyPrevReady = prev.some(Boolean);
-          if (!anyPrevReady) {
-            startCountdown(`Bot ${botIdx + 1}`);
-          }
+          if (!anyPrevReady) startCountdown(`Bot ${botIdx + 1}`);
           return updated;
         });
+        // If player already pressed READY and all bots are now done — navigate directly
+        botsReadyCountRef.current++;
+        if (playerReadyRef.current && botsReadyCountRef.current >= numberOfBots) {
+          doNavigateRef.current(boardsRef.current);
+        }
       }, delay);
       timeoutsRef.current.push(botTimer);
     }
@@ -533,12 +540,6 @@ function GameScreenInner() {
   useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
-
-  // When BOTH player and all bots are ready: navigate directly (no InteractionManager)
-  useEffect(() => {
-    if (!playerReady || !allBotsReady) return;
-    doNavigateRef.current(boardsRef.current);
-  }, [playerReady, allBotsReady]);
 
   // Tap card in hand → toggle in selectedCardIds (up to 4)
   const handleSelectCard = useCallback(
@@ -684,17 +685,25 @@ function GameScreenInner() {
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
     debugLog(`🟡 READY pressed — boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
+    void logStep('handleReady_pressed');
+
+    // Update UI state
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     playSound('cardSelect');
     setSelectedCardIds([]);
     setPlayerReady(true);
     setPhase({ type: 'waiting_for_bot' });
+    playerReadyRef.current = true;
 
     // If no countdown started yet, player is the first finisher — start countdown for bots
-    if (!countdownActive) {
-      startCountdown('You');
+    if (!countdownActive) startCountdown('You');
+
+    // Navigate directly — no useEffect chain, no InteractionManager
+    // If all bots already done: go now. If bots still running: bot timer will call doNavigate.
+    if (botsReadyCountRef.current >= numberOfBots) {
+      doNavigateRef.current(boardsRef.current);
     }
-  }, [allBoardsFull, countdownActive, startCountdown]);
+  }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
 
   // Auto-sim: auto-fill all boards + press Ready (debug marathon mode)
   useEffect(() => {
