@@ -40,6 +40,7 @@ import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../components/ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
+import { rf, rs, rb, rv, UI } from '../utils/responsive';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -74,10 +75,10 @@ function DealMeInButton({ label, onPress }: { label: string; onPress: () => void
 }
 const dealMeInStyles = StyleSheet.create({
   btn: {
-    borderRadius: 16,
+    borderRadius: rv(16),
     backgroundColor: '#FFD700',
-    marginHorizontal: 16,
-    height: 64,
+    marginHorizontal: rs(16),
+    height: rb(64),
     ...Platform.select({
       ios: {
         shadowColor: '#FFD700',
@@ -92,11 +93,11 @@ const dealMeInStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: rv(16),
   },
   text: {
     color: '#000',
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: '700',
     letterSpacing: 2,
   },
@@ -957,9 +958,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 12,
+    padding: rs(16),
+    paddingBottom: rs(32),
+    gap: rs(12),
     alignItems: 'center',
   },
   loadingContainer: {
@@ -969,26 +970,26 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: COLORS.gold,
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: '800',
   },
   titleSection: {
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   title: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: '900',
     color: COLORS.gold,
     letterSpacing: 6,
   },
   scoreDisplay: {
-    fontSize: 42,
+    fontSize: rf(42),
     fontWeight: '900',
   },
   scoreSep: {
     color: COLORS.textDim,
-    fontSize: 32,
+    fontSize: rf(32),
     fontWeight: '300',
   },
 
@@ -996,11 +997,11 @@ const styles = StyleSheet.create({
   boardCard: {
     width: '100%',
     backgroundColor: COLORS.surface,
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: rv(10),
+    padding: rs(10),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    gap: 4,
+    gap: rs(4),
   },
   boardCardWin: {
     borderColor: 'rgba(255,215,0,0.4)',
@@ -1038,16 +1039,16 @@ const styles = StyleSheet.create({
   boardHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   boardLabel: {
     color: COLORS.textMuted,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '800',
     letterSpacing: 1.5,
   },
   chipAmount: {
-    fontSize: 15,
+    fontSize: rf(15),
     fontWeight: '900',
   },
 
@@ -1066,11 +1067,11 @@ const styles = StyleSheet.create({
   handRowVertical: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
   },
   handLabel: {
     color: COLORS.textDim,
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '700',
     letterSpacing: 1,
     width: 28,
@@ -1083,9 +1084,9 @@ const styles = StyleSheet.create({
   },
   handName: {
     color: COLORS.textMuted,
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: rs(4),
   },
   handNameWin: {
     color: COLORS.goldLight,
@@ -1097,11 +1098,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     backgroundColor: 'rgba(255,215,0,0.08)',
-    padding: 16,
-    borderRadius: 12,
+    padding: rs(16),
+    borderRadius: rv(12),
     borderWidth: 2,
     borderColor: '#FFD700',
-    gap: 4,
+    gap: rs(4),
     ...Platform.select({
       ios: {
         shadowColor: '#FFD700',
@@ -1115,14 +1116,14 @@ const styles = StyleSheet.create({
   },
   completeLabel: {
     color: '#FFD700',
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: '900',
     letterSpacing: 2,
     textAlign: 'center' as any,
   },
   completeAmount: {
     color: COLORS.goldLight,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '700',
     textAlign: 'center' as any,
   },
@@ -1135,54 +1136,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: rs(4),
   },
   netLabel: {
     color: COLORS.textMuted,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
   },
   netAmount: {
-    fontSize: 28,
+    fontSize: rf(28),
     fontWeight: '900',
   },
 
   // Buttons
   buttons: {
     width: '100%',
-    gap: 10,
-    marginTop: 4,
+    gap: rs(10),
+    marginTop: rs(4),
   },
   rematchRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: rs(10),
   },
   waitingNextHand: {
     backgroundColor: COLORS.feltLight,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: rs(14),
+    borderRadius: rv(10),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
     alignItems: 'center',
   },
   waitingNextHandText: {
     color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
   },
 
   // Efficiency analysis
   efficiencyCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 10,
-    padding: 14,
+    borderRadius: rv(10),
+    padding: rs(14),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    gap: 10,
+    gap: rs(10),
   },
   efficiencyTitle: {
     color: COLORS.textMuted,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 2,
     textAlign: 'center',
@@ -1191,29 +1192,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: rs(10),
   },
   efficiencyEmoji: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
   efficiencyPercent: {
-    fontSize: 36,
+    fontSize: rf(36),
     fontWeight: '900',
   },
   efficiencyGrade: {
     color: COLORS.textMuted,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
   },
   optimalSection: {
     borderTopWidth: 1,
     borderTopColor: COLORS.boardBorder,
-    paddingTop: 8,
-    gap: 4,
+    paddingTop: rs(8),
+    gap: rs(4),
   },
   optimalTitle: {
     color: COLORS.textMuted,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 1,
     marginBottom: 2,
@@ -1221,25 +1222,25 @@ const styles = StyleSheet.create({
   optimalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   optimalBoardLabel: {
     color: '#c8a84b',
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     width: 22,
   },
   optimalCards: {
     flexDirection: 'row',
-    gap: 4,
+    gap: rs(4),
   },
   optimalCardText: {
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
   },
   optimalHandName: {
     color: COLORS.textMuted,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '600',
     flex: 1,
     textAlign: 'right',
@@ -1249,22 +1250,22 @@ const styles = StyleSheet.create({
   boardHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
   },
   shareBtn: {
-    paddingHorizontal: 8,
+    paddingHorizontal: rs(8),
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: rv(8),
     backgroundColor: 'rgba(255,215,0,0.12)',
     borderWidth: 1,
     borderColor: 'rgba(255,215,0,0.3)',
   },
   shareBtnText: {
-    fontSize: 13,
+    fontSize: rf(13),
   },
   shareGameRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: rs(8),
     width: '100%',
   },
   shareGameBtn: {
@@ -1272,8 +1273,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,215,0,0.12)',
     borderWidth: 1,
     borderColor: 'rgba(255,215,0,0.35)',
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: rv(10),
+    paddingVertical: rs(10),
     alignItems: 'center',
   },
   shareBtnLoading: {
@@ -1281,7 +1282,7 @@ const styles = StyleSheet.create({
   },
   shareGameBtnText: {
     color: '#FFD700',
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
   },
   copyLinkBtn: {
@@ -1289,13 +1290,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: rv(10),
+    paddingVertical: rs(10),
     alignItems: 'center',
   },
   copyLinkText: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '600',
   },
   offscreen: {
@@ -1309,13 +1310,13 @@ const styles = StyleSheet.create({
   // Board result label
   boardResultRow: {
     alignItems: 'center',
-    paddingTop: 6,
+    paddingTop: rs(6),
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
-    marginTop: 4,
+    marginTop: rs(4),
   },
   boardResultLabel: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1326,12 +1327,12 @@ const styles = StyleSheet.create({
   // Best hand highlight
   bestHandRow: {
     width: '100%',
-    paddingHorizontal: 4,
-    paddingVertical: 6,
+    paddingHorizontal: rs(4),
+    paddingVertical: rs(6),
   },
   bestHandText: {
     color: '#FFD700',
-    fontSize: 13,
+    fontSize: rf(13),
     fontStyle: 'italic',
     textAlign: 'center',
   },
@@ -1342,15 +1343,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
+    gap: rs(8),
+    paddingVertical: rs(6),
   },
   statItem: {
     color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
+    fontSize: rf(12),
   },
   statSep: {
     color: 'rgba(255,255,255,0.2)',
-    fontSize: 12,
+    fontSize: rf(12),
   },
 });

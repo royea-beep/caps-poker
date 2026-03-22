@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { COLORS } from '../constants/gameConfig';
+import { rf, rs } from '../utils/responsive';
 
 interface ChipsDisplayProps {
   amount: number;
@@ -57,16 +58,16 @@ const styles = StyleSheet.create({
   },
   label: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: rs(4),
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
   chipRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
   },
   // Premium chip: denomination-colored ring → dark inner → matching center dot
   chipOuter: {
@@ -96,10 +97,10 @@ const styles = StyleSheet.create({
   },
   amount: {
     color: COLORS.gold,
-    fontSize: 22,
+    fontSize: rf(22),
     fontWeight: '900',
   },
   amountLarge: {
-    fontSize: 36,
+    fontSize: rf(36, 24, 42),
   },
 });

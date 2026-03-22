@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { rv, rf, rs } from '../utils/responsive';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -221,10 +222,10 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(0,0,0,0.32)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: 4,
+    borderRadius: rv(10),
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(8),
+    marginHorizontal: rs(4),
     alignItems: 'center',
     ...Platform.select({
       web: { backdropFilter: 'blur(6px)' } as any,
@@ -233,9 +234,9 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     color: 'rgba(255,255,255,0.82)',
-    fontSize: 11,
+    fontSize: rf(11),
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: rf(16),
   },
   italic: {
     fontStyle: 'italic',
@@ -247,32 +248,32 @@ const styles = StyleSheet.create({
   },
   disclaimer: {
     color: 'rgba(255,255,255,0.28)',
-    fontSize: 8,
-    marginTop: 3,
+    fontSize: rf(8),
+    marginTop: rs(3),
     textAlign: 'center',
   },
   audioDisclaimer: {
     color: 'rgba(255,255,255,0.22)',
-    fontSize: 8,
-    marginTop: 1,
+    fontSize: rf(8),
+    marginTop: rs(1),
     textAlign: 'center',
   },
   speakerIcon: {
-    fontSize: 10,
+    fontSize: rf(10),
   },
   firstTimeNotice: {
     backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: 4,
-    marginBottom: 4,
+    borderRadius: rv(8),
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(8),
+    marginHorizontal: rs(4),
+    marginBottom: rs(4),
     alignItems: 'center',
   },
   firstTimeNoticeText: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 10,
+    fontSize: rf(10),
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: rf(14),
   },
 });

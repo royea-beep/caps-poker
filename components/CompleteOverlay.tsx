@@ -12,6 +12,7 @@ import Animated, {
 import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import ProQuoteBanner from './ProQuoteBanner';
+import { rv, rf, rs } from '../utils/responsive';
 
 // Lazy-load expo-haptics
 let Haptics: any = null;
@@ -186,7 +187,7 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
           <View style={styles.bonusChip} />
         </Animated.View>
         {winner === 'player' && (
-          <Animated.View style={[{ marginTop: 16, width: '100%' }, bonusStyle]}>
+          <Animated.View style={[{ marginTop: rs(16), width: '100%' }, bonusStyle]}>
             <ProQuoteBanner context="complete" />
           </Animated.View>
         )}
@@ -205,7 +206,7 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    padding: 40,
+    padding: rs(40),
   },
   particleContainer: {
     position: 'absolute',
@@ -220,34 +221,34 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   trophyText: {
-    fontSize: 48,
-    marginBottom: 8,
+    fontSize: rf(48),
+    marginBottom: rs(8),
   },
   completeText: {
-    fontSize: 58,
+    fontSize: rf(58),
     fontWeight: '900',
     color: COLORS.goldLight,
     letterSpacing: 6,
     textShadowColor: COLORS.gold,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 24,
-    marginBottom: 12,
+    marginBottom: rs(12),
   },
   subText: {
-    fontSize: 17,
+    fontSize: rf(17),
     color: COLORS.textPrimary,
-    marginBottom: 28,
+    marginBottom: rs(28),
     fontWeight: '500',
     letterSpacing: 0.5,
   },
   bonusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
     backgroundColor: 'rgba(201,168,76,0.18)',
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingHorizontal: rs(28),
+    paddingVertical: rs(14),
+    borderRadius: rv(14),
     borderWidth: 1.5,
     borderColor: COLORS.gold,
     ...Platform.select({
@@ -263,24 +264,24 @@ const styles = StyleSheet.create({
   },
   bonusLabel: {
     color: COLORS.gold,
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '800',
     letterSpacing: 2,
   },
   bonusSeparator: {
     color: COLORS.goldLight,
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: '900',
   },
   bonusAmount: {
     color: COLORS.goldBright,
-    fontSize: 30,
+    fontSize: rf(30),
     fontWeight: '900',
   },
   bonusChip: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: rv(14),
+    height: rv(14),
+    borderRadius: rv(7),
     backgroundColor: COLORS.gold,
     borderWidth: 2,
     borderColor: COLORS.background,

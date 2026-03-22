@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import { rf, rs, rv, rb } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import { PRO_QUOTES_ENABLED_KEY, PRO_VOICES_ENABLED_KEY } from '../components/ProQuoteBanner';
@@ -495,55 +496,55 @@ function VisualThemePicker() {
 
 const vtStyles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: rs(24),
   },
   sectionLabel: {
     color: COLORS.textMuted,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 2,
-    marginBottom: 10,
+    marginBottom: rs(10),
   },
   row: {
     flexDirection: 'row',
-    gap: 10,
+    gap: rs(10),
   },
   tile: {
     flex: 1,
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: rv(12),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    padding: 12,
+    padding: rs(12),
     alignItems: 'center',
-    gap: 4,
+    gap: rs(4),
   },
   preview: {
-    width: 44,
-    height: 36,
-    borderRadius: 6,
+    width: rv(44),
+    height: rv(36),
+    borderRadius: rv(6),
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: rs(4),
   },
   previewSymbol: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '900',
   },
   tileLabel: {
     color: COLORS.textPrimary,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '900',
     letterSpacing: 1,
   },
   tileTag: {
     color: COLORS.textMuted,
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '600',
   },
   check: {
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '900',
   },
 });
@@ -594,7 +595,7 @@ function ProQuotesToggle() {
         <View style={styles.rowLeft}>
           <Text style={styles.rowLabel}>🔊 Pro Voice Clips (AI-Generated)</Text>
           <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
-          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: 9 }]}>⚠️ Not real player voices</Text>
+          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: rf(9) }]}>⚠️ Not real player voices</Text>
         </View>
         <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]}>
           <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
@@ -705,21 +706,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(12),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.boardBorder,
   },
   backButton: {
-    padding: 4,
+    padding: rs(4),
   },
   backText: {
     color: COLORS.textSecondary,
-    fontSize: 15,
+    fontSize: rf(15),
   },
   title: {
     color: COLORS.goldBright,
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
   },
@@ -727,25 +728,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    gap: 4,
+    padding: rs(16),
+    gap: rs(4),
   },
   sectionTitle: {
     color: COLORS.gold,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '800',
     letterSpacing: 3,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: rs(20),
+    marginBottom: rs(8),
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: COLORS.feltLight,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 6,
+    padding: rs(12),
+    borderRadius: rv(8),
+    marginBottom: rs(6),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
@@ -754,46 +755,46 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: COLORS.textPrimary,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '600',
   },
   rowHint: {
     color: COLORS.textSecondary,
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: rf(10),
+    marginTop: rs(2),
   },
   creditsBox: {
     backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 24,
-    gap: 4,
+    borderRadius: rv(8),
+    padding: rs(12),
+    marginBottom: rs(24),
+    gap: rs(4),
   },
   creditsText: {
     color: 'rgba(255,255,255,0.35)',
-    fontSize: 10,
-    lineHeight: 16,
+    fontSize: rf(10),
+    lineHeight: rf(16),
   },
   rowError: {
     color: COLORS.danger,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: rs(2),
   },
   rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
   },
   input: {
     backgroundColor: COLORS.background,
     color: COLORS.goldBright,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '700',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    minWidth: 70,
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(6),
+    borderRadius: rv(6),
+    minWidth: rv(70),
     textAlign: 'center',
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
@@ -803,19 +804,19 @@ const styles = StyleSheet.create({
   },
   suffix: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '600',
   },
   selectorRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: rs(6),
   },
   selectorBtn: {
-    width: 40,
-    height: 36,
+    width: rv(40),
+    height: rb(36),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: rv(6),
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
@@ -826,16 +827,16 @@ const styles = StyleSheet.create({
   },
   selectorText: {
     color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '700',
   },
   selectorTextActive: {
     color: COLORS.background,
   },
   toggleBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(8),
+    borderRadius: rv(6),
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
@@ -846,7 +847,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     color: COLORS.textSecondary,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
   },
   toggleTextActive: {
@@ -857,18 +858,18 @@ const styles = StyleSheet.create({
 const themeStyles = StyleSheet.create({
   pickerRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 6,
+    gap: rs(8),
+    marginBottom: rs(6),
   },
   themeBtn: {
     flex: 1,
     backgroundColor: COLORS.feltLight,
-    borderRadius: 10,
+    borderRadius: rv(10),
     borderWidth: 1.5,
     borderColor: COLORS.boardBorder,
-    padding: 10,
+    padding: rs(10),
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   themeBtnActive: {
     borderColor: COLORS.gold,
@@ -876,7 +877,7 @@ const themeStyles = StyleSheet.create({
   },
   themeBtnLabel: {
     color: COLORS.textSecondary,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 0.5,
     textAlign: 'center',
@@ -886,18 +887,18 @@ const themeStyles = StyleSheet.create({
   },
   previewRow: {
     flexDirection: 'row',
-    gap: 3,
+    gap: rs(3),
     justifyContent: 'center',
   },
   activePill: {
     backgroundColor: COLORS.gold,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: rs(8),
+    paddingVertical: rs(2),
+    borderRadius: rv(6),
   },
   activePillText: {
     color: COLORS.background,
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '900',
     letterSpacing: 0.5,
   },
@@ -905,22 +906,22 @@ const themeStyles = StyleSheet.create({
 
 const homeThemeStyles = StyleSheet.create({
   container: {
-    gap: 8,
-    marginBottom: 6,
+    gap: rs(8),
+    marginBottom: rs(6),
   },
   swatchRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: rs(8),
   },
   swatchItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: rs(4),
   },
   swatchCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: rv(40),
+    height: rv(40),
+    borderRadius: rv(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -929,12 +930,12 @@ const homeThemeStyles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   swatchCheck: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '900',
     color: '#000000',
   },
   swatchLabel: {
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: '700',
     letterSpacing: 0.3,
     textAlign: 'center',
@@ -944,19 +945,19 @@ const homeThemeStyles = StyleSheet.create({
 const bgPickerStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 6,
+    gap: rs(8),
+    marginBottom: rs(6),
   },
   tile: {
     flex: 1,
     backgroundColor: COLORS.feltLight,
-    borderRadius: 10,
+    borderRadius: rv(10),
     borderWidth: 1.5,
     borderColor: COLORS.boardBorder,
-    padding: 10,
+    padding: rs(10),
     alignItems: 'center',
-    gap: 4,
-    minHeight: 80,
+    gap: rs(4),
+    minHeight: rb(80),
     justifyContent: 'center',
   },
   tileActive: {
@@ -964,12 +965,12 @@ const bgPickerStyles = StyleSheet.create({
     borderWidth: 2,
   },
   noPreview: {
-    width: 48,
-    height: 28,
+    width: rv(48),
+    height: rv(28),
   },
   tileLabel: {
     color: COLORS.textSecondary,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -978,11 +979,11 @@ const bgPickerStyles = StyleSheet.create({
   },
   tileHint: {
     color: COLORS.textMuted,
-    fontSize: 8,
+    fontSize: rf(8),
     textAlign: 'center',
   },
   check: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '900',
   },
 });
@@ -990,19 +991,19 @@ const bgPickerStyles = StyleSheet.create({
 const orientationStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 6,
+    gap: rs(8),
+    marginBottom: rs(6),
   },
   tile: {
     flex: 1,
     backgroundColor: COLORS.feltLight,
-    borderRadius: 10,
+    borderRadius: rv(10),
     borderWidth: 1.5,
     borderColor: COLORS.boardBorder,
-    padding: 14,
+    padding: rs(14),
     alignItems: 'center',
-    gap: 6,
-    minHeight: 80,
+    gap: rs(6),
+    minHeight: rb(80),
     justifyContent: 'center',
   },
   tileActive: {
@@ -1010,11 +1011,11 @@ const orientationStyles = StyleSheet.create({
     borderWidth: 2,
   },
   tileIcon: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
   tileLabel: {
     color: COLORS.textSecondary,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -1022,7 +1023,7 @@ const orientationStyles = StyleSheet.create({
     color: COLORS.gold,
   },
   check: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '900',
   },
 });
@@ -1030,38 +1031,38 @@ const orientationStyles = StyleSheet.create({
 const btnStyleStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 6,
+    gap: rs(8),
+    marginBottom: rs(6),
   },
   option: {
     flex: 1,
     backgroundColor: COLORS.feltLight,
-    borderRadius: 10,
+    borderRadius: rv(10),
     borderWidth: 1.5,
     borderColor: COLORS.boardBorder,
-    padding: 12,
+    padding: rs(12),
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
   },
   preview: {
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    borderRadius: rv(8),
+    paddingVertical: rs(6),
+    paddingHorizontal: rs(10),
     alignItems: 'center',
     justifyContent: 'center',
   },
   previewText: {
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1,
   },
   label: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   check: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '900',
   },
 });

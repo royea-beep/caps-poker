@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { rv, rf, rs } from '../../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { useGameStore } from '../../store/gameStore';
@@ -221,11 +222,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
-    gap: 20,
+    padding: rs(24),
+    gap: rs(20),
   },
   title: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: '900',
     color: COLORS.goldBright,
     letterSpacing: 6,
@@ -233,111 +234,111 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     backgroundColor: 'rgba(231, 76, 60, 0.15)',
-    padding: 12,
-    borderRadius: 8,
+    padding: rs(12),
+    borderRadius: rv(8),
     borderWidth: 1,
     borderColor: COLORS.danger,
   },
   errorText: {
     color: COLORS.danger,
-    fontSize: 13,
+    fontSize: rf(13),
     textAlign: 'center',
   },
   codeSection: {
     alignItems: 'center',
     backgroundColor: COLORS.feltLight,
-    padding: 20,
-    borderRadius: 12,
+    padding: rs(20),
+    borderRadius: rv(12),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
   codeLabel: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 3,
   },
   codeValue: {
     color: COLORS.goldBright,
-    fontSize: 48,
+    fontSize: rf(48),
     fontWeight: '900',
     letterSpacing: 16,
-    marginVertical: 8,
+    marginVertical: rs(8),
   },
   ipLabel: {
     color: COLORS.textSecondary,
-    fontSize: 13,
+    fontSize: rf(13),
     fontFamily: 'monospace',
   },
   playerCountSection: {
-    gap: 8,
+    gap: rs(8),
   },
   sectionLabel: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 2,
   },
   playerCountRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: rs(8),
   },
   countBtn: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: rs(10),
   },
   playersSection: {
     flex: 1,
-    gap: 8,
+    gap: rs(8),
   },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.feltLight,
-    padding: 12,
-    borderRadius: 8,
+    padding: rs(12),
+    borderRadius: rv(8),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    gap: 10,
+    gap: rs(10),
   },
   playerSeat: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: rv(28),
+    height: rv(28),
+    borderRadius: rv(14),
     backgroundColor: COLORS.gold,
     justifyContent: 'center',
     alignItems: 'center',
   },
   seatText: {
     color: COLORS.background,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '800',
   },
   playerName: {
     color: COLORS.textPrimary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
     flex: 1,
   },
   hostBadge: {
     color: COLORS.gold,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1,
   },
   readyBadge: {
     color: COLORS.success,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1,
   },
   waitingText: {
     color: COLORS.textSecondary,
-    fontSize: 14,
+    fontSize: rf(14),
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: rs(8),
   },
   buttons: {
-    gap: 10,
+    gap: rs(10),
   },
 });
