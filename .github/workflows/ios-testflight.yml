@@ -45,10 +45,11 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: EAS Build (fire-and-forget)
-        # No --wait, no --auto-submit — queues build on EAS Cloud and exits (~2-3 min CI).
-        # EAS Cloud compiles (~30 min, free). Submit manually via testflight-manage.yml workflow_dispatch.
-        run: eas build --platform ios --profile production --non-interactive
+      - name: EAS Build + Auto-Submit to TestFlight
+        # Queues build on EAS Cloud (~2-3 min CI). EAS Cloud compiles (~30 min) then auto-submits.
+        run: eas build --platform ios --profile production --auto-submit-with-profile ci --non-interactive
+        env:
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
 
       # Web deploy: handled by Vercel native GitHub integration (auto-deploys on push)
       # No token needed. vercel.json in repo root configures the build.
