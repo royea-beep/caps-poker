@@ -35,7 +35,11 @@ jobs:
       - name: Run TestFlight management
         env:
           FASTLANE_USER: royearguan@gmail.com
+          # For 2FA Apple accounts, FASTLANE_PASSWORD = app-specific password
+          FASTLANE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # Preloaded session cookie (if set) avoids 2FA entirely
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
           APP_IDENTIFIER: com.capspoker.app
           APPLE_TEAM_ID: 3K9KJNGL9U
           ASC_APP_ID: "6760429619"
