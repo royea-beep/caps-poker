@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npx expo export --platform web --output-dir web-dist --clear && node scripts/fix-web-html.js",
+  "outputDirectory": "web-dist",
+  "framework": null,
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/privacy.html", "destination": "/privacy.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
