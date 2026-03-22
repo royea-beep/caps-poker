@@ -54,6 +54,16 @@ function combinations<T>(arr: T[], k: number): T[][] {
   return result;
 }
 
+// Pre-computed index combinations — avoids calling combinations() on every evaluation
+// C(4,2) = 6 player card combos (indices into 4-card hand)
+const PLAYER_COMBO_IDX: [number, number][] = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+// C(5,3) = 10, C(4,3) = 4, C(3,3) = 1 board combos (indexed by board length)
+const BOARD_COMBO_IDX: Record<number, [number, number, number][]> = {
+  3: [[0,1,2]],
+  4: [[0,1,2],[0,1,3],[0,2,3],[1,2,3]],
+  5: [[0,1,2],[0,1,3],[0,1,4],[0,2,3],[0,2,4],[0,3,4],[1,2,3],[1,2,4],[1,3,4],[2,3,4]],
+};
+
 function evaluate5Cards(cards: Card[]): { rank: HandRank; score: number } {
   const values = cards.map((c) => RANK_VALUES[c.rank]).sort((a, b) => b - a);
   const suits = cards.map((c) => c.suit);
@@ -165,6 +175,9 @@ const DEFAULT_HAND_RESULT: HandResult = {
   name: HAND_RANK_NAMES[HandRank.HighCard],
 };
 
+// Shared mutable 5-card hand array — reused across all evaluations (safe in single-threaded JS)
+const _hand5: Card[] = new Array(5) as Card[];
+
 export function evaluateOmahaHand(playerCards: Card[], boardCards: Card[]): HandResult {
   // Guard: need at least 2 player cards and 3 board cards for valid Omaha evaluation
   if (!playerCards || playerCards.length < 2 || !boardCards || boardCards.length < 3) {
@@ -172,33 +185,65 @@ export function evaluateOmahaHand(playerCards: Card[], boardCards: Card[]): Hand
   }
 
   try {
-    const playerCombos = combinations(playerCards, 2);
-    const boardCombos = combinations(boardCards, 3);
+    // Use pre-computed index combos (no array allocation) for standard 4-card hands
+    const playerCombos = playerCards.length >= 4 ? PLAYER_COMBO_IDX : null;
+    const boardKey = Math.min(boardCards.length, 5);
+    const boardCombos = BOARD_COMBO_IDX[boardKey] ?? BOARD_COMBO_IDX[3];
 
-    let bestResult: HandResult | null = null;
+    let bestScore = -1;
+    let bestRank = HandRank.HighCard;
+    let bestPi = 0, bestPj = 1, bestCi = 0, bestCj = 1, bestCk = 2;
 
-    outer:
-    for (const pc of playerCombos) {
-      for (const bc of boardCombos) {
-        const hand = [...pc, ...bc];
-        const { rank, score } = evaluate5Cards(hand);
-
-        if (!bestResult || score > bestResult.score) {
-          bestResult = {
-            rank,
-            score,
-            bestCards: hand,
-            playerCardsUsed: pc,
-            boardCardsUsed: bc,
-            name: HAND_RANK_NAMES[rank],
-          };
-          // Early exit: Royal Flush is unbeatable
-          if (rank === HandRank.RoyalFlush) break outer;
+    if (playerCombos) {
+      // Fast path: pre-computed indices, no array creation per combo
+      outer:
+      for (const [pi, pj] of playerCombos) {
+        for (const [ci, cj, ck] of boardCombos) {
+          _hand5[0] = playerCards[pi];
+          _hand5[1] = playerCards[pj];
+          _hand5[2] = boardCards[ci];
+          _hand5[3] = boardCards[cj];
+          _hand5[4] = boardCards[ck];
+          const { rank, score } = evaluate5Cards(_hand5);
+          if (score > bestScore) {
+            bestScore = score; bestRank = rank;
+            bestPi = pi; bestPj = pj; bestCi = ci; bestCj = cj; bestCk = ck;
+            if (rank === HandRank.RoyalFlush) break outer;
+          }
+        }
+      }
+    } else {
+      // Slow path: arbitrary player card count (edge cases only)
+      const dynPlayerCombos = combinations(playerCards, 2);
+      outer2:
+      for (const pc of dynPlayerCombos) {
+        for (const [ci, cj, ck] of boardCombos) {
+          _hand5[0] = pc[0]; _hand5[1] = pc[1];
+          _hand5[2] = boardCards[ci]; _hand5[3] = boardCards[cj]; _hand5[4] = boardCards[ck];
+          const { rank, score } = evaluate5Cards(_hand5);
+          if (score > bestScore) {
+            bestScore = score; bestRank = rank;
+            // Store indices by finding in original array
+            bestPi = playerCards.indexOf(pc[0]);
+            bestPj = playerCards.indexOf(pc[1]);
+            bestCi = ci; bestCj = cj; bestCk = ck;
+            if (rank === HandRank.RoyalFlush) break outer2;
+          }
         }
       }
     }
 
-    return bestResult ?? { ...DEFAULT_HAND_RESULT };
+    if (bestScore < 0) return { ...DEFAULT_HAND_RESULT };
+
+    // Build result arrays only once (not in the hot loop)
+    return {
+      rank: bestRank,
+      score: bestScore,
+      bestCards: [playerCards[bestPi], playerCards[bestPj], boardCards[bestCi], boardCards[bestCj], boardCards[bestCk]],
+      playerCardsUsed: [playerCards[bestPi], playerCards[bestPj]],
+      boardCardsUsed: [boardCards[bestCi], boardCards[bestCj], boardCards[bestCk]],
+      name: HAND_RANK_NAMES[bestRank],
+    };
   } catch {
     return { ...DEFAULT_HAND_RESULT };
   }
