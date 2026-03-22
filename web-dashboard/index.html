@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🐛 CAPS Bug Reports</title>
+  <title>🐛 CAPS Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -283,16 +283,68 @@
     }
 
     .toast.show { transform: translateY(0); }
+
+    /* Tab navigation */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.2); }
+    .tab-btn.active {
+      background: rgba(201,168,76,0.15);
+      border-color: rgba(201,168,76,0.5);
+      color: #c9a84c;
+    }
+
+    /* Deploy log */
+    .deploy-type-build {
+      background: rgba(30,144,255,0.12);
+      color: #3db0ff;
+      border: 1px solid rgba(30,144,255,0.3);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .deploy-type-ota {
+      background: rgba(0,200,117,0.12);
+      color: #00c875;
+      border: 1px solid rgba(0,200,117,0.25);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .deploy-commit {
+      font-family: monospace;
+      font-size: 11px;
+      color: rgba(201,168,76,0.7);
+    }
   </style>
 </head>
 <body>
 
 <header>
   <div class="header-left">
-    <h1>🐛 CAPS Bug Reports</h1>
+    <h1>🃏 CAPS Dashboard</h1>
     <span class="badge">LIVE</span>
   </div>
-  <div class="header-right">
+  <div class="header-right" id="bugFilters">
     <select id="filterStatus" onchange="applyFilters()">
       <option value="all">All statuses</option>
       <option value="open" selected>Open</option>
@@ -309,32 +361,66 @@
 </header>
 
 <main>
-  <div id="errorBox" class="error-msg" style="display:none"></div>
-
-  <div class="stats-bar" id="statsBar">
-    <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total</div></div>
-    <div class="stat-card"><div class="stat-num" id="statOpen">—</div><div class="stat-label">Open</div></div>
-    <div class="stat-card"><div class="stat-num" id="statFixed">—</div><div class="stat-label">Fixed</div></div>
-    <div class="stat-card"><div class="stat-num" id="statToday">—</div><div class="stat-label">Today</div></div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBugs" onclick="switchTab('bugs')">🐛 Bugs</button>
+    <button class="tab-btn" id="tabDeploys" onclick="switchTab('deploys')">🚀 Deploys</button>
   </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Time (IST)</th>
-          <th>Title</th>
-          <th>Description</th>
-          <th>Screen</th>
-          <th>Device / Version</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="7" class="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+
+  <!-- BUGS TAB -->
+  <div id="sectionBugs">
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-num" id="statOpen">—</div><div class="stat-label">Open</div></div>
+      <div class="stat-card"><div class="stat-num" id="statFixed">—</div><div class="stat-label">Fixed</div></div>
+      <div class="stat-card"><div class="stat-num" id="statToday">—</div><div class="stat-label">Today</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time (IST)</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Screen</th>
+            <th>Device / Version</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="7" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DEPLOYS TAB -->
+  <div id="sectionDeploys" style="display:none">
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-num" id="dStatTotal">—</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-num" id="dStatBuilds">—</div><div class="stat-label">Builds</div></div>
+      <div class="stat-card"><div class="stat-num" id="dStatOta">—</div><div class="stat-label">OTA</div></div>
+      <div class="stat-card"><div class="stat-num" id="dStatToday">—</div><div class="stat-label">Today</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time (IST)</th>
+            <th>Type</th>
+            <th>Version / Build</th>
+            <th>Commit</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody id="deployBody">
+          <tr><td colspan="5" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </main>
 
@@ -511,6 +597,74 @@
     box.style.display = 'block';
   }
 
+  let currentTab = 'bugs';
+  let allDeploys = [];
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('sectionBugs').style.display = tab === 'bugs' ? '' : 'none';
+    document.getElementById('sectionDeploys').style.display = tab === 'deploys' ? '' : 'none';
+    document.getElementById('bugFilters').style.display = tab === 'bugs' ? '' : 'none';
+    document.getElementById('tabBugs').classList.toggle('active', tab === 'bugs');
+    document.getElementById('tabDeploys').classList.toggle('active', tab === 'deploys');
+    if (tab === 'deploys' && allDeploys.length === 0) loadDeploys();
+  }
+
+  async function fetchDeploys() {
+    const url = SUPABASE_URL + '/rest/v1/deploy_log?order=deployed_at.desc&limit=100';
+    const res = await fetch(url, { headers: await apiHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + await res.text());
+    return res.json();
+  }
+
+  function renderDeploys(deploys) {
+    const tbody = document.getElementById('deployBody');
+    if (!deploys.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No deploys found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = deploys.map(d => {
+      const typeBadge = d.type === 'build'
+        ? '<span class="deploy-type-build">🏗 BUILD</span>'
+        : '<span class="deploy-type-ota">⚡ OTA</span>';
+      const ver = d.version ? `v${escHtml(d.version)}` : '—';
+      const build = d.build_number ? ` (${escHtml(d.build_number)})` : '';
+      const commit = d.commit_hash
+        ? `<span class="deploy-commit">${escHtml(d.commit_hash.slice(0, 7))}</span>`
+        : '<span style="color:rgba(255,255,255,0.2)">—</span>';
+      return `
+        <tr>
+          <td class="td-time">${toIST(d.deployed_at)}</td>
+          <td>${typeBadge}</td>
+          <td class="td-screen">${ver}${build}</td>
+          <td>${commit}</td>
+          <td class="td-desc">${escHtml(d.message)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateDeployStats(deploys) {
+    const today = deploys.filter(d => isToday(d.deployed_at)).length;
+    const builds = deploys.filter(d => d.type === 'build').length;
+    const otas = deploys.filter(d => d.type === 'ota').length;
+    document.getElementById('dStatTotal').textContent = deploys.length;
+    document.getElementById('dStatBuilds').textContent = builds;
+    document.getElementById('dStatOta').textContent = otas;
+    document.getElementById('dStatToday').textContent = today;
+  }
+
+  async function loadDeploys() {
+    document.getElementById('deployBody').innerHTML = '<tr><td colspan="5" class="loading">Loading…</td></tr>';
+    try {
+      allDeploys = await fetchDeploys();
+      updateDeployStats(allDeploys);
+      renderDeploys(allDeploys);
+    } catch(e) {
+      document.getElementById('deployBody').innerHTML = '<tr><td colspan="5" class="empty">Failed to load: ' + escHtml(e.message) + '</td></tr>';
+    }
+  }
+
   async function load() {
     document.getElementById('errorBox').style.display = 'none';
     try {
@@ -521,6 +675,7 @@
       showError(e.message);
       document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="empty">Failed to load</td></tr>';
     }
+    if (currentTab === 'deploys') loadDeploys();
   }
 
   function startCountdown() {
@@ -533,6 +688,7 @@
       if (countdownVal <= 0) {
         countdownVal = 30;
         load();
+        if (currentTab === 'deploys') loadDeploys();
       }
     }, 1000);
   }

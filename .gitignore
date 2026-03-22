@@ -43,3 +43,5 @@ yarn-error.*
 /ios
 /android
 CLAUDE.md
+
+.vercel
