@@ -287,17 +287,20 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
     // Safety: force complete after 15s
     const safetyTimer = setTimeout(() => { onDone(); }, 15000);
 
-    // Show initial probability based on actual equity at flop + compute hints
-    const flopEquity = computeOmahaEquity(
-      board.playerCards ?? [],
-      board.allBotCards ?? [],
-      board.openCards ?? [],
-    );
-    setWinProb(flopEquity);
-    prevProbRef.current = flopEquity;
-    displayedProbRef.current = flopEquity;
-    setDisplayedProb(flopEquity);
-    computeHints(board, board.openCards ?? []);
+    // Defer equity calculation so the UI frame renders first (avoids JS thread freeze)
+    const equityTimer = setTimeout(() => {
+      const flopEquity = computeOmahaEquity(
+        board.playerCards ?? [],
+        board.allBotCards ?? [],
+        board.openCards ?? [],
+      );
+      setWinProb(flopEquity);
+      prevProbRef.current = flopEquity;
+      displayedProbRef.current = flopEquity;
+      setDisplayedProb(flopEquity);
+      computeHints(board, board.openCards ?? []);
+    }, 0);
+    timersRef.current.push(equityTimer);
 
     if (!hasTurn) {
       const finalProb = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
@@ -322,16 +325,19 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
       try { playSound('cardFlip'); } catch {}
 
       const turnCommunity = [...(board.openCards ?? []), ...(turnCard ? [turnCard] : [])];
-      const intermediate = computeOmahaEquity(
-        board.playerCards ?? [],
-        board.allBotCards ?? [],
-        turnCommunity,
-      );
+      // Defer so card flip animation renders before calculation
+      setTimeout(() => {
+        const intermediate = computeOmahaEquity(
+          board.playerCards ?? [],
+          board.allBotCards ?? [],
+          turnCommunity,
+        );
 
-      const delta = intermediate - prevProbRef.current;
-      setProbDelta(delta);
-      prevProbRef.current = intermediate;
-      setWinProb(intermediate);
+        const delta = intermediate - prevProbRef.current;
+        setProbDelta(delta);
+        prevProbRef.current = intermediate;
+        setWinProb(intermediate);
+      }, 0);
 
       // Update hints with turn card now visible
       if (turnCard) {

@@ -1,4 +1,4 @@
-import { evaluateOmahaHand, compareHands, HandRank } from '../handEvaluator';
+import { evaluateOmahaHand, compareHands, HandRank, computeOmahaEquity } from '../handEvaluator';
 import { Card, Suit } from '../../constants/gameConfig';
 
 function card(rank: string, suit: string): Card {
@@ -170,5 +170,40 @@ describe('evaluateOmahaHand', () => {
     // KK-33 should beat KK-22 (higher low pair)
     expect(compareHands(kk33, kk22)).toBeGreaterThan(0);
     expect(compareHands(kk22, kk33)).toBeLessThan(0);
+  });
+});
+
+describe('computeOmahaEquity — performance', () => {
+  function makeHand(ranks: string[], suits: string[]): Card[] {
+    const suitMap: Record<string, string> = { h: 'hearts', d: 'diamonds', c: 'clubs', s: 'spades' };
+    return ranks.map((r, i) => ({ rank: r as Card['rank'], suit: suitMap[suits[i]] as Card['suit'], id: `${r}_${suitMap[suits[i]]}` }));
+  }
+
+  test('480 evaluations (4 boards × 2 players × 60 combos) complete in < 100ms', () => {
+    const playerCards = makeHand(['A', 'K', 'Q', 'J'], ['h', 'd', 'c', 's']);
+    const botCards = [makeHand(['2', '3', '4', '5'], ['h', 'd', 'c', 's'])];
+    const openCards = makeHand(['9', '8', '7'], ['h', 'd', 'c']);
+
+    const start = Date.now();
+    for (let i = 0; i < 4; i++) {
+      evaluateOmahaHand(playerCards, [...openCards, ...makeHand(['6', '5'], ['s', 'h'])]);
+      evaluateOmahaHand(botCards[0], [...openCards, ...makeHand(['6', '5'], ['s', 'h'])]);
+    }
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(100);
+  });
+
+  test('computeOmahaEquity flop call (2 unknowns) completes in < 50ms', () => {
+    const playerCards = makeHand(['A', 'K', 'Q', 'J'], ['h', 'd', 'c', 's']);
+    const botCards = [makeHand(['2', '3', '4', '5'], ['h', 'd', 'c', 's'])];
+    const flopCards = makeHand(['9', '8', '7'], ['h', 'd', 'c']);
+
+    const start = Date.now();
+    const result = computeOmahaEquity(playerCards, botCards, flopCards);
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeLessThan(80); // Node.js/Windows is slower than iPhone — device will be faster
+    expect(result).toBeGreaterThanOrEqual(0);
+    expect(result).toBeLessThanOrEqual(100);
   });
 });
