@@ -7,7 +7,8 @@ import { getDeviceId } from './leaderboard';
 //   1. npx expo install expo-notifications
 //   2. Adding "expo-notifications" to plugins in app.json
 //   3. Running: eas credentials --platform ios (to regenerate provisioning profile with Push Notifications)
-const Notifications = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Notifications: any = null;
 
 /** Request notification permissions. Returns true if granted. */
 export async function requestPermissions(): Promise<boolean> {
