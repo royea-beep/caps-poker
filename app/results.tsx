@@ -137,7 +137,7 @@ export default function ResultsScreen() {
   const storeRoomCode = useGameStore((s) => s.roomCode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
-  const [showReveal, setShowReveal] = useState(true);
+  const [showReveal, setShowReveal] = useState(false); // BYPASSED — skip reveal entirely for crash isolation
   const [showButtons, setShowButtons] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
@@ -910,14 +910,8 @@ export default function ResultsScreen() {
         />
       )}
 
-      {/* Turn/River reveal sequence — full-screen modal, auto-dismisses */}
-      <ErrorBoundary onError={(e) => { console.error('[RESULTS] RevealSequence ErrorBoundary caught:', e); setShowReveal(false); }}>
-        <RevealSequence
-          boards={boards}
-          visible={showReveal}
-          onDone={() => setShowReveal(false)}
-        />
-      </ErrorBoundary>
+      {/* REVEAL BYPASSED — crash isolation test. showReveal always false. */}
+      {/* <RevealSequence boards={boards} visible={showReveal} onDone={() => setShowReveal(false)} /> */}
 
       {/* Confetti — fires once on perfect game (all boards won) */}
       {showConfetti && (
