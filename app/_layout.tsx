@@ -9,6 +9,10 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
+import * as Updates from 'expo-updates';
+// expo-insights is a passive SDK — auto-collects crashes + app opens via native integration
+// No API call needed; installing the package is sufficient
+import 'expo-insights';
 import { preloadSounds } from '../utils/sounds';
 import { registerAndSavePushToken } from '../utils/notifications';
 import { WebContainer } from '../components/WebContainer';
@@ -113,6 +117,23 @@ export default function RootLayout() {
   const orientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const [splashDone, setSplashDone] = useState(false);
+
+  // OTA update check — runs on every app open (production only)
+  useEffect(() => {
+    if (!__DEV__ && Platform.OS !== 'web') {
+      (async () => {
+        try {
+          const update = await Updates.checkForUpdateAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          }
+        } catch {
+          // Silent — never crash the app for a failed update check
+        }
+      })();
+    }
+  }, []);
 
   useEffect(() => {
     initSession();

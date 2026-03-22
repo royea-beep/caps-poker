@@ -51,11 +51,21 @@
       "isBeta": true,
       "buildNumber": "116"
     },
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/114b97d5-5cb3-4798-9a97-8233a6a37c07",
+      "fallbackToCacheTimeout": 3000,
+      "checkAutomatically": "ON_LOAD"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "plugins": [
       "expo-router",
       "expo-dev-client",
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-updates"
     ],
     "owner": "royea"
   }

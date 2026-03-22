@@ -26,6 +26,7 @@
     },
     "production": {
       "credentialsSource": "remote",
+      "channel": "production",
       "ios": {
         "buildConfiguration": "Release",
         "autoIncrement": true
