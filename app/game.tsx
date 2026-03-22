@@ -33,8 +33,24 @@ import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getSupabase } from '../utils/supabase';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
+
+// Log crash steps to Supabase so we know which step ran last before native kill
+async function logStep(step: string, extra?: string) {
+  console.log(`[STEP] ${step}${extra ? ` — ${extra}` : ''}`);
+  try {
+    const sb = getSupabase();
+    if (!sb) return;
+    await sb.from('bug_reports').insert({
+      title: `[CRASH-STEP] ${step}`,
+      description: extra ?? null,
+      url: 'game/navigateToReveal',
+      report_type: 'text',
+    });
+  } catch { /* silent — never block game flow */ }
+}
 const HINT_TEXTS = [
   '👆 Tap a card from your hand, then tap a board to place it',
   '🎯 Try to win ALL boards for the COMPLETE bonus!',
@@ -421,6 +437,9 @@ function GameScreenInner() {
       console.warn('[navigateToReveal] aborted after InteractionManager — component unmounted');
       return;
     }
+
+    void logStep('A:interactionManager_done');
+
     let results;
     try {
       if (precalculatedResultsRef.current) {
@@ -434,9 +453,12 @@ function GameScreenInner() {
       console.log('[navigateToReveal] results ready — playerChipsWon:', results.playerChipsWon);
     } catch (e) {
       console.error('[navigateToReveal] calculateHandResultsMulti threw:', e);
+      void logStep('CRASH:calculateHandResultsMulti', String(e));
       router.replace('/');
       return;
     }
+
+    void logStep('B:calculate_done', `boards=${currentBoards.length} won=${results.playerChipsWon}`);
 
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
       const result = results.boardResults[i];
@@ -464,9 +486,11 @@ function GameScreenInner() {
       };
     });
 
-    addChips(results.playerChipsWon);
+    void logStep('C:revealBoards_built');
 
-    console.log('[navigateToReveal] calling setRevealData...');
+    addChips(results.playerChipsWon);
+    void logStep('D:addChips_done');
+
     setRevealData({
       boards: revealBoards,
       netChips: results.playerChipsWon - config.potPerBoard * boardCount,
@@ -481,7 +505,7 @@ function GameScreenInner() {
       numberOfPlayers,
       boardCount,
     });
-    console.log('[navigateToReveal] setRevealData done — calling router.replace /results...');
+    void logStep('E:setRevealData_done');
 
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
     // Increment games-played counter for first-time hints
@@ -489,8 +513,11 @@ function GameScreenInner() {
       const count = parseInt(val ?? '0', 10);
       AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
     }).catch(() => {});
+
+    void logStep('F:before_router_replace');
     try {
       router.replace('/results' as any);
+      void logStep('G:router_replace_called');
       console.log('[navigateToReveal] router.replace /results called OK');
     } catch (e) {
       console.error('[navigateToReveal] router.replace /results threw:', e);

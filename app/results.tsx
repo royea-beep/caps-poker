@@ -44,6 +44,21 @@ import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../comp
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
 import { KILL_results } from '../utils/animationKill';
+import { getSupabase } from '../utils/supabase';
+
+async function logResultsStep(step: string, extra?: string) {
+  console.log(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
+  try {
+    const sb = getSupabase();
+    if (!sb) return;
+    await sb.from('bug_reports').insert({
+      title: `[CRASH-STEP] results/${step}`,
+      description: extra ?? null,
+      url: 'results/mount',
+      report_type: 'text',
+    });
+  } catch {}
+}
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -166,10 +181,10 @@ export default function ResultsScreen() {
   const CARD_W = Math.min(Platform.OS === 'web' ? 60 : 42, Math.max(28, Math.floor(availableW / 5.5)));
   const CARD_H = Math.round(CARD_W * 1.4);
 
-  // Debug: log on mount
+  // Debug: log on mount — Supabase log so we see it even after native crash
   useEffect(() => {
     console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
-    console.log('[RESULTS] showReveal:', showReveal);
+    void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
   }, []);
 
   // Guard: no data → go home
