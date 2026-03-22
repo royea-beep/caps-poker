@@ -27,19 +27,10 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[ErrorBoundary] caught:', error.message);
     console.error('[ErrorBoundary] stack:', error.stack?.slice(0, 500));
     this.props.onError?.(error);
-    // Log to Supabase bug_reports silently
+    // Trigger full crash detection pipeline (video stop + upload + WhatsApp)
     try {
-      const { getSupabase } = require('../utils/supabase');
-      const sb = getSupabase();
-      if (sb) {
-        sb.from('bug_reports').insert({
-          description: `[AUTO-CRASH] ${error.message.slice(0, 300)}`,
-          stack_trace: `${error.stack?.slice(0, 1500)}\n\n---component stack---\n${info.componentStack?.slice(0, 500)}`,
-          platform: Platform.OS,
-          app_version: '1.9.4',
-          severity: 'CRITICAL',
-        }).then(() => {}).catch(() => {});
-      }
+      const { onCrashDetected } = require('../utils/crashDetector');
+      onCrashDetected(error);
     } catch {}
   }
 

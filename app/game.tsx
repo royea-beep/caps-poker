@@ -35,6 +35,7 @@ import ProQuoteBanner from '../components/ProQuoteBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
+import { onGameStart, onGameEnd } from '../utils/crashDetector';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 
@@ -201,7 +202,7 @@ const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + head
 
 function GameScreenInner() {
   const router = useRouter();
-  const { autoSim } = useLocalSearchParams<{ autoSim?: string }>();
+  const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
   const { height: SCREEN_H, width: screenW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
@@ -366,9 +367,11 @@ function GameScreenInner() {
   useEffect(() => {
     mountedRef.current = true;
     debugLog(`game.tsx mounted — ${numberOfPlayers}p ${boardCount} boards`);
+    onGameStart().catch(() => {});
     return () => {
       mountedRef.current = false;
       debugLog('game.tsx unmounting');
+      onGameEnd().catch(() => {});
       timeoutsRef.current.forEach((t) => clearTimeout(t));
       timeoutsRef.current = [];
       if (countdownRef.current) {
@@ -734,16 +737,15 @@ function GameScreenInner() {
     }
   }, [allBoardsFull, countdownActive, startCountdown]);
 
-  // Auto-sim: auto-fill all boards + press Ready after 1.5s (debug only)
+  // Auto-sim: auto-fill all boards + press Ready (debug marathon mode)
   useEffect(() => {
     if (autoSim !== 'true') return;
-    debugLog('🤖 AUTO-SIM: mode active — auto-filling in 1.5s');
+    const simCount = parseInt(autoSimCount ?? '1', 10);
+    const currentHand = parseInt(currentSimHand ?? '1', 10);
+    debugLog(`🤖 AUTO-SIM: hand ${currentHand}/${simCount} — auto-fill in 1.5s`);
     const t1 = setTimeout(() => {
-      debugLog('🤖 AUTO-SIM: auto-filling all boards');
-      // Auto-fill by calling handleAutoFill for each board
-      for (let i = 0; i < boardCount; i++) {
-        handleAutoFill(i);
-      }
+      debugLog('🤖 AUTO-SIM: filling all boards');
+      for (let i = 0; i < boardCount; i++) handleAutoFill(i);
     }, 1500);
     const t2 = setTimeout(() => {
       debugLog('🤖 AUTO-SIM: pressing READY');

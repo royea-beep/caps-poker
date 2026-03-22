@@ -13,6 +13,17 @@ interface LogEntry {
 let globalLogs: LogEntry[] = [];
 let globalListener: ((logs: LogEntry[]) => void) | null = null;
 
+// Recording state — set by screenRecorder to avoid circular import
+let _isRecording = false;
+let _recordingStart = 0;
+export function setDebugRecording(recording: boolean) {
+  _isRecording = recording;
+  _recordingStart = recording ? Date.now() : _recordingStart;
+  if (globalListener) globalListener([...globalLogs]); // force re-render
+}
+
+export function getGlobalLogs(): LogEntry[] { return [...globalLogs]; }
+
 export function debugLog(message: string, level: 'info' | 'warn' | 'error' = 'info') {
   const now = new Date();
   const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
@@ -25,17 +36,26 @@ export function debugLog(message: string, level: 'info' | 'warn' | 'error' = 'in
 export default function DebugOverlay() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [minimized, setMinimized] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     globalListener = setLogs;
-    setLogs([...globalLogs]); // show any logs that fired before mount
+    setLogs([...globalLogs]);
     return () => { globalListener = null; };
   }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: false });
   }, [logs]);
+
+  // Update recording duration every second
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (_isRecording) setRecSecs(Math.floor((Date.now() - _recordingStart) / 1000));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, []);
 
   if (minimized) {
     return (
@@ -50,6 +70,9 @@ export default function DebugOverlay() {
       <View style={styles.overlay}>
         <View style={styles.header}>
           <Text style={styles.headerText}>🐛 DEBUG ({logs.length})</Text>
+          {_isRecording && (
+            <Text style={styles.recText}>🎥 REC ● {recSecs}s</Text>
+          )}
           <TouchableOpacity onPress={() => setMinimized(true)} hitSlop={12}>
             <Text style={styles.minimizeBtn}>▼</Text>
           </TouchableOpacity>
@@ -108,6 +131,12 @@ const styles = StyleSheet.create({
     color: '#00ff00',
     fontSize: 14,
     paddingHorizontal: 8,
+  },
+  recText: {
+    color: '#ff4444',
+    fontSize: 9,
+    fontWeight: '700',
+    marginRight: 4,
   },
   logArea: {
     maxHeight: 160,

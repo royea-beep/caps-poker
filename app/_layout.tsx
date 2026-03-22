@@ -20,6 +20,7 @@ import { BugReporter } from '../components/BugReporter';
 import { VersionBadge } from '../components/VersionBadge';
 import { getSupabase } from '../utils/supabase';
 import DebugOverlay, { debugLog } from '../components/DebugOverlay';
+import { onCrashDetected } from '../utils/crashDetector';
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -118,6 +119,22 @@ export default function RootLayout() {
   const orientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const [splashDone, setSplashDone] = useState(false);
+
+  // Global JS error handler — catches unhandled errors on native
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    try {
+      const originalHandler = ErrorUtils.getGlobalHandler();
+      ErrorUtils.setGlobalHandler((error, isFatal) => {
+        if (isFatal) {
+          debugLog(`💀 FATAL: ${error?.message ?? 'unknown'}`, 'error');
+          onCrashDetected(error ?? new Error('unknown fatal error')).catch(() => {});
+        }
+        originalHandler(error, isFatal);
+      });
+    } catch {}
+    return () => {};
+  }, []);
 
   useEffect(() => { debugLog('🔵 app started'); }, []);
 

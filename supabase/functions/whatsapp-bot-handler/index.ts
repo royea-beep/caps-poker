@@ -539,10 +539,32 @@ serve(async (req: Request) => {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  const body = await req.text();
-  console.log('[whatsapp-bot] Body:', body.slice(0, 300));
+  const rawBody = await req.text();
+  console.log('[whatsapp-bot] Body:', rawBody.slice(0, 300));
 
-  const params = Object.fromEntries(new URLSearchParams(body));
+  // ── Crash notification from the app ────────────────────────────────────────
+  // Content-Type: application/json, body = { crash_notification: true, message, videoUrl }
+  const contentType = req.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    try {
+      const json = JSON.parse(rawBody);
+      if (json?.crash_notification) {
+        console.log('[whatsapp-bot] Crash notification received');
+        const ROYE_NUMBER = Deno.env.get('ROYE_WHATSAPP_NUMBER') ?? 'whatsapp:+972504141513';
+        const msg = json.message ?? '🔴 CAPS CRASH (no details)';
+        const videoLine = json.videoUrl ? `\n🎥 ${json.videoUrl}` : '';
+        await sendWhatsApp(ROYE_NUMBER, `${msg}${videoLine}`);
+        return new Response(JSON.stringify({ sent: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+    } catch (e) {
+      console.error('[whatsapp-bot] JSON parse error:', e);
+    }
+  }
+
+  const params = Object.fromEntries(new URLSearchParams(rawBody));
 
   // Twilio signature verification — log but don't block (sandbox doesn't always sign correctly)
   const twilioSignature = req.headers.get('x-twilio-signature') ?? '';
