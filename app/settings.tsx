@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { debugLog } from '../components/DebugOverlay';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
 import { rf, rs, rv, rb } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -677,6 +678,15 @@ export default function SettingsScreen() {
           style={{ marginBottom: 12 }}
         />
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
+        <Button
+          title="🐛 Run Debug Simulation"
+          variant="secondary"
+          onPress={() => {
+            debugLog('🤖 AUTO-SIM: starting from settings');
+            router.push('/game?autoSim=true' as any);
+          }}
+          style={{ marginBottom: 12, borderColor: '#00ff00', opacity: 0.7 }}
+        />
 
         <Button
           title="Reset to Defaults"

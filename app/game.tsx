@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, InteractionManager } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -34,6 +34,7 @@ import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabase } from '../utils/supabase';
+import { debugLog } from '../components/DebugOverlay';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 
@@ -200,6 +201,7 @@ const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + head
 
 function GameScreenInner() {
   const router = useRouter();
+  const { autoSim } = useLocalSearchParams<{ autoSim?: string }>();
   const { height: SCREEN_H, width: screenW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
@@ -363,8 +365,10 @@ function GameScreenInner() {
   // Cleanup
   useEffect(() => {
     mountedRef.current = true;
+    debugLog(`game.tsx mounted — ${numberOfPlayers}p ${boardCount} boards`);
     return () => {
       mountedRef.current = false;
+      debugLog('game.tsx unmounting');
       timeoutsRef.current.forEach((t) => clearTimeout(t));
       timeoutsRef.current = [];
       if (countdownRef.current) {
@@ -439,6 +443,7 @@ function GameScreenInner() {
     }
 
     void logStep('A:interactionManager_done');
+    debugLog('A: InteractionManager done');
 
     let results;
     try {
@@ -459,6 +464,7 @@ function GameScreenInner() {
     }
 
     void logStep('B:calculate_done', `boards=${currentBoards.length} won=${results.playerChipsWon}`);
+    debugLog(`B: calculate done — won=${results.playerChipsWon} complete=${results.isComplete}`);
 
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
       const result = results.boardResults[i];
@@ -487,9 +493,11 @@ function GameScreenInner() {
     });
 
     void logStep('C:revealBoards_built');
+    debugLog(`C: revealBoards built (${revealBoards.length})`);
 
     addChips(results.playerChipsWon);
     void logStep('D:addChips_done');
+    debugLog('D: addChips done');
 
     setRevealData({
       boards: revealBoards,
@@ -506,6 +514,7 @@ function GameScreenInner() {
       boardCount,
     });
     void logStep('E:setRevealData_done');
+    debugLog('E: setRevealData done');
 
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
     // Increment games-played counter for first-time hints
@@ -515,9 +524,11 @@ function GameScreenInner() {
     }).catch(() => {});
 
     void logStep('F:before_router_replace');
+    debugLog('F: 🟡 router.replace /results START');
     try {
       router.replace('/results' as any);
       void logStep('G:router_replace_called');
+      debugLog('G: 🟢 router.replace called OK');
       console.log('[navigateToReveal] router.replace /results called OK');
     } catch (e) {
       console.error('[navigateToReveal] router.replace /results threw:', e);
@@ -710,6 +721,7 @@ function GameScreenInner() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
+    debugLog(`🟡 READY pressed — boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     playSound('cardSelect');
     setSelectedCardIds([]);
@@ -721,6 +733,24 @@ function GameScreenInner() {
       startCountdown('You');
     }
   }, [allBoardsFull, countdownActive, startCountdown]);
+
+  // Auto-sim: auto-fill all boards + press Ready after 1.5s (debug only)
+  useEffect(() => {
+    if (autoSim !== 'true') return;
+    debugLog('🤖 AUTO-SIM: mode active — auto-filling in 1.5s');
+    const t1 = setTimeout(() => {
+      debugLog('🤖 AUTO-SIM: auto-filling all boards');
+      // Auto-fill by calling handleAutoFill for each board
+      for (let i = 0; i < boardCount; i++) {
+        handleAutoFill(i);
+      }
+    }, 1500);
+    const t2 = setTimeout(() => {
+      debugLog('🤖 AUTO-SIM: pressing READY');
+      handleReady();
+    }, 3000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [autoSim]);
 
   const handleBack = useCallback(() => {
     const leave = () => {
