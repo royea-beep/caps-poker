@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -7,11 +7,10 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import CardComponent from './Card';
-import { COLORS, SUITS, RANKS, Card } from '../constants/gameConfig';
-import { rv } from '../constants/deviceBreakpoints';
+import { COLORS, Card } from '../constants/gameConfig';
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
-import { computeOmahaEquity } from '../utils/handEvaluator';
+import { useSimpleReveal } from '../hooks/useSimpleReveal';
 
 // Lazy haptics — never crash on web
 let Haptics: typeof import('expo-haptics') | null = null;
@@ -28,70 +27,6 @@ function haptic() {
   } catch {}
 }
 
-// Timing constants
-const TURN_FLIP_T = 3300;               // 300ms + 3×1000ms countdown
-const RIVER_FLIP_DELAY = 2500;          // after turn: 2.5s then river (no countdown)
-const WINNER_DELAY_AFTER_RIVER = 3000;  // after river: show prob 3s then winner
-const ADVANCE_DELAY = 4000;             // auto-advance after winner
-const COUNTDOWN_STEP = 1000;
-
-
-// Suit display symbols + colors
-const SUIT_SYMBOL: Record<string, string> = {
-  spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣',
-};
-const RANK_ORDER = [...RANKS].reverse(); // A, K, Q, J, 10, ..., 2
-
-/**
- * Find the best card from the remaining deck that would improve a player's hand.
- * Priority: flush draw completing card → pair with hole cards → highest unused.
- */
-function findOptimalCard(
-  holeCards: Card[],
-  communityCards: Card[],
-  allKnown: Card[],
-): { rank: string; suit: string } | null {
-  const usedKeys = new Set(allKnown.map((c) => `${c.rank}-${c.suit}`));
-  const allCards = [...holeCards, ...communityCards];
-
-  // Flush draw: 4+ cards of same suit in hole + community → find completing card
-  const suitCounts: Partial<Record<string, number>> = {};
-  for (const c of allCards) {
-    suitCounts[c.suit] = (suitCounts[c.suit] ?? 0) + 1;
-  }
-  const flushDrawSuit = Object.entries(suitCounts).find(([, n]) => (n ?? 0) >= 4)?.[0];
-  if (flushDrawSuit) {
-    for (const rank of RANK_ORDER) {
-      if (!usedKeys.has(`${rank}-${flushDrawSuit}`)) {
-        return { rank, suit: flushDrawSuit };
-      }
-    }
-  }
-
-  // Pair with hole cards: find highest hole card rank that has an unused partner
-  const holeRanks = holeCards.map((c) => c.rank);
-  for (const rank of RANK_ORDER) {
-    if (holeRanks.includes(rank)) {
-      for (const suit of SUITS) {
-        if (!usedKeys.has(`${rank}-${suit}`)) {
-          return { rank, suit };
-        }
-      }
-    }
-  }
-
-  // Fallback: highest unused card
-  for (const rank of RANK_ORDER) {
-    for (const suit of SUITS) {
-      if (!usedKeys.has(`${rank}-${suit}`)) {
-        return { rank, suit };
-      }
-    }
-  }
-  return null;
-}
-
-
 // ─── Main component ────────────────────────────────────────────────────────────
 interface RevealSequenceProps {
   boards: RevealBoardData[];
@@ -101,456 +36,118 @@ interface RevealSequenceProps {
 
 export default function RevealSequence({ boards, visible, onDone }: RevealSequenceProps) {
   const { width: screenW } = useWindowDimensions();
-  // Centered layout: community as horizontal row, hands below centered
-  // Content fits in max 680px container
   const contentW = Math.min(screenW, 680) - 40;
   const commCardW = Math.min(76, Math.floor((contentW - 4 * 6) / 5));
   const commCardH = Math.round(commCardW / 0.7);
   const handCardW = Math.min(60, Math.floor((contentW - 3 * 4) / 4.5));
   const handCardH = Math.round(handCardW / 0.7);
 
-  const [boardIdx, setBoardIdx] = useState(0);
-  const [turnRevealed, setTurnRevealed] = useState(false);
-  const [riverRevealed, setRiverRevealed] = useState(false);
-  const [showWinner, setShowWinner] = useState(false);
-  const [showNextButton, setShowNextButton] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [winProb, setWinProb] = useState<number>(50);
-  const [probDelta, setProbDelta] = useState<number | null>(null);
-  const [displayedProb, setDisplayedProb] = useState(50);
-  const [playerOptimalHint, setPlayerOptimalHint] = useState<{ rank: string; suit: string } | null>(null);
-  const [botOptimalHint, setBotOptimalHint] = useState<{ rank: string; suit: string } | null>(null);
-
-  const prevProbRef = useRef<number>(50);
-  const displayedProbRef = useRef<number>(50);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  // Animations
-  const cardOpacity = useSharedValue(0);
-  const winnerScale = useSharedValue(0);
-  const winnerOpacity = useSharedValue(0);
-  const nextBtnOpacity = useSharedValue(0);
-  const countdownOpacity = useSharedValue(0);
-  const countdownScale = useSharedValue(1);
-
-  const cardAnimStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
-  const winnerAnimStyle = useAnimatedStyle(() => ({
-    opacity: winnerOpacity.value,
-    transform: [{ scale: winnerScale.value }],
-  }));
-  const nextBtnAnimStyle = useAnimatedStyle(() => ({ opacity: nextBtnOpacity.value }));
-  const countdownAnimStyle = useAnimatedStyle(() => ({
-    opacity: countdownOpacity.value,
-    transform: [{ scale: countdownScale.value }],
-  }));
-
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
-  }, []);
-
-  const addTimer = useCallback((fn: () => void, delay: number) => {
-    const t = setTimeout(fn, delay);
-    timersRef.current.push(t);
-  }, []);
-
-  const advanceBoard = useCallback(
-    (nextIdx: number) => {
-      if (nextIdx >= boards.length) {
-        onDone();
-        return;
-      }
-      setTurnRevealed(false);
-      setRiverRevealed(false);
-      setShowWinner(false);
-      setShowNextButton(false);
-      setCountdown(null);
-      setWinProb(50);
-      setProbDelta(null);
-      setPlayerOptimalHint(null);
-      setBotOptimalHint(null);
-      setDisplayedProb(50);
-      prevProbRef.current = 50;
-      displayedProbRef.current = 50;
-      setBoardIdx(nextIdx);
-    },
-    [boards.length, onDone],
+  const { boardIdx, phase, startReveal, skipAll, goNext } = useSimpleReveal(
+    boards.length,
+    onDone,
   );
 
-  const handleNextBoard = useCallback(() => {
-    clearTimers();
-    advanceBoard(boardIdx + 1);
-  }, [clearTimers, advanceBoard, boardIdx]);
+  // Shared values for winner banner only — no complex animation chain
+  const winnerScale   = useSharedValue(0);
+  const winnerOpacity = useSharedValue(0);
+  const ctaOpacity    = useSharedValue(0);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-    };
-  }, []);
+  const winnerAnimStyle = useAnimatedStyle(() => ({
+    opacity:   winnerOpacity.value,
+    transform: [{ scale: winnerScale.value }],
+  }));
+  const ctaAnimStyle = useAnimatedStyle(() => ({ opacity: ctaOpacity.value }));
 
-  // Fade in on visibility / board change
+  // Start reveal when modal becomes visible
   useEffect(() => {
-    if (visible) {
-      cardOpacity.value = 0;
-      cardOpacity.value = withTiming(1, { duration: 250 });
-    } else {
-      cardOpacity.value = 0;
+    if (visible && boards.length > 0) {
+      startReveal();
     }
-  }, [visible, boardIdx]);
+  }, [visible]);
 
-  // Animate winner banner
+  // Sound + haptic on phase transitions
   useEffect(() => {
-    if (showWinner) {
+    if (phase === 'turn' || phase === 'river') {
+      haptic();
+      try { playSound('cardFlip'); } catch {}
+    }
+  }, [phase]);
+
+  // Winner banner animation
+  useEffect(() => {
+    if (phase === 'winner') {
       winnerScale.value = 0;
       winnerOpacity.value = 0;
       winnerScale.value = withSpring(1, { damping: 12, stiffness: 200 });
       winnerOpacity.value = withTiming(1, { duration: 200 });
+      ctaOpacity.value = withTiming(1, { duration: 400 });
     } else {
       winnerScale.value = 0;
       winnerOpacity.value = 0;
+      ctaOpacity.value = 0;
     }
-  }, [showWinner]);
+  }, [phase]);
 
-  // Fade next button
+  // Reset banner on board change
   useEffect(() => {
-    nextBtnOpacity.value = showNextButton ? withTiming(1, { duration: 300 }) : 0;
-  }, [showNextButton]);
-
-  // Countdown pop-in animation
-  useEffect(() => {
-    if (countdown !== null) {
-      countdownOpacity.value = 0;
-      countdownScale.value = 1.6;
-      countdownOpacity.value = withTiming(1, { duration: 120 });
-      countdownScale.value = withSpring(1, { damping: 10, stiffness: 350 });
-    } else {
-      countdownOpacity.value = withTiming(0, { duration: 150 });
-    }
-  }, [countdown]);
-
-  // Smooth count-up animation for probability text
-  useEffect(() => {
-    const target = Math.round(winProb);
-    const start = displayedProbRef.current;
-    const diff = target - start;
-    if (diff === 0) return;
-    const steps = Math.abs(diff);
-    const intervalMs = Math.max(10, Math.floor(700 / steps));
-    const dir = diff > 0 ? 1 : -1;
-    const timer = setInterval(() => {
-      displayedProbRef.current += dir;
-      setDisplayedProb(Math.round(displayedProbRef.current));
-      if (displayedProbRef.current === target) clearInterval(timer);
-    }, intervalMs);
-    return () => clearInterval(timer);
-  }, [winProb]);
-
-  // Helper: compute hints for both players given currently revealed community cards
-  const computeHints = useCallback((
-    board: RevealBoardData,
-    revealedCommunity: Card[],
-  ) => {
-    const allBotFlat = (board.allBotCards ?? []).flat();
-    const allKnown = [...(board.playerCards ?? []), ...allBotFlat, ...revealedCommunity];
-    const pHint = findOptimalCard(board.playerCards ?? [], revealedCommunity, allKnown);
-    const firstBot = (board.allBotCards ?? [])[0] ?? [];
-    const bHint = firstBot.length > 0
-      ? findOptimalCard(firstBot, revealedCommunity, allKnown)
-      : null;
-    setPlayerOptimalHint(pHint);
-    setBotOptimalHint(bHint);
-  }, []);
-
-  // Main per-board reveal sequence
-  useEffect(() => {
-    if (!visible) return;
-    clearTimers();
-
-    console.log(`[REVEAL] board ${boardIdx} effect start — boards.length=${boards.length}`);
-
-    // Play tension sound at the start of each board reveal
-    if (boardIdx === 0) {
-      try { playSound('revealStart'); } catch {}
-    }
-
-    const board = boards[boardIdx];
-    if (!board) {
-      console.warn(`[REVEAL] board ${boardIdx} is null — calling onDone`);
-      onDone();
-      return;
-    }
-
-    const closedCards = board.closedCards ?? [];
-    const hasTurn = closedCards.length >= 1;
-    const hasRiver = closedCards.length >= 2;
-    const turnCard = closedCards[0];
-
-    console.log(`[REVEAL] board ${boardIdx} — hasTurn=${hasTurn} hasRiver=${hasRiver} playerCards=${board.playerCards?.length} allBotCards=${board.allBotCards?.length} openCards=${board.openCards?.length}`);
-
-    // Safety: force complete after 15s
-    const safetyTimer = setTimeout(() => {
-      console.warn(`[REVEAL] SAFETY TIMER fired — board ${boardIdx} took >15s, calling onDone`);
-      clearTimers();
-      onDone();
-    }, 15000);
-
-    // Defer equity calculation so the UI frame renders first (avoids JS thread freeze)
-    const equityTimer = setTimeout(() => {
-      try {
-        console.log(`[REVEAL] board ${boardIdx} — computing flop equity`);
-        const flopEquity = computeOmahaEquity(
-          board.playerCards ?? [],
-          board.allBotCards ?? [],
-          board.openCards ?? [],
-        );
-        console.log(`[REVEAL] board ${boardIdx} — flop equity=${flopEquity}`);
-        setWinProb(flopEquity);
-        prevProbRef.current = flopEquity;
-        displayedProbRef.current = flopEquity;
-        setDisplayedProb(flopEquity);
-        computeHints(board, board.openCards ?? []);
-        console.log(`[REVEAL] board ${boardIdx} — flop equity + hints done`);
-      } catch (e) {
-        console.error(`[REVEAL] board ${boardIdx} — flop equity CRASHED:`, e);
-      }
-    }, 0);
-    timersRef.current.push(equityTimer);
-
-    if (!hasTurn) {
-      const finalProb = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
-      setWinProb(finalProb);
-      addTimer(() => {
-        try {
-          console.log(`[REVEAL] board ${boardIdx} — no-turn: showing winner`);
-          setShowWinner(true);
-          setShowNextButton(true);
-          addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
-        } catch (e) {
-          console.error(`[REVEAL] board ${boardIdx} no-turn winner CRASHED:`, e);
-          clearTimers(); clearTimeout(safetyTimer); onDone();
-        }
-      }, 600);
-      return () => { clearTimers(); clearTimeout(safetyTimer); };
-    }
-
-    // === TURN: dramatic 3-2-1 countdown → flip ===
-    addTimer(() => setCountdown(3), 300);
-    addTimer(() => setCountdown(2), 300 + COUNTDOWN_STEP);
-    addTimer(() => setCountdown(1), 300 + COUNTDOWN_STEP * 2);
-
-    addTimer(() => {
-      try {
-        console.log(`[REVEAL] board ${boardIdx} — TURN flip (${TURN_FLIP_T}ms)`);
-        setCountdown(null);
-        setTurnRevealed(true);
-        haptic();
-        try { playSound('cardFlip'); } catch {}
-
-        const turnCommunity = [...(board.openCards ?? []), ...(turnCard ? [turnCard] : [])];
-        // Defer so card flip animation renders before calculation
-        setTimeout(() => {
-          try {
-            console.log(`[REVEAL] board ${boardIdx} — computing turn equity`);
-            const intermediate = computeOmahaEquity(
-              board.playerCards ?? [],
-              board.allBotCards ?? [],
-              turnCommunity,
-            );
-            console.log(`[REVEAL] board ${boardIdx} — turn equity=${intermediate}`);
-            const delta = intermediate - prevProbRef.current;
-            setProbDelta(delta);
-            prevProbRef.current = intermediate;
-            setWinProb(intermediate);
-          } catch (e) {
-            console.error(`[REVEAL] board ${boardIdx} — turn equity CRASHED:`, e);
-          }
-        }, 0);
-
-        // Update hints with turn card now visible
-        console.log(`[REVEAL] board ${boardIdx} — computing turn hints`);
-        if (turnCard) {
-          computeHints(board, [...(board.openCards ?? []), turnCard]);
-        }
-        console.log(`[REVEAL] board ${boardIdx} — TURN flip done`);
-      } catch (e) {
-        console.error(`[REVEAL] board ${boardIdx} — TURN flip CRASHED:`, e);
-        clearTimers(); clearTimeout(safetyTimer); onDone();
-      }
-    }, TURN_FLIP_T);
-
-    if (!hasRiver) {
-      addTimer(() => {
-        try {
-          console.log(`[REVEAL] board ${boardIdx} — no-river: showing winner`);
-          setShowWinner(true);
-          setShowNextButton(true);
-          addTimer(() => advanceBoard(boardIdx + 1), ADVANCE_DELAY);
-        } catch (e) {
-          console.error(`[REVEAL] board ${boardIdx} no-river winner CRASHED:`, e);
-          clearTimers(); clearTimeout(safetyTimer); onDone();
-        }
-      }, TURN_FLIP_T + 1500);
-    } else {
-      // === RIVER: smooth auto-flip 2.5s after turn (no countdown) ===
-      const riverCard = closedCards[1];
-      const riverFlipT = TURN_FLIP_T + RIVER_FLIP_DELAY;
-
-      addTimer(() => {
-        try {
-          console.log(`[REVEAL] board ${boardIdx} — RIVER flip (${riverFlipT}ms)`);
-          setRiverRevealed(true);
-          haptic();
-          try { playSound('cardFlip'); } catch {}
-
-          console.log(`[REVEAL] board ${boardIdx} — setting final prob, winner=${board.winner}`);
-          const final = board.winner === 'player' ? 100 : board.winner === 'bot' ? 0 : 50;
-          const delta = final - prevProbRef.current;
-          setProbDelta(delta);
-          prevProbRef.current = final;
-          setWinProb(final);
-
-          // Update hints with all community cards
-          console.log(`[REVEAL] board ${boardIdx} — computing river hints`);
-          const allComm = [...(board.openCards ?? [])];
-          if (turnCard) allComm.push(turnCard);
-          if (riverCard) allComm.push(riverCard);
-          computeHints(board, allComm);
-          console.log(`[REVEAL] board ${boardIdx} — RIVER flip done`);
-        } catch (e) {
-          console.error(`[REVEAL] board ${boardIdx} — RIVER flip CRASHED:`, e);
-          clearTimers(); clearTimeout(safetyTimer); onDone();
-        }
-      }, riverFlipT);
-
-      // === WINNER: 3s after river ===
-      addTimer(() => {
-        try {
-          console.log(`[REVEAL] board ${boardIdx} — showing winner banner`);
-          setShowWinner(true);
-          setShowNextButton(true);
-          addTimer(() => {
-            console.log(`[REVEAL] board ${boardIdx} — auto-advancing to board ${boardIdx + 1}`);
-            advanceBoard(boardIdx + 1);
-          }, ADVANCE_DELAY);
-          console.log(`[REVEAL] board ${boardIdx} — winner banner + advance timer set`);
-        } catch (e) {
-          console.error(`[REVEAL] board ${boardIdx} — winner banner CRASHED:`, e);
-          clearTimers(); clearTimeout(safetyTimer); onDone();
-        }
-      }, riverFlipT + WINNER_DELAY_AFTER_RIVER);
-    }
-
-    return () => { clearTimers(); clearTimeout(safetyTimer); };
-  }, [boardIdx, visible]);
-
-  // Reset when modal closes
-  useEffect(() => {
-    if (!visible) {
-      clearTimers();
-      setBoardIdx(0);
-      setTurnRevealed(false);
-      setRiverRevealed(false);
-      setShowWinner(false);
-      setShowNextButton(false);
-      setCountdown(null);
-      setWinProb(50);
-      setProbDelta(null);
-      setPlayerOptimalHint(null);
-      setBotOptimalHint(null);
-      setDisplayedProb(50);
-      prevProbRef.current = 50;
-      displayedProbRef.current = 50;
-    }
-  }, [visible]);
-
-  const handleSkip = useCallback(() => {
-    clearTimers();
-    onDone();
-  }, [clearTimers, onDone]);
+    winnerScale.value   = 0;
+    winnerOpacity.value = 0;
+    ctaOpacity.value    = 0;
+  }, [boardIdx]);
 
   if (!visible || boards.length === 0) return null;
 
-  let board = boards[boardIdx];
+  // Safe board access
+  const board: RevealBoardData | undefined = boards[boardIdx];
   if (!board) return null;
 
-  // Defensive: fix malformed board
-  try {
-    if (!Array.isArray(board.openCards) || !Array.isArray(board.closedCards) || !Array.isArray(board.playerCards)) {
-      board = {
-        ...board,
-        openCards: board.openCards ?? [],
-        closedCards: board.closedCards ?? [],
-        playerCards: board.playerCards ?? [],
-        allBotCards: board.allBotCards ?? [],
-        boardHighlightIds: [],
-        playerHighlightIds: [],
-        botHighlightIds: [],
-        allBotHandNames: [],
-      };
-    }
-  } catch (e) {
-    console.error('[RevealSequence] board guard threw:', e);
-    return null;
-  }
+  const closedCards  = board.closedCards ?? [];
+  const turnCard     = closedCards[0] as Card | undefined;
+  const riverCard    = closedCards[1] as Card | undefined;
+  const turnRevealed  = phase === 'turn' || phase === 'river' || phase === 'winner';
+  const riverRevealed = phase === 'river' || phase === 'winner';
+  const allRevealed   = riverRevealed || (turnRevealed && !riverCard);
+  const showWinner    = phase === 'winner';
+  const canTap        = showWinner;
 
-  const turnCard = (board.closedCards ?? [])[0];
-  const riverCard = (board.closedCards ?? [])[1];
-  const allRevealed = riverRevealed || (turnRevealed && !riverCard);
-
-  const winnerColor =
-    board.winner === 'player' ? COLORS.neonGreen : board.winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
-  const winnerLabel =
-    board.winner === 'player' ? 'YOU WIN' : board.winner === 'bot' ? 'BOT WINS' : 'TIE';
+  const winnerColor = board.winner === 'player' ? COLORS.neonGreen
+    : board.winner === 'bot' ? COLORS.neonRed
+    : COLORS.textSecondary;
+  const winnerLabel = board.winner === 'player' ? 'YOU WIN'
+    : board.winner === 'bot' ? 'BOT WINS'
+    : 'TIE';
 
   const allBotCards = board.allBotCards ?? [];
-  const multiBot = allBotCards.length > 1;
-
-  const deltaColor = probDelta !== null
-    ? probDelta >= 0 ? COLORS.neonGreen : COLORS.neonRed
-    : undefined;
-  const deltaStr = probDelta !== null
-    ? probDelta >= 0
-      ? `↑+${Math.round(Math.abs(probDelta))}%`
-      : `↓-${Math.round(Math.abs(probDelta))}%`
-    : null;
-
-  const communityLabel = !turnRevealed ? 'FLOP' : !riverRevealed ? 'TURN' : 'RIVER';
-  const showBadges = !showWinner;
+  const multiBot    = allBotCards.length > 1;
 
   return (
     <Modal visible={visible} transparent={false} animationType="fade" statusBarTranslucent>
-      <Pressable style={styles.overlay} onPress={showNextButton ? handleNextBoard : undefined}>
-        <Animated.View style={[styles.screen, cardAnimStyle]}>
+      <Pressable style={styles.overlay} onPress={canTap ? goNext : undefined}>
+        <View style={styles.screen}>
 
           {/* ── Top bar ── */}
           <View style={styles.topBar}>
             <Text style={styles.boardTitle}>
-              BOARD {boardIdx + 1} <Text style={styles.boardSub}>of {boards.length}</Text>
+              BOARD {boardIdx + 1}{' '}
+              <Text style={styles.boardSub}>of {boards.length}</Text>
             </Text>
-            <Pressable style={styles.skipBtn} onPress={handleSkip} hitSlop={16}>
+            <Pressable style={styles.skipBtn} onPress={skipAll} hitSlop={16}>
               <Text style={styles.skipText}>SKIP</Text>
             </Pressable>
           </View>
 
-          {/* ── Poker table: bot top, community middle, player bottom ── */}
+          {/* ── Table layout: bot top / community middle / player bottom ── */}
           <View style={styles.mainContent}>
             <View style={styles.contentContainer}>
 
-              {/* BOT section — top (opponent across the table) */}
+              {/* BOT section */}
               <View style={styles.botSection}>
-                <View style={styles.sectionHeader}>
-                  <Text style={[
-                    styles.sectionLabel,
-                    board.winner === 'bot' ? styles.loserSectionLabel : null,
-                  ]}>
-                    {multiBot ? 'BOTS' : 'BOT'}
-                  </Text>
-                  <Text style={[styles.probInline, { color: COLORS.neonRed }]}>
-                    {100 - displayedProb}%
-                  </Text>
-                </View>
+                <Text style={[
+                  styles.sectionLabel,
+                  board.winner === 'bot' ? styles.winnerLabel : null,
+                ]}>
+                  {multiBot ? 'BOTS' : 'BOT'}
+                </Text>
                 {allBotCards.map((botCards, botIdx) =>
                   botCards && botCards.length > 0 ? (
                     <View key={`bot-${botIdx}`} style={styles.handRow}>
@@ -561,11 +158,8 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                           faceDown={false}
                           cardWidth={handCardW}
                           cardHeight={handCardH}
-                          highlighted={
-                            (botIdx === 0 && allRevealed && (board.botHighlightIds ?? []).includes(c.id)) ||
-                            (botIdx === 0 && !allRevealed && showBadges && !!botOptimalHint && c.rank === botOptimalHint.rank && c.suit === botOptimalHint.suit)
-                          }
-                          dimmed={botIdx === 0 && allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
+                          highlighted={allRevealed && (board.botHighlightIds ?? []).includes(c.id)}
+                          dimmed={allRevealed && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
                         />
                       ))}
                       {allRevealed && ((board.allBotHandNames ?? [])[botIdx] || (botIdx === 0 && board.botHandName)) && (
@@ -578,11 +172,13 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 )}
               </View>
 
-              <View style={styles.handsDivider} />
+              <View style={styles.divider} />
 
-              {/* Community cards — horizontal row, centered */}
+              {/* Community cards */}
               <View style={styles.communitySection}>
-                <Text style={styles.communityLabel}>{communityLabel}</Text>
+                <Text style={styles.communityLabel}>
+                  {!turnRevealed ? 'FLOP' : !riverRevealed ? 'TURN' : 'RIVER'}
+                </Text>
                 <View style={styles.communityRow}>
                   {(board.openCards ?? []).map((c) => (
                     <CardComponent
@@ -620,28 +216,16 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                 </View>
               </View>
 
-              <View style={styles.handsDivider} />
+              <View style={styles.divider} />
 
-              {/* YOU section — bottom (your side of the table) */}
+              {/* YOU section */}
               <View style={styles.playerSection}>
-                <View style={styles.sectionHeader}>
-                  <Text style={[
-                    styles.sectionLabel,
-                    board.winner === 'player' ? styles.winnerSectionLabel : null,
-                  ]}>
-                    YOU
-                  </Text>
-                  <View style={styles.probRow}>
-                    <Text style={[styles.probInline, { color: COLORS.neonGreen }]}>
-                      {displayedProb}%
-                    </Text>
-                    {deltaStr && (
-                      <Text style={[styles.deltaText, { color: deltaColor }]}>
-                        {' '}{deltaStr}
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                <Text style={[
+                  styles.sectionLabel,
+                  board.winner === 'player' ? styles.winnerLabel : null,
+                ]}>
+                  YOU
+                </Text>
                 <View style={styles.handRow}>
                   {(board.playerCards ?? []).map((c) => (
                     <CardComponent
@@ -650,47 +234,34 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                       faceDown={false}
                       cardWidth={handCardW}
                       cardHeight={handCardH}
-                      highlighted={
-                        (allRevealed && (board.playerHighlightIds ?? []).includes(c.id)) ||
-                        (!allRevealed && showBadges && !!playerOptimalHint && c.rank === playerOptimalHint.rank && c.suit === playerOptimalHint.suit)
-                      }
+                      highlighted={allRevealed && (board.playerHighlightIds ?? []).includes(c.id)}
                       dimmed={allRevealed && !(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
                     />
                   ))}
-                  {board.playerHandName && turnRevealed && (
+                  {board.playerHandName && allRevealed && (
                     <Text style={styles.handName}>{board.playerHandName}</Text>
                   )}
                 </View>
-                {allRevealed && playerOptimalHint && (
-                  <Text style={styles.optimalHint}>
-                    Best: {playerOptimalHint.rank}{SUIT_SYMBOL[playerOptimalHint.suit]}
-                  </Text>
-                )}
               </View>
 
             </View>
           </View>
 
-          {/* ── Footer: countdown | winner banner | CTA ── */}
+          {/* ── Footer: winner banner + CTA ── */}
           <View style={styles.footer}>
-            {countdown !== null && (
-              <Animated.View style={[styles.countdownBox, countdownAnimStyle]}>
-                <Text style={styles.countdownText}>{countdown}</Text>
-              </Animated.View>
-            )}
             {showWinner && (
               <Animated.View style={[styles.winnerBanner, { borderColor: winnerColor }, winnerAnimStyle]}>
                 <Text style={[styles.winnerText, { color: winnerColor }]}>{winnerLabel}</Text>
               </Animated.View>
             )}
-            <Animated.View style={[styles.ctaRow, nextBtnAnimStyle]}>
+            <Animated.View style={ctaAnimStyle}>
               <Text style={styles.ctaText}>
                 {boardIdx + 1 < boards.length ? 'TAP TO CONTINUE →' : 'TAP TO SEE RESULTS →'}
               </Text>
             </Animated.View>
           </View>
 
-        </Animated.View>
+        </View>
       </Pressable>
     </Modal>
   );
@@ -738,8 +309,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
-
-  // ─── Centered: community row top, bot + you below ─────────────────────────
   mainContent: {
     flex: 1,
     alignItems: 'center',
@@ -748,6 +317,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     width: '100%',
     maxWidth: 680,
+  },
+  botSection: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 8,
   },
   communitySection: {
     alignItems: 'center',
@@ -760,29 +334,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  handsDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.border,
-    marginVertical: 6,
-    width: '100%',
-  },
-  botSection: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    gap: 8,
-  },
   playerSection: {
     alignItems: 'center',
     paddingVertical: 10,
     gap: 8,
   },
-
-  // ─── Section headers ──────────────────────────────────────────────────────
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.border,
+    marginVertical: 6,
+    width: '100%',
   },
   sectionLabel: {
     color: COLORS.textSecondary,
@@ -791,24 +352,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
-  winnerSectionLabel: { color: COLORS.neonGreen },
-  loserSectionLabel: { color: COLORS.neonRed },
-  probRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  probInline: {
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  deltaText: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-
-  // ─── Community section label ───────────────────────────────────────────────
+  winnerLabel: { color: COLORS.neonGreen },
   communityLabel: {
     color: COLORS.textDim,
     fontSize: 10,
@@ -816,8 +360,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
-
-  // ─── Hand rows ────────────────────────────────────────────────────────────
   handRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -834,32 +376,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     maxWidth: 100,
   },
-  optimalHint: {
-    color: COLORS.gold,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    opacity: 0.75,
-    marginTop: 2,
-  },
-
-  // ─── Footer ───────────────────────────────────────────────────────────────
   footer: {
     alignItems: 'center',
     gap: 10,
     paddingTop: 8,
-    minHeight: 90,
-  },
-  countdownBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  countdownText: {
-    color: COLORS.gold,
-    fontSize: 72,
-    fontWeight: '900',
-    letterSpacing: 4,
-    lineHeight: 80,
+    minHeight: 80,
   },
   winnerBanner: {
     borderWidth: 2,
@@ -871,9 +392,6 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '900',
     letterSpacing: 3,
-  },
-  ctaRow: {
-    alignItems: 'center',
   },
   ctaText: {
     color: COLORS.gold,
