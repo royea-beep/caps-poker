@@ -194,8 +194,13 @@ export default function ResultsScreen() {
     debugLog(`R4 showComplete=${showComplete} showConfetti=${showConfetti}`);
     console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
-    // Clear dirty-shutdown flag — we made it to results screen normally
-    void clearGameActive();
+    debugLog('🎮 results mounted — game flag still active (cleared on unmount)');
+    // NOTE: clearGameActive() is NOT called here — called on unmount.
+    // If crash happens inside results screen, the flag survives and triggers WhatsApp alert on next open.
+    return () => {
+      debugLog('🎮 results unmounting — clearing game active flag (clean exit)');
+      void clearGameActive();
+    };
   }, []);
 
   // Auto-sim marathon: auto-start next hand after a brief pause

@@ -535,6 +535,7 @@ function GameScreenInner() {
     }).catch(() => {});
 
     // Mark game active before navigating to results — dirty shutdown detector
+    debugLog('🎮 setting game active flag (dirty shutdown detector)');
     void markGameActive();
 
     debugLog('14 router.replace /results START');

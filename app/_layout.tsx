@@ -144,8 +144,12 @@ export default function RootLayout() {
   // If a previous game was active when the app died → send WhatsApp crash alert
   useEffect(() => {
     if (Platform.OS === 'web') return;
+    debugLog('🔍 checking previous crash...');
     checkPreviousCrash().then(async (crashTs) => {
-      if (!crashTs) return;
+      if (!crashTs) {
+        debugLog('🔍 no dirty flag — clean start');
+        return;
+      }
       const age = Math.round((Date.now() - crashTs) / 1000);
       debugLog(`💀 DIRTY SHUTDOWN detected — game was active ${age}s ago`, 'error');
       try {
@@ -156,9 +160,13 @@ export default function RootLayout() {
             return { build: cfg?.ios?.buildNumber ?? 'unknown', version: cfg?.version ?? 'unknown' };
           } catch { return { build: 'unknown', version: 'unknown' }; }
         })();
+        debugLog(`💀 sending WhatsApp crash alert (build=${build} v${version})...`);
         await sendCrashAlert(null, null, `dirty-shutdown (${age}s ago)`, [], { build, version });
-      } catch {}
-    }).catch(() => {});
+        debugLog('💀 WhatsApp crash alert sent ✅');
+      } catch (e) {
+        debugLog(`💀 crash alert failed: ${e}`, 'error');
+      }
+    }).catch((e) => { debugLog(`🔍 checkPreviousCrash threw: ${e}`, 'error'); });
   }, []);
 
   // OTA update check — runs on every app open (production only)
