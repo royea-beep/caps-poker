@@ -16,6 +16,76 @@ import { COLORS } from '../constants/gameConfig'
 import Constants from 'expo-constants'
 import * as Application from 'expo-application'
 
+// ─── QA Checks ───────────────────────────────────────────────────────────────
+interface QACheck {
+  name: string
+  test: () => Promise<boolean>
+  expected: string
+  timeout?: number
+}
+
+interface QAResult {
+  name: string
+  expected: string
+  passed: boolean
+  duration: number
+  error?: string
+}
+
+const CAPS_QA_CHECKS: QACheck[] = [
+  {
+    name: 'Supabase URL configured',
+    test: async () => {
+      const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
+      return url.length > 0
+    },
+    expected: 'EXPO_PUBLIC_SUPABASE_URL set',
+  },
+  {
+    name: 'App version readable',
+    test: async () => {
+      return !!Constants.expoConfig?.version
+    },
+    expected: 'Version in app.json',
+  },
+  {
+    name: 'VersionBadge component exists',
+    test: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require('../components/VersionBadge')
+      return typeof mod.VersionBadge === 'function'
+    },
+    expected: 'VersionBadge component importable',
+  },
+  {
+    name: 'WhatsApp bot URL reachable (HEAD)',
+    test: async () => {
+      try {
+        const r = await fetch(
+          'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler',
+          { method: 'HEAD' },
+        )
+        return r.status < 500
+      } catch {
+        return false
+      }
+    },
+    expected: 'WhatsApp Edge Function not 5xx',
+    timeout: 8000,
+  },
+]
+
+async function runQAWithTimeout(fn: () => Promise<boolean>, ms: number): Promise<boolean> {
+  return Promise.race([
+    fn(),
+    new Promise<boolean>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms),
+    ),
+  ])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function getBuildInfo() {
   const version = Constants.expoConfig?.version ?? '?'
   const build = (Platform.OS !== 'web' ? Application.nativeBuildVersion : null)
@@ -25,6 +95,7 @@ function getBuildInfo() {
 }
 
 type RunStatus = 'idle' | 'running' | 'done'
+type QAStatus = 'idle' | 'running' | 'done'
 
 export default function DebugScreen() {
   const router = useRouter()
@@ -34,6 +105,11 @@ export default function DebugScreen() {
   const [whatsappSent, setWhatsappSent] = useState(false)
   const [copied, setCopied] = useState(false)
   const runnerRef = useRef<AutoDebugRunner | null>(null)
+
+  // QA state
+  const [qaStatus, setQaStatus] = useState<QAStatus>('idle')
+  const [qaResults, setQaResults] = useState<QAResult[]>([])
+  const [qaAlertSent, setQaAlertSent] = useState(false)
 
   const runDebug = useCallback(async () => {
     setStatus('running')
@@ -59,6 +135,63 @@ export default function DebugScreen() {
     }
   }, [])
 
+  const runQA = useCallback(async () => {
+    setQaStatus('running')
+    setQaResults([])
+    setQaAlertSent(false)
+
+    const results: QAResult[] = []
+
+    for (const check of CAPS_QA_CHECKS) {
+      const start = Date.now()
+      let passed = false
+      let error: string | undefined
+
+      try {
+        passed = await runQAWithTimeout(check.test, check.timeout ?? 5000)
+      } catch (e) {
+        passed = false
+        error = e instanceof Error ? e.message : String(e)
+      }
+
+      const result: QAResult = {
+        name: check.name,
+        expected: check.expected,
+        passed,
+        duration: Date.now() - start,
+        error,
+      }
+
+      results.push(result)
+      setQaResults([...results])
+    }
+
+    setQaStatus('done')
+
+    const anyFailed = results.some(r => !r.passed)
+    if (anyFailed) {
+      const { version, build } = getBuildInfo()
+      const failedNames = results.filter(r => !r.passed).map(r => r.name).join(', ')
+      const fakeReport: DebugReport = {
+        project: 'Caps',
+        version,
+        build,
+        totalSteps: results.length,
+        passed: results.filter(r => r.passed).length,
+        failedAt: results.findIndex(r => !r.passed) + 1,
+        failedStep: failedNames,
+        results: [],
+        autoFixPrompt: `QA FAILURES in Caps v${version}:\n${results
+          .filter(r => !r.passed)
+          .map(r => `- ${r.name}: expected "${r.expected}"${r.error ? ` (${r.error})` : ''}`)
+          .join('\n')}`,
+        timestamp: new Date().toISOString(),
+      }
+      await sendDebugReportToWhatsApp(fakeReport)
+      setQaAlertSent(true)
+    }
+  }, [])
+
   const copyPrompt = useCallback(() => {
     if (!report?.autoFixPrompt) return
     Clipboard.setString(report.autoFixPrompt)
@@ -77,10 +210,10 @@ export default function DebugScreen() {
 
   const statusIcon = (s: StepResult['status']) => {
     switch (s) {
-      case 'pass':    return '✅'
-      case 'fail':    return '⚠️'
-      case 'crash':   return '💀'
-      case 'timeout': return '⏱️'
+      case 'pass':    return '\u2705'
+      case 'fail':    return '\u26a0\ufe0f'
+      case 'crash':   return '\ud83d\udc80'
+      case 'timeout': return '\u23f1\ufe0f'
     }
   }
 
@@ -91,7 +224,7 @@ export default function DebugScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>{'\u2190'} Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>AUTO-DEBUG</Text>
         <Text style={styles.buildInfo}>v{version} ({build})</Text>
@@ -103,15 +236,15 @@ export default function DebugScreen() {
           <View style={[styles.summaryCard, { borderColor: report.failedAt ? '#ff4444' : '#00cc66' }]}>
             <Text style={[styles.summaryTitle, { color: report.failedAt ? '#ff4444' : '#00cc66' }]}>
               {report.failedAt
-                ? `❌ FAILED at Step ${report.failedAt}/${report.totalSteps}`
-                : `✅ ALL ${report.totalSteps} STEPS PASSED`}
+                ? `\u274c FAILED at Step ${report.failedAt}/${report.totalSteps}`
+                : `\u2705 ALL ${report.totalSteps} STEPS PASSED`}
             </Text>
             <Text style={styles.summaryDetail}>
               {report.passed}/{report.totalSteps} passed
-              {report.failedAt ? ` · crashed: "${report.failedStep}"` : ''}
+              {report.failedAt ? ` \u00b7 crashed: "${report.failedStep}"` : ''}
             </Text>
             {whatsappSent && (
-              <Text style={styles.waSent}>📱 WhatsApp alert sent</Text>
+              <Text style={styles.waSent}>{'\ud83d\udcf1'} WhatsApp alert sent</Text>
             )}
           </View>
         )}
@@ -131,7 +264,7 @@ export default function DebugScreen() {
                 {result && (
                   <View style={styles.stepMeta}>
                     <Text style={[styles.stepStatus, { color: statusColor(result.status) }]}>
-                      {statusIcon(result.status)} {result.status.toUpperCase()} — {result.duration}ms
+                      {statusIcon(result.status)} {result.status.toUpperCase()} \u2014 {result.duration}ms
                     </Text>
                     {result.error && (
                       <Text style={styles.stepError} numberOfLines={2}>{result.error}</Text>
@@ -139,7 +272,7 @@ export default function DebugScreen() {
                   </View>
                 )}
                 {isRunning && (
-                  <Text style={styles.stepRunning}>⟳ running...</Text>
+                  <Text style={styles.stepRunning}>{'\u27f3'} running...</Text>
                 )}
               </View>
             </View>
@@ -150,13 +283,89 @@ export default function DebugScreen() {
         {report?.autoFixPrompt && (
           <TouchableOpacity style={styles.copyBtn} onPress={copyPrompt}>
             <Text style={styles.copyBtnText}>
-              {copied ? '✅ Copied!' : '📋 Copy Fix Prompt'}
+              {copied ? '\u2705 Copied!' : '\ud83d\udccb Copy Fix Prompt'}
             </Text>
           </TouchableOpacity>
         )}
+
+        {/* QA Section divider */}
+        <View style={styles.qaSectionHeader}>
+          <Text style={styles.qaSectionTitle}>{'\ud83d\udd0d'} LOGIC QA</Text>
+          <Text style={styles.qaSectionSub}>{CAPS_QA_CHECKS.length} checks \u00b7 iron rules compliance</Text>
+        </View>
+
+        {/* QA summary (shown after run) */}
+        {qaStatus === 'done' && qaResults.length > 0 && (
+          <View style={[
+            styles.summaryCard,
+            { borderColor: qaResults.every(r => r.passed) ? '#00cc66' : '#ff4444' },
+          ]}>
+            <Text style={[
+              styles.summaryTitle,
+              { color: qaResults.every(r => r.passed) ? '#00cc66' : '#ff4444' },
+            ]}>
+              {qaResults.every(r => r.passed)
+                ? `\u2705 ALL ${qaResults.length} QA CHECKS PASSED`
+                : `\u274c ${qaResults.filter(r => !r.passed).length}/${qaResults.length} CHECKS FAILED`}
+            </Text>
+            <Text style={styles.summaryDetail}>
+              {qaResults.filter(r => r.passed).length}/{qaResults.length} passed
+            </Text>
+            {qaAlertSent && (
+              <Text style={styles.waSent}>{'\ud83d\udcf1'} WhatsApp QA alert sent</Text>
+            )}
+          </View>
+        )}
+
+        {/* QA idle rows */}
+        {qaStatus === 'idle' && CAPS_QA_CHECKS.map((check, i) => (
+          <View key={`qa-idle-${i}`} style={styles.stepRow}>
+            <View style={styles.stepLeft}>
+              <Text style={styles.stepNum}>{i + 1}</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepName}>{check.name}</Text>
+              <Text style={styles.qaPending}>expects: {check.expected}</Text>
+            </View>
+          </View>
+        ))}
+
+        {/* QA running/done rows */}
+        {(qaStatus === 'running' || qaStatus === 'done') && CAPS_QA_CHECKS.map((check, i) => {
+          const result = qaResults[i]
+          const isRunningNow = !result && i === qaResults.length
+          return (
+            <View key={`qa-run-${i}`} style={styles.stepRow}>
+              <View style={styles.stepLeft}>
+                <Text style={[styles.stepNum, result
+                  ? { color: result.passed ? '#00cc66' : '#ff4444' }
+                  : {},
+                ]}>
+                  {result ? (result.passed ? '\u2713' : '\u2717') : String(i + 1)}
+                </Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepName}>{check.name}</Text>
+                {result && (
+                  <View style={styles.stepMeta}>
+                    <Text style={[styles.stepStatus, { color: result.passed ? '#00cc66' : '#ff4444' }]}>
+                      {result.passed ? '\u2705 PASS' : '\u274c FAIL'} \u2014 {result.duration}ms
+                    </Text>
+                    {!result.passed && (
+                      <Text style={styles.stepError} numberOfLines={3}>
+                        expected: {result.expected}{result.error ? `\n${result.error}` : ''}
+                      </Text>
+                    )}
+                  </View>
+                )}
+                {isRunningNow && <Text style={styles.stepRunning}>{'\u27f3'} running...</Text>}
+              </View>
+            </View>
+          )
+        })}
       </ScrollView>
 
-      {/* Run button */}
+      {/* Footer — two buttons */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.runBtn, status === 'running' && styles.runBtnDisabled]}
@@ -164,7 +373,17 @@ export default function DebugScreen() {
           disabled={status === 'running'}
         >
           <Text style={styles.runBtnText}>
-            {status === 'running' ? '⟳ Running...' : status === 'done' ? '▶ Run Again' : '▶ Run Debug'}
+            {status === 'running' ? '\u27f3 Running...' : status === 'done' ? '\u25b6 Run Again' : '\u25b6 Run Debug'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.qaBtn, qaStatus === 'running' && styles.runBtnDisabled]}
+          onPress={runQA}
+          disabled={qaStatus === 'running'}
+        >
+          <Text style={styles.qaBtnText}>
+            {qaStatus === 'running' ? '\u27f3 Running QA...' : qaStatus === 'done' ? '\ud83d\udd0d Run QA Again' : '\ud83d\udd0d Run QA'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -297,11 +516,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  qaSectionHeader: {
+    marginTop: 16,
+    marginBottom: 4,
+    paddingHorizontal: 2,
+  },
+  qaSectionTitle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  qaSectionSub: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  qaPending: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
   footer: {
     padding: 16,
     paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
+    gap: 10,
   },
   runBtn: {
     backgroundColor: COLORS.gold,
@@ -314,6 +558,18 @@ const styles = StyleSheet.create({
   },
   runBtnText: {
     color: COLORS.background,
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  qaBtn: {
+    backgroundColor: 'rgba(99,102,241,0.85)',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  qaBtnText: {
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 2,
