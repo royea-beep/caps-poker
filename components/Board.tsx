@@ -370,20 +370,13 @@ export default function Board({
           )}
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
-              isArrangement && onRemoveCard ? (
-                <Pressable key={c.id} onPress={() => onRemoveCard(c)}>
-                  <CardComponent
-                    card={c}
-                    faceDown={false}
-                    cardWidth={cw}
-                    cardHeight={ch}
-                    highlighted={revealed && playerHighlightIds.includes(c.id)}
-                    dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
-                  />
-                </Pressable>
-              ) : (
+              // ALWAYS wrap in Pressable (same key, same component type across renders).
+              // When isArrangement is false, onPress is undefined = non-interactive.
+              // Previously alternated between <Pressable> and <CardComponent> at the same key,
+              // which caused React 19 to call CardComponent's render against Pressable's hook
+              // state → "Rendered fewer hooks than expected" crash (CR-T6CB / CR-6PSY).
+              <Pressable key={c.id} onPress={isArrangement && onRemoveCard ? () => onRemoveCard(c) : undefined}>
                 <CardComponent
-                  key={c.id}
                   card={c}
                   faceDown={false}
                   cardWidth={cw}
@@ -391,7 +384,7 @@ export default function Board({
                   highlighted={revealed && playerHighlightIds.includes(c.id)}
                   dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
                 />
-              )
+              </Pressable>
             ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
