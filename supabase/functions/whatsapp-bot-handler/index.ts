@@ -668,9 +668,102 @@ serve(async (req: Request) => {
   const rawBody = await req.text();
   console.log('[whatsapp-bot] Body:', rawBody.slice(0, 300));
 
+  // ── Last message status check (diagnostic) ────────────────────────────────
+  const contentType = req.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    try {
+      const json = JSON.parse(rawBody);
+      if (json?.check_last_msg) {
+        const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+        const h = { Authorization: `Basic ${creds}` };
+        const base = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}`;
+        const WEBHOOK = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler';
+
+        const [sandboxRes, notifRes, inboundRes, convRes] = await Promise.all([
+          fetch(`${base}/Sandbox.json`, { headers: h }),
+          fetch(`${base}/Notifications.json?PageSize=5`, { headers: h }),
+          fetch(`${base}/Messages.json?PageSize=5&From=whatsapp%3A%2B972526173700`, { headers: h }),
+          fetch('https://conversations.twilio.com/v1/Configuration', { headers: h }),
+        ]);
+
+        const [sandbox, notifications, inbound, conversations] = await Promise.all([
+          sandboxRes.json().catch(() => null),
+          notifRes.json().catch(() => null),
+          inboundRes.json().catch(() => null),
+          convRes.json().catch(() => null),
+        ]);
+
+        // If sandbox found but webhook wrong → fix it
+        let webhookFixed = false;
+        if (sandbox && !sandbox.code && sandbox.inbound_request_url !== WEBHOOK) {
+          const fixRes = await fetch(`${base}/Sandbox.json`, {
+            method: 'POST',
+            headers: { ...h, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ InboundRequestUrl: WEBHOOK, InboundMethod: 'POST' }).toString(),
+          });
+          webhookFixed = fixRes.ok;
+        }
+
+        // Check outbound messages TO Roye
+        const outboundRes = await fetch(`${base}/Messages.json?PageSize=5&To=whatsapp%3A%2B972526173700`, { headers: h });
+        const outbound = await outboundRes.json().catch(() => null);
+        const outMsgs = (outbound?.messages ?? []).map((m: Record<string, string>) => ({
+          to: m.to, body: m.body?.slice(0, 30), status: m.status, error_code: m.error_code, date: m.date_sent,
+        }));
+
+        const inboundMsgs = (inbound?.messages ?? []).map((m: Record<string, string>) => ({
+          from: m.from, body: m.body?.slice(0, 40), status: m.status, date: m.date_sent,
+        }));
+        const notifList = (notifications?.notifications ?? []).map((n: Record<string, string>) => ({
+          message: n.message_text, date: n.date_created,
+        }));
+
+        // Check Conversations Addresses (WhatsApp bindings that intercept messages)
+        const addrRes   = await fetch('https://conversations.twilio.com/v1/Configuration/Addresses?PageSize=20', { headers: h });
+        const addrData  = await addrRes.json().catch(() => null);
+        const addresses = addrData?.address_configurations ?? [];
+
+        // Delete any WhatsApp address bindings
+        const deleted: string[] = [];
+        for (const addr of addresses) {
+          if (addr.type === 'whatsapp' || addr.address?.includes('14155238886')) {
+            const delRes = await fetch(
+              `https://conversations.twilio.com/v1/Configuration/Addresses/${addr.sid}`,
+              { method: 'DELETE', headers: h },
+            );
+            if (delRes.ok || delRes.status === 204) deleted.push(addr.sid);
+          }
+        }
+
+        // Check Twilio Debugger alerts
+        const alertsRes  = await fetch('https://monitor.twilio.com/v1/Alerts?PageSize=5', { headers: h });
+        const alertsData = await alertsRes.json().catch(() => null);
+        const alerts     = (alertsData?.alerts ?? []).map((a: Record<string, string>) => ({
+          alert_text: a.alert_text?.slice(0, 80), date: a.date_generated,
+        }));
+
+        // Send direct outbound test message
+        const directRes = await fetch(`${base}/Messages.json`, {
+          method: 'POST',
+          headers: { ...h, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ From: TWILIO_WHATSAPP_FROM, To: 'whatsapp:+972526173700', Body: 'Direct test — if you see this, outbound works!' }).toString(),
+        });
+        const directMsg = await directRes.json().catch(() => null);
+
+        return new Response(JSON.stringify({
+          conversationsAddresses: addresses.map((a: Record<string, string>) => ({ sid: a.sid, type: a.type, address: a.address })),
+          deletedAddresses: deleted,
+          debuggerAlerts: alerts,
+          directSend: { status: directRes.status, msgStatus: directMsg?.status, error: directMsg?.error_code, sid: directMsg?.sid },
+          sandbox: sandbox?.code ? `ERROR ${sandbox.code}` : { webhook: sandbox?.inbound_request_url },
+          outboundToRoye: outMsgs.slice(0, 2),
+        }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+      }
+    } catch { /* ignore */ }
+  }
+
   // ── Crash notification from the app ────────────────────────────────────────
   // Content-Type: application/json, body = { crash_notification: true, message, videoUrl }
-  const contentType = req.headers.get('content-type') ?? '';
   if (contentType.includes('application/json')) {
     try {
       const json = JSON.parse(rawBody);

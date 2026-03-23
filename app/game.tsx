@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -373,6 +374,7 @@ function GameScreenInner() {
   useEffect(() => {
     mountedRef.current = true;
     debugLog(`game.tsx mounted — ${numberOfPlayers}p ${boardCount} boards`);
+    setCurrentScreen('Game')
     onGameStart().catch(() => {});
     return () => {
       mountedRef.current = false;
@@ -726,6 +728,7 @@ function GameScreenInner() {
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
+    trackAction('deal_pressed')
     debugLog('H1 handleReady called');
     if (!allBoardsFull) { debugLog('H1.1 NOT allBoardsFull — abort'); return; }
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);

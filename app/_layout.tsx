@@ -24,6 +24,8 @@ import { onCrashDetected } from '../utils/crashDetector';
 import { checkPreviousCrash } from '../utils/dirtyShutdown';
 import { sendCrashAlert } from '../utils/crashAlert';
 import { getLastCrashScreenshots, clearCrashScreenshots } from '../utils/screenRecorder';
+import { startCrashRecording, setCurrentScreen } from '../utils/crash-evidence';
+import { CrashBoundary } from '../components/CrashBoundary';
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -139,7 +141,11 @@ export default function RootLayout() {
     return () => {};
   }, []);
 
-  useEffect(() => { debugLog('🔵 app started'); }, []);
+  useEffect(() => {
+    debugLog('🔵 app started')
+    startCrashRecording()
+    setCurrentScreen('Splash')
+  }, []);
 
   // Dirty shutdown detector — runs on every app open (native only)
   // If a previous game was active when the app died → send WhatsApp crash alert
@@ -286,6 +292,7 @@ export default function RootLayout() {
   return (
     <RootWrapper style={{ flex: 1 }}>
       <StatusBar style="light" />
+      <CrashBoundary>
       <BugReporter>
         <WebContainer>
           <Stack
@@ -303,6 +310,7 @@ export default function RootLayout() {
           </Stack>
         </WebContainer>
       </BugReporter>
+      </CrashBoundary>
       <VersionBadge />
       <DebugOverlay />
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
