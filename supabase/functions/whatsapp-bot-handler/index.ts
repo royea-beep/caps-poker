@@ -684,26 +684,33 @@ serve(async (req: Request) => {
         const autoFixEnabled = cfg?.value?.enabled ?? false;
 
         // Record crash_pending session so user replies 1-7 are routed correctly
-        await supabase.from('whatsapp_sessions').insert({
-          message_sid: `crash-${Date.now()}`,
-          from_number: ROYE_NUMBER,
-          raw_input: msg,
-          media_type: 'crash',
-          claude_plan: { debugLogs: json.debugLogs ?? [], metadata: json.metadata ?? {}, videoUrl: json.videoUrl, screenshotUrl: json.screenshotUrl },
-          status: 'crash_pending',
-        }).catch(() => {});
+        try {
+          await supabase.from('whatsapp_sessions').insert({
+            message_sid: `crash-${Date.now()}`,
+            from_number: ROYE_NUMBER,
+            raw_input: msg,
+            media_type: 'crash',
+            claude_plan: { debugLogs: json.debugLogs ?? [], metadata: json.metadata ?? {}, videoUrl: json.videoUrl, screenshotUrl: json.screenshotUrl },
+            status: 'crash_pending',
+          });
+        } catch { /* fire and forget */ }
 
-        if (autoFixEnabled) {
-          // Auto-fix: skip menu, go straight to analyzer
-          await sendWhatsApp(ROYE_NUMBER, `🤖 AUTO-FIX: קריסה בשלב ${json.metadata?.lastStep ?? 'unknown'}. מנתח + מתקן...`);
-          const analyzerUrl = `${SUPABASE_URL}/functions/v1/crash-analyzer`;
-          fetch(analyzerUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-            body: JSON.stringify({ debugLogs: json.debugLogs, metadata: json.metadata, autoApply: true, from: ROYE_NUMBER }),
-          }).catch(() => {});
-        } else {
-          await sendWhatsApp(ROYE_NUMBER, msg);
+        // Send WhatsApp — wrapped in try/catch so a Twilio error never breaks the response
+        try {
+          if (autoFixEnabled) {
+            // Auto-fix: skip menu, go straight to analyzer
+            await sendWhatsApp(ROYE_NUMBER, `🤖 AUTO-FIX: קריסה בשלב ${json.metadata?.lastStep ?? 'unknown'}. מנתח + מתקן...`);
+            const analyzerUrl = `${SUPABASE_URL}/functions/v1/crash-analyzer`;
+            fetch(analyzerUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+              body: JSON.stringify({ debugLogs: json.debugLogs, metadata: json.metadata, autoApply: true, from: ROYE_NUMBER }),
+            }).catch(() => {});
+          } else {
+            await sendWhatsApp(ROYE_NUMBER, msg);
+          }
+        } catch (sendErr) {
+          console.error('[whatsapp-bot] sendWhatsApp failed for crash notification:', sendErr);
         }
 
         return new Response(JSON.stringify({ sent: true, autoFix: autoFixEnabled }), {
@@ -712,7 +719,11 @@ serve(async (req: Request) => {
         });
       }
     } catch (e) {
-      console.error('[whatsapp-bot] JSON parse error:', e);
+      console.error('[whatsapp-bot] crash notification error:', e);
+      return new Response(JSON.stringify({ error: String(e) }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
     }
   }
 
@@ -784,14 +795,16 @@ serve(async (req: Request) => {
         metadata: { videoUrl: publicUrl, timestamp: new Date().toISOString() },
       });
       // Record crash_pending session for the video
-      await supabase.from('whatsapp_sessions').insert({
-        message_sid: `video-${Date.now()}`,
-        from_number: from,
-        raw_input: `[CRASH-VIDEO] ${publicUrl}`,
-        media_type: 'video',
-        claude_plan: { videoUrl: publicUrl },
-        status: 'crash_pending',
-      }).catch(() => {});
+      try {
+        await supabase.from('whatsapp_sessions').insert({
+          message_sid: `video-${Date.now()}`,
+          from_number: from,
+          raw_input: `[CRASH-VIDEO] ${publicUrl}`,
+          media_type: 'video',
+          claude_plan: { videoUrl: publicUrl },
+          status: 'crash_pending',
+        });
+      } catch { /* fire and forget */ }
       const reply = [
         '🎥 וידאו התקבל ונשמר!',
         `קישור: ${publicUrl}`,
