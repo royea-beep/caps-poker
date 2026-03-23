@@ -696,6 +696,12 @@ export default function SettingsScreen() {
           }}
           style={{ marginBottom: 12, borderColor: '#00ff00', opacity: 0.7 }}
         />
+        <Button
+          title="🔬 Auto-Debug Suite"
+          variant="secondary"
+          onPress={() => router.push('/debug' as any)}
+          style={{ marginBottom: 12, borderColor: '#ff9900', opacity: 0.8 }}
+        />
 
         <Button
           title="Reset to Defaults"
