@@ -948,8 +948,8 @@ export default function ResultsScreen() {
       {/* REVEAL BYPASSED — crash isolation test. showReveal always false. */}
       {/* <RevealSequence boards={boards} visible={showReveal} onDone={() => setShowReveal(false)} /> */}
 
-      {/* Confetti — fires once on perfect game (all boards won) */}
-      {showConfetti && (
+      {/* Confetti — fires once on perfect game (all boards won), skip when CompleteOverlay showing to avoid 180 animated views crash */}
+      {showConfetti && !showComplete && (
         <ConfettiCannon
           count={180}
           origin={{ x: 0, y: 0 }}

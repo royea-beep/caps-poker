@@ -116,11 +116,6 @@ function SafeCompleteOverlay({ winner, bonusAmount, duration, onDone }: Complete
           <Text style={styles.bonusAmount}>{bonusAmount}</Text>
           <View style={styles.bonusChip} />
         </View>
-        {winner === 'player' && (
-          <View style={{ marginTop: rs(16), width: '100%' }}>
-            <ProQuoteBanner context="complete" />
-          </View>
-        )}
       </View>
     </View>
   );
@@ -256,10 +251,10 @@ const styles = StyleSheet.create({
     marginBottom: rs(8),
   },
   completeText: {
-    fontSize: rf(58),
+    fontSize: rf(48),
     fontWeight: '900',
     color: COLORS.goldLight,
-    letterSpacing: 6,
+    letterSpacing: 3,
     textShadowColor: COLORS.gold,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 24,
