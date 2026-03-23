@@ -437,6 +437,132 @@ ${recText}`;
 const MERGE_WINDOW_MS = 60_000;
 const AUTO_CANCEL_STALE_MS = 5 * 60_000; // Only cancel old sessions (>5 min)
 
+// ── Crash Control Panel (reply 1-7) ────────────────────────────────────────
+
+const AUTO_FIX_KEY = 'caps_auto_fix_mode';
+const CRASH_REPLY_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+async function handleCrashReply(
+  msgText: string,
+  supabase: ReturnType<typeof createClient>,
+  from: string,
+): Promise<string | null> {
+  const trimmed = msgText.trim();
+  const upper = trimmed.toUpperCase();
+
+  // Option 1: Auto-fix
+  if (['1', 'FIX', 'תקן'].includes(upper)) {
+    const { data: latest } = await supabase
+      .from('bug_reports')
+      .select('*')
+      .ilike('title', '[CRASH]%')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (!latest) return 'אין דוח קריסה. שלח וידאו קודם.';
+    // Trigger crash-analyzer
+    const analyzerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/crash-analyzer`;
+    fetch(analyzerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
+      body: JSON.stringify({ crashReportId: latest.id, autoApply: true, from }),
+    }).catch(() => {});
+    await supabase.from('whatsapp_sessions')
+      .update({ status: 'crash_processing' })
+      .eq('from_number', from)
+      .eq('status', 'crash_pending');
+    return '🔧 מנתח ומתקן... OTA תוך ~2 דקות.';
+  }
+
+  // Option 2: Show analysis
+  if (trimmed === '2') {
+    const { data: latest } = await supabase
+      .from('bug_reports')
+      .select('*')
+      .ilike('title', '[CRASH]%')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (!latest) return 'אין דוח קריסה.';
+    const analyzerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/crash-analyzer`;
+    fetch(analyzerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
+      body: JSON.stringify({ crashReportId: latest.id, autoApply: false, from }),
+    }).catch(() => {});
+    return '🔍 מנתח... תוצאות תוך ~30 שניות.';
+  }
+
+  // Option 3: Skip
+  if (['3', 'SKIP', 'דלג'].includes(upper)) {
+    await supabase.from('whatsapp_sessions')
+      .update({ status: 'crash_skipped' })
+      .eq('from_number', from)
+      .eq('status', 'crash_pending');
+    await supabase.from('bug_reports')
+      .update({ status: 'skipped' })
+      .ilike('title', '[CRASH]%')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    return '⏭️ דולג. התראה על הקריסה הבאה.';
+  }
+
+  // Option 4: Marathon
+  if (['4', 'MARATHON'].includes(upper)) {
+    await supabase.from('app_config').upsert({
+      key: 'run_marathon',
+      value: { requested: true, timestamp: new Date().toISOString() },
+    });
+    return '🔄 מרתון התבקש! פתח את האפליקציה — יתחיל 10 ידיים אוטומטית.';
+  }
+
+  // Option 5: AUTO-FIX ON
+  if (['5', 'AUTO', 'אוטו'].includes(upper)) {
+    await supabase.from('app_config').upsert({
+      key: AUTO_FIX_KEY,
+      value: { enabled: true, since: new Date().toISOString() },
+    });
+    return '🟢 *AUTO-FIX ON*\n\nכל קריסה תנותח ותתוקן אוטומטית ללא אישור.\nהשב 6 לביטול.';
+  }
+
+  // Option 6: AUTO-FIX OFF
+  if (trimmed === '6') {
+    await supabase.from('app_config').upsert({
+      key: AUTO_FIX_KEY,
+      value: { enabled: false, since: new Date().toISOString() },
+    });
+    return '🔴 *AUTO-FIX OFF*\n\nתישאל לאשר כל תיקון.';
+  }
+
+  // Option 7: Dashboard
+  if (['7', 'DASHBOARD', 'דשבורד'].includes(upper)) {
+    const [{ count: total }, { count: fixed }, { data: cfg }] = await Promise.all([
+      supabase.from('bug_reports').select('*', { count: 'exact', head: true }).ilike('title', '[CRASH]%'),
+      supabase.from('bug_reports').select('*', { count: 'exact', head: true }).ilike('title', '[CRASH]%').eq('status', 'fixed'),
+      supabase.from('app_config').select('value').eq('key', AUTO_FIX_KEY).single(),
+    ]);
+    const autoOn = cfg?.value?.enabled ?? false;
+    return [
+      '📊 *CRASH DASHBOARD:*',
+      `Total: ${total ?? 0}`,
+      `Fixed: ${fixed ?? 0}`,
+      `Open: ${(total ?? 0) - (fixed ?? 0)}`,
+      `Auto-fix: ${autoOn ? '🟢 ON' : '🔴 OFF'}`,
+      '',
+      'https://caps.ftable.co.il/bugs/',
+    ].join('\n');
+  }
+
+  return null; // Not a crash reply
+}
+
 async function findPendingMerge(
   supabase: ReturnType<typeof createClient>,
   from: string,
@@ -552,9 +678,35 @@ serve(async (req: Request) => {
         console.log('[whatsapp-bot] Crash notification received');
         const ROYE_NUMBER = Deno.env.get('ROYE_WHATSAPP_NUMBER') ?? 'whatsapp:+972504141513';
         const msg = json.message ?? '🔴 CAPS CRASH (no details)';
-        const videoLine = json.videoUrl ? `\n🎥 ${json.videoUrl}` : '';
-        await sendWhatsApp(ROYE_NUMBER, `${msg}${videoLine}`);
-        return new Response(JSON.stringify({ sent: true }), {
+
+        // Check auto-fix mode
+        const { data: cfg } = await supabase.from('app_config').select('value').eq('key', AUTO_FIX_KEY).single();
+        const autoFixEnabled = cfg?.value?.enabled ?? false;
+
+        // Record crash_pending session so user replies 1-7 are routed correctly
+        await supabase.from('whatsapp_sessions').insert({
+          message_sid: `crash-${Date.now()}`,
+          from_number: ROYE_NUMBER,
+          raw_input: msg,
+          media_type: 'crash',
+          claude_plan: { debugLogs: json.debugLogs ?? [], metadata: json.metadata ?? {}, videoUrl: json.videoUrl, screenshotUrl: json.screenshotUrl },
+          status: 'crash_pending',
+        }).catch(() => {});
+
+        if (autoFixEnabled) {
+          // Auto-fix: skip menu, go straight to analyzer
+          await sendWhatsApp(ROYE_NUMBER, `🤖 AUTO-FIX: קריסה בשלב ${json.metadata?.lastStep ?? 'unknown'}. מנתח + מתקן...`);
+          const analyzerUrl = `${SUPABASE_URL}/functions/v1/crash-analyzer`;
+          fetch(analyzerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+            body: JSON.stringify({ debugLogs: json.debugLogs, metadata: json.metadata, autoApply: true, from: ROYE_NUMBER }),
+          }).catch(() => {});
+        } else {
+          await sendWhatsApp(ROYE_NUMBER, msg);
+        }
+
+        return new Response(JSON.stringify({ sent: true, autoFix: autoFixEnabled }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
@@ -589,6 +741,72 @@ serve(async (req: Request) => {
   const isFixOnly  = ['1', 'FIX', 'תקן'].includes(upperBody);
   const isFixBuild = ['2', 'BUILD', 'בנה', 'APPROVE', 'כן', 'אשר'].includes(upperBody);
   const isCancel   = ['3', 'CANCEL', 'לא', 'בטל'].includes(upperBody);
+
+  // ── Check crash_pending FIRST — routes 1-7 replies to crash control panel ─
+  if (['1','2','3','4','5','6','7','FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)) {
+    const windowStart = new Date(Date.now() - CRASH_REPLY_WINDOW_MS).toISOString();
+    const { data: crashSession } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('from_number', from)
+      .eq('status', 'crash_pending')
+      .gte('created_at', windowStart)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (crashSession) {
+      const reply = await handleCrashReply(msgBody, supabase, from);
+      if (reply) {
+        await sendWhatsApp(from, reply);
+        return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+      }
+    }
+  }
+
+  // ── Handle video from WhatsApp (user sends crash video) ────────────────────
+  if (numMedia > 0 && mediaUrl && mediaType.startsWith('video/')) {
+    console.log('[whatsapp-bot] Video received, uploading to crash-recordings');
+    try {
+      const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+      const vidRes = await fetch(mediaUrl, { headers: { Authorization: `Basic ${creds}` } });
+      const vidBuf = await vidRes.arrayBuffer();
+      const fileName = `crash-video-${Date.now()}.mp4`;
+      await supabase.storage.from('crash-recordings').upload(
+        fileName, new Uint8Array(vidBuf), { contentType: 'video/mp4', upsert: false },
+      );
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/crash-recordings/${fileName}`;
+      await supabase.from('bug_reports').insert({
+        title: '[CRASH-VIDEO] WhatsApp',
+        description: '[CRASH-VIDEO] Video received via WhatsApp',
+        url: 'whatsapp/video',
+        report_type: 'text',
+        screenshot_url: publicUrl,
+        metadata: { videoUrl: publicUrl, timestamp: new Date().toISOString() },
+      });
+      // Record crash_pending session for the video
+      await supabase.from('whatsapp_sessions').insert({
+        message_sid: `video-${Date.now()}`,
+        from_number: from,
+        raw_input: `[CRASH-VIDEO] ${publicUrl}`,
+        media_type: 'video',
+        claude_plan: { videoUrl: publicUrl },
+        status: 'crash_pending',
+      }).catch(() => {});
+      const reply = [
+        '🎥 וידאו התקבל ונשמר!',
+        `קישור: ${publicUrl}`,
+        '',
+        '*השב:*',
+        '1 = 🔧 Auto-fix',
+        '2 = 👀 ניתוח',
+        '3 = ⏭️ דלג',
+      ].join('\n');
+      await sendWhatsApp(from, reply);
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+    } catch (e) {
+      console.error('[whatsapp-bot] Video upload failed:', e);
+    }
+  }
 
   if (isFixOnly || isFixBuild || isCancel) {
     // Check if there's a stale pending_merge that never got a second message → promote it first

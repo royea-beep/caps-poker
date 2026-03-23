@@ -175,6 +175,27 @@ export default function RootLayout() {
     }
   }, []);
 
+  // Marathon auto-start — triggered via WhatsApp reply "4"
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data } = await supabase
+          .from('app_config')
+          .select('value')
+          .eq('key', 'run_marathon')
+          .single();
+        if (data?.value?.requested) {
+          await supabase.from('app_config').upsert({ key: 'run_marathon', value: { requested: false } });
+          debugLog('🤖 Marathon requested via WhatsApp — starting in 2s');
+          setTimeout(() => router.push('/game?autoSim=true&autoSimCount=10' as any), 2000);
+        }
+      } catch {}
+    })();
+  }, []);
+
   // Lock screen orientation based on user choice
   useEffect(() => {
     if (!ScreenOrientation || !orientation) return;

@@ -58,6 +58,6 @@ export async function onCrashDetected(error?: Error) {
     lastStep: lastLine,
     crashError: error?.message,
   }).then((videoUrl) => {
-    sendCrashAlert(videoUrl, lastLine, { build, version, device }).catch(() => {});
+    sendCrashAlert(videoUrl, videoUrl, lastLine, logs, { build, version, device }).catch(() => {});
   }).catch(() => {});
 }
