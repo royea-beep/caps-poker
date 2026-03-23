@@ -171,17 +171,18 @@ export default function ResultsScreen() {
   const gameShareRef = useRef<any>(null);
   const gameStoryRef = useRef<any>(null);
 
+  const scrollRef = useRef<any>(null);
   const chipCountProgress = useSharedValue(0);
   const goldPulse = useSharedValue(0); // 0=off, 1=gold border active
-  const goldPulseStyle = useAnimatedStyle(() => ({
-    borderColor: goldPulse.value > 0.5 ? '#FFD700' : undefined,
-    borderWidth: goldPulse.value > 0.5 ? 3 : undefined,
-  }));
+  const goldPulseStyle = useAnimatedStyle(() => {
+    if (goldPulse.value <= 0.5) return {};
+    return { borderColor: '#FFD700', borderWidth: 3 };
+  });
 
-  // Dynamic card sizing: fit 5 community cards + separator in available width
-  // Available = screenWidth - container padding (32) - board padding (20) - separator (6)
-  const availableW = SCREEN_W - 32 - 20 - 6;
-  const CARD_W = Math.min(Platform.OS === 'web' ? 60 : 42, Math.max(28, Math.floor(availableW / 5.5)));
+  // Dynamic card sizing: compact — fit boards + buttons on screen without excessive scrolling
+  // Available = screenWidth - container padding (32) - board padding (20) - separator (4)
+  const availableW = SCREEN_W - 32 - 20 - 4;
+  const CARD_W = Math.min(Platform.OS === 'web' ? 56 : 36, Math.max(24, Math.floor(availableW / 6.5)));
   const CARD_H = Math.round(CARD_W * 1.4);
 
   // Debug: log on mount — Supabase log so we see it even after native crash
@@ -321,6 +322,7 @@ export default function ResultsScreen() {
       } else {
         debugLog('A15.2 not complete — setShowButtons');
         setShowButtons(true);
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
       }
       // Skip confetti when isComplete — CompleteOverlay IS the celebration.
       // Abrupt unmount of 180 ConfettiCannon views when !showComplete flips → Reanimated cleanup crash.
@@ -341,6 +343,7 @@ export default function ResultsScreen() {
   const handleCompleteDone = useCallback(() => {
     setShowComplete(false);
     setShowButtons(true);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
   }, []);
 
   const handleNextHand = useCallback(() => {
@@ -613,7 +616,7 @@ export default function ResultsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.titleSection}>
           <Text style={[styles.title, {
