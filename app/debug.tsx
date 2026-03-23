@@ -386,6 +386,13 @@ export default function DebugScreen() {
             {qaStatus === 'running' ? '\u27f3 Running QA...' : qaStatus === 'done' ? '\ud83d\udd0d Run QA Again' : '\ud83d\udd0d Run QA'}
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.crashBtn}
+          onPress={() => { throw new Error('TEST CRASH — verify evidence system') }}
+        >
+          <Text style={styles.crashBtnText}>💥 Trigger Test Crash</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   )
@@ -573,5 +580,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+  crashBtn: {
+    backgroundColor: 'rgba(220,38,38,0.85)',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  crashBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 })

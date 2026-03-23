@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -395,6 +396,7 @@ export default function HomeScreen() {
   const taglineAnimStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
 
   useEffect(() => {
+    setCurrentScreen('Home')
     CapsHooks.screenViewed('home');
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
       if (!val) setShowTutorial(true);
@@ -418,6 +420,7 @@ export default function HomeScreen() {
         return;
       }
     }
+    trackAction('play_pressed')
     router.push('/game' as any);
   }, [chips, config, router]);
 
