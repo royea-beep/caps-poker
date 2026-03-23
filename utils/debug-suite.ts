@@ -35,37 +35,38 @@ export const CAPS_DEBUG_STEPS: DebugStep[] = [
     name: 'Hand evaluator: royal flush + full house detection',
     timeout: 3000,
     action: () => {
-      // Royal flush: A♠ K♠ Q♠ J♠ in player hand, 10♠ on board
+      // Omaha rules: EXACTLY 2 from player hand + 3 from board.
+      // Royal flush: A♠K♠ in hand (use 2) + Q♠J♠10♠ on board (use 3) = A♠K♠Q♠J♠10♠
       const makeCard = (rank: string, suit: string, id: string): Card =>
         ({ rank: rank as Card['rank'], suit: suit as Card['suit'], id })
 
       const playerCards: Card[] = [
         makeCard('A', 'spades', 'as'),
         makeCard('K', 'spades', 'ks'),
-        makeCard('Q', 'spades', 'qs'),
-        makeCard('J', 'spades', 'js'),
+        makeCard('2', 'hearts', '2h'),  // duds — Omaha picks best 2 from 4
+        makeCard('3', 'clubs', '3c'),
       ]
       const boardCards: Card[] = [
+        makeCard('Q', 'spades', 'qs'),
+        makeCard('J', 'spades', 'js'),
         makeCard('10', 'spades', '10s'),
-        makeCard('2', 'hearts', '2h'),
-        makeCard('3', 'clubs', '3c'),
       ]
       const result = evaluateOmahaHand(playerCards, boardCards)
       if (result.rank !== HandRank.RoyalFlush) {
         throw new Error(`Royal flush not detected — got rank ${result.rank}`)
       }
 
-      // Full house: three Aces + two Kings
+      // Full house: J♠J♥ in hand + A♣A♦J♣ on board → JJJ + AA
       const playerCards2: Card[] = [
-        makeCard('A', 'spades', 'as2'),
-        makeCard('A', 'hearts', 'ah2'),
-        makeCard('K', 'spades', 'ks2'),
-        makeCard('K', 'hearts', 'kh2'),
+        makeCard('J', 'spades', 'js2'),
+        makeCard('J', 'hearts', 'jh2'),
+        makeCard('2', 'diamonds', '2d2'),
+        makeCard('3', 'diamonds', '3d2'),
       ]
       const boardCards2: Card[] = [
         makeCard('A', 'clubs', 'ac2'),
-        makeCard('2', 'diamonds', '2d2'),
-        makeCard('4', 'clubs', '4c2'),
+        makeCard('A', 'diamonds', 'ad2'),
+        makeCard('J', 'clubs', 'jc2'),
       ]
       const result2 = evaluateOmahaHand(playerCards2, boardCards2)
       if (result2.rank !== HandRank.FullHouse) {
@@ -80,8 +81,9 @@ export const CAPS_DEBUG_STEPS: DebugStep[] = [
     timeout: 3000,
     action: () => {
       const deal = dealCards()
-      if (!deal.playerHand || deal.playerHand.length !== 4) {
-        throw new Error(`Player hand should have 4 cards, got ${deal.playerHand?.length}`)
+      // Caps deals 16 cards per player (4 boards × 4 Omaha cards each)
+      if (!deal.playerHand || deal.playerHand.length !== 16) {
+        throw new Error(`Player hand should have 16 cards, got ${deal.playerHand?.length}`)
       }
       if (!deal.boards || deal.boards.length === 0) {
         throw new Error('No boards dealt')
