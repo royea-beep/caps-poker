@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AutoDebugRunner, DebugReport, StepResult } from '../utils/auto-debug'
 import { CAPS_DEBUG_STEPS } from '../utils/debug-suite'
 import { sendDebugReportToWhatsApp } from '../utils/debug-whatsapp'
+import { runSimulation, SimulationReport } from '../utils/debug-simulation'
 import { COLORS } from '../constants/gameConfig'
 import Constants from 'expo-constants'
 import * as Application from 'expo-application'
@@ -110,6 +111,8 @@ export default function DebugScreen() {
   const [qaStatus, setQaStatus] = useState<QAStatus>('idle')
   const [qaResults, setQaResults] = useState<QAResult[]>([])
   const [qaAlertSent, setQaAlertSent] = useState(false)
+  const [simRunning, setSimRunning] = useState(false)
+  const [simReport, setSimReport] = useState<SimulationReport | null>(null)
 
   const runDebug = useCallback(async () => {
     setStatus('running')
@@ -132,6 +135,19 @@ export default function DebugScreen() {
     if (finalReport.failedAt) {
       await sendDebugReportToWhatsApp(finalReport)
       setWhatsappSent(true)
+    }
+  }, [])
+
+  const runSim = useCallback(async () => {
+    setSimRunning(true)
+    setSimReport(null)
+    try {
+      const report = await runSimulation()
+      setSimReport(report)
+    } catch (e) {
+      console.error('[Simulation] failed:', e)
+    } finally {
+      setSimRunning(false)
     }
   }, [])
 
@@ -393,7 +409,35 @@ export default function DebugScreen() {
         >
           <Text style={styles.crashBtnText}>💥 Trigger Test Crash</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.simBtn, simRunning && styles.runBtnDisabled]}
+          onPress={runSim}
+          disabled={simRunning}
+        >
+          <Text style={styles.simBtnText}>
+            {simRunning ? '⏳ מריץ סימולציה...' : '🎮 Simulate 10 Players (2 crash)'}
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {simReport && (
+        <View style={styles.simResults}>
+          <Text style={styles.simTitle}>📊 Simulation Results</Text>
+          <Text style={styles.simClean}>✅ Clean: {simReport.completedClean}/{simReport.totalPlayers}</Text>
+          <Text style={styles.simCrashed}>💥 Crashed: {simReport.crashed}/{simReport.totalPlayers}</Text>
+          {simReport.crashReports.map((cr, i) => (
+            <View key={i} style={styles.crashCard}>
+              <Text style={styles.crashCardTitle}>💥 P{cr.playerId}: {cr.playerName}</Text>
+              <Text style={styles.crashCardErr}>Error: {cr.error.slice(0, 80)}</Text>
+              <Text style={styles.crashCardMeta}>
+                📸 {cr.screenshotsUploaded} shots · 📱 WA {cr.whatsappSent ? '✅' : '❌'} · 💾 DB {cr.dbSaved ? '✅' : '❌'} · 📋 {cr.fixPromptLength}c
+              </Text>
+            </View>
+          ))}
+          <Text style={styles.simLog}>{simReport.debugLines.join('\n')}</Text>
+        </View>
+      )}
     </SafeAreaView>
   )
 }
@@ -592,5 +636,48 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+  simBtn: {
+    backgroundColor: '#7c3aed',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  simBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  simResults: {
+    margin: 12,
+    padding: 12,
+    backgroundColor: '#0f0f23',
+    borderRadius: 10,
+  },
+  simTitle: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  simClean: { color: '#4ade80', fontSize: 13 },
+  simCrashed: { color: '#f87171', fontSize: 13, marginBottom: 6 },
+  crashCard: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#1a0000',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ef4444',
+  },
+  crashCardTitle: { color: '#ff6666', fontWeight: 'bold', fontSize: 13 },
+  crashCardErr: { color: '#ffaaaa', fontSize: 11, marginTop: 2 },
+  crashCardMeta: { color: '#aaa', fontSize: 11, marginTop: 4 },
+  simLog: {
+    color: '#666',
+    fontSize: 9,
+    fontFamily: 'monospace',
+    marginTop: 10,
   },
 })
