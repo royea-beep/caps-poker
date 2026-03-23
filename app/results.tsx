@@ -221,25 +221,32 @@ export default function ResultsScreen() {
 
   // Track stats + start animations
   useEffect(() => {
-    if (!revealData) return;
+    debugLog('A1 stats useEffect START');
+    if (!revealData) { debugLog('A1.1 no revealData — return'); return; }
+    debugLog('A2 incrementHandsPlayed');
     incrementHandsPlayed();
+    debugLog('A3 updateBestChips');
     updateBestChips();
 
     // Track wins and biggest win
     if (revealData.netChips > 0) {
+      debugLog(`A4 incrementHandsWon netChips=${revealData.netChips}`);
       incrementHandsWon();
       updateBiggestWin(revealData.netChips);
     }
 
     // Track board results via learning hooks
+    debugLog('A5 CapsHooks.boardCompleted loop');
     revealData.boards.forEach((board, i) => {
       CapsHooks.boardCompleted(i, board.playerHandName, board.winner === 'player');
     });
     if (revealData.isComplete && revealData.completeBonusAmount > 0) {
+      debugLog('A6 CapsHooks.bonusAchieved');
       CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
     }
 
     // Submit to leaderboard (async, silent fail)
+    debugLog('A7 submitScore');
     const store = useGameStore.getState();
     submitScore(
       store.playerName || 'Player',
@@ -250,6 +257,7 @@ export default function ResultsScreen() {
     ).catch(() => {});
 
     // Save hand to history (async, silent fail)
+    debugLog('A8 saveHandToHistory');
     const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
       boardIndex: i,
       winner: b.winner,
@@ -272,22 +280,29 @@ export default function ResultsScreen() {
     };
     saveHandToHistory(handRecord).catch(() => {});
 
+    debugLog('A9 computing delays');
     const lastBoardDelay = revealData.boardCount * BOARD_STAGGER;
     const chipsStart = lastBoardDelay + BOARD_FADE + CHIPS_DELAY;
     const buttonsShow = chipsStart + CHIPS_DURATION + BUTTONS_DELAY;
+    debugLog(`A10 delays: chipsStart=${chipsStart} buttonsShow=${buttonsShow}`);
 
+    debugLog('A11 chipCountProgress animation');
     chipCountProgress.value = withDelay(
       chipsStart,
       withTiming(1, { duration: CHIPS_DURATION, easing: Easing.out(Easing.cubic) })
     );
 
+    debugLog('A12 soundTimer setup');
     const playerWon = revealData.netChips >= 0;
     const soundTimer = setTimeout(() => playSound(playerWon ? 'chipsWin' : 'lose'), chipsStart);
     const playerWinsCount = revealData.boards.filter((b) => b.winner === 'player').length;
+    debugLog(`A13 btnTimer setup: buttonsShow=${buttonsShow} isComplete=${revealData.isComplete}`);
     const btnTimer = setTimeout(() => {
+      debugLog('A14 btnTimer fired');
       if (revealData.isComplete && revealData.completeWinner) {
-        // Gold pulse all boards 3 times, then show CompleteOverlay
+        debugLog('A15 isComplete=true — goldPulse + setShowComplete');
         if (!KILL_results) {
+          debugLog('A15.1 goldPulse withRepeat(3)');
           goldPulse.value = withRepeat(
             withSequence(
               withTiming(1, { duration: 200 }),
@@ -297,18 +312,23 @@ export default function ResultsScreen() {
             false,
           );
         }
+        debugLog('A16 haptics sequence');
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 0);
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 400);
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 800);
-        setTimeout(() => setShowComplete(true), 1200);
+        debugLog('A17 setShowComplete timer set (1200ms)');
+        setTimeout(() => { debugLog('A18 setShowComplete(true)'); setShowComplete(true); }, 1200);
       } else {
+        debugLog('A15.2 not complete — setShowButtons');
         setShowButtons(true);
       }
       // Skip confetti when isComplete — CompleteOverlay IS the celebration.
       // Abrupt unmount of 180 ConfettiCannon views when !showComplete flips → Reanimated cleanup crash.
       if (!revealData.isComplete && playerWinsCount === revealData.boards.length && revealData.boards.length > 0) {
+        debugLog('A19 setShowConfetti(true)');
         setShowConfetti(true);
       }
+      debugLog('A20 btnTimer done');
     }, buttonsShow);
 
     return () => {
