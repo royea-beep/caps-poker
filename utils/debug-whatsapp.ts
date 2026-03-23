@@ -7,63 +7,91 @@ import { CrashReport } from './crash-evidence'
 import { debugLog } from '../components/DebugOverlay'
 
 const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler'
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
+const NTFY_TOPIC = 'caps-crash-roye'
 
-export async function sendCrashToWhatsApp(report: CrashReport): Promise<void> {
-  const lastSteps = report.stepLog
-    .slice(-5)
-    .map(s => `  ${s.id}. [${s.type}] ${s.description}`)
-    .join('\n')
+export async function sendCrashToWhatsApp(report: CrashReport): Promise<boolean> {
+  // Keep WhatsApp message SHORT — under 1000 chars, always has content
+  const lastStep = report.stepLog.length > 0
+    ? report.stepLog[report.stepLog.length - 1].description
+    : 'unknown'
 
-  const screenshots = report.storageUrls.length > 0
-    ? report.storageUrls.map((url, i) => `📸 Frame ${i + 1}: ${url}`).join('\n')
-    : '  (no screenshots)'
+  const screenshotLine = report.storageUrls.length > 0
+    ? `📸 ${report.storageUrls.length} screenshots: ${report.storageUrls[0]}`
+    : `📸 0 screenshots (upload failed or crash was immediate)`
 
-  const message = [
+  const shortMessage = [
     `💥 *CRASH: ${report.project} v${report.version}*`,
     ``,
-    `❌ *Error:* ${report.error.message}`,
-    `📍 *Screen:* ${report.lastScreen}`,
-    `🎯 *Last action:* ${report.lastAction}`,
-    `📱 *Device:* ${report.device.platform} ${report.device.os ?? ''}`,
+    `❌ ${report.error.message.slice(0, 120)}`,
+    `📍 Screen: ${report.lastScreen}`,
+    `🎯 Last action: ${report.lastAction}`,
+    `📋 Last step: ${lastStep}`,
+    `📊 ${report.stepLog.length} steps · ${report.consoleErrors.length} console errors`,
+    screenshotLine,
     ``,
-    `📋 *Last 5 steps before crash:*`,
-    lastSteps,
+    `🔧 Fix prompt in DB:`,
+    `SELECT fix_prompt FROM crash_reports`,
+    `WHERE project='${report.project}'`,
+    `ORDER BY created_at DESC LIMIT 1;`,
     ``,
-    `📸 *Screenshots (${report.storageUrls.length}):*`,
-    screenshots,
-    ``,
-    `📊 *Evidence:* ${report.frames.length} frames | ${report.stepLog.length} steps | ${report.consoleErrors.length} errors`,
-    ``,
-    `🔧 *Fix prompt ready* — copy from crash screen`,
+    `Or: open app → Debug → crash screen → Copy Fix Prompt`,
   ].join('\n')
 
+  const [wa, ntfy] = await Promise.allSettled([
+    sendViaEdgeFunction(shortMessage, report),
+    sendViaNtfy(shortMessage, report),
+  ])
+
+  const waSent = wa.status === 'fulfilled' && wa.value
+  const ntfySent = ntfy.status === 'fulfilled' && ntfy.value
+
+  debugLog(`[CrashEvidence] WA: ${waSent ? '✅' : '❌'} · ntfy: ${ntfySent ? '✅' : '❌'}`)
+  return waSent || ntfySent
+}
+
+async function sendViaEdgeFunction(message: string, report: CrashReport): Promise<boolean> {
   try {
-    debugLog('[CrashEvidence] sending WhatsApp crash report...')
-    await fetch(BOT_URL, {
+    const res = await fetch(BOT_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         crash_notification: true,
         message,
         videoUrl: null,
-        screenshotUrl: report.storageUrls[report.storageUrls.length - 1] ?? null,
-        debugLogs: report.consoleErrors.slice(-20),
+        screenshotUrl: report.storageUrls[0] ?? null,
+        debugLogs: report.consoleErrors.slice(-10),
         metadata: {
           version: report.version,
           device: `${report.device.platform} ${report.device.os ?? ''}`,
           lastScreen: report.lastScreen,
-          screenshots: report.storageUrls,
+          lastAction: report.lastAction,
         },
       }),
     })
-    debugLog('[CrashEvidence] WhatsApp crash report sent ✅')
+    const text = await res.text()
+    debugLog(`[CrashEvidence] WA response ${res.status}: ${text.slice(0, 80)}`)
+    return res.ok
   } catch (e) {
-    debugLog(`[CrashEvidence] WhatsApp send failed: ${e}`, 'warn')
+    debugLog(`[CrashEvidence] WA failed: ${e}`, 'warn')
+    return false
+  }
+}
+
+async function sendViaNtfy(message: string, report: CrashReport): Promise<boolean> {
+  try {
+    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+      method: 'POST',
+      headers: {
+        'Title': `💥 ${report.project} CRASH: ${report.error.message.slice(0, 50)}`,
+        'Tags': 'warning,skull',
+        'Priority': '5',
+      },
+      body: message,
+    })
+    return true
+  } catch (e) {
+    debugLog(`[CrashEvidence] ntfy failed: ${e}`, 'warn')
+    return false
   }
 }
 
