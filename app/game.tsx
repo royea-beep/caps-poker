@@ -92,7 +92,7 @@ function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; s
             withTiming(1.12, { duration: 500 }),
             withTiming(1, { duration: 500 }),
           ),
-          -1,
+          100, // finite — no withRepeat(-1) ever (iron rule)
         );
       }
     } else {
@@ -158,7 +158,7 @@ function TimerBar({ countdown, total, color }: { countdown: number; total: numbe
       if (!KILL_game) {
         pulseOpacity.value = withRepeat(
           withSequence(withTiming(0.4, { duration: 250 }), withTiming(1, { duration: 250 })),
-          -1, false,
+          20, false, // finite — countdown only runs 3s max so 20 cycles is plenty
         );
       }
     } else {
@@ -537,6 +537,12 @@ function GameScreenInner() {
       const count = parseInt(val ?? '0', 10);
       AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
     }).catch(() => {});
+
+    // Cancel all shake animations before navigation — prevents worklet overlap during transition
+    cancelAnimation(shake0); shake0.value = 0;
+    cancelAnimation(shake1); shake1.value = 0;
+    cancelAnimation(shake2); shake2.value = 0;
+    cancelAnimation(shake3); shake3.value = 0;
 
     // Mark game active before navigating to results — dirty shutdown detector
     debugLog('🎮 setting game active flag (dirty shutdown detector)');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, cancelAnimation } from 'react-native-reanimated';
+// ZERO Reanimated on results screen — game.tsx has 7 active shared values during transition
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CardComponent from '../components/Card';
@@ -47,13 +47,13 @@ async function logResultsStep(step: string, extra?: string) {
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 
-function DealMeInButton({ label, onPress, glowStyle }: { label: string; onPress: () => void; glowStyle?: any }) {
+function DealMeInButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Animated.View style={[dealMeInStyles.btn, glowStyle]}>
+    <View style={dealMeInStyles.btn}>
       <Pressable onPress={onPress} style={dealMeInStyles.inner}>
         <Text style={dealMeInStyles.text}>{label}</Text>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 const dealMeInStyles = StyleSheet.create({
@@ -126,10 +126,7 @@ export default function ResultsScreen() {
 
   const scrollRef = useRef<any>(null);
 
-  // Safe animations — max 3 shared values on this screen (well under limit of 5)
-  const screenOpacity = useSharedValue(0);
-  const dealGlow = useSharedValue(0.5);
-  const chipsReveal = useSharedValue(0); // scale+opacity reveal for net result
+  // ZERO shared values — results screen is fully static (game.tsx has 7 active SV during transition)
 
   // Dynamic card sizing: compact — fit boards + buttons on screen without excessive scrolling
   // Available = screenWidth - container padding (32) - board padding (20) - separator (4)
@@ -154,31 +151,6 @@ export default function ResultsScreen() {
     };
   }, []);
 
-  // Screen fade-in
-  useEffect(() => {
-    screenOpacity.value = withTiming(1, { duration: 400 });
-    return () => cancelAnimation(screenOpacity);
-  }, []);
-
-  // DealMeIn glow pulse — finite repeat (3), no withRepeat(-1)
-  useEffect(() => {
-    dealGlow.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1500 }),
-        withTiming(0.5, { duration: 1500 }),
-      ),
-      3,
-    );
-    return () => cancelAnimation(dealGlow);
-  }, []);
-
-  // Chips reveal — scale+opacity from 0→1 over 600ms (delayed 300ms after mount)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      chipsReveal.value = withTiming(1, { duration: 600 });
-    }, 300);
-    return () => { clearTimeout(t); cancelAnimation(chipsReveal); };
-  }, []);
 
   // Auto-sim marathon: auto-start next hand after a brief pause
   useEffect(() => {
@@ -530,23 +502,11 @@ export default function ResultsScreen() {
     }
   }, [revealData]);
 
-  const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
-  const chipsRevealStyle = useAnimatedStyle(() => ({
-    opacity: chipsReveal.value,
-    transform: [{ scale: 0.7 + chipsReveal.value * 0.3 }],
-  }));
-  const dealGlowStyle = useAnimatedStyle(() => ({
-    shadowOpacity: dealGlow.value,
-    ...Platform.select({
-      web: { boxShadow: `0px 0px 20px rgba(255,215,0,${dealGlow.value})` } as any,
-      default: {},
-    }),
-  }));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
-      <Animated.View style={[{ flex: 1 }, screenStyle]}>
+      <View style={{ flex: 1 }}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
         <View style={styles.titleSection}>
@@ -815,15 +775,15 @@ export default function ResultsScreen() {
           </View>
         )}
 
-        {/* Net result — animated reveal (scale+opacity) */}
-        <Animated.View style={[styles.netSection, chipsRevealStyle]}>
+        {/* Net result */}
+        <View style={styles.netSection}>
           <View style={styles.netRow}>
             <Text style={styles.netLabel}>Net Result</Text>
             <Text style={[styles.netAmount, { color: netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
               {netChips >= 0 ? '+' : ''}{netChips}
             </Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Current balance */}
         <ChipsDisplay amount={chips} label="Current Balance" size="large" />
@@ -853,7 +813,6 @@ export default function ResultsScreen() {
                 <DealMeInButton
                   label={chips >= config.potPerBoard * revealData.boardCount ? 'DEAL ME IN' : 'GAME OVER'}
                   onPress={handleNextHand}
-                  glowStyle={dealGlowStyle}
                 />
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && (
@@ -865,7 +824,7 @@ export default function ResultsScreen() {
             )}
           </View>
       </ScrollView>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
