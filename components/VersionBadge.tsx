@@ -2,9 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { rf, rs } from '../utils/responsive';
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 
 const version = Constants.expoConfig?.version ?? '?';
-const build = Constants.expoConfig?.extra?.buildNumber ?? Constants.expoConfig?.ios?.buildNumber ?? '?';
+// Application.nativeBuildVersion reads from native binary's Info.plist — correct even with OTA
+// Constants.expoConfig.ios.buildNumber reads bundled app.json — stays at 116 even when binary is 198
+const build = (Platform.OS !== 'web' ? Application.nativeBuildVersion : null)
+  ?? Constants.expoConfig?.extra?.buildNumber
+  ?? Constants.expoConfig?.ios?.buildNumber
+  ?? '?';
 
 function getOtaInfo(): string {
   if (Platform.OS === 'web') return '';

@@ -155,9 +155,11 @@ export default function RootLayout() {
       try {
         const { build, version } = (() => {
           try {
+            const Application = require('expo-application');
             const Constants = require('expo-constants').default;
             const cfg = Constants.expoConfig;
-            return { build: cfg?.ios?.buildNumber ?? 'unknown', version: cfg?.version ?? 'unknown' };
+            const nativeBuild = Platform.OS !== 'web' ? (Application.nativeBuildVersion ?? null) : null;
+            return { build: nativeBuild ?? cfg?.ios?.buildNumber ?? 'unknown', version: cfg?.version ?? 'unknown' };
           } catch { return { build: 'unknown', version: 'unknown' }; }
         })();
         debugLog(`💀 sending WhatsApp crash alert (build=${build} v${version})...`);
