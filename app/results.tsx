@@ -1,29 +1,10 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS } from 'react-native';
-import ConfettiCannon from 'react-native-confetti-cannon';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  withSequence,
-  withRepeat,
-  cancelAnimation,
-  useDerivedValue,
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  Easing,
-  runOnJS,
-  SharedValue,
-} from 'react-native-reanimated';
 import CardComponent from '../components/Card';
 import { Badge } from '../components/Badge';
 import ChipsDisplay from '../components/ChipsDisplay';
-import CompleteOverlay from '../components/CompleteOverlay';
-import RevealSequence from '../components/RevealSequence';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
@@ -37,7 +18,6 @@ import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
-import ProQuoteBanner from '../components/ProQuoteBanner';
 import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../components/ShareCard';
@@ -66,35 +46,12 @@ async function logResultsStep(step: string, extra?: string) {
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 
-// DEAL ME IN button with idle gold glow pulse
+// Static DEAL ME IN button — no animations (crash isolation)
 function DealMeInButton({ label, onPress }: { label: string; onPress: () => void }) {
-  const glow = useSharedValue(0.15);
-  useEffect(() => {
-    if (!KILL_results) {
-      glow.value = withRepeat(
-        withSequence(
-          withTiming(0.7, { duration: 900 }),
-          withTiming(0.15, { duration: 900 }),
-        ),
-        -1,
-        false,
-      );
-    }
-    return () => { cancelAnimation(glow); };
-  }, []);
-  const glowStyle = useAnimatedStyle(() => ({
-    shadowOpacity: glow.value,
-    ...Platform.select({
-      web: { boxShadow: `0px 0px 20px rgba(255,215,0,${glow.value})` } as any,
-      default: {},
-    }),
-  }));
   return (
-    <Animated.View style={[dealMeInStyles.btn, glowStyle]}>
-      <Pressable onPress={onPress} style={dealMeInStyles.inner}>
-        <Text style={dealMeInStyles.text}>{label}</Text>
-      </Pressable>
-    </Animated.View>
+    <Pressable onPress={onPress} style={dealMeInStyles.btn}>
+      <Text style={dealMeInStyles.text}>{label}</Text>
+    </Pressable>
   );
 }
 const dealMeInStyles = StyleSheet.create({
@@ -103,21 +60,13 @@ const dealMeInStyles = StyleSheet.create({
     backgroundColor: '#FFD700',
     marginHorizontal: rs(16),
     height: rb(64),
+    justifyContent: 'center',
+    alignItems: 'center',
     ...Platform.select({
-      ios: {
-        shadowColor: '#FFD700',
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 16,
-      },
+      ios: { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 4 }, shadowRadius: 16, shadowOpacity: 0.5 },
       android: { elevation: 8 },
       default: {},
     }),
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: rv(16),
   },
   text: {
     color: '#000',
@@ -127,12 +76,12 @@ const dealMeInStyles = StyleSheet.create({
   },
 });
 
-// Animation timing
-const BOARD_STAGGER = 250;
-const BOARD_FADE = 350;
-const CHIPS_DELAY = 300;
-const CHIPS_DURATION = 1000;
-const BUTTONS_DELAY = 400;
+// Animation timing — zeroed for crash isolation (no delayed timers)
+const BOARD_STAGGER = 0;
+const BOARD_FADE = 0;
+const CHIPS_DELAY = 0;
+const CHIPS_DURATION = 0;
+const BUTTONS_DELAY = 0;
 
 export default function ResultsScreen() {
   const router = useRouter();
@@ -156,10 +105,7 @@ export default function ResultsScreen() {
   const storeRoomCode = useGameStore((s) => s.roomCode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
-  const [showReveal, setShowReveal] = useState(false); // BYPASSED — skip reveal entirely for crash isolation
-  const [showButtons, setShowButtons] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [showComplete, setShowComplete] = useState(false);
+  const [showButtons, setShowButtons] = useState(true); // show immediately — no delayed timer
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
   const waitingTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,12 +119,6 @@ export default function ResultsScreen() {
   const gameStoryRef = useRef<any>(null);
 
   const scrollRef = useRef<any>(null);
-  const chipCountProgress = useSharedValue(0);
-  const goldPulse = useSharedValue(0); // 0=off, 1=gold border active
-  const goldPulseStyle = useAnimatedStyle(() => {
-    if (goldPulse.value <= 0.5) return {};
-    return { borderColor: '#FFD700', borderWidth: 3 };
-  });
 
   // Dynamic card sizing: compact — fit boards + buttons on screen without excessive scrolling
   // Available = screenWidth - container padding (32) - board padding (20) - separator (4)
@@ -191,7 +131,7 @@ export default function ResultsScreen() {
     debugLog('R1 results.tsx mounted');
     debugLog(`R2 revealData: ${revealData ? `boards=${revealData.boards.length} isComplete=${revealData.isComplete}` : 'NULL'}`);
     debugLog(`R3 chips: ${chips}`);
-    debugLog(`R4 showComplete=${showComplete} showConfetti=${showConfetti}`);
+    debugLog(`R4 isComplete=${revealData?.isComplete}`);
     console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
     debugLog('🎮 results mounted — game flag still active (cleared on unmount)');
@@ -289,75 +229,8 @@ export default function ResultsScreen() {
     };
     saveHandToHistory(handRecord).catch(() => {});
 
-    debugLog('A9 computing delays');
-    const lastBoardDelay = revealData.boardCount * BOARD_STAGGER;
-    const chipsStart = lastBoardDelay + BOARD_FADE + CHIPS_DELAY;
-    const buttonsShow = chipsStart + CHIPS_DURATION + BUTTONS_DELAY;
-    debugLog(`A10 delays: chipsStart=${chipsStart} buttonsShow=${buttonsShow}`);
-
-    debugLog('A11 chipCountProgress animation');
-    chipCountProgress.value = withDelay(
-      chipsStart,
-      withTiming(1, { duration: CHIPS_DURATION, easing: Easing.out(Easing.cubic) })
-    );
-
-    debugLog('A12 soundTimer setup');
-    const playerWon = revealData.netChips >= 0;
-    const soundTimer = setTimeout(() => playSound(playerWon ? 'chipsWin' : 'lose'), chipsStart);
-    const playerWinsCount = revealData.boards.filter((b) => b.winner === 'player').length;
-    debugLog(`A13 btnTimer setup: buttonsShow=${buttonsShow} isComplete=${revealData.isComplete}`);
-    const btnTimer = setTimeout(() => {
-      debugLog('A14 btnTimer fired');
-      if (revealData.isComplete && revealData.completeWinner) {
-        debugLog('A15 isComplete=true — goldPulse + setShowComplete');
-        if (!KILL_results) {
-          debugLog('A15.1 goldPulse withRepeat(3)');
-          goldPulse.value = withRepeat(
-            withSequence(
-              withTiming(1, { duration: 200 }),
-              withTiming(0, { duration: 200 }),
-            ),
-            3,
-            false,
-          );
-        }
-        debugLog('A16 haptics sequence');
-        setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 0);
-        setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 400);
-        setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 800);
-        // DISABLED: CompleteOverlay causes native crash — show buttons directly
-        // TODO: rebuild CompleteOverlay from scratch (static text, zero Reanimated)
-        debugLog('A17 CompleteOverlay DISABLED — showing buttons directly');
-        setTimeout(() => {
-          debugLog('A18 setShowButtons(true) instead of CompleteOverlay');
-          setShowButtons(true);
-          setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
-        }, 400);
-      } else {
-        debugLog('A15.2 not complete — setShowButtons');
-        setShowButtons(true);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
-      }
-      // Skip confetti when isComplete — CompleteOverlay IS the celebration.
-      // Abrupt unmount of 180 ConfettiCannon views when !showComplete flips → Reanimated cleanup crash.
-      if (!revealData.isComplete && playerWinsCount === revealData.boards.length && revealData.boards.length > 0) {
-        debugLog('A19 setShowConfetti(true)');
-        setShowConfetti(true);
-      }
-      debugLog('A20 btnTimer done');
-    }, buttonsShow);
-
-    return () => {
-      clearTimeout(soundTimer);
-      clearTimeout(btnTimer);
-      cancelAnimation(goldPulse);
-    };
-  }, []);
-
-  const handleCompleteDone = useCallback(() => {
-    setShowComplete(false);
-    setShowButtons(true);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+    // STATIC: no timers, no animations — show everything immediately (crash isolation)
+    debugLog('A9 stats done — buttons already visible (showButtons=true on mount)');
   }, []);
 
   const handleNextHand = useCallback(() => {
@@ -490,13 +363,6 @@ export default function ResultsScreen() {
     clearRevealData();
     router.replace('/game');
   }, [clearRevealData, router]);
-
-  const chipCountStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: 0.9 + chipCountProgress.value * 0.1 }],
-      opacity: chipCountProgress.value > 0 ? 1 : 0,
-    };
-  });
 
   if (!revealData) {
     return (
@@ -632,7 +498,7 @@ export default function ResultsScreen() {
       <FriendsBg />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
-        <Animated.View entering={FadeIn.duration(400)} style={styles.titleSection}>
+        <View style={styles.titleSection}>
           <Text style={[styles.title, {
             color: isPerfectGame ? COLORS.gold : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold,
           }]}>
@@ -643,7 +509,7 @@ export default function ResultsScreen() {
             <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
             <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
           </Text>
-        </Animated.View>
+        </View>
 
         {/* Board results — stacked vertically */}
         {boards.map((board, i) => {
@@ -660,17 +526,15 @@ export default function ResultsScreen() {
           const multiBot = (board.allBotCards ?? []).length > 1;
 
           return (
-            <Animated.View
+            <View
               key={i}
-              entering={FadeInDown.duration(BOARD_FADE).delay(BOARD_STAGGER * (i + 1))}
               style={{ width: '100%' }}
             >
-              <Animated.View style={[
+              <View style={[
                 styles.boardCard,
                 { backgroundColor: theme.surface, borderColor: theme.boardBorder },
                 board.winner === 'player' && styles.boardCardWin,
                 board.winner === 'bot' && styles.boardCardLose,
-                revealData?.isComplete && goldPulseStyle,
               ]}>
                 {/* Header: BOARD X + badge + chip amount */}
                 <View style={styles.boardHeader}>
@@ -794,17 +658,14 @@ export default function ResultsScreen() {
                     {board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE'}
                   </Text>
                 </View>
-              </Animated.View>
-            </Animated.View>
+              </View>
+            </View>
           );
         })}
 
         {/* Share Game button + offscreen FullGameShareCard */}
         {Platform.OS !== 'web' && (
-          <Animated.View
-            entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE)}
-            style={{ width: '100%', gap: 8 }}
-          >
+          <View style={{ width: '100%', gap: 8 }}>
             <View style={styles.shareGameRow}>
               <Pressable
                 onPress={handleShareGame}
@@ -823,15 +684,12 @@ export default function ResultsScreen() {
             <View ref={gameStoryRef as any} style={styles.offscreen} pointerEvents="none">
               <StoryShareCard boards={boards} netChips={netChips} isComplete={isComplete} completeBonusAmount={completeBonusAmount} potPerBoard={revealData.potPerBoard} numberOfPlayers={numberOfPlayers} />
             </View>
-          </Animated.View>
+          </View>
         )}
 
         {/* Efficiency analysis */}
         {efficiency && (
-          <Animated.View
-            entering={FadeIn.duration(400).delay(boards.length * BOARD_STAGGER + BOARD_FADE)}
-            style={{ width: '100%' }}
-          >
+          <View style={{ width: '100%' }}>
             <View style={styles.efficiencyCard}>
               <Text style={styles.efficiencyTitle}>PLACEMENT EFFICIENCY</Text>
               <View style={styles.efficiencyScoreRow}>
@@ -867,7 +725,7 @@ export default function ResultsScreen() {
                 </View>
               )}
             </View>
-          </Animated.View>
+          </View>
         )}
 
         {/* Best hand highlight */}
@@ -881,20 +739,14 @@ export default function ResultsScreen() {
           });
           if (!bestName) return null;
           return (
-            <Animated.View
-              entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE + 50)}
-              style={styles.bestHandRow}
-            >
+            <View style={styles.bestHandRow}>
               <Text style={styles.bestHandText}>⭐ Best hand: {bestName} on Board {bestBoard}</Text>
-            </Animated.View>
+            </View>
           );
         })()}
 
         {/* Stats row */}
-        <Animated.View
-          entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE + 100)}
-          style={styles.statsRow}
-        >
+        <View style={styles.statsRow}>
           <Text style={styles.statItem}>Boards: {playerWins}/{boards.length}</Text>
           <Text style={styles.statSep}>|</Text>
           <Text style={[styles.statItem, { color: netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
@@ -902,45 +754,31 @@ export default function ResultsScreen() {
           </Text>
           <Text style={styles.statSep}>|</Text>
           <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
-        </Animated.View>
+        </View>
 
         {/* Complete bonus */}
         {isComplete && completeBonusAmount > 0 && (
-          <Animated.View
-            entering={FadeIn.duration(400).delay(boards.length * BOARD_STAGGER + BOARD_FADE)}
-            style={styles.completeRow}
-          >
+          <View style={styles.completeRow}>
             <Text style={styles.completeLabel}>🏆 COMPLETE! +50% BONUS</Text>
             <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips</Text>
-          </Animated.View>
+          </View>
         )}
 
         {/* Net result */}
-        <Animated.View
-          style={styles.netSection}
-          entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE + CHIPS_DELAY - 200)}
-        >
+        <View style={styles.netSection}>
           <View style={styles.netRow}>
             <Text style={styles.netLabel}>Net Result</Text>
-            <Animated.View style={chipCountStyle}>
-              <AnimatedChipCount profit={netChips} progress={chipCountProgress} />
-            </Animated.View>
+            <Text style={[styles.netAmount, { color: netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
+              {netChips >= 0 ? '+' : ''}{netChips}
+            </Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Current balance */}
-        <Animated.View
-          entering={FadeIn.duration(300).delay(boards.length * BOARD_STAGGER + BOARD_FADE + CHIPS_DELAY)}
-        >
-          <ChipsDisplay amount={chips} label="Current Balance" size="large" />
-        </Animated.View>
+        <ChipsDisplay amount={chips} label="Current Balance" size="large" />
 
-        {/* Pro quote */}
-        {showButtons && <ProQuoteBanner context="summary" />}
-
-        {/* Buttons */}
-        {showButtons && (
-          <Animated.View style={styles.buttons} entering={FadeInUp.duration(400).delay(boards.length * BOARD_STAGGER + BOARD_FADE + 200)}>
+        {/* Buttons — always visible, no delay */}
+        <View style={styles.buttons}>
             {waitingForNextHand ? (
               <View style={styles.waitingNextHand}>
                 <Text style={styles.waitingNextHandText}>
@@ -973,64 +811,10 @@ export default function ResultsScreen() {
                 </View>
               </>
             )}
-          </Animated.View>
-        )}
+          </View>
       </ScrollView>
 
-      {/* Complete overlay */}
-      {showComplete && revealData.completeWinner && (
-        <CompleteOverlay
-          winner={revealData.completeWinner}
-          bonusAmount={revealData.completeBonusAmount}
-          duration={revealData.completeBonusDisplay}
-          onDone={handleCompleteDone}
-        />
-      )}
-
-      {/* REVEAL BYPASSED — crash isolation test. showReveal always false. */}
-      {/* <RevealSequence boards={boards} visible={showReveal} onDone={() => setShowReveal(false)} /> */}
-
-      {/* Confetti — fires once on perfect game (all boards won), skip when CompleteOverlay showing to avoid 180 animated views crash */}
-      {showConfetti && !showComplete && (
-        <ConfettiCannon
-          count={180}
-          origin={{ x: 0, y: 0 }}
-          autoStart
-          fadeOut
-          onAnimationEnd={() => setShowConfetti(false)}
-          colors={['#c9a84c', '#4ecdc4', '#e8192c', '#1E90FF', '#00c875', '#ff6b35']}
-        />
-      )}
     </SafeAreaView>
-  );
-}
-
-function AnimatedChipCount({
-  profit,
-  progress,
-}: {
-  profit: number;
-  progress: SharedValue<number>;
-}) {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  const updateDisplay = useCallback((val: number) => {
-    setDisplayValue(val);
-  }, []);
-
-  useDerivedValue(() => {
-    const current = Math.round(progress.value * profit);
-    runOnJS(updateDisplay)(current);
-    return current;
-  });
-
-  const prefix = displayValue >= 0 ? '+' : '';
-  const color = displayValue >= 0 ? COLORS.neonGreen : COLORS.neonRed;
-
-  return (
-    <Text style={[styles.netAmount, { color }]}>
-      {prefix}{displayValue}
-    </Text>
   );
 }
 
