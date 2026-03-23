@@ -10,12 +10,16 @@ import { sendCrashAlert } from './crashAlert';
 import { debugLog, getGlobalLogs } from '../components/DebugOverlay';
 
 // Read build info lazily
+// Application.nativeBuildVersion reads from native binary's Info.plist — always correct
+// Constants.expoConfig.ios.buildNumber reads bundled app.json — stale with OTA/EAS auto-increment
 function getBuildInfo() {
   try {
+    const Application = require('expo-application');
     const Constants = require('expo-constants').default;
     const cfg = Constants.expoConfig;
+    const nativeBuild = Platform.OS !== 'web' ? (Application.nativeBuildVersion ?? null) : null;
     return {
-      build: cfg?.ios?.buildNumber ?? cfg?.android?.versionCode?.toString() ?? 'unknown',
+      build: nativeBuild ?? cfg?.ios?.buildNumber ?? cfg?.android?.versionCode?.toString() ?? 'unknown',
       version: cfg?.version ?? 'unknown',
     };
   } catch { return { build: 'unknown', version: 'unknown' }; }
