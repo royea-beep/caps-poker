@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { debugLog } from '../components/DebugOverlay';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
@@ -139,7 +140,11 @@ export const useGameStore = create<GameStore>()(
 
       // Persisted actions
       setChips: (chips: number) => set({ chips }),
-      addChips: (amount: number) => set((state) => ({ chips: state.chips + amount })),
+      addChips: (amount: number) => {
+        debugLog(`S1 addChips: ${amount}`);
+        set((state) => ({ chips: state.chips + amount }));
+        debugLog('S2 addChips DONE');
+      },
       incrementHandsPlayed: () => set((state) => ({ handsPlayed: state.handsPlayed + 1 })),
       incrementHandsWon: () => set((state) => ({ handsWon: state.handsWon + 1 })),
       updateBestChips: () => set((state) => ({
@@ -186,7 +191,11 @@ export const useGameStore = create<GameStore>()(
       setLastFreeRefill: (iso: string) => set({ lastFreeRefill: iso }),
 
       // Reveal actions
-      setRevealData: (data) => set({ revealData: data }),
+      setRevealData: (data) => {
+        debugLog(`S3 setRevealData START: boards=${data?.boards?.length}`);
+        set({ revealData: data });
+        debugLog('S4 setRevealData DONE');
+      },
       clearRevealData: () => set({ revealData: null }),
 
       // Multiplayer actions
