@@ -273,6 +273,8 @@ function GameScreenInner() {
   const playerHandRef = useRef(playerHand);
   const boardsRef = useRef(boards);
   const [showContinueButton, setShowContinueButton] = useState(false);
+  const [showSafeReveal, setShowSafeReveal] = useState(false);
+  const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{winner: 'player'|'bot'|'tie', playerHandName: string, botHandName: string}>>([]);
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
   const playerReadyRef = useRef(false);
@@ -538,6 +540,18 @@ function GameScreenInner() {
     debugLog('🎮 setting game active flag (dirty shutdown detector)');
     void markGameActive();
 
+    // Show safe reveal overlay before navigating (skip in auto-sim to avoid delays)
+    if (autoSim !== 'true') {
+      const revealSummary = revealBoards.map((b) => ({
+        winner: b.winner ?? 'tie' as const,
+        playerHandName: b.playerHandName ?? '',
+        botHandName: b.botHandName ?? '',
+      }));
+      setPendingRevealBoards(revealSummary);
+      setShowSafeReveal(true);
+      return; // navigation happens from onRevealDone
+    }
+
     debugLog('14 router.replace /results START');
     void logStep('F:before_router_replace');
     try {
@@ -548,11 +562,23 @@ function GameScreenInner() {
       debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
     }
-  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
+  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim]);
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
   useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]);
+
+  const onRevealDone = useCallback(() => {
+    setShowSafeReveal(false);
+    setPendingRevealBoards([]);
+    debugLog('reveal done — navigating to results');
+    void logStep('F:before_router_replace');
+    try {
+      router.replace('/results' as any);
+    } catch (e) {
+      try { router.push('/results' as any); } catch {}
+    }
+  }, [router]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
 
@@ -904,6 +930,9 @@ function GameScreenInner() {
             </Pressable>
           )}
         </View>
+      {showSafeReveal && (
+        <SafeRevealOverlay boards={pendingRevealBoards} onDone={onRevealDone} />
+      )}
       </SafeAreaView>
     );
   }
@@ -1078,6 +1107,9 @@ function GameScreenInner() {
         </View>
       )}
       </Animated.View>
+      {showSafeReveal && (
+        <SafeRevealOverlay boards={pendingRevealBoards} onDone={onRevealDone} />
+      )}
     </SafeAreaView>
   );
 }
@@ -1434,6 +1466,88 @@ const landscapeStyles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: rs(8),
     alignItems: 'center',
+  },
+});
+
+function SafeRevealOverlay({
+  boards,
+  onDone,
+}: {
+  boards: Array<{winner: 'player'|'bot'|'tie', playerHandName: string, botHandName: string}>;
+  onDone: () => void;
+}) {
+  const [currentBoard, setCurrentBoard] = useState(0);
+
+  useEffect(() => {
+    const timers = boards.map((_, i) =>
+      setTimeout(() => setCurrentBoard(i + 1), (i + 1) * 1200),
+    );
+    const doneTimer = setTimeout(onDone, boards.length * 1200 + 600);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(doneTimer);
+    };
+  }, []);
+
+  return (
+    <View style={safeRevealStyles.overlay}>
+      <Text style={safeRevealStyles.title}>Results</Text>
+      {boards.slice(0, currentBoard).map((board, i) => (
+        <View key={i} style={safeRevealStyles.row}>
+          <Text style={safeRevealStyles.boardLabel}>Board {i + 1}</Text>
+          <Text style={[safeRevealStyles.result, {
+            color: board.winner === 'player' ? '#00ff88' : board.winner === 'bot' ? '#ff4444' : '#aaa',
+          }]}>
+            {board.winner === 'player' ? '✅ WIN' : board.winner === 'bot' ? '❌ LOSE' : '🤝 TIE'}
+          </Text>
+          {board.playerHandName ? <Text style={safeRevealStyles.hand}>{board.playerHandName}</Text> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const safeRevealStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+    gap: 16,
+    padding: 32,
+  },
+  title: {
+    color: '#c9a84c',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 3,
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    width: '100%',
+  },
+  boardLabel: {
+    color: '#aaa',
+    fontSize: 14,
+    fontWeight: '600',
+    width: 60,
+  },
+  result: {
+    fontSize: 16,
+    fontWeight: '800',
+    width: 80,
+  },
+  hand: {
+    color: '#888',
+    fontSize: 12,
+    flex: 1,
   },
 });
 

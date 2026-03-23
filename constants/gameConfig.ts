@@ -80,8 +80,8 @@ export function getCardDimensions(
   numberOfPlayers: 2 | 3 | 4,
 ): { cardHeight: number; cardWidth: number; communityScale: number } {
   const communityScale = CARD_SCALE[numberOfPlayers]?.communityScale ?? 1.1;
-  const overhead = 100;
-  const commW = Math.floor((screenWidth - overhead) / 5);
+  const overhead = 120;
+  const commW = Math.min(50, Math.max(28, Math.floor((screenWidth - overhead) / 5)));
   const commH = Math.round(commW / 0.7);
   const cardH = Math.max(38, Math.min(88, Math.round(commH / communityScale)));
   return { cardHeight: cardH, cardWidth: Math.round(cardH * 0.7), communityScale };

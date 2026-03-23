@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, cancelAnimation, FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CardComponent from '../components/Card';
@@ -46,12 +47,13 @@ async function logResultsStep(step: string, extra?: string) {
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 
-// Static DEAL ME IN button — no animations (crash isolation)
-function DealMeInButton({ label, onPress }: { label: string; onPress: () => void }) {
+function DealMeInButton({ label, onPress, glowStyle }: { label: string; onPress: () => void; glowStyle?: any }) {
   return (
-    <Pressable onPress={onPress} style={dealMeInStyles.btn}>
-      <Text style={dealMeInStyles.text}>{label}</Text>
-    </Pressable>
+    <Animated.View style={[dealMeInStyles.btn, glowStyle]}>
+      <Pressable onPress={onPress} style={dealMeInStyles.inner}>
+        <Text style={dealMeInStyles.text}>{label}</Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 const dealMeInStyles = StyleSheet.create({
@@ -60,13 +62,17 @@ const dealMeInStyles = StyleSheet.create({
     backgroundColor: '#FFD700',
     marginHorizontal: rs(16),
     height: rb(64),
-    justifyContent: 'center',
-    alignItems: 'center',
     ...Platform.select({
       ios: { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 4 }, shadowRadius: 16, shadowOpacity: 0.5 },
       android: { elevation: 8 },
       default: {},
     }),
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: rv(16),
   },
   text: {
     color: '#000',
@@ -120,6 +126,10 @@ export default function ResultsScreen() {
 
   const scrollRef = useRef<any>(null);
 
+  // Safe animations — max 2 shared values on this screen
+  const screenOpacity = useSharedValue(0);
+  const dealGlow = useSharedValue(0.5);
+
   // Dynamic card sizing: compact — fit boards + buttons on screen without excessive scrolling
   // Available = screenWidth - container padding (32) - board padding (20) - separator (4)
   const availableW = SCREEN_W - 32 - 20 - 4;
@@ -141,6 +151,24 @@ export default function ResultsScreen() {
       debugLog('🎮 results unmounting — clearing game active flag (clean exit)');
       void clearGameActive();
     };
+  }, []);
+
+  // Screen fade-in
+  useEffect(() => {
+    screenOpacity.value = withTiming(1, { duration: 400 });
+    return () => cancelAnimation(screenOpacity);
+  }, []);
+
+  // DealMeIn glow pulse — finite repeat (3), no withRepeat(-1)
+  useEffect(() => {
+    dealGlow.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1500 }),
+        withTiming(0.5, { duration: 1500 }),
+      ),
+      3,
+    );
+    return () => cancelAnimation(dealGlow);
   }, []);
 
   // Auto-sim marathon: auto-start next hand after a brief pause
@@ -493,9 +521,19 @@ export default function ResultsScreen() {
     }
   }, [revealData]);
 
+  const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
+  const dealGlowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: dealGlow.value,
+    ...Platform.select({
+      web: { boxShadow: `0px 0px 20px rgba(255,215,0,${dealGlow.value})` } as any,
+      default: {},
+    }),
+  }));
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
+      <Animated.View style={[{ flex: 1 }, screenStyle]}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
         <View style={styles.titleSection}>
@@ -526,8 +564,9 @@ export default function ResultsScreen() {
           const multiBot = (board.allBotCards ?? []).length > 1;
 
           return (
-            <View
+            <Animated.View
               key={i}
+              entering={FadeInDown.delay(i * 150).duration(300)}
               style={{ width: '100%' }}
             >
               <View style={[
@@ -659,7 +698,7 @@ export default function ResultsScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
+            </Animated.View>
           );
         })}
 
@@ -758,10 +797,10 @@ export default function ResultsScreen() {
 
         {/* Complete bonus */}
         {isComplete && completeBonusAmount > 0 && (
-          <View style={styles.completeRow}>
+          <Animated.View entering={FadeInDown.duration(500)} style={styles.completeRow}>
             <Text style={styles.completeLabel}>🏆 COMPLETE! +50% BONUS</Text>
-            <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips</Text>
-          </View>
+            <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips!</Text>
+          </Animated.View>
         )}
 
         {/* Net result */}
@@ -802,6 +841,7 @@ export default function ResultsScreen() {
                 <DealMeInButton
                   label={chips >= config.potPerBoard * revealData.boardCount ? 'DEAL ME IN' : 'GAME OVER'}
                   onPress={handleNextHand}
+                  glowStyle={dealGlowStyle}
                 />
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && (
@@ -813,7 +853,7 @@ export default function ResultsScreen() {
             )}
           </View>
       </ScrollView>
-
+      </Animated.View>
     </SafeAreaView>
   );
 }
