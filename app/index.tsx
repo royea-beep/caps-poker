@@ -36,7 +36,6 @@ import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
-import { KILL_index } from '../utils/animationKill';
 
 const isWeb = Platform.OS === 'web';
 
@@ -66,12 +65,10 @@ function FloatingParticle({ x, suit, size, opacity, dur, delay, screenW, screenH
   const translateY = useSharedValue(screenH + 50);
 
   useEffect(() => {
-    if (!KILL_index) {
-      translateY.value = withDelay(
-        delay,
-        withRepeat(withTiming(-80, { duration: dur }), -1, false),
-      );
-    }
+    translateY.value = withDelay(
+      delay,
+      withRepeat(withTiming(-80, { duration: dur }), 50, false),
+    );
     return () => { cancelAnimation(translateY); };
   }, []);
 
@@ -113,16 +110,14 @@ function HeroCardFan() {
   const breatheScale = useSharedValue(1);
 
   useEffect(() => {
-    if (!KILL_index) {
-      breatheScale.value = withRepeat(
-        withSequence(
-          withTiming(1.025, { duration: 2200 }),
-          withTiming(1.0,   { duration: 2200 }),
-        ),
-        -1,
-        false,
-      );
-    }
+    breatheScale.value = withRepeat(
+      withSequence(
+        withTiming(1.025, { duration: 2200 }),
+        withTiming(1.0,   { duration: 2200 }),
+      ),
+      100,
+      false,
+    );
     return () => { cancelAnimation(breatheScale); };
   }, []);
 
@@ -249,7 +244,7 @@ function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, t
   const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
-    if (isPrimary && !disabled && !KILL_index) {
+    if (isPrimary && !disabled) {
       glowOpacity.value = withDelay(
         1200,
         withRepeat(
@@ -257,7 +252,7 @@ function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, t
             withTiming(0.7, { duration: 1400 }),
             withTiming(0.1, { duration: 1400 }),
           ),
-          -1,
+          100,
           false,
         ),
       );

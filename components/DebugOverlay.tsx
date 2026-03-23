@@ -25,6 +25,9 @@ export function setDebugRecording(recording: boolean) {
 export function getGlobalLogs(): LogEntry[] { return [...globalLogs]; }
 
 export function debugLog(message: string, level: 'info' | 'warn' | 'error' = 'info') {
+  if (!__DEV__ && !globalListener) {
+    return; // Silent in production when overlay is not active
+  }
   const now = new Date();
   const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
   const entry: LogEntry = { time, message, level };

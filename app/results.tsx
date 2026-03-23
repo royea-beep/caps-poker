@@ -24,7 +24,6 @@ import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHis
 import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../components/ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
-import { KILL_results } from '../utils/animationKill';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';

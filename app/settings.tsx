@@ -33,6 +33,7 @@ import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
 import { CapsHooks } from '../utils/learning';
 import { OrientationType, VisualTheme } from '../store/gameStore';
 import { getTheme, VISUAL_THEMES } from '../constants/visualThemes';
+import { VersionBadge } from '../components/VersionBadge';
 
 // Lazy-load screen orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -611,6 +612,13 @@ export default function SettingsScreen() {
   const config = useGameStore((s) => s.config);
   const resetConfig = useGameStore((s) => s.resetConfig);
   const navigateToSimulation = () => router.push('/simulate');
+  const [debugEnabled, setDebugEnabled] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('debug_overlay_enabled').then(v => {
+      setDebugEnabled(v === 'true');
+    }).catch(() => {});
+  }, []);
 
   const boardCount = getBoardCount(config.numberOfPlayers);
   const buyIn = config.potPerBoard * boardCount;
@@ -678,30 +686,54 @@ export default function SettingsScreen() {
           style={{ marginBottom: 12 }}
         />
         <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
-        <Button
-          title="🐛 Debug 1 Hand"
-          variant="secondary"
-          onPress={() => {
-            debugLog('🤖 AUTO-SIM: 1 hand');
-            router.push('/game?autoSim=true&autoSimCount=1&currentSimHand=1' as any);
-          }}
-          style={{ marginBottom: 8, borderColor: '#00ff00', opacity: 0.7 }}
-        />
-        <Button
-          title="🐛 Debug Marathon (10 hands)"
-          variant="secondary"
-          onPress={() => {
-            debugLog('🤖 AUTO-SIM: 10-hand marathon');
-            router.push('/game?autoSim=true&autoSimCount=10&currentSimHand=1' as any);
-          }}
-          style={{ marginBottom: 12, borderColor: '#00ff00', opacity: 0.7 }}
-        />
-        <Button
-          title="🔬 Auto-Debug Suite"
-          variant="secondary"
-          onPress={() => router.push('/debug' as any)}
-          style={{ marginBottom: 12, borderColor: '#ff9900', opacity: 0.8 }}
-        />
+        {__DEV__ && (
+          <>
+            <Button
+              title="🐛 Debug 1 Hand"
+              variant="secondary"
+              onPress={() => {
+                debugLog('🤖 AUTO-SIM: 1 hand');
+                router.push('/game?autoSim=true&autoSimCount=1&currentSimHand=1' as any);
+              }}
+              style={{ marginBottom: 8, borderColor: '#00ff00', opacity: 0.7 }}
+            />
+            <Button
+              title="🐛 Debug Marathon (10 hands)"
+              variant="secondary"
+              onPress={() => {
+                debugLog('🤖 AUTO-SIM: 10-hand marathon');
+                router.push('/game?autoSim=true&autoSimCount=10&currentSimHand=1' as any);
+              }}
+              style={{ marginBottom: 12, borderColor: '#00ff00', opacity: 0.7 }}
+            />
+            <Button
+              title="🔬 Auto-Debug Suite"
+              variant="secondary"
+              onPress={() => router.push('/debug' as any)}
+              style={{ marginBottom: 12, borderColor: '#ff9900', opacity: 0.8 }}
+            />
+          </>
+        )}
+
+        <Text style={styles.sectionTitle}>DEVELOPER</Text>
+        <View style={styles.row}>
+          <View style={styles.rowLeft}>
+            <Text style={styles.rowLabel}>Debug Overlay</Text>
+            <Text style={styles.rowHint}>Restart app to apply</Text>
+          </View>
+          <Pressable
+            onPress={() => {
+              const next = !debugEnabled;
+              setDebugEnabled(next);
+              AsyncStorage.setItem('debug_overlay_enabled', next ? 'true' : 'false').catch(() => {});
+            }}
+            style={[styles.toggleBtn, debugEnabled && styles.toggleBtnActive]}
+          >
+            <Text style={[styles.toggleText, debugEnabled && styles.toggleTextActive]}>
+              {debugEnabled ? 'ON' : 'OFF'}
+            </Text>
+          </Pressable>
+        </View>
 
         <Button
           title="Reset to Defaults"
@@ -716,6 +748,9 @@ export default function SettingsScreen() {
           <Text style={styles.creditsText}>🔊 Voice Clips: AI-generated voices via ElevenLabs</Text>
           <Text style={styles.creditsText}>⚠️ Not affiliated with any poker player mentioned</Text>
           <Text style={styles.creditsText}>Voices are parody / entertainment only</Text>
+        </View>
+        <View style={{ alignItems: 'center', paddingBottom: 8 }}>
+          <VersionBadge />
         </View>
       </ScrollView>
     </SafeAreaView>
