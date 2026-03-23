@@ -440,39 +440,45 @@ function GameScreenInner() {
   // Navigate to reveal — DIRECT (no InteractionManager, no async chain)
   // Called as soon as both player and all bots are ready.
   const doNavigate = useCallback((currentBoards: BoardState[]) => {
-    if (hasNavigatedRef.current || !mountedRef.current) return;
+    debugLog('1 doNavigate called');
+    if (hasNavigatedRef.current || !mountedRef.current) { debugLog('1.1 already navigated or unmounted — abort'); return; }
+    debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
 
-    debugLog('🚀 doNavigate: START');
     void logStep('doNavigate_start');
 
+    debugLog('3 clearing countdown interval');
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
       countdownRef.current = null;
     }
 
+    debugLog('4 calculateHandResultsMulti START');
     void logStep('A:start_calculate');
-    debugLog('A: calculating');
 
     let results;
     try {
       if (precalculatedResultsRef.current) {
+        debugLog('4.1 using pre-calculated results');
         results = precalculatedResultsRef.current;
         precalculatedResultsRef.current = null;
       } else {
+        debugLog('4.2 calculating fresh');
         results = calculateHandResultsMulti(currentBoards, numberOfPlayers, config);
       }
     } catch (e) {
-      debugLog(`A: CRASH: ${String(e)}`, 'error');
+      debugLog(`4E calculateHandResultsMulti CRASHED: ${String(e)}`, 'error');
       void logStep('CRASH:A', String(e));
       router.replace('/');
       return;
     }
 
+    debugLog(`5 calculate DONE: won=${results.playerChipsWon} isComplete=${results.isComplete}`);
     void logStep('B:calculate_done', `boards=${currentBoards.length} won=${results.playerChipsWon}`);
-    debugLog(`B: done — won=${results.playerChipsWon}`);
 
+    debugLog('6 building revealBoards');
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
+      debugLog(`6.${i + 1} board ${i}: ${results.boardResults[i]?.winner ?? 'tie'}`);
       const result = results.boardResults[i];
       return {
         openCards: board.openCards,
@@ -493,13 +499,15 @@ function GameScreenInner() {
       };
     });
 
+    debugLog(`7 revealBoards done: ${revealBoards.length} boards`);
     void logStep('C:revealBoards_built');
-    debugLog(`C: revealBoards (${revealBoards.length})`);
 
+    debugLog(`8 addChips: ${results.playerChipsWon}`);
     addChips(results.playerChipsWon);
+    debugLog('9 addChips done');
     void logStep('D:addChips_done');
-    debugLog('D: addChips done');
 
+    debugLog('10 setRevealData START');
     setRevealData({
       boards: revealBoards,
       netChips: results.playerChipsWon - config.potPerBoard * boardCount,
@@ -514,23 +522,25 @@ function GameScreenInner() {
       numberOfPlayers,
       boardCount,
     });
+    debugLog('11 setRevealData DONE');
     void logStep('E:setRevealData_done');
-    debugLog('E: setRevealData done');
 
+    debugLog('12 CapsHooks.gameCompleted');
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
+    debugLog('13 AsyncStorage update');
     AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
       const count = parseInt(val ?? '0', 10);
       AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
     }).catch(() => {});
 
+    debugLog('14 router.replace /results START');
     void logStep('F:before_router_replace');
-    debugLog('F: router.replace /results');
     try {
       router.replace('/results' as any);
+      debugLog('15 router.replace DONE');
       void logStep('G:router_replace_called');
-      debugLog('G: ✅ done');
     } catch (e) {
-      debugLog(`G: CRASH: ${String(e)}`, 'error');
+      debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
     }
   }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router]);
@@ -683,25 +693,30 @@ function GameScreenInner() {
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
-    if (!allBoardsFull) return;
-    debugLog(`🟡 READY pressed — boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
+    debugLog('H1 handleReady called');
+    if (!allBoardsFull) { debugLog('H1.1 NOT allBoardsFull — abort'); return; }
+    debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     void logStep('handleReady_pressed');
-
-    // Update UI state
+    debugLog('H3 hapticNotify');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
+    debugLog('H4 playSound');
     playSound('cardSelect');
+    debugLog('H5 setSelectedCardIds([])');
     setSelectedCardIds([]);
+    debugLog('H6 setPlayerReady(true)');
     setPlayerReady(true);
+    debugLog('H7 setPhase(waiting_for_bot)');
     setPhase({ type: 'waiting_for_bot' });
+    debugLog('H8 playerReadyRef=true');
     playerReadyRef.current = true;
-
-    // If no countdown started yet, player is the first finisher — start countdown for bots
-    if (!countdownActive) startCountdown('You');
-
-    // Navigate directly — no useEffect chain, no InteractionManager
-    // If all bots already done: go now. If bots still running: bot timer will call doNavigate.
+    debugLog(`H9 countdownActive=${countdownActive}`);
+    if (!countdownActive) { debugLog('H9.1 startCountdown'); startCountdown('You'); }
+    debugLog(`H10 botsReady=${botsReadyCountRef.current}/${numberOfBots}`);
     if (botsReadyCountRef.current >= numberOfBots) {
+      debugLog('H10.1 all bots done — calling doNavigate');
       doNavigateRef.current(boardsRef.current);
+    } else {
+      debugLog('H10.2 bots still running — waiting');
     }
   }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
 

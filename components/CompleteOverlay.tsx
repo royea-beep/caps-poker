@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { debugLog } from './DebugOverlay';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -95,12 +96,17 @@ function Particle({ index }: { index: number }) {
 
 // Static safe version — no animations
 function SafeCompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
+  debugLog('C1 SafeCompleteOverlay mounted');
+  debugLog(`C2 winner=${winner} bonus=${bonusAmount} duration=${duration}`);
   useEffect(() => {
+    debugLog('C3 playSound(complete)');
     playSound('complete');
+    debugLog('C4 haptics');
     if (Haptics) {
       Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Heavy)?.catch?.(() => {});
     }
-    const timer = setTimeout(() => { onDone(); }, duration * 1000);
+    debugLog(`C5 dismiss timer started: ${duration}s`);
+    const timer = setTimeout(() => { debugLog('C6 onDone called'); onDone(); }, duration * 1000);
     return () => clearTimeout(timer);
   }, [duration, onDone]);
 

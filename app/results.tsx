@@ -186,8 +186,11 @@ export default function ResultsScreen() {
 
   // Debug: log on mount — Supabase log so we see it even after native crash
   useEffect(() => {
+    debugLog('R1 results.tsx mounted');
+    debugLog(`R2 revealData: ${revealData ? `boards=${revealData.boards.length} isComplete=${revealData.isComplete}` : 'NULL'}`);
+    debugLog(`R3 chips: ${chips}`);
+    debugLog(`R4 showComplete=${showComplete} showConfetti=${showConfetti}`);
     console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
-    debugLog(`H: 🟢 results.tsx mounted — ${revealData ? `${revealData.boards.length} boards` : 'NO DATA'}`);
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
   }, []);
 
