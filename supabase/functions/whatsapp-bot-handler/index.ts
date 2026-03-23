@@ -81,19 +81,41 @@ async function verifyTwilioSignature(
 
 // ── Twilio send message ─────────────────────────────────────────────────────
 
+// Twilio SMS/WhatsApp over REST uses application/x-www-form-urlencoded.
+// URLSearchParams percent-encodes emoji correctly, but some Twilio plans
+// default to GSM7 which strips non-ASCII. Replace emojis with readable ASCII.
+function sanitizeForTwilio(text: string): string {
+  return text
+    .replace(/💥|🔴/g, '[CRASH]')
+    .replace(/❌/g, '[FAIL]')
+    .replace(/✅/g, '[OK]')
+    .replace(/📍/g, 'Screen:')
+    .replace(/🎯/g, 'Action:')
+    .replace(/📸/g, 'Screenshots:')
+    .replace(/📋/g, 'Steps:')
+    .replace(/📊/g, 'Evidence:')
+    .replace(/🔧/g, 'Fix:')
+    .replace(/↩️/g, 'Reply:')
+    .replace(/🧪/g, '[TEST]')
+    .replace(/⏱️/g, '')
+    .replace(/[^\x00-\x7F\u0590-\u05FF\u0600-\u06FF\n*_]/g, '') // keep ASCII + Hebrew + WhatsApp bold/italic
+    .trim()
+}
+
 async function sendWhatsApp(to: string, body: string): Promise<void> {
   const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+  const safeBody = sanitizeForTwilio(body);
   const params = new URLSearchParams({
     From: TWILIO_WHATSAPP_FROM,
     To: to,
-    Body: body,
+    Body: safeBody,
   });
   const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
   await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${creds}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
     },
     body: params.toString(),
   });
