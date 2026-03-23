@@ -20,21 +20,18 @@ export async function sendCrashToWhatsApp(report: CrashReport): Promise<boolean>
     : `📸 0 screenshots (upload failed or crash was immediate)`
 
   const shortMessage = [
-    `💥 *CRASH: ${report.project} v${report.version}*`,
+    `💥 *CRASH [${report.crashCode}]*`,
+    `*${report.project} v${report.version}*`,
     ``,
-    `❌ ${report.error.message.slice(0, 120)}`,
-    `📍 Screen: ${report.lastScreen}`,
-    `🎯 Last action: ${report.lastAction}`,
+    `❌ ${report.error.message.slice(0, 100)}`,
+    `📍 ${report.lastScreen} → ${report.lastAction}`,
     `📋 Last step: ${lastStep}`,
-    `📊 ${report.stepLog.length} steps · ${report.consoleErrors.length} console errors`,
+    `📊 ${report.stepLog.length} steps · ${report.consoleErrors.length} errors`,
     screenshotLine,
     ``,
-    `🔧 Fix prompt in DB:`,
-    `SELECT fix_prompt FROM crash_reports`,
-    `WHERE project='${report.project}'`,
-    `ORDER BY created_at DESC LIMIT 1;`,
-    ``,
-    `Or: open app → Debug → crash screen → Copy Fix Prompt`,
+    `↩️ Reply "תתקן" to auto-fix this crash`,
+    `↩️ Reply "פרטים" for full details`,
+    `↩️ Reply "תתעלם" to dismiss`,
   ].join('\n')
 
   const [wa, ntfy] = await Promise.allSettled([
@@ -56,6 +53,7 @@ async function sendViaEdgeFunction(message: string, report: CrashReport): Promis
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         crash_notification: true,
+        crash_code: report.crashCode,
         message,
         videoUrl: null,
         screenshotUrl: report.storageUrls[0] ?? null,
@@ -65,6 +63,7 @@ async function sendViaEdgeFunction(message: string, report: CrashReport): Promis
           device: `${report.device.platform} ${report.device.os ?? ''}`,
           lastScreen: report.lastScreen,
           lastAction: report.lastAction,
+          crashCode: report.crashCode,
         },
       }),
     })
@@ -82,7 +81,7 @@ async function sendViaNtfy(message: string, report: CrashReport): Promise<boolea
     await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
       method: 'POST',
       headers: {
-        'Title': `💥 ${report.project} CRASH: ${report.error.message.slice(0, 50)}`,
+        'Title': `💥 [${report.crashCode}] ${report.project}: ${report.error.message.slice(0, 40)}`,
         'Tags': 'warning,skull',
         'Priority': '5',
       },

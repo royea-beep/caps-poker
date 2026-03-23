@@ -846,6 +846,96 @@ serve(async (req: Request) => {
   const isFixBuild = ['2', 'BUILD', 'בנה', 'APPROVE', 'כן', 'אשר'].includes(upperBody);
   const isCancel   = ['3', 'CANCEL', 'לא', 'בטל'].includes(upperBody);
 
+  // ── Crash threading: תתקן / פרטים / תתעלם — work with crash_reports table ─
+  const crashCodeMatch = msgBody.match(/CR-[A-Z0-9]{4}/i)
+  const isCrashFix     = /^תתקן(\s|$)/u.test(msgBody.trim()) || msgBody.trim() === 'תתקן'
+  const isCrashDetails = /פרטים/.test(msgBody)
+  const isCrashDismiss = /תתעלם/.test(msgBody)
+  const isFixAll       = /תתקן\s+הכל/.test(msgBody)
+
+  if (isCrashFix || isCrashDetails || isCrashDismiss) {
+    const crashCodeUpper = crashCodeMatch ? crashCodeMatch[0].toUpperCase() : null
+
+    if (isCrashFix && !isFixAll) {
+      // Find specific crash by code, or latest unresolved
+      let crashQuery = supabase.from('crash_reports').select('*').eq('project', 'Caps').is('resolved_at', null)
+      if (crashCodeUpper) crashQuery = supabase.from('crash_reports').select('*').eq('crash_code', crashCodeUpper)
+      const { data: crash } = await (crashCodeUpper
+        ? supabase.from('crash_reports').select('*').eq('crash_code', crashCodeUpper).single()
+        : supabase.from('crash_reports').select('*').eq('project', 'Caps').is('resolved_at', null).order('created_at', { ascending: false }).limit(1).single()
+      )
+      if (!crash) {
+        await sendWhatsApp(from, '❓ לא נמצאה קריסה. פתח אפליקציה → Debug → העתק Fix Prompt.')
+      } else {
+        await supabase.from('crash_reports').update({ status: 'fixing', resolved_at: new Date().toISOString() }).eq('id', crash.id)
+        const replyMsg = [
+          `🔧 *מתקן קריסה [${crash.crash_code ?? 'N/A'}]*`,
+          ``,
+          `📋 Fix prompt (${crash.fix_prompt?.length ?? 0} chars):`,
+          ``,
+          (crash.fix_prompt ?? 'No fix prompt').slice(0, 1500),
+          ``,
+          `העתק ⬆️ והדבק ל-Claude Bot`,
+        ].join('\n')
+        await sendWhatsApp(from, replyMsg)
+      }
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } })
+    }
+
+    if (isFixAll) {
+      const { data: crashes } = await supabase.from('crash_reports').select('id, crash_code, error_message, last_screen').eq('project', 'Caps').is('resolved_at', null).order('created_at', { ascending: false }).limit(5)
+      if (!crashes?.length) {
+        await sendWhatsApp(from, '✅ אין קריסות פתוחות.')
+      } else {
+        const list = crashes.map((c, i) => `${i+1}. [${c.crash_code ?? '?'}] ${c.last_screen}: ${(c.error_message ?? '').slice(0, 60)}`).join('\n')
+        await sendWhatsApp(from, `🔧 *${crashes.length} קריסות פתוחות:*\n\n${list}\n\nשלח "תתקן [CODE]" לתיקון ספציפי`)
+      }
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } })
+    }
+
+    if (isCrashDetails) {
+      const { data: crash } = await (crashCodeUpper
+        ? supabase.from('crash_reports').select('*').eq('crash_code', crashCodeUpper).single()
+        : supabase.from('crash_reports').select('*').eq('project', 'Caps').order('created_at', { ascending: false }).limit(1).single()
+      )
+      if (!crash) {
+        await sendWhatsApp(from, '❓ לא נמצאה קריסה.')
+      } else {
+        const screenshotLines = (crash.screenshot_urls ?? []).slice(0, 3).map((u: string, i: number) => `  📸 ${i+1}: ${u}`).join('\n')
+        const stepLines = (crash.step_log ?? []).slice(-5).map((s: Record<string, unknown>) => `  ${s.id}. ${s.description}`).join('\n')
+        const details = [
+          `📊 *Crash [${crash.crash_code ?? 'N/A'}]*`,
+          `Error: ${crash.error_message}`,
+          `Screen: ${crash.last_screen}`,
+          `Action: ${crash.last_action}`,
+          `Time: ${crash.created_at}`,
+          ``,
+          `Screenshots: ${(crash.screenshot_urls ?? []).length}`,
+          screenshotLines,
+          ``,
+          `Steps: ${(crash.step_log ?? []).length}`,
+          stepLines,
+        ].filter(Boolean).join('\n')
+        await sendWhatsApp(from, details)
+      }
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } })
+    }
+
+    if (isCrashDismiss) {
+      const { data: crash } = await (crashCodeUpper
+        ? supabase.from('crash_reports').select('id, crash_code').eq('crash_code', crashCodeUpper).single()
+        : supabase.from('crash_reports').select('id, crash_code').eq('project', 'Caps').is('resolved_at', null).order('created_at', { ascending: false }).limit(1).single()
+      )
+      if (crash) {
+        await supabase.from('crash_reports').update({ status: 'dismissed', resolved_at: new Date().toISOString() }).eq('id', crash.id)
+        await sendWhatsApp(from, `✅ קריסה [${crash.crash_code ?? 'N/A'}] סומנה כ-dismissed.`)
+      } else {
+        await sendWhatsApp(from, '❓ לא נמצאה קריסה פתוחה.')
+      }
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } })
+    }
+  }
+
   // ── Check crash_pending FIRST — routes 1-7 replies to crash control panel ─
   if (['1','2','3','4','5','6','7','FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)) {
     const windowStart = new Date(Date.now() - CRASH_REPLY_WINDOW_MS).toISOString();
