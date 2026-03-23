@@ -126,9 +126,10 @@ export default function ResultsScreen() {
 
   const scrollRef = useRef<any>(null);
 
-  // Safe animations — max 2 shared values on this screen
+  // Safe animations — max 3 shared values on this screen (well under limit of 5)
   const screenOpacity = useSharedValue(0);
   const dealGlow = useSharedValue(0.5);
+  const chipsReveal = useSharedValue(0); // scale+opacity reveal for net result
 
   // Dynamic card sizing: compact — fit boards + buttons on screen without excessive scrolling
   // Available = screenWidth - container padding (32) - board padding (20) - separator (4)
@@ -169,6 +170,14 @@ export default function ResultsScreen() {
       3,
     );
     return () => cancelAnimation(dealGlow);
+  }, []);
+
+  // Chips reveal — scale+opacity from 0→1 over 600ms (delayed 300ms after mount)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      chipsReveal.value = withTiming(1, { duration: 600 });
+    }, 300);
+    return () => { clearTimeout(t); cancelAnimation(chipsReveal); };
   }, []);
 
   // Auto-sim marathon: auto-start next hand after a brief pause
@@ -522,6 +531,10 @@ export default function ResultsScreen() {
   }, [revealData]);
 
   const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
+  const chipsRevealStyle = useAnimatedStyle(() => ({
+    opacity: chipsReveal.value,
+    transform: [{ scale: 0.7 + chipsReveal.value * 0.3 }],
+  }));
   const dealGlowStyle = useAnimatedStyle(() => ({
     shadowOpacity: dealGlow.value,
     ...Platform.select({
@@ -803,15 +816,15 @@ export default function ResultsScreen() {
           </Animated.View>
         )}
 
-        {/* Net result */}
-        <View style={styles.netSection}>
+        {/* Net result — animated reveal (scale+opacity) */}
+        <Animated.View style={[styles.netSection, chipsRevealStyle]}>
           <View style={styles.netRow}>
             <Text style={styles.netLabel}>Net Result</Text>
             <Text style={[styles.netAmount, { color: netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
               {netChips >= 0 ? '+' : ''}{netChips}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Current balance */}
         <ChipsDisplay amount={chips} label="Current Balance" size="large" />
