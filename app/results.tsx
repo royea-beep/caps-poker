@@ -44,6 +44,7 @@ import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../comp
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
 import { KILL_results } from '../utils/animationKill';
+import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { useLocalSearchParams } from 'expo-router';
@@ -193,6 +194,8 @@ export default function ResultsScreen() {
     debugLog(`R4 showComplete=${showComplete} showConfetti=${showConfetti}`);
     console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
+    // Clear dirty-shutdown flag — we made it to results screen normally
+    void clearGameActive();
   }, []);
 
   // Auto-sim marathon: auto-start next hand after a brief pause
@@ -317,8 +320,14 @@ export default function ResultsScreen() {
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 0);
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 400);
         setTimeout(() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium), 800);
-        debugLog('A17 setShowComplete timer set (1200ms)');
-        setTimeout(() => { debugLog('A18 setShowComplete(true)'); setShowComplete(true); }, 1200);
+        // DISABLED: CompleteOverlay causes native crash — show buttons directly
+        // TODO: rebuild CompleteOverlay from scratch (static text, zero Reanimated)
+        debugLog('A17 CompleteOverlay DISABLED — showing buttons directly');
+        setTimeout(() => {
+          debugLog('A18 setShowButtons(true) instead of CompleteOverlay');
+          setShowButtons(true);
+          setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+        }, 400);
       } else {
         debugLog('A15.2 not complete — setShowButtons');
         setShowButtons(true);

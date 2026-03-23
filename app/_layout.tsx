@@ -21,6 +21,8 @@ import { VersionBadge } from '../components/VersionBadge';
 import { getSupabase } from '../utils/supabase';
 import DebugOverlay, { debugLog } from '../components/DebugOverlay';
 import { onCrashDetected } from '../utils/crashDetector';
+import { checkPreviousCrash } from '../utils/dirtyShutdown';
+import { sendCrashAlert } from '../utils/crashAlert';
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -137,6 +139,27 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => { debugLog('🔵 app started'); }, []);
+
+  // Dirty shutdown detector — runs on every app open (native only)
+  // If a previous game was active when the app died → send WhatsApp crash alert
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    checkPreviousCrash().then(async (crashTs) => {
+      if (!crashTs) return;
+      const age = Math.round((Date.now() - crashTs) / 1000);
+      debugLog(`💀 DIRTY SHUTDOWN detected — game was active ${age}s ago`, 'error');
+      try {
+        const { build, version } = (() => {
+          try {
+            const Constants = require('expo-constants').default;
+            const cfg = Constants.expoConfig;
+            return { build: cfg?.ios?.buildNumber ?? 'unknown', version: cfg?.version ?? 'unknown' };
+          } catch { return { build: 'unknown', version: 'unknown' }; }
+        })();
+        await sendCrashAlert(null, null, `dirty-shutdown (${age}s ago)`, [], { build, version });
+      } catch {}
+    }).catch(() => {});
+  }, []);
 
   // OTA update check — runs on every app open (production only)
   useEffect(() => {
