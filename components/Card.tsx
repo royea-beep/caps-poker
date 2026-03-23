@@ -90,9 +90,12 @@ export default function CardComponent({
   }, [faceDown]);
 
   useEffect(() => {
-    glowOpacity.value = highlighted
-      ? withSpring(1, { damping: 12, stiffness: 120 })
-      : withTiming(0, { duration: 200 });
+    if (highlighted) {
+      glowOpacity.value = withSpring(1, { damping: 12, stiffness: 120 });
+    } else if (glowOpacity.value > 0) {
+      // Only animate to 0 if not already 0 — prevents 50+ no-op worklets on results mount
+      glowOpacity.value = withTiming(0, { duration: 200 });
+    }
   }, [highlighted]);
 
   const backAnimStyle = useAnimatedStyle(() => {
