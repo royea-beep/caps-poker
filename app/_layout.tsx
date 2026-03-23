@@ -1,6 +1,7 @@
 import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { View, Text, Platform, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { useSharedValue, withTiming, withSequence, withDelay, useAnimatedStyle } from 'react-native-reanimated';
 import * as Linking from 'expo-linking';
 import { Stack, useRouter } from 'expo-router';
@@ -17,7 +18,6 @@ import { preloadSounds } from '../utils/sounds';
 import { registerAndSavePushToken } from '../utils/notifications';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
-import { VersionBadge } from '../components/VersionBadge';
 import { getSupabase } from '../utils/supabase';
 import DebugOverlay, { debugLog } from '../components/DebugOverlay';
 import { onCrashDetected } from '../utils/crashDetector';
@@ -125,6 +125,13 @@ export default function RootLayout() {
   const orientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const [splashDone, setSplashDone] = useState(false);
+  const [debugEnabled, setDebugEnabled] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('debug_overlay_enabled').then(v => {
+      if (v === 'true') setDebugEnabled(true);
+    }).catch(() => {});
+  }, []);
 
   // Global JS error handler — catches unhandled errors on native
   useEffect(() => {
@@ -334,8 +341,7 @@ export default function RootLayout() {
         </WebContainer>
       </BugReporter>
       </CrashBoundary>
-      <VersionBadge />
-      <DebugOverlay />
+      {debugEnabled && <DebugOverlay />}
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
   );
