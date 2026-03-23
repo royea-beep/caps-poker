@@ -24,7 +24,8 @@ import { onCrashDetected } from '../utils/crashDetector';
 import { checkPreviousCrash } from '../utils/dirtyShutdown';
 import { sendCrashAlert } from '../utils/crashAlert';
 import { getLastCrashScreenshots, clearCrashScreenshots } from '../utils/screenRecorder';
-import { startCrashRecording, setCurrentScreen } from '../utils/crash-evidence';
+import { startCrashRecording, setCurrentScreen, initCrashSession, markCleanExit, flushCrashSessionNow, checkDirtyShutdown } from '../utils/crash-evidence';
+import { sendCrashToWhatsApp } from '../utils/debug-whatsapp';
 import { CrashBoundary } from '../components/CrashBoundary';
 
 // Lazy-load expo-screen-orientation (not available on web)
@@ -144,11 +145,29 @@ export default function RootLayout() {
   useEffect(() => {
     debugLog('🔵 app started')
     try {
+      initCrashSession()
       startCrashRecording()
       setCurrentScreen('Splash')
     } catch (e) {
       console.warn('[CrashEvidence] Failed to start — app continues without it:', e)
     }
+  }, []);
+
+  // AppState: flush + mark clean exit when backgrounded; detect dirty-shutdown on launch
+  useEffect(() => {
+    if (Platform.OS === 'web') return
+    // Check for dirty shutdown from previous session
+    checkDirtyShutdown(sendCrashToWhatsApp).catch(() => {})
+    // Mark clean exit when going to background
+    const { AppState } = require('react-native')
+    const sub = AppState.addEventListener('change', (state: string) => {
+      if (state === 'background' || state === 'inactive') {
+        markCleanExit()
+      } else if (state === 'active') {
+        flushCrashSessionNow()
+      }
+    })
+    return () => sub.remove()
   }, []);
 
   // Dirty shutdown detector — runs on every app open (native only)

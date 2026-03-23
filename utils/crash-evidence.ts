@@ -4,8 +4,15 @@
  * Think of it as a car dashcam: always recording, saves last N frames on crash.
  */
 import { Platform } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { debugLog } from '../components/DebugOverlay'
 import { getSupabase } from './supabase'
+
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
+const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+const SESSION_STORAGE_KEY = 'debug_session_id'
+const CLEAN_EXIT_KEY = 'debug_clean_exit'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,6 +103,141 @@ let lastAction = 'none'
 let isRecording = false
 let origConsoleError: ((...args: unknown[]) => void) | null = null
 
+// ─── DB Session Logging ───────────────────────────────────────────────────────
+
+let sessionId = ''
+let dbStepNumber = 0
+let pendingDbSteps: Record<string, unknown>[] = []
+let dbFlushTimer: ReturnType<typeof setTimeout> | null = null
+
+export function initCrashSession(): string {
+  sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  dbStepNumber = 0
+  AsyncStorage.setItem(SESSION_STORAGE_KEY, sessionId).catch(() => {})
+  AsyncStorage.setItem(CLEAN_EXIT_KEY, 'false').catch(() => {})
+  logStepToDB('lifecycle', 'App launched', 'Splash')
+  return sessionId
+}
+
+export function markCleanExit(): void {
+  AsyncStorage.setItem(CLEAN_EXIT_KEY, 'true').catch(() => {})
+  flushDbNow()
+}
+
+function logStepToDB(type: string, description: string, screen?: string, data?: Record<string, unknown> | null): void {
+  if (!sessionId || Platform.OS === 'web' || !SUPABASE_URL) return
+  dbStepNumber++
+  pendingDbSteps.push({
+    project: 'Caps',
+    session_id: sessionId,
+    step_number: dbStepNumber,
+    step_type: type,
+    description,
+    screen: screen ?? currentScreen,
+    data: data ?? null,
+  })
+  // Flush immediately on error or screen change — these are most critical
+  if (type === 'error' || type === 'screen_change') {
+    flushDbNow()
+    return
+  }
+  // Otherwise batch every 5 seconds
+  if (!dbFlushTimer) {
+    dbFlushTimer = setTimeout(flushDbNow, 5000)
+  }
+}
+
+function flushDbNow(): void {
+  if (dbFlushTimer) {
+    clearTimeout(dbFlushTimer)
+    dbFlushTimer = null
+  }
+  if (pendingDbSteps.length === 0) return
+  const batch = [...pendingDbSteps]
+  pendingDbSteps = []
+  fetch(`${SUPABASE_URL}/rest/v1/debug_sessions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(batch),
+  }).catch(() => {}) // silent — never crash the app
+}
+
+export function flushCrashSessionNow(): void {
+  flushDbNow()
+}
+
+export async function checkDirtyShutdown(
+  sendFn: (report: CrashReport) => Promise<unknown>,
+): Promise<void> {
+  if (Platform.OS === 'web' || !SUPABASE_URL) return
+  try {
+    const lastSessionId = await AsyncStorage.getItem(SESSION_STORAGE_KEY)
+    const cleanExit = await AsyncStorage.getItem(CLEAN_EXIT_KEY)
+    if (!lastSessionId || cleanExit === 'true') return
+
+    debugLog('[CrashEvidence] dirty shutdown detected — recovering from DB', 'warn')
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/debug_sessions?session_id=eq.${lastSessionId}&order=step_number.asc&limit=30`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } },
+    )
+    const steps: Array<{ step_number: number; created_at: string; step_type: string; description: string; screen: string }> =
+      await res.json().catch(() => [])
+
+    if (!Array.isArray(steps) || steps.length === 0) return
+
+    const lastStep = steps[steps.length - 1]
+    const crashCode = generateCrashCode()
+    let version = 'unknown'
+    try { version = require('expo-constants').default?.expoConfig?.version ?? 'unknown' } catch {}
+
+    const stepLogFromDB: StepLogEntry[] = steps.map(s => ({
+      id: s.step_number,
+      timestamp: s.created_at,
+      type: s.step_type as StepLogEntry['type'],
+      description: s.description,
+    }))
+
+    const report: CrashReport = {
+      crashCode,
+      project: 'Caps',
+      version,
+      timestamp: new Date().toISOString(),
+      device: { platform: Platform.OS, os: Platform.Version?.toString() },
+      frames: [],
+      stepLog: stepLogFromDB,
+      lastScreen: lastStep.screen ?? 'unknown',
+      lastAction: lastStep.description ?? 'unknown',
+      error: {
+        message: `Native crash (dirty-shutdown) — last action: ${lastStep.description}`,
+        stack: `${steps.length} steps recovered from DB. Session: ${lastSessionId}`,
+      },
+      consoleErrors: [],
+      storageUrls: [],
+      fixPrompt: '',
+    }
+    report.fixPrompt = buildFixPrompt(report)
+
+    saveToDB(report).catch(() => {})
+    sendFn(report).catch(() => {})
+    debugLog(`[CrashEvidence] dirty-shutdown report sent: ${crashCode}`)
+
+    // Cleanup old sessions (> 7 days)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    fetch(`${SUPABASE_URL}/rest/v1/debug_sessions?created_at=lt.${sevenDaysAgo}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+    }).catch(() => {})
+  } catch (e) {
+    debugLog(`[CrashEvidence] dirty-shutdown check failed: ${e}`, 'warn')
+  }
+}
+
 // ─── Public API: Recording ────────────────────────────────────────────────────
 
 export function startCrashRecording(): void {
@@ -137,13 +279,20 @@ export function setCurrentScreen(screen: string): void {
   if (screen === currentScreen) return
   currentScreen = screen
   logStep('screen_change', `→ ${screen}`)
+  logStepToDB('screen_change', `→ ${screen}`, screen)
   captureFrame(`screen:${screen}`).catch(() => {})
 }
 
 export function trackAction(action: string): void {
   lastAction = action
   logStep('user_action', action)
+  logStepToDB('user_action', action)
   captureFrame(`action:${action}`).catch(() => {})
+}
+
+export function trackError(error: string): void {
+  logStep('error', error)
+  logStepToDB('error', error)
 }
 
 // ─── Public API: Generate Report ──────────────────────────────────────────────
