@@ -541,6 +541,7 @@ function GameScreenInner() {
     void markGameActive();
 
     // Show safe reveal overlay before navigating (skip in auto-sim to avoid delays)
+    debugLog('14 showSafeReveal path — setting overlay');
     if (autoSim !== 'true') {
       const revealSummary = revealBoards.map((b) => ({
         winner: b.winner ?? 'tie' as const,
@@ -569,9 +570,10 @@ function GameScreenInner() {
   useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]);
 
   const onRevealDone = useCallback(() => {
+    debugLog('15 onRevealDone called — clearing overlay');
     setShowSafeReveal(false);
     setPendingRevealBoards([]);
-    debugLog('reveal done — navigating to results');
+    debugLog('16 navigating to results');
     void logStep('F:before_router_replace');
     try {
       router.replace('/results' as any);

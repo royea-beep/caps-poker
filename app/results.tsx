@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, cancelAnimation, FadeInDown } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, cancelAnimation } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CardComponent from '../components/Card';
@@ -577,9 +577,8 @@ export default function ResultsScreen() {
           const multiBot = (board.allBotCards ?? []).length > 1;
 
           return (
-            <Animated.View
+            <View
               key={i}
-              entering={FadeInDown.delay(i * 150).duration(300)}
               style={{ width: '100%' }}
             >
               <View style={[
@@ -711,7 +710,7 @@ export default function ResultsScreen() {
                   </Text>
                 </View>
               </View>
-            </Animated.View>
+            </View>
           );
         })}
 
@@ -810,10 +809,10 @@ export default function ResultsScreen() {
 
         {/* Complete bonus */}
         {isComplete && completeBonusAmount > 0 && (
-          <Animated.View entering={FadeInDown.duration(500)} style={styles.completeRow}>
+          <View style={styles.completeRow}>
             <Text style={styles.completeLabel}>🏆 COMPLETE! +50% BONUS</Text>
             <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips!</Text>
-          </Animated.View>
+          </View>
         )}
 
         {/* Net result — animated reveal (scale+opacity) */}
