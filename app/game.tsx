@@ -33,6 +33,7 @@ import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { markGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
@@ -532,6 +533,9 @@ function GameScreenInner() {
       const count = parseInt(val ?? '0', 10);
       AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
     }).catch(() => {});
+
+    // Mark game active before navigating to results — dirty shutdown detector
+    void markGameActive();
 
     debugLog('14 router.replace /results START');
     void logStep('F:before_router_replace');
