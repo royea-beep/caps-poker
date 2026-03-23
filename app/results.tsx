@@ -304,7 +304,9 @@ export default function ResultsScreen() {
       } else {
         setShowButtons(true);
       }
-      if (playerWinsCount === revealData.boards.length && revealData.boards.length > 0) {
+      // Skip confetti when isComplete — CompleteOverlay IS the celebration.
+      // Abrupt unmount of 180 ConfettiCannon views when !showComplete flips → Reanimated cleanup crash.
+      if (!revealData.isComplete && playerWinsCount === revealData.boards.length && revealData.boards.length > 0) {
         setShowConfetti(true);
       }
     }, buttonsShow);
