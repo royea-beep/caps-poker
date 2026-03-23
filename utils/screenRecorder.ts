@@ -1,70 +1,74 @@
 /**
- * Screen Recorder — wraps expo-screen-recorder with graceful fallback.
- * Works via OTA only if package is in the native build.
- * Install: npx expo install expo-screen-recorder
+ * Screen Recorder — uses react-native-view-shot (captureScreen) as a fallback
+ * since expo-screen-recorder and react-native-record-screen require native builds.
+ *
+ * Captures a screenshot every 500ms → keeps the last 20 frames (10s window).
+ * stopRecording() returns the last captured frame URI.
  */
 import { Platform } from 'react-native';
 import { debugLog, setDebugRecording } from '../components/DebugOverlay';
 
-let ScreenRecorder: any = null;
+let captureScreen: ((opts: { format: string; quality: number }) => Promise<string>) | null = null;
 
-if (Platform.OS === 'ios') {
-  try {
-    ScreenRecorder = require('expo-screen-recorder');
-    debugLog('🎥 Screen recorder: expo-screen-recorder loaded');
-  } catch {
-    try {
-      ScreenRecorder = require('react-native-record-screen');
-      debugLog('🎥 Screen recorder: react-native-record-screen loaded');
-    } catch {
-      debugLog('🎥 Screen recorder: no package available — video disabled', 'warn');
-    }
-  }
+try {
+  captureScreen = require('react-native-view-shot').captureScreen;
+  debugLog('🎥 screenRecorder: react-native-view-shot captureScreen loaded ✅');
+} catch {
+  debugLog('🎥 screenRecorder: no capture package available — video disabled', 'warn');
 }
 
+let screenshotInterval: ReturnType<typeof setInterval> | null = null;
+const screenshots: string[] = [];
+let isCapturing = false;
 let isRecording = false;
 let recordingStartTime = 0;
 
 export async function startRecording(): Promise<boolean> {
-  if (!ScreenRecorder || isRecording || Platform.OS !== 'ios') return false;
-  try {
-    debugLog('🎥 REC start');
-    if (ScreenRecorder.startRecording) {
-      await ScreenRecorder.startRecording(false);
-    } else if (ScreenRecorder.RecordScreen?.startRecording) {
-      await ScreenRecorder.RecordScreen.startRecording({ mic: false, fps: 30 });
-    }
-    isRecording = true;
-    recordingStartTime = Date.now();
-    setDebugRecording(true);
-    return true;
-  } catch (e) {
-    debugLog(`🎥 REC start failed: ${e}`, 'error');
+  if (!captureScreen || Platform.OS === 'web') {
+    debugLog('🎥 REC start: skipped (no captureScreen or web)');
     return false;
   }
+  if (isRecording) return true;
+
+  screenshots.length = 0;
+  isRecording = true;
+  recordingStartTime = Date.now();
+  setDebugRecording(true);
+  debugLog('🎥 REC start: screenshot mode (2fps)');
+
+  screenshotInterval = setInterval(async () => {
+    if (isCapturing || !isRecording) return;
+    isCapturing = true;
+    try {
+      const uri = await captureScreen!({ format: 'jpg', quality: 0.5 });
+      screenshots.push(uri);
+      if (screenshots.length > 20) screenshots.shift(); // keep last 10s
+    } catch {
+      // silent — capture can fail during transitions
+    } finally {
+      isCapturing = false;
+    }
+  }, 500);
+
+  return true;
 }
 
 export async function stopRecording(): Promise<string | null> {
-  if (!ScreenRecorder || !isRecording) return null;
-  try {
-    const duration = ((Date.now() - recordingStartTime) / 1000).toFixed(1);
-    debugLog(`🎥 REC stop (${duration}s)`);
-    let videoUri: string | null = null;
-    if (ScreenRecorder.stopRecording) {
-      videoUri = await ScreenRecorder.stopRecording();
-    } else if (ScreenRecorder.RecordScreen?.stopRecording) {
-      const result = await ScreenRecorder.RecordScreen.stopRecording();
-      videoUri = result?.result?.outputURL ?? null;
-    }
-    isRecording = false;
-    setDebugRecording(false);
-    if (videoUri) debugLog(`🎥 REC saved: ${videoUri.slice(-20)}`);
-    return videoUri;
-  } catch (e) {
-    debugLog(`🎥 REC stop failed: ${e}`, 'error');
-    isRecording = false;
-    return null;
+  if (!isRecording) return null;
+
+  const duration = ((Date.now() - recordingStartTime) / 1000).toFixed(1);
+  debugLog(`🎥 REC stop (${duration}s) — ${screenshots.length} frames`);
+
+  if (screenshotInterval) {
+    clearInterval(screenshotInterval);
+    screenshotInterval = null;
   }
+  isRecording = false;
+  setDebugRecording(false);
+
+  const lastFrame = screenshots[screenshots.length - 1] ?? null;
+  if (lastFrame) debugLog(`🎥 REC last frame: ${lastFrame.slice(-30)}`);
+  return lastFrame;
 }
 
 export function isCurrentlyRecording(): boolean { return isRecording; }
