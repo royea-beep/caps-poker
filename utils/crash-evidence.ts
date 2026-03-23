@@ -25,6 +25,7 @@ export interface StepLogEntry {
 }
 
 export interface CrashReport {
+  crashCode: string         // CR-XXXX — unique 6-char ID for WhatsApp threading
   project: string
   version: string
   timestamp: string
@@ -37,6 +38,38 @@ export interface CrashReport {
   consoleErrors: string[]
   storageUrls: string[]
   fixPrompt: string
+}
+
+// ─── Batch crash queue (10s window — no spam) ─────────────────────────────────
+
+let pendingCrashes: CrashReport[] = []
+let batchTimer: ReturnType<typeof setTimeout> | null = null
+const BATCH_WINDOW_MS = 10_000
+
+export function queueCrashAlert(
+  report: CrashReport,
+  sendFn: (r: CrashReport) => Promise<unknown>,
+): void {
+  pendingCrashes.push(report)
+  if (batchTimer) return
+  batchTimer = setTimeout(async () => {
+    const batch = [...pendingCrashes]
+    pendingCrashes = []
+    batchTimer = null
+    for (const r of batch) {
+      await sendFn(r).catch(() => {})
+    }
+  }, BATCH_WINDOW_MS)
+}
+
+// ─── Crash Code Generator ─────────────────────────────────────────────────────
+
+function generateCrashCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no I/O/0/1 confusion
+  const code = Array.from({ length: 4 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join('')
+  return `CR-${code}`
 }
 
 // ─── Module state ─────────────────────────────────────────────────────────────
@@ -128,7 +161,10 @@ export async function generateCrashReport(error: {
     version = require('expo-constants').default?.expoConfig?.version ?? 'unknown'
   } catch {}
 
+  const crashCode = generateCrashCode()
+
   const report: CrashReport = {
+    crashCode,
     project: 'Caps',
     version,
     timestamp: new Date().toISOString(),
@@ -222,6 +258,7 @@ async function saveToDB(report: CrashReport): Promise<void> {
   if (!supabase) return
   try {
     await supabase.from('crash_reports').insert({
+      crash_code: report.crashCode,
       project: report.project,
       version: report.version,
       error_message: report.error.message,
@@ -233,6 +270,7 @@ async function saveToDB(report: CrashReport): Promise<void> {
       console_errors: report.consoleErrors,
       fix_prompt: report.fixPrompt,
       device: report.device,
+      status: 'new',
     })
   } catch (e) {
     debugLog(`[CrashEvidence] DB save failed: ${e}`, 'warn')
@@ -258,7 +296,7 @@ function buildFixPrompt(report: CrashReport): string {
     : '  none'
 
   return [
-    `## CRASH FIX: ${report.project} v${report.version}`,
+    `## CRASH FIX: ${report.project} v${report.version} [${report.crashCode}]`,
     `## Time: ${report.timestamp}`,
     ``,
     `Yes, allow all edits in components`,
