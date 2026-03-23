@@ -80,17 +80,31 @@ export class CrashBoundary extends React.Component<{ children: React.ReactNode }
         )}
 
         {report?.fixPrompt && (
-          <TouchableOpacity
-            style={[s.btn, s.btnBlue]}
-            onPress={() => {
-              Clipboard.setString(report.fixPrompt)
-              this.setState({ copied: true })
-            }}
-          >
-            <Text style={s.btnText}>
-              {copied ? '✅ Copied!' : '📋 Copy Fix Prompt for Claude Bot'}
-            </Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={[s.btn, s.btnBlue]}
+              onPress={() => {
+                Clipboard.setString(report.fixPrompt)
+                this.setState({ copied: true })
+                setTimeout(() => this.setState({ copied: false }), 3000)
+              }}
+            >
+              <Text style={s.btnText}>
+                {copied ? '✅ הועתק! Paste to Claude Bot' : '📋 Copy Fix Prompt for Claude Bot'}
+              </Text>
+            </TouchableOpacity>
+            <ScrollView style={s.promptPreview}>
+              <Text style={s.promptText}>
+                {report.fixPrompt.slice(0, 600)}
+                {report.fixPrompt.length > 600 ? '\n...(full version copied)' : ''}
+              </Text>
+            </ScrollView>
+          </>
+        )}
+        {!report?.fixPrompt && (
+          <Text style={[s.metaText, { marginTop: 12, color: '#ff8800' }]}>
+            ⚠️ NO FIX PROMPT — generateCrashReport failed
+          </Text>
         )}
 
         <TouchableOpacity
@@ -161,5 +175,17 @@ const s = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  promptPreview: {
+    marginTop: 8,
+    maxHeight: 180,
+    backgroundColor: '#111',
+    borderRadius: 6,
+    padding: 8,
+  },
+  promptText: {
+    color: '#9ca3af',
+    fontSize: 9,
+    fontFamily: 'monospace',
   },
 })

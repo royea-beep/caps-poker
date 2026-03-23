@@ -242,30 +242,40 @@ async function saveToDB(report: CrashReport): Promise<void> {
 // ─── Internal: Fix Prompt ─────────────────────────────────────────────────────
 
 function buildFixPrompt(report: CrashReport): string {
-  const steps = report.stepLog
-    .slice(-20)
-    .map(s => `  [${s.id}] ${s.timestamp.slice(11, 19)} ${s.type}: ${s.description}`)
-    .join('\n')
+  const steps = report.stepLog.length > 0
+    ? report.stepLog
+        .slice(-20)
+        .map(s => `  [${s.id}] ${s.timestamp.slice(11, 19)} ${s.type}: ${s.description}`)
+        .join('\n')
+    : '  (no steps captured — crash happened before any navigation)'
 
   const screenshots = report.storageUrls.length > 0
-    ? report.storageUrls.map((url, i) => `  Frame ${i + 1}: ${url}`).join('\n')
-    : '  (no screenshots uploaded)'
+    ? report.storageUrls.map((url, i) => `  📸 Frame ${i + 1}: ${url}`).join('\n')
+    : '  (no screenshots — crash happened before 3s dashcam interval fired,\n   or upload failed. Check: SELECT * FROM crash_reports ORDER BY created_at DESC LIMIT 1)'
 
   const errors = report.consoleErrors.length > 0
     ? report.consoleErrors.slice(-10).join('\n  ')
     : '  none'
 
   return [
-    `## CRASH REPORT: ${report.project} v${report.version}`,
-    `## Generated: ${report.timestamp}`,
+    `## CRASH FIX: ${report.project} v${report.version}`,
+    `## Time: ${report.timestamp}`,
     ``,
     `Yes, allow all edits in components`,
     `Project: /c/Projects/Caps`,
     ``,
-    `## CRASH DETAILS`,
-    `Error: ${report.error.message}`,
-    `Stack: ${report.error.stack ?? 'N/A'}`,
-    `Last screen: ${report.lastScreen}`,
+    `## ERROR`,
+    `\`\`\``,
+    report.error.message,
+    `\`\`\``,
+    ``,
+    `## STACK TRACE`,
+    `\`\`\``,
+    report.error.stack ?? 'N/A',
+    `\`\`\``,
+    ``,
+    `## WHERE IT CRASHED`,
+    `Screen: ${report.lastScreen}`,
     `Last action: ${report.lastAction}`,
     `Platform: ${report.device.platform} ${report.device.os ?? ''}`,
     ``,
@@ -279,15 +289,19 @@ function buildFixPrompt(report: CrashReport): string {
     `  ${errors}`,
     ``,
     `## TASK`,
-    `1. Look at the screenshots — they show EXACTLY what was on screen before the crash`,
-    `2. Read the step log — it shows the EXACT sequence of actions`,
-    `3. The crash happened on screen "${report.lastScreen}" after "${report.lastAction}"`,
-    `4. Read the error stack trace above`,
-    `5. Find the bug, fix it, build clean, commit, push`,
+    `1. Read the error and stack trace above`,
+    `2. Look at the screenshots (if available) — they show what was on screen`,
+    `3. Crash happened on screen "${report.lastScreen}" after action "${report.lastAction}"`,
+    `4. Read the step log — last step before crash tells you what triggered it`,
+    `5. Find the bug in the code at /c/Projects/Caps`,
+    `6. Fix it`,
+    `7. npx tsc --noEmit — must pass clean`,
+    `8. git add -A && git commit -m "fix: crash on ${report.lastScreen} — ${report.error.message.slice(0, 50)}"`,
+    `9. git push origin main`,
     ``,
     `## DEFINITION OF DONE`,
-    `- App doesn't crash on the same action sequence`,
-    `- Build clean`,
-    `- Push to main → EAS auto-builds`,
+    `- Same action sequence no longer crashes`,
+    `- TypeScript clean`,
+    `- Pushed → EAS auto-builds`,
   ].join('\n')
 }
