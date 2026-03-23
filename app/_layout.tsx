@@ -23,6 +23,7 @@ import DebugOverlay, { debugLog } from '../components/DebugOverlay';
 import { onCrashDetected } from '../utils/crashDetector';
 import { checkPreviousCrash } from '../utils/dirtyShutdown';
 import { sendCrashAlert } from '../utils/crashAlert';
+import { getLastCrashScreenshots, clearCrashScreenshots } from '../utils/screenRecorder';
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -162,9 +163,15 @@ export default function RootLayout() {
             return { build: nativeBuild ?? cfg?.ios?.buildNumber ?? 'unknown', version: cfg?.version ?? 'unknown' };
           } catch { return { build: 'unknown', version: 'unknown' }; }
         })();
+        // Read screenshots saved to disk during previous session
+        const screenshots = await getLastCrashScreenshots();
+        debugLog(`💀 crash screenshots on disk: ${screenshots.length}`);
         debugLog(`💀 sending WhatsApp crash alert (build=${build} v${version})...`);
-        await sendCrashAlert(null, null, `dirty-shutdown (${age}s ago)`, [], { build, version });
+        await sendCrashAlert(null, null, `dirty-shutdown (${age}s ago)`, screenshots, { build, version });
         debugLog('💀 WhatsApp crash alert sent ✅');
+        // Clean up screenshots after successful send
+        await clearCrashScreenshots();
+        debugLog('💀 crash screenshots cleared from disk ✅');
       } catch (e) {
         debugLog(`💀 crash alert failed: ${e}`, 'error');
       }
