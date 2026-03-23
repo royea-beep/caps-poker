@@ -278,8 +278,8 @@ export function stopCrashRecording(): void {
 export function setCurrentScreen(screen: string): void {
   if (screen === currentScreen) return
   currentScreen = screen
-  logStep('screen_change', `→ ${screen}`)
-  logStepToDB('screen_change', `→ ${screen}`, screen)
+  logStep('screen_change', `-> ${screen}`)
+  logStepToDB('screen_change', `-> ${screen}`, screen)
   captureFrame(`screen:${screen}`).catch(() => {})
 }
 
