@@ -143,8 +143,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     debugLog('🔵 app started')
-    startCrashRecording()
-    setCurrentScreen('Splash')
+    try {
+      startCrashRecording()
+      setCurrentScreen('Splash')
+    } catch (e) {
+      console.warn('[CrashEvidence] Failed to start — app continues without it:', e)
+    }
   }, []);
 
   // Dirty shutdown detector — runs on every app open (native only)
