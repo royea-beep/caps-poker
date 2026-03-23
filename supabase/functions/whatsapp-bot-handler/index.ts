@@ -789,6 +789,8 @@ serve(async (req: Request) => {
         } catch { /* fire and forget */ }
 
         // Send WhatsApp — wrapped in try/catch so a Twilio error never breaks the response
+        let whatsappSent = false;
+        let whatsappError: string | null = null;
         try {
           if (autoFixEnabled) {
             // Auto-fix: skip menu, go straight to analyzer
@@ -802,11 +804,13 @@ serve(async (req: Request) => {
           } else {
             await sendWhatsApp(ROYE_NUMBER, msg);
           }
+          whatsappSent = true;
         } catch (sendErr) {
+          whatsappError = String(sendErr);
           console.error('[whatsapp-bot] sendWhatsApp failed for crash notification:', sendErr);
         }
 
-        return new Response(JSON.stringify({ sent: true, autoFix: autoFixEnabled }), {
+        return new Response(JSON.stringify({ sent: whatsappSent, autoFix: autoFixEnabled, twilioError: whatsappError, msgPreview: msg.slice(0, 80) }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
