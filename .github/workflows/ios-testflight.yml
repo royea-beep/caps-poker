@@ -1,5 +1,12 @@
 name: iOS TestFlight
 
+# Standard EAS pipeline — matches Wingman approach
+# Secrets required:
+#   EXPO_TOKEN              — Expo account token (EAS builds + managed signing)
+#   APPLE_API_KEY_BASE64    — Base64 of AuthKey_WTWALQMG5N.p8 (ASC API key)
+#   APPLE_API_KEY_ID        — WTWALQMG5N
+#   APPLE_API_ISSUER_ID     — 686f97b8-3f8a-40b7-a6cd-5293a3168439
+
 on:
   push:
     branches: [main, master]
@@ -26,18 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env for EAS archive
+      - name: Write Apple API Key
         run: |
-          echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env
-          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
-          echo "SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
-
-      - name: Inject iOS distribution certificate
-        run: |
-          mkdir -p certs
-          echo "${{ secrets.DISTRIBUTION_P12_BASE64 }}" | base64 -d > certs/distribution.p12
-          echo "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 -d > certs/caps.mobileprovision
+          echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_WTWALQMG5N.p8
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -46,23 +44,8 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: EAS Build + Auto-Submit to TestFlight
-        # Queues build on EAS Cloud (~2-3 min CI). EAS Cloud compiles (~30 min) then auto-submits.
-        run: eas build --platform ios --profile production --auto-submit-with-profile ci --non-interactive
-        env:
-          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: eas build --platform ios --profile production --non-interactive --auto-submit
 
-      - name: Log build to Supabase deploy_log
+      - name: Cleanup key file
         if: always()
-        run: |
-          VERSION=$(node -e "console.log(require('./app.json').expo.version)" 2>/dev/null || echo "?")
-          BUILD=$(node -e "console.log(require('./app.json').expo.extra?.buildNumber || '?')" 2>/dev/null || echo "?")
-          STATUS="${{ job.status }}"
-          curl -s -X POST "${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}/rest/v1/deploy_log" \
-            -H "apikey: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"type\":\"build\",\"version\":\"${VERSION}\",\"build_number\":\"${BUILD}\",\"commit_hash\":\"${{ github.sha }}\",\"message\":\"${{ github.event.head_commit.message }} [${STATUS}]\"}" \
-            > /dev/null || echo "Supabase log failed (non-fatal)"
-
-      # Web deploy: handled by Vercel native GitHub integration (auto-deploys on push)
-      # No token needed. vercel.json in repo root configures the build.
+        run: rm -f AuthKey_WTWALQMG5N.p8
