@@ -215,9 +215,10 @@ export default function RootLayout() {
   }, []);
 
   // OTA update check — runs on every app open (production only)
+  // 800ms delay lets the network stack initialize on cold start before we hit the server
   useEffect(() => {
     if (!__DEV__ && Platform.OS !== 'web') {
-      (async () => {
+      const timer = setTimeout(async () => {
         try {
           console.log('[OTA] checking... isEmbedded:', Updates.isEmbeddedLaunch, 'updateId:', Updates.updateId?.slice(0, 8) ?? 'none');
           const update = await Updates.checkForUpdateAsync();
@@ -231,7 +232,8 @@ export default function RootLayout() {
         } catch (e) {
           console.log('[OTA] check failed (non-fatal):', String(e));
         }
-      })();
+      }, 800);
+      return () => clearTimeout(timer);
     }
   }, []);
 
