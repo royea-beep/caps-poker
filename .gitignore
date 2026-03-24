@@ -45,3 +45,6 @@ yarn-error.*
 CLAUDE.md
 
 .vercel
+
+# Claude Code session data (may contain tokens)
+.claude/settings.local.json
