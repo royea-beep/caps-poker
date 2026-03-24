@@ -232,12 +232,21 @@ function GameScreenInner() {
   const mobileWebCardH = CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60;
   const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
   const communityScale = nativeCardDims.communityScale;
+  // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
+  // During arrangement: commH = ch*communityScale, slotH = ch*0.7, plus 4pt cardRow padding.
+  // ch*(communityScale + 0.7) + 4 <= boardSpace → maxCh = floor((boardSpace-4)/(communityScale+0.7))
+  // Landscape uses a 2-column grid with more height per row — no cap needed there.
+  const CARD_ROW_PAD = 4;
+  const maxNativeCardH = Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
+  const nativeCardH = isLandscape
+    ? nativeCardDims.cardHeight
+    : Math.min(nativeCardDims.cardHeight, maxNativeCardH);
   const BOARD_CARD_H = rvOld(
     screenW,
     mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
     72,                          // tablet web
     100,                         // desktop web
-    nativeCardDims.cardHeight,   // native — width-based, readable on all iPhones
+    nativeCardH,                 // native — height-capped so AUTO button is always visible
   );
   const isWeb = Platform.OS === 'web';
 
