@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import Board from '../components/Board';
+import CardComponent from '../components/Card';
 import PlayerHand from '../components/PlayerHand';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import ChipsDisplay from '../components/ChipsDisplay';
@@ -284,7 +285,15 @@ function GameScreenInner() {
   const boardsRef = useRef(boards);
   const [showContinueButton, setShowContinueButton] = useState(false);
   const [showSafeReveal, setShowSafeReveal] = useState(false);
-  const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{winner: 'player'|'bot'|'tie', playerHandName: string, botHandName: string}>>([]);
+  const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
+    winner: 'player'|'bot'|'tie';
+    playerHandName: string;
+    botHandName: string;
+    openCards: Card[];
+    closedCards: Card[];
+    playerCards: Card[];
+    potAmount: number;
+  }>>([]);
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
   const playerReadyRef = useRef(false);
@@ -564,6 +573,10 @@ function GameScreenInner() {
         winner: b.winner ?? 'tie' as const,
         playerHandName: b.playerHandName ?? '',
         botHandName: b.botHandName ?? '',
+        openCards: b.openCards,
+        closedCards: b.closedCards,
+        playerCards: b.playerCards,
+        potAmount: b.potAmount,
       }));
       setPendingRevealBoards(revealSummary);
       setShowSafeReveal(true);
@@ -994,7 +1007,7 @@ function GameScreenInner() {
               Waiting for bot{numberOfBots > 1 ? 's' : ''}...
             </Text>
           )}
-          {playerReady && allBotsReady && !showContinueButton && (
+          {playerReady && allBotsReady && !showContinueButton && !showSafeReveal && (
             <Text style={styles.calculatingText}>Calculating results...</Text>
           )}
         </View>
@@ -1496,81 +1509,168 @@ function SafeRevealOverlay({
   boards,
   onDone,
 }: {
-  boards: Array<{winner: 'player'|'bot'|'tie', playerHandName: string, botHandName: string}>;
+  boards: Array<{
+    winner: 'player'|'bot'|'tie';
+    playerHandName: string;
+    openCards: Card[];
+    closedCards: Card[];
+    playerCards: Card[];
+    potAmount: number;
+  }>;
   onDone: () => void;
 }) {
-  const [currentBoard, setCurrentBoard] = useState(0);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const { width: screenW } = useWindowDimensions();
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
+  // Auto-advance every 1.5s per board
   useEffect(() => {
-    const timers = boards.map((_, i) =>
-      setTimeout(() => setCurrentBoard(i + 1), (i + 1) * 1200),
-    );
-    const doneTimer = setTimeout(onDone, boards.length * 1200 + 600);
-    return () => {
-      timers.forEach(clearTimeout);
-      clearTimeout(doneTimer);
-    };
-  }, []);
+    const timer = setTimeout(() => {
+      if (currentIdx + 1 >= boards.length) {
+        onDoneRef.current();
+      } else {
+        setCurrentIdx(i => i + 1);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [currentIdx, boards.length]);
+
+  const advance = () => {
+    if (currentIdx + 1 >= boards.length) {
+      onDoneRef.current();
+    } else {
+      setCurrentIdx(i => i + 1);
+    }
+  };
+
+  const board = boards[currentIdx];
+  if (!board) return null;
+
+  const allCommunity = [...board.openCards, ...board.closedCards];
+  const resultColor = board.winner === 'player' ? '#00ff88' : board.winner === 'bot' ? '#ff4444' : '#aaa';
+  const resultText = board.winner === 'player' ? '✅ WIN' : board.winner === 'bot' ? '❌ LOSE' : '🤝 TIE';
+
+  // Card sizes: fit 5 community cards and 4 player cards in available width
+  const pad = 48;
+  const commCardW = Math.min(56, Math.floor((screenW - pad - 4 * 6) / 5));
+  const commCardH = Math.round(commCardW * 1.4);
+  const playerCardW = Math.min(64, Math.floor((screenW - pad - 3 * 6) / 4));
+  const playerCardH = Math.round(playerCardW * 1.4);
 
   return (
-    <View style={safeRevealStyles.overlay}>
-      <Text style={safeRevealStyles.title}>Results</Text>
-      {boards.slice(0, currentBoard).map((board, i) => (
-        <View key={i} style={safeRevealStyles.row}>
-          <Text style={safeRevealStyles.boardLabel}>Board {i + 1}</Text>
-          <Text style={[safeRevealStyles.result, {
-            color: board.winner === 'player' ? '#00ff88' : board.winner === 'bot' ? '#ff4444' : '#aaa',
-          }]}>
-            {board.winner === 'player' ? '✅ WIN' : board.winner === 'bot' ? '❌ LOSE' : '🤝 TIE'}
+    <Modal visible animationType="fade" transparent={false} statusBarTranslucent>
+      <SafeAreaView style={safeRevealStyles.container}>
+        {/* Header */}
+        <View style={safeRevealStyles.header}>
+          <Text style={safeRevealStyles.boardCounter}>
+            BOARD {currentIdx + 1} / {boards.length}
           </Text>
-          {board.playerHandName ? <Text style={safeRevealStyles.hand}>{board.playerHandName}</Text> : null}
+          <Pressable onPress={() => onDoneRef.current()} hitSlop={16}>
+            <Text style={safeRevealStyles.skipText}>SKIP</Text>
+          </Pressable>
         </View>
-      ))}
-    </View>
+
+        {/* Tappable main area — advances on tap */}
+        <Pressable style={safeRevealStyles.main} onPress={advance}>
+          {/* Community cards */}
+          <Text style={safeRevealStyles.rowLabel}>COMMUNITY</Text>
+          <View style={safeRevealStyles.cardRow}>
+            {allCommunity.map((c) => (
+              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={commCardW} cardHeight={commCardH} />
+            ))}
+          </View>
+
+          {/* Player cards */}
+          <Text style={[safeRevealStyles.rowLabel, { marginTop: 12 }]}>YOUR HAND</Text>
+          <View style={safeRevealStyles.cardRow}>
+            {board.playerCards.map((c) => (
+              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={playerCardW} cardHeight={playerCardH} />
+            ))}
+          </View>
+
+          {/* Hand name */}
+          {board.playerHandName ? (
+            <Text style={safeRevealStyles.handName}>{board.playerHandName}</Text>
+          ) : null}
+
+          {/* Result — big and clear */}
+          <Text style={[safeRevealStyles.result, { color: resultColor }]}>{resultText}</Text>
+
+          {/* Tap hint */}
+          <Text style={safeRevealStyles.tapHint}>
+            {currentIdx + 1 < boards.length ? '▶ TAP FOR NEXT BOARD' : '▶ TAP FOR RESULTS'}
+          </Text>
+        </Pressable>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
 const safeRevealStyles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-    gap: 16,
-    padding: 32,
+  container: {
+    flex: 1,
+    backgroundColor: '#080d16',
   },
-  title: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201,168,76,0.2)',
+  },
+  boardCounter: {
     color: '#c9a84c',
-    fontSize: 28,
+    fontSize: 15,
     fontWeight: '900',
     letterSpacing: 3,
-    marginBottom: 8,
   },
-  row: {
-    flexDirection: 'row',
+  skipText: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  main: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-    width: '100%',
+    paddingHorizontal: 24,
+    gap: 4,
   },
-  boardLabel: {
-    color: '#aaa',
-    fontSize: 14,
-    fontWeight: '600',
-    width: 60,
+  rowLabel: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 2.5,
+    marginBottom: 6,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+  },
+  handName: {
+    color: '#c9a84c',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 2,
+    marginTop: 16,
   },
   result: {
-    fontSize: 16,
-    fontWeight: '800',
-    width: 80,
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginTop: 8,
   },
-  hand: {
-    color: '#888',
-    fontSize: 12,
-    flex: 1,
+  tapHint: {
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: 24,
   },
 });
 

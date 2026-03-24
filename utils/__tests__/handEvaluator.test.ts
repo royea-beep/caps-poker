@@ -1,5 +1,6 @@
 import { evaluateOmahaHand, compareHands, HandRank, computeOmahaEquity } from '../handEvaluator';
 import { Card, Suit } from '../../constants/gameConfig';
+import { createDeck, shuffleDeck } from '../deck';
 
 function card(rank: string, suit: string): Card {
   const suitMap: Record<string, Suit> = {
@@ -213,5 +214,21 @@ describe('computeOmahaEquity — performance', () => {
     expect(elapsed).toBeLessThan(80); // Node.js/Windows is slower than iPhone — device will be faster
     expect(result).toBeGreaterThanOrEqual(0);
     expect(result).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('Hand distribution', () => {
+  it('produces <30% High Card across 500 random Omaha hands', () => {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 500; i++) {
+      const deck = shuffleDeck([...createDeck()]);
+      const player = deck.slice(0, 4);
+      const community = deck.slice(4, 9);
+      const result = evaluateOmahaHand(player, community);
+      counts[result.name] = (counts[result.name] || 0) + 1;
+    }
+    console.log('Hand distribution (500 hands):', JSON.stringify(counts));
+    expect(counts['High Card'] ?? 0).toBeLessThan(150); // < 30%
+    expect(Object.keys(counts).length).toBeGreaterThanOrEqual(4);
   });
 });

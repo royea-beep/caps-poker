@@ -80,9 +80,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
   const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
 
-  // Dynamic card sizing: fit actual cards-per-row, accounting for wrapper overhead
+  // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
-  const cardsPerRow = Math.max(1, useTwoRows ? Math.ceil(cards.length / 2) : cards.length);
+  const cardsPerRow = useTwoRows ? 4 : Math.max(1, cards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
