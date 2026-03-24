@@ -635,6 +635,13 @@ function GameScreenInner() {
     [isArranging]
   );
 
+  // Returns true if card is already placed on ANY board — cross-board duplicate guard
+  const isCardOnAnyBoard = useCallback(
+    (cardId: string, currentBoards: BoardState[]) =>
+      currentBoards.some((b) => b.playerCards.some((pc) => pc.id === cardId)),
+    []
+  );
+
   // Tap board → place all selectedCardIds (or first hand card if none selected)
   // FIX: compute cardsToPlace outside setBoards updater; call setPlayerHand separately
   // in same event handler so React batches all three setState calls together, eliminating
@@ -667,13 +674,16 @@ function GameScreenInner() {
         return;
       }
 
-      // Determine which cards to place
-      const cardsToPlace: Card[] = selectedCardIds.length > 0
+      // Determine which cards to place, excluding any already on any board
+      const candidateCards: Card[] = selectedCardIds.length > 0
         ? selectedCardIds
             .map((id) => currentHand.find((c) => c.id === id))
             .filter((c): c is Card => c !== undefined)
-            .slice(0, emptySlots)
-        : currentHand.slice(0, 1); // fallback: place first card
+        : currentHand.slice(0, 1);
+
+      const cardsToPlace = candidateCards
+        .filter((c) => !isCardOnAnyBoard(c.id, boards))
+        .slice(0, emptySlots);
 
       if (cardsToPlace.length === 0) return;
 
@@ -686,10 +696,10 @@ function GameScreenInner() {
       setBoards((prev) => {
         const prevBoard = prev[boardIndex];
         if (!prevBoard) return prev;
-        // Re-validate slots in updater to guard against stale closure
+        // Re-validate in updater: guard against stale closure AND cross-board duplicates
         const slots = CARDS_PER_BOARD - prevBoard.playerCards.length;
         const validCards = cardsToPlace.filter((c) =>
-          !prevBoard.playerCards.some((pc) => pc.id === c.id)
+          !prev.some((b) => b.playerCards.some((pc) => pc.id === c.id))
         ).slice(0, slots);
         if (validCards.length === 0) return prev;
         const updated = [...prev];
@@ -702,7 +712,7 @@ function GameScreenInner() {
       setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
       setSelectedCardIds([]);
     },
-    [isArranging, selectedCardIds, boards]
+    [isArranging, selectedCardIds, boards, isCardOnAnyBoard]
   );
 
   // Tap placed card → remove from board
@@ -726,7 +736,7 @@ function GameScreenInner() {
   );
 
   // AUTO fill — place first N available hand cards into an empty board
-  // FIX: same batched setState approach as handleBoardPress
+  // FIX: same batched setState approach as handleBoardPress + cross-board duplicate guard
   const handleAutoFill = useCallback(
     (boardIndex: number) => {
       if (!isArranging) return;
@@ -735,7 +745,10 @@ function GameScreenInner() {
       const board = boards[boardIndex];
       if (!board || board.playerCards.length > 0) return;
       const slots = CARDS_PER_BOARD - board.playerCards.length;
-      const cardsToPlace = currentHand.slice(0, slots);
+      // Only place cards not already on any board
+      const cardsToPlace = currentHand
+        .filter((c) => !isCardOnAnyBoard(c.id, boards))
+        .slice(0, slots);
       if (cardsToPlace.length === 0) return;
       haptic(Haptics?.ImpactFeedbackStyle?.Medium);
       playSound('cardPlace');
@@ -743,14 +756,19 @@ function GameScreenInner() {
       setBoards((prev) => {
         const prevBoard = prev[boardIndex];
         if (!prevBoard || prevBoard.playerCards.length > 0) return prev;
+        // Re-validate cross-board in updater
+        const validCards = cardsToPlace.filter((c) =>
+          !prev.some((b) => b.playerCards.some((pc) => pc.id === c.id))
+        );
+        if (validCards.length === 0) return prev;
         const updated = [...prev];
-        updated[boardIndex] = { ...prevBoard, playerCards: [...prevBoard.playerCards, ...cardsToPlace] };
+        updated[boardIndex] = { ...prevBoard, playerCards: [...prevBoard.playerCards, ...validCards] };
         return updated;
       });
       setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
       setSelectedCardIds([]);
     },
-    [isArranging, boards]
+    [isArranging, boards, isCardOnAnyBoard]
   );
 
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
