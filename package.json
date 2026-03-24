@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "generate-icons": "node scripts/generate-icon.js"
+    "generate-icons": "node scripts/generate-icon.js",
+    "ota": "NODE_OPTIONS='--max-old-space-size=8192' eas update --branch production --environment production"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
