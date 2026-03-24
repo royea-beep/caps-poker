@@ -337,8 +337,9 @@ function GameScreenInner() {
 
   // Pre-calculate results in background as soon as countdown starts (first finisher done)
   // By the time both are ready, results are already computed → zero-wait navigation
-  // IMPORTANT: only pre-calc if ALL bots have already placed cards — otherwise evaluator
-  // sees empty allBotCards and returns "High Card" for every bot hand (stale result bug)
+  // IMPORTANT: must guard BOTH bot cards AND player cards — pre-calc fires when the first
+  // finisher triggers the countdown. If bot finishes first, playerCards is still empty →
+  // evaluator returns "High Card" for every player hand (the S48 stale result bug).
   useEffect(() => {
     if (!countdownActive) return;
     const t = setTimeout(() => {
@@ -347,8 +348,11 @@ function GameScreenInner() {
         const botsDone = boardsRef.current.every((b) =>
           b.allBotCards.every((bc) => bc.length >= CARDS_PER_BOARD)
         );
-        if (!botsDone) {
-          console.log('[GAME] pre-calc skipped — bot cards not ready yet, will calc on navigate');
+        const playerDone = boardsRef.current.every((b) =>
+          b.playerCards.length >= CARDS_PER_BOARD
+        );
+        if (!botsDone || !playerDone) {
+          console.log('[GAME] pre-calc skipped — cards not fully placed yet, will calc fresh on navigate');
           return;
         }
         precalculatedResultsRef.current = calculateHandResultsMulti(boardsRef.current, numberOfPlayers, config);
