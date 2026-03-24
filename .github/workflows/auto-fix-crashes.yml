@@ -1,0 +1,23 @@
+name: Auto-Fix Crashes
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # every 5 minutes
+  workflow_dispatch:          # manual trigger for testing
+
+jobs:
+  auto-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4        # must finish before next 5-min tick
+    steps:
+      - name: Trigger auto-fix Edge Function
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/auto-fix-crashes" \
+            -H "Content-Type: application/json")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+          echo "HTTP: $HTTP_CODE"
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Auto-fix returned HTTP $HTTP_CODE"
+          fi
