@@ -131,9 +131,20 @@ export default function ResultsScreen() {
   const glowAnim = useRef(new Animated.Value(0)).current;
   // COMPLETE banner spring
   const completeScale = useRef(new Animated.Value(0)).current;
-  // DEAL ME IN fade (2 values = 4 total — under 5 limit)
+  // DEAL ME IN fade + entrance
   const dealBtnOpacity = useRef(new Animated.Value(0)).current;
   const dealBtnScale = useRef(new Animated.Value(0.9)).current;
+  // S50 additions — all RN Animated, zero Reanimated
+  // Full screen fade-in
+  const screenOpacity = useRef(new Animated.Value(0)).current;
+  // Per-board slide-up (lazy initialized in board map + effect)
+  const boardTranslates = useRef<Animated.Value[]>([]);
+  // Win badge scale pulse (once, all win badges simultaneously)
+  const winBadgeAnim = useRef(new Animated.Value(1)).current;
+  // Net chips gold→green flash (only when positive)
+  const chipsFlashAnim = useRef(new Animated.Value(0)).current;
+  // DEAL ME IN loop ref (started after entrance completes)
+  const dealPulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   // Timer refs for cleanup
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const animIntervals = useRef<ReturnType<typeof setInterval>[]>([]);
@@ -256,9 +267,20 @@ export default function ResultsScreen() {
     if (!revealData) return;
     const boardLen = revealData.boards.length;
 
-    // 1. Board stagger — pure state, no Animated.Value needed
+    // S50-B1: Full screen fade-in 0→1, 400ms
+    Animated.timing(screenOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+
+    // 1. Board stagger — pure state + per-board slide-up (S50-B1)
     for (let i = 0; i < boardLen; i++) {
-      const t = setTimeout(() => setVisibleBoardCount(i + 1), i * BOARD_STAGGER_MS);
+      // Initialize per-board translate value if not yet created
+      if (!boardTranslates.current[i]) {
+        boardTranslates.current[i] = new Animated.Value(30);
+      }
+      const slideVal = boardTranslates.current[i];
+      const t = setTimeout(() => {
+        setVisibleBoardCount(i + 1);
+        Animated.timing(slideVal, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+      }, 200 + i * 80);
       animTimers.current.push(t);
     }
 
@@ -282,7 +304,7 @@ export default function ResultsScreen() {
 
     // 3. Win glow — pulse once after all boards are visible
     if (revealData.boards.some((b) => b.winner === 'player')) {
-      const glowDelay = (boardLen - 1) * BOARD_STAGGER_MS + 300;
+      const glowDelay = (boardLen - 1) * 80 + 200 + 300;
       const glowTimer = setTimeout(() => {
         Animated.sequence([
           Animated.timing(glowAnim, { toValue: 1, duration: 400, useNativeDriver: false }),
@@ -290,6 +312,24 @@ export default function ResultsScreen() {
         ]).start();
       }, glowDelay);
       animTimers.current.push(glowTimer);
+
+      // S50-B2: Win badge scale pulse — once, after all boards visible
+      const badgeDelay = (boardLen - 1) * 80 + 200 + 500;
+      const badgeTimer = setTimeout(() => {
+        Animated.sequence([
+          Animated.timing(winBadgeAnim, { toValue: 1.15, duration: 150, useNativeDriver: true }),
+          Animated.timing(winBadgeAnim, { toValue: 1.0, duration: 150, useNativeDriver: true }),
+        ]).start();
+      }, badgeDelay);
+      animTimers.current.push(badgeTimer);
+    }
+
+    // S50-B3: Net chips gold→green flash (positive only)
+    if (revealData.netChips > 0) {
+      const chipsTimer = setTimeout(() => {
+        Animated.timing(chipsFlashAnim, { toValue: 1, duration: 600, useNativeDriver: false }).start();
+      }, 600);
+      animTimers.current.push(chipsTimer);
     }
 
     // 4. COMPLETE banner spring
@@ -305,23 +345,39 @@ export default function ResultsScreen() {
       animTimers.current.push(completeTimer);
     }
 
-    // 5. DEAL ME IN fade after stagger completes
-    const dealDelay = (boardLen - 1) * BOARD_STAGGER_MS + DEAL_BTN_DELAY_MS;
+    // 5. DEAL ME IN fade after stagger completes + S50-B4 loop
+    const dealDelay = (boardLen - 1) * 80 + 200 + DEAL_BTN_DELAY_MS;
     const dealTimer = setTimeout(() => {
       Animated.parallel([
         Animated.timing(dealBtnOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
         Animated.spring(dealBtnScale, { toValue: 1, friction: 5, useNativeDriver: true }),
-      ]).start();
+      ]).start(() => {
+        // S50-B4: gentle pulse loop after entrance (999 iterations, NOT -1)
+        const pulse = Animated.loop(
+          Animated.sequence([
+            Animated.timing(dealBtnScale, { toValue: 1.04, duration: 600, useNativeDriver: true }),
+            Animated.timing(dealBtnScale, { toValue: 1.0, duration: 600, useNativeDriver: true }),
+          ]),
+          { iterations: 999 }
+        );
+        dealPulseLoopRef.current = pulse;
+        pulse.start();
+      });
     }, dealDelay);
     animTimers.current.push(dealTimer);
 
     return () => {
       animTimers.current.forEach(clearTimeout);
       animIntervals.current.forEach(clearInterval);
+      screenOpacity.stopAnimation();
       glowAnim.stopAnimation();
       completeScale.stopAnimation();
       dealBtnOpacity.stopAnimation();
       dealBtnScale.stopAnimation();
+      dealPulseLoopRef.current?.stop();
+      winBadgeAnim.stopAnimation();
+      chipsFlashAnim.stopAnimation();
+      boardTranslates.current.forEach((v) => v.stopAnimation());
     };
   }, []);
 
@@ -595,7 +651,7 @@ export default function ResultsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
-      <View style={{ flex: 1 }}>
+      <Animated.View style={{ flex: 1, opacity: screenOpacity }}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title + score */}
         <View style={styles.titleSection}>
@@ -628,10 +684,14 @@ export default function ResultsScreen() {
             : COLORS.textDim;
           const multiBot = (board.allBotCards ?? []).length > 1;
 
+          // Lazy-init per-board translate (in case JSX renders before effect fires)
+          if (!boardTranslates.current[i]) {
+            boardTranslates.current[i] = new Animated.Value(30);
+          }
           return (
-            <View
+            <Animated.View
               key={i}
-              style={{ width: '100%' }}
+              style={{ width: '100%', transform: [{ translateY: boardTranslates.current[i] }] }}
             >
               <View style={[
                 styles.boardCard,
@@ -654,11 +714,18 @@ export default function ResultsScreen() {
                 <View style={styles.boardHeader}>
                   <View style={styles.boardHeaderLeft}>
                     <Text style={styles.boardLabel}>BOARD {i + 1}</Text>
-                    <Badge
-                      label={board.winner === 'player' ? 'WIN' : board.winner === 'bot' ? 'LOSS' : 'TIE'}
-                      variant={board.winner === 'player' ? 'win' : board.winner === 'bot' ? 'lose' : 'tie'}
-                      small
-                    />
+                    {/* S50-B2: WIN badge pulses once after boards appear */}
+                    {board.winner === 'player' ? (
+                      <Animated.View style={{ transform: [{ scale: winBadgeAnim }] }}>
+                        <Badge label="WIN" variant="win" small />
+                      </Animated.View>
+                    ) : (
+                      <Badge
+                        label={board.winner === 'bot' ? 'LOSS' : 'TIE'}
+                        variant={board.winner === 'bot' ? 'lose' : 'tie'}
+                        small
+                      />
+                    )}
                   </View>
                   <View style={styles.boardHeaderRight}>
                     <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>
@@ -773,7 +840,7 @@ export default function ResultsScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
+            </Animated.View>
           );
         })}
 
@@ -878,13 +945,24 @@ export default function ResultsScreen() {
           </Animated.View>
         )}
 
-        {/* Net result */}
+        {/* Net result — S50-B3: gold→green flash on positive */}
         <View style={styles.netSection}>
           <View style={styles.netRow}>
             <Text style={styles.netLabel}>Net Result</Text>
-            <Text style={[styles.netAmount, { color: netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
-              {netChips >= 0 ? '+' : ''}{netChips}
-            </Text>
+            {netChips > 0 ? (
+              <Animated.Text style={[styles.netAmount, {
+                color: chipsFlashAnim.interpolate({
+                  inputRange: [0, 0.4, 1],
+                  outputRange: ['#FFD700', '#FFD700', '#4CAF50'],
+                }),
+              }]}>
+                +{netChips}
+              </Animated.Text>
+            ) : (
+              <Text style={[styles.netAmount, { color: netChips === 0 ? COLORS.textDim : COLORS.neonRed }]}>
+                {netChips === 0 ? '±0' : netChips}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -929,7 +1007,7 @@ export default function ResultsScreen() {
             )}
           </View>
       </ScrollView>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
