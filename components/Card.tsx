@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { rs } from '../utils/responsive';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
 import Animated, {
@@ -64,8 +65,8 @@ export default function CardComponent({
   cardWidth,
   cardHeight,
 }: CardProps) {
-  const width = cardWidth ?? (small ? 52 : 58);
-  const height = cardHeight ?? (small ? 74 : 82);
+  const width = cardWidth ?? (small ? rs(52) : rs(58));
+  const height = cardHeight ?? (small ? rs(74) : rs(82));
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
