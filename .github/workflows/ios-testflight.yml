@@ -3,8 +3,8 @@ name: iOS TestFlight
 # Standard EAS pipeline — matches Wingman approach
 # Secrets required:
 #   EXPO_TOKEN              — Expo account token (EAS builds + managed signing)
-#   APPLE_API_KEY_BASE64    — Base64 of AuthKey_WTWALQMG5N.p8 (ASC API key)
-#   APPLE_API_KEY_ID        — WTWALQMG5N
+#   APPLE_API_KEY_BASE64    — Base64 of AuthKey_HH732W7XQJ.p8 (ASC API key)
+#   APPLE_API_KEY_ID        — HH732W7XQJ
 #   APPLE_API_ISSUER_ID     — 686f97b8-3f8a-40b7-a6cd-5293a3168439
 
 on:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Write Apple API Key
         run: |
-          echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_WTWALQMG5N.p8
+          echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_HH732W7XQJ.p8
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -48,4 +48,4 @@ jobs:
 
       - name: Cleanup key file
         if: always()
-        run: rm -f AuthKey_WTWALQMG5N.p8
+        run: rm -f AuthKey_HH732W7XQJ.p8
