@@ -292,6 +292,7 @@ function GameScreenInner() {
     openCards: Card[];
     closedCards: Card[];
     playerCards: Card[];
+    botCards: Card[];
     potAmount: number;
   }>>([]);
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
@@ -576,6 +577,7 @@ function GameScreenInner() {
         openCards: b.openCards,
         closedCards: b.closedCards,
         playerCards: b.playerCards,
+        botCards: (b.allBotCards?.[0]) ?? [],
         potAmount: b.potAmount,
       }));
       setPendingRevealBoards(revealSummary);
@@ -1530,9 +1532,11 @@ function SafeRevealOverlay({
   boards: Array<{
     winner: 'player'|'bot'|'tie';
     playerHandName: string;
+    botHandName: string;
     openCards: Card[];
     closedCards: Card[];
     playerCards: Card[];
+    botCards: Card[];
     potAmount: number;
   }>;
   onDone: () => void;
@@ -1542,7 +1546,7 @@ function SafeRevealOverlay({
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
-  // Auto-advance every 1.5s per board
+  // Auto-advance every 2s per board
   useEffect(() => {
     const timer = setTimeout(() => {
       if (currentIdx + 1 >= boards.length) {
@@ -1550,7 +1554,7 @@ function SafeRevealOverlay({
       } else {
         setCurrentIdx(i => i + 1);
       }
-    }, 1500);
+    }, 2000);
     return () => clearTimeout(timer);
   }, [currentIdx, boards.length]);
 
@@ -1566,15 +1570,21 @@ function SafeRevealOverlay({
   if (!board) return null;
 
   const allCommunity = [...board.openCards, ...board.closedCards];
-  const resultColor = board.winner === 'player' ? '#00ff88' : board.winner === 'bot' ? '#ff4444' : '#aaa';
-  const resultText = board.winner === 'player' ? '✅ WIN' : board.winner === 'bot' ? '❌ LOSE' : '🤝 TIE';
+  const resultColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#ffffff';
+  const resultText = board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE';
+  const chipDelta = board.winner === 'player'
+    ? `+${board.potAmount}`
+    : board.winner === 'bot'
+    ? `-${board.potAmount}`
+    : '±0';
+  const chipDeltaColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#aaa';
 
-  // Card sizes: fit 5 community cards and 4 player cards in available width
+  // Card sizes: fit 5 community cards and 4 player/bot cards in available width
   const pad = 48;
-  const commCardW = Math.min(56, Math.floor((screenW - pad - 4 * 6) / 5));
+  const commCardW = Math.min(52, Math.floor((screenW - pad - 4 * 6) / 5));
   const commCardH = Math.round(commCardW * 1.4);
-  const playerCardW = Math.min(64, Math.floor((screenW - pad - 3 * 6) / 4));
-  const playerCardH = Math.round(playerCardW * 1.4);
+  const handCardW = Math.min(58, Math.floor((screenW - pad - 3 * 6) / 4));
+  const handCardH = Math.round(handCardW * 1.4);
 
   return (
     <Modal visible animationType="fade" transparent={false} statusBarTranslucent>
@@ -1599,25 +1609,38 @@ function SafeRevealOverlay({
             ))}
           </View>
 
-          {/* Player cards */}
-          <Text style={[safeRevealStyles.rowLabel, { marginTop: 12 }]}>YOUR HAND</Text>
+          {/* Bot hand */}
+          <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>BOT HAND</Text>
+          <View style={safeRevealStyles.cardRow}>
+            {board.botCards.length > 0
+              ? board.botCards.map((c) => (
+                  <CardComponent key={c.id} card={c} faceDown={false} cardWidth={handCardW} cardHeight={handCardH} />
+                ))
+              : <Text style={safeRevealStyles.noCardsText}>—</Text>
+            }
+          </View>
+          {board.botHandName ? (
+            <Text style={safeRevealStyles.handNameSub}>{board.botHandName}</Text>
+          ) : null}
+
+          {/* Player hand */}
+          <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>YOUR HAND</Text>
           <View style={safeRevealStyles.cardRow}>
             {board.playerCards.map((c) => (
-              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={playerCardW} cardHeight={playerCardH} />
+              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={handCardW} cardHeight={handCardH} />
             ))}
           </View>
-
-          {/* Hand name */}
           {board.playerHandName ? (
             <Text style={safeRevealStyles.handName}>{board.playerHandName}</Text>
           ) : null}
 
           {/* Result — big and clear */}
           <Text style={[safeRevealStyles.result, { color: resultColor }]}>{resultText}</Text>
+          <Text style={[safeRevealStyles.chipDelta, { color: chipDeltaColor }]}>{chipDelta}</Text>
 
           {/* Tap hint */}
           <Text style={safeRevealStyles.tapHint}>
-            {currentIdx + 1 < boards.length ? '▶ TAP FOR NEXT BOARD' : '▶ TAP FOR RESULTS'}
+            {currentIdx + 1 < boards.length ? '▶ TAP TO CONTINUE' : '▶ TAP FOR RESULTS'}
           </Text>
         </Pressable>
       </SafeAreaView>
@@ -1672,23 +1695,40 @@ const safeRevealStyles = StyleSheet.create({
   },
   handName: {
     color: '#c9a84c',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '900',
-    letterSpacing: 2,
-    marginTop: 16,
+    letterSpacing: 1.5,
+    marginTop: 6,
+  },
+  handNameSub: {
+    color: 'rgba(201,168,76,0.6)',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  noCardsText: {
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: 16,
   },
   result: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     letterSpacing: 1,
-    marginTop: 8,
+    marginTop: 14,
+  },
+  chipDelta: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginTop: 4,
   },
   tapHint: {
-    color: 'rgba(255,255,255,0.2)',
+    color: 'rgba(255,255,255,0.25)',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 2,
-    marginTop: 24,
+    marginTop: 20,
   },
 });
 
