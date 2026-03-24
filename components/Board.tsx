@@ -317,8 +317,8 @@ export default function Board({
           </View>
         </View>
 
-        {/* Bot card rows — hidden during arrangement, shown during reveal */}
-        {!isArrangement && botCardSets.map((botCardSet, botIdx) =>
+        {/* Bot card rows — face-down during arrangement, revealed during reveal */}
+        {botCardSets.map((botCardSet, botIdx) =>
           botCardSet.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
               <Text style={styles.rowLabel}>{multiBot ? `BOT${botIdx + 1}` : 'BOT'}</Text>
@@ -326,7 +326,7 @@ export default function Board({
                 <CardComponent
                   key={c.id}
                   card={c}
-                  faceDown={!revealed}
+                  faceDown={isArrangement ? true : !revealed}
                   cardWidth={cw}
                   cardHeight={ch}
                   highlighted={botIdx === 0 && revealed && botHighlightIds.includes(c.id)}

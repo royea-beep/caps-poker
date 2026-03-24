@@ -208,46 +208,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
             </View>
           </View>
 
-          {/* Community cards — flop face-up, turn+river flip in sequence */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>COMMUNITY</Text>
-            <View style={[styles.cardRow, { gap: commGap }]}>
-              {allCommunity.map((c, i) => (
-                <CardComponent
-                  key={c.id}
-                  card={c}
-                  faceDown={i === 3 ? turnFaceDown : i === 4 ? riverFaceDown : false}
-                  flipDuration={400}
-                  cardWidth={commCardW}
-                  cardHeight={commCardH}
-                />
-              ))}
-            </View>
-          </View>
-
-          {/* Player cards — always face-up (player knows them) */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, styles.sectionLabelPlayer]}>YOUR CARDS</Text>
-            <View style={[styles.cardRow, { gap: handGap }]}>
-              {board.playerCards.map((c) => (
-                <CardComponent
-                  key={c.id}
-                  card={c}
-                  faceDown={false}
-                  flipDuration={300}
-                  cardWidth={handCardW}
-                  cardHeight={handCardH}
-                />
-              ))}
-            </View>
-            {showHandNames && (
-              <AnimatedRN.Text style={[styles.handNameBadge, styles.handNamePlayer, { opacity: handNameOpacity }]}>
-                {board.playerHandName}
-              </AnimatedRN.Text>
-            )}
-          </View>
-
-          {/* Bot cards — face-down until revealed */}
+          {/* Bot cards — face-down until revealed (top) */}
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, styles.sectionLabelBot]}>BOT</Text>
             <View style={[styles.cardRow, { gap: handGap }]}>
@@ -267,6 +228,45 @@ export default function BoardReveal({ boards, onDone }: Props) {
                 {board.botHandName}
               </AnimatedRN.Text>
             ) : null}
+          </View>
+
+          {/* Community cards — flop face-up, turn+river flip in sequence (middle) */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>COMMUNITY</Text>
+            <View style={[styles.cardRow, { gap: commGap }]}>
+              {allCommunity.map((c, i) => (
+                <CardComponent
+                  key={c.id}
+                  card={c}
+                  faceDown={i === 3 ? turnFaceDown : i === 4 ? riverFaceDown : false}
+                  flipDuration={400}
+                  cardWidth={commCardW}
+                  cardHeight={commCardH}
+                />
+              ))}
+            </View>
+          </View>
+
+          {/* Player cards — always face-up (player knows them) (bottom) */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, styles.sectionLabelPlayer]}>YOUR CARDS</Text>
+            <View style={[styles.cardRow, { gap: handGap }]}>
+              {board.playerCards.map((c) => (
+                <CardComponent
+                  key={c.id}
+                  card={c}
+                  faceDown={false}
+                  flipDuration={300}
+                  cardWidth={handCardW}
+                  cardHeight={handCardH}
+                />
+              ))}
+            </View>
+            {showHandNames && (
+              <AnimatedRN.Text style={[styles.handNameBadge, styles.handNamePlayer, { opacity: handNameOpacity }]}>
+                {board.playerHandName}
+              </AnimatedRN.Text>
+            )}
           </View>
 
           {/* Win/lose result — scale in after hand names */}

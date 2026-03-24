@@ -60,7 +60,18 @@ export function dealCardsMultiplayer(playerCount: 2 | 3 | 4): MultiDealResult {
   }
 
   const discarded = deck.slice(idx);
-  return { playerHands, boards, discarded };
+  const result = { playerHands, boards, discarded };
+  // Duplicate guard
+  const allCards = [
+    ...playerHands.flat(),
+    ...boards.flatMap(b => [...b.openCards, ...b.closedCards]),
+  ];
+  const keys = allCards.map(c => c.id);
+  if (new Set(keys).size !== keys.length) {
+    console.error('[DEAL] DUPLICATE CARDS DETECTED — re-dealing');
+    return dealCardsMultiplayer(playerCount);
+  }
+  return result;
 }
 
 export function dealCards(): DealResult {
@@ -82,5 +93,17 @@ export function dealCards(): DealResult {
     boards.push({ openCards, closedCards });
   }
 
-  return { playerHand, botHand, boards };
+  const result = { playerHand, botHand, boards };
+  // Duplicate guard — mathematically impossible but defend against future refactors
+  const allCards = [
+    ...playerHand,
+    ...botHand,
+    ...boards.flatMap(b => [...b.openCards, ...b.closedCards]),
+  ];
+  const keys = allCards.map(c => c.id);
+  if (new Set(keys).size !== keys.length) {
+    console.error('[DEAL] DUPLICATE CARDS DETECTED — re-dealing');
+    return dealCards();
+  }
+  return result;
 }
