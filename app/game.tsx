@@ -66,6 +66,7 @@ import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rb, rv } from '../utils/responsive';
 import { KILL_game } from '../utils/animationKill';
 import { OrientationType } from '../store/gameStore';
+import BoardReveal from '../components/BoardReveal';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -989,7 +990,7 @@ function GameScreenInner() {
           )}
         </View>
       {showSafeReveal && (
-        <SafeRevealOverlay boards={pendingRevealBoards} onDone={onRevealDone} />
+        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} />
       )}
       </SafeAreaView>
     );
@@ -1166,7 +1167,7 @@ function GameScreenInner() {
       )}
       </Animated.View>
       {showSafeReveal && (
-        <SafeRevealOverlay boards={pendingRevealBoards} onDone={onRevealDone} />
+        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} />
       )}
     </SafeAreaView>
   );
