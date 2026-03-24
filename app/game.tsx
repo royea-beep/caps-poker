@@ -1550,7 +1550,53 @@ function SafeRevealOverlay({
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
-  // Auto-advance every 2s per board
+  // Flip state — pure React state, ZERO new Reanimated shared values here.
+  // Card.tsx handles rotateY internally when faceDown prop changes true→false.
+  const [commFaceDown, setCommFaceDown] = useState([true, true, true, true, true]);
+  const [botFaceDown, setBotFaceDown] = useState([true, true, true, true]);
+  const [playerFaceDown, setPlayerFaceDown] = useState([true, true, true, true]);
+  const [showResult, setShowResult] = useState(false);
+  const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Reset + start flip stagger whenever the board index changes
+  useEffect(() => {
+    flipTimers.current.forEach(clearTimeout);
+    flipTimers.current = [];
+    setCommFaceDown([true, true, true, true, true]);
+    setBotFaceDown([true, true, true, true]);
+    setPlayerFaceDown([true, true, true, true]);
+    setShowResult(false);
+
+    // Sequence: flop 3 cards (150ms apart) → 400ms pause → turn → 300ms pause → river
+    //           → bot cards (150ms apart) → player cards (150ms apart) → show result
+    const seq: [number, () => void][] = [
+      [100,  () => setCommFaceDown(p => { const n=[...p]; n[0]=false; return n; })],
+      [250,  () => setCommFaceDown(p => { const n=[...p]; n[1]=false; return n; })],
+      [400,  () => setCommFaceDown(p => { const n=[...p]; n[2]=false; return n; })],
+      [800,  () => setCommFaceDown(p => { const n=[...p]; n[3]=false; return n; })], // turn
+      [1100, () => setCommFaceDown(p => { const n=[...p]; n[4]=false; return n; })], // river
+      [1300, () => setBotFaceDown(p => { const n=[...p]; n[0]=false; return n; })],
+      [1450, () => setBotFaceDown(p => { const n=[...p]; n[1]=false; return n; })],
+      [1600, () => setBotFaceDown(p => { const n=[...p]; n[2]=false; return n; })],
+      [1750, () => setBotFaceDown(p => { const n=[...p]; n[3]=false; return n; })],
+      [1900, () => setPlayerFaceDown(p => { const n=[...p]; n[0]=false; return n; })],
+      [2050, () => setPlayerFaceDown(p => { const n=[...p]; n[1]=false; return n; })],
+      [2200, () => setPlayerFaceDown(p => { const n=[...p]; n[2]=false; return n; })],
+      [2350, () => setPlayerFaceDown(p => { const n=[...p]; n[3]=false; return n; })],
+      [2650, () => setShowResult(true)], // after last card's 300ms flip completes
+    ];
+
+    for (const [delay, action] of seq) {
+      flipTimers.current.push(setTimeout(action, delay));
+    }
+
+    return () => {
+      flipTimers.current.forEach(clearTimeout);
+      flipTimers.current = [];
+    };
+  }, [currentIdx]);
+
+  // Auto-advance: 3.5s per board (gives full flip sequence + reading time)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (currentIdx + 1 >= boards.length) {
@@ -1558,7 +1604,7 @@ function SafeRevealOverlay({
       } else {
         setCurrentIdx(i => i + 1);
       }
-    }, 2000);
+    }, 3500);
     return () => clearTimeout(timer);
   }, [currentIdx, boards.length]);
 
@@ -1605,42 +1651,67 @@ function SafeRevealOverlay({
 
         {/* Tappable main area — advances on tap */}
         <Pressable style={safeRevealStyles.main} onPress={advance}>
-          {/* Community cards */}
+          {/* Community cards — flop then turn then river, staggered */}
           <Text style={safeRevealStyles.rowLabel}>COMMUNITY</Text>
           <View style={safeRevealStyles.cardRow}>
-            {allCommunity.map((c) => (
-              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={commCardW} cardHeight={commCardH} />
+            {allCommunity.map((c, i) => (
+              <CardComponent
+                key={c.id}
+                card={c}
+                faceDown={commFaceDown[i] ?? false}
+                flipDuration={300}
+                cardWidth={commCardW}
+                cardHeight={commCardH}
+              />
             ))}
           </View>
 
-          {/* Bot hand */}
+          {/* Bot hand — flips after community */}
           <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>BOT HAND</Text>
           <View style={safeRevealStyles.cardRow}>
             {board.botCards.length > 0
-              ? board.botCards.map((c) => (
-                  <CardComponent key={c.id} card={c} faceDown={false} cardWidth={handCardW} cardHeight={handCardH} />
+              ? board.botCards.map((c, i) => (
+                  <CardComponent
+                    key={c.id}
+                    card={c}
+                    faceDown={botFaceDown[i] ?? false}
+                    flipDuration={300}
+                    cardWidth={handCardW}
+                    cardHeight={handCardH}
+                  />
                 ))
               : <Text style={safeRevealStyles.noCardsText}>—</Text>
             }
           </View>
-          {board.botHandName ? (
+          {showResult && board.botHandName ? (
             <Text style={safeRevealStyles.handNameSub}>{board.botHandName}</Text>
           ) : null}
 
-          {/* Player hand */}
+          {/* Player hand — flips last */}
           <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>YOUR HAND</Text>
           <View style={safeRevealStyles.cardRow}>
-            {board.playerCards.map((c) => (
-              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={handCardW} cardHeight={handCardH} />
+            {board.playerCards.map((c, i) => (
+              <CardComponent
+                key={c.id}
+                card={c}
+                faceDown={playerFaceDown[i] ?? false}
+                flipDuration={300}
+                cardWidth={handCardW}
+                cardHeight={handCardH}
+              />
             ))}
           </View>
-          {board.playerHandName ? (
+          {showResult && board.playerHandName ? (
             <Text style={safeRevealStyles.handName}>{board.playerHandName}</Text>
           ) : null}
 
-          {/* Result — big and clear */}
-          <Text style={[safeRevealStyles.result, { color: resultColor }]}>{resultText}</Text>
-          <Text style={[safeRevealStyles.chipDelta, { color: chipDeltaColor }]}>{chipDelta}</Text>
+          {/* Result — appears after all cards revealed */}
+          {showResult && (
+            <>
+              <Text style={[safeRevealStyles.result, { color: resultColor }]}>{resultText}</Text>
+              <Text style={[safeRevealStyles.chipDelta, { color: chipDeltaColor }]}>{chipDelta}</Text>
+            </>
+          )}
 
           {/* Tap hint */}
           <Text style={safeRevealStyles.tapHint}>
