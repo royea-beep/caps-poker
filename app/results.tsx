@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, ActionSheetIOS, Animated } from 'react-native';
 // ZERO Reanimated on results screen — game.tsx has 7 active shared values during transition
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -81,12 +81,9 @@ const dealMeInStyles = StyleSheet.create({
   },
 });
 
-// Animation timing — zeroed for crash isolation (no delayed timers)
-const BOARD_STAGGER = 0;
-const BOARD_FADE = 0;
-const CHIPS_DELAY = 0;
-const CHIPS_DURATION = 0;
-const BUTTONS_DELAY = 0;
+// Animation timing
+const BOARD_STAGGER_MS = 200;  // ms between each board appearing
+const DEAL_BTN_DELAY_MS = 800; // ms after last board before DEAL ME IN fades in
 
 export default function ResultsScreen() {
   const router = useRouter();
@@ -125,7 +122,21 @@ export default function ResultsScreen() {
 
   const scrollRef = useRef<any>(null);
 
-  // ZERO shared values — results screen is fully static (game.tsx has 7 active SV during transition)
+  // RN Animated values — JS thread only, zero Reanimated (iron rule: results.tsx = no reanimated)
+  // Board stagger via pure state — no Animated.Value per board (stays under 4 total values)
+  const [visibleBoardCount, setVisibleBoardCount] = useState(0);
+  // Chip roll-up via pure state
+  const [displayChips, setDisplayChips] = useState(chips);
+  // Win boards glow — 1 shared value for all win boards simultaneously
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  // COMPLETE banner spring
+  const completeScale = useRef(new Animated.Value(0)).current;
+  // DEAL ME IN fade (2 values = 4 total — under 5 limit)
+  const dealBtnOpacity = useRef(new Animated.Value(0)).current;
+  const dealBtnScale = useRef(new Animated.Value(0.9)).current;
+  // Timer refs for cleanup
+  const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const animIntervals = useRef<ReturnType<typeof setInterval>[]>([]);
 
   // Dynamic card sizing: compact — fit boards + buttons on screen without excessive scrolling
   // Available = screenWidth - container padding (32) - board padding (20) - separator (4)
@@ -237,8 +248,81 @@ export default function ResultsScreen() {
     };
     saveHandToHistory(handRecord).catch(() => {});
 
-    // STATIC: no timers, no animations — show everything immediately (crash isolation)
-    debugLog('A9 stats done — buttons already visible (showButtons=true on mount)');
+    debugLog('A9 stats done');
+  }, []);
+
+  // Animations — RN Animated only (JS thread, safe on results screen — no Reanimated ever)
+  useEffect(() => {
+    if (!revealData) return;
+    const boardLen = revealData.boards.length;
+
+    // 1. Board stagger — pure state, no Animated.Value needed
+    for (let i = 0; i < boardLen; i++) {
+      const t = setTimeout(() => setVisibleBoardCount(i + 1), i * BOARD_STAGGER_MS);
+      animTimers.current.push(t);
+    }
+
+    // 2. Chip roll-up — count from "before hand" balance up to current
+    const chipTarget = useGameStore.getState().chips;
+    const chipStart = chipTarget - revealData.netChips;
+    const chipSteps = 20;
+    const chipDuration = 800;
+    let chipStep = 0;
+    setDisplayChips(chipStart);
+    const chipTimer = setInterval(() => {
+      chipStep++;
+      if (chipStep >= chipSteps) {
+        setDisplayChips(chipTarget);
+        clearInterval(chipTimer);
+      } else {
+        setDisplayChips(Math.round(chipStart + (chipTarget - chipStart) * (chipStep / chipSteps)));
+      }
+    }, chipDuration / chipSteps);
+    animIntervals.current.push(chipTimer);
+
+    // 3. Win glow — pulse once after all boards are visible
+    if (revealData.boards.some((b) => b.winner === 'player')) {
+      const glowDelay = (boardLen - 1) * BOARD_STAGGER_MS + 300;
+      const glowTimer = setTimeout(() => {
+        Animated.sequence([
+          Animated.timing(glowAnim, { toValue: 1, duration: 400, useNativeDriver: false }),
+          Animated.timing(glowAnim, { toValue: 0.3, duration: 600, useNativeDriver: false }),
+        ]).start();
+      }, glowDelay);
+      animTimers.current.push(glowTimer);
+    }
+
+    // 4. COMPLETE banner spring
+    if (revealData.isComplete) {
+      const completeTimer = setTimeout(() => {
+        Animated.spring(completeScale, {
+          toValue: 1,
+          friction: 4,
+          tension: 80,
+          useNativeDriver: true,
+        }).start();
+      }, 400);
+      animTimers.current.push(completeTimer);
+    }
+
+    // 5. DEAL ME IN fade after stagger completes
+    const dealDelay = (boardLen - 1) * BOARD_STAGGER_MS + DEAL_BTN_DELAY_MS;
+    const dealTimer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(dealBtnOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(dealBtnScale, { toValue: 1, friction: 5, useNativeDriver: true }),
+      ]).start();
+    }, dealDelay);
+    animTimers.current.push(dealTimer);
+
+    return () => {
+      animTimers.current.forEach(clearTimeout);
+      animIntervals.current.forEach(clearInterval);
+      glowAnim.stopAnimation();
+      completeScale.stopAnimation();
+      dealBtnOpacity.stopAnimation();
+      dealBtnScale.stopAnimation();
+    };
   }, []);
 
   const handleNextHand = useCallback(() => {
@@ -486,6 +570,12 @@ export default function ResultsScreen() {
     }
   };
 
+  // Win glow color interpolation (useNativeDriver: false — needed for borderColor)
+  const winBorderColor = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(76,175,80,0.3)', 'rgba(76,175,80,0.9)'],
+  });
+
   // Efficiency analysis — memoized so it runs once
   const efficiency = useMemo<EfficiencyResult | null>(() => {
     if (!revealData || boards.length === 0) return null;
@@ -521,8 +611,11 @@ export default function ResultsScreen() {
           </Text>
         </View>
 
-        {/* Board results — stacked vertically */}
+        {/* Board results — staggered fade-in (pure state, no Animated.Value per board) */}
         {boards.map((board, i) => {
+          // Stagger: boards appear one at a time, 200ms apart
+          if (i >= visibleBoardCount) return null;
+
           const chipResult = board.winner === 'player'
             ? `+${potPerBoardTotal}`
             : board.winner === 'bot'
@@ -546,6 +639,17 @@ export default function ResultsScreen() {
                 board.winner === 'player' && styles.boardCardWin,
                 board.winner === 'bot' && styles.boardCardLose,
               ]}>
+                {/* Win glow overlay — absolute border that pulses green for won boards */}
+                {board.winner === 'player' && (
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[StyleSheet.absoluteFill, {
+                      borderRadius: 10,
+                      borderWidth: 2,
+                      borderColor: winBorderColor,
+                    }]}
+                  />
+                )}
                 {/* Header: BOARD X + badge + chip amount */}
                 <View style={styles.boardHeader}>
                   <View style={styles.boardHeaderLeft}>
@@ -766,12 +870,12 @@ export default function ResultsScreen() {
           <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
         </View>
 
-        {/* Complete bonus */}
+        {/* Complete bonus — spring scale entrance */}
         {isComplete && completeBonusAmount > 0 && (
-          <View style={styles.completeRow}>
+          <Animated.View style={[styles.completeRow, { transform: [{ scale: completeScale }] }]}>
             <Text style={styles.completeLabel}>🏆 COMPLETE! +50% BONUS</Text>
             <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips!</Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* Net result */}
@@ -784,8 +888,8 @@ export default function ResultsScreen() {
           </View>
         </View>
 
-        {/* Current balance */}
-        <ChipsDisplay amount={chips} label="Current Balance" size="large" />
+        {/* Current balance — rolls up from pre-hand value */}
+        <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
 
         {/* Buttons — always visible, no delay */}
         <View style={styles.buttons}>
@@ -809,10 +913,12 @@ export default function ResultsScreen() {
               </View>
             ) : (
               <>
-                <DealMeInButton
-                  label={chips >= config.potPerBoard * revealData.boardCount ? 'DEAL ME IN' : 'GAME OVER'}
-                  onPress={handleNextHand}
-                />
+                <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }] }}>
+                  <DealMeInButton
+                    label={chips >= config.potPerBoard * revealData.boardCount ? 'DEAL ME IN' : 'GAME OVER'}
+                    onPress={handleNextHand}
+                  />
+                </Animated.View>
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && (
                     <Button title="REMATCH" variant="secondary" onPress={handleRematch} style={{ flex: 1 }} />
