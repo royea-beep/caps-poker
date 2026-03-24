@@ -575,6 +575,10 @@ export default function HomeScreen() {
         {/* ── Action buttons ── */}
         <View style={[styles.buttonSection, { gap: btnGap }]}>
           <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} btnHeight={btnHeight} btnFontSize={btnFontSize} />
+          {/* S52: board count subtitle — Brunson fix */}
+          <Text style={{ color: COLORS.textDim ?? '#888', fontSize: rf(13), textAlign: 'center', marginTop: -rs(4) }}>
+            {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
+          </Text>
 
           {/* ── Google sign-in / signed-in row ── */}
           {!user ? (

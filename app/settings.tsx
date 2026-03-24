@@ -22,6 +22,7 @@ function hapticLight() {
   } catch {}
 }
 import { useRouter } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import CardComponent from '../components/Card';
@@ -751,6 +752,9 @@ export default function SettingsScreen() {
         </View>
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <VersionBadge />
+          <Text style={{ color: '#555', fontSize: rf(11), marginTop: 4 }}>
+            OTA: {Updates.updateId?.slice(0, 8) ?? 'binary'}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

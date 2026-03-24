@@ -83,7 +83,7 @@ const dealMeInStyles = StyleSheet.create({
 
 // Animation timing
 const BOARD_STAGGER_MS = 200;  // ms between each board appearing
-const DEAL_BTN_DELAY_MS = 800; // ms after last board before DEAL ME IN fades in
+const DEAL_BTN_DELAY_MS = 300; // ms after last board before DEAL ME IN fades in (S52: 800→300)
 
 export default function ResultsScreen() {
   const router = useRouter();
