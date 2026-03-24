@@ -217,6 +217,26 @@ describe('computeOmahaEquity — performance', () => {
   });
 });
 
+describe('Bug S48 — hand names regression (was showing High Card for everything)', () => {
+  it('detects Three of a Kind: 3♥,3♠ in hand + 3♦ on community', () => {
+    // Exact real-game scenario from bug report
+    const player = [card('9', 'c'), card('K', 's'), card('3', 'h'), card('3', 's')];
+    const community = [card('3', 'd'), card('A', 'c'), card('10', 's'), card('6', 'h'), card('9', 's')];
+    const result = evaluateOmahaHand(player, community);
+    console.log('S48 Test 1 — expected Three of a Kind:', result.name, 'rank:', result.rank);
+    expect(result.name.toLowerCase()).toContain('three');
+  });
+
+  it('detects at least One Pair: 6♦,6♠ in hand', () => {
+    // Exact real-game scenario from bug report
+    const player = [card('6', 'd'), card('4', 'h'), card('6', 's'), card('9', 'd')];
+    const community = [card('A', 's'), card('5', 'c'), card('2', 'h'), card('10', 'c'), card('2', 'c')];
+    const result = evaluateOmahaHand(player, community);
+    console.log('S48 Test 2 — expected >= One Pair:', result.name, 'rank:', result.rank);
+    expect(result.name.toLowerCase()).not.toBe('high card');
+  });
+});
+
 describe('Hand distribution', () => {
   it('produces <30% High Card across 500 random Omaha hands', () => {
     const counts: Record<string, number> = {};
