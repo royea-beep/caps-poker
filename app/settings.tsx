@@ -753,7 +753,10 @@ export default function SettingsScreen() {
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <VersionBadge />
           <Text style={{ color: '#555', fontSize: rf(11), marginTop: 4 }}>
-            OTA: {Updates.updateId?.slice(0, 8) ?? 'binary'}
+            OTA: {Updates.updateId?.slice(0, 8) ?? 'none'} | Ch: {Updates.channel ?? '?'} | RT: {Updates.runtimeVersion ?? '?'}
+          </Text>
+          <Text style={{ color: '#555', fontSize: rf(11), marginTop: 2 }}>
+            Embedded: {Updates.isEmbeddedLaunch ? 'YES' : 'NO'} | {Updates.createdAt?.toISOString().slice(0, 10) ?? 'unknown'}
           </Text>
         </View>
       </ScrollView>

@@ -214,27 +214,30 @@ export default function RootLayout() {
     }).catch((e) => { debugLog(`🔍 checkPreviousCrash threw: ${e}`, 'error'); });
   }, []);
 
-  // OTA update check — runs on every app open (production only)
-  // 800ms delay lets the network stack initialize on cold start before we hit the server
+  // OTA nuclear check — immediate + every 30s while app is open (production only)
   useEffect(() => {
-    if (!__DEV__ && Platform.OS !== 'web') {
-      const timer = setTimeout(async () => {
-        try {
-          console.log('[OTA] checking... isEmbedded:', Updates.isEmbeddedLaunch, 'updateId:', Updates.updateId?.slice(0, 8) ?? 'none');
-          const update = await Updates.checkForUpdateAsync();
-          console.log('[OTA] isAvailable:', update.isAvailable);
-          if (update.isAvailable) {
-            console.log('[OTA] fetching update...');
-            await Updates.fetchUpdateAsync();
-            console.log('[OTA] reloading app...');
-            await Updates.reloadAsync();
-          }
-        } catch (e) {
-          console.log('[OTA] check failed (non-fatal):', String(e));
+    if (__DEV__) return;
+    const forceUpdate = async () => {
+      try {
+        console.log('[OTA] Checking for update...');
+        console.log('[OTA] Current update ID:', Updates.updateId);
+        console.log('[OTA] Channel:', Updates.channel);
+        console.log('[OTA] Runtime version:', Updates.runtimeVersion);
+        const update = await Updates.checkForUpdateAsync();
+        console.log('[OTA] Update available:', update.isAvailable);
+        if (update.isAvailable) {
+          console.log('[OTA] Fetching update...');
+          await Updates.fetchUpdateAsync();
+          console.log('[OTA] Reloading...');
+          await Updates.reloadAsync();
         }
-      }, 800);
-      return () => clearTimeout(timer);
-    }
+      } catch (e) {
+        console.log('[OTA] Error:', e);
+      }
+    };
+    forceUpdate();
+    const interval = setInterval(forceUpdate, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
