@@ -16,6 +16,7 @@ import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs } from '../utils/responsive';
+import { trackAction } from '../utils/crash-evidence';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
@@ -256,6 +257,15 @@ export default function Board({
     };
   });
 
+  // Track layout dimensions for crash diagnostics — fires once per board mount
+  useEffect(() => {
+    if (index === 0) {
+      // Only log for board 0 to avoid 4× noise; board sizes are all identical
+      trackAction(`layout:cw=${cw}h=${ch}sw=${slotW}sh=${slotH}scr=${screenW}`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Build bot card sets: use allBotCards if provided, otherwise fall back to single botCards
   const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : botCards.length > 0 ? [botCards] : [];
   const multiBot = botCardSets.length > 1;
@@ -379,8 +389,8 @@ export default function Board({
                 <CardComponent
                   card={c}
                   faceDown={false}
-                  cardWidth={cw}
-                  cardHeight={ch}
+                  cardWidth={isArrangement ? slotW : cw}
+                  cardHeight={isArrangement ? slotH : ch}
                   highlighted={revealed && playerHighlightIds.includes(c.id)}
                   dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
                 />
@@ -425,8 +435,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.boardBg,
-    borderRadius: 18,
-    borderWidth: 3,
+    borderRadius: rs(18),
+    borderWidth: rs(3),
     borderColor: COLORS.boardBorder,
     overflow: 'hidden',
     ...Platform.select({
@@ -494,9 +504,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   boardFullBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: rs(16),
+    height: rs(16),
+    borderRadius: rs(8),
     backgroundColor: '#28A745',
     justifyContent: 'center',
     alignItems: 'center',
@@ -523,7 +533,7 @@ const styles = StyleSheet.create({
     fontSize: rf(7),
     fontWeight: '700',
     letterSpacing: 0.5,
-    width: 20,
+    width: rs(20),
     textAlign: 'center',
   },
   potArea: {
@@ -542,9 +552,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   potDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: rs(8),
+    height: rs(8),
+    borderRadius: rs(4),
     backgroundColor: COLORS.gold,
   },
   floatingChips: {
@@ -570,7 +580,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   emptySlot: {
-    borderRadius: 8,
+    borderRadius: rs(8),
     borderWidth: 1.5,
     borderColor: '#c8a84b44',
     borderStyle: 'dashed',

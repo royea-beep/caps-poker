@@ -827,7 +827,7 @@ function GameScreenInner() {
 
   const readyBotCount = botsReady.filter(Boolean).length;
   const cardsRemaining = playerHand.length;
-  const TIMER_SIZE = 52;
+  const TIMER_SIZE = rv(52);
 
   // ── Landscape / widescreen layout ──────────────────────────────────────────
   if (isLandscape) {
@@ -1344,6 +1344,9 @@ const styles = StyleSheet.create({
   floatingBtn: {
     paddingVertical: rs(12),
     paddingHorizontal: rs(28),
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: rv(24),
     ...Platform.select({
       ios: {
@@ -1410,7 +1413,7 @@ const styles = StyleSheet.create({
   },
   continueBtn: {
     position: 'absolute',
-    bottom: 100,
+    bottom: rs(100),
     alignSelf: 'center',
     backgroundColor: COLORS.gold,
     paddingVertical: rs(14),

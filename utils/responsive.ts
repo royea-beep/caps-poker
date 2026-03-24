@@ -403,3 +403,23 @@ export const UI = {
     chipFontSize:   rf(14, 11, 16),
   },
 } as const;
+
+// ─── React Native Responsive Aliases ──────────────────────────────────────────
+// Aliases matching the react-native-size-matters API so components can use
+// the familiar names (scale / verticalScale / moderateScale) without an
+// extra dependency.
+
+/** Alias for rv() — proportional width scale */
+export const scale = rv;
+
+/** Alias for rh() — proportional height scale */
+export const verticalScale = rh;
+
+/**
+ * moderateScale — less aggressive than full scale.
+ * moderateScale(16, 0.5) on 375pt = 15.1 → 15 (halfway between raw and scaled)
+ * Useful for font sizes and padding where full scaling looks too extreme.
+ */
+export function moderateScale(size: number, factor = 0.5): number {
+  return Math.round(size + (rv(size) - size) * factor);
+}
