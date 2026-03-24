@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, Modal, Animated as AnimatedRN } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +30,7 @@ import {
   calculateHandResultsMulti,
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
+import { HandRank, HAND_RANK_NAMES } from '../utils/handEvaluator';
 import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
@@ -1557,6 +1558,33 @@ function SafeRevealOverlay({
   const [playerFaceDown, setPlayerFaceDown] = useState([true, true, true, true]);
   const [showResult, setShowResult] = useState(false);
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // S52: "Tap to reveal" hint — fades out after 1500ms via RN Animated
+  const hintOpacity = useRef(new AnimatedRN.Value(1)).current;
+
+  // S52: tap-to-skip — clear all timers, instantly reveal, show result
+  const handleSkip = useCallback(() => {
+    flipTimers.current.forEach(clearTimeout);
+    flipTimers.current = [];
+    setCommFaceDown([false, false, false, false, false]);
+    setBotFaceDown([false, false, false, false]);
+    setPlayerFaceDown([false, false, false, false]);
+    setShowResult(true);
+    Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
+  }, []);
+
+  // S52: strong hand haptic — fires when showResult becomes true for a player win
+  useEffect(() => {
+    if (!showResult || !board || board.winner !== 'player') return;
+    const nameToRank: Record<string, number> = Object.fromEntries(
+      (Object.entries(HAND_RANK_NAMES) as [string, string][]).map(([r, n]) => [n, parseInt(r, 10)])
+    );
+    const rank = nameToRank[board.playerHandName] ?? -1;
+    if (rank >= HandRank.Straight) {
+      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success)?.catch?.(() => {});
+    } else if (rank >= HandRank.TwoPair) {
+      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
+    }
+  }, [showResult]);
 
   // Reset + start flip stagger whenever the board index changes
   useEffect(() => {
@@ -1566,6 +1594,13 @@ function SafeRevealOverlay({
     setBotFaceDown([true, true, true, true]);
     setPlayerFaceDown([true, true, true, true]);
     setShowResult(false);
+    // Reset and fade out "Tap to reveal" hint
+    hintOpacity.setValue(1);
+    flipTimers.current.push(
+      setTimeout(() => {
+        AnimatedRN.timing(hintOpacity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
+      }, 1500)
+    );
 
     // Sequence: flop 3 cards (150ms apart) → 400ms pause → turn → 300ms pause → river
     //           → bot cards (150ms apart) → player cards (150ms apart) → show result
@@ -1649,8 +1684,8 @@ function SafeRevealOverlay({
           </Pressable>
         </View>
 
-        {/* Tappable main area — advances on tap */}
-        <Pressable style={safeRevealStyles.main} onPress={advance}>
+        {/* Tappable main area — skip flip if not yet revealed, advance if revealed */}
+        <Pressable style={safeRevealStyles.main} onPress={() => showResult ? advance() : handleSkip()}>
           {/* Community cards — flop then turn then river, staggered */}
           <Text style={safeRevealStyles.rowLabel}>COMMUNITY</Text>
           <View style={safeRevealStyles.cardRow}>
@@ -1713,10 +1748,18 @@ function SafeRevealOverlay({
             </>
           )}
 
-          {/* Tap hint */}
-          <Text style={safeRevealStyles.tapHint}>
-            {currentIdx + 1 < boards.length ? '▶ TAP TO CONTINUE' : '▶ TAP FOR RESULTS'}
-          </Text>
+          {/* S52: "Tap to reveal" hint — fades out after 1500ms, shows while cards are flipping */}
+          {!showResult && (
+            <AnimatedRN.Text style={[safeRevealStyles.tapRevealHint, { opacity: hintOpacity }]}>
+              Tap to reveal
+            </AnimatedRN.Text>
+          )}
+          {/* Tap hint — shown after result is visible */}
+          {showResult && (
+            <Text style={safeRevealStyles.tapHint}>
+              {currentIdx + 1 < boards.length ? '▶ TAP TO CONTINUE' : '▶ TAP FOR RESULTS'}
+            </Text>
+          )}
         </Pressable>
       </SafeAreaView>
     </Modal>
@@ -1804,6 +1847,13 @@ const safeRevealStyles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     marginTop: 20,
+  },
+  tapRevealHint: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 1,
+    marginTop: 16,
   },
 });
 
