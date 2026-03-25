@@ -109,6 +109,7 @@ export default function ResultsScreen() {
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
   const [showButtons, setShowButtons] = useState(true); // show immediately — no delayed timer
+  const [savedHandId, setSavedHandId] = useState<string | null>(null);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
   const waitingTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -259,6 +260,7 @@ export default function ResultsScreen() {
       completeBonusAmount: revealData.completeBonusAmount,
     };
     saveHandToHistory(handRecord).catch(() => {});
+    setSavedHandId(handRecord.id);
 
     debugLog('A9 stats done');
   }, []);
@@ -998,6 +1000,16 @@ export default function ResultsScreen() {
                     onPress={handleNextHand}
                   />
                 </Animated.View>
+                {savedHandId && !isMultiplayer && (
+                  <Animated.View style={{ opacity: dealBtnOpacity, alignItems: 'center', marginTop: rs(8) }}>
+                    <Pressable
+                      style={styles.coachingBtn}
+                      onPress={() => router.push(`/coaching?handId=${savedHandId}`)}
+                    >
+                      <Text style={styles.coachingBtnText}>💡 COACHING</Text>
+                    </Pressable>
+                  </Animated.View>
+                )}
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && (
                     <Button title="REMATCH" variant="secondary" onPress={handleRematch} style={{ flex: 1 }} />
@@ -1218,6 +1230,20 @@ const styles = StyleSheet.create({
   rematchRow: {
     flexDirection: 'row',
     gap: rs(10),
+  },
+  coachingBtn: {
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(28),
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    borderRadius: rv(16),
+    backgroundColor: 'rgba(255,215,0,0.08)',
+  },
+  coachingBtnText: {
+    color: COLORS.gold,
+    fontSize: rf(14),
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   waitingNextHand: {
     backgroundColor: COLORS.feltLight,
