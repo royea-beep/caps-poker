@@ -1,10 +1,10 @@
 /**
  * BugReporter for CAPS Poker — S75 Enhanced Version
  * Shake / FAB → recording overlay → live debug log stream → STOP & SEND
- * → screen frames captured + expo-av audio + Claude AI triage → Supabase bug_reports
+ * → screen frames captured + expo-audio recording + Claude AI triage → Supabase bug_reports
  *
  * ZERO Reanimated — RN Animated only for dot pulse.
- * Audio: expo-av Audio.Recording → .m4a → Supabase Storage (bug-recordings bucket)
+ * Audio: expo-audio AudioRecorder → .m4a → Supabase Storage (bug-recordings bucket)
  */
 
 declare global {
@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
 
 let Haptics: typeof import('expo-haptics') | null = null;
@@ -234,7 +234,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const flatListRef = useRef<FlatList>(null);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const audioRecordingRef = useRef<Audio.Recording | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const { elapsed, display: timerDisplay } = useRecordingTimer(isRecording);
 
@@ -258,16 +258,16 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   // Request mic permissions on mount (non-blocking)
   useEffect(() => {
     if (Platform.OS !== 'web') {
-      Audio.requestPermissionsAsync().catch(() => {});
+      requestRecordingPermissionsAsync().catch(() => {});
     }
   }, []);
 
   async function startAudio() {
     if (Platform.OS === 'web') return;
     try {
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      audioRecordingRef.current = recording;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
       setAudioAvailable(true);
     } catch {
       setAudioAvailable(false);
@@ -275,15 +275,13 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   }
 
   async function stopAudio(): Promise<string | null> {
-    if (!audioRecordingRef.current) return null;
+    if (!audioAvailable) return null;
     try {
-      await audioRecordingRef.current.stopAndUnloadAsync();
-      const uri = audioRecordingRef.current.getURI() ?? null;
-      audioRecordingRef.current = null;
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri ?? null;
       setAudioAvailable(false);
       return uri;
     } catch {
-      audioRecordingRef.current = null;
       return null;
     }
   }
