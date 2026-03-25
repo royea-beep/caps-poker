@@ -1,10 +1,10 @@
 /**
- * BugReporter for CAPS Poker — S74 Enhanced Version
+ * BugReporter for CAPS Poker — S75 Enhanced Version
  * Shake / FAB → recording overlay → live debug log stream → STOP & SEND
- * → screen frames captured + Claude AI triage → Supabase bug_reports
+ * → screen frames captured + expo-av audio + Claude AI triage → Supabase bug_reports
  *
  * ZERO Reanimated — RN Animated only for dot pulse.
- * Audio: expo-av not installed → text-only fallback (TODO: add audio when expo-av available)
+ * Audio: expo-av Audio.Recording → .m4a → Supabase Storage (bug-recordings bucket)
  */
 
 declare global {
@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
+import { Audio } from 'expo-av';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
 
 let Haptics: typeof import('expo-haptics') | null = null;
@@ -99,6 +100,27 @@ async function classifyBugReport(logs: ReturnType<typeof getGlobalLogs>, note: s
 
 // ── Supabase Submit ──────────────────────────────────────────────────────────
 
+async function uploadAudio(uri: string, supabaseUrl: string, supabaseKey: string): Promise<string | null> {
+  try {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const filename = `bug-audio-${Date.now()}.m4a`;
+    const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/bug-recordings/${filename}`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'audio/m4a',
+      },
+      body: blob,
+    });
+    if (!uploadRes.ok) return null;
+    return `${supabaseUrl}/storage/v1/object/public/bug-recordings/${filename}`;
+  } catch {
+    return null;
+  }
+}
+
 async function submitBugReport(
   title: string,
   description: string,
@@ -106,6 +128,7 @@ async function submitBugReport(
   logs: ReturnType<typeof getGlobalLogs>,
   triage: TriageResult,
   hasVideo: boolean,
+  audioUrl: string | null,
 ): Promise<void> {
   const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl;
@@ -131,11 +154,12 @@ async function submitBugReport(
     },
     status: 'open',
     report_type: 'video',
-    // New S74 columns (gracefully ignored if migration not applied):
+    // New S74/S75 columns (gracefully ignored if migration not applied):
     classification: triage.classification,
     ai_summary: triage.summary,
     needs_review: triage.classification === 'UNRELATED',
     has_video: hasVideo,
+    audio_url: audioUrl,
   };
 
   const res = await fetch(`${url}/rest/v1/bug_reports`, {
@@ -206,9 +230,11 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [liveLogs, setLiveLogs] = useState<ReturnType<typeof getGlobalLogs>>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [audioAvailable, setAudioAvailable] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioRecordingRef = useRef<Audio.Recording | null>(null);
 
   const { elapsed, display: timerDisplay } = useRecordingTimer(isRecording);
 
@@ -229,6 +255,39 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     return () => { pulse.stop(); dotPulseRef.current = null; };
   }, [visible, isRecording]);
 
+  // Request mic permissions on mount (non-blocking)
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      Audio.requestPermissionsAsync().catch(() => {});
+    }
+  }, []);
+
+  async function startAudio() {
+    if (Platform.OS === 'web') return;
+    try {
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      audioRecordingRef.current = recording;
+      setAudioAvailable(true);
+    } catch {
+      setAudioAvailable(false);
+    }
+  }
+
+  async function stopAudio(): Promise<string | null> {
+    if (!audioRecordingRef.current) return null;
+    try {
+      await audioRecordingRef.current.stopAndUnloadAsync();
+      const uri = audioRecordingRef.current.getURI() ?? null;
+      audioRecordingRef.current = null;
+      setAudioAvailable(false);
+      return uri;
+    } catch {
+      audioRecordingRef.current = null;
+      return null;
+    }
+  }
+
   const pathname = usePathname();
   const path = pathname ?? '';
   const isGameScreen = ['/game', '/multiplayer-game', '/sit-and-go', '/tournament', '/orientation-pick'].includes(path) || path.startsWith('/lobby');
@@ -237,7 +296,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   // Dev ping on mount
   useEffect(() => {
     if (!__DEV__) return;
-    submitBugReport(`[ping] app opened v${VERSION}`, '[dev ping]', 'mount', [], { classification: 'UNRELATED', summary: 'dev ping' }, false).catch(() => {});
+    submitBugReport(`[ping] app opened v${VERSION}`, '[dev ping]', 'mount', [], { classification: 'UNRELATED', summary: 'dev ping' }, false, null).catch(() => {});
   }, []);
 
   const openReporter = useCallback(async () => {
@@ -247,8 +306,8 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     setLiveLogs(getGlobalLogs());
     setVisible(true);
 
-    // Start screen recording
-    const started = await startRecording();
+    // Start screen recording + audio recording in parallel
+    const [started] = await Promise.all([startRecording(), startAudio()]);
     setIsRecording(started);
 
     // Auto-stop at 60s
@@ -274,7 +333,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
   const handleCancel = useCallback(async () => {
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
-    await stopRecording();
+    await Promise.all([stopRecording(), stopAudio()]);
     setIsRecording(false);
     setVisible(false);
   }, []);
@@ -285,16 +344,23 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     setStatus('idle');
 
     try {
-      // 1. Stop screen recording
-      await stopRecording();
+      // 1. Stop screen + audio recording in parallel
+      const [, audioUri, frames] = await Promise.all([
+        stopRecording(),
+        stopAudio(),
+        getLastCrashScreenshots(),
+      ]);
       setIsRecording(false);
 
       // 2. Get current log snapshot
       const logs = getGlobalLogs();
-
-      // 3. Check if video frames were captured
-      const frames = await getLastCrashScreenshots();
       const hasVideo = frames.length > 0;
+
+      // 3. Upload audio to Supabase Storage
+      const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl || '';
+      const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || extra?.supabaseAnonKey || '';
+      const audioUrl = audioUri ? await uploadAudio(audioUri, supabaseUrl, supabaseKey) : null;
 
       // 4. AI triage (with timeout fallback)
       let triage: TriageResult = { classification: 'PENDING', summary: 'Classifying...' };
@@ -313,6 +379,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         logs,
         triage,
         hasVideo,
+        audioUrl,
       );
 
       Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success)?.catch?.(() => {});
@@ -383,10 +450,12 @@ export function BugReporter({ children, overlayActive = false }: Props) {
               />
             </View>
 
-            {/* Mic indicator (visual only — expo-av not installed) */}
+            {/* Mic indicator */}
             <View style={styles.micRow}>
-              <Text style={styles.micText}>🎤 Audio: type your description below</Text>
-              <Text style={styles.micHint}>(tap to record voice in a future update)</Text>
+              {audioAvailable
+                ? <Text style={styles.micTextActive}>🎤 Recording audio...</Text>
+                : <Text style={styles.micText}>🎤 Audio unavailable — describe in text</Text>
+              }
             </View>
 
             {/* Text note */}
@@ -519,8 +588,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 4,
   },
-  micText: { color: '#c8a84b', fontSize: 12, fontWeight: '600' },
-  micHint: { color: '#555', fontSize: 10 },
+  micText: { color: '#78716C', fontSize: 12, fontWeight: '600' },
+  micTextActive: { color: '#4CAF50', fontSize: 12, fontWeight: '700' },
   noteInput: {
     backgroundColor: '#1a0e06',
     borderRadius: 10,
