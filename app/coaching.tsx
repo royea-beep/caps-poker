@@ -257,7 +257,7 @@ export default function CoachingScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.headerBack}>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={({ pressed }) => [styles.headerBack, pressed && { opacity: 0.7 }]}>
           <Text style={styles.headerBackText}>← COACHING</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Hand #{handNumber}</Text>
@@ -323,7 +323,7 @@ export default function CoachingScreen() {
       {/* Navigation */}
       <View style={styles.nav}>
         <Pressable
-          style={[styles.navBtn, handIndex >= handList.length - 1 && styles.navBtnDisabled]}
+          style={({ pressed }) => [styles.navBtn, handIndex >= handList.length - 1 && styles.navBtnDisabled, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]}
           onPress={() => goToHand(handIndex + 1)}
           disabled={handIndex >= handList.length - 1}
         >
@@ -333,7 +333,7 @@ export default function CoachingScreen() {
         <Text style={styles.navPageText}>{handIndex + 1} / {handList.length}</Text>
 
         <Pressable
-          style={[styles.navBtn, handIndex === 0 && styles.navBtnDisabled]}
+          style={({ pressed }) => [styles.navBtn, handIndex === 0 && styles.navBtnDisabled, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]}
           onPress={() => goToHand(handIndex - 1)}
           disabled={handIndex === 0}
         >

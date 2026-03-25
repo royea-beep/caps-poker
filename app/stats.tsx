@@ -200,7 +200,7 @@ export default function StatsScreen() {
         <Pressable
           key={p}
           onPress={() => setFilter(p)}
-          style={[styles.filterBtn, filter === p && styles.filterBtnActive]}
+          style={({ pressed }) => [styles.filterBtn, filter === p && styles.filterBtnActive, pressed && { opacity: 0.75 }]}
         >
           <Text style={[styles.filterBtnText, filter === p && styles.filterBtnTextActive]}>
             {FILTER_LABELS[p]}

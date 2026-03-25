@@ -318,16 +318,16 @@ export default function Board({
           </View>
         </View>
 
-        {/* Bot card rows — face-down during arrangement, revealed during reveal */}
-        {botCardSets.map((botCardSet, botIdx) =>
+        {/* Bot card rows — hidden during arrangement (board stays clean for player placement) */}
+        {!isArrangement && botCardSets.map((botCardSet, botIdx) =>
           botCardSet.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              {!isArrangement && <Text style={styles.rowLabel}>{multiBot ? `${t().bot}${botIdx + 1}` : t().bot}</Text>}
+              <Text style={styles.rowLabel}>{multiBot ? `${t().bot}${botIdx + 1}` : t().bot}</Text>
               {botCardSet.map((c) => (
                 <CardComponent
                   key={c.id}
                   card={c}
-                  faceDown={isArrangement ? true : !revealed}
+                  faceDown={!revealed}
                   cardWidth={cw}
                   cardHeight={ch}
                   highlighted={botIdx === 0 && revealed && botHighlightIds.includes(c.id)}

@@ -360,6 +360,15 @@ export default function RootLayout() {
             <Stack.Screen name="game" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="results" options={{ animation: 'fade_from_bottom' }} />
             <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="stats" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="hand-history" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="replay" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="coaching" options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="spectate" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="tournament" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="leaderboard" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="orientation-pick" options={{ animation: 'fade' }} />
+            <Stack.Screen name="theme-pick" options={{ animation: 'slide_from_bottom' }} />
           </Stack>
         </WebContainer>
       </BugReporter>
