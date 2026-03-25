@@ -36,7 +36,7 @@ import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { markGameActive } from '../utils/dirtyShutdown';
+import { markAppActive as markGameActive } from '@caps/debugger';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
