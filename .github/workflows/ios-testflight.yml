@@ -44,7 +44,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: EAS Build + Auto-Submit to TestFlight (External Testers)
-        run: eas build --platform ios --profile production --non-interactive --auto-submit --auto-submit-with-profile production
+        run: eas build --platform ios --profile production --non-interactive --auto-submit-with-profile production
 
       - name: Cleanup key file
         if: always()
