@@ -1,7 +1,10 @@
 /**
- * BugReporter for CAPS Poker
- * Shake phone → modal → describe bug → send to Supabase bug_reports.
- * FAB hidden when game overlays are showing (pointerEvents: 'none').
+ * BugReporter for CAPS Poker — S74 Enhanced Version
+ * Shake / FAB → recording overlay → live debug log stream → STOP & SEND
+ * → screen frames captured + Claude AI triage → Supabase bug_reports
+ *
+ * ZERO Reanimated — RN Animated only for dot pulse.
+ * Audio: expo-av not installed → text-only fallback (TODO: add audio when expo-av available)
  */
 
 declare global {
@@ -11,99 +14,128 @@ declare global {
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  ActivityIndicator,
-  Platform,
-  Keyboard,
-  KeyboardAvoidingView,
-  Image,
+  View, Text, TextInput, StyleSheet, TouchableOpacity, Modal,
+  ActivityIndicator, Platform, Keyboard, FlatList, Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
-import { debugLog } from './DebugOverlay';
-// Lazy haptics — never crash on web
+import { getGlobalLogs, debugLog } from './DebugOverlay';
+import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
+
 let Haptics: typeof import('expo-haptics') | null = null;
-if (Platform.OS !== 'web') {
-  try { Haptics = require('expo-haptics'); } catch {}
-}
+if (Platform.OS !== 'web') { try { Haptics = require('expo-haptics'); } catch {} }
 
 const PROJECT = 'caps-poker';
-const VERSION = Constants.expoConfig?.version ?? '1.9.2';
+const VERSION = Constants.expoConfig?.version ?? '1.9.4';
+const MAX_AUTO_STOP_S = 60;
 
-// ── Shake Detection ──
+// ── Shake Detection ─────────────────────────────────────────────────────────
 
 function useShakeDetection(onShake: () => void, enabled: boolean) {
   const lastShake = useRef(0);
-
   useEffect(() => {
     if (!enabled || Platform.OS === 'web') return;
-
     let sub: { remove: () => void } | null = null;
-
     (async () => {
       try {
         const Accelerometer = (await import('expo-sensors')).Accelerometer;
         Accelerometer.setUpdateInterval(100);
         let lastX = 0, lastY = 0, lastZ = 0;
-
         sub = Accelerometer.addListener(({ x, y, z }) => {
           const delta = Math.abs(x - lastX) + Math.abs(y - lastY) + Math.abs(z - lastZ);
           lastX = x; lastY = y; lastZ = z;
-
           if (delta > 3.5) {
             const now = Date.now();
-            if (now - lastShake.current > 2000) {
-              lastShake.current = now;
-              onShake();
-            }
+            if (now - lastShake.current > 2000) { lastShake.current = now; onShake(); }
           }
         });
-      } catch {
-        // expo-sensors not available — shake detection disabled
-      }
+      } catch {}
     })();
-
     return () => { sub?.remove(); };
   }, [enabled, onShake]);
 }
 
-// ── Supabase Insert ──
+// ── AI Triage ───────────────────────────────────────────────────────────────
+
+interface TriageResult {
+  classification: 'RELEVANT' | 'UNRELATED' | 'PENDING';
+  summary: string;
+}
+
+async function classifyBugReport(logs: ReturnType<typeof getGlobalLogs>, note: string): Promise<TriageResult> {
+  const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+  if (!apiKey) return { classification: 'PENDING', summary: 'No API key' };
+  try {
+    const logText = logs.slice(-20).map((l, i) => `[${i + 1}] ${l.time} ${l.message}`).join('\n');
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `You are a QA analyst for a poker app called CAPS.\n\nA tester submitted a bug report. Classify it as RELEVANT or UNRELATED.\n\nRELEVANT = real bug, unexpected behavior, crash, or visual issue IN THE APP.\nUNRELATED = off-topic, testing the recorder, silence, accidental recording.\n\nDebug log (last 20 entries):\n${logText}\n\nText note: "${note}"\n\nRespond ONLY with JSON: {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence","confidence":0.0}`,
+        }],
+      }),
+    });
+    if (!res.ok) return { classification: 'PENDING', summary: `HTTP ${res.status}` };
+    const data = await res.json();
+    const text = data.content?.[0]?.text ?? '{}';
+    const result = JSON.parse(text);
+    return {
+      classification: result.classification === 'UNRELATED' ? 'UNRELATED' : 'RELEVANT',
+      summary: typeof result.summary === 'string' ? result.summary : '',
+    };
+  } catch {
+    return { classification: 'PENDING', summary: 'Triage error' };
+  }
+}
+
+// ── Supabase Submit ──────────────────────────────────────────────────────────
 
 async function submitBugReport(
   title: string,
   description: string,
   screen: string,
+  logs: ReturnType<typeof getGlobalLogs>,
+  triage: TriageResult,
+  hasVideo: boolean,
 ): Promise<void> {
-  // Read Supabase creds — prefer env vars, fall back to app.json extra (Expo managed workflow)
   const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
-  const url = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || extra?.supabaseUrl;
-  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || extra?.supabaseAnonKey;
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl;
+  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || extra?.supabaseAnonKey;
+  if (!url || !key) { debugLog('[BugReporter] Supabase not configured', 'warn'); return; }
 
-  if (!url || !key) {
-    debugLog('[BugReporter] Supabase not configured', 'warn');
-    return;
-  }
+  const logSnapshot = logs.slice(-50).map((l) => `${l.time} ${l.message}`).join('\n');
 
-  const row = {
+  const row: Record<string, unknown> = {
     project: PROJECT,
     version: VERSION,
     title,
-    description: description || null,
+    description: description || logSnapshot.slice(0, 500) || null,
     url: screen,
     user_agent: `${Platform.OS} ${Platform.Version}`,
     session_id: `caps-${Date.now().toString(36)}`,
     metadata: {
       device: Constants.deviceName || 'unknown',
       platform: Platform.OS,
-      expoVersion: Constants.expoConfig?.sdkVersion || 'unknown',
+      expoVersion: Constants.expoConfig?.sdkVersion,
+      logCount: logs.length,
+      hasVideo,
     },
     status: 'open',
+    report_type: 'video',
+    // New S74 columns (gracefully ignored if migration not applied):
+    classification: triage.classification,
+    ai_summary: triage.summary,
+    needs_review: triage.classification === 'UNRELATED',
+    has_video: hasVideo,
   };
 
   const res = await fetch(`${url}/rest/v1/bug_reports`, {
@@ -116,246 +148,295 @@ async function submitBugReport(
     },
     body: JSON.stringify(row),
   });
-
   if (!res.ok) throw new Error(`${res.status}`);
 
-  // Get inserted ID from location header (Prefer: return=headers-only)
+  // Pass screenshot to Drive sync via global
   const location = res.headers.get('location') || '';
   const idMatch = location.match(/id=eq\.([^&]+)/);
   const bugReportId = idMatch ? idMatch[1] : null;
 
-  // Call analyze-bug-report Edge Function (fire-and-forget)
+  if (typeof globalThis.__bugReporterScreenshot === 'string') {
+    globalThis.__bugReporterScreenshot = undefined;
+  }
+
   fetch(`${url}/functions/v1/analyze-bug-report`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: key,
-    },
+    headers: { 'Content-Type': 'application/json', apikey: key },
     body: JSON.stringify({
       bug_report_id: bugReportId,
       description: `${title}${description ? ' — ' + description : ''}`,
-      report_type: 'text',
+      report_type: 'video',
       tester_name: 'Anonymous',
       app_version: VERSION,
       language: 'he',
       project_name: 'Caps',
       github_repo: 'royea-beep/caps',
-      breadcrumbs: [],
+      breadcrumbs: logs.slice(-10).map((l) => ({ message: l.message, timestamp: l.time })),
       base_url: 'https://caps.ftable.co.il',
     }),
   }).catch(() => {});
-
-  // Sync to Google Drive (fire-and-forget)
-  const drivePayload: Record<string, string> = {
-    description: `${title}${description ? ' — ' + description : ''}`,
-    severity: 'medium',
-    page: screen,
-    timestamp: new Date().toISOString(),
-  };
-  if (typeof globalThis.__bugReporterScreenshot === 'string') {
-    try {
-      const fs = await import('expo-file-system');
-      const base64 = await fs.readAsStringAsync(globalThis.__bugReporterScreenshot, { encoding: 'base64' });
-      drivePayload.screenshot = `data:image/jpeg;base64,${base64}`;
-    } catch { /* skip screenshot */ }
-    globalThis.__bugReporterScreenshot = undefined;
-  }
-  fetch(`${url}/functions/v1/sync-bugs-to-drive`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(drivePayload),
-  }).catch(() => {});
 }
 
-// ── Component ──
+// ── Recording Hook ───────────────────────────────────────────────────────────
+
+function useRecordingTimer(active: boolean) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!active) { setElapsed(0); return; }
+    const iv = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(iv);
+  }, [active]);
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const ss = String(elapsed % 60).padStart(2, '0');
+  return { elapsed, display: `${mm}:${ss}` };
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 interface Props {
   children: React.ReactNode;
-  /** Hide the FAB when game overlays are active */
   overlayActive?: boolean;
 }
 
 export function BugReporter({ children, overlayActive = false }: Props) {
   const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
+  const [liveLogs, setLiveLogs] = useState<ReturnType<typeof getGlobalLogs>>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const { elapsed, display: timerDisplay } = useRecordingTimer(isRecording);
+
+  // RN Animated red dot pulse (ZERO Reanimated — iron rule)
+  const dotAnim = useRef(new Animated.Value(1)).current;
+  const dotPulseRef = useRef<Animated.CompositeAnimation | null>(null);
+  useEffect(() => {
+    if (!visible || !isRecording) { dotAnim.setValue(1); dotPulseRef.current?.stop(); return; }
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(dotAnim, { toValue: 0.2, duration: 500, useNativeDriver: true }),
+        Animated.timing(dotAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ]),
+      { iterations: 999 }
+    );
+    dotPulseRef.current = pulse;
+    pulse.start();
+    return () => { pulse.stop(); dotPulseRef.current = null; };
+  }, [visible, isRecording]);
+
   const pathname = usePathname();
   const path = pathname ?? '';
-  const isGameScreen =
-    ['/game', '/multiplayer-game', '/sit-and-go', '/tournament', '/orientation-pick'].includes(path) ||
-    path.startsWith('/lobby');
+  const isGameScreen = ['/game', '/multiplayer-game', '/sit-and-go', '/tournament', '/orientation-pick'].includes(path) || path.startsWith('/lobby');
   const fabBottom = pathname === '/' ? insets.bottom + 60 : insets.bottom + 16;
 
-  // Dev-only ping on mount — confirms Supabase connection (disabled in production to avoid junk rows)
+  // Dev ping on mount
   useEffect(() => {
     if (!__DEV__) return;
-    submitBugReport(
-      `[ping] app opened v${typeof VERSION === 'string' ? VERSION : '?'}`,
-      '[dev ping — not a real bug]',
-      'mount',
-    ).catch(() => {});
+    submitBugReport(`[ping] app opened v${VERSION}`, '[dev ping]', 'mount', [], { classification: 'UNRELATED', summary: 'dev ping' }, false).catch(() => {});
   }, []);
 
   const openReporter = useCallback(async () => {
-    // Capture screenshot BEFORE showing modal
-    try {
-      const { captureScreen } = await import('react-native-view-shot');
-      const uri = await captureScreen({ format: 'jpg', quality: 0.5 });
-      setScreenshotUri(uri);
-    } catch {
-      // Screenshot not available — continue without it
-    }
     Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium)?.catch?.(() => {});
-    setVisible(true);
-    setTitle('');
-    setDescription('');
+    setNote('');
     setStatus('idle');
+    setLiveLogs(getGlobalLogs());
+    setVisible(true);
+
+    // Start screen recording
+    const started = await startRecording();
+    setIsRecording(started);
+
+    // Auto-stop at 60s
+    autoStopRef.current = setTimeout(() => handleStop(true), MAX_AUTO_STOP_S * 1000);
   }, []);
 
-  // Shake detection — only on native
-  useShakeDetection(openReporter, !visible);
+  // Poll debug logs every 500ms while recording
+  useEffect(() => {
+    if (!visible) { if (logPollRef.current) clearInterval(logPollRef.current); return; }
+    logPollRef.current = setInterval(() => {
+      const newLogs = getGlobalLogs();
+      setLiveLogs([...newLogs]);
+    }, 500);
+    return () => { if (logPollRef.current) clearInterval(logPollRef.current); };
+  }, [visible]);
 
-  const handleSend = useCallback(async () => {
-    if (!title.trim()) {
-      setStatus('error');
-      return;
+  // Auto-scroll log list to bottom
+  useEffect(() => {
+    if (liveLogs.length > 0) {
+      flatListRef.current?.scrollToEnd?.({ animated: false });
     }
+  }, [liveLogs]);
 
+  const handleCancel = useCallback(async () => {
+    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+    await stopRecording();
+    setIsRecording(false);
+    setVisible(false);
+  }, []);
+
+  const handleStop = useCallback(async (autoStopped = false) => {
+    if (autoStopRef.current) clearTimeout(autoStopRef.current);
     setSending(true);
     setStatus('idle');
 
     try {
-      // Pass screenshot URI to submitBugReport via global (consumed by Drive sync)
-      if (screenshotUri) (globalThis as any).__bugReporterScreenshot = screenshotUri;
-      await submitBugReport(title.trim(), description.trim(), pathname || 'unknown');
+      // 1. Stop screen recording
+      await stopRecording();
+      setIsRecording(false);
+
+      // 2. Get current log snapshot
+      const logs = getGlobalLogs();
+
+      // 3. Check if video frames were captured
+      const frames = await getLastCrashScreenshots();
+      const hasVideo = frames.length > 0;
+
+      // 4. AI triage (with timeout fallback)
+      let triage: TriageResult = { classification: 'PENDING', summary: 'Classifying...' };
+      try {
+        const triagePromise = classifyBugReport(logs, note);
+        const timeout = new Promise<TriageResult>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
+        triage = await Promise.race([triagePromise, timeout]);
+      } catch { triage = { classification: 'PENDING', summary: 'Triage timeout' }; }
+
+      // 5. Submit to Supabase
+      const titleText = note.trim() || (autoStopped ? `Auto-stopped after ${MAX_AUTO_STOP_S}s` : 'Bug recorded');
+      await submitBugReport(
+        titleText,
+        note.trim(),
+        pathname || 'unknown',
+        logs,
+        triage,
+        hasVideo,
+      );
+
       Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success)?.catch?.(() => {});
       setStatus('success');
-      setTimeout(() => {
-        setVisible(false);
-      }, 1200);
+      setTimeout(() => setVisible(false), 1500);
     } catch {
       setStatus('error');
-    } finally {
       setSending(false);
     }
-  }, [title, description, pathname]);
+  }, [note, pathname]);
+
+  useShakeDetection(openReporter, !visible);
+
+  const renderLogItem = useCallback(({ item, index }: { item: ReturnType<typeof getGlobalLogs>[0]; index: number }) => (
+    <Text
+      key={index}
+      style={[styles.logLine, item.level === 'error' && styles.logError, item.level === 'warn' && styles.logWarn]}
+      numberOfLines={2}
+    >
+      <Text style={styles.logSeq}>[{String(index + 1).padStart(3, '0')}] </Text>
+      <Text style={styles.logTime}>{item.time} </Text>
+      {item.message}
+    </Text>
+  ), []);
 
   return (
     <View style={{ flex: 1 }}>
       {children}
 
-      {/* FAB — hidden when overlay active, modal open, or on game screens */}
+      {/* FAB */}
       {!visible && !overlayActive && !isGameScreen && (
-        <TouchableOpacity
-          style={[styles.fab, { bottom: fabBottom }]}
-          onPress={openReporter}
-          activeOpacity={0.7}
-          accessibilityLabel="Report a bug"
-        >
+        <TouchableOpacity style={[styles.fab, { bottom: fabBottom }]} onPress={openReporter} activeOpacity={0.7} accessibilityLabel="Record bug">
           <Text style={styles.fabText}>🐛</Text>
         </TouchableOpacity>
       )}
 
-      {/* Report Modal */}
+      {/* Recording Modal */}
       <Modal visible={visible} animationType="slide" transparent>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalBackdrop}
-        >
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => { Keyboard.dismiss(); setVisible(false); }}
-          >
-            <TouchableOpacity activeOpacity={1} onPress={() => Keyboard.dismiss()}>
-              <View style={styles.modalContent}>
-                {/* Header */}
-                <View style={styles.header}>
-                  <Text style={styles.headerTitle}>🐛 Bug Report</Text>
-                  <TouchableOpacity onPress={() => setVisible(false)} style={styles.closeBtn}>
-                    <Text style={styles.closeBtnText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 16 }]}>
 
-                {/* Screenshot preview */}
-                {screenshotUri && (
-                  <View style={{ marginBottom: 10, borderRadius: 8, overflow: 'hidden', opacity: 0.6 }}>
-                    <Image source={{ uri: screenshotUri }} style={{ width: '100%', height: 80 }} resizeMode="cover" />
-                    <Text style={{ position: 'absolute', top: 4, right: 6, color: '#4ecdc4', fontSize: 10, fontWeight: '700' }}>Screenshot captured ✓</Text>
-                  </View>
+            {/* Header: recording indicator */}
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                {isRecording && (
+                  <Animated.View style={[styles.recDot, { opacity: dotAnim }]} />
                 )}
-
-                {/* Meta info */}
-                <Text style={styles.meta}>
-                  {PROJECT} v{VERSION} · {pathname || '/'}
+                <Text style={styles.headerTitle}>
+                  {isRecording ? `🔴 RECORDING  ${timerDisplay}` : '🐛 Bug Reporter'}
                 </Text>
-
-                {/* Title */}
-                <TextInput
-                  style={styles.input}
-                  placeholder="What went wrong?"
-                  placeholderTextColor="#78716C"
-                  value={title}
-                  onChangeText={(t) => { setTitle(t); setStatus('idle'); }}
-                  maxLength={100}
-                  autoFocus
-                  returnKeyType="next"
-                />
-
-                {/* Description */}
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="Steps to reproduce (optional)"
-                  placeholderTextColor="#78716C"
-                  value={description}
-                  onChangeText={setDescription}
-                  maxLength={500}
-                  multiline
-                  numberOfLines={3}
-                  returnKeyType="done"
-                  textAlignVertical="top"
-                />
-
-                {/* Status message */}
-                {status === 'success' && (
-                  <Text style={styles.statusSuccess}>✅ Report sent — thank you!</Text>
-                )}
-                {status === 'error' && !title.trim() && (
-                  <Text style={styles.statusError}>Please enter a title</Text>
-                )}
-                {status === 'error' && title.trim() && (
-                  <Text style={styles.statusError}>❌ Failed to send — try again</Text>
-                )}
-
-                {/* Send button */}
-                <TouchableOpacity
-                  style={[styles.sendBtn, sending && { opacity: 0.6 }]}
-                  onPress={handleSend}
-                  disabled={sending}
-                  activeOpacity={0.7}
-                >
-                  {sending ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.sendBtnText}>📤 Send Report</Text>
-                  )}
-                </TouchableOpacity>
-
-                <Text style={styles.hint}>Shake your phone to open this anytime</Text>
               </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
+              <Text style={styles.metaText}>v{VERSION} · {pathname || '/'}</Text>
+            </View>
+
+            {/* Live debug log stream */}
+            <View style={styles.logContainer}>
+              <Text style={styles.logHeader}>DEBUG LOG ({liveLogs.length})</Text>
+              <FlatList
+                ref={flatListRef}
+                data={liveLogs}
+                renderItem={renderLogItem}
+                keyExtractor={(_, i) => String(i)}
+                style={styles.logList}
+                showsVerticalScrollIndicator={false}
+                getItemLayout={(_, index) => ({ length: 26, offset: 26 * index, index })}
+                initialScrollIndex={Math.max(0, liveLogs.length - 1)}
+                onScrollToIndexFailed={() => flatListRef.current?.scrollToEnd?.({ animated: false })}
+              />
+            </View>
+
+            {/* Mic indicator (visual only — expo-av not installed) */}
+            <View style={styles.micRow}>
+              <Text style={styles.micText}>🎤 Audio: type your description below</Text>
+              <Text style={styles.micHint}>(tap to record voice in a future update)</Text>
+            </View>
+
+            {/* Text note */}
+            <TextInput
+              style={styles.noteInput}
+              placeholder="Describe the bug... (optional)"
+              placeholderTextColor="#78716C"
+              value={note}
+              onChangeText={setNote}
+              maxLength={300}
+              multiline
+              numberOfLines={2}
+              returnKeyType="done"
+              textAlignVertical="top"
+            />
+
+            {/* Status */}
+            {status === 'success' && <Text style={styles.statusSuccess}>✅ Bug report sent — thank you!</Text>}
+            {status === 'error' && <Text style={styles.statusError}>❌ Failed to send — try again</Text>}
+
+            {/* Buttons */}
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} disabled={sending}>
+                <Text style={styles.cancelBtnText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.stopBtn, sending && { opacity: 0.6 }]}
+                onPress={() => handleStop(false)}
+                disabled={sending}
+                activeOpacity={0.8}
+              >
+                {sending
+                  ? <ActivityIndicator size="small" color="#000" />
+                  : <Text style={styles.stopBtnText}>⏹ STOP & SEND</Text>
+                }
+              </TouchableOpacity>
+            </View>
+
+            {elapsed >= 50 && (
+              <Text style={styles.autoStopHint}>Auto-stops in {MAX_AUTO_STOP_S - elapsed}s</Text>
+            )}
+
+          </View>
+        </View>
       </Modal>
     </View>
   );
 }
 
-// ── Styles ──
+// ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   fab: {
@@ -376,51 +457,72 @@ const styles = StyleSheet.create({
     elevation: 999,
   },
   fabText: { fontSize: 20 },
-
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1a0e06',
-    borderRadius: 16,
-    padding: 24,
-    width: 340,
-    maxWidth: '90%',
-    borderWidth: 1,
+    backgroundColor: '#0d0700',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
     borderColor: '#3d2a1a',
+    maxHeight: '90%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#f5e6d3',
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  recDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ff4444',
   },
-  closeBtn: {
-    width: 32,
-    height: 32,
+  headerTitle: { color: '#f5e6d3', fontSize: 16, fontWeight: '700' },
+  metaText: { color: '#78716C', fontSize: 10 },
+  logContainer: {
+    backgroundColor: '#080400',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a1a0a',
+    marginBottom: 10,
+    height: 200,
+    overflow: 'hidden',
+  },
+  logHeader: {
+    color: '#00ff00',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a3a1a',
+  },
+  logList: { flex: 1, paddingHorizontal: 6, paddingVertical: 2 },
+  logLine: { color: '#00cc00', fontSize: 9, lineHeight: 13, marginBottom: 1 },
+  logError: { color: '#ff4444' },
+  logWarn: { color: '#ffaa00' },
+  logSeq: { color: '#666', fontSize: 8 },
+  logTime: { color: '#555', fontSize: 8 },
+  micRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
-  closeBtnText: {
-    fontSize: 20,
-    color: '#78716C',
-    fontWeight: '600',
-  },
-  meta: {
-    fontSize: 11,
-    color: '#78716C',
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: '#0d0600',
+  micText: { color: '#c8a84b', fontSize: 12, fontWeight: '600' },
+  micHint: { color: '#555', fontSize: 10 },
+  noteInput: {
+    backgroundColor: '#1a0e06',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#3d2a1a',
@@ -428,40 +530,28 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: '#f5e6d3',
     fontSize: 14,
-    marginBottom: 10,
+    marginBottom: 12,
+    minHeight: 60,
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  statusSuccess: {
-    textAlign: 'center',
-    color: '#4ecdc4',
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  statusError: {
-    textAlign: 'center',
-    color: '#FF3B30',
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  sendBtn: {
-    backgroundColor: '#c96a1a',
+  statusSuccess: { color: '#4CAF50', fontSize: 13, textAlign: 'center', marginBottom: 8 },
+  statusError: { color: '#ff4444', fontSize: 13, textAlign: 'center', marginBottom: 8 },
+  btnRow: { flexDirection: 'row', gap: 10 },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
     borderRadius: 12,
-    height: 48,
+    borderWidth: 1,
+    borderColor: '#3d2a1a',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  sendBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+  cancelBtnText: { color: '#78716C', fontSize: 14, fontWeight: '700', letterSpacing: 1 },
+  stopBtn: {
+    flex: 2,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#ff4444',
+    alignItems: 'center',
   },
-  hint: {
-    textAlign: 'center',
-    color: '#78716C',
-    fontSize: 11,
-    marginTop: 10,
-  },
+  stopBtnText: { color: '#000', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
+  autoStopHint: { color: '#ff6666', fontSize: 11, textAlign: 'center', marginTop: 6 },
 });
