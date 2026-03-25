@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform }
 import { useRouter } from 'expo-router';
 import { rv, rf, rs } from '../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+// no Reanimated — iron rule: history screen = zero Reanimated
 import { Button } from '../components/Button';
 import { COLORS, Card } from '../constants/gameConfig';
 import { getHandHistory, clearHandHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
@@ -73,7 +73,7 @@ function handRecordToShareData(hand: HandRecord): ShareData {
   };
 }
 
-function HandCard({ hand, index }: { hand: HandRecord; index: number }) {
+function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; onReplay: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [sharing, setSharing] = useState(false);
   const shareRef = useRef<any>(null);
@@ -91,7 +91,7 @@ function HandCard({ hand, index }: { hand: HandRecord; index: number }) {
   }, [hand]);
 
   return (
-    <Animated.View entering={FadeInDown.duration(300).delay(index * 80)}>
+    <View>
       <TouchableOpacity
         style={[styles.handCard, isWin ? styles.handCardWin : styles.handCardLose]}
         onPress={() => setExpanded(!expanded)}
@@ -153,10 +153,17 @@ function HandCard({ hand, index }: { hand: HandRecord; index: number }) {
                 {hand.boardCount} boards | {hand.numberOfPlayers} players | {hand.potPerBoard}/board
               </Text>
             </View>
+            <TouchableOpacity
+              style={styles.replayBtn}
+              onPress={(e) => { e.stopPropagation(); onReplay(hand.id); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.replayBtnText}>▶ REPLAY HAND</Text>
+            </TouchableOpacity>
           </View>
         )}
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -244,26 +251,30 @@ export default function HandHistoryScreen() {
     ]);
   }, []);
 
+  const handleReplay = useCallback((id: string) => {
+    router.push(`/replay?id=${id}` as any);
+  }, [router]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
+        <View style={styles.header}>
           <Text style={styles.title}>HAND HISTORY</Text>
-          <Text style={styles.subtitle}>Last {MAX_DISPLAY} hands</Text>
-        </Animated.View>
+          <Text style={styles.subtitle}>Last {history.length} / {MAX_DISPLAY} hands</Text>
+        </View>
 
         {loading ? (
           <Text style={styles.emptyText}>Loading...</Text>
         ) : history.length === 0 ? (
-          <Animated.View entering={FadeIn.duration(400).delay(200)} style={styles.emptyContainer}>
+          <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>{'\u2660'}</Text>
             <Text style={styles.emptyText}>No hands played yet</Text>
             <Text style={styles.emptySubtext}>Play a hand and it will appear here</Text>
-          </Animated.View>
+          </View>
         ) : (
           <>
             {history.map((hand, i) => (
-              <HandCard key={hand.id} hand={hand} index={i} />
+              <HandCard key={hand.id} hand={hand} index={i} onReplay={handleReplay} />
             ))}
             <View style={styles.clearSection}>
               <Button title="CLEAR HISTORY" variant="ghost" onPress={handleClear} />
@@ -279,7 +290,7 @@ export default function HandHistoryScreen() {
   );
 }
 
-const MAX_DISPLAY = 10;
+const MAX_DISPLAY = 50;
 
 const styles = StyleSheet.create({
   container: {
@@ -488,5 +499,21 @@ const styles = StyleSheet.create({
     left: -9999,
     opacity: 0,
     zIndex: -1,
+  },
+  replayBtn: {
+    marginTop: rs(8),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.4)',
+    borderRadius: rv(8),
+    paddingHorizontal: rs(20),
+    paddingVertical: rs(8),
+  },
+  replayBtnText: {
+    fontSize: rf(12),
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 1.5,
   },
 });
