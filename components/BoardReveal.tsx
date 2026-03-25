@@ -19,6 +19,7 @@ import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
+import { useGameStore } from '../store/gameStore';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -41,6 +42,8 @@ interface Props {
 
 export default function BoardReveal({ boards, onDone }: Props) {
   const { width: screenW } = useWindowDimensions();
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
+  const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const [currentIdx, setCurrentIdx] = useState(0);
   const currentIdxRef = useRef(0);
   useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);
@@ -260,7 +263,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
 
           {/* Player cards — always face-up (player knows them) (bottom) */}
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, styles.sectionLabelPlayer]}>YOUR CARDS</Text>
+            <Text style={[styles.sectionLabel, styles.sectionLabelPlayer]}>{playerAvatar} {playerDisplayName.toUpperCase()}</Text>
             <View style={[styles.cardRow, { gap: handGap }]}>
               {board.playerCards.map((c) => (
                 <CardComponent
