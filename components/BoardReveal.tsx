@@ -63,6 +63,13 @@ export default function BoardReveal({ boards, onDone }: Props) {
   const handNameOpacity = useRef(new AnimatedRN.Value(0)).current;
   const resultScale = useRef(new AnimatedRN.Value(0)).current;
   const hintOpacity = useRef(new AnimatedRN.Value(1)).current;
+  // Per-bot-card scale for impact bounce on reveal (Hearthstone principle)
+  const botCardScales = useRef([
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+  ]).current;
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const anims = useRef<AnimatedRN.CompositeAnimation[]>([]);
@@ -88,6 +95,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
     handNameOpacity.setValue(1);
     resultScale.setValue(1);
     hintOpacity.setValue(0);
+    botCardScales.forEach(s => s.setValue(1));
     Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
     // Auto-advance after brief reading time
     timers.current.push(setTimeout(doAdvance, 800));
@@ -107,6 +115,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
     handNameOpacity.setValue(0);
     resultScale.setValue(0);
     hintOpacity.setValue(1);
+    botCardScales.forEach(s => s.setValue(1));
 
     // 0ms — board appears: play tension sound
     playSound('revealStart');
@@ -118,36 +127,56 @@ export default function BoardReveal({ boards, onDone }: Props) {
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
     }, 600));
 
-    // 900ms — flip river card
+    // 1000ms — flip river card
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, 900));
+    }, 1000));
 
-    // 1300ms — flip all bot cards + medium haptic
-    timers.current.push(setTimeout(() => {
-      setBotFaceDown([false, false, false, false]);
-      playSound('cardFlip');
-      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
-    }, 1300));
+    // 1500–1800ms — staggered bot card flips (showdown moment)
+    // Each card: bounce scale 1→1.18→1 (Hearthstone impact principle)
+    [1500, 1600, 1700, 1800].forEach((ms, i) => {
+      timers.current.push(setTimeout(() => {
+        setBotFaceDown(prev => {
+          const next = [...prev];
+          next[i] = false;
+          return next;
+        });
+        // Impact bounce: pop to 1.18 then spring back to 1
+        botCardScales[i].setValue(1.18);
+        const bounce = AnimatedRN.spring(botCardScales[i], {
+          toValue: 1,
+          friction: 4,
+          tension: 120,
+          useNativeDriver: true,
+        });
+        anims.current.push(bounce);
+        bounce.start();
+        playSound('cardFlip');
+        const hapticStyle = i === 3
+          ? Haptics?.ImpactFeedbackStyle?.Medium
+          : Haptics?.ImpactFeedbackStyle?.Light;
+        Haptics?.impactAsync?.(hapticStyle)?.catch?.(() => {});
+      }, ms));
+    });
 
-    // 1500ms — fade out hint
+    // 1950ms — fade out hint
     timers.current.push(setTimeout(() => {
       const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: 400, useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, 1500));
+    }, 1950));
 
-    // 1600ms — show hand names (fade in)
+    // 2100ms — show hand names (fade in, both simultaneously)
     timers.current.push(setTimeout(() => {
       setShowHandNames(true);
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: 300, useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, 1600));
+    }, 2100));
 
-    // 2000ms — show win/lose result (scale in)
+    // 2500ms — show win/lose result (scale in)
     timers.current.push(setTimeout(() => {
       setShowResult(true);
       const a = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
@@ -161,10 +190,10 @@ export default function BoardReveal({ boards, onDone }: Props) {
       } else if (boardForSound?.winner === 'bot') {
         playSound('boardLose');
       }
-    }, 2000));
+    }, 2500));
 
-    // 3200ms — auto-advance
-    timers.current.push(setTimeout(doAdvance, 3200));
+    // 4000ms — auto-advance
+    timers.current.push(setTimeout(doAdvance, 4000));
 
     return () => {
       timers.current.forEach(clearTimeout);
@@ -173,6 +202,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
       handNameOpacity.stopAnimation();
       resultScale.stopAnimation();
       hintOpacity.stopAnimation();
+      botCardScales.forEach(s => s.stopAnimation());
     };
   }, [currentIdx]);
 
@@ -229,14 +259,18 @@ export default function BoardReveal({ boards, onDone }: Props) {
             <Text style={[styles.sectionLabel, styles.sectionLabelBot]}>BOT</Text>
             <View style={[styles.cardRow, { gap: handGap }]}>
               {board.botCards.map((c, i) => (
-                <CardComponent
+                <AnimatedRN.View
                   key={c.id}
-                  card={c}
-                  faceDown={botFaceDown[i] ?? false}
-                  flipDuration={300}
-                  cardWidth={handCardW}
-                  cardHeight={handCardH}
-                />
+                  style={{ transform: [{ scale: botCardScales[i] }] }}
+                >
+                  <CardComponent
+                    card={c}
+                    faceDown={botFaceDown[i] ?? false}
+                    flipDuration={300}
+                    cardWidth={handCardW}
+                    cardHeight={handCardH}
+                  />
+                </AnimatedRN.View>
               ))}
             </View>
             {showHandNames && board.botHandName ? (
