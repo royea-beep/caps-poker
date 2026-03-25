@@ -30,14 +30,14 @@ export interface HandRecord {
 }
 
 const HISTORY_KEY = 'caps_hand_history';
-const MAX_RECORDS = 10;
+const MAX_RECORDS = 50;
 
 export async function saveHandToHistory(hand: HandRecord): Promise<void> {
   try {
     const raw = await AsyncStorage.getItem(HISTORY_KEY);
     const history: HandRecord[] = raw ? JSON.parse(raw) : [];
     history.unshift(hand);
-    if (history.length > MAX_RECORDS) history.pop();
+    if (history.length > MAX_RECORDS) history.splice(MAX_RECORDS);
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   } catch {
     // Silent fail — history is non-critical
@@ -50,6 +50,15 @@ export async function getHandHistory(): Promise<HandRecord[]> {
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
+  }
+}
+
+export async function getHand(id: string): Promise<HandRecord | null> {
+  try {
+    const history = await getHandHistory();
+    return history.find((h) => h.id === id) ?? null;
+  } catch {
+    return null;
   }
 }
 
