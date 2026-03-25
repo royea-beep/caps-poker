@@ -12,6 +12,7 @@ export const DEFAULT_CONFIG = {
   botSpeedMin: 1500,
   botSpeedMax: 4000,
   soundEnabled: true as boolean,
+  revealSpeed: 'normal' as 'fast' | 'normal' | 'cinematic',
 };
 
 export type GameConfig = typeof DEFAULT_CONFIG;

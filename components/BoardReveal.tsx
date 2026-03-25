@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated as AnimatedRN,
+  Easing,
   Modal,
   Platform,
   Pressable,
@@ -34,14 +35,24 @@ interface RevealBoard {
   playerCards: Card[];
   botCards: Card[];
   potAmount: number;
+  playerHighlightIds: string[];
+  botHighlightIds: string[];
+  boardHighlightIds: string[];
 }
+
+const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
+  fast: 0.4,
+  normal: 1.0,
+  cinematic: 1.8,
+};
 
 interface Props {
   boards: RevealBoard[];
   onDone: () => void;
+  revealSpeed?: 'fast' | 'normal' | 'cinematic';
 }
 
-export default function BoardReveal({ boards, onDone }: Props) {
+export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: Props) {
   const { width: screenW } = useWindowDimensions();
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
@@ -65,6 +76,37 @@ export default function BoardReveal({ boards, onDone }: Props) {
   const hintOpacity = useRef(new AnimatedRN.Value(1)).current;
   // Per-bot-card scale for impact bounce on reveal (Hearthstone principle)
   const botCardScales = useRef([
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+  ]).current;
+
+  // Chip counter — animates 0→potAmount on result reveal (useNativeDriver:false — text interp)
+  const chipCounterAnim = useRef(new AnimatedRN.Value(0)).current;
+
+  // Pre-flip pulse — group scale on bot cards before they flip (iterations:2)
+  const botPulseScale = useRef(new AnimatedRN.Value(1)).current;
+
+  // Community spotlight opacity — dims non-highlighted community cards after hand name
+  const communitySpotlightOpacities = useRef([
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+  ]).current;
+
+  // Player spotlight opacity — dims non-highlighted player cards
+  const playerSpotlightOpacities = useRef([
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+    new AnimatedRN.Value(1),
+  ]).current;
+
+  // Bot spotlight opacity — dims non-highlighted bot cards
+  const botSpotlightOpacities = useRef([
     new AnimatedRN.Value(1),
     new AnimatedRN.Value(1),
     new AnimatedRN.Value(1),
@@ -96,6 +138,14 @@ export default function BoardReveal({ boards, onDone }: Props) {
     resultScale.setValue(1);
     hintOpacity.setValue(0);
     botCardScales.forEach(s => s.setValue(1));
+    chipCounterAnim.setValue(0);
+    botPulseScale.setValue(1);
+    communitySpotlightOpacities.forEach(s => s.setValue(1));
+    playerSpotlightOpacities.forEach(s => s.setValue(1));
+    botSpotlightOpacities.forEach(s => s.setValue(1));
+    // Skip: animate chip counter to final immediately
+    const skipBoard = boards[currentIdxRef.current];
+    if (skipBoard) chipCounterAnim.setValue(skipBoard.potAmount);
     Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
     // Auto-advance after brief reading time
     timers.current.push(setTimeout(doAdvance, 800));
@@ -115,7 +165,16 @@ export default function BoardReveal({ boards, onDone }: Props) {
     handNameOpacity.setValue(0);
     resultScale.setValue(0);
     hintOpacity.setValue(1);
+    chipCounterAnim.setValue(0);
+    botPulseScale.setValue(1);
+    communitySpotlightOpacities.forEach(s => s.setValue(1));
+    playerSpotlightOpacities.forEach(s => s.setValue(1));
+    botSpotlightOpacities.forEach(s => s.setValue(1));
     botCardScales.forEach(s => s.setValue(1));
+
+    // Speed multiplier — applied to all timeouts
+    const sm = SPEED_MULTIPLIER[revealSpeed];
+    const t = (ms: number) => Math.round(ms * sm);
 
     // 0ms — board appears: play tension sound
     playSound('revealStart');
@@ -125,14 +184,27 @@ export default function BoardReveal({ boards, onDone }: Props) {
       setTurnFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, 600));
+    }, t(600)));
 
     // 1000ms — flip river card
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, 1000));
+    }, t(1000)));
+
+    // 1100ms — pre-flip tension pulse on bot cards (iterations:2 = safe, never -1)
+    timers.current.push(setTimeout(() => {
+      const pulse = AnimatedRN.loop(
+        AnimatedRN.sequence([
+          AnimatedRN.timing(botPulseScale, { toValue: 1.05, duration: t(200), useNativeDriver: true }),
+          AnimatedRN.timing(botPulseScale, { toValue: 1.0, duration: t(200), useNativeDriver: true }),
+        ]),
+        { iterations: 2 }
+      );
+      anims.current.push(pulse);
+      pulse.start();
+    }, t(1100)));
 
     // 1500–1800ms — staggered bot card flips (showdown moment)
     // Each card: bounce scale 1→1.18→1 (Hearthstone impact principle)
@@ -158,42 +230,90 @@ export default function BoardReveal({ boards, onDone }: Props) {
           ? Haptics?.ImpactFeedbackStyle?.Medium
           : Haptics?.ImpactFeedbackStyle?.Light;
         Haptics?.impactAsync?.(hapticStyle)?.catch?.(() => {});
-      }, ms));
+      }, t(ms)));
     });
 
     // 1950ms — fade out hint
     timers.current.push(setTimeout(() => {
-      const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: 400, useNativeDriver: true });
+      const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: t(400), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, 1950));
+    }, t(1950)));
 
     // 2100ms — show hand names (fade in, both simultaneously)
     timers.current.push(setTimeout(() => {
       setShowHandNames(true);
-      const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: 300, useNativeDriver: true });
+      const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, 2100));
+    }, t(2100)));
 
-    // 2500ms — show win/lose result (scale in)
+    // 2200ms — community spotlight: dim non-highlighted cards
+    timers.current.push(setTimeout(() => {
+      const b = boards[currentIdxRef.current];
+      if (!b) return;
+      const allComm = [...b.openCards, ...b.closedCards];
+      // Community: dim cards not in boardHighlightIds
+      allComm.forEach((c, i) => {
+        if (!b.boardHighlightIds.includes(c.id)) {
+          const a = AnimatedRN.timing(communitySpotlightOpacities[i], {
+            toValue: 0.35, duration: t(300), useNativeDriver: true,
+          });
+          anims.current.push(a);
+          a.start();
+        }
+      });
+      // Player: dim cards not in playerHighlightIds
+      b.playerCards.forEach((c, i) => {
+        if (!b.playerHighlightIds.includes(c.id)) {
+          const a = AnimatedRN.timing(playerSpotlightOpacities[i], {
+            toValue: 0.35, duration: t(300), useNativeDriver: true,
+          });
+          anims.current.push(a);
+          a.start();
+        }
+      });
+      // Bot: dim cards not in botHighlightIds
+      b.botCards.forEach((c, i) => {
+        if (!b.botHighlightIds.includes(c.id)) {
+          const a = AnimatedRN.timing(botSpotlightOpacities[i], {
+            toValue: 0.35, duration: t(300), useNativeDriver: true,
+          });
+          anims.current.push(a);
+          a.start();
+        }
+      });
+    }, t(2200)));
+
+    // 2500ms — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
       setShowResult(true);
-      const a = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
-      anims.current.push(a);
-      a.start();
-      // Play win/lose sound at the same moment result appears
-      const boardForSound = boards[currentIdxRef.current];
-      if (boardForSound?.winner === 'player') {
+      const scaleAnim = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
+      anims.current.push(scaleAnim);
+      scaleAnim.start();
+      // Chip counter: animate 0 → potAmount (useNativeDriver:false — text interpolation)
+      const boardForResult = boards[currentIdxRef.current];
+      if (boardForResult && boardForResult.winner !== 'tie') {
+        const counterAnim = AnimatedRN.timing(chipCounterAnim, {
+          toValue: boardForResult.potAmount,
+          duration: t(800),
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        });
+        anims.current.push(counterAnim);
+        counterAnim.start();
+      }
+      // Play win/lose sound
+      if (boardForResult?.winner === 'player') {
         playSound('boardWin');
         Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success)?.catch?.(() => {});
-      } else if (boardForSound?.winner === 'bot') {
+      } else if (boardForResult?.winner === 'bot') {
         playSound('boardLose');
       }
-    }, 2500));
+    }, t(2500)));
 
     // 4000ms — auto-advance
-    timers.current.push(setTimeout(doAdvance, 4000));
+    timers.current.push(setTimeout(doAdvance, t(4000)));
 
     return () => {
       timers.current.forEach(clearTimeout);
@@ -203,6 +323,11 @@ export default function BoardReveal({ boards, onDone }: Props) {
       resultScale.stopAnimation();
       hintOpacity.stopAnimation();
       botCardScales.forEach(s => s.stopAnimation());
+      chipCounterAnim.stopAnimation();
+      botPulseScale.stopAnimation();
+      communitySpotlightOpacities.forEach(s => s.stopAnimation());
+      playerSpotlightOpacities.forEach(s => s.stopAnimation());
+      botSpotlightOpacities.forEach(s => s.stopAnimation());
     };
   }, [currentIdx]);
 
@@ -224,11 +349,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
   const resultColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#fff';
   const tx = t();
   const resultText = board.winner === 'player' ? tx.youWin : board.winner === 'bot' ? tx.youLose : tx.tie;
-  const chipDelta = board.winner === 'player'
-    ? `+${board.potAmount}`
-    : board.winner === 'bot'
-    ? `-${board.potAmount}`
-    : '±0';
+  const chipSign = board.winner === 'player' ? '+' : board.winner === 'bot' ? '-' : '±';
   const chipColor = board.winner === 'player' ? COLORS.goldBright : board.winner === 'bot' ? '#F44336' : '#aaa';
 
   return (
@@ -257,11 +378,12 @@ export default function BoardReveal({ boards, onDone }: Props) {
           {/* Bot cards — face-down until revealed (top) */}
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, styles.sectionLabelBot]}>BOT</Text>
-            <View style={[styles.cardRow, { gap: handGap }]}>
+            {/* Pulse wrapper — group scale on all bot cards before flip (iterations:2) */}
+            <AnimatedRN.View style={[styles.cardRow, { gap: handGap, transform: [{ scale: botPulseScale }] }]}>
               {board.botCards.map((c, i) => (
                 <AnimatedRN.View
                   key={c.id}
-                  style={{ transform: [{ scale: botCardScales[i] }] }}
+                  style={{ transform: [{ scale: botCardScales[i] }], opacity: botSpotlightOpacities[i] }}
                 >
                   <CardComponent
                     card={c}
@@ -272,7 +394,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
                   />
                 </AnimatedRN.View>
               ))}
-            </View>
+            </AnimatedRN.View>
             {showHandNames && board.botHandName ? (
               <AnimatedRN.Text style={[styles.handNameBadge, { opacity: handNameOpacity }]}>
                 {board.botHandName}
@@ -285,14 +407,15 @@ export default function BoardReveal({ boards, onDone }: Props) {
             <Text style={styles.sectionLabel}>COMMUNITY</Text>
             <View style={[styles.cardRow, { gap: commGap }]}>
               {allCommunity.map((c, i) => (
-                <CardComponent
-                  key={c.id}
-                  card={c}
-                  faceDown={i === 3 ? turnFaceDown : i === 4 ? riverFaceDown : false}
-                  flipDuration={400}
-                  cardWidth={commCardW}
-                  cardHeight={commCardH}
-                />
+                <AnimatedRN.View key={c.id} style={{ opacity: communitySpotlightOpacities[i] }}>
+                  <CardComponent
+                    card={c}
+                    faceDown={i === 3 ? turnFaceDown : i === 4 ? riverFaceDown : false}
+                    flipDuration={400}
+                    cardWidth={commCardW}
+                    cardHeight={commCardH}
+                  />
+                </AnimatedRN.View>
               ))}
             </View>
           </View>
@@ -301,15 +424,16 @@ export default function BoardReveal({ boards, onDone }: Props) {
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, styles.sectionLabelPlayer]}>{playerAvatar} {playerDisplayName.toUpperCase()}</Text>
             <View style={[styles.cardRow, { gap: handGap }]}>
-              {board.playerCards.map((c) => (
-                <CardComponent
-                  key={c.id}
-                  card={c}
-                  faceDown={false}
-                  flipDuration={300}
-                  cardWidth={handCardW}
-                  cardHeight={handCardH}
-                />
+              {board.playerCards.map((c, i) => (
+                <AnimatedRN.View key={c.id} style={{ opacity: playerSpotlightOpacities[i] }}>
+                  <CardComponent
+                    card={c}
+                    faceDown={false}
+                    flipDuration={300}
+                    cardWidth={handCardW}
+                    cardHeight={handCardH}
+                  />
+                </AnimatedRN.View>
               ))}
             </View>
             {showHandNames && (
@@ -323,7 +447,17 @@ export default function BoardReveal({ boards, onDone }: Props) {
           {showResult ? (
             <AnimatedRN.View style={[styles.resultRow, { transform: [{ scale: resultScale }] }]}>
               <Text style={[styles.resultText, { color: resultColor }]}>{resultText}</Text>
-              <Text style={[styles.chipDelta, { color: chipColor }]}>{chipDelta}</Text>
+              {board.winner === 'tie' ? (
+                <Text style={[styles.chipDelta, { color: chipColor }]}>±0</Text>
+              ) : (
+                <AnimatedRN.Text style={[styles.chipDelta, { color: chipColor }]}>
+                  {chipCounterAnim.interpolate({
+                    inputRange: [0, board.potAmount],
+                    outputRange: [`${chipSign}0`, `${chipSign}${board.potAmount}`],
+                    extrapolate: 'clamp',
+                  })}
+                </AnimatedRN.Text>
+              )}
             </AnimatedRN.View>
           ) : (
             <View style={styles.resultRowPlaceholder} />

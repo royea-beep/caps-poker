@@ -158,6 +158,34 @@ function NotificationsToggle() {
   );
 }
 
+function RevealSpeedSelector() {
+  const value = useGameStore((s) => s.config.revealSpeed) ?? 'normal';
+  const updateConfig = useGameStore((s) => s.updateConfig);
+  const options: Array<{ key: 'fast' | 'normal' | 'cinematic'; label: string }> = [
+    { key: 'fast', label: 'Fast' },
+    { key: 'normal', label: 'Normal' },
+    { key: 'cinematic', label: 'Cinematic' },
+  ];
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Reveal Speed</Text>
+      </View>
+      <View style={styles.selectorRow}>
+        {options.map((o) => (
+          <Pressable
+            key={o.key}
+            onPress={() => { updateConfig({ revealSpeed: o.key }); CapsHooks.settingsChanged('revealSpeed', o.key); }}
+            style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
+          >
+            <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function SoundToggle() {
   const soundEnabled = useGameStore((s) => s.config.soundEnabled);
   const updateConfig = useGameStore((s) => s.updateConfig);
@@ -650,6 +678,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>GAMEPLAY</Text>
         <PlayerCountSelector />
+        <RevealSpeedSelector />
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />

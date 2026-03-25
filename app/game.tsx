@@ -178,6 +178,9 @@ function GameScreenInner() {
     playerCards: Card[];
     botCards: Card[];
     potAmount: number;
+    playerHighlightIds: string[];
+    botHighlightIds: string[];
+    boardHighlightIds: string[];
   }>>([]);
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
@@ -471,6 +474,9 @@ function GameScreenInner() {
         playerCards: b.playerCards,
         botCards: (b.allBotCards?.[0]) ?? [],
         potAmount: b.potAmount,
+        playerHighlightIds: b.playerHighlightIds ?? [],
+        botHighlightIds: b.botHighlightIds ?? [],
+        boardHighlightIds: b.boardHighlightIds ?? [],
       }));
       setPendingRevealBoards(revealSummary);
       setShowSafeReveal(true);
@@ -879,7 +885,7 @@ function GameScreenInner() {
           )}
         </View>
       {showSafeReveal && (
-        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} />
+        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} revealSpeed={config.revealSpeed} />
       )}
       </SafeAreaView>
     );
@@ -1000,7 +1006,7 @@ function GameScreenInner() {
       />
       </Animated.View>
       {showSafeReveal && (
-        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} />
+        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} revealSpeed={config.revealSpeed} />
       )}
     </SafeAreaView>
   );
