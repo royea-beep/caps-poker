@@ -39,6 +39,7 @@ export const PLAYER_HAND_SIZE = 16;
 export function getBoardCount(numberOfPlayers: number): number {
   if (numberOfPlayers === 3) return 3;
   if (numberOfPlayers === 4) return 2;
+  if (numberOfPlayers === 5) return 2;
   return 4;
 }
 

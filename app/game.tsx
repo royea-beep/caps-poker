@@ -64,6 +64,7 @@ const HINT_TEXTS = [
 ];
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rb, rv } from '../utils/responsive';
+import { t } from '../utils/i18n';
 import { KILL_game } from '../utils/animationKill';
 import { OrientationType } from '../store/gameStore';
 import BoardReveal from '../components/BoardReveal';
@@ -920,7 +921,7 @@ function GameScreenInner() {
               }}
               disabled={boards.every((b) => b.playerCards.length === 0)}
             >
-              <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>UNDO</Text>
+              <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>{t().undo}</Text>
             </Pressable>
           )}
         </View>
@@ -980,7 +981,7 @@ function GameScreenInner() {
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
-              {allBotsReady ? '✓ READY' : '…'}
+              {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
           </View>
           {isArranging && (
@@ -990,7 +991,7 @@ function GameScreenInner() {
               disabled={!allBoardsFull}
             >
               <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-                {allBoardsFull ? '✓ READY' : `PLACE ${cardsRemaining}`}
+                {allBoardsFull ? t().ready : t().placeN(cardsRemaining)}
               </Text>
             </Pressable>
           )}
@@ -1031,12 +1032,12 @@ function GameScreenInner() {
                 color={timerColor}
                 pulsing={timerPulsing}
               />
-              <Text style={styles.countdownLabel}>{firstFinisher} finished!</Text>
+              <Text style={styles.countdownLabel}>{firstFinisher ? t().botFinished : ''}</Text>
             </View>
           )}
           {!countdownActive && isArranging && (
             <Text style={styles.freePlayLabel}>
-              {cardsRemaining === 0 ? '✓ ALL PLACED' : `ARRANGE ${cardsRemaining} CARDS`}
+              {cardsRemaining === 0 ? t().allPlaced : `ARRANGE ${cardsRemaining} CARDS`}
             </Text>
           )}
           {playerReady && !allBotsReady && (
@@ -1060,7 +1061,7 @@ function GameScreenInner() {
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
-              {allBotsReady ? '✓ READY' : '…'}
+              {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
           </View>
         </View>
@@ -1156,14 +1157,14 @@ function GameScreenInner() {
             setCountdown((prev) => prev + 15);
           }}
         >
-          <Text style={styles.timeBankText}>⏱ +15s</Text>
+          <Text style={styles.timeBankText}>⏱ {t().timeBank}</Text>
         </Pressable>
       )}
 
       {/* WIN ALL bonus hint */}
       {isArranging && allBoardsFull && (
         <Text style={styles.winAllHint}>
-          {`WIN ALL → +${config.potPerBoard * boardCount * numberOfPlayers + Math.round(config.potPerBoard * boardCount * 0.5)} 🟡`}
+          {t().winAll(config.potPerBoard * boardCount * numberOfPlayers + Math.round(config.potPerBoard * boardCount * 0.5))}
         </Text>
       )}
 

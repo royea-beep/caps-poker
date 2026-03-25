@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { rf, rs, rv } from '../utils/responsive';
+import { t } from '../utils/i18n';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
 import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
@@ -113,7 +114,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   return (
     <View style={[styles.container, { backgroundColor: theme.surface, borderTopColor: theme.boardBorder }]}>
       <View style={styles.labelRow}>
-        <Text style={styles.label}>YOUR HAND</Text>
+        <Text style={styles.label}>{t().yourHand}</Text>
         <View style={styles.countBadge}>
           <Text style={styles.countBadgeText}>{cards.length}</Text>
         </View>

@@ -19,6 +19,7 @@ import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
+import { t } from '../utils/i18n';
 import { useGameStore } from '../store/gameStore';
 
 let Haptics: any = null;
@@ -191,7 +192,8 @@ export default function BoardReveal({ boards, onDone }: Props) {
   const handCardH = Math.round(handCardW * 1.4);
 
   const resultColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#fff';
-  const resultText = board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE';
+  const tx = t();
+  const resultText = board.winner === 'player' ? tx.youWin : board.winner === 'bot' ? tx.youLose : tx.tie;
   const chipDelta = board.winner === 'player'
     ? `+${board.potAmount}`
     : board.winner === 'bot'
@@ -208,7 +210,7 @@ export default function BoardReveal({ boards, onDone }: Props) {
         >
           {/* Header — board title + progress dots */}
           <View style={styles.header}>
-            <Text style={styles.boardTitle}>BOARD {currentIdx + 1} OF {totalBoards}</Text>
+            <Text style={styles.boardTitle}>{t().boardN(currentIdx + 1, totalBoards)}</Text>
             <View style={styles.dotsRow}>
               {Array.from({ length: totalBoards }).map((_, i) => (
                 <View
@@ -296,11 +298,11 @@ export default function BoardReveal({ boards, onDone }: Props) {
           {/* Hint text */}
           {!showResult ? (
             <AnimatedRN.Text style={[styles.hint, { opacity: hintOpacity }]}>
-              Tap to reveal
+              {t().tapToReveal}
             </AnimatedRN.Text>
           ) : (
             <Text style={styles.hint}>
-              {currentIdx + 1 < totalBoards ? '▶ TAP FOR NEXT BOARD' : '▶ TAP FOR RESULTS'}
+              {currentIdx + 1 < totalBoards ? t().tapForNextBoard : '▶ TAP FOR RESULTS'}
             </Text>
           )}
         </Pressable>

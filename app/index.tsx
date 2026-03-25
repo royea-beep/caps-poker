@@ -36,6 +36,7 @@ import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import ProQuoteBanner from '../components/ProQuoteBanner';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
+import { t } from '../utils/i18n';
 
 const isWeb = Platform.OS === 'web';
 
@@ -574,10 +575,10 @@ export default function HomeScreen() {
 
         {/* ── Action buttons ── */}
         <View style={[styles.buttonSection, { gap: btnGap }]}>
-          <HomeBtn title="NEW HAND (vs Bot)" theme={theme} isPrimary onPress={handleNewHand} btnHeight={btnHeight} btnFontSize={btnFontSize} />
+          <HomeBtn title={t().newHand} theme={theme} isPrimary onPress={handleNewHand} btnHeight={btnHeight} btnFontSize={btnFontSize} />
           {/* S52: board count subtitle — Brunson fix */}
           <Text style={{ color: COLORS.textDim ?? '#888', fontSize: rf(13), textAlign: 'center', marginTop: -rs(4) }}>
-            {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
+            {t().boardsPlayers(getBoardCount(config.numberOfPlayers), config.numberOfPlayers)}
           </Text>
 
           {/* ── Google sign-in / signed-in row ── */}
@@ -631,19 +632,19 @@ export default function HomeScreen() {
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>HAND HISTORY</Text>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{t().history}</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => router.push('/stats' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>STATS</Text>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{t().stats}</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => setShowTutorial(true)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>📖 HOW TO PLAY</Text>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>📖 {t().tutorial}</Text>
             </Pressable>
             <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
             <Pressable onPress={() => router.push('/settings' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>SETTINGS</Text>
+              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t().settings}</Text>
             </Pressable>
           </View>
         </View>

@@ -1,0 +1,245 @@
+/**
+ * i18n — S66
+ * Detects device language (Hebrew or English) and provides typed translations.
+ * OTA-safe: uses NativeModules fallback (no expo-localization native dependency).
+ */
+import { I18nManager, NativeModules, Platform } from 'react-native';
+
+export type Language = 'he' | 'en';
+
+/** Detect device language code without requiring expo-localization native module */
+function detectLanguageCode(): string {
+  try {
+    // Try expo-localization first (may or may not be compiled into the binary)
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Loc = require('expo-localization');
+    const code = Loc.getLocales?.()[0]?.languageCode;
+    if (code) return code;
+  } catch {
+    // Not available in this build — fall through to NativeModules
+  }
+
+  try {
+    if (Platform.OS === 'ios') {
+      const settings = NativeModules.SettingsManager?.settings;
+      const raw = settings?.AppleLocale || settings?.AppleLanguages?.[0] || 'en';
+      return raw.substring(0, 2);
+    }
+    if (Platform.OS === 'android') {
+      const id: string = NativeModules.I18nManager?.localeIdentifier ?? 'en';
+      return id.substring(0, 2);
+    }
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      return navigator.language.substring(0, 2);
+    }
+  } catch {
+    // ignore
+  }
+  return 'en';
+}
+
+// Singleton — computed once per app session
+let _lang: Language | null = null;
+
+export function getLanguage(): Language {
+  if (!_lang) {
+    const code = detectLanguageCode();
+    _lang = code === 'he' ? 'he' : 'en';
+  }
+  return _lang;
+}
+
+export function isRTL(): boolean {
+  return getLanguage() === 'he';
+}
+
+// ---------------------------------------------------------------------------
+// Translation interface
+// ---------------------------------------------------------------------------
+
+interface Translations {
+  // Game screen
+  botFinished: string;
+  yourHand: string;
+  placeN: (n: number) => string;
+  undo: string;
+  ready: string;
+  allPlaced: string;
+  timeBank: string;
+  winAll: (n: number) => string;
+
+  // Board
+  bot: string;
+  yourCards: string;
+  boardN: (n: number, total: number) => string;
+
+  // Reveal
+  tapForNextBoard: string;
+  tapToReveal: string;
+  youWin: string;
+  youLose: string;
+  tie: string;
+
+  // Results
+  dealMeIn: string;
+  netChips: (n: number) => string;
+  complete: string;
+  completeBonus: string;
+
+  // Home
+  newHand: string;
+  history: string;
+  stats: string;
+  settings: string;
+  tutorial: string;
+  boardsPlayers: (boards: number, players: number) => string;
+
+  // Onboarding steps
+  onboarding: {
+    step1Title: string;
+    step1Body: string;
+    step2Title: string;
+    step2Body: string;
+    step3Title: string;
+    step3Body: string;
+    step4Title: string;
+    step4Body: string;
+    step5Title: string;
+    step5Body: string;
+    next: string;
+    skip: string;
+    letsPlay: string;
+  };
+
+  // Settings
+  settingsTitle: string;
+  proQuotes: string;
+  proVoice: string;
+  showTutorial: string;
+  simulationMode: string;
+  debugOverlay: string;
+  resetDefaults: string;
+  yourProfile: string;
+  edit: string;
+}
+
+// ---------------------------------------------------------------------------
+// Hebrew
+// ---------------------------------------------------------------------------
+
+const he: Translations = {
+  botFinished: 'הבוט סיים!',
+  yourHand: 'היד שלך',
+  placeN: (n) => `שים ${n}`,
+  undo: 'בטל',
+  ready: 'מוכן',
+  allPlaced: 'כל הקלפים הונחו!',
+  timeBank: '+15 שניות',
+  winAll: (n) => `נצח הכל ← +${n} 🟡`,
+  bot: 'בוט',
+  yourCards: 'הקלפים שלך',
+  boardN: (n, total) => `בורד ${n} מתוך ${total}`,
+  tapForNextBoard: 'הקש לבורד הבא',
+  tapToReveal: 'הקש לחשיפה',
+  youWin: '✅ ניצחת',
+  youLose: '❌ הפסדת',
+  tie: '🤝 תיקו',
+  dealMeIn: 'קלפים חדשים',
+  netChips: (n) => n > 0 ? `+${n} 🟡` : `${n} 🟡`,
+  complete: '🏆 הושלם!',
+  completeBonus: '+50% בונוס',
+  newHand: 'יד חדשה',
+  history: 'היסטוריה',
+  stats: 'סטטיסטיקות',
+  settings: 'הגדרות',
+  tutorial: 'מדריך',
+  boardsPlayers: (b, p) => `${b} בורדים · ${p} שחקנים`,
+  onboarding: {
+    step1Title: 'ברוך הבא ל-CAPS',
+    step1Body: 'CAPS הוא משחק Omaha Poker על מספר בורדים במקביל. כל בורד = יד נפרדת עם פוט נפרד.',
+    step2Title: 'חלק את הקלפים',
+    step2Body: 'קיבלת 16 קלפים. שים 4 קלפים על כל בורד — כולם בשימוש, אין קלפים בצד.',
+    step3Title: 'בחר בחוכמה',
+    step3Body: 'הפלופ גלוי מראש. בנה את היד הטובה ביותר לפי חוקי Omaha: בדיוק 2 מהקלפים שלך + 3 מקלפי הקהילה.',
+    step4Title: 'COMPLETE Bonus',
+    step4Body: 'נצח את כל הבורדים → קבל 50% נוספים! זה ה-COMPLETE bonus. מסוכן אבל שווה.',
+    step5Title: 'מוכן לשחק?',
+    step5Body: 'הבוט ימלא את הקלפים שלו. לחץ מוכן כשסיימת. הקש על הקלפים כדי לבחור, הקש על הבורד כדי להניח.',
+    next: 'הבא',
+    skip: 'דלג',
+    letsPlay: 'בואו נשחק!',
+  },
+  settingsTitle: 'הגדרות',
+  proQuotes: 'ציטוטי מקצוענים (הדמיה)',
+  proVoice: 'קולות מקצוענים (AI)',
+  showTutorial: 'הצג מדריך מחדש',
+  simulationMode: 'מצב סימולציה',
+  debugOverlay: 'כלי דיבאג',
+  resetDefaults: 'אפס הגדרות',
+  yourProfile: 'הפרופיל שלך',
+  edit: 'ערוך',
+};
+
+// ---------------------------------------------------------------------------
+// English
+// ---------------------------------------------------------------------------
+
+const en: Translations = {
+  botFinished: 'Bot finished!',
+  yourHand: 'YOUR HAND',
+  placeN: (n) => `PLACE ${n}`,
+  undo: 'UNDO',
+  ready: 'READY',
+  allPlaced: 'All cards placed!',
+  timeBank: '+15s',
+  winAll: (n) => `WIN ALL → +${n} 🟡`,
+  bot: 'BOT',
+  yourCards: 'YOUR CARDS',
+  boardN: (n, total) => `BOARD ${n} OF ${total}`,
+  tapForNextBoard: '▶ TAP FOR NEXT BOARD',
+  tapToReveal: 'Tap to reveal',
+  youWin: '✅ YOU WIN',
+  youLose: '❌ YOU LOSE',
+  tie: '🤝 TIE',
+  dealMeIn: 'DEAL ME IN',
+  netChips: (n) => n > 0 ? `+${n} 🟡` : `${n} 🟡`,
+  complete: '🏆 COMPLETE!',
+  completeBonus: '+50% BONUS',
+  newHand: 'NEW HAND',
+  history: 'HISTORY',
+  stats: 'STATS',
+  settings: 'SETTINGS',
+  tutorial: 'TUTORIAL',
+  boardsPlayers: (b, p) => `${b} boards · ${p} players`,
+  onboarding: {
+    step1Title: 'Welcome to CAPS',
+    step1Body: 'CAPS is Omaha Poker played across multiple boards simultaneously. Each board is a separate hand with its own pot.',
+    step2Title: 'Distribute your cards',
+    step2Body: 'You receive 16 cards. Place exactly 4 cards on each board — all cards must be placed, none left over.',
+    step3Title: 'Choose wisely',
+    step3Body: 'The flop is visible upfront. Build the best hand on each board using Omaha rules: exactly 2 of your cards + 3 community cards.',
+    step4Title: 'COMPLETE Bonus',
+    step4Body: "Win ALL boards → earn 50% extra from the total pot! That's the COMPLETE bonus. Risky but powerful.",
+    step5Title: 'Ready to play?',
+    step5Body: 'The bot will fill its cards. Press READY when done. Tap a card to select it, tap a board slot to place it.',
+    next: 'NEXT',
+    skip: 'SKIP',
+    letsPlay: "LET'S PLAY!",
+  },
+  settingsTitle: 'SETTINGS',
+  proQuotes: 'Pro Quotes (AI Simulation)',
+  proVoice: 'Pro Voice Clips (AI-Generated)',
+  showTutorial: 'Show Tutorial Again',
+  simulationMode: 'Simulation Mode',
+  debugOverlay: 'Debug Overlay',
+  resetDefaults: 'Reset to Defaults',
+  yourProfile: 'YOUR PROFILE',
+  edit: 'EDIT',
+};
+
+const translations: Record<Language, Translations> = { he, en };
+
+/** Get translations for current device language. Cached singleton. */
+export function t(): Translations {
+  return translations[getLanguage()];
+}

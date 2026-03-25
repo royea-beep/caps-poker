@@ -80,6 +80,7 @@ export default function SpectateScreen() {
   const channelRef = useRef<any>(null);
   const spectatorId = useRef(generateSpectatorId()).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const snapshotTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!roomCode) {
@@ -100,6 +101,11 @@ export default function SpectateScreen() {
 
     channel
       .on('broadcast', { event: 'game_state' }, ({ payload }: { payload: SpectatorSnapshot }) => {
+        // Cancel the no-snapshot timeout
+        if (snapshotTimeoutRef.current) {
+          clearTimeout(snapshotTimeoutRef.current);
+          snapshotTimeoutRef.current = null;
+        }
         setSnapshot(payload);
         // Fade in content on first snapshot
         if (!connected) {
@@ -115,12 +121,20 @@ export default function SpectateScreen() {
           setConnected(true);
           // Register presence as spectator
           await channel.track({ spectatorId, joinedAt: Date.now() });
+          // If no game state arrives within 15s, show not-found message
+          snapshotTimeoutRef.current = setTimeout(() => {
+            setError('Game not found or not started yet.');
+          }, 15000);
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setError('Could not connect to game. Make sure the room code is correct.');
         }
       });
 
     return () => {
+      if (snapshotTimeoutRef.current) {
+        clearTimeout(snapshotTimeoutRef.current);
+        snapshotTimeoutRef.current = null;
+      }
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
