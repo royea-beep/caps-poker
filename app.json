@@ -68,7 +68,7 @@
       "expo-updates",
       "expo-localization",
       [
-        "expo-av",
+        "expo-audio",
         {
           "microphonePermission": "Allow Caps Poker to record audio for bug reports"
         }
