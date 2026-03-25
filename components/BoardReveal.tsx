@@ -104,6 +104,9 @@ export default function BoardReveal({ boards, onDone }: Props) {
     resultScale.setValue(0);
     hintOpacity.setValue(1);
 
+    // 0ms — board appears: play tension sound
+    playSound('revealStart');
+
     // 600ms — flip turn card
     timers.current.push(setTimeout(() => {
       setTurnFaceDown(false);
@@ -146,6 +149,14 @@ export default function BoardReveal({ boards, onDone }: Props) {
       const a = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
       anims.current.push(a);
       a.start();
+      // Play win/lose sound at the same moment result appears
+      const boardForSound = boards[currentIdxRef.current];
+      if (boardForSound?.winner === 'player') {
+        playSound('boardWin');
+        Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success)?.catch?.(() => {});
+      } else if (boardForSound?.winner === 'bot') {
+        playSound('boardLose');
+      }
     }, 2000));
 
     // 3200ms — auto-advance

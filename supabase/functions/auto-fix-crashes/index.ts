@@ -4,6 +4,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
 const GITHUB_TOKEN = Deno.env.get('GITHUB_TOKEN')!;
 
+// ── Timeout / batch guards ─────────────────────────────────────────────────
+const MAX_CRASHES_PER_PROJECT = 2;          // Guard 1 — was implicitly 3, now 2
+const OPERATION_TIMEOUT_MS    = 30_000;     // Guard 2 — 30s per individual HTTP op
+const MAX_TOTAL_DURATION_MS   = 120_000;    // Guard 3 — hard stop at 120s (before 150s limit)
+
+/** Reject a promise after `ms` milliseconds. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms: ${label}`)), ms)
+    ),
+  ]);
+}
+
 const PROJECT_CONFIG: Record<string, {
   supabaseUrl: string;
   supabaseKey: string;
@@ -90,12 +105,16 @@ function isDirtyShutdown(crash: Record<string, unknown>): boolean {
 // Fetch file content from GitHub
 async function fetchFileFromGitHub(repo: string, branch: string, filePath: string): Promise<string | null> {
   const url = `https://api.github.com/repos/${repo}/contents/${filePath}?ref=${branch}`;
-  const resp = await fetch(url, {
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      Accept: 'application/vnd.github.v3.raw',
-    },
-  });
+  const resp = await withTimeout(
+    fetch(url, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github.v3.raw',
+      },
+    }),
+    OPERATION_TIMEOUT_MS,
+    `fetchFile ${filePath}`
+  );
   if (!resp.ok) return null;
   return await resp.text();
 }
@@ -103,12 +122,16 @@ async function fetchFileFromGitHub(repo: string, branch: string, filePath: strin
 // Get file SHA for GitHub commit
 async function getFileSha(repo: string, branch: string, filePath: string): Promise<string | null> {
   const url = `https://api.github.com/repos/${repo}/contents/${filePath}?ref=${branch}`;
-  const resp = await fetch(url, {
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      Accept: 'application/vnd.github.v3+json',
-    },
-  });
+  const resp = await withTimeout(
+    fetch(url, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    }),
+    OPERATION_TIMEOUT_MS,
+    `getFileSha ${filePath}`
+  );
   if (!resp.ok) return null;
   const data = await resp.json();
   return data.sha ?? null;
@@ -120,19 +143,23 @@ async function commitFix(repo: string, branch: string, filePath: string, content
   if (!sha) return null;
   const encoded = btoa(unescape(encodeURIComponent(content)));
   const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
-  const resp = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      message,
-      content: encoded,
-      sha,
-      branch,
+  const resp = await withTimeout(
+    fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message,
+        content: encoded,
+        sha,
+        branch,
+      }),
     }),
-  });
+    OPERATION_TIMEOUT_MS,
+    `commitFix ${filePath}`
+  );
   if (!resp.ok) {
     const err = await resp.text();
     throw new Error(`GitHub commit failed: ${err}`);
@@ -187,19 +214,23 @@ Rules:
 - The file path must match one of the source files provided
 - Do not add comments unless explaining the fix`;
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8192,
-      messages: [{ role: 'user', content: prompt }],
+  const resp = await withTimeout(
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8192,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     }),
-  });
+    OPERATION_TIMEOUT_MS,
+    'askClaude API call'
+  );
 
   if (!resp.ok) throw new Error(`Claude API error: ${resp.status}`);
   const data = await resp.json();
@@ -230,7 +261,7 @@ async function sendNtfy(channel: string, title: string, body: string) {
 }
 
 // Process a single project's crashes
-async function processProject(projectKey: string) {
+async function processProject(projectKey: string, startTime: number) {
   const config = PROJECT_CONFIG[projectKey];
   if (!config?.supabaseUrl || !config?.supabaseKey) return { project: projectKey, error: 'missing config' };
 
@@ -242,7 +273,7 @@ async function processProject(projectKey: string) {
     .eq('status', 'new')
     .lt('auto_fix_attempts', 3)
     .order('created_at', { ascending: true })
-    .limit(3);
+    .limit(MAX_CRASHES_PER_PROJECT); // Guard 1 — capped at 2
 
   if (error) return { project: projectKey, error: error.message };
   if (!crashes?.length) return { project: projectKey, crashes: 0, message: 'No new crashes' };
@@ -250,7 +281,15 @@ async function processProject(projectKey: string) {
   const results = [];
 
   for (const crash of crashes) {
-    // Mark as auto_fixing
+    // Guard 3 — stop early if approaching the 150s function limit
+    if (Date.now() - startTime > MAX_TOTAL_DURATION_MS) {
+      console.log(`[${projectKey}] Approaching time limit, stopping early`);
+      results.push({ crashCode: crash.crash_code, status: 'DEFERRED_TIME_LIMIT' });
+      break;
+    }
+
+    // Guard 4 — mark as auto_fixing BEFORE processing so a timeout
+    // on this invocation won't reprocess the same crash immediately.
     await sb.from('crash_reports').update({
       status: 'auto_fixing',
       auto_fix_attempts: (crash.auto_fix_attempts ?? 0) + 1,
@@ -272,18 +311,20 @@ async function processProject(projectKey: string) {
       const stackText = [crash.error_stack, crash.fix_prompt].filter(Boolean).join('\n');
       const filePaths = extractFilePaths(stackText, crash.last_screen as string | undefined);
 
-      // Fetch source files from GitHub
+      // Fetch source files from GitHub (each individually guarded by withTimeout)
       const sourceFiles: Record<string, string> = {};
       for (const fp of filePaths) {
+        // Skip remaining file fetches if time is running short
+        if (Date.now() - startTime > MAX_TOTAL_DURATION_MS) break;
         const content = await fetchFileFromGitHub(config.repo, config.defaultBranch, fp);
         if (content) sourceFiles[fp] = content;
       }
 
-      // Ask Claude for a fix
+      // Ask Claude for a fix (guarded by withTimeout inside askClaude)
       const fix = await askClaude(crash, sourceFiles);
       if (!fix) throw new Error('No fix returned');
 
-      // Commit the fix
+      // Commit the fix (guarded by withTimeout inside commitFix)
       const commitMessage = `fix: auto-fix ${crash.crash_code} — ${(crash.error_message ?? '').slice(0, 80)}`;
       const commitSha = await commitFix(config.repo, config.defaultBranch, fix.file, fix.content, commitMessage);
 
@@ -327,16 +368,18 @@ async function processProject(projectKey: string) {
 }
 
 serve(async (_req) => {
+  const startTime = Date.now();
   try {
-    const [capsResult, soccerResult, wingmanResult] = await Promise.all([
-      processProject('caps'),
-      processProject('9soccer'),
-      processProject('wingman'),
-    ]);
+    // Guard — run projects sequentially, not in parallel, so Claude calls
+    // don't all fire at once and collectively blow the 150s budget.
+    const capsResult    = await processProject('caps',     startTime);
+    const soccerResult  = await processProject('9soccer',  startTime);
+    const wingmanResult = await processProject('wingman',  startTime);
 
     return new Response(JSON.stringify({
       ok: true,
       results: [capsResult, soccerResult, wingmanResult],
+      elapsed_ms: Date.now() - startTime,
       ts: new Date().toISOString(),
     }), { headers: { 'Content-Type': 'application/json' } });
 

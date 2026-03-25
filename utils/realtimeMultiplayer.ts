@@ -65,6 +65,12 @@ export interface RealtimeConnectedClient {
 // ---------------------------------------------------------------------------
 // Server callback interface — mirrors GameServerCallbacks
 // ---------------------------------------------------------------------------
+export interface ChatMsg {
+  playerName: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface RealtimeServerCallbacks {
   onPlayerJoined?: (player: RealtimeConnectedClient) => void;
   onPlayerLeft?: (playerId: string) => void;
@@ -74,6 +80,7 @@ export interface RealtimeServerCallbacks {
   onRoomStateChanged?: (players: RealtimeConnectedClient[]) => void;
   onNewHandDealt?: () => void;
   onDisconnected?: () => void;
+  onChat?: (msg: ChatMsg) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +117,7 @@ export interface RealtimeClientCallbacks {
   onHostLost?: () => void;
   onDisconnected?: () => void;
   onError?: (error: Error) => void;
+  onChat?: (msg: ChatMsg) => void;
 }
 
 // ===========================================================================
@@ -355,6 +363,13 @@ export class RealtimeServer {
       }
       case 'HAND_COMPLETE_ACK': {
         this.handleDeliveryAck('HAND_COMPLETE', senderId, data);
+        break;
+      }
+      case 'CHAT': {
+        const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now() };
+        this.callbacks.onChat?.(msg);
+        // Re-broadcast to all so everyone sees it
+        this.broadcastToAll('CHAT', msg);
         break;
       }
     }
@@ -670,6 +685,12 @@ export class RealtimeServer {
   // =========================================================================
 
   /** Broadcast a message to all players in the room */
+  sendChat(text: string, playerName: string): void {
+    const msg: ChatMsg = { playerName, text, timestamp: Date.now() };
+    this.callbacks.onChat?.(msg);
+    this.broadcastToAll('CHAT', msg);
+  }
+
   broadcastToAll(type: string, payload: any): void {
     if (!this.channel) return;
     this.channel.send({
@@ -985,6 +1006,11 @@ export class RealtimeClient {
         this.callbacks.onHandComplete?.(data as HandCompletePayload);
         break;
       }
+      case 'CHAT': {
+        const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now() };
+        this.callbacks.onChat?.(msg);
+        break;
+      }
     }
   }
 
@@ -1000,6 +1026,11 @@ export class RealtimeClient {
   /** Send board assignments to host (PLAYER_READY) */
   sendReady(boardAssignments: Card[][]): void {
     this.send('PLAYER_READY', { boardAssignments });
+  }
+
+  /** Send a chat message to the room (host will re-broadcast to all) */
+  sendChat(text: string, playerName: string): void {
+    this.send('CHAT', { playerName, text, timestamp: Date.now() });
   }
 
   /** Request next hand from host */

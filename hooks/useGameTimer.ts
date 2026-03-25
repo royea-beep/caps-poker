@@ -12,6 +12,7 @@ interface UseGameTimerReturn {
   start: () => void;
   stop: () => void;
   reset: (seconds?: number) => void;
+  addTime: (seconds: number) => void;
 }
 
 export function useGameTimer({
@@ -79,5 +80,9 @@ export function useGameTimer({
     [initialSeconds, clearTimer]
   );
 
-  return { timeLeft, isRunning, start, stop, reset };
+  const addTime = useCallback((seconds: number) => {
+    setTimeLeft((prev) => prev + seconds);
+  }, []);
+
+  return { timeLeft, isRunning, start, stop, reset, addTime };
 }

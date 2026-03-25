@@ -275,6 +275,7 @@ function GameScreenInner() {
   const boardShakeStyles = [shakeStyle0, shakeStyle1, shakeStyle2, shakeStyle3];
   const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: 0 });
   const [playerReady, setPlayerReady] = useState(false);
+  const [timeBankUsed, setTimeBankUsed] = useState(false);
 
   // New timer logic: no timer at start, 30s countdown when first player finishes
   const [countdownActive, setCountdownActive] = useState(false);
@@ -1141,6 +1142,26 @@ function GameScreenInner() {
         <ProQuoteBanner context="tutorial" />
       )}
 
+      {/* Time bank button — visible when countdown < 20s and not yet used */}
+      {isArranging && countdownActive && countdown < 20 && !timeBankUsed && (
+        <Pressable
+          style={styles.timeBankBtn}
+          onPress={() => {
+            setTimeBankUsed(true);
+            setCountdown((prev) => prev + 15);
+          }}
+        >
+          <Text style={styles.timeBankText}>⏱ +15s</Text>
+        </Pressable>
+      )}
+
+      {/* WIN ALL bonus hint */}
+      {isArranging && allBoardsFull && (
+        <Text style={styles.winAllHint}>
+          {`WIN ALL → +${config.potPerBoard * boardCount * numberOfPlayers + Math.round(config.potPerBoard * boardCount * 0.5)} 🟡`}
+        </Text>
+      )}
+
       {/* Floating action buttons */}
       {isArranging && (
         <View style={styles.floatingActions}>
@@ -1376,6 +1397,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     paddingVertical: rs(4),
+  },
+  timeBankBtn: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    borderRadius: rv(16),
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(5),
+    marginBottom: rs(2),
+  },
+  timeBankText: {
+    color: COLORS.gold,
+    fontSize: rf(12),
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  winAllHint: {
+    textAlign: 'center',
+    color: COLORS.goldBright,
+    fontSize: rf(11),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: rs(2),
+    opacity: 0.85,
   },
   floatingActions: {
     flexDirection: 'row',
