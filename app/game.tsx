@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, Modal, Animated as AnimatedRN } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
   withSequence,
   withTiming,
   FadeIn,
   cancelAnimation,
 } from 'react-native-reanimated';
 import Board from '../components/Board';
-import CardComponent from '../components/Card';
 import PlayerHand from '../components/PlayerHand';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import ChipsDisplay from '../components/ChipsDisplay';
@@ -30,22 +28,26 @@ import {
   calculateHandResultsMulti,
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
-import { HandRank, HAND_RANK_NAMES } from '../utils/handEvaluator';
 import { playSound } from '../utils/sounds';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
-import ProQuoteBanner from '../components/ProQuoteBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { markAppActive as markGameActive } from '@caps/debugger';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
+import { rv as rvOld } from '../constants/deviceBreakpoints';
+import { rf, rs, rv } from '../utils/responsive';
+import { t } from '../utils/i18n';
+import BoardReveal from '../components/BoardReveal';
+import { TimerController, TimerBar } from '../components/TimerController';
+import { BoardArrangement } from '../components/BoardArrangement';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 
 // Log crash steps to Supabase so we know which step ran last before native kill
 async function logStep(step: string, extra?: string) {
-  console.log(`[STEP] ${step}${extra ? ` — ${extra}` : ''}`);
+  debugLog(`[STEP] ${step}${extra ? ` — ${extra}` : ''}`);
   try {
     const sb = getSupabase();
     if (!sb) return;
@@ -57,17 +59,6 @@ async function logStep(step: string, extra?: string) {
     });
   } catch { /* silent — never block game flow */ }
 }
-const HINT_TEXTS = [
-  '👆 Tap a card from your hand, then tap a board to place it',
-  '🎯 Try to win ALL boards for the COMPLETE bonus!',
-  '💡 Tip: Tap a placed card to remove it and try a different board',
-];
-import { rv as rvOld } from '../constants/deviceBreakpoints';
-import { rf, rs, rb, rv } from '../utils/responsive';
-import { t } from '../utils/i18n';
-import { KILL_game } from '../utils/animationKill';
-import { OrientationType } from '../store/gameStore';
-import BoardReveal from '../components/BoardReveal';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -83,120 +74,6 @@ const haptic = (style: any) => {
 const hapticNotify = (type: any) => {
   Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
-
-// Circular timer component — depleting ring on web, pulsing circle on native
-function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; size: number; color: string; pulsing: boolean }) {
-  const pulseScale = useSharedValue(1);
-
-  useEffect(() => {
-    if (pulsing) {
-      if (!KILL_game) {
-        pulseScale.value = withRepeat(
-          withSequence(
-            withTiming(1.12, { duration: 500 }),
-            withTiming(1, { duration: 500 }),
-          ),
-          100, // finite — no withRepeat(-1) ever (iron rule)
-        );
-      }
-    } else {
-      cancelAnimation(pulseScale);
-      pulseScale.value = withTiming(1, { duration: 200 });
-    }
-    return () => { cancelAnimation(pulseScale); };
-  }, [pulsing]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-  }));
-
-  const s = timeLeft % 60;
-  const timeStr = `0:${s.toString().padStart(2, '0')}`;
-
-  if (Platform.OS === 'web') {
-    const progress = Math.max(0, Math.min(timeLeft / 60, 1));
-    const deg = Math.round(progress * 360);
-    return (
-      <Animated.View style={[{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }, animStyle]}>
-        {/* Depleting ring via conic-gradient */}
-        <View style={[{ position: 'absolute', width: size, height: size, borderRadius: size / 2 },
-          { background: `conic-gradient(${color} ${deg}deg, rgba(40,40,40,0.85) ${deg}deg)` } as any]} />
-        {/* Inner dark mask to create ring */}
-        <View style={{ position: 'absolute', width: size - 8, height: size - 8, borderRadius: (size - 8) / 2, backgroundColor: 'rgba(8,8,8,0.9)' }} />
-        <Text style={[timerStyles.text, { color, fontSize: size * 0.30, zIndex: 1 }]}>{timeStr}</Text>
-      </Animated.View>
-    );
-  }
-
-  return (
-    <Animated.View style={[timerStyles.container, { width: size, height: size, borderRadius: size / 2, borderColor: color }, animStyle]}>
-      <Text style={[timerStyles.text, { color, fontSize: size * 0.32 }]}>{timeStr}</Text>
-    </Animated.View>
-  );
-}
-
-const timerStyles = StyleSheet.create({
-  container: {
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  text: {
-    fontWeight: '900',
-    fontVariant: ['tabular-nums'],
-  },
-});
-
-// Horizontal progress bar — shrinks left-to-right as time passes
-function TimerBar({ countdown, total, color }: { countdown: number; total: number; color: string }) {
-  const progress = useSharedValue(countdown / total);
-  const pulseOpacity = useSharedValue(1);
-
-  useEffect(() => {
-    progress.value = withTiming(Math.max(0, countdown / total), { duration: 850 });
-    return () => { cancelAnimation(progress); };
-  }, [countdown]);
-
-  useEffect(() => {
-    if (countdown <= 3 && countdown > 0) {
-      if (!KILL_game) {
-        pulseOpacity.value = withRepeat(
-          withSequence(withTiming(0.4, { duration: 250 }), withTiming(1, { duration: 250 })),
-          20, false, // finite — countdown only runs 3s max so 20 cycles is plenty
-        );
-      }
-    } else {
-      cancelAnimation(pulseOpacity);
-      pulseOpacity.value = withTiming(1, { duration: 100 });
-    }
-    return () => { cancelAnimation(pulseOpacity); };
-  }, [countdown <= 3]);
-
-  const barStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(0, progress.value * 100)}%` as any,
-    opacity: pulseOpacity.value,
-  }));
-
-  return (
-    <View style={timerBarStyles.track}>
-      <Animated.View style={[timerBarStyles.fill, { backgroundColor: color }, barStyle]} />
-    </View>
-  );
-}
-
-const timerBarStyles = StyleSheet.create({
-  track: {
-    width: '100%',
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
-  fill: {
-    height: 3,
-    borderRadius: 1.5,
-  },
-});
 
 const COUNTDOWN_SECONDS = 30;
 
@@ -224,7 +101,7 @@ function GameScreenInner() {
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
 
-  const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4;
+  const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4 | 5;
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
@@ -359,13 +236,13 @@ function GameScreenInner() {
           b.playerCards.length >= CARDS_PER_BOARD
         );
         if (!botsDone || !playerDone) {
-          console.log('[GAME] pre-calc skipped — cards not fully placed yet, will calc fresh on navigate');
+          debugLog('[GAME] pre-calc skipped — cards not fully placed yet, will calc fresh on navigate');
           return;
         }
         precalculatedResultsRef.current = calculateHandResultsMulti(boardsRef.current, numberOfPlayers, config);
-        console.log('[GAME] pre-calculation done during countdown');
+        debugLog('[GAME] pre-calculation done during countdown');
       } catch (e) {
-        console.warn('[GAME] pre-calculation failed — will recalculate on navigate:', e);
+        debugLog(`[GAME] pre-calculation failed — will recalculate on navigate: ${e}`, 'warn');
         precalculatedResultsRef.current = null;
       }
     }, 0);
@@ -935,7 +812,7 @@ function GameScreenInner() {
             </Pressable>
             <View style={styles.topCenter}>
               {countdownActive && isArranging && (
-                <CircularTimer timeLeft={countdown} size={44} color={timerColor} pulsing={timerPulsing} />
+                <TimerController countdown={countdown} total={COUNTDOWN_SECONDS} isActive={countdownActive && isArranging} firstFinisher={firstFinisher} timerSize={44} timerColor={timerColor} timerPulsing={timerPulsing} />
               )}
               {!countdownActive && isArranging && (
                 <Text style={styles.freePlayLabel}>Arrange freely</Text>
@@ -1026,11 +903,14 @@ function GameScreenInner() {
         <View style={styles.topCenter}>
           {countdownActive && isArranging && (
             <View style={styles.countdownSection}>
-              <CircularTimer
-                timeLeft={countdown}
-                size={TIMER_SIZE}
-                color={timerColor}
-                pulsing={timerPulsing}
+              <TimerController
+                countdown={countdown}
+                total={COUNTDOWN_SECONDS}
+                isActive={true}
+                firstFinisher={firstFinisher}
+                timerSize={TIMER_SIZE}
+                timerColor={timerColor}
+                timerPulsing={timerPulsing}
               />
               <Text style={styles.countdownLabel}>{firstFinisher ? t().botFinished : ''}</Text>
             </View>
@@ -1072,131 +952,52 @@ function GameScreenInner() {
         <TimerBar countdown={countdown} total={COUNTDOWN_SECONDS} color={timerColor} />
       )}
 
-      {/* Boards */}
-      <View style={isWeb ? styles.boardsGrid : styles.boardsColumn}>
-        {boards.map((board, i) => (
-          <Animated.View
-            key={i}
-            style={[
-              isWeb ? (boardCount === 3 ? styles.boardCellThird : styles.boardCellHalf) : styles.boardCellFull,
-              isWeb && screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
-              boardShakeStyles[i],
-            ]}
-          >
-            <Board
-              index={i}
-              openCards={board.openCards}
-              closedCards={board.closedCards}
-              playerCards={board.playerCards}
-              botCards={board.allBotCards[0] || board.botCards}
-              allBotCards={board.allBotCards}
-              revealed={false}
-              active={false}
-              potAmount={config.potPerBoard * numberOfPlayers}
-              onPress={() => handleBoardPress(i)}
-              onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
-              onAutoFill={() => handleAutoFill(i)}
-              isArrangement={isArranging}
-              selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-              cardHeight={BOARD_CARD_H}
-              communityScale={communityScale}
-            />
-          </Animated.View>
-        ))}
-      </View>
-
-      {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
-      {playerReady && allBotsReady && showContinueButton && (
-        <Pressable
-          style={styles.continueBtn}
-          onPress={() => {
-            console.log('[GAME] fallback button pressed — calling doNavigate manually');
-            doNavigateRef.current(boardsRef.current);
-          }}
-        >
-          <Text style={styles.continueBtnText}>TAP TO CONTINUE →</Text>
-        </Pressable>
-      )}
-
-      {/* Player hand */}
-      {isArranging && (
-        <PlayerHand
-          cards={playerHand}
-          selectedCardIds={selectedCardIds}
-          onSelectCard={handleSelectCard}
-        />
-      )}
-
-      {/* Selection hint / board error */}
-      {isArranging && (boardError || selectedCardIds.length > 0) && (
-        <Text style={boardError ? styles.boardErrorText : styles.selectionHint}>
-          {boardError
-            ? boardError
-            : `${selectedCardIds.length} card${selectedCardIds.length !== 1 ? 's' : ''} selected — tap a board`}
-        </Text>
-      )}
-
-      {/* First-time hint bar (first 3 games only) */}
-      {isArranging && !boardError && gamesPlayed < 3 && (
-        <View style={styles.firstTimeHint}>
-          <Text style={styles.firstTimeHintText}>{HINT_TEXTS[Math.min(gamesPlayed, 2)]}</Text>
-        </View>
-      )}
-
-      {/* Pro quote tip during arrangement — shown after 3 games */}
-      {isArranging && !boardError && selectedCardIds.length === 0 && gamesPlayed >= 3 && (
-        <ProQuoteBanner context="tutorial" />
-      )}
-
-      {/* Time bank button — visible when countdown < 20s and not yet used */}
-      {isArranging && countdownActive && countdown < 20 && !timeBankUsed && (
-        <Pressable
-          style={styles.timeBankBtn}
-          onPress={() => {
-            setTimeBankUsed(true);
-            setCountdown((prev) => prev + 15);
-          }}
-        >
-          <Text style={styles.timeBankText}>⏱ {t().timeBank}</Text>
-        </Pressable>
-      )}
-
-      {/* WIN ALL bonus hint */}
-      {isArranging && allBoardsFull && (
-        <Text style={styles.winAllHint}>
-          {t().winAll(config.potPerBoard * boardCount * numberOfPlayers + Math.round(config.potPerBoard * boardCount * 0.5))}
-        </Text>
-      )}
-
-      {/* Floating action buttons */}
-      {isArranging && (
-        <View style={styles.floatingActions}>
-          <Pressable
-            style={[styles.floatingBtn, styles.undoBtn]}
-            onPress={() => {
-              for (let i = boards.length - 1; i >= 0; i--) {
-                if (boards[i].playerCards.length > 0) {
-                  const lastCard = boards[i].playerCards[boards[i].playerCards.length - 1];
-                  handleRemoveCardFromBoard(i, lastCard);
-                  break;
-                }
-              }
-            }}
-            disabled={boards.every((b) => b.playerCards.length === 0)}
-          >
-            <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>UNDO</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady]}
-            onPress={handleReady}
-            disabled={!allBoardsFull}
-          >
-            <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-              {allBoardsFull ? '✓ READY' : `PLACE ${cardsRemaining}`}
-            </Text>
-          </Pressable>
-        </View>
-      )}
+      <BoardArrangement
+        boards={boards}
+        boardShakeStyles={boardShakeStyles}
+        playerHand={playerHand}
+        selectedCardIds={selectedCardIds}
+        isArranging={isArranging}
+        allBoardsFull={allBoardsFull}
+        cardsRemaining={cardsRemaining}
+        boardError={boardError}
+        boardCount={boardCount}
+        numberOfPlayers={numberOfPlayers}
+        communityScale={communityScale}
+        BOARD_CARD_H={BOARD_CARD_H}
+        screenW={screenW}
+        isWeb={isWeb}
+        countdownActive={countdownActive}
+        countdown={countdown}
+        timeBankUsed={timeBankUsed}
+        gamesPlayed={gamesPlayed}
+        playerReady={playerReady}
+        allBotsReady={allBotsReady}
+        showContinueButton={showContinueButton}
+        onBoardPress={handleBoardPress}
+        onRemoveCard={handleRemoveCardFromBoard}
+        onAutoFill={handleAutoFill}
+        onSelectCard={handleSelectCard}
+        onUndo={() => {
+          for (let i = boards.length - 1; i >= 0; i--) {
+            if (boards[i].playerCards.length > 0) {
+              const lastCard = boards[i].playerCards[boards[i].playerCards.length - 1];
+              handleRemoveCardFromBoard(i, lastCard);
+              break;
+            }
+          }
+        }}
+        onReady={handleReady}
+        onTimeBank={() => {
+          setTimeBankUsed(true);
+          setCountdown((prev) => prev + 15);
+        }}
+        onContinue={() => {
+          debugLog('[GAME] fallback button pressed — calling doNavigate manually');
+          doNavigateRef.current(boardsRef.current);
+        }}
+        potPerBoard={config.potPerBoard}
+      />
       </Animated.View>
       {showSafeReveal && (
         <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} />
@@ -1333,36 +1134,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
-  boardsColumn: {
-    flex: 1,
-    flexDirection: 'column',
-    paddingHorizontal: rs(16),
-    gap: rs(4),
-  },
-  boardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'stretch',
-    alignContent: 'stretch',
-    paddingHorizontal: Platform.OS === 'web' ? 12 : 8,
-    paddingVertical: Platform.OS === 'web' ? 8 : 0,
-    width: '100%',
-    flex: 1,
-  },
-  boardCellFull: {
-    flex: 1,
-  },
-  boardCellHalf: {
-    width: '50%',
-    minHeight: Platform.OS === 'web' ? 200 : undefined,
-    paddingHorizontal: Platform.OS === 'web' ? 6 : 4,
-    paddingVertical: Platform.OS === 'web' ? 4 : 4,
-  },
-  boardCellThird: {
-    width: '33.33%',
-    paddingHorizontal: rs(4),
-    paddingVertical: 2,
-  },
   waitingText: {
     color: COLORS.textSecondary,
     fontSize: rf(14),
@@ -1382,20 +1153,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     paddingVertical: rs(4),
   },
-  firstTimeHint: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: rs(4),
-    paddingHorizontal: rs(12),
-    alignItems: 'center',
-    marginHorizontal: rs(4),
-    borderRadius: rv(8),
-  },
-  firstTimeHintText: {
-    color: '#FFFFFF',
-    fontSize: rf(12),
-    fontWeight: '500',
-    textAlign: 'center',
-  },
   boardErrorText: {
     textAlign: 'center',
     color: COLORS.neonRed,
@@ -1403,39 +1160,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     paddingVertical: rs(4),
-  },
-  timeBankBtn: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderWidth: 1,
-    borderColor: COLORS.gold,
-    borderRadius: rv(16),
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(5),
-    marginBottom: rs(2),
-  },
-  timeBankText: {
-    color: COLORS.gold,
-    fontSize: rf(12),
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  winAllHint: {
-    textAlign: 'center',
-    color: COLORS.goldBright,
-    fontSize: rf(11),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: rs(2),
-    opacity: 0.85,
-  },
-  floatingActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: rs(12),
-    paddingHorizontal: rs(20),
-    paddingVertical: rs(10),
-    zIndex: 10,
   },
   floatingBtn: {
     paddingVertical: rs(12),
@@ -1597,335 +1321,6 @@ const landscapeStyles = StyleSheet.create({
   },
 });
 
-function SafeRevealOverlay({
-  boards,
-  onDone,
-}: {
-  boards: Array<{
-    winner: 'player'|'bot'|'tie';
-    playerHandName: string;
-    botHandName: string;
-    openCards: Card[];
-    closedCards: Card[];
-    playerCards: Card[];
-    botCards: Card[];
-    potAmount: number;
-  }>;
-  onDone: () => void;
-}) {
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const { width: screenW } = useWindowDimensions();
-  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
-  const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
-
-  // Flip state — pure React state, ZERO new Reanimated shared values here.
-  // Card.tsx handles rotateY internally when faceDown prop changes true→false.
-  const [commFaceDown, setCommFaceDown] = useState([true, true, true, true, true]);
-  const [botFaceDown, setBotFaceDown] = useState([true, true, true, true]);
-  const [playerFaceDown, setPlayerFaceDown] = useState([true, true, true, true]);
-  const [showResult, setShowResult] = useState(false);
-  const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  // S52: "Tap to reveal" hint — fades out after 1500ms via RN Animated
-  const hintOpacity = useRef(new AnimatedRN.Value(1)).current;
-
-  // S52: tap-to-skip — clear all timers, instantly reveal, show result
-  const handleSkip = useCallback(() => {
-    flipTimers.current.forEach(clearTimeout);
-    flipTimers.current = [];
-    setCommFaceDown([false, false, false, false, false]);
-    setBotFaceDown([false, false, false, false]);
-    setPlayerFaceDown([false, false, false, false]);
-    setShowResult(true);
-    Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-  }, []);
-
-  // S52: strong hand haptic — fires when showResult becomes true for a player win
-  // no cleanup needed — fire-and-forget haptic call, no subscriptions
-  useEffect(() => {
-    if (!showResult || !board || board.winner !== 'player') return;
-    const nameToRank: Record<string, number> = Object.fromEntries(
-      (Object.entries(HAND_RANK_NAMES) as [string, string][]).map(([r, n]) => [n, parseInt(r, 10)])
-    );
-    const rank = nameToRank[board.playerHandName] ?? -1;
-    if (rank >= HandRank.Straight) {
-      Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success)?.catch?.(() => {});
-    } else if (rank >= HandRank.TwoPair) {
-      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
-    }
-  }, [showResult]);
-
-  // Reset + start flip stagger whenever the board index changes
-  useEffect(() => {
-    flipTimers.current.forEach(clearTimeout);
-    flipTimers.current = [];
-    setCommFaceDown([true, true, true, true, true]);
-    setBotFaceDown([true, true, true, true]);
-    setPlayerFaceDown([true, true, true, true]);
-    setShowResult(false);
-    // Reset and fade out "Tap to reveal" hint
-    hintOpacity.setValue(1);
-    flipTimers.current.push(
-      setTimeout(() => {
-        AnimatedRN.timing(hintOpacity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
-      }, 1500)
-    );
-
-    // Sequence: flop 3 cards (150ms apart) → 400ms pause → turn → 300ms pause → river
-    //           → bot cards (150ms apart) → player cards (150ms apart) → show result
-    const seq: [number, () => void][] = [
-      [100,  () => setCommFaceDown(p => { const n=[...p]; n[0]=false; return n; })],
-      [250,  () => setCommFaceDown(p => { const n=[...p]; n[1]=false; return n; })],
-      [400,  () => setCommFaceDown(p => { const n=[...p]; n[2]=false; return n; })],
-      [800,  () => setCommFaceDown(p => { const n=[...p]; n[3]=false; return n; })], // turn
-      [1100, () => setCommFaceDown(p => { const n=[...p]; n[4]=false; return n; })], // river
-      [1300, () => setBotFaceDown(p => { const n=[...p]; n[0]=false; return n; })],
-      [1450, () => setBotFaceDown(p => { const n=[...p]; n[1]=false; return n; })],
-      [1600, () => setBotFaceDown(p => { const n=[...p]; n[2]=false; return n; })],
-      [1750, () => setBotFaceDown(p => { const n=[...p]; n[3]=false; return n; })],
-      [1900, () => setPlayerFaceDown(p => { const n=[...p]; n[0]=false; return n; })],
-      [2050, () => setPlayerFaceDown(p => { const n=[...p]; n[1]=false; return n; })],
-      [2200, () => setPlayerFaceDown(p => { const n=[...p]; n[2]=false; return n; })],
-      [2350, () => setPlayerFaceDown(p => { const n=[...p]; n[3]=false; return n; })],
-      [2650, () => setShowResult(true)], // after last card's 300ms flip completes
-    ];
-
-    for (const [delay, action] of seq) {
-      flipTimers.current.push(setTimeout(action, delay));
-    }
-
-    return () => {
-      flipTimers.current.forEach(clearTimeout);
-      flipTimers.current = [];
-    };
-  }, [currentIdx]);
-
-  // Auto-advance: 3.5s per board (gives full flip sequence + reading time)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (currentIdx + 1 >= boards.length) {
-        onDoneRef.current();
-      } else {
-        setCurrentIdx(i => i + 1);
-      }
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, [currentIdx, boards.length]);
-
-  const advance = () => {
-    if (currentIdx + 1 >= boards.length) {
-      onDoneRef.current();
-    } else {
-      setCurrentIdx(i => i + 1);
-    }
-  };
-
-  const board = boards[currentIdx];
-  if (!board) return null;
-
-  const allCommunity = [...board.openCards, ...board.closedCards];
-  const resultColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#ffffff';
-  const resultText = board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE';
-  const chipDelta = board.winner === 'player'
-    ? `+${board.potAmount}`
-    : board.winner === 'bot'
-    ? `-${board.potAmount}`
-    : '±0';
-  const chipDeltaColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#aaa';
-
-  // Card sizes: fit 5 community cards and 4 player/bot cards in available width
-  const pad = 48;
-  const commCardW = Math.min(52, Math.floor((screenW - pad - 4 * 6) / 5));
-  const commCardH = Math.round(commCardW * 1.4);
-  const handCardW = Math.min(58, Math.floor((screenW - pad - 3 * 6) / 4));
-  const handCardH = Math.round(handCardW * 1.4);
-
-  return (
-    <Modal visible animationType="fade" transparent={false} statusBarTranslucent>
-      <SafeAreaView style={safeRevealStyles.container}>
-        {/* Header */}
-        <View style={safeRevealStyles.header}>
-          <Text style={safeRevealStyles.boardCounter}>
-            BOARD {currentIdx + 1} / {boards.length}
-          </Text>
-          <Pressable onPress={() => onDoneRef.current()} hitSlop={16}>
-            <Text style={safeRevealStyles.skipText}>SKIP</Text>
-          </Pressable>
-        </View>
-
-        {/* Tappable main area — skip flip if not yet revealed, advance if revealed */}
-        <Pressable style={safeRevealStyles.main} onPress={() => showResult ? advance() : handleSkip()}>
-          {/* Community cards — flop then turn then river, staggered */}
-          <Text style={safeRevealStyles.rowLabel}>COMMUNITY</Text>
-          <View style={safeRevealStyles.cardRow}>
-            {allCommunity.map((c, i) => (
-              <CardComponent
-                key={c.id}
-                card={c}
-                faceDown={commFaceDown[i] ?? false}
-                flipDuration={300}
-                cardWidth={commCardW}
-                cardHeight={commCardH}
-              />
-            ))}
-          </View>
-
-          {/* Bot hand — flips after community */}
-          <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>BOT HAND</Text>
-          <View style={safeRevealStyles.cardRow}>
-            {board.botCards.length > 0
-              ? board.botCards.map((c, i) => (
-                  <CardComponent
-                    key={c.id}
-                    card={c}
-                    faceDown={botFaceDown[i] ?? false}
-                    flipDuration={300}
-                    cardWidth={handCardW}
-                    cardHeight={handCardH}
-                  />
-                ))
-              : <Text style={safeRevealStyles.noCardsText}>—</Text>
-            }
-          </View>
-          {showResult && board.botHandName ? (
-            <Text style={safeRevealStyles.handNameSub}>{board.botHandName}</Text>
-          ) : null}
-
-          {/* Player hand — flips last */}
-          <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>{playerAvatar} {playerDisplayName.toUpperCase()}</Text>
-          <View style={safeRevealStyles.cardRow}>
-            {board.playerCards.map((c, i) => (
-              <CardComponent
-                key={c.id}
-                card={c}
-                faceDown={playerFaceDown[i] ?? false}
-                flipDuration={300}
-                cardWidth={handCardW}
-                cardHeight={handCardH}
-              />
-            ))}
-          </View>
-          {showResult && board.playerHandName ? (
-            <Text style={safeRevealStyles.handName}>{board.playerHandName}</Text>
-          ) : null}
-
-          {/* Result — appears after all cards revealed */}
-          {showResult && (
-            <>
-              <Text style={[safeRevealStyles.result, { color: resultColor }]}>{resultText}</Text>
-              <Text style={[safeRevealStyles.chipDelta, { color: chipDeltaColor }]}>{chipDelta}</Text>
-            </>
-          )}
-
-          {/* S52: "Tap to reveal" hint — fades out after 1500ms, shows while cards are flipping */}
-          {!showResult && (
-            <AnimatedRN.Text style={[safeRevealStyles.tapRevealHint, { opacity: hintOpacity }]}>
-              Tap to reveal
-            </AnimatedRN.Text>
-          )}
-          {/* Tap hint — shown after result is visible */}
-          {showResult && (
-            <Text style={safeRevealStyles.tapHint}>
-              {currentIdx + 1 < boards.length ? '▶ TAP TO CONTINUE' : '▶ TAP FOR RESULTS'}
-            </Text>
-          )}
-        </Pressable>
-      </SafeAreaView>
-    </Modal>
-  );
-}
-
-const safeRevealStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#080d16',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(201,168,76,0.2)',
-  },
-  boardCounter: {
-    color: '#c9a84c',
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 3,
-  },
-  skipText: {
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-  main: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    gap: 4,
-  },
-  rowLabel: {
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 2.5,
-    marginBottom: 6,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-  },
-  handName: {
-    color: '#c9a84c',
-    fontSize: 16,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-    marginTop: 6,
-  },
-  handNameSub: {
-    color: 'rgba(201,168,76,0.6)',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginTop: 4,
-  },
-  noCardsText: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 16,
-  },
-  result: {
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 1,
-    marginTop: 14,
-  },
-  chipDelta: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginTop: 4,
-  },
-  tapHint: {
-    color: 'rgba(255,255,255,0.25)',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginTop: 20,
-  },
-  tapRevealHint: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: 11,
-    fontWeight: '500',
-    letterSpacing: 1,
-    marginTop: 16,
-  },
-});
 
 export default function GameScreen() {
   return (

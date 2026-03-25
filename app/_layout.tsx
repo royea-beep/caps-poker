@@ -174,7 +174,7 @@ export default function RootLayout() {
       startCrashRecording()
       setCurrentScreen('Splash')
     } catch (e) {
-      console.warn('[CrashEvidence] Failed to start — app continues without it:', e)
+      debugLog(`[CrashEvidence] Failed to start — app continues without it: ${e}`, 'warn')
     }
   }, []);
 
@@ -237,20 +237,20 @@ export default function RootLayout() {
     if (__DEV__) return;
     const forceUpdate = async () => {
       try {
-        console.log('[OTA] Checking for update...');
-        console.log('[OTA] Current update ID:', Updates.updateId);
-        console.log('[OTA] Channel:', Updates.channel);
-        console.log('[OTA] Runtime version:', Updates.runtimeVersion);
+        debugLog('[OTA] Checking for update...');
+        debugLog(`[OTA] Current update ID: ${Updates.updateId}`);
+        debugLog(`[OTA] Channel: ${Updates.channel}`);
+        debugLog(`[OTA] Runtime version: ${Updates.runtimeVersion}`);
         const update = await Updates.checkForUpdateAsync();
-        console.log('[OTA] Update available:', update.isAvailable);
+        debugLog(`[OTA] Update available: ${update.isAvailable}`);
         if (update.isAvailable) {
-          console.log('[OTA] Fetching update...');
+          debugLog('[OTA] Fetching update...');
           await Updates.fetchUpdateAsync();
-          console.log('[OTA] Reloading...');
+          debugLog('[OTA] Reloading...');
           await Updates.reloadAsync();
         }
       } catch (e) {
-        console.log('[OTA] Error:', e);
+        debugLog(`[OTA] Error: ${e}`);
       }
     };
     forceUpdate();

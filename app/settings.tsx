@@ -196,7 +196,7 @@ function PlayerCountSelector() {
         <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
       </View>
       <View style={styles.selectorRow}>
-        {([2, 3, 4] as const).map((n) => (
+        {([2, 3, 4, 5] as const).map((n) => (
           <Pressable
             key={n}
             onPress={() => { updateConfig({ numberOfPlayers: n }); CapsHooks.settingsChanged('numberOfPlayers', n); }}

@@ -141,16 +141,21 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 
 // ─── Main Screen ────────────────────────────────────────────────────────────
 
+type FilterPeriod = 'today' | 'week' | 'all';
+
 export default function StatsScreen() {
   const router = useRouter();
   const { width: screenW } = useWindowDimensions();
+  const [allHands, setAllHands] = useState<Awaited<ReturnType<typeof getHandHistory>>>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<FilterPeriod>('all');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     getHandHistory().then((hands) => {
+      setAllHands(hands);
       setStats(computeStats(hands));
       setLoading(false);
       Animated.timing(fadeAnim, {
@@ -161,6 +166,16 @@ export default function StatsScreen() {
     });
   }, []);
 
+  useEffect(() => {
+    if (allHands.length === 0) return;
+    const now = Date.now();
+    const filtered =
+      filter === 'today' ? allHands.filter((h) => h.timestamp > now - 86400000) :
+      filter === 'week'  ? allHands.filter((h) => h.timestamp > now - 7 * 86400000) :
+      allHands;
+    setStats(computeStats(filtered));
+  }, [filter, allHands]);
+
   const chartW = Math.min(screenW - rs(32), 360);
 
   if (loading) {
@@ -168,6 +183,47 @@ export default function StatsScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading stats…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const FILTER_LABELS: Record<FilterPeriod, string> = {
+    today: 'Today',
+    week: 'This week',
+    all: 'All time',
+  };
+
+  const filterBar = (
+    <View style={styles.filterBar}>
+      {(['today', 'week', 'all'] as FilterPeriod[]).map((p) => (
+        <Pressable
+          key={p}
+          onPress={() => setFilter(p)}
+          style={[styles.filterBtn, filter === p && styles.filterBtnActive]}
+        >
+          <Text style={[styles.filterBtnText, filter === p && styles.filterBtnTextActive]}>
+            {FILTER_LABELS[p]}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  if (allHands.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+            <Text style={styles.backText}>← BACK</Text>
+          </Pressable>
+          <Text style={styles.title}>STATS</Text>
+          <View style={styles.backBtn} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>📊</Text>
+          <Text style={styles.emptyTitle}>No hands yet</Text>
+          <Text style={styles.emptySubtitle}>Play a few hands to see your statistics</Text>
         </View>
       </SafeAreaView>
     );
@@ -183,10 +239,11 @@ export default function StatsScreen() {
           <Text style={styles.title}>STATS</Text>
           <View style={styles.backBtn} />
         </View>
+        {filterBar}
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={styles.emptyTitle}>No hands yet</Text>
-          <Text style={styles.emptySubtitle}>Play a few hands to see your statistics</Text>
+          <Text style={styles.emptyTitle}>No hands played in this period</Text>
+          <Text style={styles.emptySubtitle}>Try "All time" to see your full history</Text>
         </View>
       </SafeAreaView>
     );
@@ -217,6 +274,8 @@ export default function StatsScreen() {
         <Text style={styles.title}>STATS</Text>
         <View style={styles.backBtn} />
       </View>
+
+      {filterBar}
 
       <ScrollView
         style={styles.scroll}
@@ -418,6 +477,34 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     fontSize: rf(13),
     textAlign: 'center',
+  },
+  // Filter bar
+  filterBar: {
+    flexDirection: 'row',
+    marginHorizontal: rs(16),
+    marginBottom: rs(12),
+    backgroundColor: COLORS.surface,
+    borderRadius: rv(10),
+    padding: rs(3),
+    gap: rs(3),
+  },
+  filterBtn: {
+    flex: 1,
+    paddingVertical: rs(7),
+    borderRadius: rv(8),
+    alignItems: 'center',
+  },
+  filterBtnActive: {
+    backgroundColor: COLORS.gold,
+  },
+  filterBtnText: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: rf(11),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  filterBtnTextActive: {
+    color: '#000',
   },
   // Overview grid
   overviewGrid: {

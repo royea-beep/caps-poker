@@ -134,6 +134,31 @@ describe('simulateHand', () => {
       expect(result.chipDeltas.length).toBe(4);
     });
   });
+
+  // --- 5-Player Tests ---
+  describe('5-player', () => {
+    it('5-player 2-board game deals correctly', () => {
+      const result = simulateHand(5, DEFAULT_CONFIG);
+      expect(result.playerCount).toBe(5);
+      expect(result.boardCount).toBe(2);
+      expect(result.boards.length).toBe(2);
+      expect(result.chipDeltas.length).toBe(5);
+    });
+
+    it('chipDeltas sum to 0 (zero-sum)', () => {
+      for (let i = 0; i < 50; i++) {
+        const result = simulateHand(5, DEFAULT_CONFIG);
+        const sum = result.chipDeltas.reduce((a, b) => a + b, 0);
+        expect(sum).toBe(0);
+      }
+    });
+
+    it('runs 50 hands without crashes', () => {
+      for (let i = 0; i < 50; i++) {
+        expect(() => simulateHand(5, DEFAULT_CONFIG)).not.toThrow();
+      }
+    });
+  });
 });
 
 describe('simulateBatch', () => {

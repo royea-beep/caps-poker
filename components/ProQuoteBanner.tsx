@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PRO_QUOTES, getRandomQuote, ProQuote } from '../constants/proQuotes';
 import { getSupabase } from '../utils/supabase';
 import { KILL_ProQuoteBanner } from '../utils/animationKill';
+import { debugLog } from './DebugOverlay';
 
 export const PRO_QUOTES_ENABLED_KEY = 'caps_show_pro_quotes';
 export const PRO_VOICES_ENABLED_KEY = 'caps_pro_voices_enabled';
@@ -66,7 +67,7 @@ async function playVoiceClip(audioFile: any): Promise<void> {
       }
     });
   } catch (e) {
-    console.warn('[ProQuoteBanner] Voice playback failed:', e);
+    debugLog(`[ProQuoteBanner] Voice playback failed: ${e}`, 'warn');
   }
 }
 
