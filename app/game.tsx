@@ -990,7 +990,7 @@ function GameScreenInner() {
               disabled={!allBoardsFull}
             >
               <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-                {allBoardsFull ? '✓ READY' : `${cardsRemaining} left`}
+                {allBoardsFull ? '✓ READY' : `PLACE ${cardsRemaining}`}
               </Text>
             </Pressable>
           )}
@@ -1191,7 +1191,7 @@ function GameScreenInner() {
             disabled={!allBoardsFull}
           >
             <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-              {allBoardsFull ? '✓ READY' : `${cardsRemaining} left`}
+              {allBoardsFull ? '✓ READY' : `PLACE ${cardsRemaining}`}
             </Text>
           </Pressable>
         </View>

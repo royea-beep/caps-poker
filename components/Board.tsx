@@ -321,7 +321,7 @@ export default function Board({
         {botCardSets.map((botCardSet, botIdx) =>
           botCardSet.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              <Text style={styles.rowLabel}>{multiBot ? `BOT${botIdx + 1}` : 'BOT'}</Text>
+              {!isArrangement && <Text style={styles.rowLabel}>{multiBot ? `BOT${botIdx + 1}` : 'BOT'}</Text>}
               {botCardSet.map((c) => (
                 <CardComponent
                   key={c.id}
@@ -389,8 +389,8 @@ export default function Board({
                 <CardComponent
                   card={c}
                   faceDown={false}
-                  cardWidth={isArrangement ? slotW : cw}
-                  cardHeight={isArrangement ? slotH : ch}
+                  cardWidth={cw}
+                  cardHeight={ch}
                   highlighted={revealed && playerHighlightIds.includes(c.id)}
                   dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
                 />
@@ -406,7 +406,7 @@ export default function Board({
               <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           }
-          {isArrangement && playerCards.length === CARDS_PER_BOARD && (
+          {isArrangement && playerCards.length >= 2 && (
             <Text style={styles.hintText}>{getHandHint(playerCards)}</Text>
           )}
           {revealed && playerHandName && (
