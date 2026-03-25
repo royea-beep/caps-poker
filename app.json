@@ -65,7 +65,14 @@
       "expo-dev-client",
       "expo-web-browser",
       "expo-sharing",
-      "expo-updates"
+      "expo-updates",
+      "expo-localization",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Caps Poker to record audio for bug reports"
+        }
+      ]
     ],
     "owner": "royea"
   }
