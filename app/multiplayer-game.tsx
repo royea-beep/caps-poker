@@ -12,7 +12,7 @@ import { useGameTimer } from '../hooks/useGameTimer';
 import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
-import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
+import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMultiplayer';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
@@ -111,6 +111,7 @@ export default function MultiplayerGameScreen() {
   const initialPhase = params.rejoinPhase === 'waiting' ? 'waiting' : 'arranging';
   const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>(initialPhase);
   const [disconnectBanner, setDisconnectBanner] = useState<string | null>(null);
+  const [spectatorCount, setSpectatorCount] = useState(0);
 
   // --- Chat (internet MP only) ---
   const isInternetMP = typeof (mpServer as any)?.sendChat === 'function' || typeof (mpClient as any)?.sendChat === 'function';
@@ -152,6 +153,29 @@ export default function MultiplayerGameScreen() {
     .map((p) => p.name);
 
   const isArranging = phase === 'arranging';
+
+  // --- Host: set up spectator channel + announce arranging phase ---
+  useEffect(() => {
+    if (!isHost || !isInternetMP || !mpServer || !storeRoomCode) return;
+    const server = mpServer as any;
+    if (typeof server.setupSpectatorChannel !== 'function') return;
+
+    server.setupSpectatorChannel(storeRoomCode);
+    server.onSpectatorCountChange((count: number) => {
+      if (mountedRef.current) setSpectatorCount(count);
+    });
+
+    // Broadcast initial 'arranging' snapshot
+    const clients = server.getClients?.() ?? [];
+    const snapshot: SpectatorSnapshot = {
+      phase: 'arranging',
+      boardCount,
+      players: clients.map((c: any) => ({ id: c.id, name: c.name, isReady: c.isReady })),
+      communityCards: boardsParam.map((b: any) => b.openCards ?? []),
+      spectatorCount: 0,
+    };
+    server.broadcastToSpectators(snapshot);
+  }, [isHost, isInternetMP, mpServer, storeRoomCode, boardCount]);
 
   // --- Wire onChat for host ---
   useEffect(() => {
@@ -210,6 +234,26 @@ export default function MultiplayerGameScreen() {
           completeBonusAmount: handResult.completeBonusAmount,
         };
         mpServer.sendHandComplete(handCompletePayload);
+
+        // Broadcast 'results' snapshot to spectators
+        if (typeof (mpServer as any).broadcastToSpectators === 'function') {
+          const spectatorResults: SpectatorSnapshot = {
+            phase: 'results',
+            boardCount: boardResults.length,
+            players: clientArray.map((c: any) => ({ id: c.id, name: c.name, isReady: true })),
+            communityCards: serverBoards.map((b: any) => b.openCards ?? []),
+            revealedBoards: boardResults.map((br: any) => ({
+              boardIndex: br.boardIndex,
+              winnerName: br.winnerIndex >= 0 ? clientArray[br.winnerIndex]?.name || '' : 'Tie',
+              playerHands: br.playerResults.map((pr: any, pi: number) => ({
+                playerName: clientArray[pi]?.name || '',
+                handRank: pr.name,
+              })),
+            })),
+            spectatorCount: (mpServer as any).getSpectatorCount?.() ?? 0,
+          };
+          (mpServer as any).broadcastToSpectators(spectatorResults);
+        }
 
         // Build RevealData for host and navigate
         buildRevealDataAndNavigate(boardResults, handResult, serverBoards, clientArray);
@@ -648,7 +692,12 @@ export default function MultiplayerGameScreen() {
             <Text style={styles.statusText}>WAITING...</Text>
           )}
         </View>
-        <ChipsDisplay amount={chips} />
+        <View style={styles.topRight}>
+          {isHost && isInternetMP && spectatorCount > 0 && (
+            <Text style={styles.spectatorBadge}>👁 {spectatorCount}</Text>
+          )}
+          <ChipsDisplay amount={chips} />
+        </View>
       </View>
 
       {/* Disconnect banner (CAPS 10) */}
@@ -760,6 +809,16 @@ const styles = StyleSheet.create({
   },
   topInfo: {
     alignItems: 'center',
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  spectatorBadge: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    fontWeight: '600',
   },
   timerContainer: {
     backgroundColor: COLORS.feltLight,

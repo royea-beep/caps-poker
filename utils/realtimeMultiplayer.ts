@@ -105,6 +105,23 @@ export interface GameStateSnapshot {
 }
 
 // ---------------------------------------------------------------------------
+// Spectator snapshot — broadcast to spectate:{roomCode} channel
+// Player hole cards are NEVER included until reveal phase
+// ---------------------------------------------------------------------------
+export interface SpectatorSnapshot {
+  phase: 'arranging' | 'revealing' | 'results';
+  boardCount: number;
+  players: { id: string; name: string; isReady: boolean; }[];
+  communityCards: { rank: string; suit: string }[][];
+  revealedBoards?: {
+    boardIndex: number;
+    winnerName: string;
+    playerHands: { playerName: string; handRank: string; }[];
+  }[];
+  spectatorCount: number;
+}
+
+// ---------------------------------------------------------------------------
 // Client callback interface — mirrors GameClientCallbacks
 // ---------------------------------------------------------------------------
 export interface RealtimeClientCallbacks {
@@ -146,6 +163,11 @@ export class RealtimeServer {
 
   // --- Game phase tracking (CAPS 12) ---
   private gamePhase: GamePhase = 'lobby';
+
+  // --- Spectator channel ---
+  private spectateChannel: RealtimeChannel | null = null;
+  private spectatorCount: number = 0;
+  private spectatorCountHandler: ((count: number) => void) | null = null;
 
   async start(roomCode: string, hostName: string): Promise<boolean> {
     const supabase = getSupabase();
@@ -727,8 +749,58 @@ export class RealtimeServer {
     return this.started;
   }
 
+  // ---------------------------------------------------------------------------
+  // Spectator channel methods
+  // ---------------------------------------------------------------------------
+
+  /** Initialize spectate:{roomCode} channel — called by host after game screen mounts */
+  async setupSpectatorChannel(roomCode: string): Promise<void> {
+    const supabase = getSupabase();
+    if (!supabase || this.spectateChannel) return;
+
+    this.spectateChannel = supabase.channel(`spectate:${roomCode}`, {
+      config: { presence: { key: `host-${this.hostId}` } },
+    });
+
+    this.spectateChannel.on('presence', { event: 'sync' }, () => {
+      if (!this.spectateChannel) return;
+      const state = this.spectateChannel.presenceState();
+      // Count presences that are NOT the host
+      const count = Object.keys(state).filter((k) => !k.startsWith('host-')).length;
+      this.spectatorCount = count;
+      this.spectatorCountHandler?.(count);
+    });
+
+    await this.spectateChannel.subscribe();
+    rtLog('SERVER', `Spectator channel ready: spectate:${roomCode}`);
+  }
+
+  /** Broadcast a game state snapshot to all spectators */
+  broadcastToSpectators(snapshot: SpectatorSnapshot): void {
+    if (!this.spectateChannel) return;
+    this.spectateChannel.send({
+      type: 'broadcast',
+      event: 'game_state',
+      payload: snapshot,
+    });
+  }
+
+  /** Current spectator count (via presence) */
+  getSpectatorCount(): number {
+    return this.spectatorCount;
+  }
+
+  /** Register callback for spectator count changes */
+  onSpectatorCountChange(handler: (count: number) => void): void {
+    this.spectatorCountHandler = handler;
+  }
+
   stop(): void {
     this.clearAllPendingDeliveries();
+    if (this.spectateChannel) {
+      this.spectateChannel.unsubscribe();
+      this.spectateChannel = null;
+    }
     if (this.channel) {
       this.channel.unsubscribe();
       this.channel = null;
@@ -741,6 +813,7 @@ export class RealtimeServer {
     this.nextHandRequests.clear();
     this.callbacks = {};
     this.presenceHandler = null;
+    this.spectatorCountHandler = null;
   }
 }
 
