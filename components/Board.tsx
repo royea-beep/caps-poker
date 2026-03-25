@@ -140,11 +140,11 @@ export default function Board({
   const { width: screenW } = useWindowDimensions();
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
-  const ch = cardHeightProp ?? rv(screenW, 56, 72, 90, 64);
-  const cw = Math.round(ch * 0.7);
-  // Community cards are slightly larger for better readability
-  const commH = Math.round(ch * communityScale);
-  const commW = Math.round(commH * 0.7);
+  // Explicit card size hierarchy: community (largest) > board slot (medium) > hand (smallest)
+  const commH = rv(screenW, 62, 80, 100, 72);
+  const commW = Math.round(commH * 0.72);
+  const ch = cardHeightProp ?? rv(screenW, 46, 59, 74, 53);
+  const cw = Math.round(ch * 0.72);
   // Empty slots are ~30% smaller during arrangement
   const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
   const slotW = Math.round(slotH * 0.7);

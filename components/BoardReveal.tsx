@@ -184,14 +184,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       setTurnFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(800)));
+    }, t(1500)));
 
     // 1600ms — flip river card
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(1600)));
+    }, t(3000)));
 
     // 1100ms — pre-flip tension pulse on bot cards (iterations:2 = safe, never -1)
     timers.current.push(setTimeout(() => {
@@ -238,7 +238,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: t(400), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(1950)));
+    }, t(3100)));
 
     // 2100ms — show hand names (fade in, both simultaneously)
     timers.current.push(setTimeout(() => {
@@ -246,7 +246,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(2100)));
+    }, t(3400)));
 
     // 2200ms — community spotlight: dim non-highlighted cards
     timers.current.push(setTimeout(() => {
@@ -283,7 +283,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
           a.start();
         }
       });
-    }, t(2200)));
+    }, t(3600)));
 
     // 2500ms — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
@@ -310,10 +310,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       } else if (boardForResult?.winner === 'bot') {
         playSound('boardLose');
       }
-    }, t(2500)));
+    }, t(4000)));
 
     // 4000ms — auto-advance
-    timers.current.push(setTimeout(doAdvance, t(4000)));
+    timers.current.push(setTimeout(doAdvance, t(5500)));
 
     return () => {
       timers.current.forEach(clearTimeout);
