@@ -25,6 +25,7 @@ import { checkPreviousCrash } from '../utils/dirtyShutdown';
 import { sendCrashAlert } from '../utils/crashAlert';
 import { getLastCrashScreenshots, clearCrashScreenshots } from '../utils/screenRecorder';
 import { startCrashRecording, setCurrentScreen, initCrashSession, markCleanExit, flushCrashSessionNow, checkDirtyShutdown } from '../utils/crash-evidence';
+import { initDebugger } from '@caps/debugger';
 import { sendCrashToWhatsApp } from '../utils/debug-whatsapp';
 import { CrashBoundary } from '../components/CrashBoundary';
 
@@ -38,6 +39,23 @@ if (Platform.OS !== 'web') {
 
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
+
+// Initialize @caps/debugger — reads Supabase config from app constants
+try {
+  const Constants = require('expo-constants').default;
+  const extra = Constants.expoConfig?.extra ?? {};
+  initDebugger({
+    appName: 'caps',
+    version: Constants.expoConfig?.version ?? '1.0.0',
+    supabaseUrl: extra.supabaseUrl ?? '',
+    supabaseAnonKey: extra.supabaseAnonKey ?? '',
+    whatsappEdgeFunctionUrl: `${extra.supabaseUrl ?? ''}/functions/v1/whatsapp-bot-handler`,
+    alertPhone: '+972526173700',
+    enabled: typeof __DEV__ !== 'undefined' && __DEV__,
+    screenshotFps: 2,
+    maxScreenshots: 10,
+  });
+} catch { /* non-blocking — debugger is optional */ }
 
 // expo-router error boundary — catches JS errors in any screen
 // Shows full crash details on screen so we can read them on device
