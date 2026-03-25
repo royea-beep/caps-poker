@@ -24,6 +24,7 @@ import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHis
 import { SingleBoardShareCard, FullGameShareCard, StoryShareCard } from '../components/ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv, UI } from '../utils/responsive';
+import { t } from '../utils/i18n';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
@@ -940,7 +941,7 @@ export default function ResultsScreen() {
         {/* Complete bonus — spring scale entrance */}
         {isComplete && completeBonusAmount > 0 && (
           <Animated.View style={[styles.completeRow, { transform: [{ scale: completeScale }] }]}>
-            <Text style={styles.completeLabel}>🏆 COMPLETE! +50% BONUS</Text>
+            <Text style={styles.completeLabel}>{t().complete} {t().completeBonus}</Text>
             <Text style={styles.completeAmount}>+{completeBonusAmount} bonus chips!</Text>
           </Animated.View>
         )}
@@ -993,7 +994,7 @@ export default function ResultsScreen() {
               <>
                 <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }] }}>
                   <DealMeInButton
-                    label={chips >= config.potPerBoard * revealData.boardCount ? 'DEAL ME IN' : 'GAME OVER'}
+                    label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}
                     onPress={handleNextHand}
                   />
                 </Animated.View>

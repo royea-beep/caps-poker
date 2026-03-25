@@ -3,6 +3,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
 import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
+import { t } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import { PRO_QUOTES_ENABLED_KEY, PRO_VOICES_ENABLED_KEY } from '../components/ProQuoteBanner';
@@ -589,7 +590,7 @@ function ProQuotesToggle() {
     <>
       <View style={styles.row}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>🎭 Pro Quotes (AI Simulation)</Text>
+          <Text style={styles.rowLabel}>🎭 {t().proQuotes}</Text>
           <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
         </View>
         <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}>
@@ -598,7 +599,7 @@ function ProQuotesToggle() {
       </View>
       <View style={[styles.row, !enabled && { opacity: 0.4 }]}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>🔊 Pro Voice Clips (AI-Generated)</Text>
+          <Text style={styles.rowLabel}>🔊 {t().proVoice}</Text>
           <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
           <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: rf(9) }]}>⚠️ Not real player voices</Text>
         </View>
@@ -632,7 +633,7 @@ export default function SettingsScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
-        <Text style={styles.title}>SETTINGS</Text>
+        <Text style={styles.title}>{t().settingsTitle}</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -680,7 +681,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>TOOLS</Text>
         <ProQuotesToggle />
         <Button
-          title="📖 Show Tutorial Again"
+          title={`📖 ${t().showTutorial}`}
           variant="secondary"
           onPress={() => {
             AsyncStorage.removeItem(TUTORIAL_SEEN_KEY).catch(() => {});
@@ -688,7 +689,7 @@ export default function SettingsScreen() {
           }}
           style={{ marginBottom: 12 }}
         />
-        <Button title="Simulation Mode" variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
+        <Button title={t().simulationMode} variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
         {__DEV__ && (
           <>
             <Button
@@ -721,7 +722,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>DEVELOPER</Text>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <Text style={styles.rowLabel}>Debug Overlay</Text>
+            <Text style={styles.rowLabel}>{t().debugOverlay}</Text>
             <Text style={styles.rowHint}>Restart app to apply</Text>
           </View>
           <Pressable
@@ -739,7 +740,7 @@ export default function SettingsScreen() {
         </View>
 
         <Button
-          title="Reset to Defaults"
+          title={t().resetDefaults}
           variant="secondary"
           onPress={resetConfig}
           style={{ marginBottom: 24 }}

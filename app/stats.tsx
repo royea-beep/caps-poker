@@ -268,10 +268,18 @@ export default function StatsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>BOARD WIN RATES</Text>
             {stats.boardWinRateByIndex.map((rate, i) => {
-              if (stats.boardWinRateByIndex.slice(0, i + 1).every((_, j) => {
-                const total = stats.handsPlayed;
-                return j > 0 && rate === 0 && total > 0;
-              }) && rate === 0 && i > 0) return null; // skip empty boards
+              const played = stats.boardPlayCountByIndex[i] ?? 0;
+              if (played === 0) {
+                return (
+                  <View key={i} style={styles.boardRow}>
+                    <Text style={styles.boardLabel}>Board {i + 1}</Text>
+                    <View style={styles.boardBarArea}>
+                      <ProgressBar pct={0} color={COLORS.boardBorder} />
+                    </View>
+                    <Text style={[styles.boardPct, { color: COLORS.boardBorder }]}>N/A</Text>
+                  </View>
+                );
+              }
               return (
                 <View key={i} style={styles.boardRow}>
                   <Text style={styles.boardLabel}>Board {i + 1}</Text>

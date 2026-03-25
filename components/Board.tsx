@@ -16,6 +16,7 @@ import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs } from '../utils/responsive';
+import { t } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
@@ -321,7 +322,7 @@ export default function Board({
         {botCardSets.map((botCardSet, botIdx) =>
           botCardSet.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              {!isArrangement && <Text style={styles.rowLabel}>{multiBot ? `BOT${botIdx + 1}` : 'BOT'}</Text>}
+              {!isArrangement && <Text style={styles.rowLabel}>{multiBot ? `${t().bot}${botIdx + 1}` : t().bot}</Text>}
               {botCardSet.map((c) => (
                 <CardComponent
                   key={c.id}

@@ -35,6 +35,7 @@ export interface PlayerStats {
   boardsWon: number;
   boardWinRate: number; // % individual boards won
   boardWinRateByIndex: number[]; // [board0%, board1%, board2%, board3%]
+  boardPlayCountByIndex: number[]; // [board0count, board1count, ...] — 0 = never played
 
   // Special
   completeCount: number; // hands where isComplete=true
@@ -73,6 +74,7 @@ export function computeStats(hands: HandRecord[]): PlayerStats {
     boardsWon: 0,
     boardWinRate: 0,
     boardWinRateByIndex: [0, 0, 0, 0],
+    boardPlayCountByIndex: [0, 0, 0, 0],
     completeCount: 0,
     completeRate: 0,
     bestHandEver: '—',
@@ -189,6 +191,7 @@ export function computeStats(hands: HandRecord[]): PlayerStats {
     boardsWon,
     boardWinRate,
     boardWinRateByIndex,
+    boardPlayCountByIndex: boardTotalsByIndex,
     completeCount,
     completeRate,
     bestHandEver,
