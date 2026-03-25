@@ -97,7 +97,7 @@ function BoardView({ board, boardNumber, totalBoards }: { board: HandBoardRecord
   );
 }
 
-function SummaryView({ hand }: { hand: HandRecord }) {
+function SummaryView({ hand, onCoach }: { hand: HandRecord; onCoach: () => void }) {
   const isWin = hand.netChips >= 0;
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
@@ -119,6 +119,10 @@ function SummaryView({ hand }: { hand: HandRecord }) {
       {hand.isComplete && hand.completeBonusAmount > 0 && (
         <Text style={styles.bonusText}>🏆 WIN ALL +{hand.completeBonusAmount} bonus</Text>
       )}
+
+      <Pressable style={styles.coachingBtn} onPress={onCoach}>
+        <Text style={styles.coachingBtnText}>💡 COACHING</Text>
+      </Pressable>
     </View>
   );
 }
@@ -200,7 +204,7 @@ export default function ReplayScreen() {
       {/* Content */}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {isOnSummary ? (
-          <SummaryView hand={hand} />
+          <SummaryView hand={hand} onCoach={() => router.push(`/coaching?handId=${hand.id}`)} />
         ) : (
           <BoardView
             board={hand.boards[boardIndex]}
@@ -409,6 +413,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.gold,
     letterSpacing: 1,
+  },
+  coachingBtn: {
+    marginTop: rs(16),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(28),
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    borderRadius: rv(16),
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    alignSelf: 'center',
+  },
+  coachingBtnText: {
+    color: COLORS.gold,
+    fontSize: rf(14),
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   // Nav
   nav: {
