@@ -135,7 +135,7 @@ export default function Board({
   flipDuration,
   cardHeight: cardHeightProp,
   isWinner,
-  communityScale = 1,
+  communityScale = 1.2,
 }: BoardProps) {
   const { width: screenW } = useWindowDimensions();
   const visualTheme = useGameStore((s) => s.visualTheme);

@@ -179,19 +179,19 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
     // 0ms — board appears: play tension sound
     playSound('revealStart');
 
-    // 600ms — flip turn card
+    // 800ms — flip turn card
     timers.current.push(setTimeout(() => {
       setTurnFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(600)));
+    }, t(800)));
 
-    // 1000ms — flip river card
+    // 1600ms — flip river card
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(1000)));
+    }, t(1600)));
 
     // 1100ms — pre-flip tension pulse on bot cards (iterations:2 = safe, never -1)
     timers.current.push(setTimeout(() => {

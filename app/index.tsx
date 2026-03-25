@@ -151,7 +151,7 @@ function HeroCardFan() {
 }
 
 const TAGLINES = [
-  "4 Boards. One Winner. No Excuses.",
+  "Place Your Cards. Own Every Board.",
   "Every Card Counts. Every Board Matters.",
   "Omaha Like You've Never Played It.",
   "Stack the Boards. Take the Chips.",
