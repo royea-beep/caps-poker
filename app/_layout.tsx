@@ -115,7 +115,7 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
       <Animated.View style={[splashStyles.content, animStyle]}>
         <Text style={splashStyles.suits}>♠ ♥ ♦ ♣</Text>
         <Text style={splashStyles.title}>CAPS POKER</Text>
-        <Text style={splashStyles.sub}>4 Boards. One Winner.</Text>
+        <Text style={splashStyles.sub}>Place Your Cards. Own Every Board.</Text>
         <View style={splashStyles.divider} />
       </Animated.View>
     </View>
@@ -343,7 +343,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <RootWrapper style={{ flex: 1 }}>
+    <RootWrapper style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
       <StatusBar style="light" />
       <CrashBoundary>
       <BugReporter>
