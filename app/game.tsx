@@ -213,6 +213,8 @@ function GameScreenInner() {
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
+  const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const storeOrientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
@@ -886,7 +888,10 @@ function GameScreenInner() {
         )}
         {/* LEFT — Your hand */}
         <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
-          <Text style={landscapeStyles.panelTitle}>YOUR HAND</Text>
+          <View style={landscapeStyles.panelTitleRow}>
+            <Text style={landscapeStyles.panelAvatarText}>{playerAvatar}</Text>
+            <Text style={landscapeStyles.panelTitle}>{playerDisplayName.toUpperCase()}</Text>
+          </View>
           {isArranging && (
             <PlayerHand
               cards={playerHand}
@@ -1574,6 +1579,15 @@ const landscapeStyles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
   },
+  panelTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rs(4),
+  },
+  panelAvatarText: {
+    fontSize: rf(14),
+  },
   readyBtn: {
     marginTop: 'auto' as any,
     width: '100%',
@@ -1600,6 +1614,8 @@ function SafeRevealOverlay({
 }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const { width: screenW } = useWindowDimensions();
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
+  const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
@@ -1776,7 +1792,7 @@ function SafeRevealOverlay({
           ) : null}
 
           {/* Player hand — flips last */}
-          <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>YOUR HAND</Text>
+          <Text style={[safeRevealStyles.rowLabel, { marginTop: 14 }]}>{playerAvatar} {playerDisplayName.toUpperCase()}</Text>
           <View style={safeRevealStyles.cardRow}>
             {board.playerCards.map((c, i) => (
               <CardComponent

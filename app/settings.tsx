@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { debugLog } from '../components/DebugOverlay';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
@@ -98,39 +99,40 @@ function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps)
   );
 }
 
-function PlayerNameInput() {
+function ProfileSection() {
   const playerName = useGameStore((s) => s.playerName);
+  const playerAvatar = useGameStore((s) => s.playerAvatar);
   const setPlayerName = useGameStore((s) => s.setPlayerName);
-  const [localText, setLocalText] = useState(playerName);
+  const setPlayerAvatar = useGameStore((s) => s.setPlayerAvatar);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
-  useEffect(() => {
-    setLocalText(playerName);
-  }, [playerName]);
-
-  const commitValue = () => {
-    const trimmed = localText.trim().slice(0, 20);
-    setPlayerName(trimmed);
-    setLocalText(trimmed);
-  };
+  const displayName = playerName || 'Player 1';
+  const displayAvatar = playerAvatar || '🎰';
 
   return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Player Name</Text>
-        <Text style={styles.rowHint}>Shown on leaderboard</Text>
-      </View>
-      <TextInput
-        style={[styles.input, { minWidth: 120 }]}
-        value={localText}
-        onChangeText={setLocalText}
-        onBlur={commitValue}
-        onSubmitEditing={commitValue}
-        placeholder="Your name"
-        placeholderTextColor={COLORS.textMuted}
-        maxLength={20}
-        selectTextOnFocus
+    <>
+      <Pressable
+        style={styles.profileRow}
+        onPress={() => setPickerVisible(true)}
+      >
+        <Text style={styles.profileAvatar}>{displayAvatar}</Text>
+        <View style={styles.profileInfo}>
+          <Text style={styles.profileName}>{displayName}</Text>
+          <Text style={styles.profileHint}>Shown on leaderboard · Tap to edit</Text>
+        </View>
+        <Text style={styles.profileEdit}>EDIT</Text>
+      </Pressable>
+      <AvatarPicker
+        visible={pickerVisible}
+        currentAvatar={displayAvatar}
+        currentName={displayName}
+        onSave={(avatar, name) => {
+          setPlayerAvatar(avatar);
+          setPlayerName(name.trim().slice(0, 20) || 'Player 1');
+        }}
+        onClose={() => setPickerVisible(false)}
       />
-    </View>
+    </>
   );
 }
 
@@ -643,7 +645,7 @@ export default function SettingsScreen() {
         <FriendsBgPicker />
 
         <Text style={styles.sectionTitle}>PROFILE</Text>
-        <PlayerNameInput />
+        <ProfileSection />
 
         <Text style={styles.sectionTitle}>GAMEPLAY</Text>
         <PlayerCountSelector />
@@ -819,6 +821,40 @@ const styles = StyleSheet.create({
   },
   rowLeft: {
     flex: 1,
+  },
+  // Profile section
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(12),
+    backgroundColor: COLORS.surface,
+    borderRadius: rv(10),
+    padding: rs(12),
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    ...Platform.select({ web: { cursor: 'pointer' } as any }),
+  },
+  profileAvatar: {
+    fontSize: rf(32),
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: rf(15),
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  profileHint: {
+    fontSize: rf(11),
+    color: COLORS.textDim,
+    marginTop: rs(2),
+  },
+  profileEdit: {
+    fontSize: rf(11),
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 1,
   },
   rowLabel: {
     color: COLORS.textPrimary,
