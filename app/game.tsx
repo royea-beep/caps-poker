@@ -255,9 +255,9 @@ function GameScreenInner() {
     if (!countdownActive) return;
     // Per-second ticks from 5s down to 1s (escalating urgency)
     if (countdown <= 5 && countdown >= 1) playSound('timerLow');
-    // Time up: timerLow as buzzer placeholder (TODO: add dedicated buzzer.wav)
+    // Time up: play buzzer sound
     if (countdown === 0) {
-      playSound('timerLow');
+      playSound('buzzer');
       haptic(Haptics?.ImpactFeedbackStyle?.Heavy);
     }
   }, [countdownActive, countdown]);

@@ -12,6 +12,7 @@ export type SoundName =
   | 'lose'
   | 'complete'
   | 'timerLow'
+  | 'buzzer'
   | 'revealStart'  // placeholder — replace with real tension/drum-roll WAV
   | 'boardWin'     // placeholder — replace with ascending chime WAV
   | 'boardLose';   // placeholder — replace with descending tone WAV
@@ -31,6 +32,7 @@ const soundFiles: Record<SoundName, ReturnType<typeof require> | null> = {
   lose: null,
   complete: null,
   timerLow: null,
+  buzzer: null,
   revealStart: null,
   boardWin: null,
   boardLose: null,
@@ -44,6 +46,7 @@ try { soundFiles.chipsWin = require('../assets/sounds/chipsWin.wav'); } catch {}
 try { soundFiles.lose = require('../assets/sounds/lose.wav'); } catch {}
 try { soundFiles.complete = require('../assets/sounds/complete.wav'); } catch {}
 try { soundFiles.timerLow = require('../assets/sounds/timerLow.wav'); } catch {}
+try { soundFiles.buzzer = require('../assets/sounds/buzzer.wav'); } catch {}
 try { soundFiles.revealStart = require('../assets/sounds/revealStart.wav'); } catch {}
 try { soundFiles.boardWin = require('../assets/sounds/boardWin.wav'); } catch {}
 try { soundFiles.boardLose = require('../assets/sounds/boardLose.wav'); } catch {}
