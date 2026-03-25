@@ -50,7 +50,10 @@ try { Haptics = require('expo-haptics'); } catch {}
 function DealMeInButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <View style={dealMeInStyles.btn}>
-      <Pressable onPress={onPress} style={dealMeInStyles.inner}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [dealMeInStyles.inner, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
+      >
         <Text style={dealMeInStyles.text}>{label}</Text>
       </Pressable>
     </View>

@@ -176,14 +176,14 @@ export function BoardArrangement({
       {isArranging && (
         <View style={baStyles.floatingActions}>
           <Pressable
-            style={[baStyles.floatingBtn, baStyles.undoBtn]}
+            style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
             onPress={onUndo}
             disabled={boards.every((b) => b.playerCards.length === 0)}
           >
             <Text style={[baStyles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>UNDO</Text>
           </Pressable>
           <Pressable
-            style={[baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady]}
+            style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={onReady}
             disabled={!allBoardsFull}
           >

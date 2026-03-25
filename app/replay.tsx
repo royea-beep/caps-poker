@@ -217,7 +217,7 @@ export default function ReplayScreen() {
       {/* Navigation */}
       <View style={styles.nav}>
         <Pressable
-          style={[styles.navBtn, boardIndex === 0 && styles.navBtnDisabled]}
+          style={({ pressed }) => [styles.navBtn, boardIndex === 0 && styles.navBtnDisabled, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]}
           onPress={goPrev}
           disabled={boardIndex === 0}
         >
@@ -229,7 +229,7 @@ export default function ReplayScreen() {
         </Text>
 
         <Pressable
-          style={[styles.navBtn, isOnSummary && styles.navBtnDisabled]}
+          style={({ pressed }) => [styles.navBtn, isOnSummary && styles.navBtnDisabled, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]}
           onPress={goNext}
           disabled={isOnSummary}
         >
