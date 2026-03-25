@@ -160,13 +160,26 @@ export default function InternetJoinScreen() {
         />
 
         {status === 'idle' && (
-          <Button
-            title="JOIN"
-            variant="gold"
-            onPress={handleJoin}
-            disabled={code.trim().length < 6}
-            style={{ width: '100%', marginTop: 16 }}
-          />
+          <View style={styles.actionRow}>
+            <Button
+              title="JOIN"
+              variant="gold"
+              onPress={handleJoin}
+              disabled={code.trim().length < 6}
+              style={{ flex: 1 }}
+            />
+            <Button
+              title="WATCH"
+              variant="secondary"
+              onPress={() => {
+                const trimmed = code.trim();
+                if (trimmed.length < 6) return;
+                router.push({ pathname: '/spectate', params: { roomCode: trimmed } } as any);
+              }}
+              disabled={code.trim().length < 6}
+              style={{ flex: 1 }}
+            />
+          </View>
         )}
 
         {status === 'connecting' && (
@@ -247,6 +260,12 @@ const styles = StyleSheet.create({
     borderColor: COLORS.boardBorder,
     width: '100%',
     marginTop: rs(8),
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: rs(10),
+    width: '100%',
+    marginTop: rs(16),
   },
   divider: {
     width: '80%',
