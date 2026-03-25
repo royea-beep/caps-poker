@@ -22,7 +22,7 @@ export interface SimulationResult {
 }
 
 export function simulateHand(
-  playerCount: 2 | 3 | 4,
+  playerCount: 2 | 3 | 4 | 5,
   config: GameConfig = DEFAULT_CONFIG
 ): SimulationResult {
   const start = performance.now();
@@ -76,7 +76,7 @@ export interface BatchSimulationResult {
 }
 
 export function simulateBatch(
-  playerCount: 2 | 3 | 4,
+  playerCount: 2 | 3 | 4 | 5,
   handCount: number,
   config: GameConfig = DEFAULT_CONFIG
 ): BatchSimulationResult {

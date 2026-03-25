@@ -31,7 +31,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { useLocalSearchParams } from 'expo-router';
 
 async function logResultsStep(step: string, extra?: string) {
-  console.log(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
+  debugLog(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
   try {
     const sb = getSupabase();
     if (!sb) return;
@@ -162,7 +162,7 @@ export default function ResultsScreen() {
     debugLog(`R2 revealData: ${revealData ? `boards=${revealData.boards.length} isComplete=${revealData.isComplete}` : 'NULL'}`);
     debugLog(`R3 chips: ${chips}`);
     debugLog(`R4 isComplete=${revealData?.isComplete}`);
-    console.log('[RESULTS] mounted — revealData:', revealData ? `boards=${revealData.boards.length}` : 'NULL');
+    debugLog(`[RESULTS] mounted — revealData: ${revealData ? `boards=${revealData.boards.length}` : 'NULL'}`);
     void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
     debugLog('🎮 results mounted — game flag still active (cleared on unmount)');
     // NOTE: clearGameActive() is NOT called here — called on unmount.
@@ -192,9 +192,9 @@ export default function ResultsScreen() {
 
   // Guard: no data → go home
   useEffect(() => {
-    console.log('[RESULTS] revealData guard — revealData:', revealData ? 'present' : 'null');
+    debugLog(`[RESULTS] revealData guard — revealData: ${revealData ? 'present' : 'null'}`);
     if (!revealData) {
-      console.warn('[RESULTS] no revealData — redirecting to /');
+      debugLog('[RESULTS] no revealData — redirecting to /', 'warn');
       router.replace('/');
     }
   }, [revealData, router]);

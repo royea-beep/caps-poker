@@ -5,6 +5,7 @@
 import { Platform } from 'react-native';
 import { RevealBoardData, RevealData } from '../types/gameTypes';
 import { getSupabase, isSupabaseConfigured } from './supabase';
+import { debugLog } from '../components/DebugOverlay';
 
 // Lazy-load native-only modules to avoid web crashes
 let captureRef: ((ref: any, options?: any) => Promise<string>) | null = null;
@@ -62,7 +63,7 @@ export async function captureAndShare(viewRef: React.RefObject<any>, shareText: 
       });
     }
   } catch (e) {
-    console.warn('[shareHand] capture/share failed:', e);
+    debugLog(`[shareHand] capture/share failed: ${e}`, 'warn');
   }
 }
 
@@ -80,12 +81,12 @@ export async function saveHandForWebReplay(data: ShareData): Promise<string | nu
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
     if (error) {
-      console.warn('[shareHand] Supabase insert failed:', error.message);
+      debugLog(`[shareHand] Supabase insert failed: ${error.message}`, 'warn');
       return null;
     }
     return `https://caps.ftable.co.il/hand/?id=${handId}`;
   } catch (e) {
-    console.warn('[shareHand] saveHandForWebReplay failed:', e);
+    debugLog(`[shareHand] saveHandForWebReplay failed: ${e}`, 'warn');
     return null;
   }
 }

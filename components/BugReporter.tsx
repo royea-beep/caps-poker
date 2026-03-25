@@ -26,6 +26,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
+import { debugLog } from './DebugOverlay';
 // Lazy haptics — never crash on web
 let Haptics: typeof import('expo-haptics') | null = null;
 if (Platform.OS !== 'web') {
@@ -85,7 +86,7 @@ async function submitBugReport(
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || extra?.supabaseAnonKey;
 
   if (!url || !key) {
-    console.warn('[BugReporter] Supabase not configured');
+    debugLog('[BugReporter] Supabase not configured', 'warn');
     return;
   }
 

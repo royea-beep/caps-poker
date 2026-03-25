@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 import { getDeviceId } from './leaderboard';
+import { debugLog } from '../components/DebugOverlay';
 
 // expo-notifications is not installed — all functions are stubs.
 // Push notification support can be added in a future session by:
@@ -150,7 +151,7 @@ export async function registerAndSavePushToken(): Promise<string | null> {
         { onConflict: 'device_id,token' },
       )
       .then(({ error }: { error: { message: string } | null }) => {
-        if (error) console.warn('[push_tokens] upsert failed:', error.message);
+        if (error) debugLog(`[push_tokens] upsert failed: ${error.message}`, 'warn');
       });
   }
 

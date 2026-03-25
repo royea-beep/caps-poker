@@ -47,6 +47,7 @@ export function getBoardCount(numberOfPlayers: number): number {
 export function getCardsPerPlayer(numberOfPlayers: number): number {
   if (numberOfPlayers === 3) return 12;
   if (numberOfPlayers === 4) return 8;
+  if (numberOfPlayers === 5) return 8;
   return 16;
 }
 
@@ -78,7 +79,7 @@ export const CARD_SCALE: Record<number, { cardHeight: number; communityScale: nu
  */
 export function getCardDimensions(
   screenWidth: number,
-  numberOfPlayers: 2 | 3 | 4,
+  numberOfPlayers: 2 | 3 | 4 | 5,
 ): { cardHeight: number; cardWidth: number; communityScale: number } {
   const communityScale = CARD_SCALE[numberOfPlayers]?.communityScale ?? 1.1;
   const overhead = 120;

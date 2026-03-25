@@ -4,6 +4,8 @@
  * Captures console errors, detects crashes/timeouts, generates fix prompts.
  */
 
+import { debugLog } from '../components/DebugOverlay';
+
 export interface DebugStep {
   id: number
   name: string
@@ -60,7 +62,7 @@ export class AutoDebugRunner {
   private async runStep(step: DebugStep): Promise<StepResult> {
     const start = Date.now()
     const errsBefore = this.capturedErrors.length
-    console.log(`[AutoDebug] ▶ Step ${step.id}: ${step.name}`)
+    debugLog(`[AutoDebug] ▶ Step ${step.id}: ${step.name}`)
 
     try {
       await Promise.race([

@@ -177,7 +177,7 @@ export function calculateHandResults(
 }
 
 /** Initialize a game for N players (1 human + N-1 bots). */
-export function initializeGameMulti(numberOfPlayers: 2 | 3 | 4): {
+export function initializeGameMulti(numberOfPlayers: 2 | 3 | 4 | 5): {
   boards: BoardState[];
   playerHand: Card[];
   botHands: Card[][];
@@ -285,7 +285,7 @@ export function createPlayers(playerCount: number, startingChips: number): Playe
 }
 
 export function dealNewHand(
-  playerCount: 2 | 3 | 4,
+  playerCount: 2 | 3 | 4 | 5,
   config: GameConfig
 ): { players: Player[]; boards: MultiBoardState[]; dealResult: MultiDealResult } {
   const dealResult = dealCardsMultiplayer(playerCount);
