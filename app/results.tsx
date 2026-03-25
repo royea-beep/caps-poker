@@ -25,6 +25,7 @@ import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHis
 import { saveHandForWebReplay, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv } from '../utils/responsive';
 import { t } from '../utils/i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
@@ -109,6 +110,14 @@ export default function ResultsScreen() {
     incrementHandsPlayed();
     updateBestChips();
     if (revealData.netChips > 0) { incrementHandsWon(); updateBiggestWin(revealData.netChips); }
+
+    // [BANKROLL] Verify bankroll sync — logs in-memory vs persisted value
+    console.log('[BANKROLL] chips in store:', chips, 'netChips:', revealData.netChips);
+    AsyncStorage.getItem('caps-poker-storage').then(stored => {
+      if (stored) {
+        try { const p = JSON.parse(stored); console.log('[BANKROLL] persisted chips:', p?.state?.chips); } catch {}
+      }
+    }).catch(() => {});
 
     revealData.boards.forEach((board, i) => CapsHooks.boardCompleted(i, board.playerHandName, board.winner === 'player'));
     if (revealData.isComplete && revealData.completeBonusAmount > 0) CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
