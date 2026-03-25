@@ -51,7 +51,8 @@
         "appleTeamId": "3K9KJNGL9U",
         "ascApiKeyPath": "./AuthKey_HH732W7XQJ.p8",
         "ascApiKeyId": "HH732W7XQJ",
-        "ascApiKeyIssuerId": "686f97b8-3f8a-40b7-a6cd-5293a3168439"
+        "ascApiKeyIssuerId": "686f97b8-3f8a-40b7-a6cd-5293a3168439",
+        "groups": ["External Testers"]
       }
     },
     "ci": {
