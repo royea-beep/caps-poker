@@ -309,6 +309,44 @@
       color: #c9a84c;
     }
 
+    /* AI queue sub-tabs */
+    .queue-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .queue-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .queue-btn:hover { color: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.2); }
+    .queue-btn.active-relevant {
+      background: rgba(76,175,80,0.15);
+      border-color: rgba(76,175,80,0.5);
+      color: #4CAF50;
+    }
+    .queue-btn.active-review {
+      background: rgba(255,152,0,0.15);
+      border-color: rgba(255,152,0,0.5);
+      color: #FF9800;
+    }
+    .queue-btn.active-all {
+      background: rgba(201,168,76,0.12);
+      border-color: rgba(201,168,76,0.4);
+      color: #c9a84c;
+    }
+    .ai-badge-relevant { background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); color:#4CAF50; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+    .ai-badge-unrelated { background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.35); color:#FF9800; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+    .ai-badge-pending { background:rgba(120,113,108,0.15); border:1px solid rgba(120,113,108,0.3); color:#78716C; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+
     /* Deploy log */
     .deploy-type-build {
       background: rgba(30,144,255,0.12);
@@ -376,6 +414,14 @@
       <div class="stat-card"><div class="stat-num" id="statOpen">—</div><div class="stat-label">Open</div></div>
       <div class="stat-card"><div class="stat-num" id="statFixed">—</div><div class="stat-label">Fixed</div></div>
       <div class="stat-card"><div class="stat-num" id="statToday">—</div><div class="stat-label">Today</div></div>
+      <div class="stat-card"><div class="stat-num" id="statRelevant">—</div><div class="stat-label">Relevant</div></div>
+      <div class="stat-card"><div class="stat-num" id="statReview">—</div><div class="stat-label">Review</div></div>
+    </div>
+
+    <div class="queue-tabs">
+      <button class="queue-btn active-all" id="queueAll" onclick="switchQueue('all')">📋 All</button>
+      <button class="queue-btn" id="queueRelevant" onclick="switchQueue('relevant')">✅ Relevant bugs</button>
+      <button class="queue-btn" id="queueReview" onclick="switchQueue('review')">🔍 Review queue</button>
     </div>
 
     <div class="table-wrap">
@@ -384,7 +430,8 @@
           <tr>
             <th>Time (IST)</th>
             <th>Title</th>
-            <th>Description</th>
+            <th>AI</th>
+            <th>AI Summary</th>
             <th>Screen</th>
             <th>Device / Version</th>
             <th>Status</th>
@@ -392,7 +439,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="7" class="loading">Loading…</td></tr>
+          <tr><td colspan="8" class="loading">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -504,7 +551,7 @@
   }
 
   async function fetchBugs() {
-    const url = SUPABASE_URL + '/rest/v1/bug_reports?order=created_at.desc&limit=200';
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?order=created_at.desc&limit=200&select=id,title,description,url,screen,device_info,app_version,version,status,metadata,created_at,classification,ai_summary,needs_review,has_video,audio_url';
     const res = await fetch(url, { headers: await apiHeaders() });
     if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + await res.text());
     return res.json();
@@ -532,6 +579,17 @@
     navigator.clipboard.writeText(lines).then(() => showToast('Copied for WhatsApp ✓'));
   }
 
+  let currentQueue = 'all';
+
+  function switchQueue(queue) {
+    currentQueue = queue;
+    ['all', 'relevant', 'review'].forEach(q => {
+      const btn = document.getElementById('queue' + q.charAt(0).toUpperCase() + q.slice(1));
+      btn.className = 'queue-btn' + (q === queue ? ' active-' + (q === 'all' ? 'all' : q === 'relevant' ? 'relevant' : 'review') : '');
+    });
+    applyFilters();
+  }
+
   function applyFilters() {
     const statusF = document.getElementById('filterStatus').value;
     const dateF = document.getElementById('filterDate').value;
@@ -541,29 +599,43 @@
       if (statusF !== 'all' && status !== statusF) return false;
       if (dateF === 'today' && !isToday(b.created_at)) return false;
       if (dateF === 'week' && !isThisWeek(b.created_at)) return false;
+      if (currentQueue === 'relevant' && b.classification !== 'RELEVANT') return false;
+      if (currentQueue === 'review' && !(b.needs_review === true || b.classification === 'UNRELATED')) return false;
       return true;
     });
 
     renderTable(filtered);
   }
 
+  function aiBadge(classification) {
+    if (classification === 'RELEVANT') return '<span class="ai-badge-relevant">✅ RELEVANT</span>';
+    if (classification === 'UNRELATED') return '<span class="ai-badge-unrelated">🔍 REVIEW</span>';
+    return '<span class="ai-badge-pending">⏳ PENDING</span>';
+  }
+
   function renderTable(bugs) {
     const tbody = document.getElementById('tableBody');
     if (!bugs.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">No bug reports found</td></tr>';
+      const queueLabel = currentQueue === 'relevant' ? 'relevant bugs' : currentQueue === 'review' ? 'bugs in review queue' : 'bug reports';
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">No ${queueLabel} found</td></tr>`;
       return;
     }
 
     tbody.innerHTML = bugs.map(b => {
       const status = b.status || 'open';
       const isFixed = status === 'fixed';
+      const cls = b.classification || 'PENDING';
+      const meta = (() => { try { return typeof b.metadata === 'string' ? JSON.parse(b.metadata) : (b.metadata ?? {}); } catch { return {}; } })();
+      const deviceStr = meta.device || b.device_info || '—';
+      const versionStr = b.version || b.app_version || '—';
       return `
         <tr>
           <td class="td-time">${toIST(b.created_at)}</td>
           <td class="td-title">${escHtml(b.title)}</td>
-          <td class="td-desc">${escHtml(b.description)}</td>
-          <td class="td-screen">${escHtml(b.screen)}</td>
-          <td class="td-device">${escHtml(b.device_info)}<br>${escHtml(b.app_version)}</td>
+          <td>${aiBadge(cls)}</td>
+          <td class="td-desc">${escHtml(b.ai_summary)}</td>
+          <td class="td-screen">${escHtml(b.url || b.screen)}</td>
+          <td class="td-device">${escHtml(deviceStr)}<br>${escHtml(versionStr)}</td>
           <td>${statusBadge(status)}</td>
           <td>
             <div class="actions">
@@ -581,10 +653,14 @@
     const today = allBugs.filter(b => isToday(b.created_at)).length;
     const open = allBugs.filter(b => !b.status || b.status === 'open').length;
     const fixed = allBugs.filter(b => b.status === 'fixed').length;
+    const relevant = allBugs.filter(b => b.classification === 'RELEVANT').length;
+    const review = allBugs.filter(b => b.needs_review === true || b.classification === 'UNRELATED').length;
     document.getElementById('statTotal').textContent = allBugs.length;
     document.getElementById('statOpen').textContent = open;
     document.getElementById('statFixed').textContent = fixed;
     document.getElementById('statToday').textContent = today;
+    document.getElementById('statRelevant').textContent = relevant;
+    document.getElementById('statReview').textContent = review;
   }
 
   async function handleMark(id, status) {
@@ -753,7 +829,7 @@
       applyFilters();
     } catch(e) {
       showError(e.message);
-      document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="empty">Failed to load</td></tr>';
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="empty">Failed to load</td></tr>';
     }
     if (currentTab === 'deploys') loadDeploys();
   }
