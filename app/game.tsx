@@ -154,6 +154,7 @@ function TimerBar({ countdown, total, color }: { countdown: number; total: numbe
 
   useEffect(() => {
     progress.value = withTiming(Math.max(0, countdown / total), { duration: 850 });
+    return () => { cancelAnimation(progress); };
   }, [countdown]);
 
   useEffect(() => {
@@ -302,8 +303,8 @@ function GameScreenInner() {
   const playerReadyRef = useRef(false);
   const botsReadyCountRef = useRef(0);
 
-  useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
-  useEffect(() => { boardsRef.current = boards; }, [boards]);
+  useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]); // no cleanup needed — sync ref update
+  useEffect(() => { boardsRef.current = boards; }, [boards]); // no cleanup needed — sync ref update
 
   const isArranging = phase.type === 'arranging' && !playerReady;
 
@@ -368,6 +369,7 @@ function GameScreenInner() {
   }, [countdownActive]);
 
   // Countdown sound escalation: timerLow at 10s (from startCountdown), per-second at 5–1, timerLow at 0
+  // no cleanup needed — fire-and-forget sound/haptic calls, no subscriptions
   useEffect(() => {
     if (!countdownActive) return;
     // Per-second ticks from 5s down to 1s (escalating urgency)
@@ -380,6 +382,7 @@ function GameScreenInner() {
   }, [countdownActive, countdown]);
 
   // When countdown hits 0 — auto-place remaining cards and navigate directly
+  // no cleanup needed — one-time state transition, no subscriptions or timers
   useEffect(() => {
     if (countdownActive && countdown === 0 && !playerReady) {
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
@@ -419,6 +422,7 @@ function GameScreenInner() {
   }, []);
 
   // Load games-played counter for first-time hints
+  // no cleanup needed — one-time AsyncStorage read, promise resolves after unmount harmlessly
   useEffect(() => {
     AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
       setGamesPlayed(parseInt(val ?? '0', 10));
@@ -426,6 +430,7 @@ function GameScreenInner() {
   }, []);
 
   // Initialize game
+  // no cleanup needed — bot timers are pushed to timeoutsRef.current, cleared by the central cleanup effect above
   useEffect(() => {
     const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
     setBoards(initialBoards);
@@ -605,7 +610,7 @@ function GameScreenInner() {
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
-  useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]);
+  useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]); // no cleanup needed — sync ref update
 
   const onRevealDone = useCallback(() => {
     debugLog('15 onRevealDone called — clearing overlay');
@@ -1574,6 +1579,7 @@ function SafeRevealOverlay({
   }, []);
 
   // S52: strong hand haptic — fires when showResult becomes true for a player win
+  // no cleanup needed — fire-and-forget haptic call, no subscriptions
   useEffect(() => {
     if (!showResult || !board || board.winner !== 'player') return;
     const nameToRank: Record<string, number> = Object.fromEntries(
