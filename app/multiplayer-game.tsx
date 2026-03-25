@@ -16,6 +16,8 @@ import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
+import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
+import { ChatMsg } from '../utils/realtimeMultiplayer';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -110,6 +112,31 @@ export default function MultiplayerGameScreen() {
   const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>(initialPhase);
   const [disconnectBanner, setDisconnectBanner] = useState<string | null>(null);
 
+  // --- Chat (internet MP only) ---
+  const isInternetMP = typeof (mpServer as any)?.sendChat === 'function' || typeof (mpClient as any)?.sendChat === 'function';
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const myPlayerName = connectedPlayers.find((p) => p.seat === playerIndex)?.name ?? `Seat ${playerIndex + 1}`;
+  const chatIdCounter = useRef(0);
+
+  const addChatMessage = useCallback((msg: ChatMsg, isMe: boolean) => {
+    const id = `chat-${Date.now()}-${chatIdCounter.current++}`;
+    const newMsg: ChatMessage = { id, playerName: msg.playerName, text: msg.text, isMe, timestamp: msg.timestamp };
+    setChatMessages((prev) => [...prev.slice(-20), newMsg]); // keep last 20 in memory
+  }, []);
+
+  const handleSendChat = useCallback((text: string) => {
+    const msg: ChatMsg = { playerName: myPlayerName, text, timestamp: Date.now() };
+    addChatMessage(msg, true);
+    if (isHost && (mpServer as any)?.sendChat) {
+      (mpServer as any).sendChat(text, myPlayerName);
+    } else if (!isHost && (mpClient as any)?.sendChat) {
+      (mpClient as any).sendChat(text, myPlayerName);
+    }
+  }, [myPlayerName, isHost, mpServer, mpClient, addChatMessage]);
+
+  // --- Time bank (1 use per hand) ---
+  const [timeBankUsed, setTimeBankUsed] = useState(false);
+
   // Collected reveal data for guest
   const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
   const mountedRef = useRef(true);
@@ -125,6 +152,18 @@ export default function MultiplayerGameScreen() {
     .map((p) => p.name);
 
   const isArranging = phase === 'arranging';
+
+  // --- Wire onChat for host ---
+  useEffect(() => {
+    if (!isHost || !mpServer || !isInternetMP) return;
+    mpServer.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current) addChatMessage(msg, false); } });
+  }, [isHost, mpServer, isInternetMP, addChatMessage]);
+
+  // --- Wire onChat for guest ---
+  useEffect(() => {
+    if (isHost || !mpClient || !isInternetMP) return;
+    mpClient.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current) addChatMessage(msg, msg.playerName === myPlayerName); } });
+  }, [isHost, mpClient, isInternetMP, addChatMessage, myPlayerName]);
 
   // --- Host: wire server callbacks on mount ---
   useEffect(() => {
@@ -442,6 +481,17 @@ export default function MultiplayerGameScreen() {
     autoStart: true,
   });
 
+  const handleTimeBank = useCallback(() => {
+    if (timeBankUsed) return;
+    setTimeBankUsed(true);
+    timer.addTime(15);
+    if (isInternetMP) {
+      const payload = { playerName: myPlayerName };
+      if (isHost && (mpServer as any)?.broadcastToAll) (mpServer as any).broadcastToAll('TIMEBANK', payload);
+      else if (!isHost && (mpClient as any)?.send) (mpClient as any).send('TIMEBANK', payload);
+    }
+  }, [timeBankUsed, timer, myPlayerName, isHost, mpServer, mpClient, isInternetMP]);
+
   // Auto-fill remaining cards and send ready
   const autoFillAndReady = useCallback(() => {
     setBoards((currentBoards) => {
@@ -646,6 +696,13 @@ export default function MultiplayerGameScreen() {
         />
       )}
 
+      {/* Time bank button — visible when timer < 20s and not yet used */}
+      {isArranging && displayTimeLeft < 20 && !timeBankUsed && (
+        <Pressable style={styles.timeBankBtn} onPress={handleTimeBank}>
+          <Text style={styles.timeBankText}>⏱ +15s</Text>
+        </Pressable>
+      )}
+
       {/* Ready button */}
       {isArranging && (
         <View style={styles.readySection}>
@@ -665,6 +722,15 @@ export default function MultiplayerGameScreen() {
             <Text style={styles.waitingText}>Waiting for other players...</Text>
           </View>
         </View>
+      )}
+
+      {/* Chat overlay — internet MP only */}
+      {isInternetMP && (
+        <ChatOverlay
+          myName={myPlayerName}
+          messages={chatMessages}
+          onSend={handleSendChat}
+        />
       )}
     </SafeAreaView>
   );
@@ -733,6 +799,22 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     paddingHorizontal: 16,
     gap: 4,
+  },
+  timeBankBtn: {
+    alignSelf: 'center',
+    marginBottom: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  timeBankText: {
+    color: COLORS.gold,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   readySection: {
     paddingHorizontal: 12,

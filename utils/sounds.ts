@@ -12,7 +12,9 @@ export type SoundName =
   | 'lose'
   | 'complete'
   | 'timerLow'
-  | 'revealStart'; // placeholder silence — replace with real tension/drum-roll WAV when available
+  | 'revealStart'  // placeholder — replace with real tension/drum-roll WAV
+  | 'boardWin'     // placeholder — replace with ascending chime WAV
+  | 'boardLose';   // placeholder — replace with descending tone WAV
 
 let Audio: any = null;
 try {
@@ -30,6 +32,8 @@ const soundFiles: Record<SoundName, ReturnType<typeof require> | null> = {
   complete: null,
   timerLow: null,
   revealStart: null,
+  boardWin: null,
+  boardLose: null,
 };
 
 // Try to load sound files — they may not exist in all environments
@@ -41,6 +45,8 @@ try { soundFiles.lose = require('../assets/sounds/lose.wav'); } catch {}
 try { soundFiles.complete = require('../assets/sounds/complete.wav'); } catch {}
 try { soundFiles.timerLow = require('../assets/sounds/timerLow.wav'); } catch {}
 try { soundFiles.revealStart = require('../assets/sounds/revealStart.wav'); } catch {}
+try { soundFiles.boardWin = require('../assets/sounds/boardWin.wav'); } catch {}
+try { soundFiles.boardLose = require('../assets/sounds/boardLose.wav'); } catch {}
 
 const loadedSounds: Partial<Record<SoundName, any>> = {};
 
