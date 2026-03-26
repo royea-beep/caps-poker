@@ -5,6 +5,7 @@
 import { Platform } from 'react-native';
 import { debugLog } from '../components/DebugOverlay';
 import { getSupabase } from './supabase';
+import { readFileAsBytes } from './fileReader';
 
 export interface CrashMeta {
   build: string;
@@ -28,21 +29,13 @@ export async function uploadCrashReport(
 
     if (videoUri && Platform.OS !== 'web') {
       try {
-        // Lazy import — expo-file-system is already installed
-        const FileSystem = require('expo-file-system');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName = `crash-${timestamp}.mp4`;
-        const base64 = await FileSystem.readAsStringAsync(videoUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
+        const bytes = await readFileAsBytes(videoUri);
+        if (!bytes) throw new Error('readFileAsBytes returned null');
         const { error } = await supabase.storage
           .from('crash-recordings')
-          .upload(fileName, bytes, { contentType: 'video/mp4', upsert: false });
+          .upload(fileName, bytes.buffer as ArrayBuffer, { contentType: 'video/mp4', upsert: false });
         if (!error) {
           const { data: urlData } = supabase.storage
             .from('crash-recordings')
