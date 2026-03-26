@@ -29,7 +29,7 @@ export async function uploadCrashReport(
     if (videoUri && Platform.OS !== 'web') {
       try {
         // Lazy import — expo-file-system is already installed
-        const FileSystem = require('expo-file-system');
+        const FileSystem = require('expo-file-system/legacy');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName = `crash-${timestamp}.mp4`;
         const base64 = await FileSystem.readAsStringAsync(videoUri, {
