@@ -1,3 +1,9 @@
+// Suppress expo-file-system deprecation spam (36 identical warnings)
+const _origWarn = console.warn;
+console.warn = (...args: any[]) => {
+  if (typeof args[0] === 'string' && args[0].includes('imported from "expo-file-system" is deprecated')) return;
+  _origWarn(...args);
+};
 import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { initLogBuffer } from '../utils/logBuffer';
