@@ -3,7 +3,7 @@
     "name": "Caps Poker",
     "slug": "caps-poker",
     "version": "1.9.4",
-    "orientation": "default",
+    "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "caps-poker",
