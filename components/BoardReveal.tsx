@@ -22,6 +22,7 @@ import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { useGameStore } from '../store/gameStore';
+import { getTheme } from '../constants/visualThemes';
 import GuidedTooltip from './GuidedTooltip';
 
 let Haptics: any = null;
@@ -65,6 +66,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const { width: screenW } = useWindowDimensions();
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const revealBg = getTheme(visualTheme).background; // #1C0508 for Five-O, #0a0a0a for Classic
   const [currentIdx, setCurrentIdx] = useState(0);
   const currentIdxRef = useRef(0);
   useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);
@@ -72,10 +75,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
-  // Card face-down states — flop always visible, turn+river+bot start face-down
+  // Card face-down states — flop always visible, bot always visible (already revealed in game screen)
+  // Only turn + river start hidden and flip during the dramatic reveal
   const [turnFaceDown, setTurnFaceDown] = useState(true);
   const [riverFaceDown, setRiverFaceDown] = useState(true);
-  const [botFaceDown, setBotFaceDown] = useState([true, true, true, true]);
+  const [botFaceDown] = useState([false, false, false, false]); // S86: always open
   const [showHandNames, setShowHandNames] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
@@ -146,7 +150,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setRevealTipVisible(false);
     setTurnFaceDown(false);
     setRiverFaceDown(false);
-    setBotFaceDown([false, false, false, false]);
+    // S86: botFaceDown is always [false,false,false,false] — no setter needed
     setShowHandNames(true);
     setShowResult(true);
     handNameOpacity.setValue(1);
@@ -174,7 +178,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     anims.current = [];
     setTurnFaceDown(true);
     setRiverFaceDown(true);
-    setBotFaceDown([true, true, true, true]);
+    // S86: bot cards NEVER reset to face-down — they're always visible in BoardReveal
     setShowHandNames(false);
     setShowResult(false);
     handNameOpacity.setValue(0);
@@ -194,78 +198,37 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     // 0ms — board appears: play tension sound
     playSound('revealStart');
 
-    // 300ms — pre-flip tension pulse on bot cards (iterations:2 = safe, never -1)
-    // Signals "opponent cards about to reveal" before the staggered flips
-    timers.current.push(setTimeout(() => {
-      const pulse = AnimatedRN.loop(
-        AnimatedRN.sequence([
-          AnimatedRN.timing(botPulseScale, { toValue: 1.05, duration: t(200), useNativeDriver: true }),
-          AnimatedRN.timing(botPulseScale, { toValue: 1.0, duration: t(200), useNativeDriver: true }),
-        ]),
-        { iterations: 2 }
-      );
-      anims.current.push(pulse);
-      pulse.start();
-    }, t(300)));
-
-    // 500–950ms — opponent reveal: staggered bot card flips BEFORE turn/river
-    // Player sees what they're up against → then 1500ms pause → THEN turn reveals
-    // Each card: bounce scale 1→1.18→1 (Hearthstone impact principle)
-    [500, 650, 800, 950].forEach((ms, i) => {
-      timers.current.push(setTimeout(() => {
-        setBotFaceDown(prev => {
-          const next = [...prev];
-          next[i] = false;
-          return next;
-        });
-        // Impact bounce: pop to 1.18 then spring back to 1
-        botCardScales[i].setValue(1.18);
-        const bounce = AnimatedRN.spring(botCardScales[i], {
-          toValue: 1,
-          friction: 4,
-          tension: 120,
-          useNativeDriver: true,
-        });
-        anims.current.push(bounce);
-        bounce.start();
-        playSound('cardFlip');
-        const hapticStyle = i === 3
-          ? Haptics?.ImpactFeedbackStyle?.Medium
-          : Haptics?.ImpactFeedbackStyle?.Light;
-        Haptics?.impactAsync?.(hapticStyle)?.catch?.(() => {});
-      }, t(ms)));
-    });
-
-    // 2450ms — flip turn card (950ms last bot flip + 1500ms dramatic pause)
+    // S86: Bot cards already face-up. Only turn + river reveal with drama.
+    // 800ms — flip turn card
     timers.current.push(setTimeout(() => {
       setTurnFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(2450)));
+    }, t(800)));
 
-    // 3950ms — flip river card (2450ms turn + 1500ms dramatic pause)
+    // 2300ms — flip river card (800ms turn + 1500ms dramatic pause)
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(3950)));
+    }, t(2300)));
 
-    // 4100ms — fade out hint
+    // 2450ms — fade out hint
     timers.current.push(setTimeout(() => {
       const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: t(400), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(4100)));
+    }, t(2450)));
 
-    // 4400ms — show hand names (fade in, both simultaneously)
+    // 2750ms — show hand names (fade in, both simultaneously)
     timers.current.push(setTimeout(() => {
       setShowHandNames(true);
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(4400)));
+    }, t(2750)));
 
-    // 4600ms — community spotlight: dim non-highlighted cards
+    // 2950ms — community spotlight: dim non-highlighted cards
     timers.current.push(setTimeout(() => {
       const b = boards[currentIdxRef.current];
       if (!b) return;
@@ -300,9 +263,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           a.start();
         }
       });
-    }, t(4600)));
+    }, t(2950)));
 
-    // 5000ms — show win/lose result (scale in) + chip counter animation
+    // 3350ms — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
       setShowResult(true);
       const scaleAnim = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
@@ -327,10 +290,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       } else if (boardForResult?.winner === 'bot') {
         playSound('boardLose');
       }
-    }, t(5000)));
+    }, t(3350)));
 
-    // 6500ms — auto-advance
-    timers.current.push(setTimeout(doAdvance, t(6500)));
+    // 4800ms — auto-advance
+    timers.current.push(setTimeout(doAdvance, t(4800)));
 
     // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
     if (isFirstGame && currentIdxRef.current === 0) {
@@ -339,21 +302,21 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           revealTipShownRef.current.add(6);
           setRevealTipText(REVEAL_TIPS[0]());
           setRevealTipVisible(true);
-        }, t(1050)));
+        }, t(400)));
       }
       if (!revealTipShownRef.current.has(7)) {
         timers.current.push(setTimeout(() => {
           revealTipShownRef.current.add(7);
           setRevealTipVisible(false);
           setTimeout(() => { setRevealTipText(REVEAL_TIPS[1]()); setRevealTipVisible(true); }, 300);
-        }, t(2650)));
+        }, t(1000)));
       }
       if (!revealTipShownRef.current.has(8)) {
         timers.current.push(setTimeout(() => {
           revealTipShownRef.current.add(8);
           setRevealTipVisible(false);
           setTimeout(() => { setRevealTipText(REVEAL_TIPS[2]()); setRevealTipVisible(true); }, 300);
-        }, t(5200)));
+        }, t(3550)));
       }
     }
 
@@ -396,9 +359,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
   return (
     <Modal visible animationType="fade" transparent={false} statusBarTranslucent>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: revealBg }]}>
         <Pressable
-          style={styles.container}
+          style={[styles.container, { backgroundColor: revealBg }]}
           onPress={() => (showResult ? doAdvance() : handleSkip())}
         >
           {/* Header — board title + progress dots */}
@@ -523,7 +486,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             text={revealTipText}
             visible={revealTipVisible}
             onDismiss={() => setRevealTipVisible(false)}
-            position="center"
+            position="bottom"
           />
         )}
       </SafeAreaView>

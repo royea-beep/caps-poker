@@ -295,14 +295,11 @@ export default function RootLayout() {
     })();
   }, []);
 
-  // Lock screen orientation based on user choice
+  // S86: Portrait-only — Iron Rule 2. Always lock to portrait regardless of stored choice.
   useEffect(() => {
-    if (!ScreenOrientation || !orientation) return;
-    const lock = orientation === 'landscape'
-      ? ScreenOrientation.OrientationLock.LANDSCAPE
-      : ScreenOrientation.OrientationLock.PORTRAIT_UP;
-    ScreenOrientation.lockAsync(lock).catch(() => {});
-  }, [orientation]);
+    if (!ScreenOrientation) return;
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+  }, []);
 
   // First-launch flow: theme pick → orientation pick → home
   useEffect(() => {

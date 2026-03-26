@@ -108,7 +108,7 @@ function GameScreenInner() {
   const storeOrientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
-  const isLandscape = storeOrientation === 'landscape' && Platform.OS !== 'web';
+  const isLandscape = false; // S86: portrait-only — Iron Rule 2
   const addChips = useGameStore((s) => s.addChips);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
