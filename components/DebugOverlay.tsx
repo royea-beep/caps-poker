@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { testAudioPipeline } from '../utils/testAudioPipeline';
 
 const MAX_LOGS = 50;
 
@@ -76,6 +77,11 @@ export default function DebugOverlay() {
           {_isRecording && (
             <Text style={styles.recText}>🎥 REC ● {recSecs}s</Text>
           )}
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity onPress={() => testAudioPipeline().catch(() => {})} hitSlop={8} style={styles.testBtn}>
+              <Text style={styles.testBtnText}>🎙 TEST</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => setMinimized(true)} hitSlop={12}>
             <Text style={styles.minimizeBtn}>▼</Text>
           </TouchableOpacity>
@@ -135,6 +141,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingHorizontal: 8,
   },
+  testBtn: {
+    backgroundColor: 'rgba(255,165,0,0.2)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 4,
+  },
+  testBtnText: { color: '#ffaa00', fontSize: 9, fontWeight: '700' },
   recText: {
     color: '#ff4444',
     fontSize: 9,
