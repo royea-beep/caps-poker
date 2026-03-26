@@ -406,6 +406,7 @@ export default function HomeScreen() {
   const { height: screenH, width: screenW } = useWindowDimensions();
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
+  const updateConfig = useGameStore((s) => s.updateConfig);
   const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
   const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
@@ -497,9 +498,11 @@ export default function HomeScreen() {
 
   const handleWelcomeStart = useCallback(async () => {
     setShowWelcome(false);
+    // First game: default to 3 players (3 boards, 12 cards) — easier for beginners
+    updateConfig({ numberOfPlayers: 3 });
     await AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
     router.push('/game' as any);
-  }, [router]);
+  }, [router, updateConfig]);
 
   const handleWelcomeSkip = useCallback(() => {
     setShowWelcome(false);

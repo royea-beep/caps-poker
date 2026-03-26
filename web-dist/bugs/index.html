@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐛 CAPS Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080808;
+      color: #e8e8e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0a0a0a 0%, #111116 100%);
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #c9a84c;
+      letter-spacing: 1px;
+    }
+
+    .badge {
+      background: rgba(201,168,76,0.15);
+      border: 1px solid rgba(201,168,76,0.3);
+      color: #c9a84c;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #e8e8e8;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    select:focus { outline: none; border-color: rgba(201,168,76,0.5); }
+
+    .refresh-info {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    #countdown { color: rgba(201,168,76,0.7); }
+
+    main { padding: 20px 24px; }
+
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 12px 20px;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 24px;
+      font-weight: 800;
+      color: #c9a84c;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    thead th {
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    td {
+      padding: 12px 14px;
+      vertical-align: top;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .td-time {
+      white-space: nowrap;
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+    }
+
+    .td-title {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .td-desc {
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+      max-width: 220px;
+    }
+
+    .td-screen {
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(201,168,76,0.7);
+    }
+
+    .td-device {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      white-space: nowrap;
+    }
+
+    .status-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .status-open {
+      background: rgba(255,180,0,0.12);
+      color: #ffb400;
+      border: 1px solid rgba(255,180,0,0.25);
+    }
+
+    .status-fixed {
+      background: rgba(0,200,117,0.12);
+      color: #00c875;
+      border: 1px solid rgba(0,200,117,0.25);
+    }
+
+    .status-wontfix {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1px solid;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button:hover { opacity: 0.85; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .btn-fix {
+      background: rgba(0,200,117,0.1);
+      border-color: rgba(0,200,117,0.4);
+      color: #00c875;
+    }
+
+    .btn-wa {
+      background: rgba(37,211,102,0.1);
+      border-color: rgba(37,211,102,0.3);
+      color: #25d166;
+    }
+
+    .btn-wontfix {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.35);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: rgba(255,255,255,0.3);
+      font-size: 16px;
+    }
+
+    .error-msg {
+      background: rgba(232,25,44,0.1);
+      border: 1px solid rgba(232,25,44,0.3);
+      border-radius: 8px;
+      padding: 16px 20px;
+      color: #e8192c;
+      margin-bottom: 20px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a1a22;
+      border: 1px solid rgba(201,168,76,0.4);
+      color: #c9a84c;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 18px;
+      border-radius: 8px;
+      transform: translateY(80px);
+      transition: transform 0.3s;
+      z-index: 100;
+    }
+
+    .toast.show { transform: translateY(0); }
+
+    /* Tab navigation */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.2); }
+    .tab-btn.active {
+      background: rgba(201,168,76,0.15);
+      border-color: rgba(201,168,76,0.5);
+      color: #c9a84c;
+    }
+
+    /* AI queue sub-tabs */
+    .queue-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .queue-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .queue-btn:hover { color: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.2); }
+    .queue-btn.active-relevant {
+      background: rgba(76,175,80,0.15);
+      border-color: rgba(76,175,80,0.5);
+      color: #4CAF50;
+    }
+    .queue-btn.active-review {
+      background: rgba(255,152,0,0.15);
+      border-color: rgba(255,152,0,0.5);
+      color: #FF9800;
+    }
+    .queue-btn.active-all {
+      background: rgba(201,168,76,0.12);
+      border-color: rgba(201,168,76,0.4);
+      color: #c9a84c;
+    }
+    .ai-badge-relevant { background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); color:#4CAF50; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+    .ai-badge-unrelated { background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.35); color:#FF9800; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+    .ai-badge-pending { background:rgba(120,113,108,0.15); border:1px solid rgba(120,113,108,0.3); color:#78716C; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+
+    /* Deploy log */
+    .deploy-type-build {
+      background: rgba(30,144,255,0.12);
+      color: #3db0ff;
+      border: 1px solid rgba(30,144,255,0.3);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .deploy-type-ota {
+      background: rgba(0,200,117,0.12);
+      color: #00c875;
+      border: 1px solid rgba(0,200,117,0.25);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .deploy-commit {
+      font-family: monospace;
+      font-size: 11px;
+      color: rgba(201,168,76,0.7);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>🃏 CAPS Dashboard</h1>
+    <span class="badge">LIVE</span>
+  </div>
+  <div class="header-right" id="bugFilters">
+    <select id="filterStatus" onchange="applyFilters()">
+      <option value="all">All statuses</option>
+      <option value="open" selected>Open</option>
+      <option value="fixed">Fixed</option>
+      <option value="wontfix">Won't Fix</option>
+    </select>
+    <select id="filterDate" onchange="applyFilters()">
+      <option value="all">All time</option>
+      <option value="today" selected>Today</option>
+      <option value="week">This week</option>
+    </select>
+    <span class="refresh-info">Auto-refresh in <span id="countdown">30</span>s</span>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBugs" onclick="switchTab('bugs')">🐛 Bugs</button>
+    <button class="tab-btn" id="tabDeploys" onclick="switchTab('deploys')">🚀 Deploys</button>
+    <button class="tab-btn" id="tabCrashes" onclick="switchTab('crashes')">💥 Crashes</button>
+  </div>
+
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+
+  <!-- BUGS TAB -->
+  <div id="sectionBugs">
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-num" id="statOpen">—</div><div class="stat-label">Open</div></div>
+      <div class="stat-card"><div class="stat-num" id="statFixed">—</div><div class="stat-label">Fixed</div></div>
+      <div class="stat-card"><div class="stat-num" id="statToday">—</div><div class="stat-label">Today</div></div>
+      <div class="stat-card"><div class="stat-num" id="statRelevant">—</div><div class="stat-label">Relevant</div></div>
+      <div class="stat-card"><div class="stat-num" id="statReview">—</div><div class="stat-label">Review</div></div>
+    </div>
+
+    <div class="queue-tabs">
+      <button class="queue-btn active-all" id="queueAll" onclick="switchQueue('all')">📋 All</button>
+      <button class="queue-btn" id="queueRelevant" onclick="switchQueue('relevant')">✅ Relevant bugs</button>
+      <button class="queue-btn" id="queueReview" onclick="switchQueue('review')">🔍 Review queue</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time (IST)</th>
+            <th>Title</th>
+            <th>AI</th>
+            <th>AI Summary</th>
+            <th>Screen</th>
+            <th>Device / Version</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="8" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DEPLOYS TAB -->
+  <div id="sectionDeploys" style="display:none">
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-num" id="dStatTotal">—</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-num" id="dStatBuilds">—</div><div class="stat-label">Builds</div></div>
+      <div class="stat-card"><div class="stat-num" id="dStatOta">—</div><div class="stat-label">OTA</div></div>
+      <div class="stat-card"><div class="stat-num" id="dStatToday">—</div><div class="stat-label">Today</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time (IST)</th>
+            <th>Type</th>
+            <th>Version / Build</th>
+            <th>Commit</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody id="deployBody">
+          <tr><td colspan="5" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CRASHES TAB -->
+  <div id="sectionCrashes" style="display:none">
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-num" id="crStatTotal">—</div><div class="stat-label">Crashes</div></div>
+      <div class="stat-card"><div class="stat-num" id="crStatToday">—</div><div class="stat-label">Today</div></div>
+      <div class="stat-card"><div class="stat-num" id="crStatVideos">—</div><div class="stat-label">With Video</div></div>
+    </div>
+    <div id="crashCards" style="padding:16px 24px;display:flex;flex-wrap:wrap;gap:16px;">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cnB1bnZoamNyenFuaXRicWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTc5OTksImV4cCI6MjA4ODkzMzk5OX0.MLHYIbU4saCHq0eQbwUzyfAl_q9TLgepKf8iNDDav-Q';
+
+  let allBugs = [];
+  let countdownVal = 30;
+  let countdownTimer = null;
+
+  const IST_OFFSET = 2; // UTC+2 (will be +3 after DST, ~Mar 29)
+
+  function toIST(isoStr) {
+    const d = new Date(isoStr);
+    const utc = d.getTime();
+    const ist = new Date(utc + IST_OFFSET * 3600 * 1000);
+    const hh = String(ist.getUTCHours()).padStart(2, '0');
+    const mm = String(ist.getUTCMinutes()).padStart(2, '0');
+    const dd = String(ist.getUTCDate()).padStart(2, '0');
+    const mo = String(ist.getUTCMonth() + 1).padStart(2, '0');
+    return `${hh}:${mm}  ${dd}/${mo}`;
+  }
+
+  function isToday(isoStr) {
+    const d = new Date(isoStr);
+    const now = new Date();
+    return d.toDateString() === now.toDateString();
+  }
+
+  function isThisWeek(isoStr) {
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diff = now - d;
+    return diff < 7 * 24 * 3600 * 1000;
+  }
+
+  function statusBadge(status) {
+    const map = {
+      open: '<span class="status-badge status-open">🟡 Open</span>',
+      fixed: '<span class="status-badge status-fixed">✅ Fixed</span>',
+      wontfix: '<span class="status-badge status-wontfix">⛔ Won\'t Fix</span>',
+    };
+    return map[status] || map['open'];
+  }
+
+  function escHtml(str) {
+    if (!str) return '<span style="color:rgba(255,255,255,0.2)">—</span>';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  async function apiHeaders() {
+    return {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+    };
+  }
+
+  async function fetchBugs() {
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?order=created_at.desc&limit=200&select=id,title,description,url,screen,device_info,app_version,version,status,metadata,created_at,classification,ai_summary,needs_review,has_video,audio_url';
+    const res = await fetch(url, { headers: await apiHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + await res.text());
+    return res.json();
+  }
+
+  async function markStatus(id, status) {
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?id=eq.' + id;
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { ...(await apiHeaders()), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('PATCH failed: ' + res.status);
+  }
+
+  function copyWAFormat(bug) {
+    const lines = [
+      '🐛 *CAPS Bug Report*',
+      `📱 Screen: ${bug.screen || '/'}`,
+      `📌 Title: ${bug.title || '—'}`,
+      bug.description ? `📝 Desc: ${bug.description}` : null,
+      `📱 Device: ${bug.device_info || '—'} | v${bug.app_version || '—'}`,
+      `🕐 Time: ${toIST(bug.created_at)} IST`,
+    ].filter(Boolean).join('\n');
+    navigator.clipboard.writeText(lines).then(() => showToast('Copied for WhatsApp ✓'));
+  }
+
+  let currentQueue = 'all';
+
+  function switchQueue(queue) {
+    currentQueue = queue;
+    ['all', 'relevant', 'review'].forEach(q => {
+      const btn = document.getElementById('queue' + q.charAt(0).toUpperCase() + q.slice(1));
+      btn.className = 'queue-btn' + (q === queue ? ' active-' + (q === 'all' ? 'all' : q === 'relevant' ? 'relevant' : 'review') : '');
+    });
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const statusF = document.getElementById('filterStatus').value;
+    const dateF = document.getElementById('filterDate').value;
+
+    const filtered = allBugs.filter(b => {
+      const status = b.status || 'open';
+      if (statusF !== 'all' && status !== statusF) return false;
+      if (dateF === 'today' && !isToday(b.created_at)) return false;
+      if (dateF === 'week' && !isThisWeek(b.created_at)) return false;
+      if (currentQueue === 'relevant' && b.classification !== 'RELEVANT') return false;
+      if (currentQueue === 'review' && !(b.needs_review === true || b.classification === 'UNRELATED')) return false;
+      return true;
+    });
+
+    renderTable(filtered);
+  }
+
+  function aiBadge(classification) {
+    if (classification === 'RELEVANT') return '<span class="ai-badge-relevant">✅ RELEVANT</span>';
+    if (classification === 'UNRELATED') return '<span class="ai-badge-unrelated">🔍 REVIEW</span>';
+    return '<span class="ai-badge-pending">⏳ PENDING</span>';
+  }
+
+  function renderTable(bugs) {
+    const tbody = document.getElementById('tableBody');
+    if (!bugs.length) {
+      const queueLabel = currentQueue === 'relevant' ? 'relevant bugs' : currentQueue === 'review' ? 'bugs in review queue' : 'bug reports';
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">No ${queueLabel} found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = bugs.map(b => {
+      const status = b.status || 'open';
+      const isFixed = status === 'fixed';
+      const cls = b.classification || 'PENDING';
+      const meta = (() => { try { return typeof b.metadata === 'string' ? JSON.parse(b.metadata) : (b.metadata ?? {}); } catch { return {}; } })();
+      const deviceStr = meta.device || b.device_info || '—';
+      const versionStr = b.version || b.app_version || '—';
+      return `
+        <tr>
+          <td class="td-time">${toIST(b.created_at)}</td>
+          <td class="td-title">${escHtml(b.title)}</td>
+          <td>${aiBadge(cls)}</td>
+          <td class="td-desc">${escHtml(b.ai_summary)}</td>
+          <td class="td-screen">${escHtml(b.url || b.screen)}</td>
+          <td class="td-device">${escHtml(deviceStr)}<br>${escHtml(versionStr)}</td>
+          <td>${statusBadge(status)}</td>
+          <td>
+            <div class="actions">
+              ${!isFixed ? `<button class="btn-fix" onclick="handleMark('${b.id}','fixed')">✅ Mark Fixed</button>` : ''}
+              ${status !== 'wontfix' ? `<button class="btn-wontfix" onclick="handleMark('${b.id}','wontfix')">⛔ Won't Fix</button>` : ''}
+              <button class="btn-wa" onclick='handleWA(${JSON.stringify(b)})'>📱 WA</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateStats() {
+    const today = allBugs.filter(b => isToday(b.created_at)).length;
+    const open = allBugs.filter(b => !b.status || b.status === 'open').length;
+    const fixed = allBugs.filter(b => b.status === 'fixed').length;
+    const relevant = allBugs.filter(b => b.classification === 'RELEVANT').length;
+    const review = allBugs.filter(b => b.needs_review === true || b.classification === 'UNRELATED').length;
+    document.getElementById('statTotal').textContent = allBugs.length;
+    document.getElementById('statOpen').textContent = open;
+    document.getElementById('statFixed').textContent = fixed;
+    document.getElementById('statToday').textContent = today;
+    document.getElementById('statRelevant').textContent = relevant;
+    document.getElementById('statReview').textContent = review;
+  }
+
+  async function handleMark(id, status) {
+    try {
+      await markStatus(id, status);
+      const bug = allBugs.find(b => b.id === id);
+      if (bug) bug.status = status;
+      showToast(status === 'fixed' ? '✅ Marked as fixed' : '⛔ Marked won\'t fix');
+      updateStats();
+      applyFilters();
+    } catch(e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  function handleWA(bug) {
+    copyWAFormat(bug);
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠️ ' + msg;
+    box.style.display = 'block';
+  }
+
+  let currentTab = 'bugs';
+  let allDeploys = [];
+
+  let allCrashes = [];
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('sectionBugs').style.display = tab === 'bugs' ? '' : 'none';
+    document.getElementById('sectionDeploys').style.display = tab === 'deploys' ? '' : 'none';
+    document.getElementById('sectionCrashes').style.display = tab === 'crashes' ? '' : 'none';
+    document.getElementById('bugFilters').style.display = tab === 'bugs' ? '' : 'none';
+    document.getElementById('tabBugs').classList.toggle('active', tab === 'bugs');
+    document.getElementById('tabDeploys').classList.toggle('active', tab === 'deploys');
+    document.getElementById('tabCrashes').classList.toggle('active', tab === 'crashes');
+    if (tab === 'deploys' && allDeploys.length === 0) loadDeploys();
+    if (tab === 'crashes' && allCrashes.length === 0) loadCrashes();
+  }
+
+  async function fetchCrashes() {
+    const url = SUPABASE_URL + '/rest/v1/bug_reports?title=like.[CRASH]*&order=created_at.desc&limit=50';
+    const res = await fetch(url, { headers: await apiHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  function renderCrashes(crashes) {
+    const container = document.getElementById('crashCards');
+    if (!crashes.length) {
+      container.innerHTML = '<div class="empty" style="width:100%">No crashes recorded yet 🎉</div>';
+      return;
+    }
+    const today = new Date().toDateString();
+    let withVideo = 0;
+    let todayCount = 0;
+    container.innerHTML = crashes.map(c => {
+      const meta = (() => { try { return typeof c.metadata === 'string' ? JSON.parse(c.metadata) : (c.metadata ?? {}); } catch { return {}; } })();
+      const videoUrl = meta.videoUrl ?? c.screenshot_url ?? null;
+      if (videoUrl) withVideo++;
+      if (new Date(c.created_at).toDateString() === today) todayCount++;
+      const lastStep = meta.lastStep ?? c.title ?? 'unknown';
+      const logs = (meta.debugLogs ?? []).join('\n');
+      return `
+        <div style="background:#111;border:1px solid rgba(255,80,80,0.25);border-radius:10px;padding:14px;min-width:280px;max-width:420px;flex:1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="color:#ff4444;font-size:11px;font-weight:700;">💥 CRASH</span>
+            <span style="color:#666;font-size:10px;">${toIST(c.created_at)}</span>
+          </div>
+          <div style="color:#fff;font-size:12px;font-weight:600;margin-bottom:4px;">${escHtml(lastStep.slice(0, 80))}</div>
+          <div style="color:#aaa;font-size:11px;margin-bottom:8px;">
+            Build ${escHtml(meta.build ?? '?')} | ${escHtml(meta.version ?? '?')} | ${escHtml(meta.device ?? 'unknown')}
+          </div>
+          ${videoUrl ? `
+            <video controls width="100%" style="border-radius:6px;margin-bottom:6px;" preload="none">
+              <source src="${escHtml(videoUrl)}" type="video/mp4">
+            </video>
+            <a href="${escHtml(videoUrl)}" target="_blank" style="color:#c9a84c;font-size:10px;">🎥 Open video</a>
+          ` : '<span style="color:#555;font-size:10px;">No video</span>'}
+          ${logs ? `
+            <details style="margin-top:8px;">
+              <summary style="color:#666;font-size:10px;cursor:pointer;">Debug logs (${meta.debugLogs?.length ?? 0})</summary>
+              <pre style="color:#0f0;font-size:8px;white-space:pre-wrap;max-height:120px;overflow:auto;margin-top:4px;">${escHtml(logs)}</pre>
+            </details>
+          ` : ''}
+        </div>`;
+    }).join('');
+    document.getElementById('crStatTotal').textContent = crashes.length;
+    document.getElementById('crStatToday').textContent = todayCount;
+    document.getElementById('crStatVideos').textContent = withVideo;
+    allCrashes = crashes;
+  }
+
+  async function loadCrashes() {
+    try {
+      const crashes = await fetchCrashes();
+      renderCrashes(crashes);
+    } catch (e) {
+      document.getElementById('crashCards').innerHTML = '<div class="empty">Failed to load crashes</div>';
+    }
+  }
+
+  async function fetchDeploys() {
+    const url = SUPABASE_URL + '/rest/v1/deploy_log?order=deployed_at.desc&limit=100';
+    const res = await fetch(url, { headers: await apiHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + await res.text());
+    return res.json();
+  }
+
+  function renderDeploys(deploys) {
+    const tbody = document.getElementById('deployBody');
+    if (!deploys.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No deploys found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = deploys.map(d => {
+      const typeBadge = d.type === 'build'
+        ? '<span class="deploy-type-build">🏗 BUILD</span>'
+        : '<span class="deploy-type-ota">⚡ OTA</span>';
+      const ver = d.version ? `v${escHtml(d.version)}` : '—';
+      const build = d.build_number ? ` (${escHtml(d.build_number)})` : '';
+      const commit = d.commit_hash
+        ? `<span class="deploy-commit">${escHtml(d.commit_hash.slice(0, 7))}</span>`
+        : '<span style="color:rgba(255,255,255,0.2)">—</span>';
+      return `
+        <tr>
+          <td class="td-time">${toIST(d.deployed_at)}</td>
+          <td>${typeBadge}</td>
+          <td class="td-screen">${ver}${build}</td>
+          <td>${commit}</td>
+          <td class="td-desc">${escHtml(d.message)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateDeployStats(deploys) {
+    const today = deploys.filter(d => isToday(d.deployed_at)).length;
+    const builds = deploys.filter(d => d.type === 'build').length;
+    const otas = deploys.filter(d => d.type === 'ota').length;
+    document.getElementById('dStatTotal').textContent = deploys.length;
+    document.getElementById('dStatBuilds').textContent = builds;
+    document.getElementById('dStatOta').textContent = otas;
+    document.getElementById('dStatToday').textContent = today;
+  }
+
+  async function loadDeploys() {
+    document.getElementById('deployBody').innerHTML = '<tr><td colspan="5" class="loading">Loading…</td></tr>';
+    try {
+      allDeploys = await fetchDeploys();
+      updateDeployStats(allDeploys);
+      renderDeploys(allDeploys);
+    } catch(e) {
+      document.getElementById('deployBody').innerHTML = '<tr><td colspan="5" class="empty">Failed to load: ' + escHtml(e.message) + '</td></tr>';
+    }
+  }
+
+  async function load() {
+    document.getElementById('errorBox').style.display = 'none';
+    try {
+      allBugs = await fetchBugs();
+      updateStats();
+      applyFilters();
+    } catch(e) {
+      showError(e.message);
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="empty">Failed to load</td></tr>';
+    }
+    if (currentTab === 'deploys') loadDeploys();
+  }
+
+  function startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownVal = 30;
+    document.getElementById('countdown').textContent = countdownVal;
+    countdownTimer = setInterval(() => {
+      countdownVal--;
+      document.getElementById('countdown').textContent = countdownVal;
+      if (countdownVal <= 0) {
+        countdownVal = 30;
+        load();
+        if (currentTab === 'deploys') loadDeploys();
+      }
+    }, 1000);
+  }
+
+  load();
+  startCountdown();
+</script>
+</body>
+</html>

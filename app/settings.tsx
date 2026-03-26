@@ -240,6 +240,35 @@ function PlayerCountSelector() {
   );
 }
 
+function BotDifficultySelector() {
+  const value = useGameStore((s) => s.config.botDifficulty) ?? 'easy';
+  const updateConfig = useGameStore((s) => s.updateConfig);
+  const options: Array<{ key: 'easy' | 'medium' | 'hard'; label: string; hint: string }> = [
+    { key: 'easy',   label: 'Easy',   hint: 'Random placement' },
+    { key: 'medium', label: 'Medium', hint: 'Groups suited cards' },
+    { key: 'hard',   label: 'Hard',   hint: 'Pairs + suits + position' },
+  ];
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Bot Difficulty</Text>
+        <Text style={styles.rowHint}>{options.find(o => o.key === value)?.hint ?? ''}</Text>
+      </View>
+      <View style={styles.selectorRow}>
+        {options.map((o) => (
+          <Pressable
+            key={o.key}
+            onPress={() => { updateConfig({ botDifficulty: o.key }); CapsHooks.settingsChanged('botDifficulty', o.key); }}
+            style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
+          >
+            <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function OrientationPicker() {
   const orientation = useGameStore((s) => s.orientation);
   const setOrientation = useGameStore((s) => s.setOrientation);
@@ -678,6 +707,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>GAMEPLAY</Text>
         <PlayerCountSelector />
+        <BotDifficultySelector />
         <RevealSpeedSelector />
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />

@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG = {
   botSpeedMax: 4000,
   soundEnabled: true as boolean,
   revealSpeed: 'normal' as 'fast' | 'normal' | 'cinematic',
+  botDifficulty: 'easy' as 'easy' | 'medium' | 'hard',
 };
 
 export type GameConfig = typeof DEFAULT_CONFIG;

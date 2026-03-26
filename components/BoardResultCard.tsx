@@ -10,6 +10,8 @@ import { SingleBoardShareCard, StoryShareCard } from './ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
+import { getHandName, getComparisonText } from '../utils/handNames';
+import { getLanguage } from '../utils/i18n';
 
 export interface BoardRevealResult {
   winner: 'player' | 'bot' | 'tie';
@@ -53,6 +55,10 @@ export function BoardResultCard({
   const chipResult = board.winner === 'player' ? `+${pot}` : board.winner === 'bot' ? `-${pot}` : '\u00b10';
   const chipColor = board.winner === 'player' ? COLORS.neonGreen : board.winner === 'bot' ? COLORS.neonRed : COLORS.textDim;
   const multiBot = (board.allBotCards ?? []).length > 1;
+  const lang = getLanguage() === 'he' ? 'he' : 'en';
+  const comparisonText = getComparisonText(board.playerHandName, board.botHandName, board.winner, lang);
+  const playerHandDisplay = getHandName(board.playerHandName, lang);
+  const botHandDisplay = getHandName(board.botHandName, lang);
 
   const doShare = async (ref: React.RefObject<any>) => {
     setSharing(true);
@@ -157,7 +163,7 @@ export function BoardResultCard({
                   />
                 ))}
                 <Text style={[styles.handName, board.winner === 'bot' && styles.handNameWin]}>
-                  {(board.allBotHandNames ?? [])[botIdx] || board.botHandName}
+                  {getHandName((board.allBotHandNames ?? [])[botIdx] || board.botHandName, lang)}
                 </Text>
               </View>
             </View>
@@ -192,9 +198,24 @@ export function BoardResultCard({
               />
             ))}
             <Text style={[styles.handName, board.winner === 'player' && styles.handNameWin]}>
-              {board.playerHandName}
+              {playerHandDisplay}
             </Text>
           </View>
+        </View>
+
+        {/* Comparison text: "Three of a Kind beats One Pair" */}
+        <View style={styles.comparisonRow}>
+          <Text style={[
+            styles.comparisonText,
+            board.winner === 'player' ? styles.comparisonWin : board.winner === 'bot' ? styles.comparisonLose : styles.comparisonTie,
+          ]}>
+            {comparisonText}
+          </Text>
+          {(board.playerHighlightIds ?? []).length > 0 && (
+            <Text style={styles.bestSelectedLabel}>
+              {lang === 'he' ? '★ 2 הטובים נבחרו' : '★ Best 2 selected'}
+            </Text>
+          )}
         </View>
 
         {/* Result label */}
@@ -260,4 +281,10 @@ const styles = StyleSheet.create({
   boardResultWin: { color: '#FFD700' },
   boardResultLose: { color: COLORS.neonRed },
   boardResultTie: { color: COLORS.textMuted },
+  comparisonRow: { alignItems: 'center', gap: rs(2), paddingVertical: rs(4) },
+  comparisonText: { fontSize: rf(11), fontWeight: '600', textAlign: 'center', letterSpacing: 0.3 },
+  comparisonWin: { color: COLORS.neonGreen },
+  comparisonLose: { color: COLORS.neonRed },
+  comparisonTie: { color: COLORS.textDim },
+  bestSelectedLabel: { fontSize: rf(9), color: '#8B6914', fontWeight: '600', letterSpacing: 0.5 },
 });
