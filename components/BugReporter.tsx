@@ -29,6 +29,7 @@ import { getConsoleLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
 import { readFileAsBytes } from '../utils/fileReader';
 import { withTimeout } from '../utils/withTimeout';
+import { sendBugReportToWhatsApp, buildBugFixPrompt } from '../utils/bugWhatsApp';
 
 let Haptics: typeof import('expo-haptics') | null = null;
 if (Platform.OS !== 'web') { try { Haptics = require('expo-haptics'); } catch {} }
@@ -253,11 +254,11 @@ async function triggerAITriage(
   reportId: string,
   description: string,
   consoleLogs: string[],
-): Promise<void> {
+): Promise<{ summary: string; severity: string } | null> {
   const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl;
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || extra?.supabaseAnonKey;
-  if (!url || !key) return;
+  if (!url || !key) return null;
 
   const logText = consoleLogs.slice(-20).join('\n');
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
@@ -287,6 +288,7 @@ Reply JSON: {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence","s
             ai_summary: typeof result.summary === 'string' ? result.summary : '',
           }).eq('id', reportId);
           console.log('[BUG-PIPE] Step 5: ✅ AI triage saved. severity:', result.severity, 'summary:', result.summary);
+          return { summary: String(result.summary ?? ''), severity: String(result.severity ?? 'medium') };
         }
       }
     } catch (e) {
@@ -294,7 +296,7 @@ Reply JSON: {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence","s
     }
   }
 
-  // Also call edge function (it can do deeper analysis with full row from DB)
+  // Also call edge function (fire-and-forget) (it can do deeper analysis with full row from DB)
   fetch(`${url}/functions/v1/analyze-bug-report`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: key },
@@ -310,6 +312,7 @@ Reply JSON: {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence","s
       base_url: 'https://caps.ftable.co.il',
     }),
   }).catch(() => {});
+  return null;
 }
 
 // ─── Timer Hook ───────────────────────────────────────────────────────────────
@@ -527,14 +530,58 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         }), 5000, null, 'insert-report');
         console.log('[BUG-PIPE] Step 4f: reportId=', reportId ? reportId : 'NULL (timeout/fail)');
 
+        // 5: AI triage — await inline result for WhatsApp message, edge fn is fire-and-forget
+        let aiSummary: string | null = null;
+        let aiSeverity: string | null = null;
         if (reportId) {
-          // 5: AI triage — runs AFTER insert so the DB row has all the data
           console.log('[BUG-PIPE] Step 5: Triggering AI triage for report ID:', reportId);
-          triggerAITriage(reportId, noteToSend, consoleLogs).catch(() => {});
+          const aiResult = await withTimeout(
+            triggerAITriage(reportId, noteToSend, consoleLogs),
+            8000,
+            null,
+            'ai-triage',
+          );
+          aiSummary = aiResult?.summary ?? null;
+          aiSeverity = aiResult?.severity ?? null;
+          console.log('[BUG-PIPE] Step 5: aiSummary=', aiSummary ? aiSummary.slice(0, 60) : 'NULL');
         }
 
-        // 6: Cleanup temp files
-        console.log('[BUG-PIPE] Step 6: Cleaning up temp files...');
+        // 6: WhatsApp + ntfy notification
+        if (reportId) {
+          console.log('[BUG-PIPE] Step 6: Sending WhatsApp notification...');
+          const fixPrompt = buildBugFixPrompt({
+            reportId,
+            aiSummary,
+            aiSeverity,
+            consoleLogs,
+            crumbs,
+          });
+          await withTimeout(
+            sendBugReportToWhatsApp({
+              reportId,
+              aiSummary,
+              aiSeverity,
+              description: noteToSend || null,
+              deviceModel: deviceInfo.model,
+              deviceOsVersion: deviceInfo.osVersion,
+              deviceBuildNumber: deviceInfo.buildNumber,
+              audioUrl,
+              videoUrl,
+              logCount: consoleLogs.length,
+              crumbCount: crumbs.length,
+              frameCount,
+              elapsed: recordingElapsed,
+              fixPrompt,
+            }),
+            8000,
+            undefined,
+            'whatsapp-notification',
+          );
+          console.log('[BUG-PIPE] Step 6: ✅ WhatsApp sent');
+        }
+
+        // 7: Cleanup temp files
+        console.log('[BUG-PIPE] Step 7: Cleaning up temp files...');
         const FileSystem = Platform.OS !== 'web' ? (() => { try { return require('expo-file-system'); } catch { return null; } })() : null;
         if (FileSystem) {
           if (audioUri) FileSystem.deleteAsync(audioUri, { idempotent: true }).catch(() => {});
@@ -547,7 +594,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         capturedLastFrame.current = null;
         capturedLogs.current = [];
         capturedElapsed.current = 0;
-        console.log('[BUG-PIPE] Step 6: ✅ Cleanup complete');
+        console.log('[BUG-PIPE] Step 7: ✅ Cleanup complete');
 
         Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success)?.catch?.(() => {});
         showToast(reportId ? 'Report sent ✅' : 'Sent (upload issue) ⚠️');
