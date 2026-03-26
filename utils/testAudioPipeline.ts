@@ -103,31 +103,58 @@ export async function testFullPipeline(): Promise<PipelineStep[]> {
     console.error('[TEST-PIPE] Step 6 ❌', msg);
   }
 
-  // Step 7 — Supabase INSERT to bug_reports
+  // Step 7 — Full INSERT + readback (verifies all fields land in DB)
   try {
-    console.log('[TEST-PIPE] Step 7: Inserting test report...');
+    console.log('[TEST-PIPE] Step 7: Full INSERT + readback...');
     const sb = getSupabase();
     if (!sb) throw new Error('getSupabase() returned null');
     const Device = (() => { try { return require('expo-device'); } catch { return {}; } })();
     const Application = (() => { try { return require('expo-application'); } catch { return {}; } })();
-    const { data, error } = await sb.from('bug_reports').insert({
-      title: `[TEST] Pipeline test ${new Date().toISOString()}`,
+    const consoleLogs = getConsoleLogs().slice(-10);
+    const crumbs = getBreadcrumbs().slice(-5);
+    const testReport = {
+      title: `[PIPE-TEST] ${new Date().toISOString()}`,
+      description: 'Automated pipeline test — verify all fields populated',
       report_type: 'text',
+      version: Application.nativeApplicationVersion ?? '1.9.4',
+      app_version: Application.nativeApplicationVersion ?? '1.9.4',
+      audio_url: null,
+      video_url: null,
+      screenshot_url: null,
+      has_video: false,
+      device_info: {
+        model: Device.modelName ?? 'test',
+        brand: Device.brand ?? 'test',
+        osVersion: String(Device.osVersion ?? 'test'),
+        buildNumber: Application.nativeBuildVersion ?? 'test',
+        platform: 'ios',
+        isDevice: Device.isDevice ?? false,
+      },
+      console_logs: consoleLogs,
+      breadcrumbs: crumbs,
+      metadata: { test: true, timestamp: Date.now() },
       project: 'caps-poker',
-      device_info: { model: Device.modelName ?? 'test', test: true, platform: 'ios' },
-      console_logs: getConsoleLogs().slice(-5),
-      breadcrumbs: getBreadcrumbs().slice(-3),
-      app_version: Application.nativeApplicationVersion ?? 'test',
-      metadata: { test: true },
+      tester_name: 'PIPE-TEST',
       status: 'open',
-    }).select('id').single();
-    if (error) throw new Error(error.message);
-    const id = (data as { id: string } | null)?.id ?? 'unknown';
-    results.push({ step: '7-insert', ok: true, detail: `ID: ${id}` });
-    console.log('[TEST-PIPE] Step 7 ✅ Report ID:', id);
+    };
+    const { data, error } = await sb
+      .from('bug_reports')
+      .insert(testReport)
+      .select('id, device_info, console_logs, breadcrumbs, version, app_version')
+      .single();
+    if (error) {
+      console.error('[PIPE-TEST] ❌ INSERT failed:', error.message);
+      console.error('[PIPE-TEST] details:', error.details, 'hint:', error.hint, 'code:', error.code);
+      throw new Error(`${error.message} (code: ${error.code})`);
+    }
+    const row = data as { id: string; device_info: Record<string, unknown> | null; console_logs: string[] | null; breadcrumbs: unknown[] | null; version: string | null; app_version: string | null } | null;
+    const fieldsOk = !!(row?.device_info && row?.console_logs && row?.breadcrumbs);
+    const detail = `ID: ${row?.id ?? '?'} | device: ${!!row?.device_info?.model} | logs: ${row?.console_logs?.length ?? 0} | crumbs: ${row?.breadcrumbs?.length ?? 0} | version: ${row?.version ?? 'NULL'}`;
+    results.push({ step: '7-insert-readback', ok: fieldsOk, detail });
+    console.log('[PIPE-TEST]', fieldsOk ? '✅' : '⚠️', detail);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    results.push({ step: '7-insert', ok: false, detail: msg });
+    results.push({ step: '7-insert-readback', ok: false, detail: msg });
     console.error('[TEST-PIPE] Step 7 ❌', msg);
   }
 
