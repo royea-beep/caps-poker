@@ -17,6 +17,7 @@ import Constants from 'expo-constants';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
+import { getSupabase } from '../utils/supabase';
 
 let Haptics: typeof import('expo-haptics') | null = null;
 if (Platform.OS !== 'web') { try { Haptics = require('expo-haptics'); } catch {} }
@@ -73,22 +74,81 @@ JSON: {"classification":"RELEVANT"|"UNRELATED","summary":"..."}` }] }),
   } catch { return { classification: 'PENDING', summary: 'Triage error' }; }
 }
 
-async function uploadAudio(uri: string, supabaseUrl: string, supabaseKey: string): Promise<string | null> {
+async function readFileAsBytes(uri: string): Promise<Uint8Array | null> {
   try {
-    const blob = await (await fetch(uri)).blob();
-    const filename = `bug-audio-${Date.now()}.m4a`;
-    const res = await fetch(`${supabaseUrl}/storage/v1/object/bug-recordings/${filename}`, {
-      method: 'POST',
-      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'audio/m4a' },
-      body: blob,
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const FileSystem = require('expo-file-system');
+    const base64: string = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
     });
-    return res.ok ? `${supabaseUrl}/storage/v1/object/public/bug-recordings/${filename}` : null;
-  } catch { return null; }
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  } catch (err) {
+    console.error('[BUG-AUDIO] ❌ readFileAsBytes failed:', err);
+    return null;
+  }
+}
+
+async function uploadAudio(uri: string): Promise<string | null> {
+  try {
+    console.log('[BUG-AUDIO] Step 7: Reading audio file from URI:', uri);
+    const bytes = await readFileAsBytes(uri);
+    if (!bytes) { console.error('[BUG-AUDIO] ❌ Could not read audio file'); return null; }
+    console.log('[BUG-AUDIO] Step 8: File read, size:', bytes.length, 'bytes');
+
+    const sb = getSupabase();
+    if (!sb) { console.error('[BUG-AUDIO] ❌ No Supabase client'); return null; }
+
+    const filename = `audio/bug-audio-${Date.now()}.m4a`;
+    console.log('[BUG-AUDIO] Step 9: Uploading to bug-recordings bucket...');
+    const { data, error } = await sb.storage
+      .from('bug-recordings')
+      .upload(filename, bytes, { contentType: 'audio/mp4', upsert: false });
+
+    if (error) { console.error('[BUG-AUDIO] ❌ Upload failed:', error.message); return null; }
+    console.log('[BUG-AUDIO] Step 9b: Upload response:', data?.path);
+
+    const { data: urlData } = sb.storage.from('bug-recordings').getPublicUrl(filename);
+    const publicUrl = urlData?.publicUrl ?? null;
+    console.log('[BUG-AUDIO] Step 10: Upload success ✅, URL:', publicUrl);
+    return publicUrl;
+  } catch (err) {
+    console.error('[BUG-AUDIO] ❌ uploadAudio exception:', err);
+    return null;
+  }
+}
+
+async function uploadVideoFrame(frameUri: string): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
+  try {
+    console.log('[BUG-VIDEO] Reading frame:', frameUri);
+    const bytes = await readFileAsBytes(frameUri);
+    if (!bytes) return null;
+
+    const sb = getSupabase();
+    if (!sb) return null;
+
+    const filename = `frames/bug-frame-${Date.now()}.jpg`;
+    const { error } = await sb.storage
+      .from('bug-recordings')
+      .upload(filename, bytes, { contentType: 'image/jpeg', upsert: false });
+    if (error) { console.error('[BUG-VIDEO] ❌ Frame upload failed:', error.message); return null; }
+
+    const { data: urlData } = sb.storage.from('bug-recordings').getPublicUrl(filename);
+    const publicUrl = urlData?.publicUrl ?? null;
+    console.log('[BUG-VIDEO] Frame uploaded ✅:', publicUrl);
+    return publicUrl;
+  } catch (err) {
+    console.error('[BUG-VIDEO] ❌ uploadVideoFrame exception:', err);
+    return null;
+  }
 }
 
 async function submitBugReport(
   title: string, description: string, screen: string,
-  logs: ReturnType<typeof getGlobalLogs>, triage: TriageResult, hasVideo: boolean, audioUrl: string | null,
+  logs: ReturnType<typeof getGlobalLogs>, triage: TriageResult, hasVideo: boolean, audioUrl: string | null, videoUrl: string | null,
 ): Promise<void> {
   const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl;
@@ -103,7 +163,7 @@ async function submitBugReport(
     metadata: { device: Constants.deviceName || 'unknown', platform: Platform.OS, expoVersion: Constants.expoConfig?.sdkVersion, logCount: logs.length, hasVideo },
     status: 'open', report_type: 'video', classification: triage.classification,
     ai_summary: triage.summary, needs_review: triage.classification === 'UNRELATED',
-    has_video: hasVideo, audio_url: audioUrl,
+    has_video: hasVideo, audio_url: audioUrl, video_url: videoUrl,
   };
   const res = await fetch(`${url}/rest/v1/bug_reports`, {
     method: 'POST',
@@ -139,6 +199,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const capturedAudioUri = useRef<string | null>(null);
   const capturedFrameCount = useRef(0);
+  const capturedLastFrame = useRef<string | null>(null);
   const capturedLogs = useRef<ReturnType<typeof getGlobalLogs>>([]);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,7 +225,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   useEffect(() => { if (Platform.OS !== 'web') requestRecordingPermissionsAsync().catch(() => {}); }, []);
   useEffect(() => {
     if (!__DEV__) return;
-    submitBugReport(`[ping] app opened v${VERSION}`, '[dev ping]', 'mount', [], { classification: 'UNRELATED', summary: 'dev ping' }, false, null).catch(() => {});
+    submitBugReport(`[ping] app opened v${VERSION}`, '[dev ping]', 'mount', [], { classification: 'UNRELATED', summary: 'dev ping' }, false, null, null).catch(() => {});
   }, []);
 
   const showToast = useCallback((msg: string, durationMs = 2500) => {
@@ -176,21 +237,36 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   async function startAudio() {
     if (Platform.OS === 'web') return;
     try {
+      console.log('[BUG-AUDIO] Step 1: Setting audio mode...');
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      console.log('[BUG-AUDIO] Step 2: Audio mode set ✅');
       await audioRecorder.prepareToRecordAsync();
+      console.log('[BUG-AUDIO] Step 3: Recorder prepared ✅');
       audioRecorder.record();
+      console.log('[BUG-AUDIO] Step 4: Recording started ✅');
       setAudioAvailable(true);
-    } catch { setAudioAvailable(false); }
+    } catch (err) {
+      console.error('[BUG-AUDIO] ❌ startAudio failed:', err);
+      setAudioAvailable(false);
+    }
   }
 
   async function stopAudio(): Promise<string | null> {
-    if (!audioAvailable) return null;
+    if (!audioAvailable) {
+      console.log('[BUG-AUDIO] stopAudio: skipped (audioAvailable=false)');
+      return null;
+    }
     try {
+      console.log('[BUG-AUDIO] Step 5: Stopping recorder...');
       await audioRecorder.stop();
       const uri = audioRecorder.uri ?? null;
+      console.log('[BUG-AUDIO] Step 6: URI after stop:', uri);
       setAudioAvailable(false);
       return uri;
-    } catch { return null; }
+    } catch (err) {
+      console.error('[BUG-AUDIO] ❌ stopAudio failed:', err);
+      return null;
+    }
   }
 
   const pathname = usePathname();
@@ -210,9 +286,12 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
   const handleStop = useCallback(async (_autoStopped = false) => {
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
+    console.log('[BUG-AUDIO] handleStop: stopping all recordings...');
     const [, audioUri, frames] = await Promise.all([stopRecording(), stopAudio(), getLastCrashScreenshots()]);
+    console.log('[BUG-AUDIO] handleStop: audioUri=', audioUri, 'frames=', frames.length);
     capturedAudioUri.current = audioUri;
     capturedFrameCount.current = frames.length;
+    capturedLastFrame.current = frames.length > 0 ? frames[frames.length - 1] : null;
     capturedLogs.current = getGlobalLogs();
     Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Light)?.catch?.(() => {});
     setPhase('review');
@@ -222,16 +301,18 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     const noteToSend = note.trim();
     const audioUri = capturedAudioUri.current;
     const frameCount = capturedFrameCount.current;
+    const lastFrame = capturedLastFrame.current;
     const logs = capturedLogs.current;
     setPhase('idle');
     setNote('');
     showToast('Sending...');
     (async () => {
       try {
-        const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
-        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl || '';
-        const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || extra?.supabaseAnonKey || '';
-        const audioUrl = audioUri ? await uploadAudio(audioUri, supabaseUrl, supabaseKey) : null;
+        console.log('[BUG-AUDIO] handleSend: audioUri=', audioUri, 'frameCount=', frameCount, 'lastFrame=', lastFrame);
+        const audioUrl = audioUri ? await uploadAudio(audioUri) : null;
+        console.log('[BUG-AUDIO] Step 8b: audioUrl=', audioUrl);
+        const videoUrl = lastFrame ? await uploadVideoFrame(lastFrame) : null;
+        console.log('[BUG-VIDEO] videoUrl=', videoUrl);
         let triage: TriageResult = { classification: 'PENDING', summary: 'Classifying...' };
         try {
           triage = await Promise.race([
@@ -239,10 +320,14 @@ export function BugReporter({ children, overlayActive = false }: Props) {
             new Promise<TriageResult>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
           ]);
         } catch { triage = { classification: 'PENDING', summary: 'Triage timeout' }; }
-        await submitBugReport(noteToSend || 'Bug recorded', noteToSend, pathname || 'unknown', logs, triage, frameCount > 0, audioUrl);
+        console.log('[BUG-AUDIO] Step 11: Submitting report...');
+        await submitBugReport(noteToSend || 'Bug recorded', noteToSend, pathname || 'unknown', logs, triage, frameCount > 0, audioUrl, videoUrl);
         Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success)?.catch?.(() => {});
         showToast('Report sent ✅');
-      } catch { showToast('Failed to send ❌'); }
+      } catch (err) {
+        console.error('[BUG-AUDIO] ❌ handleSend failed:', err);
+        showToast('Failed to send ❌');
+      }
     })();
   }, [note, pathname, showToast]);
 
@@ -251,6 +336,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     if (phase === 'recording') await Promise.all([stopRecording(), stopAudio()]);
     capturedAudioUri.current = null;
     capturedFrameCount.current = 0;
+    capturedLastFrame.current = null;
     capturedLogs.current = [];
     setNote('');
     setPhase('idle');
