@@ -8,9 +8,9 @@ export const ECONOMY_FLAGS = {
   /** Deduct buy-in chips before dealing cards */
   matchCostEnabled: false,
   /** Show daily reward claim button on home screen */
-  dailyRewardEnabled: false,
+  dailyRewardEnabled: true,
   /** Show free refill button when bankrupt (replaces "Reset Chips") */
-  freeRefillEnabled: false,
+  freeRefillEnabled: true,
   /** Sync wallet balance to Supabase */
   walletSyncEnabled: false,
   /** Show ad-for-chips reward button */
