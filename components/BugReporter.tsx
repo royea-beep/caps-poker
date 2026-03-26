@@ -105,30 +105,67 @@ function useShakeDetection(onShake: () => void, enabled: boolean) {
 
 // ─── File Upload Utilities ────────────────────────────────────────────────────
 
-async function readFileAsBytes(uri: string): Promise<Uint8Array | null> {
+async function readAudioFile(uri: string): Promise<Uint8Array | null> {
+  // Method 1: FileSystem.readAsStringAsync (Base64)
   try {
-    // GEM-13: fetch(file://).blob() fails silently on iOS — use FileSystem Base64
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    console.log('[BUG-PIPE] 4a: Trying FileSystem.readAsStringAsync...');
     const FileSystem = require('expo-file-system');
     const base64: string = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    console.log('[BUG-PIPE] readFileAsBytes: base64 length', base64.length);
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    console.log('[BUG-PIPE] readFileAsBytes: Uint8Array size', bytes.length, 'bytes');
-    return bytes;
-  } catch (err) {
-    console.error('[BUG-PIPE] ❌ readFileAsBytes failed:', err);
-    return null;
+    if (base64 && base64.length > 0) {
+      console.log('[BUG-PIPE] 4a: ✅ Method 1 success, base64 length:', base64.length);
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+  } catch (err: any) {
+    console.error('[BUG-PIPE] 4a: Method 1 failed:', err?.message || JSON.stringify(err), 'code:', err?.code);
   }
+
+  // Method 2: fetch + arrayBuffer
+  try {
+    console.log('[BUG-PIPE] 4a: Trying fetch + arrayBuffer...');
+    const response = await fetch(uri);
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > 0) {
+      console.log('[BUG-PIPE] 4a: ✅ Method 2 success, bytes:', buffer.byteLength);
+      return new Uint8Array(buffer);
+    }
+  } catch (err: any) {
+    console.error('[BUG-PIPE] 4a: Method 2 failed:', err?.message || JSON.stringify(err));
+  }
+
+  // Method 3: XMLHttpRequest (arraybuffer)
+  try {
+    console.log('[BUG-PIPE] 4a: Trying XHR...');
+    const bytes = await new Promise<Uint8Array>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', uri, true);
+      xhr.responseType = 'arraybuffer';
+      xhr.onload = () => xhr.status === 200
+        ? resolve(new Uint8Array(xhr.response))
+        : reject(new Error('XHR ' + xhr.status));
+      xhr.onerror = () => reject(new Error('XHR error'));
+      xhr.send();
+    });
+    if (bytes.length > 0) {
+      console.log('[BUG-PIPE] 4a: ✅ Method 3 success, bytes:', bytes.length);
+      return bytes;
+    }
+  } catch (err: any) {
+    console.error('[BUG-PIPE] 4a: Method 3 failed:', err?.message || JSON.stringify(err));
+  }
+
+  console.error('[BUG-PIPE] 4a: ❌ ALL 3 methods failed to read file:', uri);
+  return null;
 }
 
 async function uploadAudio(uri: string): Promise<string | null> {
   try {
     console.log('[BUG-PIPE] Step 4a: Reading audio file from URI:', uri);
-    const bytes = await readFileAsBytes(uri);
+    const bytes = await readAudioFile(uri);
     if (!bytes) { console.error('[BUG-PIPE] Step 4a: ❌ Could not read audio file'); return null; }
 
     const sb = getSupabase();
@@ -157,7 +194,7 @@ async function uploadFrame(frameUri: string): Promise<string | null> {
   if (Platform.OS === 'web') return null;
   try {
     console.log('[BUG-PIPE] Step 4b: Reading frame:', frameUri);
-    const bytes = await readFileAsBytes(frameUri);
+    const bytes = await readAudioFile(frameUri);
     if (!bytes) { console.error('[BUG-PIPE] Step 4b: ❌ Could not read frame'); return null; }
 
     const sb = getSupabase();
