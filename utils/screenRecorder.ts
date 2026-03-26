@@ -21,7 +21,7 @@ try {
 }
 
 try {
-  FileSystem = require('expo-file-system');
+  FileSystem = require('expo-file-system/legacy');
 } catch {
   debugLog('🎥 screenRecorder: expo-file-system not available', 'warn');
 }

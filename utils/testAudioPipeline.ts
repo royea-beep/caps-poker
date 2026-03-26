@@ -5,7 +5,6 @@
  *
  * Triggered from DebugOverlay. Each step logs [TEST-PIPE] Step N: ✅/❌ detail.
  */
-import { setAudioModeAsync } from 'expo-audio';
 import { getSupabase } from './supabase';
 import { getConsoleLogs } from './logBuffer';
 import { getBreadcrumbs } from './breadcrumbs';
@@ -20,21 +19,59 @@ export async function testFullPipeline(): Promise<PipelineStep[]> {
   const results: PipelineStep[] = [];
   console.log('[TEST-PIPE] === Starting full pipeline test ===');
 
-  // Step 1 — Audio mode
+  // Step 1 — Audio mode + 2-second recording via expo-av class API
   try {
-    console.log('[TEST-PIPE] Step 1: setAudioModeAsync...');
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    results.push({ step: '1-audio-mode', ok: true, detail: 'Configured ✅' });
-    console.log('[TEST-PIPE] Step 1 ✅ Audio mode configured');
+    console.log('[TEST-PIPE] Step 1: Audio mode + recording test (expo-av)...');
+    const { Audio } = require('expo-av');
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+    results.push({ step: '1-audio-mode', ok: true, detail: 'setAudioModeAsync ✅' });
+    console.log('[TEST-PIPE] Step 1 ✅ Audio mode set');
+
+    // Step 2 — 2-second recording
+    console.log('[TEST-PIPE] Step 2: Recording 2 seconds...');
+    const rec = new Audio.Recording();
+    await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    await rec.startAsync();
+    await new Promise((r) => setTimeout(r, 2000));
+    await rec.stopAndUnloadAsync();
+    const recUri: string | null = rec.getURI() ?? null;
+    results.push({ step: '2-recording', ok: !!recUri, detail: recUri ? `URI: ${recUri.slice(-40)}` : 'NO URI' });
+    console.log('[TEST-PIPE] Step 2', recUri ? `✅ URI: ${recUri.slice(-40)}` : '❌ NO URI');
+
+    // Cleanup
+    if (recUri) {
+      try {
+        const FileSystem = require('expo-file-system/legacy');
+        await FileSystem.deleteAsync(recUri, { idempotent: true });
+      } catch {}
+    }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    results.push({ step: '1-audio-mode', ok: false, detail: msg });
-    console.error('[TEST-PIPE] Step 1 ❌', msg);
+    if (!results.find((r) => r.step === '1-audio-mode')) {
+      results.push({ step: '1-audio-mode', ok: false, detail: msg });
+    }
+    results.push({ step: '2-recording', ok: false, detail: msg });
+    console.error('[TEST-PIPE] Steps 1-2 ❌', msg);
   }
 
-  // Step 2 — Recording (skipped — hook-based API requires component context)
-  results.push({ step: '2-recording', ok: true, detail: 'SKIPPED (hook-based — test via BugReporter FAB/shake)' });
-  console.log('[TEST-PIPE] Step 2: SKIPPED (useAudioRecorder hook requires component)');
+  // Step 2b — Screen capture (captureScreen — no ref needed)
+  try {
+    console.log('[TEST-PIPE] Step 2b: Testing screen capture...');
+    const { captureScreen } = require('react-native-view-shot');
+    const uri: string = await captureScreen({ format: 'jpg', quality: 0.5 });
+    results.push({ step: '2b-screen-capture', ok: !!uri, detail: uri ? `URI: ${uri.slice(-40)}` : 'NO URI' });
+    console.log('[TEST-PIPE] Step 2b', uri ? `✅ URI: ${uri.slice(-40)}` : '❌ NO URI');
+    if (uri) {
+      try {
+        const FileSystem = require('expo-file-system/legacy');
+        await FileSystem.deleteAsync(uri, { idempotent: true });
+      } catch {}
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    results.push({ step: '2b-screen-capture', ok: false, detail: msg });
+    console.error('[TEST-PIPE] Step 2b ❌', msg);
+  }
 
   // Step 3 — Supabase bucket upload probe
   try {
