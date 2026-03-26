@@ -28,6 +28,7 @@ import { getSupabase } from '../utils/supabase';
 import { getConsoleLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
 import { readFileAsBytes } from '../utils/fileReader';
+import { withTimeout } from '../utils/withTimeout';
 
 let Haptics: typeof import('expo-haptics') | null = null;
 if (Platform.OS !== 'web') { try { Haptics = require('expo-haptics'); } catch {} }
@@ -453,7 +454,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const handleStop = useCallback(async (_autoStopped = false) => {
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
     console.log('[BUG-PIPE] Step 3: Stopping all recordings...');
-    const [, audioUri, frames] = await Promise.all([stopRecording(), stopAudio(), getLastCrashScreenshots()]);
+    const [, audioUri, frames] = await Promise.all([stopRecording(), withTimeout(stopAudio(), 3000, null, 'stop-audio'), getLastCrashScreenshots()]);
     console.log('[BUG-PIPE] Step 3a: Screen capture stopped. Total frames:', frames.length);
     capturedAudioUri.current = audioUri;
     capturedFrameCount.current = frames.length;
@@ -479,13 +480,19 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
     (async () => {
       try {
-        // 4a: Upload audio
+        // 4a: Upload audio — 10s timeout
         console.log('[BUG-PIPE] Step 4a: Uploading audio... audioUri=', audioUri ? 'SET' : 'NULL');
-        const audioUrl = audioUri ? await uploadAudio(audioUri) : null;
+        const audioUrl = audioUri
+          ? await withTimeout(uploadAudio(audioUri), 10000, null, 'upload-audio')
+          : null;
+        console.log('[BUG-PIPE] Step 4a: audioUrl=', audioUrl ? 'SET' : 'NULL (timeout/fail)');
 
-        // 4b: Upload last frame
+        // 4b: Upload last frame — 5s timeout
         console.log('[BUG-PIPE] Step 4b: Uploading screenshot... lastFrame=', lastFrame ? 'SET' : 'NULL');
-        const videoUrl = lastFrame ? await uploadFrame(lastFrame) : null;
+        const videoUrl = lastFrame
+          ? await withTimeout(uploadFrame(lastFrame), 5000, null, 'upload-frame')
+          : null;
+        console.log('[BUG-PIPE] Step 4b: videoUrl=', videoUrl ? 'SET' : 'NULL (timeout/fail)');
 
         // 4c: Collect device info
         console.log('[BUG-PIPE] Step 4c: Collecting device info...');
@@ -504,7 +511,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
         // 4f: INSERT to Supabase
         console.log('[BUG-PIPE] Step 4f: Inserting report to Supabase...');
-        const reportId = await submitBugReport({
+        const reportId = await withTimeout(submitBugReport({
           title: noteToSend || 'Bug recorded',
           description: noteToSend,
           screen: path || 'unknown',
@@ -517,7 +524,8 @@ export function BugReporter({ children, overlayActive = false }: Props) {
           breadcrumbs: crumbs,
           frameCount,
           elapsed: recordingElapsed,
-        });
+        }), 5000, null, 'insert-report');
+        console.log('[BUG-PIPE] Step 4f: reportId=', reportId ? reportId : 'NULL (timeout/fail)');
 
         if (reportId) {
           // 5: AI triage — runs AFTER insert so the DB row has all the data
