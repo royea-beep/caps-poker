@@ -102,7 +102,11 @@ function sanitizeForTwilio(text: string): string {
     .trim()
 }
 
-async function sendWhatsApp(to: string, body: string): Promise<void> {
+async function sendWhatsApp(to: string, body: string): Promise<string | null> {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
+    console.error('[sendWhatsApp] Twilio credentials missing! Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM as Edge Function secrets.');
+    return null;
+  }
   const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
   const safeBody = sanitizeForTwilio(body);
   const params = new URLSearchParams({
@@ -111,7 +115,7 @@ async function sendWhatsApp(to: string, body: string): Promise<void> {
     Body: safeBody,
   });
   const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-  await fetch(url, {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${creds}`,
@@ -119,6 +123,13 @@ async function sendWhatsApp(to: string, body: string): Promise<void> {
     },
     body: params.toString(),
   });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.sid) {
+    console.error('[sendWhatsApp] Twilio error:', res.status, JSON.stringify(data).slice(0, 200));
+    return null;
+  }
+  console.log('[sendWhatsApp] Sent OK. SID:', data.sid, '| To:', to.slice(-12));
+  return data.sid as string;
 }
 
 // ── Transcribe audio via OpenAI Whisper ────────────────────────────────────
@@ -890,7 +901,7 @@ serve(async (req: Request) => {
         try {
           if (autoFixEnabled) {
             // Auto-fix: skip menu, go straight to analyzer
-            await sendWhatsApp(ROYE_NUMBER, `🤖 AUTO-FIX: קריסה בשלב ${json.metadata?.lastStep ?? 'unknown'}. מנתח + מתקן...`);
+            await sendWhatsApp(ROYE_NUMBER, `AUTO-FIX: קריסה בשלב ${json.metadata?.lastStep ?? 'unknown'}. מנתח + מתקן...`);
             const analyzerUrl = `${SUPABASE_URL}/functions/v1/crash-analyzer`;
             fetch(analyzerUrl, {
               method: 'POST',
@@ -898,9 +909,16 @@ serve(async (req: Request) => {
               body: JSON.stringify({ debugLogs: json.debugLogs, metadata: json.metadata, autoApply: true, from: ROYE_NUMBER }),
             }).catch(() => {});
           } else {
-            await sendWhatsApp(ROYE_NUMBER, msg);
+            const crashSid = await sendWhatsApp(ROYE_NUMBER, msg);
+            whatsappSent = crashSid !== null;
+            if (crashSid) {
+              supabase.from('whatsapp_sessions')
+                .update({ message_sid: crashSid })
+                .eq('from_number', ROYE_NUMBER).eq('status', 'crash_pending')
+                .order('created_at', { ascending: false }).limit(1)
+                .then(() => {}).catch(() => {});
+            }
           }
-          whatsappSent = true;
         } catch (sendErr) {
           whatsappError = String(sendErr);
           console.error('[whatsapp-bot] sendWhatsApp failed for crash notification:', sendErr);
@@ -943,10 +961,32 @@ serve(async (req: Request) => {
           } catch { /* non-critical */ }
         }
         let bugWaSent = false;
+        let bugTwilioSid: string | null = null;
         let bugWaError: string | null = null;
-        try { await sendWhatsApp(ROYE_WA, bugMsg); bugWaSent = true; }
-        catch (e) { bugWaError = String(e); }
-        return new Response(JSON.stringify({ sent: bugWaSent, reportId: bugReportId, twilioError: bugWaError }), {
+        try {
+          bugTwilioSid = await sendWhatsApp(ROYE_WA, bugMsg);
+          bugWaSent = bugTwilioSid !== null;
+          if (bugTwilioSid) {
+            // Update session with real Twilio SID and mark as sent
+            supabase.from('whatsapp_sessions')
+              .update({ message_sid: bugTwilioSid, status: 'bug_sent' })
+              .eq('from_number', ROYE_WA).eq('status', 'bug_pending')
+              .order('created_at', { ascending: false }).limit(1)
+              .then(() => {}).catch(() => {});
+            if (bugReportId) {
+              supabase.from('bug_notifications')
+                .update({ status: 'delivered' })
+                .eq('bug_report_id', bugReportId)
+                .then(() => {}).catch(() => {});
+            }
+          } else {
+            bugWaError = 'Twilio returned no SID (check credentials or message format)';
+          }
+        } catch (e) {
+          bugWaError = String(e);
+        }
+        console.log('[whatsapp-bot] Bug notification result:', { bugWaSent, bugTwilioSid, bugWaError });
+        return new Response(JSON.stringify({ sent: bugWaSent, sid: bugTwilioSid, reportId: bugReportId, twilioError: bugWaError }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
