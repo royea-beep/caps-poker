@@ -50,9 +50,12 @@ import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { HOME_THEMES } from '../constants/homeThemes';
+import { migrateGuestToUser } from '../utils/guestMigration';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
+const NUDGE_AT_GAMES = [3, 8, 20];
+const NUDGE_DISMISSED_KEY = 'nudgeDismissedAt';
 
 const isWeb = Platform.OS === 'web';
 
@@ -149,6 +152,145 @@ const TAGLINES = [
 let taglineMountCount = 0;
 
 const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
+
+// ─── Sign-in nudge banner — slide-up, non-blocking ─────────────────────────────
+function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () => void }) {
+  const isHE = getLanguage() === 'he';
+  const translateY = useRef(new AnimatedRN.Value(200)).current;
+  useEffect(() => {
+    AnimatedRN.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+  }, []);
+  const dismiss = (cb: () => void) => {
+    AnimatedRN.timing(translateY, { toValue: 200, duration: 200, useNativeDriver: true }).start(cb);
+  };
+  return (
+    <AnimatedRN.View style={[nudgeStyles.banner, { transform: [{ translateY }] }]}>
+      <View style={nudgeStyles.content}>
+        <Text style={nudgeStyles.title}>
+          {isHE ? '🔒 התחבר כדי לשמור את הנתונים' : '🔒 Sign in to save your stats'}
+        </Text>
+        <Text style={nudgeStyles.sub}>
+          {isHE
+            ? 'הניצחונות, הבנקרול וההיסטוריה ישמרו בין מכשירים.'
+            : 'Your wins, bankroll & history will be saved across devices.'}
+        </Text>
+        <View style={nudgeStyles.btnRow}>
+          <Pressable
+            onPress={() => dismiss(onSignIn)}
+            style={nudgeStyles.signInBtn}
+          >
+            <Text style={nudgeStyles.signInBtnText}>
+              {isHE ? '🔵 כניסה עם Google' : '🔵 Sign in with Google'}
+            </Text>
+          </Pressable>
+          <Pressable onPress={() => dismiss(onLater)} hitSlop={8} style={nudgeStyles.laterBtn}>
+            <Text style={nudgeStyles.laterBtnText}>{isHE ? 'אחר כך' : 'Later'}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </AnimatedRN.View>
+  );
+}
+
+const nudgeStyles = StyleSheet.create({
+  banner: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 150,
+    backgroundColor: 'rgba(14,10,20,0.97)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(201,168,76,0.25)',
+    paddingBottom: rs(16),
+  },
+  content: {
+    paddingHorizontal: rs(20),
+    paddingTop: rs(16),
+    gap: rs(8),
+  },
+  title: {
+    color: '#ffffff',
+    fontSize: rf(15),
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  sub: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(13),
+    fontWeight: '400',
+    lineHeight: rf(19),
+  },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(12),
+    marginTop: rs(4),
+  },
+  signInBtn: {
+    backgroundColor: '#4285F4',
+    borderRadius: rv(10),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(18),
+    flex: 1,
+    alignItems: 'center',
+  },
+  signInBtnText: {
+    color: '#ffffff',
+    fontSize: rf(13),
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  laterBtn: {
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(12),
+  },
+  laterBtnText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: rf(13),
+    fontWeight: '500',
+  },
+});
+
+// ─── Welcome toast after sign-in ──────────────────────────────────────────────
+function WelcomeToast({ name }: { name: string }) {
+  const isHE = getLanguage() === 'he';
+  const opacity = useRef(new AnimatedRN.Value(0)).current;
+  useEffect(() => {
+    AnimatedRN.sequence([
+      AnimatedRN.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      AnimatedRN.delay(2500),
+      AnimatedRN.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start();
+  }, []);
+  return (
+    <AnimatedRN.View style={[toastStyles.toast, { opacity }]} pointerEvents="none">
+      <Text style={toastStyles.text}>
+        {isHE ? `ברוך הבא, ${name}! הנתונים שלך נשמרים.` : `Welcome, ${name}! Your data is now saved.`}
+      </Text>
+    </AnimatedRN.View>
+  );
+}
+
+const toastStyles = StyleSheet.create({
+  toast: {
+    position: 'absolute',
+    top: rs(80),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(34,197,94,0.92)',
+    borderRadius: rv(24),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(20),
+    zIndex: 300,
+    maxWidth: '85%' as any,
+  },
+  text: {
+    color: '#ffffff',
+    fontSize: rf(13),
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
 // ─── Welcome modal — shown before first game / tutorial replay ─────────────────
 function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
@@ -272,11 +414,16 @@ export default function HomeScreen() {
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
 
   const user = useAuthUser();
+  const prevUserRef = useRef<typeof user>(undefined);
+  const playerName = useGameStore((s) => s.playerName) || 'Player';
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
+  const [showNudge, setShowNudge] = useState(false);
+  const [showWelcomeToast, setShowWelcomeToast] = useState(false);
+  const [welcomeToastName, setWelcomeToastName] = useState('');
 
   // Rotating tagline — cycles through all 10
   const [tagline] = useState<string>(() => {
@@ -297,13 +444,37 @@ export default function HomeScreen() {
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
       if (!val) setShowTutorial(true);
     }).catch(() => {});
-    AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
-      setGamesPlayed(val ? parseInt(val, 10) || 0 : 0);
+    Promise.all([
+      AsyncStorage.getItem(GAMES_PLAYED_KEY),
+      AsyncStorage.getItem(NUDGE_DISMISSED_KEY),
+    ]).then(([gamesVal, dismissedVal]) => {
+      const played = gamesVal ? parseInt(gamesVal, 10) || 0 : 0;
+      setGamesPlayed(played);
+      // Show nudge if: guest + nudge point + not recently dismissed
+      const dismissedAt = dismissedVal ? parseInt(dismissedVal, 10) || 0 : 0;
+      if (!user && NUDGE_AT_GAMES.includes(played) && played > dismissedAt) {
+        setShowNudge(true);
+      }
     }).catch(() => { setGamesPlayed(0); });
   }, []);
 
+  // Migrate guest data when user signs in for the first time
   useEffect(() => {
-    if (user?.user_metadata?.full_name) {
+    const prev = prevUserRef.current;
+    prevUserRef.current = user;
+    if (!prev && user) {
+      // Just signed in — migrate and show toast
+      const displayName = String(user.user_metadata?.full_name ?? playerName).slice(0, 30);
+      useGameStore.getState().setPlayerName(displayName);
+      migrateGuestToUser(user.id, displayName).then((migrated) => {
+        if (migrated) {
+          setWelcomeToastName(displayName.split(' ')[0]);
+          setShowWelcomeToast(true);
+          setTimeout(() => setShowWelcomeToast(false), 3500);
+        }
+      }).catch(() => {});
+    } else if (user?.user_metadata?.full_name && !prev) {
+      // Already signed in on mount — just update name
       useGameStore.getState().setPlayerName(String(user.user_metadata.full_name).slice(0, 20));
     }
   }, [user?.id]);
@@ -353,11 +524,17 @@ export default function HomeScreen() {
   }, [lastDailyRewardClaim, dailyRewardStreak]);
 
   const handleGoogleSignIn = useCallback(async () => {
+    setShowNudge(false);
     setSigningIn(true);
     const { error } = await signInWithGoogle();
     setSigningIn(false);
     if (error) Alert.alert('Sign In Failed', error.message);
   }, []);
+
+  const handleNudgeLater = useCallback(() => {
+    setShowNudge(false);
+    AsyncStorage.setItem(NUDGE_DISMISSED_KEY, String(gamesPlayed)).catch(() => {});
+  }, [gamesPlayed]);
 
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
 
@@ -499,6 +676,14 @@ export default function HomeScreen() {
           {homeThemeId} · {Math.round(screenW)}×{Math.round(screenH)}
         </Text>
       )}
+
+      {/* Sign-in nudge banner — non-blocking, slides up from bottom */}
+      {showNudge && !user && (
+        <NudgeBanner onSignIn={handleGoogleSignIn} onLater={handleNudgeLater} />
+      )}
+
+      {/* Welcome toast after sign-in */}
+      {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
     </SafeAreaView>
   );
 }
