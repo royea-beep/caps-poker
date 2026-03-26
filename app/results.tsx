@@ -27,6 +27,7 @@ import { rf, rs, rb, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkAchievements, getAchievement, Achievement } from '../utils/achievements';
+import { playSound } from '../utils/sounds';
 import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
@@ -91,6 +92,7 @@ export default function ResultsScreen() {
   const {
     screenOpacity, glowAnim, completeScale, dealBtnOpacity, dealBtnScale,
     winBadgeAnim, chipsFlashAnim, boardTranslates, visibleBoardCount, displayChips,
+    completeFlashOpacity, completeTitleScale, chipTranslates, showCompleteOverlay,
   } = useResultsAnimations(revealData);
 
   const CARD_W = Math.min(Platform.OS === 'web' ? 56 : 36, Math.max(24, Math.floor((SCREEN_W - 56) / 6.5)));
@@ -127,7 +129,18 @@ export default function ResultsScreen() {
     if (!revealData) return;
     incrementHandsPlayed();
     updateBestChips();
-    if (revealData.netChips > 0) { incrementHandsWon(); updateBiggestWin(revealData.netChips); }
+    if (revealData.netChips > 0) {
+      incrementHandsWon();
+      updateBiggestWin(revealData.netChips);
+      // Win sound — delayed slightly so it plays after screen fade-in
+      setTimeout(() => { void playSound('chipsWin'); }, 500);
+    } else if (revealData.netChips < 0) {
+      setTimeout(() => { void playSound('lose'); }, 500);
+    }
+    // Complete sound
+    if (revealData.isComplete && revealData.completeBonusAmount > 0) {
+      setTimeout(() => { void playSound('complete'); }, 800);
+    }
 
     // [BANKROLL] Verify bankroll sync — logs in-memory vs persisted value
     console.log('[BANKROLL] chips in store:', chips, 'netChips:', revealData.netChips);
@@ -324,9 +337,37 @@ export default function ResultsScreen() {
   let bestRank = 99; let bestName = ''; let bestBoard = 0;
   boards.forEach((b, i) => { const r = HAND_ORDER.indexOf(b.playerHandName); if (r >= 0 && r < bestRank) { bestRank = r; bestName = b.playerHandName; bestBoard = i + 1; } });
 
+  // Chip x-positions (left %) for shower
+  const CHIP_X_POSITIONS = ['10%', '22%', '35%', '50%', '65%', '80%'] as const;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
+
+      {/* COMPLETE celebration overlay — screen flash + chip shower */}
+      {showCompleteOverlay && isComplete && (
+        <>
+          {/* Gold screen flash */}
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.completeFlash, { opacity: completeFlashOpacity }]}
+          />
+          {/* Chip shower — 6 chips fall from top */}
+          {chipTranslates.map((chipY, idx) => (
+            <Animated.Text
+              key={`chip-${idx}`}
+              pointerEvents="none"
+              style={[
+                styles.chipShower,
+                { left: CHIP_X_POSITIONS[idx] as any, transform: [{ translateY: chipY }] },
+              ]}
+            >
+              🟡
+            </Animated.Text>
+          ))}
+        </>
+      )}
+
       {/* Achievement toasts — shown one at a time */}
       {pendingAchievements.length > 0 && (
         <AchievementToast
@@ -442,6 +483,15 @@ export default function ResultsScreen() {
             <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
           </View>
 
+          {/* COMPLETE celebration title — scale pop */}
+          {isComplete && (
+            <Animated.Text
+              style={[styles.completeCelebTitle, { transform: [{ scale: completeTitleScale }] }]}
+            >
+              COMPLETE! ALL BOARDS!
+            </Animated.Text>
+          )}
+
           {/* Complete bonus banner */}
           <CompleteBanner visible={isComplete} bonusChips={completeBonusAmount} scale={completeScale} />
 
@@ -555,4 +605,27 @@ const styles = StyleSheet.create({
   xpBanner: { width: '100%', backgroundColor: 'rgba(201,168,76,0.10)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: rv(10), padding: rs(14), gap: rs(6) },
   xpBannerTitle: { color: '#FFD700', fontSize: rf(16), fontWeight: '800', letterSpacing: 1 },
   xpBannerBreakdown: { color: 'rgba(255,255,255,0.55)', fontSize: rf(12), fontWeight: '500' },
+  // COMPLETE celebration
+  completeFlash: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: '#FFD700',
+    zIndex: 50,
+  },
+  chipShower: {
+    position: 'absolute',
+    top: -50,
+    fontSize: 28,
+    zIndex: 60,
+  },
+  completeCelebTitle: {
+    color: '#FFD700',
+    fontSize: rf(22),
+    fontWeight: '900',
+    letterSpacing: 3,
+    textAlign: 'center',
+    textShadowColor: 'rgba(255,215,0,0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 16,
+  },
 });

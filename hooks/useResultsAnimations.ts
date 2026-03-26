@@ -6,6 +6,8 @@ import { useRef, useState, useEffect } from 'react';
 import { Animated } from 'react-native';
 import { useGameStore } from '../store/gameStore';
 
+const CHIP_COUNT = 6;
+
 const DEAL_BTN_DELAY_MS = 300;
 
 interface RevealDataShape {
@@ -27,6 +29,14 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
   const boardTranslates = useRef<Animated.Value[]>([]);
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const animIntervals = useRef<ReturnType<typeof setInterval>[]>([]);
+
+  // COMPLETE celebration — RN Animated only
+  const completeFlashOpacity = useRef(new Animated.Value(0)).current;
+  const completeTitleScale = useRef(new Animated.Value(0)).current;
+  const chipTranslates = useRef<Animated.Value[]>(
+    Array.from({ length: CHIP_COUNT }, () => new Animated.Value(-100))
+  ).current;
+  const [showCompleteOverlay, setShowCompleteOverlay] = useState(false);
 
   const [visibleBoardCount, setVisibleBoardCount] = useState(0);
   const [displayChips, setDisplayChips] = useState(() => useGameStore.getState().chips);
@@ -98,6 +108,32 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
       animTimers.current.push(setTimeout(() => {
         Animated.spring(completeScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }).start();
       }, 400));
+
+      // COMPLETE celebration: screen flash + chip shower + title scale
+      animTimers.current.push(setTimeout(() => {
+        setShowCompleteOverlay(true);
+
+        // Screen flash: fade in then out
+        Animated.sequence([
+          Animated.timing(completeFlashOpacity, { toValue: 0.4, duration: 200, useNativeDriver: true }),
+          Animated.timing(completeFlashOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+        ]).start();
+
+        // COMPLETE title scale: 0 → 1.2 → 1.0
+        Animated.sequence([
+          Animated.timing(completeTitleScale, { toValue: 1.2, duration: 300, useNativeDriver: true }),
+          Animated.timing(completeTitleScale, { toValue: 1.0, duration: 200, useNativeDriver: true }),
+        ]).start();
+
+        // Chip shower: 6 chips fall from top with staggered delays
+        chipTranslates.forEach((chipVal, idx) => {
+          chipVal.setValue(-100);
+          const delay = idx * 100;
+          animTimers.current.push(setTimeout(() => {
+            Animated.timing(chipVal, { toValue: 900, duration: 1200, useNativeDriver: true }).start();
+          }, delay));
+        });
+      }, 350));
     }
 
     // DEAL ME IN fade + pulse loop (999 iterations, not -1)
@@ -131,6 +167,9 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
       winBadgeAnim.stopAnimation();
       chipsFlashAnim.stopAnimation();
       boardTranslates.current.forEach((v) => v.stopAnimation());
+      completeFlashOpacity.stopAnimation();
+      completeTitleScale.stopAnimation();
+      chipTranslates.forEach((v) => v.stopAnimation());
     };
   }, []);
 
@@ -145,5 +184,9 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
     boardTranslates,
     visibleBoardCount,
     displayChips,
+    completeFlashOpacity,
+    completeTitleScale,
+    chipTranslates,
+    showCompleteOverlay,
   };
 }

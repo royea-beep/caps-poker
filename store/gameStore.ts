@@ -91,6 +91,10 @@ interface GameStore {
   setRevealData: (data: RevealData) => void;
   clearRevealData: () => void;
 
+  // Language version (NOT persisted — runtime counter to force re-renders on language change)
+  languageVersion: number;
+  bumpLanguageVersion: () => void;
+
   // Multiplayer actions
   setMultiplayerMode: (mode: 'none' | 'host' | 'guest') => void;
   setRoomCode: (code: string | null) => void;
@@ -138,6 +142,9 @@ export const useGameStore = create<GameStore>()(
 
       // Reveal data (not persisted)
       revealData: null,
+
+      // Language version (not persisted)
+      languageVersion: 0,
 
       // Multiplayer state (not persisted via partialize)
       multiplayerMode: 'none',
@@ -209,6 +216,9 @@ export const useGameStore = create<GameStore>()(
       incrementWinStreak: () =>
         set((state) => ({ currentWinStreak: state.currentWinStreak + 1 })),
       resetWinStreak: () => set({ currentWinStreak: 0 }),
+
+      // Language version action
+      bumpLanguageVersion: () => set((state) => ({ languageVersion: state.languageVersion + 1 })),
 
       // Reveal actions
       setRevealData: (data) => {

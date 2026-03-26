@@ -151,7 +151,7 @@ export default function InternetHostScreen() {
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
-        message: `Join my CAPS Poker game! Room: ${roomCode}`,
+        message: `Join my CAPS game! Room: ${roomCode}\nDownload: https://caps.ftable.co.il\nTestFlight: https://testflight.apple.com/join/hD3KvZeC`,
         title: 'CAPS Poker — Room Invite',
       });
     } catch {}
