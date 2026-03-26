@@ -143,3 +143,71 @@ describe('i18n — onboarding strings', () => {
     expect(ob.step5Title).toBeTruthy();
   });
 });
+
+describe('i18n — S92 new keys', () => {
+  const freshHe = () => {
+    jest.resetModules();
+    jest.mock('expo-localization', () => ({ getLocales: () => [{ languageCode: 'he' }] }), { virtual: true });
+    return loadFresh();
+  };
+  const freshEn = () => {
+    jest.resetModules();
+    jest.mock('expo-localization', () => ({ getLocales: () => [{ languageCode: 'en' }] }), { virtual: true });
+    return loadFresh();
+  };
+
+  it('t().play is non-empty in both languages', () => {
+    expect(freshHe().t().play).toBeTruthy();
+    expect(freshEn().t().play).toBeTruthy();
+  });
+
+  it('t().battlePass is non-empty in Hebrew and English', () => {
+    expect(freshHe().t().battlePass).toBeTruthy();
+    expect(freshEn().t().battlePass).toBeTruthy();
+  });
+
+  it('t().tournaments is non-empty in both languages', () => {
+    expect(freshHe().t().tournaments).toBeTruthy();
+    expect(freshEn().t().tournaments).toBeTruthy();
+  });
+
+  it('t().leaderboard is non-empty in both languages', () => {
+    expect(freshHe().t().leaderboard).toBeTruthy();
+    expect(freshEn().t().leaderboard).toBeTruthy();
+  });
+
+  it('t().handHistory is non-empty in both languages', () => {
+    expect(freshHe().t().handHistory).toBeTruthy();
+    expect(freshEn().t().handHistory).toBeTruthy();
+  });
+
+  it('t().language is non-empty in both languages', () => {
+    expect(freshHe().t().language).toBeTruthy();
+    expect(freshEn().t().language).toBeTruthy();
+  });
+
+  it('setLanguage changes the active language', () => {
+    jest.resetModules();
+    jest.mock('expo-localization', () => ({ getLocales: () => [{ languageCode: 'en' }] }), { virtual: true });
+    // Mock the store to avoid circular dep issues in test
+    jest.mock('../../store/gameStore', () => ({
+      useGameStore: { getState: () => ({ bumpLanguageVersion: () => {} }) },
+    }), { virtual: true });
+    const { getLanguage, setLanguage } = loadFresh();
+    expect(getLanguage()).toBe('en');
+    setLanguage('he');
+    expect(getLanguage()).toBe('he');
+  });
+
+  it('all 16 new S92 keys are non-empty strings in Hebrew', () => {
+    const { t } = freshHe();
+    const keys: string[] = [
+      'play', 'signIn', 'signOut', 'leaderboard', 'handHistory', 'coaching',
+      'spectator', 'reportBug', 'battlePass', 'tournaments', 'language',
+      'languageEnglish', 'languageHebrew', 'playOnline', 'localMultiplayer', 'chooseLanguage',
+    ];
+    for (const key of keys) {
+      expect((t() as Record<string, unknown>)[key]).toBeTruthy();
+    }
+  });
+});

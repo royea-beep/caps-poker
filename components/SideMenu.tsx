@@ -15,10 +15,12 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
+import { t, getLanguage, setLanguage, Language } from '../utils/i18n';
 
 export interface SideMenuProps {
   visible: boolean;
@@ -48,6 +50,10 @@ export default function SideMenu({
 
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
   const playerName = useGameStore((s) => s.playerName) || 'Player';
+  // Subscribe to languageVersion so the menu re-renders when language changes
+  const languageVersion = useGameStore((s) => s.languageVersion);
+  void languageVersion; // suppress unused warning
+  const currentLang = getLanguage();
 
   useEffect(() => {
     if (visible) {
@@ -129,32 +135,41 @@ export default function SideMenu({
           <View style={styles.divider} />
 
           {/* Online / Multiplayer */}
-          <MenuItem icon="🎮" label="Play Online" onPress={() => navigate('/lobby/internet-host')} />
-          <MenuItem icon="🏆" label="Tournament" onPress={() => navigate('/tournament')} />
+          <MenuItem icon="🎮" label={t().playOnline} onPress={() => navigate('/lobby/internet-host')} />
+          <MenuItem icon="🏆" label={t().tournaments} onPress={() => navigate('/tournament')} />
           <MenuItem icon="📡" label="Host Game" onPress={() => navigate('/lobby/host')} />
           <MenuItem icon="🔗" label="Join Game" onPress={() => navigate('/lobby/join')} />
 
           <View style={styles.divider} />
 
           {/* Progress & History */}
-          <MenuItem icon="⚔️" label="Battle Pass" onPress={() => navigate('/battle-pass')} />
-          <MenuItem icon="🏆" label="Tournaments" onPress={() => navigate('/tournament')} />
-          <MenuItem icon="📊" label="Statistics" onPress={() => navigate('/stats')} />
-          <MenuItem icon="📜" label="Hand History" onPress={() => navigate('/hand-history')} />
-          <MenuItem icon="🎓" label="Coaching" onPress={() => navigate('/coaching')} />
-          <MenuItem icon="👁" label="Spectator Mode" onPress={() => navigate('/spectate')} />
-          <MenuItem icon="🏅" label="Leaderboard" onPress={() => navigate('/leaderboard')} />
+          <MenuItem icon="⚔️" label={t().battlePass} onPress={() => navigate('/battle-pass')} />
+          <MenuItem icon="📊" label={t().stats} onPress={() => navigate('/stats')} />
+          <MenuItem icon="📜" label={t().handHistory} onPress={() => navigate('/hand-history')} />
+          <MenuItem icon="🎓" label={t().coaching} onPress={() => navigate('/coaching')} />
+          <MenuItem icon="👁" label={t().spectator} onPress={() => navigate('/spectate')} />
+          <MenuItem icon="🏅" label={t().leaderboard} onPress={() => navigate('/leaderboard')} />
 
           <View style={styles.divider} />
 
           {/* Settings */}
-          <MenuItem icon="⚙️" label="Settings" onPress={() => navigate('/settings')} />
+          <MenuItem icon="⚙️" label={t().settings} onPress={() => navigate('/settings')} />
           <MenuItem
             icon="📖"
-            label="Tutorial"
+            label={t().tutorial}
             onPress={() => {
               onClose();
               setTimeout(onShowTutorial, 60);
+            }}
+          />
+          <MenuItem
+            icon="🌐"
+            label={currentLang === 'he' ? `🌐 ${t().language}: ${t().languageHebrew}` : `🌐 ${t().language}: ${t().languageEnglish}`}
+            onPress={async () => {
+              const newLang: Language = currentLang === 'he' ? 'en' : 'he';
+              await AsyncStorage.setItem('caps_language', newLang);
+              setLanguage(newLang);
+              onClose();
             }}
           />
 
@@ -164,7 +179,7 @@ export default function SideMenu({
           {!user ? (
             <MenuItem
               icon="🔵"
-              label="Sign in with Google"
+              label={t().signIn}
               onPress={() => {
                 onClose();
                 setTimeout(onSignIn, 60);
@@ -182,7 +197,7 @@ export default function SideMenu({
                 }}
                 hitSlop={8}
               >
-                <Text style={styles.signOutText}>Sign out</Text>
+                <Text style={styles.signOutText}>{t().signOut}</Text>
               </Pressable>
             </View>
           )}

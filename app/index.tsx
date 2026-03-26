@@ -666,6 +666,16 @@ export default function HomeScreen() {
           <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
             {t().boardsPlayers(getBoardCount(config.numberOfPlayers), config.numberOfPlayers)}
           </Text>
+          {/* Stakes label */}
+          <Text style={styles.stakesLabel}>
+            {config.potPerBoard === 0
+              ? 'Casual (Free)'
+              : config.potPerBoard <= 25
+              ? `Low Stakes (${config.potPerBoard})`
+              : config.potPerBoard <= 100
+              ? `Mid Stakes (${config.potPerBoard})`
+              : `High Stakes (${config.potPerBoard})`}
+          </Text>
         </View>
 
         {/* Balance */}
@@ -881,6 +891,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     opacity: 0.55,
     textAlign: 'center',
+  },
+  stakesLabel: {
+    fontSize: rf(11),
+    fontWeight: '500',
+    color: '#78716C',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    marginTop: -rs(4),
   },
 
   // Daily reward pill

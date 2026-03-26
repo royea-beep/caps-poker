@@ -10,6 +10,8 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
+import { setLanguage, Language } from '../utils/i18n';
+import { LanguagePicker } from '../components/LanguagePicker';
 import * as Updates from 'expo-updates';
 // expo-insights is a passive SDK — auto-collects crashes + app opens via native integration
 // No API call needed; installing the package is sufficient
@@ -142,8 +144,30 @@ export default function RootLayout() {
   const initSession = useGameStore((s) => s.initSession);
   const orientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
+  const languageVersion = useGameStore((s) => s.languageVersion);
   const [splashDone, setSplashDone] = useState(false);
   const [debugEnabled, setDebugEnabled] = useState(false);
+  const [langReady, setLangReady] = useState(false);
+  const [needsPicker, setNeedsPicker] = useState(false);
+
+  // Language detection — runs first, before splash or routing
+  useEffect(() => {
+    AsyncStorage.getItem('caps_language').then(saved => {
+      if (saved === 'he' || saved === 'en') {
+        setLanguage(saved as Language);
+        setLangReady(true);
+      } else {
+        setNeedsPicker(true);
+        setLangReady(true);
+      }
+    }).catch(() => setLangReady(true));
+  }, []);
+
+  const handleLanguageSelect = async (lang: Language) => {
+    await AsyncStorage.setItem('caps_language', lang);
+    setLanguage(lang);
+    setNeedsPicker(false);
+  };
 
   useEffect(() => {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
@@ -339,6 +363,9 @@ export default function RootLayout() {
     return () => window.removeEventListener('error', handler);
   }, []);
 
+  if (!langReady) return null;
+  if (needsPicker) return <LanguagePicker onSelect={handleLanguageSelect} />;
+
   return (
     <RootWrapper style={{ flex: 1, backgroundColor: '#1C0508' }}>
       <StatusBar style="light" />
@@ -346,6 +373,7 @@ export default function RootLayout() {
       <BugReporter>
         <WebContainer>
           <Stack
+            key={languageVersion}
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: COLORS.background },

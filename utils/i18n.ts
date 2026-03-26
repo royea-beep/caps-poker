@@ -49,6 +49,16 @@ export function getLanguage(): Language {
   return _lang;
 }
 
+export function setLanguage(lang: Language): void {
+  _lang = lang;
+  // Notify store to bump version (lazy import to avoid circular dep)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { useGameStore } = require('../store/gameStore');
+    useGameStore.getState().bumpLanguageVersion?.();
+  } catch {}
+}
+
 export function isRTL(): boolean {
   return getLanguage() === 'he';
 }
@@ -121,6 +131,24 @@ interface Translations {
   resetDefaults: string;
   yourProfile: string;
   edit: string;
+
+  // Navigation / SideMenu
+  play: string;
+  signIn: string;
+  signOut: string;
+  leaderboard: string;
+  handHistory: string;
+  coaching: string;
+  spectator: string;
+  reportBug: string;
+  battlePass: string;
+  tournaments: string;
+  language: string;
+  languageEnglish: string;
+  languageHebrew: string;
+  playOnline: string;
+  localMultiplayer: string;
+  chooseLanguage: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -178,6 +206,22 @@ const he: Translations = {
   resetDefaults: 'אפס הגדרות',
   yourProfile: 'הפרופיל שלך',
   edit: 'ערוך',
+  play: 'שחק',
+  signIn: 'כניסה',
+  signOut: 'יציאה',
+  leaderboard: 'לוח תוצאות',
+  handHistory: 'היסטוריית ידיים',
+  coaching: 'אימון',
+  spectator: 'צפייה',
+  reportBug: 'דווח על תקלה',
+  battlePass: 'מעבר קרב',
+  tournaments: 'טורנירים',
+  language: 'שפה',
+  languageEnglish: 'English',
+  languageHebrew: 'עברית',
+  playOnline: 'שחק אונליין',
+  localMultiplayer: 'מולטי-פלייר מקומי',
+  chooseLanguage: 'בחר את השפה שלך',
 };
 
 // ---------------------------------------------------------------------------
@@ -235,6 +279,22 @@ const en: Translations = {
   resetDefaults: 'Reset to Defaults',
   yourProfile: 'YOUR PROFILE',
   edit: 'EDIT',
+  play: 'PLAY',
+  signIn: 'SIGN IN',
+  signOut: 'SIGN OUT',
+  leaderboard: 'LEADERBOARD',
+  handHistory: 'HAND HISTORY',
+  coaching: 'COACHING',
+  spectator: 'SPECTATOR',
+  reportBug: 'REPORT BUG',
+  battlePass: 'BATTLE PASS',
+  tournaments: 'TOURNAMENTS',
+  language: 'LANGUAGE',
+  languageEnglish: 'English',
+  languageHebrew: 'עברית',
+  playOnline: 'PLAY ONLINE',
+  localMultiplayer: 'LOCAL MULTIPLAYER',
+  chooseLanguage: 'Choose your language',
 };
 
 const translations: Record<Language, Translations> = { he, en };
