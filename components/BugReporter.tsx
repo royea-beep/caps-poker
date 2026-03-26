@@ -244,7 +244,19 @@ async function submitBugReport(opts: {
     .single();
 
   if (error) {
-    console.error('[BUG-PIPE] Step 4f: ❌ INSERT FAILED:', error.message);
+    console.error('[BUG-PIPE] ❌ INSERT FAILED');
+    console.error('[BUG-PIPE] Error message:', error.message);
+    console.error('[BUG-PIPE] Error details:', error.details);
+    console.error('[BUG-PIPE] Error hint:', error.hint);
+    console.error('[BUG-PIPE] Error code:', error.code);
+    console.error('[BUG-PIPE] Payload keys:', Object.keys(row).join(', '));
+    console.error('[BUG-PIPE] Payload version:', row.version, '| app_version:', row.app_version);
+    // Log to error_logs table as fallback for diagnosis
+    void sb.from('error_logs').insert({
+      context: 'bug_report_insert',
+      message: error.message,
+      details: JSON.stringify({ code: error.code, hint: error.hint, payload_keys: Object.keys(row) }),
+    });
     return null;
   }
   const id = (data as { id: string } | null)?.id ?? null;
