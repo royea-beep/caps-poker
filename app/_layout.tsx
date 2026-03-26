@@ -1,10 +1,14 @@
 import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
+import { initLogBuffer } from '../utils/logBuffer';
+import { addBreadcrumb } from '../utils/breadcrumbs';
+// Initialize log buffer immediately at module load — before any component renders
+initLogBuffer();
 import { View, Text, Platform, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { useSharedValue, withTiming, withSequence, withDelay, useAnimatedStyle } from 'react-native-reanimated';
 import * as Linking from 'expo-linking';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, usePathname } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -141,6 +145,7 @@ const splashStyles = StyleSheet.create({
 
 export default function RootLayout() {
   const router = useRouter();
+  const currentPath = usePathname();
   const initSession = useGameStore((s) => s.initSession);
   const orientation = useGameStore((s) => s.orientation);
   const visualTheme = useGameStore((s) => s.visualTheme);
@@ -190,6 +195,9 @@ export default function RootLayout() {
     } catch {}
     return () => {};
   }, []);
+
+  // Track screen navigation as breadcrumbs for bug reports
+  useEffect(() => { addBreadcrumb(currentPath); }, [currentPath]);
 
   useEffect(() => {
     debugLog('🔵 app started')
