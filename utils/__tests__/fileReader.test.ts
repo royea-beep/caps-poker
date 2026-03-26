@@ -53,8 +53,11 @@ describe('readFileAsBytes', () => {
     expect(result).toBeNull();
   });
 
-  it('Method 1: returns Uint8Array when File.bytes() succeeds', async () => {
-    mockBytes.mockResolvedValue(TEST_BYTES);
+  it('Method 1: returns Uint8Array when fetch+arrayBuffer succeeds', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(TEST_BYTES.buffer),
+    });
 
     const { readFileAsBytes } = require('../fileReader');
     const result = await readFileAsBytes(TEST_URI);
@@ -62,42 +65,38 @@ describe('readFileAsBytes', () => {
     expect(result).not.toBeNull();
     expect(result).toBeInstanceOf(Uint8Array);
     expect(result!.length).toBe(200);
-    expect(MockFile).toHaveBeenCalledWith(TEST_URI);
-    expect(mockBytes).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(TEST_URI);
   });
 
-  it('Method 1: falls through when File.bytes() returns too-small result', async () => {
-    mockBytes.mockResolvedValue(new Uint8Array(5).fill(1)); // < 100 bytes
+  it('Method 1: falls through when fetch returns too-small buffer', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      arrayBuffer: () => Promise.resolve(TEST_BYTES.buffer),
+      arrayBuffer: () => Promise.resolve(new Uint8Array(5).buffer),
     });
+    mockBytes.mockResolvedValue(TEST_BYTES);
 
     const { readFileAsBytes } = require('../fileReader');
     const result = await readFileAsBytes(TEST_URI);
 
     expect(result).not.toBeNull();
-    expect(mockFetch).toHaveBeenCalledWith(TEST_URI);
+    expect(MockFile).toHaveBeenCalledWith(TEST_URI);
   });
 
-  it('Method 1: falls through on File.bytes() error, tries Method 2', async () => {
-    mockBytes.mockRejectedValue(new Error('File not accessible'));
-    mockFetch.mockResolvedValue({
-      ok: true,
-      arrayBuffer: () => Promise.resolve(TEST_BYTES.buffer),
-    });
+  it('Method 1: falls through on fetch error, tries Method 2 (File.bytes)', async () => {
+    mockFetch.mockRejectedValue(new Error('fetch failed'));
+    mockBytes.mockResolvedValue(TEST_BYTES);
 
     const { readFileAsBytes } = require('../fileReader');
     const result = await readFileAsBytes(TEST_URI);
 
     expect(result).not.toBeNull();
     expect(result).toBeInstanceOf(Uint8Array);
-    expect(mockFetch).toHaveBeenCalledWith(TEST_URI);
+    expect(MockFile).toHaveBeenCalledWith(TEST_URI);
   });
 
-  it('Method 2: falls through on fetch error, tries Method 3 (XHR)', async () => {
+  it('Method 2: falls through on File.bytes() error, tries Method 3 (XHR)', async () => {
+    mockFetch.mockRejectedValue(new Error('fetch fail'));
     mockBytes.mockRejectedValue(new Error('FS fail'));
-    mockFetch.mockRejectedValue(new Error('Network error'));
 
     mockXHR.send.mockImplementation(() => {
       mockXHR.status = 0; // iOS local file success

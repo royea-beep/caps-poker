@@ -1,18 +1,16 @@
 /**
  * fileReader.ts — Robust local file reader for SDK 55.
  *
- * Root cause of the "readFileAsBytes failed: {}" bug:
- * FileSystem.readAsStringAsync from expo-file-system (non-legacy) throws at
- * runtime in SDK 55 via errorOnLegacyMethodUse() — the error object serializes
- * as {} because it's a non-standard error thrown by the Expo shim.
- *
- * Fix: Use the SDK 55 File class (.bytes()) as Method 1.
- * Methods 2+3 are network-level fallbacks that bypass the native module.
+ * Method order: fetch+arrayBuffer FIRST (no expo dependency, most reliable),
+ * then File.bytes() (SDK 55 API, but can hang on large files — size-checked),
+ * then XHR (arraybuffer, iOS treats status=0 as local file success).
  *
  * Supabase Storage .upload() accepts: Blob | File | ArrayBuffer | string.
  * Pass bytes.buffer (ArrayBuffer) not bytes (Uint8Array) for best compatibility.
  */
 import { File } from 'expo-file-system';
+
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB — above this File.bytes() may hang
 
 /**
  * Read a local file URI as Uint8Array.
@@ -26,40 +24,50 @@ export const readFileAsBytes = async (uri: string): Promise<Uint8Array | null> =
 
   console.log('[FILE-READER] Reading:', uri.slice(-50));
 
-  // Method 1: SDK 55 File.bytes() — correct non-deprecated API
+  // Method 1: fetch() + arrayBuffer() — no expo dependency, most reliable on iOS
   try {
-    console.log('[FILE-READER] Method 1: new File(uri).bytes()...');
-    const file = new File(uri);
-    const bytes = await file.bytes();
-    if (bytes && bytes.length > 100) {
-      console.log('[FILE-READER] Method 1 ✅ bytes:', bytes.length);
-      return bytes;
-    }
-    console.warn('[FILE-READER] Method 1: result too small:', bytes?.length ?? 0);
-  } catch (err: any) {
-    console.error(
-      '[FILE-READER] Method 1 ❌:',
-      err?.message || err?.code || JSON.stringify(err) || 'unknown error',
-    );
-  }
-
-  // Method 2: fetch() + arrayBuffer()
-  // Note: fetch(file://) on iOS — arrayBuffer works where .blob() fails
-  try {
-    console.log('[FILE-READER] Method 2: fetch + arrayBuffer...');
+    console.log('[FILE-READER] Method 1: fetch + arrayBuffer...');
     const response = await fetch(uri);
     if (!response.ok) {
-      console.error('[FILE-READER] Method 2: fetch status:', response.status);
+      console.error('[FILE-READER] Method 1: fetch status:', response.status);
     } else {
       const buffer = await response.arrayBuffer();
       if (buffer.byteLength > 100) {
-        console.log('[FILE-READER] Method 2 ✅ bytes:', buffer.byteLength);
+        console.log('[FILE-READER] Method 1 ✅ bytes:', buffer.byteLength);
         return new Uint8Array(buffer);
       }
-      console.warn('[FILE-READER] Method 2: buffer too small:', buffer.byteLength);
+      console.warn('[FILE-READER] Method 1: buffer too small:', buffer.byteLength);
     }
   } catch (err: any) {
-    console.error('[FILE-READER] Method 2 ❌:', err?.message || JSON.stringify(err) || 'unknown error');
+    console.error('[FILE-READER] Method 1 ❌:', err?.message || JSON.stringify(err) || 'unknown error');
+  }
+
+  // Method 2: SDK 55 File.bytes() — correct non-deprecated API
+  // Size check first: File.bytes() may hang on large files (> 5MB audio)
+  try {
+    console.log('[FILE-READER] Method 2: new File(uri).bytes()...');
+    const file = new File(uri);
+    let shouldRead = true;
+    try {
+      const info = file.info();
+      if (info.size && info.size > MAX_FILE_SIZE_BYTES) {
+        console.warn('[FILE-READER] Method 2: file too large:', info.size, 'bytes — skipping File.bytes()');
+        shouldRead = false;
+      }
+    } catch {}
+    if (shouldRead) {
+      const bytes = await file.bytes();
+      if (bytes && bytes.length > 100) {
+        console.log('[FILE-READER] Method 2 ✅ bytes:', bytes.length);
+        return bytes;
+      }
+      console.warn('[FILE-READER] Method 2: result too small:', bytes?.length ?? 0);
+    }
+  } catch (err: any) {
+    console.error(
+      '[FILE-READER] Method 2 ❌:',
+      err?.message || err?.code || JSON.stringify(err) || 'unknown error',
+    );
   }
 
   // Method 3: XMLHttpRequest with arraybuffer responseType
