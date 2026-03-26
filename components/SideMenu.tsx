@@ -137,6 +137,8 @@ export default function SideMenu({
           <View style={styles.divider} />
 
           {/* Progress & History */}
+          <MenuItem icon="⚔️" label="Battle Pass" onPress={() => navigate('/battle-pass')} />
+          <MenuItem icon="🏆" label="Tournaments" onPress={() => navigate('/tournament')} />
           <MenuItem icon="📊" label="Statistics" onPress={() => navigate('/stats')} />
           <MenuItem icon="📜" label="Hand History" onPress={() => navigate('/hand-history')} />
           <MenuItem icon="🎓" label="Coaching" onPress={() => navigate('/coaching')} />

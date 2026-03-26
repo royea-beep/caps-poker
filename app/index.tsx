@@ -51,6 +51,12 @@ import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { HOME_THEMES } from '../constants/homeThemes';
 import { migrateGuestToUser } from '../utils/guestMigration';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { useBattlePassStore } from '../stores/battlePassStore';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { getProgressToNextTier } from '../utils/battlePass';
+// @ts-ignore — parallel agent file, exists at deploy time
+import XPBar from '../components/XPBar';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -665,6 +671,36 @@ export default function HomeScreen() {
         {/* Balance */}
         <ChipsDisplay amount={chips} label="Balance" size="large" />
 
+        {/* Battle Pass XP bar — compact, tappable */}
+        {(() => {
+          let bpCurrentXP = 0;
+          let bpCurrentTier = 1;
+          let bpProgress = 0;
+          let bpXpInTier = 0;
+          let bpXpNeeded = 100;
+          try {
+            const bpSnap = useBattlePassStore();
+            bpCurrentXP = bpSnap.currentXP;
+            bpCurrentTier = bpSnap.currentTier;
+            const prog = getProgressToNextTier(bpCurrentXP);
+            bpProgress = prog.progress;
+            bpXpInTier = prog.xpInTier;
+            bpXpNeeded = prog.xpNeeded;
+          } catch { return null; }
+          return (
+            <Pressable onPress={() => router.push('/battle-pass' as any)} style={styles.xpBarTouchable}>
+              <XPBar
+                currentXP={bpCurrentXP}
+                currentTier={bpCurrentTier}
+                progress={bpProgress}
+                xpInTier={bpXpInTier}
+                xpNeeded={bpXpNeeded}
+                compact
+              />
+            </Pressable>
+          );
+        })()}
+
         {/* Daily reward — one motivational element at bottom */}
         {canClaim && (
           <Pressable onPress={handleClaimDailyReward} style={styles.dailyPill}>
@@ -870,5 +906,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     color: 'rgba(255,255,255,0.15)',
     fontSize: rf(10),
+  },
+
+  // Battle Pass XP bar touchable wrapper
+  xpBarTouchable: {
+    width: '100%',
   },
 });
