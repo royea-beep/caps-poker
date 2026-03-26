@@ -1,9 +1,23 @@
+/**
+ * HomeScreen — Clean Lobby (S83)
+ * Single PLAY button center stage. Everything else in SideMenu (hamburger).
+ * Design principle: a 10-year-old knows what to do — press the big green button.
+ */
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, Image, StyleSheet, Platform, Alert, Pressable, ViewStyle, useWindowDimensions, ScrollView } from 'react-native';
+import {
+  Animated as AnimatedRN,
+  Image,
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  Alert,
+  Pressable,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
-import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -16,11 +30,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import CardComponent from '../components/Card';
 import ChipsDisplay from '../components/ChipsDisplay';
-import { Button } from '../components/Button';
+import SideMenu from '../components/SideMenu';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount, Card } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
-import { HOME_THEMES, HomeTheme, ButtonStyle } from '../constants/homeThemes';
 import {
   getMatchCost,
   canAffordMatch,
@@ -34,9 +47,9 @@ import { CapsHooks } from '../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
-import ProQuoteBanner from '../components/ProQuoteBanner';
-import { rf, rs, rb, rv, UI } from '../utils/responsive';
+import { rf, rs, rv } from '../utils/responsive';
 import { t } from '../utils/i18n';
+import { HOME_THEMES } from '../constants/homeThemes';
 
 const isWeb = Platform.OS === 'web';
 
@@ -64,31 +77,14 @@ function FloatingParticle({ x, suit, size, opacity, dur, delay, screenW, screenH
   screenW: number; screenH: number;
 }) {
   const translateY = useSharedValue(screenH + 50);
-
   useEffect(() => {
-    translateY.value = withDelay(
-      delay,
-      withRepeat(withTiming(-80, { duration: dur }), 50, false),
-    );
+    translateY.value = withDelay(delay, withRepeat(withTiming(-80, { duration: dur }), 50, false));
     return () => { cancelAnimation(translateY); };
   }, []);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   return (
     <Animated.Text
-      style={[
-        {
-          position: 'absolute',
-          left: Math.floor(x * screenW),
-          fontSize: size,
-          color: '#c9a84c',
-          opacity,
-        },
-        animStyle,
-      ]}
+      style={[{ position: 'absolute', left: Math.floor(x * screenW), fontSize: size, color: '#c9a84c', opacity }, animStyle]}
       pointerEvents="none"
     >
       {suit}
@@ -109,26 +105,14 @@ const FAN_TRANSLATE_Y = [10, 4, 0, 4, 10];
 
 function HeroCardFan() {
   const breatheScale = useSharedValue(1);
-
   useEffect(() => {
     breatheScale.value = withRepeat(
-      withSequence(
-        withTiming(1.025, { duration: 2200 }),
-        withTiming(1.0,   { duration: 2200 }),
-      ),
-      100,
-      false,
+      withSequence(withTiming(1.025, { duration: 2200 }), withTiming(1.0, { duration: 2200 })),
+      100, false,
     );
     return () => { cancelAnimation(breatheScale); };
   }, []);
-
-  const breatheStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: breatheScale.value }],
-  }));
-
-  const CARD_W = 38;
-  const CARD_H = 53;
-
+  const breatheStyle = useAnimatedStyle(() => ({ transform: [{ scale: breatheScale.value }] }));
   return (
     <Animated.View style={[{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10, marginBottom: 2 }, breatheStyle]}>
       {FAN_CARDS.map((card, i) => (
@@ -136,14 +120,11 @@ function HeroCardFan() {
           key={card.id}
           style={{
             marginLeft: i === 0 ? 0 : -16,
-            transform: [
-              { rotate: `${FAN_ROTATIONS[i]}deg` },
-              { translateY: FAN_TRANSLATE_Y[i] },
-            ],
+            transform: [{ rotate: `${FAN_ROTATIONS[i]}deg` }, { translateY: FAN_TRANSLATE_Y[i] }],
             zIndex: i === 2 ? 5 : i < 2 ? i + 1 : 5 - i,
           }}
         >
-          <CardComponent card={card} cardWidth={CARD_W} cardHeight={CARD_H} />
+          <CardComponent card={card} cardWidth={38} cardHeight={53} />
         </View>
       ))}
     </Animated.View>
@@ -164,247 +145,50 @@ const TAGLINES = [
 ];
 let taglineMountCount = 0;
 
-const DISPLAY_FONT = Platform.select({
-  web: 'Playfair Display, Georgia, serif',
-  default: undefined,
-});
-
-// ─── Floating shadow helpers ──────────────────────────────────────────────────
-function primShadow(accent: string): ViewStyle {
-  if (Platform.OS === 'web') {
-    return { boxShadow: `0 10px 40px ${accent}60, 0 2px 8px rgba(0,0,0,0.4)` } as ViewStyle;
-  }
-  if (Platform.OS === 'android') return { elevation: 16 };
-  return {
-    shadowColor: accent,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-  };
-}
-
-function secShadow(): ViewStyle {
-  if (Platform.OS === 'web') {
-    return { boxShadow: '0 4px 16px rgba(0,0,0,0.3)' } as ViewStyle;
-  }
-  if (Platform.OS === 'android') return { elevation: 6 };
-  return {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-  };
-}
-
-// ─── Themed button — used for primary + secondary CTAs on home screen ────────
-interface HomeBtnProps {
-  title: string;
-  onPress: () => void;
-  isPrimary?: boolean;
-  disabled?: boolean;
-  style?: ViewStyle;
-  theme: HomeTheme;
-  btnHeight?: number;
-  btnFontSize?: number;
-}
-
-function getHomeBtnColors(
-  isPrimary: boolean,
-  t: HomeTheme,
-  btnStyle: ButtonStyle,
-): { bg: string; borderColor: string; borderWidth: number; textColor: string } {
-  switch (btnStyle) {
-    case 'glass':
-      return {
-        bg: isPrimary ? t.accent + '30' : t.accent + '14',
-        borderColor: t.accent,
-        borderWidth: 1.5,
-        textColor: t.accent,
-      };
-    case 'outline':
-      return {
-        bg: 'transparent',
-        borderColor: t.accent,
-        borderWidth: 1.5,
-        textColor: t.accent,
-      };
-    case 'solid':
-    default:
-      return {
-        bg: isPrimary ? t.buttonPrimary : 'rgba(255,255,255,0.05)',
-        borderColor: isPrimary ? t.buttonPrimary : t.accent + '60',
-        borderWidth: isPrimary ? 0 : 1,
-        textColor: isPrimary ? t.buttonPrimaryText : t.buttonSecondaryText,
-      };
-  }
-}
-
-function HomeBtn({ title, onPress, isPrimary = false, disabled = false, style, theme: t, btnHeight, btnFontSize }: HomeBtnProps) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-  const glowOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    if (isPrimary && !disabled) {
-      glowOpacity.value = withDelay(
-        1200,
-        withRepeat(
-          withSequence(
-            withTiming(0.7, { duration: 1400 }),
-            withTiming(0.1, { duration: 1400 }),
-          ),
-          100,
-          false,
-        ),
-      );
-    }
-    return () => { cancelAnimation(glowOpacity); };
-  }, [isPrimary, disabled]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-  const btnStyle = useGameStore((s) => s.buttonStyle);
-  const colors = getHomeBtnColors(isPrimary, t, btnStyle);
-  const h = btnHeight ?? 50;
-  const fs = btnFontSize ?? (isPrimary ? 16 : 15);
-  const paddingV = isPrimary ? 16 : Math.max(8, (h - fs * 1.4) / 2);
-  const borderR = isPrimary ? 18 : 14;
-  const webGlass = isWeb && btnStyle === 'glass'
-    ? ({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } as any)
-    : {};
-  const shadow = isPrimary ? primShadow(t.accent) : secShadow();
-
-  return (
-    <Animated.View style={[{ width: '100%' }, animStyle, style]}>
-      <Pressable
-        onPress={onPress}
-        disabled={disabled}
-        onPressIn={() => {
-          scale.value = withTiming(0.96, { duration: 80 });
-          opacity.value = withTiming(0.9, { duration: 80 });
-        }}
-        onPressOut={() => {
-          scale.value = withTiming(1.0, { duration: 150 });
-          opacity.value = withTiming(1.0, { duration: 150 });
-        }}
-        style={[
-          homeBtnBase,
-          {
-            backgroundColor: colors.bg,
-            borderColor: colors.borderColor,
-            borderWidth: colors.borderWidth,
-            borderRadius: borderR,
-            minHeight: h,
-            paddingVertical: paddingV,
-          },
-          webGlass,
-          shadow,
-          disabled && { opacity: 0.5 },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={title}
-      >
-        {isPrimary && (
-          <View style={styles.btnHighlight} pointerEvents="none" />
-        )}
-        {isPrimary && !disabled && (
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFillObject,
-              { borderRadius: 18, backgroundColor: colors.borderColor },
-              glowStyle,
-            ]}
-          />
-        )}
-        <Text
-          style={{
-            color: colors.textColor,
-            fontSize: fs,
-            fontWeight: '800',
-            letterSpacing: 2,
-          }}
-        >
-          {title}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-const homeBtnBase: ViewStyle = {
-  width: '100%',
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingHorizontal: 24,
-  borderRadius: 16,
-  overflow: 'hidden',
-};
+const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
 
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
   const { height: screenH, width: screenW } = useWindowDimensions();
-  const isMobileWeb = Platform.OS === 'web' && screenW < 500;
-  const titleFontSize = isMobileWeb
-    ? Math.min(36, Math.floor(screenW * 0.09))
-    : Math.min(42, Math.floor(screenW * 0.105));
-  const btnHeight = isMobileWeb
-    ? Math.min(42, screenH * 0.055)
-    : Math.min(46, screenH * 0.06);
-  const btnFontSize = isMobileWeb
-    ? Math.min(13, screenH * 0.017)
-    : Math.min(14, screenH * 0.019);
-  const btnGap = Math.min(8, screenH * 0.011);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
-  const handsPlayed = useGameStore((s) => s.handsPlayed);
-  const handsWon = useGameStore((s) => s.handsWon);
-  const biggestWin = useGameStore((s) => s.biggestWin);
-  const sessionStartChips = useGameStore((s) => s.sessionStartChips);
   const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
   const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
   const homeThemeId = useGameStore((s) => s.homeTheme);
   const theme = HOME_THEMES[homeThemeId];
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
 
   const user = useAuthUser();
   const [signingIn, setSigningIn] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  const sessionNet = chips - sessionStartChips;
 
-  // Rotating tagline — different one each mount, cycles through all 10
+  // Rotating tagline — cycles through all 10
   const [tagline] = useState<string>(() => {
     const idx = taglineMountCount % TAGLINES.length;
     taglineMountCount++;
     return TAGLINES[idx];
   });
   const taglineOpacity = useSharedValue(0);
-  useEffect(() => {
-    taglineOpacity.value = withTiming(1, { duration: 800 });
-  }, []);
+  useEffect(() => { taglineOpacity.value = withTiming(1, { duration: 800 }); }, []);
   const taglineAnimStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
 
+  // PLAY button scale — RN Animated (not Reanimated)
+  const playScale = useRef(new AnimatedRN.Value(1)).current;
+
   useEffect(() => {
-    setCurrentScreen('Home')
+    setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
       if (!val) setShowTutorial(true);
     }).catch(() => {});
   }, []);
 
-  // Auto-save display name to store when user signs in
   useEffect(() => {
     if (user?.user_metadata?.full_name) {
-      useGameStore.getState().setPlayerName(
-        String(user.user_metadata.full_name).slice(0, 20)
-      );
+      useGameStore.getState().setPlayerName(String(user.user_metadata.full_name).slice(0, 20));
     }
   }, [user?.id]);
 
@@ -416,7 +200,7 @@ export default function HomeScreen() {
         return;
       }
     }
-    trackAction('play_pressed')
+    trackAction('play_pressed');
     router.push('/game' as any);
   }, [chips, config, router]);
 
@@ -437,47 +221,28 @@ export default function HomeScreen() {
     Alert.alert('Daily Reward!', `+${reward} chips${nextStreak > 1 ? ` (${nextStreak}-day streak!)` : ''}`);
   }, [lastDailyRewardClaim, dailyRewardStreak]);
 
-  const handleFreeRefill = useCallback(() => {
-    const now = new Date();
-    if (!canUseFreeRefill(lastFreeRefill, now)) {
-      Alert.alert('Refill Cooldown', 'You can refill again later.');
-      return;
-    }
-    const amount = getFreeRefillAmount();
-    const store = useGameStore.getState();
-    store.addChips(amount);
-    store.trackChipsEarned(amount);
-    store.setLastFreeRefill(now.toISOString());
-    Alert.alert('Free Refill!', `+${amount} chips added.`);
-  }, [lastFreeRefill]);
-
   const handleGoogleSignIn = useCallback(async () => {
     setSigningIn(true);
-    setAuthError(null);
     const { error } = await signInWithGoogle();
     setSigningIn(false);
-    if (error) {
-      setAuthError(error.message);
-    }
+    if (error) Alert.alert('Sign In Failed', error.message);
   }, []);
 
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
-  const canRefill = ECONOMY_FLAGS.freeRefillEnabled && canUseFreeRefill(lastFreeRefill);
 
-  // Web title gradient only for dark_gold
-  const webTitleGradient =
-    isWeb && homeThemeId === 'dark_gold'
-      ? ({
-          background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        } as any)
-      : {};
+  const titleFontSize = Math.min(42, Math.floor(screenW * 0.105));
+
+  // Web title gradient for dark_gold theme
+  const webTitleGradient = isWeb && homeThemeId === 'dark_gold'
+    ? ({ background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as any)
+    : {};
+
+  const playBtnWidth = Math.round(screenW * 0.70);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       <FriendsBg />
+
       {/* Floating suit particles — decorative background */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         {PARTICLE_CONFIG.map((p, i) => (
@@ -486,16 +251,46 @@ export default function HomeScreen() {
       </View>
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
+
+      {/* Tutorial overlay */}
       {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
 
-      <ScrollView
-        style={styles.contentScroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      {/* Side menu — always rendered, pointer-events controlled by visible */}
+      <SideMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onShowTutorial={() => { setMenuOpen(false); setShowTutorial(true); }}
+        chips={chips}
+        user={user}
+        onSignIn={handleGoogleSignIn}
+        onSignOut={signOut}
+      />
 
-        {/* ── Title section ── */}
+      {/* Top bar — hamburger + avatar */}
+      <View style={styles.topBar}>
+        <Pressable onPress={() => setMenuOpen(true)} style={styles.hamburgerBtn} hitSlop={12}>
+          <Text style={[styles.hamburgerText, { color: theme.accent }]}>☰</Text>
+        </Pressable>
+        <View style={styles.topBarRight}>
+          {user?.user_metadata?.avatar_url ? (
+            <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+              <Image
+                source={{ uri: String(user.user_metadata.avatar_url) }}
+                style={styles.topAvatar}
+              />
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+              <Text style={[styles.topAvatarEmoji, { color: theme.accent }]}>{playerAvatar}</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      {/* Center content */}
+      <View style={styles.content}>
+
+        {/* Title section */}
         <View style={styles.titleSection}>
           <Text style={[styles.suitSymbols, { color: theme.accent }]}>
             {'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}
@@ -512,9 +307,7 @@ export default function HomeScreen() {
           >
             CAPS
           </Text>
-          <Text style={[styles.titlePoker, { color: theme.subtitleColor }]}>
-            POKER
-          </Text>
+          <Text style={[styles.titlePoker, { color: theme.subtitleColor }]}>POKER</Text>
           <HeroCardFan />
           <Animated.Text
             style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
@@ -526,156 +319,49 @@ export default function HomeScreen() {
           <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
         </View>
 
-        {/* ── Balance ── */}
-        <ChipsDisplay amount={chips} label="Your Balance" size="large" />
+        {/* PLAY button — always green, center stage */}
+        <View style={styles.playSection}>
+          <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
+            <Pressable
+              onPress={handleNewHand}
+              onPressIn={() =>
+                AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
+              }
+              onPressOut={() =>
+                AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
+              }
+              style={[styles.playBtn, { width: playBtnWidth }]}
+              accessibilityRole="button"
+              accessibilityLabel="Play"
+            >
+              <View style={styles.playBtnHighlight} pointerEvents="none" />
+              <Text style={styles.playBtnText}>PLAY</Text>
+            </Pressable>
+          </AnimatedRN.View>
 
-        {/* ── Stats ── */}
-        <View style={styles.statsSection}>
-          <View style={[styles.statsGrid, isMobileWeb && { paddingVertical: 6 }]}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>{handsPlayed}</Text>
-              <Text style={styles.statLabel}>Played</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>{handsWon}</Text>
-              <Text style={styles.statLabel}>Won</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>
-                {handsPlayed > 0 ? Math.round((handsWon / handsPlayed) * 100) : 0}%
-              </Text>
-              <Text style={styles.statLabel}>Win Rate</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.accent }, isMobileWeb && { fontSize: 15 }]}>{biggestWin}</Text>
-              <Text style={styles.statLabel}>Best Win</Text>
-            </View>
-          </View>
-          <Text style={[styles.sessionText, { color: sessionNet >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
-            Session: {sessionNet >= 0 ? '+' : ''}{sessionNet}
-          </Text>
-        </View>
-
-        {/* ── Daily reward ── */}
-        {ECONOMY_FLAGS.dailyRewardEnabled && (
-          <HomeBtn
-            title={canClaim ? 'CLAIM DAILY REWARD' : 'REWARD CLAIMED'}
-            theme={theme}
-            isPrimary={canClaim}
-            disabled={!canClaim}
-            onPress={handleClaimDailyReward}
-          />
-        )}
-
-        {/* ── Pro quote ── */}
-        <ProQuoteBanner context="home" rotating rotateInterval={8000} />
-
-        {/* ── Action buttons ── */}
-        <View style={[styles.buttonSection, { gap: btnGap }]}>
-          <HomeBtn title={t().newHand} theme={theme} isPrimary onPress={handleNewHand} btnHeight={btnHeight} btnFontSize={btnFontSize} />
-          {/* S52: board count subtitle — Brunson fix */}
-          <Text style={{ color: COLORS.textDim ?? '#888', fontSize: rf(13), textAlign: 'center', marginTop: -rs(4) }}>
+          {/* Board config hint — small, below button */}
+          <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
             {t().boardsPlayers(getBoardCount(config.numberOfPlayers), config.numberOfPlayers)}
           </Text>
-
-          {/* ── Google sign-in / signed-in row ── */}
-          {!user ? (
-            <View>
-              <Pressable
-                style={[styles.googleBtn, signingIn && styles.googleBtnLoading, { minHeight: btnHeight }]}
-                onPress={handleGoogleSignIn}
-                disabled={signingIn}
-              >
-                <Text style={[styles.googleBtnText, { fontSize: btnFontSize }]}>
-                  {signingIn ? 'Signing in...' : '🔵  Continue with Google'}
-                </Text>
-              </Pressable>
-              {authError !== null && (
-                <Text style={styles.authError}>{authError}</Text>
-              )}
-            </View>
-          ) : (
-            <View style={styles.signedInRow}>
-              {user.user_metadata?.avatar_url ? (
-                <Image
-                  source={{ uri: String(user.user_metadata.avatar_url) }}
-                  style={styles.avatar}
-                />
-              ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: theme.accent }]}>
-                  <Text style={styles.avatarInitial}>
-                    {String(user.user_metadata?.full_name ?? user.email ?? '?').charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              <Text style={[styles.signedInName, { color: theme.subtitleColor }]} numberOfLines={1}>
-                {String(user.user_metadata?.full_name ?? user.email ?? 'Signed in')}
-              </Text>
-              <Pressable onPress={signOut} hitSlop={8}>
-                <Text style={[styles.signOutText, { color: theme.accent }]}>Sign out</Text>
-              </Pressable>
-            </View>
-          )}
-
-          <HomeBtn title="TOURNAMENT" theme={theme} onPress={() => router.push('/tournament' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
-          <HomeBtn title="PLAY ONLINE" theme={theme} onPress={() => router.push('/lobby/internet-host' as any)} btnHeight={btnHeight} btnFontSize={btnFontSize} />
-          <View style={[styles.rowPair, { gap: btnGap }]}>
-            <HomeBtn title="HOST GAME" theme={theme} style={{ flex: 1, width: undefined }} onPress={() => router.push('/lobby/host' as any)} btnHeight={btnHeight} btnFontSize={Math.min(14, btnFontSize ?? 14)} />
-            <HomeBtn title="JOIN GAME" theme={theme} style={{ flex: 1, width: undefined }} onPress={() => router.push('/lobby/join' as any)} btnHeight={btnHeight} btnFontSize={Math.min(14, btnFontSize ?? 14)} />
-          </View>
-          <View style={styles.linkRow}>
-            <Pressable onPress={() => router.push('/leaderboard' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>LEADERBOARD</Text>
-            </Pressable>
-            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => router.push('/hand-history' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{t().history}</Text>
-            </Pressable>
-            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => router.push('/stats' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{t().stats}</Text>
-            </Pressable>
-            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => setShowTutorial(true)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>📖 {t().tutorial}</Text>
-            </Pressable>
-            <Text style={[styles.linkDot, { color: theme.accent + '40' }]}>·</Text>
-            <Pressable onPress={() => router.push('/settings' as any)} hitSlop={8} style={styles.linkItem}>
-              <Text style={[styles.linkText, { color: theme.accent + '80' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t().settings}</Text>
-            </Pressable>
-          </View>
         </View>
 
-        {/* ── Refill / Reset ── */}
-        {ECONOMY_FLAGS.freeRefillEnabled ? (
-          <Button
-            title={canRefill ? 'FREE REFILL' : 'REFILL USED'}
-            variant={canRefill ? 'secondary' : 'ghost'}
-            disabled={!canRefill}
-            onPress={handleFreeRefill}
-          />
-        ) : (
-          <Button
-            title="Reset Chips"
-            variant="ghost"
-            onPress={() => useGameStore.getState().setChips(useGameStore.getState().config.startingChips)}
-          />
+        {/* Balance */}
+        <ChipsDisplay amount={chips} label="Balance" size="large" />
+
+        {/* Daily reward — one motivational element at bottom */}
+        {canClaim && (
+          <Pressable onPress={handleClaimDailyReward} style={styles.dailyPill}>
+            <Text style={styles.dailyPillText}>🎁 Claim Daily Reward</Text>
+          </Pressable>
         )}
 
-        {__DEV__ && (
-          <Button title="SIMULATE" variant="ghost" onPress={() => router.push('/simulate' as any)} />
-        )}
+      </View>
 
-        {__DEV__ && (
-          <Text style={styles.debugInfo}>
-            theme: {homeThemeId} · btn: {useGameStore.getState().buttonStyle} · {Math.round(screenW)}×{Math.round(screenH)}
-          </Text>
-        )}
-      </ScrollView>
-
+      {__DEV__ && (
+        <Text style={styles.debugInfo}>
+          {homeThemeId} · {Math.round(screenW)}×{Math.round(screenH)}
+        </Text>
+      )}
     </SafeAreaView>
   );
 }
@@ -686,25 +372,17 @@ const styles = StyleSheet.create({
   },
   gradientOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     zIndex: 0,
     pointerEvents: 'none',
     ...Platform.select({
-      web: {
-        backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.25) 100%)',
-      } as any,
+      web: { backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.25) 100%)' } as any,
       default: {},
     }),
   },
   grainOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     zIndex: 0,
     pointerEvents: 'none',
     ...Platform.select({
@@ -715,16 +393,50 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  contentScroll: {
-    flex: 1,
-    zIndex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
+
+  // Top bar
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: rs(16),
-    gap: rs(10),
+    justifyContent: 'space-between',
+    paddingHorizontal: rs(16),
+    paddingTop: rs(8),
+    paddingBottom: rs(4),
+    zIndex: 10,
+  },
+  hamburgerBtn: {
+    padding: rs(4),
+  },
+  hamburgerText: {
+    fontSize: rf(26),
+    fontWeight: '400',
+    lineHeight: rf(30),
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(8),
+  },
+  topAvatar: {
+    width: rv(34),
+    height: rv(34),
+    borderRadius: rv(17),
+    borderWidth: 1.5,
+    borderColor: 'rgba(201,168,76,0.4)',
+  },
+  topAvatarEmoji: {
+    fontSize: rf(24),
+    lineHeight: rf(30),
+  },
+
+  // Main content — centered vertically
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: rs(20),
+    gap: rs(16),
+    zIndex: 1,
   },
 
   // Title
@@ -768,174 +480,70 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
 
-  // Stats
-  statsSection: {
+  // PLAY button
+  playSection: {
     alignItems: 'center',
     gap: rs(8),
-    width: '100%',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: rv(12),
-    paddingVertical: rs(8),
-    paddingHorizontal: rs(8),
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    ...Platform.select({
-      web: { boxShadow: '0 8px 32px rgba(0,0,0,0.6)' } as any,
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 12 },
-      android: { elevation: 8 },
-    }),
-  },
-  statItem: {
-    alignItems: 'center',
-    gap: rs(4),
-    flex: 1,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  statValue: {
-    fontSize: rf(18),
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: COLORS.textMuted,
-    fontSize: rf(10),
-    fontWeight: '600',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  sessionText: {
-    fontSize: rf(13),
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-
-  // Buttons
-  buttonSection: {
-    width: '100%',
-    gap: rs(8),
-  },
-  rowPair: {
-    flexDirection: 'row',
-    width: '100%',
-  },
-  linkRow: {
-    flexDirection: 'row',
+  playBtn: {
+    minHeight: rv(70),
+    backgroundColor: '#22C55E',
+    borderRadius: rv(16),
     alignItems: 'center',
     justifyContent: 'center',
-    gap: rs(6),
-    paddingVertical: rs(4),
+    paddingVertical: rs(18),
+    paddingHorizontal: rs(32),
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0 8px 32px rgba(34,197,94,0.4), 0 2px 8px rgba(0,0,0,0.3)' } as any,
+      ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 20 },
+      android: { elevation: 12 },
+    }),
   },
-  linkItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  linkText: {
-    fontSize: rf(11),
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textAlign: 'center',
-  },
-  linkDot: {
-    fontSize: rf(14),
-    fontWeight: '400',
-  },
-  btnHighlight: {
+  playBtnHighlight: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 0, left: 0, right: 0,
     height: '50%' as any,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.14)',
     borderTopLeftRadius: rv(16),
     borderTopRightRadius: rv(16),
   },
-  // Google sign-in button
-  googleBtn: {
-    width: '100%',
-    backgroundColor: '#ffffff',
-    borderRadius: rv(12),
-    paddingVertical: rs(14),
-    paddingHorizontal: rs(20),
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-    ...Platform.select({
-      web: { boxShadow: '0 2px 12px rgba(0,0,0,0.25)' } as any,
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 6 },
-      android: { elevation: 4 },
-    }),
+  playBtnText: {
+    color: '#ffffff',
+    fontSize: rf(28),
+    fontWeight: '900',
+    letterSpacing: 6,
   },
-  googleBtnLoading: {
-    opacity: 0.6,
-  },
-  googleBtnText: {
-    color: '#1f1f1f',
-    fontSize: rf(15),
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  authError: {
-    color: COLORS.neonRed,
-    fontSize: rf(11),
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: rs(4),
-  },
-
-  // Signed-in row
-  signedInRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(8),
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: rv(12),
-    paddingVertical: rs(10),
-    paddingHorizontal: rs(14),
-    width: '100%',
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-  },
-  avatarPlaceholder: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    color: '#000',
-    fontSize: rf(13),
-    fontWeight: '800',
-  },
-  signedInName: {
-    flex: 1,
+  playSubtext: {
     fontSize: rf(12),
     fontWeight: '500',
-  },
-  signOutText: {
-    fontSize: rf(12),
-    fontWeight: '700',
     letterSpacing: 0.5,
-  },
-  debugInfo: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: rf(10),
-    fontWeight: '400',
+    opacity: 0.55,
     textAlign: 'center',
-    letterSpacing: 0.5,
-    marginTop: rs(4),
   },
 
+  // Daily reward pill
+  dailyPill: {
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
+    borderRadius: rv(24),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(22),
+  },
+  dailyPillText: {
+    color: '#e8c96a',
+    fontSize: rf(14),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+
+  debugInfo: {
+    position: 'absolute',
+    bottom: rs(8),
+    alignSelf: 'center',
+    color: 'rgba(255,255,255,0.15)',
+    fontSize: rf(10),
+  },
 });
