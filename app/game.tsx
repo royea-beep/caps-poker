@@ -38,12 +38,24 @@ import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rv } from '../utils/responsive';
-import { t } from '../utils/i18n';
+import { t, getLanguage } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
+import GuidedTooltip from '../components/GuidedTooltip';
 import { TimerController, TimerBar } from '../components/TimerController';
 import { BoardArrangement } from '../components/BoardArrangement';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
+const GUIDED_FORCED_KEY = 'guidedModeForced';
+
+// Tooltip text — inline EN/HE
+const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
+const TIPS = [
+  () => TIP('These are your cards. Place 4 on each board.', 'אלה הקלפים שלך. תשים 4 על כל בורד.'),
+  () => TIP('Tap a card, then tap an empty slot.', 'לחץ על קלף, ואז על מקום ריק.'),
+  () => TIP('Nice! 3 more cards on this board.', 'מעולה! עוד 3 קלפים על הבורד הזה.'),
+  () => TIP('Hand strength shown here. Better hands win more!', 'זה מראה כמה חזקה היד שלך.'),
+  () => TIP('All set! Tap READY to reveal.', 'מוכן! לחץ READY לחשיפה.'),
+];
 
 // Log crash steps to Supabase so we know which step ran last before native kill
 async function logStep(step: string, extra?: string) {
@@ -135,6 +147,9 @@ function GameScreenInner() {
   const isWeb = Platform.OS === 'web';
 
   const [gamesPlayed, setGamesPlayed] = useState(99); // default high so hint is hidden until loaded
+  const [isFirstGame, setIsFirstGame] = useState(false);
+  const [tooltipStep, setTooltipStep] = useState(0); // 0 = none shown yet, 1-5 = current tip index
+  const [tooltipVisible, setTooltipVisible] = useState(false);
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -191,6 +206,54 @@ function GameScreenInner() {
   useEffect(() => { boardsRef.current = boards; }, [boards]); // no cleanup needed — sync ref update
 
   const isArranging = phase.type === 'arranging' && !playerReady;
+
+  // ── Guided first game tooltips ─────────────────────────────────────────────
+  const advanceTooltip = useCallback(() => {
+    setTooltipVisible(false);
+    // Tip 2 auto-shows 300ms after tip 1 dismissed — handled by step watcher below
+  }, []);
+
+  // Tip 1 — cards dealt (step 0 → 1)
+  useEffect(() => {
+    if (!isFirstGame || tooltipStep !== 0 || playerHand.length === 0) return;
+    const id = setTimeout(() => { setTooltipStep(1); setTooltipVisible(true); }, 500);
+    return () => clearTimeout(id);
+  }, [isFirstGame, tooltipStep, playerHand.length]);
+
+  // Tip 2 — auto after tip 1 dismissed (step 1 → 2, tooltipVisible just became false)
+  useEffect(() => {
+    if (!isFirstGame || tooltipStep !== 1 || tooltipVisible) return;
+    const id = setTimeout(() => { setTooltipStep(2); setTooltipVisible(true); }, 300);
+    return () => clearTimeout(id);
+  }, [isFirstGame, tooltipStep, tooltipVisible]);
+
+  // Tip 3 — first card placed (step 2 → 3)
+  useEffect(() => {
+    if (!isFirstGame || tooltipStep !== 2) return;
+    const anyCardPlaced = boards.some((b) => b.playerCards.length >= 1);
+    if (!anyCardPlaced) return;
+    const id = setTimeout(() => { setTooltipStep(3); setTooltipVisible(true); }, 200);
+    return () => clearTimeout(id);
+  }, [isFirstGame, tooltipStep, boards]);
+
+  // Tip 4 — first board full (step 3 → 4)
+  useEffect(() => {
+    if (!isFirstGame || tooltipStep !== 3) return;
+    const hasFullBoard = boards.some((b) => b.playerCards.length === CARDS_PER_BOARD);
+    if (!hasFullBoard) return;
+    const id = setTimeout(() => { setTooltipStep(4); setTooltipVisible(true); }, 500);
+    return () => clearTimeout(id);
+  }, [isFirstGame, tooltipStep, boards]);
+
+  // Tip 5 — all boards full (step 4 → 5)
+  useEffect(() => {
+    if (!isFirstGame || tooltipStep !== 4) return;
+    const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
+    if (!allFull) return;
+    const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 500);
+    return () => clearTimeout(id);
+  }, [isFirstGame, tooltipStep, boards]);
+  // ── End guided tooltips ────────────────────────────────────────────────────
 
   // Start 30s countdown
   const startCountdown = useCallback((finisherName: string) => {
@@ -305,11 +368,21 @@ function GameScreenInner() {
     };
   }, []);
 
-  // Load games-played counter for first-time hints
+  // Load games-played counter + guided mode flag
   // no cleanup needed — one-time AsyncStorage read, promise resolves after unmount harmlessly
   useEffect(() => {
-    AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
-      setGamesPlayed(parseInt(val ?? '0', 10));
+    Promise.all([
+      AsyncStorage.getItem(GAMES_PLAYED_KEY),
+      AsyncStorage.getItem(GUIDED_FORCED_KEY),
+    ]).then(([gamesVal, guidedVal]) => {
+      const played = parseInt(gamesVal ?? '0', 10);
+      setGamesPlayed(played);
+      const guided = played === 0 || guidedVal === 'true';
+      setIsFirstGame(guided);
+      if (guided && guidedVal === 'true') {
+        // Clear forced flag — won't fire again unless Tutorial replayed
+        AsyncStorage.removeItem(GUIDED_FORCED_KEY).catch(() => {});
+      }
     }).catch(() => {});
   }, []);
 
@@ -1006,7 +1079,22 @@ function GameScreenInner() {
       />
       </Animated.View>
       {showSafeReveal && (
-        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} revealSpeed={config.revealSpeed} />
+        <BoardReveal
+          boards={pendingRevealBoards}
+          onDone={onRevealDone}
+          revealSpeed={config.revealSpeed}
+          isFirstGame={isFirstGame}
+        />
+      )}
+
+      {/* Guided first-game tooltips (tips 1–5) — non-blocking */}
+      {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 5 && (
+        <GuidedTooltip
+          text={TIPS[tooltipStep - 1]?.() ?? ''}
+          visible={tooltipVisible}
+          onDismiss={advanceTooltip}
+          position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'top' : 'bottom'}
+        />
       )}
     </SafeAreaView>
   );

@@ -48,8 +48,11 @@ import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import { rf, rs, rv } from '../utils/responsive';
-import { t } from '../utils/i18n';
+import { t, getLanguage } from '../utils/i18n';
 import { HOME_THEMES } from '../constants/homeThemes';
+
+export const GAMES_PLAYED_KEY = 'caps_games_played';
+export const GUIDED_FORCED_KEY = 'guidedModeForced';
 
 const isWeb = Platform.OS === 'web';
 
@@ -147,6 +150,114 @@ let taglineMountCount = 0;
 
 const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
 
+// ─── Welcome modal — shown before first game / tutorial replay ─────────────────
+function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
+  const isHE = getLanguage() === 'he';
+  const opacity = useRef(new AnimatedRN.Value(0)).current;
+  useEffect(() => {
+    AnimatedRN.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  }, []);
+  return (
+    <AnimatedRN.View style={[welcomeStyles.overlay, { opacity }]}>
+      <Pressable style={StyleSheet.absoluteFillObject} onPress={onSkip} />
+      <View style={welcomeStyles.card}>
+        <Text style={welcomeStyles.title}>🃏 CAPS POKER</Text>
+        {isHE ? (
+          <>
+            <Text style={welcomeStyles.line}>פוקר מסוג חדש.</Text>
+            <Text style={welcomeStyles.line}>אתה מקבל קלפים.</Text>
+            <Text style={welcomeStyles.line}>שים אותם על הבורדים.</Text>
+            <Text style={welcomeStyles.line}>היד הכי טובה מנצחת.</Text>
+            <Text style={welcomeStyles.sub}>אל תדאג — נלווה אותך במשחק הראשון!</Text>
+          </>
+        ) : (
+          <>
+            <Text style={welcomeStyles.line}>A new kind of poker.</Text>
+            <Text style={welcomeStyles.line}>You get cards.</Text>
+            <Text style={welcomeStyles.line}>Place them on boards.</Text>
+            <Text style={welcomeStyles.line}>Best hand wins each board.</Text>
+            <Text style={welcomeStyles.sub}>{"Don't worry — we'll guide you through your first game!"}</Text>
+          </>
+        )}
+        <Pressable onPress={onStart} style={welcomeStyles.startBtn}>
+          <Text style={welcomeStyles.startBtnText}>{isHE ? 'יאללה!' : "LET'S GO!"}</Text>
+        </Pressable>
+        <Pressable onPress={onSkip} hitSlop={8}>
+          <Text style={welcomeStyles.skipText}>{isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}</Text>
+        </Pressable>
+      </View>
+    </AnimatedRN.View>
+  );
+}
+
+const welcomeStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject as any,
+    backgroundColor: 'rgba(0,0,0,0.82)',
+    zIndex: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: rs(24),
+  },
+  card: {
+    backgroundColor: '#1C0508',
+    borderRadius: rv(16),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.35)',
+    padding: rs(28),
+    alignItems: 'center',
+    gap: rs(6),
+    maxWidth: 360,
+    width: '100%',
+  },
+  title: {
+    color: '#c9a84c',
+    fontSize: rf(22),
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: rs(8),
+    textAlign: 'center',
+  },
+  line: {
+    color: '#ffffff',
+    fontSize: rf(15),
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: rf(22),
+  },
+  sub: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(13),
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: rf(19),
+    marginTop: rs(4),
+    marginBottom: rs(4),
+  },
+  startBtn: {
+    backgroundColor: '#22C55E',
+    borderRadius: rv(12),
+    paddingVertical: rs(14),
+    paddingHorizontal: rs(40),
+    marginTop: rs(12),
+    width: '100%',
+    alignItems: 'center',
+  },
+  startBtnText: {
+    color: '#ffffff',
+    fontSize: rf(18),
+    fontWeight: '900',
+    letterSpacing: 3,
+  },
+  skipText: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: rf(12),
+    fontWeight: '400',
+    marginTop: rs(10),
+    textDecorationLine: 'underline',
+  },
+});
+
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
@@ -164,6 +275,8 @@ export default function HomeScreen() {
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
 
   // Rotating tagline — cycles through all 10
   const [tagline] = useState<string>(() => {
@@ -184,6 +297,9 @@ export default function HomeScreen() {
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
       if (!val) setShowTutorial(true);
     }).catch(() => {});
+    AsyncStorage.getItem(GAMES_PLAYED_KEY).then(val => {
+      setGamesPlayed(val ? parseInt(val, 10) || 0 : 0);
+    }).catch(() => { setGamesPlayed(0); });
   }, []);
 
   useEffect(() => {
@@ -201,8 +317,23 @@ export default function HomeScreen() {
       }
     }
     trackAction('play_pressed');
+    if (gamesPlayed === 0) {
+      setShowWelcome(true);
+      return;
+    }
     router.push('/game' as any);
-  }, [chips, config, router]);
+  }, [chips, config, router, gamesPlayed]);
+
+  const handleWelcomeStart = useCallback(async () => {
+    setShowWelcome(false);
+    await AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
+    router.push('/game' as any);
+  }, [router]);
+
+  const handleWelcomeSkip = useCallback(() => {
+    setShowWelcome(false);
+    router.push('/game' as any);
+  }, [router]);
 
   const handleClaimDailyReward = useCallback(() => {
     const now = new Date();
@@ -252,14 +383,20 @@ export default function HomeScreen() {
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
 
-      {/* Tutorial overlay */}
+      {/* Tutorial overlay — 5-slide static tutorial */}
       {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
+
+      {/* Welcome modal — shown before first game or tutorial replay */}
+      {showWelcome && <WelcomeModal onStart={handleWelcomeStart} onSkip={handleWelcomeSkip} />}
 
       {/* Side menu — always rendered, pointer-events controlled by visible */}
       <SideMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onShowTutorial={() => { setMenuOpen(false); setShowTutorial(true); }}
+        onShowTutorial={() => {
+          setMenuOpen(false);
+          setTimeout(() => setShowWelcome(true), 60);
+        }}
         chips={chips}
         user={user}
         onSignIn={handleGoogleSignIn}

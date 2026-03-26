@@ -1,5 +1,5 @@
 // v-red-boards
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -16,12 +16,28 @@ import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs } from '../utils/responsive';
-import { t } from '../utils/i18n';
+import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { KILL_Board } from '../utils/animationKill';
+
+// Hand hint explanations — always available (not just first game)
+const HINT_EXPLANATIONS: Record<string, { en: string; he: string }> = {
+  'High Card':       { en: 'No special combination yet',          he: 'אין צירוף מיוחד' },
+  'Pair':            { en: 'Two cards of the same rank',          he: 'שני קלפים זהים' },
+  'Two Pair':        { en: 'Two different pairs',                 he: 'שני זוגות שונים' },
+  'Trips':           { en: 'Three cards of the same rank',        he: 'שלושה קלפים זהים' },
+  'Straight':        { en: 'Five cards in a row',                 he: 'חמישה קלפים ברצף' },
+  'Flush':           { en: 'Five cards of the same suit',         he: 'חמישה קלפים מאותו סוג' },
+  'Full House':      { en: 'Three of a kind + a pair',            he: 'שלישיה + זוג' },
+  'Four of a Kind':  { en: 'Four cards of the same rank',         he: 'ארבעה קלפים זהים' },
+  'Straight Flush':  { en: 'Straight + Flush combined',           he: 'רצף מאותו סוג' },
+  'Flush Draw':      { en: 'One card away from a Flush',          he: 'קלף אחד מצבע שלם' },
+  'Straight Draw':   { en: 'One card away from a Straight',       he: 'קלף אחד מרצף' },
+  'Str+Flush Draw':  { en: 'Drawing to both Straight and Flush',  he: 'קרוב גם לרצף וגם לצבע' },
+};
 
 interface BoardProps {
   index: number;
@@ -140,6 +156,8 @@ export default function Board({
   const { width: screenW } = useWindowDimensions();
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
+  const [hintInfoVisible, setHintInfoVisible] = useState(false);
+  const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Explicit card size hierarchy: community (largest) > board slot (medium) > hand (smallest)
   const commH = rv(screenW, 62, 80, 100, 72);
   const commW = Math.round(commH * 0.72);
@@ -407,9 +425,37 @@ export default function Board({
               <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           }
-          {isArrangement && playerCards.length >= 2 && (
-            <Text style={styles.hintText}>{getHandHint(playerCards)}</Text>
-          )}
+          {isArrangement && playerCards.length >= 2 && (() => {
+            const hint = getHandHint(playerCards);
+            const expl = HINT_EXPLANATIONS[hint];
+            const isHE = getLanguage() === 'he';
+            const explText = expl ? (isHE ? expl.he : expl.en) : '';
+            return (
+              <View style={styles.hintRow}>
+                <Text style={styles.hintText}>{hint}</Text>
+                {expl && (
+                  <Pressable
+                    onPress={() => {
+                      if (hintInfoTimer.current) clearTimeout(hintInfoTimer.current);
+                      setHintInfoVisible(v => {
+                        if (!v) {
+                          hintInfoTimer.current = setTimeout(() => setHintInfoVisible(false), 3000);
+                        }
+                        return !v;
+                      });
+                    }}
+                    hitSlop={6}
+                    style={styles.hintInfoBtn}
+                  >
+                    <Text style={styles.hintInfoIcon}>ⓘ</Text>
+                  </Pressable>
+                )}
+                {hintInfoVisible && explText ? (
+                  <Text style={styles.hintExplText}>{explText}</Text>
+                ) : null}
+              </View>
+            );
+          })()}
           {revealed && playerHandName && (
             <HandNameOverlay handName={playerHandName} isWinner={winner === 'player'} />
           )}
@@ -608,12 +654,34 @@ const styles = StyleSheet.create({
   winnerHandName: {
     color: COLORS.goldLight,
   },
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: rs(4),
+    flexWrap: 'wrap',
+    gap: rs(2),
+  },
   hintText: {
     color: COLORS.textMuted,
     fontSize: rf(7),
     fontWeight: '600',
-    marginLeft: rs(4),
     opacity: 0.7,
+  },
+  hintInfoBtn: {
+    paddingHorizontal: rs(2),
+  },
+  hintInfoIcon: {
+    color: 'rgba(201,168,76,0.7)',
+    fontSize: rf(8),
+    fontWeight: '700',
+  },
+  hintExplText: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: rf(7),
+    fontWeight: '400',
+    fontStyle: 'italic',
+    marginLeft: rs(2),
+    flexShrink: 1,
   },
   winnerBadge: {
     position: 'absolute',
