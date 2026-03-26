@@ -32,6 +32,11 @@ export function initLogBuffer(): void {
     oError(...args);
   };
   console.warn = (...args: unknown[]) => {
+    // Suppress expo-file-system deprecation spam so it doesn't flood the log buffer
+    if (typeof args[0] === 'string' && args[0].includes('expo-file-system') && args[0].includes('deprecated')) {
+      oWarn(...args); // still passes through to Metro, just not buffered
+      return;
+    }
     push('[WRN]', args);
     oWarn(...args);
   };

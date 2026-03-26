@@ -459,6 +459,80 @@ ${recText}`;
 const MERGE_WINDOW_MS = 60_000;
 const AUTO_CANCEL_STALE_MS = 5 * 60_000; // Only cancel old sessions (>5 min)
 
+// ── Bug Report Reply Handler (reply 1/2/3) ──────────────────────────────────────────
+
+const BUG_REPLY_WINDOW_MS = 10 * 60 * 1000;
+
+async function handleBugReply(
+  msgText: string,
+  session: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  from: string,
+): Promise<string | null> {
+  const plan = session.claude_plan as Record<string, unknown>;
+  const reportId = plan?.bug_report_id as string | null;
+  const fixPrompt = plan?.fix_prompt as string | null;
+  const aiSummary = plan?.ai_summary as string | null;
+  const trimmed = msgText.trim();
+
+  if (trimmed === '1') {
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_approved' }).eq('id', session.id);
+    if (reportId) {
+      await supabase.from('bug_notifications')
+        .update({ approved_at: new Date().toISOString() })
+        .eq('bug_report_id', reportId);
+    }
+    if (fixPrompt) {
+      const claudePlan = {
+        type: 'BUG' as const,
+        summary: aiSummary ?? 'Bug fix from report',
+        severity: 'MEDIUM' as const,
+        plan: [fixPrompt.slice(0, 500)],
+        files: [],
+        effort: 'MEDIUM' as const,
+        project: 'caps-poker',
+      };
+      await triggerGitHubAction(claudePlan, 'caps-poker', 'claude-fix-no-build');
+      return '[FIX] Auto-fix triggered! Claude Bot is working on it...';
+    }
+    return '[FIX] Marked as approved.';
+  }
+
+  if (trimmed === '2') {
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_analyzing' }).eq('id', session.id);
+    if (!reportId) return 'No report ID.';
+    const { data: rep } = await supabase.from('bug_reports')
+      .select('ai_summary,ai_suggested_fix,ai_screen,audio_url,video_url,console_logs,breadcrumbs')
+      .eq('id', reportId).single();
+    if (!rep) return 'Bug report not found.';
+    const ls = [
+      '*FULL BUG ANALYSIS*',
+      rep.ai_summary ? `AI: ${rep.ai_summary}` : '',
+      rep.ai_suggested_fix ? `Fix: ${rep.ai_suggested_fix}` : '',
+      rep.ai_screen ? `Screen: ${rep.ai_screen}` : '',
+      rep.audio_url ? `Audio: ${rep.audio_url}` : '',
+      rep.video_url ? `Screenshot: ${rep.video_url}` : '',
+      `Logs: ${(rep.console_logs ?? []).length} | Breadcrumbs: ${(rep.breadcrumbs ?? []).length}`,
+    ].filter(Boolean);
+    return ls.join('\n');
+  }
+
+  if (trimmed === '3') {
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_dismissed' }).eq('id', session.id);
+    if (reportId) {
+      await Promise.allSettled([
+        supabase.from('bug_notifications')
+          .update({ dismissed_at: new Date().toISOString() })
+          .eq('bug_report_id', reportId),
+        supabase.from('bug_reports').update({ status: 'dismissed' }).eq('id', reportId),
+      ]);
+    }
+    return 'Bug dismissed.';
+  }
+
+  return null;
+}
+
 // ── Crash Control Panel (reply 1-7) ────────────────────────────────────────
 
 const AUTO_FIX_KEY = 'caps_auto_fix_mode';
@@ -837,6 +911,46 @@ serve(async (req: Request) => {
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
       }
+
+      // ── Bug notification from the app ────────────────────────────────
+      if (json?.bug_notification) {
+        console.log('[whatsapp-bot] Bug notification received, reportId:', json.reportId);
+        const ROYE_WA = Deno.env.get('ROYE_WHATSAPP_NUMBER') ?? 'whatsapp:+972504141513';
+        const bugMsg = json.message ?? 'Bug report received';
+        const bugReportId = json.reportId ?? null;
+        const bugFixPrompt = json.fixPrompt ?? null;
+        const bugAiSummary = json.aiSummary ?? null;
+        try {
+          await supabase.from('whatsapp_sessions').insert({
+            message_sid: `bug-${Date.now()}`,
+            from_number: ROYE_WA,
+            raw_input: bugMsg,
+            media_type: 'bug',
+            claude_plan: { bug_report_id: bugReportId, fix_prompt: bugFixPrompt, ai_summary: bugAiSummary },
+            status: 'bug_pending',
+          });
+        } catch { /* non-critical */ }
+        if (bugReportId) {
+          try {
+            await supabase.from('bug_notifications').insert({
+              bug_report_id: bugReportId,
+              channel: 'whatsapp',
+              recipient: ROYE_WA,
+              message: bugAiSummary,
+              status: 'sent',
+              fix_prompt: bugFixPrompt,
+            });
+          } catch { /* non-critical */ }
+        }
+        let bugWaSent = false;
+        let bugWaError: string | null = null;
+        try { await sendWhatsApp(ROYE_WA, bugMsg); bugWaSent = true; }
+        catch (e) { bugWaError = String(e); }
+        return new Response(JSON.stringify({ sent: bugWaSent, reportId: bugReportId, twilioError: bugWaError }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
     } catch (e) {
       console.error('[whatsapp-bot] crash notification error:', e);
       return new Response(JSON.stringify({ error: String(e) }), {
@@ -962,7 +1076,24 @@ serve(async (req: Request) => {
     }
   }
 
-  // ── Check crash_pending FIRST — routes 1-7 replies to crash control panel ─
+  // ── Check bug_pending FIRST — routes 1/2/3 to bug report handler ────────────
+  if (['1', '2', '3'].includes(upperBody)) {
+    const bugWinStart = new Date(Date.now() - BUG_REPLY_WINDOW_MS).toISOString();
+    const { data: bugSession } = await supabase
+      .from('whatsapp_sessions').select('*')
+      .eq('from_number', from).eq('status', 'bug_pending')
+      .gte('created_at', bugWinStart)
+      .order('created_at', { ascending: false }).limit(1).single();
+    if (bugSession) {
+      const bugReply = await handleBugReply(msgBody, bugSession, supabase, from);
+      if (bugReply) {
+        await sendWhatsApp(from, bugReply);
+        return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+      }
+    }
+  }
+
+    // ── Check crash_pending FIRST — routes 1-7 replies to crash control panel ─
   if (['1','2','3','4','5','6','7','FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)) {
     const windowStart = new Date(Date.now() - CRASH_REPLY_WINDOW_MS).toISOString();
     const { data: crashSession } = await supabase
