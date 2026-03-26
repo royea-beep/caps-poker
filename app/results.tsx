@@ -24,7 +24,7 @@ import { CapsHooks } from '../utils/learning';
 import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { saveHandForWebReplay, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv } from '../utils/responsive';
-import { t } from '../utils/i18n';
+import { t, getLanguage } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
@@ -63,10 +63,12 @@ export default function ResultsScreen() {
   const storeRoomCode = useGameStore((s) => s.roomCode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
+  const updateConfig = useGameStore((s) => s.updateConfig);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
   const [autoShareUrl, setAutoShareUrl] = useState<string | null>(null);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
+  const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
   const scrollRef = useRef<any>(null);
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -160,6 +162,12 @@ export default function ResultsScreen() {
       numberOfPlayers: revealData.numberOfPlayers,
     };
     saveHandForWebReplay(autoShareData).then((url) => { if (url) setAutoShareUrl(url); }).catch(() => {});
+
+    // "Try 4 boards" nudge — shown after first game (3-board intro)
+    AsyncStorage.getItem('caps_games_played').then((val) => {
+      const played = parseInt(val ?? '0', 10);
+      if (played === 1 && revealData.boardCount === 3) setShowUpgradeNudge(true);
+    }).catch(() => {});
   }, []);
 
   const handleNextHand = useCallback(() => {
@@ -347,6 +355,28 @@ export default function ResultsScreen() {
           {/* Current balance */}
           <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
 
+          {/* First game: upgrade nudge — "Try 4 boards next!" */}
+          {showUpgradeNudge && (
+            <View style={styles.upgradeNudge}>
+              <Text style={styles.upgradeNudgeText}>
+                {getLanguage() === 'he'
+                  ? 'מוכן לאתגר המלא? נסה 4 בורדים!'
+                  : 'Ready for the full challenge? Try 4 boards next!'}
+              </Text>
+              <View style={styles.upgradeNudgeRow}>
+                <Pressable
+                  style={styles.upgradeNudgeBtn}
+                  onPress={() => { updateConfig({ numberOfPlayers: 2 }); setShowUpgradeNudge(false); }}
+                >
+                  <Text style={styles.upgradeNudgeBtnText}>4 BOARDS →</Text>
+                </Pressable>
+                <Pressable onPress={() => setShowUpgradeNudge(false)}>
+                  <Text style={styles.upgradeNudgeDismiss}>Later</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
           {/* Action buttons */}
           <View style={styles.buttons}>
             {waitingForNextHand ? (
@@ -409,4 +439,10 @@ const styles = StyleSheet.create({
   statsRow: { width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(8), paddingVertical: rs(6) },
   statItem: { color: 'rgba(255,255,255,0.5)', fontSize: rf(12) },
   statSep: { color: 'rgba(255,255,255,0.2)', fontSize: rf(12) },
+  upgradeNudge: { width: '100%', backgroundColor: 'rgba(201,168,76,0.12)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)', borderRadius: rv(10), padding: rs(14), gap: rs(10) },
+  upgradeNudgeText: { color: COLORS.gold, fontSize: rf(14), fontWeight: '700', textAlign: 'center' },
+  upgradeNudgeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(16) },
+  upgradeNudgeBtn: { paddingVertical: rs(8), paddingHorizontal: rs(20), backgroundColor: COLORS.gold, borderRadius: rv(8) },
+  upgradeNudgeBtnText: { color: '#1C0508', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
+  upgradeNudgeDismiss: { color: COLORS.textMuted, fontSize: rf(12) },
 });

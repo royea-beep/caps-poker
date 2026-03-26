@@ -2,6 +2,7 @@ import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig, getBoardCount } from '..
 import { dealCards, DealResult, dealCardsMultiplayer, MultiDealResult } from './deck';
 import { evaluateOmahaHand, compareHands, HandResult } from './handEvaluator';
 import { Player, MultiBoardState } from '../types/gameTypes';
+import { placeBotCardsWithStrategy, BotDifficulty } from './botStrategy';
 
 export interface BoardState {
   openCards: Card[];
@@ -54,22 +55,21 @@ export function initializeGame(): { gameState: GameState; dealResult: DealResult
   };
 }
 
-export function placeBotCards(botHand: Card[], boards: BoardState[]): BoardState[] {
-  const shuffled = [...botHand].sort(() => Math.random() - 0.5);
-  const updatedBoards = boards.map((b, i) => {
-    const cards = shuffled.slice(i * CARDS_PER_BOARD, (i + 1) * CARDS_PER_BOARD);
+export function placeBotCards(botHand: Card[], boards: BoardState[], difficulty: BotDifficulty = 'easy'): BoardState[] {
+  const placements = placeBotCardsWithStrategy(botHand, boards, difficulty);
+  return boards.map((b, i) => {
+    const cards = placements[i] ?? [];
     const newAllBotCards = [...b.allBotCards];
     newAllBotCards[0] = cards;
     return { ...b, botCards: cards, allBotCards: newAllBotCards };
   });
-  return updatedBoards;
 }
 
 /** Place a single bot's cards on all boards. botIndex is 0-based (0 = first bot). */
-export function placeSingleBotCards(botHand: Card[], boards: BoardState[], botIndex: number): BoardState[] {
-  const shuffled = [...botHand].sort(() => Math.random() - 0.5);
+export function placeSingleBotCards(botHand: Card[], boards: BoardState[], botIndex: number, difficulty: BotDifficulty = 'easy'): BoardState[] {
+  const placements = placeBotCardsWithStrategy(botHand, boards, difficulty);
   return boards.map((b, i) => {
-    const cards = shuffled.slice(i * CARDS_PER_BOARD, (i + 1) * CARDS_PER_BOARD);
+    const cards = placements[i] ?? [];
     const newAllBotCards = [...b.allBotCards];
     newAllBotCards[botIndex] = cards;
     return {

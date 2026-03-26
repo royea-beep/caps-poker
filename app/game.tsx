@@ -54,6 +54,11 @@ const TIPS = [
   () => TIP('Tap a card, then tap an empty slot.', 'לחץ על קלף, ואז על מקום ריק.'),
   () => TIP('Nice! 3 more cards on this board.', 'מעולה! עוד 3 קלפים על הבורד הזה.'),
   () => TIP('Hand strength shown here. Better hands win more!', 'זה מראה כמה חזקה היד שלך.'),
+  // Tip 5 (index 4) — 2-of-4 rule explainer. autoDismissMs=6000 in JSX.
+  () => TIP(
+    'The game picks your BEST 2 cards + 3 from the board automatically. You don\'t choose — the strongest combination wins!',
+    'המשחק בוחר אוטומטית 2 הקלפים הטובים שלך + 3 מהשולחן. לא צריך לבחור — השילוב החזק ביותר מנצח!'
+  ),
   () => TIP('All set! Tap READY to reveal.', 'מוכן! לחץ READY לחשיפה.'),
 ];
 
@@ -245,12 +250,19 @@ function GameScreenInner() {
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
 
-  // Tip 5 — all boards full (step 4 → 5)
+  // Tip 5 — auto after tip 4 dismissed (step 4 → 5): 2-of-4 rule explainer
   useEffect(() => {
-    if (!isFirstGame || tooltipStep !== 4) return;
+    if (!isFirstGame || tooltipStep !== 4 || tooltipVisible) return;
+    const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 400);
+    return () => clearTimeout(id);
+  }, [isFirstGame, tooltipStep, tooltipVisible]);
+
+  // Tip 6 — all boards full (step 5 → 6): ready to submit
+  useEffect(() => {
+    if (!isFirstGame || tooltipStep !== 5) return;
     const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
     if (!allFull) return;
-    const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => { setTooltipStep(6); setTooltipVisible(true); }, 500);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
   // ── End guided tooltips ────────────────────────────────────────────────────
@@ -411,7 +423,7 @@ function GameScreenInner() {
       const botCards = botHands[botIdx];
       const botTimer = setTimeout(() => {
         if (!mountedRef.current) return;
-        setBoards((prev) => placeSingleBotCards(botCards, prev, botIdx));
+        setBoards((prev) => placeSingleBotCards(botCards, prev, botIdx, (config.botDifficulty ?? 'easy') as import('../utils/botStrategy').BotDifficulty));
         setBotsReady((prev) => {
           const updated = [...prev];
           updated[botIdx] = true;
@@ -1087,13 +1099,14 @@ function GameScreenInner() {
         />
       )}
 
-      {/* Guided first-game tooltips (tips 1–5) — non-blocking */}
-      {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 5 && (
+      {/* Guided first-game tooltips (tips 1–6) — non-blocking */}
+      {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
         <GuidedTooltip
           text={TIPS[tooltipStep - 1]?.() ?? ''}
           visible={tooltipVisible}
           onDismiss={advanceTooltip}
-          position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'top' : 'bottom'}
+          position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
+          autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
         />
       )}
     </SafeAreaView>
