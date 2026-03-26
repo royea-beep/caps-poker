@@ -20,8 +20,9 @@ import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
-import { t } from '../utils/i18n';
+import { t, getLanguage } from '../utils/i18n';
 import { useGameStore } from '../store/gameStore';
+import GuidedTooltip from './GuidedTooltip';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -46,13 +47,21 @@ const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
   cinematic: 1.8,
 };
 
+const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
+const REVEAL_TIPS = [
+  () => TIP('Now see what your opponent has on each board.', 'עכשיו רואים מה יש ליריב על כל בורד.'),
+  () => TIP('Each card changes the winning hand!', 'כל קלף יכול לשנות את התוצאה!'),
+  () => TIP('Green = win, Red = loss. Watch for COMPLETE bonus!', 'ירוק = ניצחון, אדום = הפסד.'),
+];
+
 interface Props {
   boards: RevealBoard[];
   onDone: () => void;
   revealSpeed?: 'fast' | 'normal' | 'cinematic';
+  isFirstGame?: boolean;
 }
 
-export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: Props) {
+export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false }: Props) {
   const { width: screenW } = useWindowDimensions();
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
@@ -113,6 +122,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
     new AnimatedRN.Value(1),
   ]).current;
 
+  // Guided tooltip (tips 6-8) — only shown once per tip during first game on board 0
+  const [revealTipText, setRevealTipText] = useState('');
+  const [revealTipVisible, setRevealTipVisible] = useState(false);
+  const revealTipShownRef = useRef<Set<number>>(new Set());
+
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const anims = useRef<AnimatedRN.CompositeAnimation[]>([]);
 
@@ -129,6 +143,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
     timers.current = [];
     anims.current.forEach(a => a.stop());
     anims.current = [];
+    setRevealTipVisible(false);
     setTurnFaceDown(false);
     setRiverFaceDown(false);
     setBotFaceDown([false, false, false, false]);
@@ -317,6 +332,31 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
     // 6500ms — auto-advance
     timers.current.push(setTimeout(doAdvance, t(6500)));
 
+    // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
+    if (isFirstGame && currentIdxRef.current === 0) {
+      if (!revealTipShownRef.current.has(6)) {
+        timers.current.push(setTimeout(() => {
+          revealTipShownRef.current.add(6);
+          setRevealTipText(REVEAL_TIPS[0]());
+          setRevealTipVisible(true);
+        }, t(1050)));
+      }
+      if (!revealTipShownRef.current.has(7)) {
+        timers.current.push(setTimeout(() => {
+          revealTipShownRef.current.add(7);
+          setRevealTipVisible(false);
+          setTimeout(() => { setRevealTipText(REVEAL_TIPS[1]()); setRevealTipVisible(true); }, 300);
+        }, t(2650)));
+      }
+      if (!revealTipShownRef.current.has(8)) {
+        timers.current.push(setTimeout(() => {
+          revealTipShownRef.current.add(8);
+          setRevealTipVisible(false);
+          setTimeout(() => { setRevealTipText(REVEAL_TIPS[2]()); setRevealTipVisible(true); }, 300);
+        }, t(5200)));
+      }
+    }
+
     return () => {
       timers.current.forEach(clearTimeout);
       timers.current = [];
@@ -476,6 +516,16 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
             </Text>
           )}
         </Pressable>
+
+        {/* Guided first-game tooltips (tips 6-8) */}
+        {isFirstGame && (
+          <GuidedTooltip
+            text={revealTipText}
+            visible={revealTipVisible}
+            onDismiss={() => setRevealTipVisible(false)}
+            position="center"
+          />
+        )}
       </SafeAreaView>
     </Modal>
   );
