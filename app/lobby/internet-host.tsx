@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Clipboard, Share, Platform, Pressable } from 'react-native';
 import { rf, rs, rv } from '../../utils/responsive';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -130,6 +130,24 @@ export default function InternetHostScreen() {
     });
   }, [players, router]);
 
+  const handleCopy = useCallback(() => {
+    if (Platform.OS === 'web') {
+      navigator.clipboard?.writeText(roomCode).catch(() => {});
+    } else {
+      Clipboard.setString(roomCode);
+    }
+    Alert.alert('Copied!', `Room code ${roomCode} copied to clipboard.`);
+  }, [roomCode]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({
+        message: `Join my CAPS Poker game! Room: ${roomCode}`,
+        title: 'CAPS Poker — Room Invite',
+      });
+    } catch {}
+  }, [roomCode]);
+
   const handleCancel = useCallback(() => {
     if (serverRef.current) {
       serverRef.current.stop();
@@ -176,6 +194,15 @@ export default function InternetHostScreen() {
         <Text style={styles.label}>ROOM CODE</Text>
         <Text style={styles.roomCode}>{roomCode}</Text>
         <Text style={styles.shareHint}>Share this code with friends anywhere</Text>
+
+        <View style={styles.codeActions}>
+          <Pressable onPress={handleCopy} style={styles.codeActionBtn}>
+            <Text style={styles.codeActionText}>📋 COPY</Text>
+          </Pressable>
+          <Pressable onPress={handleShare} style={styles.codeActionBtn}>
+            <Text style={styles.codeActionText}>📤 SHARE</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.divider} />
 
@@ -291,5 +318,24 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     textAlign: 'center',
     marginBottom: rs(20),
+  },
+  codeActions: {
+    flexDirection: 'row',
+    gap: rs(12),
+    marginTop: rs(4),
+  },
+  codeActionBtn: {
+    backgroundColor: COLORS.feltLight,
+    borderRadius: rv(8),
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(20),
+  },
+  codeActionText: {
+    color: COLORS.goldBright,
+    fontSize: rf(14),
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

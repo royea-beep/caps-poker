@@ -26,6 +26,8 @@ import { saveHandForWebReplay, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { checkAchievements, getAchievement, Achievement } from '../utils/achievements';
+import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
@@ -64,7 +66,12 @@ export default function ResultsScreen() {
   const isMultiplayer = mpServer !== null || mpClient !== null;
 
   const updateConfig = useGameStore((s) => s.updateConfig);
+  const handsPlayed = useGameStore((s) => s.handsPlayed);
+  const handsWon = useGameStore((s) => s.handsWon);
+  const currentWinStreak = useGameStore((s) => s.currentWinStreak);
+  const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
+  const [pendingAchievements, setPendingAchievements] = useState<Achievement[]>([]);
   const [autoShareUrl, setAutoShareUrl] = useState<string | null>(null);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
@@ -168,6 +175,33 @@ export default function ResultsScreen() {
       const played = parseInt(val ?? '0', 10);
       if (played === 1 && revealData.boardCount === 3) setShowUpgradeNudge(true);
     }).catch(() => {});
+
+    // Achievement checks — run after stats are incremented
+    const gs = useGameStore.getState();
+    const newWin = revealData.netChips > 0;
+    if (newWin) gs.incrementWinStreak(); else gs.resetWinStreak();
+
+    const newlyUnlocked = checkAchievements({
+      revealData,
+      config,
+      handsPlayed: gs.handsPlayed,
+      handsWon: gs.handsWon,
+      currentWinStreak: newWin ? gs.currentWinStreak : 0,
+      isMultiplayer,
+      alreadyUnlocked: gs.unlockedAchievements,
+    });
+
+    if (newlyUnlocked.length > 0) {
+      const toasts = newlyUnlocked
+        .map((id) => getAchievement(id))
+        .filter((a): a is Achievement => a !== undefined);
+      toasts.forEach((a) => {
+        gs.unlockAchievement(a.id);
+        gs.addChips(a.reward);
+        gs.trackChipsEarned(a.reward);
+      });
+      setPendingAchievements(toasts);
+    }
   }, []);
 
   const handleNextHand = useCallback(() => {
@@ -266,6 +300,13 @@ export default function ResultsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
+      {/* Achievement toasts — shown one at a time */}
+      {pendingAchievements.length > 0 && (
+        <AchievementToast
+          achievement={pendingAchievements[0]}
+          onDone={() => setPendingAchievements((prev) => prev.slice(1))}
+        />
+      )}
       <Animated.View style={{ flex: 1, opacity: screenOpacity }}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
