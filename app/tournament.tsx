@@ -24,6 +24,7 @@ import {
   calculateHandResultsMulti,
 } from '../utils/gameLogic';
 import { playSound } from '../utils/sounds';
+import TournamentLobby from '../components/TournamentLobby';
 
 let Haptics: any = null;
 try {
@@ -88,6 +89,10 @@ export default function TournamentScreen() {
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
+
+  // Mode toggle: 'local' = existing simulation, 'online' = Supabase lobby
+  const [mode, setMode] = useState<'local' | 'online'>('local');
+  const playerName = useGameStore.getState().playerName || 'Player';
 
   // Room code state (multiplayer prep — UI only for now)
   const [roomCode, setRoomCode] = useState<string | null>(null);
@@ -698,6 +703,58 @@ export default function TournamentScreen() {
       (humanInQF && !humanWonQF && quarterFinals.some((m) => (m.player1?.isHuman || m.player2?.isHuman) && m.winner && !m.winner.isHuman)) ||
       (humanInSF && !humanWonSF && semiFinals.some((m) => (m.player1?.isHuman || m.player2?.isHuman) && m.winner && !m.winner.isHuman));
 
+    // ─── Mode toggle (LOCAL / ONLINE) ──────────────────────────────────────
+    const modeToggle = (
+      <View style={styles.modeToggleRow}>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === 'local' && styles.modeBtnActive]}
+          onPress={() => setMode('local')}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.modeBtnText, mode === 'local' && styles.modeBtnTextActive]}>
+            LOCAL
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === 'online' && styles.modeBtnActive]}
+          onPress={() => setMode('online')}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.modeBtnText, mode === 'online' && styles.modeBtnTextActive]}>
+            ONLINE
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+
+    // ─── Online lobby view ──────────────────────────────────────────────────
+    if (mode === 'online') {
+      return (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.onlineHeader}>
+            <Button
+              title="BACK"
+              variant="ghost"
+              onPress={() => router.replace('/')}
+              style={{ paddingVertical: 8, paddingHorizontal: 12 }}
+            />
+            <Text style={styles.onlineTitle}>TOURNAMENT</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          {modeToggle}
+          <TournamentLobby
+            playerName={playerName}
+            onJoin={(tournamentId) => {
+              // For now, joining transitions back to local bracket seeded with tournament id
+              // Future: load real bracket from Supabase and render it here
+              setMode('local');
+              Alert.alert('Joined!', `Tournament ${tournamentId} joined. Starting local bracket preview.`);
+            }}
+          />
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.centered}>
@@ -705,6 +762,8 @@ export default function TournamentScreen() {
           <Text style={styles.subheading}>
             8 Players  |  Entry: {ENTRY_FEE} chips  |  Best of {BEST_OF}
           </Text>
+
+          {modeToggle}
 
           {renderBracket()}
 
@@ -1218,6 +1277,52 @@ const styles = StyleSheet.create({
     color: COLORS.goldDim,
     letterSpacing: 3,
     marginTop: 4,
+  },
+
+  // Mode toggle
+  modeToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    overflow: 'hidden',
+    marginVertical: 8,
+  },
+  modeBtn: {
+    paddingHorizontal: 28,
+    paddingVertical: 9,
+  },
+  modeBtnActive: {
+    backgroundColor: COLORS.gold,
+  },
+  modeBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.textDim,
+    letterSpacing: 2,
+  },
+  modeBtnTextActive: {
+    color: '#fff',
+  },
+
+  // Online header
+  onlineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: COLORS.boardBorder,
+  },
+  onlineTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.gold,
+    letterSpacing: 4,
   },
 
   // Tournament results summary

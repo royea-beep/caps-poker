@@ -31,6 +31,14 @@ import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { useBattlePassStore } from '../stores/battlePassStore';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { BATTLE_PASS_CONFIG } from '../constants/battlePassConfig';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { getProgressToNextTier } from '../utils/battlePass';
+// @ts-ignore — parallel agent file, exists at deploy time
+import XPBar from '../components/XPBar';
 
 async function logResultsStep(step: string, extra?: string) {
   debugLog(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
@@ -71,6 +79,7 @@ export default function ResultsScreen() {
   const currentWinStreak = useGameStore((s) => s.currentWinStreak);
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
+  const [xpGained, setXpGained] = useState(0);
   const [pendingAchievements, setPendingAchievements] = useState<Achievement[]>([]);
   const [autoShareUrl, setAutoShareUrl] = useState<string | null>(null);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
@@ -202,6 +211,24 @@ export default function ResultsScreen() {
       });
       setPendingAchievements(toasts);
     }
+
+    // Battle Pass XP + mission tracking
+    try {
+      const boardsWonByPlayer = revealData.boards.filter((b) => b.winner === 'player').length;
+      const isWinner = revealData.netChips > 0;
+      const isComplete = revealData.isComplete;
+      const earned = BATTLE_PASS_CONFIG.xpPerGame
+        + (boardsWonByPlayer * BATTLE_PASS_CONFIG.xpPerBoardWin)
+        + (isWinner ? BATTLE_PASS_CONFIG.xpPerGameWin : 0)
+        + (isComplete ? BATTLE_PASS_CONFIG.xpPerComplete : 0);
+      const bpStore = useBattlePassStore.getState();
+      bpStore.addXP(earned);
+      bpStore.trackMissionProgress('games_played', 1);
+      bpStore.trackMissionProgress('boards_won', boardsWonByPlayer);
+      if (isWinner) bpStore.trackMissionProgress('games_won', 1);
+      if (isComplete) bpStore.trackMissionProgress('complete', 1);
+      setXpGained(earned);
+    } catch {}
   }, []);
 
   const handleNextHand = useCallback(() => {
@@ -321,6 +348,45 @@ export default function ResultsScreen() {
               <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
             </Text>
           </View>
+
+          {/* Battle Pass XP banner */}
+          {xpGained > 0 && (() => {
+            let bpCurrentXP = 0;
+            let bpCurrentTier = 1;
+            let bpProgress = 0;
+            let bpXpInTier = 0;
+            let bpXpNeeded = 100;
+            try {
+              const bpSnap = useBattlePassStore.getState();
+              bpCurrentXP = bpSnap.currentXP;
+              bpCurrentTier = bpSnap.currentTier;
+              const prog = getProgressToNextTier(bpCurrentXP);
+              bpProgress = prog.progress;
+              bpXpInTier = prog.xpInTier;
+              bpXpNeeded = prog.xpNeeded;
+            } catch {}
+            const boardsWonForBanner = boards.filter((b) => b.winner === 'player').length;
+            const isWinnerForBanner = netChips > 0;
+            return (
+              <View style={styles.xpBanner}>
+                <Text style={styles.xpBannerTitle}>⚔️ +{xpGained} XP</Text>
+                <Text style={styles.xpBannerBreakdown}>
+                  {'Game: ' + BATTLE_PASS_CONFIG.xpPerGame}
+                  {boardsWonForBanner > 0 ? (' · Boards: +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
+                  {isWinnerForBanner ? (' · Win: +' + BATTLE_PASS_CONFIG.xpPerGameWin) : ''}
+                  {isComplete ? (' · Complete: +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
+                </Text>
+                <XPBar
+                  currentXP={bpCurrentXP}
+                  currentTier={bpCurrentTier}
+                  progress={bpProgress}
+                  xpInTier={bpXpInTier}
+                  xpNeeded={bpXpNeeded}
+                  compact={false}
+                />
+              </View>
+            );
+          })()}
 
           {/* Board result cards — staggered fade-in */}
           {boards.map((board, i) => {
@@ -486,4 +552,7 @@ const styles = StyleSheet.create({
   upgradeNudgeBtn: { paddingVertical: rs(8), paddingHorizontal: rs(20), backgroundColor: COLORS.gold, borderRadius: rv(8) },
   upgradeNudgeBtnText: { color: '#1C0508', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
   upgradeNudgeDismiss: { color: COLORS.textMuted, fontSize: rf(12) },
+  xpBanner: { width: '100%', backgroundColor: 'rgba(201,168,76,0.10)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: rv(10), padding: rs(14), gap: rs(6) },
+  xpBannerTitle: { color: '#FFD700', fontSize: rf(16), fontWeight: '800', letterSpacing: 1 },
+  xpBannerBreakdown: { color: 'rgba(255,255,255,0.55)', fontSize: rf(12), fontWeight: '500' },
 });
