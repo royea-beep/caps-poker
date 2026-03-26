@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
 import { getSupabase } from '../utils/supabase';
 import { getConsoleLogs } from '../utils/logBuffer';
@@ -109,7 +109,7 @@ async function readFileAsBytes(uri: string): Promise<Uint8Array | null> {
   try {
     // GEM-13: fetch(file://).blob() fails silently on iOS — use FileSystem Base64
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const FileSystem = require('expo-file-system/legacy');
+    const FileSystem = require('expo-file-system');
     const base64: string = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
     });
@@ -358,7 +358,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const capturedElapsed = useRef(0);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const recordingRef = useRef<InstanceType<typeof Audio.Recording> | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const { elapsed, display: timerDisplay } = useRecordingTimer(phase === 'recording');
 
   const dotAnim = useRef(new Animated.Value(1)).current;
@@ -377,7 +377,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     return () => { pulse.stop(); dotPulseRef.current = null; };
   }, [phase]);
 
-  useEffect(() => { if (Platform.OS !== 'web') Audio.requestPermissionsAsync().catch(() => {}); }, []);
+  useEffect(() => { if (Platform.OS !== 'web') requestRecordingPermissionsAsync().catch(() => {}); }, []);
 
   // Dev ping on mount
   useEffect(() => {
@@ -402,49 +402,45 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const path = pathname ?? '';
   useEffect(() => { addBreadcrumb(path); }, [path]);
 
-  // ── Audio (expo-av class-based — more reliable than hook for imperative use) ──
+  // ── Audio (expo-audio hook — expo-av NOT used: was removed in S75, native binary lacks it) ──
 
   async function startAudio() {
     if (Platform.OS === 'web') return;
     console.log('[BUG-PIPE] Step 2b: Configuring audio mode for recording...');
     try {
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       console.log('[BUG-PIPE] Step 2b: ✅ Audio mode set');
     } catch (err) {
-      console.error('[BUG-PIPE] Step 2b: ❌ setAudioModeAsync failed:', err);
+      console.error('[BUG-PIPE] Step 2b: ❌ setAudioModeAsync FAILED:', err);
       return;
     }
-    console.log('[BUG-PIPE] Step 2b: Creating Audio.Recording...');
+    console.log('[BUG-PIPE] Step 2b: Preparing recorder...');
     try {
-      const rec = new Audio.Recording();
-      await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await audioRecorder.prepareToRecordAsync();
       console.log('[BUG-PIPE] Step 2b: ✅ Prepared');
-      await rec.startAsync();
-      console.log('[BUG-PIPE] Step 2b: ✅ Recording started');
-      recordingRef.current = rec;
+      audioRecorder.record();
+      console.log('[BUG-PIPE] Step 2b: ✅ record() called');
       setAudioAvailable(true);
     } catch (err) {
-      console.error('[BUG-PIPE] Step 2b: ❌ Recording start FAILED:', err);
+      console.error('[BUG-PIPE] Step 2b: ❌ prepareToRecordAsync/record FAILED:', err);
       setAudioAvailable(false);
     }
   }
 
   async function stopAudio(): Promise<string | null> {
-    if (!audioAvailable || !recordingRef.current) {
-      console.log('[BUG-PIPE] Step 3b: stopAudio skipped (audioAvailable=false or no recording)');
+    if (!audioAvailable) {
+      console.log('[BUG-PIPE] Step 3b: stopAudio skipped (audioAvailable=false)');
       return null;
     }
     try {
-      console.log('[BUG-PIPE] Step 3b: Stopping audio recorder...');
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI() ?? null;
-      console.log('[BUG-PIPE] Step 3b:', uri ? `✅ Audio URI: ${uri}` : '❌ NO AUDIO URI');
-      recordingRef.current = null;
+      console.log('[BUG-PIPE] Step 3b: Stopping recorder...');
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri ?? null;
+      console.log('[BUG-PIPE] Step 3b:', uri ? `✅ Audio URI: ${uri}` : '❌ NO AUDIO URI — stop() returned no uri');
       setAudioAvailable(false);
       return uri;
     } catch (err) {
-      console.error('[BUG-PIPE] Step 3b: ❌ stopAudio failed:', err);
-      recordingRef.current = null;
+      console.error('[BUG-PIPE] Step 3b: ❌ stopAudio FAILED:', err);
       setAudioAvailable(false);
       return null;
     }
@@ -549,7 +545,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
         // 6: Cleanup temp files
         console.log('[BUG-PIPE] Step 6: Cleaning up temp files...');
-        const FileSystem = Platform.OS !== 'web' ? (() => { try { return require('expo-file-system/legacy'); } catch { return null; } })() : null;
+        const FileSystem = Platform.OS !== 'web' ? (() => { try { return require('expo-file-system'); } catch { return null; } })() : null;
         if (FileSystem) {
           if (audioUri) FileSystem.deleteAsync(audioUri, { idempotent: true }).catch(() => {});
           if (lastFrame) FileSystem.deleteAsync(lastFrame, { idempotent: true }).catch(() => {});
