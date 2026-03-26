@@ -179,21 +179,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
     // 0ms — board appears: play tension sound
     playSound('revealStart');
 
-    // 800ms — flip turn card
-    timers.current.push(setTimeout(() => {
-      setTurnFaceDown(false);
-      playSound('cardFlip');
-      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(1500)));
-
-    // 1600ms — flip river card
-    timers.current.push(setTimeout(() => {
-      setRiverFaceDown(false);
-      playSound('cardFlip');
-      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(3000)));
-
-    // 1100ms — pre-flip tension pulse on bot cards (iterations:2 = safe, never -1)
+    // 300ms — pre-flip tension pulse on bot cards (iterations:2 = safe, never -1)
+    // Signals "opponent cards about to reveal" before the staggered flips
     timers.current.push(setTimeout(() => {
       const pulse = AnimatedRN.loop(
         AnimatedRN.sequence([
@@ -204,11 +191,12 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       );
       anims.current.push(pulse);
       pulse.start();
-    }, t(1100)));
+    }, t(300)));
 
-    // 1500–1800ms — staggered bot card flips (showdown moment)
+    // 500–950ms — opponent reveal: staggered bot card flips BEFORE turn/river
+    // Player sees what they're up against → then 1500ms pause → THEN turn reveals
     // Each card: bounce scale 1→1.18→1 (Hearthstone impact principle)
-    [1500, 1600, 1700, 1800].forEach((ms, i) => {
+    [500, 650, 800, 950].forEach((ms, i) => {
       timers.current.push(setTimeout(() => {
         setBotFaceDown(prev => {
           const next = [...prev];
@@ -233,22 +221,36 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       }, t(ms)));
     });
 
-    // 1950ms — fade out hint
+    // 2450ms — flip turn card (950ms last bot flip + 1500ms dramatic pause)
+    timers.current.push(setTimeout(() => {
+      setTurnFaceDown(false);
+      playSound('cardFlip');
+      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
+    }, t(2450)));
+
+    // 3950ms — flip river card (2450ms turn + 1500ms dramatic pause)
+    timers.current.push(setTimeout(() => {
+      setRiverFaceDown(false);
+      playSound('cardFlip');
+      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
+    }, t(3950)));
+
+    // 4100ms — fade out hint
     timers.current.push(setTimeout(() => {
       const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: t(400), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(3100)));
+    }, t(4100)));
 
-    // 2100ms — show hand names (fade in, both simultaneously)
+    // 4400ms — show hand names (fade in, both simultaneously)
     timers.current.push(setTimeout(() => {
       setShowHandNames(true);
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(3400)));
+    }, t(4400)));
 
-    // 2200ms — community spotlight: dim non-highlighted cards
+    // 4600ms — community spotlight: dim non-highlighted cards
     timers.current.push(setTimeout(() => {
       const b = boards[currentIdxRef.current];
       if (!b) return;
@@ -283,9 +285,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
           a.start();
         }
       });
-    }, t(3600)));
+    }, t(4600)));
 
-    // 2500ms — show win/lose result (scale in) + chip counter animation
+    // 5000ms — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
       setShowResult(true);
       const scaleAnim = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
@@ -310,10 +312,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal' }: 
       } else if (boardForResult?.winner === 'bot') {
         playSound('boardLose');
       }
-    }, t(4000)));
+    }, t(5000)));
 
-    // 4000ms — auto-advance
-    timers.current.push(setTimeout(doAdvance, t(5500)));
+    // 6500ms — auto-advance
+    timers.current.push(setTimeout(doAdvance, t(6500)));
 
     return () => {
       timers.current.forEach(clearTimeout);
