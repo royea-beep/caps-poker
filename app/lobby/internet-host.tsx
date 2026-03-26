@@ -14,6 +14,7 @@ import {
   isOnlineMultiplayerAvailable,
 } from '../../utils/realtimeMultiplayer';
 import { CapsHooks } from '../../utils/learning';
+import { getSupabase } from '../../utils/supabase';
 
 export default function InternetHostScreen() {
   const router = useRouter();
@@ -106,6 +107,14 @@ export default function InternetHostScreen() {
     // Use server-driven game start — deals cards, broadcasts to guests
     CapsHooks.multiplayerJoined(roomCode, 'realtime');
     server.startGame(config);
+
+    // Mark session as playing in Supabase
+    const sb = getSupabase();
+    if (sb && roomCode) {
+      void sb.from('sit_and_go_sessions')
+        .update({ status: 'playing' })
+        .eq('room_code', roomCode);
+    }
 
     // Read host's dealt data from server state
     const { boards, playerHands } = server.getDealtCards();

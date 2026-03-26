@@ -17,6 +17,7 @@ import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
+import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
 
 // Lazy-load expo-haptics — not available on web
@@ -115,6 +116,7 @@ export default function MultiplayerGameScreen() {
 
   // --- Chat (internet MP only) ---
   const isInternetMP = typeof (mpServer as any)?.sendChat === 'function' || typeof (mpClient as any)?.sendChat === 'function';
+  const isConnected = isInternetMP && (mpServer !== null || mpClient !== null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const myPlayerName = connectedPlayers.find((p) => p.seat === playerIndex)?.name ?? `Seat ${playerIndex + 1}`;
   const chatIdCounter = useRef(0);
@@ -696,6 +698,7 @@ export default function MultiplayerGameScreen() {
           {isHost && isInternetMP && spectatorCount > 0 && (
             <Text style={styles.spectatorBadge}>👁 {spectatorCount}</Text>
           )}
+          <ConnectionStatus connected={isConnected} />
           <ChipsDisplay amount={chips} />
         </View>
       </View>
