@@ -37,7 +37,7 @@ function formatTime(ts: number): string {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDay = Math.floor(diffHr / 24);
   if (diffDay === 1) return 'Yesterday';
-  return `${diffDay}d ago`;
+  return d.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short' });
 }
 
 function handRecordToShareData(hand: HandRecord): ShareData {

@@ -55,6 +55,45 @@ export async function testFullPipeline(): Promise<PipelineStep[]> {
     console.error('[TEST-PIPE] Step 2b ❌', msg);
   }
 
+  // Step 2c — FileSystem read fallback chain test (write temp file, read it back)
+  try {
+    console.log('[TEST-PIPE] Step 2c: FileSystem read fallback chain...');
+    const FileSystem = require('expo-file-system');
+    const testUri = `${FileSystem.cacheDirectory}pipe-test-${Date.now()}.bin`;
+    const testBase64 = 'dGVzdA=='; // "test" in base64
+    await FileSystem.writeAsStringAsync(testUri, testBase64, { encoding: FileSystem.EncodingType.Base64 });
+
+    // Method 1: readAsStringAsync
+    let readOk = false;
+    try {
+      const base64: string = await FileSystem.readAsStringAsync(testUri, { encoding: FileSystem.EncodingType.Base64 });
+      readOk = base64.length > 0;
+      console.log('[TEST-PIPE] Step 2c: Method 1 (FileSystem Base64)', readOk ? '✅' : '❌', 'len:', base64.length);
+    } catch (e: any) {
+      console.error('[TEST-PIPE] Step 2c: Method 1 failed:', e?.message || JSON.stringify(e));
+    }
+
+    // Method 2: fetch + arrayBuffer
+    if (!readOk) {
+      try {
+        const resp = await fetch(testUri);
+        const buf = await resp.arrayBuffer();
+        readOk = buf.byteLength > 0;
+        console.log('[TEST-PIPE] Step 2c: Method 2 (fetch+arrayBuffer)', readOk ? '✅' : '❌', 'bytes:', buf.byteLength);
+      } catch (e: any) {
+        console.error('[TEST-PIPE] Step 2c: Method 2 failed:', e?.message || JSON.stringify(e));
+      }
+    }
+
+    await FileSystem.deleteAsync(testUri, { idempotent: true }).catch(() => {});
+    results.push({ step: '2c-file-read', ok: readOk, detail: readOk ? 'Read OK' : 'All methods failed' });
+    console.log('[TEST-PIPE] Step 2c', readOk ? '✅' : '❌');
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    results.push({ step: '2c-file-read', ok: false, detail: msg });
+    console.error('[TEST-PIPE] Step 2c ❌', msg);
+  }
+
   // Step 3 — Supabase bucket upload probe
   try {
     console.log('[TEST-PIPE] Step 3: Testing bug-recordings bucket...');

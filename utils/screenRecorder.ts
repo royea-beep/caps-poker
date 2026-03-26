@@ -58,9 +58,12 @@ export async function startRecording(): Promise<boolean> {
   setDebugRecording(true);
   debugLog('🎥 REC start: disk mode (2fps → crash-screenshots/)');
 
+  let _tickCount = 0;
   screenshotInterval = setInterval(async () => {
     if (isCapturing || !isRecording || !FileSystem) return;
     isCapturing = true;
+    _tickCount++;
+    console.log('[BUG-PIPE] 2a: Interval tick #' + _tickCount);
     try {
       const uri = await captureScreen!({ format: 'jpg', quality: 0.3 });
       const fileName = `frame-${Date.now()}.jpg`;
@@ -74,12 +77,13 @@ export async function startRecording(): Promise<boolean> {
           await FileSystem.deleteAsync(SCREENSHOT_DIR + sorted[i], { idempotent: true });
         }
       }
-    } catch {
-      // silent — capture can fail during transitions
+      console.log('[BUG-PIPE] 2a: ✅ Frame', files.length, uri.slice(-30));
+    } catch (err: any) {
+      console.error('[BUG-PIPE] 2a: ❌ Capture failed:', err?.message || JSON.stringify(err));
     } finally {
       isCapturing = false;
     }
-  }, 500);
+  }, 2000);
 
   return true;
 }

@@ -19,7 +19,7 @@ export async function sendCrashAlert(
       `Build: ${meta.build} | v${meta.version}`,
       `Device: ${meta.device ?? 'unknown'}`,
       `Step: ${lastStep}`,
-      `Time: ${new Date().toLocaleTimeString('he-IL')}`,
+      `Time: ${new Date().toLocaleTimeString('he-IL', { timeZone: 'Asia/Jerusalem' })}`,
       '',
       videoUrl      ? `🎥 Video: ${videoUrl}`           : '',
       screenshotUrl ? `📸 Screenshot: ${screenshotUrl}` : '',

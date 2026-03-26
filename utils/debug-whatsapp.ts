@@ -114,7 +114,7 @@ export async function sendDebugReportToWhatsApp(report: DebugReport): Promise<vo
     passedList ? `*Passed:*\n${passedList}` : '',
     ``,
     `Fix prompt ready — open /debug in app`,
-    `⏱️ ${new Date(report.timestamp).toLocaleString('he-IL')}`,
+    `⏱️ ${new Date(report.timestamp).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`,
   ].filter(Boolean).join('\n')
 
   try {
