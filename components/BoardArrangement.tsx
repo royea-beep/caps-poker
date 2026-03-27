@@ -180,7 +180,7 @@ export function BoardArrangement({
             onPress={onUndo}
             disabled={boards.every((b) => b.playerCards.length === 0)}
           >
-            <Text style={[baStyles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>UNDO</Text>
+            <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>UNDO</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
@@ -292,9 +292,9 @@ const baStyles = StyleSheet.create({
     zIndex: 10,
   },
   floatingBtn: {
-    paddingVertical: rs(12),
+    paddingVertical: 14,
     paddingHorizontal: rs(28),
-    minHeight: 44,
+    minHeight: 52,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: rv(24),
@@ -310,9 +310,9 @@ const baStyles = StyleSheet.create({
     }),
   },
   undoBtn: {
-    backgroundColor: COLORS.surfaceRaised,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: '#2A1A06',
+    borderWidth: 1.5,
+    borderColor: '#F5C842',
   },
   placeBtn: {
     backgroundColor: COLORS.gold,
@@ -350,13 +350,16 @@ const baStyles = StyleSheet.create({
   },
   floatingBtnText: {
     color: COLORS.textPrimary,
-    fontSize: rf(14),
+    fontSize: rf(16),
     fontWeight: '800',
     letterSpacing: 2,
     textAlign: 'center',
   },
   floatingBtnDisabled: {
     opacity: 0.4,
+  },
+  undoBtnText: {
+    color: '#F5C842',
   },
   placeBtnText: {
     color: COLORS.background,

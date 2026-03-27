@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, Clipboard, Share, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Alert, Clipboard, Share, Platform, Pressable, Linking } from 'react-native';
 import { rf, rs, rv } from '../../utils/responsive';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -157,6 +157,15 @@ export default function InternetHostScreen() {
     } catch {}
   }, [roomCode]);
 
+  const shareToWhatsApp = useCallback(() => {
+    const message = `היי! בוא תנסה את CAPS Poker 🂣
+קוד חדר: ${roomCode}
+להורדה: https://caps.ftable.co.il`;
+    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`).catch(() => {
+      Alert.alert('WhatsApp לא זמין', 'אנא וודא ש-WhatsApp מותקן');
+    });
+  }, [roomCode]);
+
   const handleCancel = useCallback(() => {
     if (serverRef.current) {
       serverRef.current.stop();
@@ -210,6 +219,9 @@ export default function InternetHostScreen() {
           </Pressable>
           <Pressable onPress={handleShare} style={styles.codeActionBtn}>
             <Text style={styles.codeActionText}>📤 SHARE</Text>
+          </Pressable>
+          <Pressable onPress={shareToWhatsApp} style={[styles.codeActionBtn, styles.whatsappBtn]}>
+            <Text style={styles.whatsappBtnText}>💬 שתף בווטסאפ</Text>
           </Pressable>
         </View>
 
@@ -346,5 +358,15 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  whatsappBtn: {
+    backgroundColor: '#128C7E',
+    borderColor: '#128C7E',
+  },
+  whatsappBtnText: {
+    color: '#FFFFFF',
+    fontSize: rf(14),
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
