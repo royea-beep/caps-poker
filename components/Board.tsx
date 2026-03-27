@@ -286,7 +286,8 @@ export default function Board({
   }, []);
 
   // Build bot card sets: use allBotCards if provided, otherwise fall back to single botCards
-  const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : botCards.length > 0 ? [botCards] : [];
+  const safeBotCards = botCards ?? [];
+  const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : safeBotCards.length > 0 ? [safeBotCards] : [];
   const multiBot = botCardSets.length > 1;
 
   const boardAccent = BOARD_COLORS[index % BOARD_COLORS.length];
@@ -333,11 +334,11 @@ export default function Board({
         </View>
 
         {/* Bot card rows — hidden during arrangement (board stays clean for player placement) */}
-        {!isArrangement && botCardSets.map((botCardSet, botIdx) =>
-          botCardSet.length > 0 ? (
+        {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
+          (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
               <Text style={styles.rowLabel}>{multiBot ? `${t().bot}${botIdx + 1}` : t().bot}</Text>
-              {botCardSet.map((c) => (
+              {(botCardSet ?? []).map((c) => (
                 <CardComponent
                   key={c.id}
                   card={c}
@@ -360,7 +361,7 @@ export default function Board({
 
         {/* Community cards: flop + turn/river (slightly larger for readability) */}
         <View style={styles.cardRow}>
-          {openCards.map((c) => (
+          {(openCards ?? []).map((c) => (
             <CardComponent
               key={c.id}
               card={c}
@@ -374,7 +375,7 @@ export default function Board({
             />
           ))}
           <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
-          {closedCards.map((c) => (
+          {(closedCards ?? []).map((c) => (
             <CardComponent
               key={c.id}
               card={c}
