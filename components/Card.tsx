@@ -23,6 +23,7 @@ interface CardProps {
   cardWidth?: number;
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
+  hideCornerLabels?: boolean;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -64,6 +65,7 @@ export default function CardComponent({
   flipDuration = 800,
   cardWidth,
   cardHeight,
+  hideCornerLabels = false,
 }: CardProps) {
   const width = cardWidth ?? (small ? rs(52) : rs(58));
   const height = cardHeight ?? (small ? rs(74) : rs(82));
@@ -275,21 +277,23 @@ export default function CardComponent({
           frontAnimStyle,
         ]}
       >
-        {/* Top-left corner: small rank + suit */}
-        <View style={styles.cornerTL}>
-          <Text style={[styles.rankText, { color: suitColor, fontSize: cornerRankSize }]}>
-            {card.rank}
-          </Text>
-          <Text style={[styles.suitText, {
-            color: suitColor,
-            fontSize: cornerSuitSize,
-            textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 4,
-          }]}>
-            {SUIT_SYMBOLS[card.suit]}
-          </Text>
-        </View>
+        {/* Top-left corner: small rank + suit — hidden when hideCornerLabels is true */}
+        {!hideCornerLabels && (
+          <View style={styles.cornerTL}>
+            <Text style={[styles.rankText, { color: suitColor, fontSize: cornerRankSize }]}>
+              {card.rank}
+            </Text>
+            <Text style={[styles.suitText, {
+              color: suitColor,
+              fontSize: cornerSuitSize,
+              textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 4,
+            }]}>
+              {SUIT_SYMBOLS[card.suit]}
+            </Text>
+          </View>
+        )}
 
         {/* Center: large rank + suit below */}
         <View style={styles.centerDisplay}>
