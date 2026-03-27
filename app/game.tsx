@@ -806,11 +806,7 @@ function GameScreenInner() {
 
   const handleBack = useCallback(() => {
     const leave = () => {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/');
-      }
+      router.replace('/');
     };
 
     // On web, Alert.alert uses window.confirm which is unreliable — navigate directly
