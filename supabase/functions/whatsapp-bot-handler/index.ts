@@ -197,6 +197,69 @@ async function transcribeBugAudio(audioUrl: string): Promise<string | null> {
   }
 }
 
+// ── Build rich fix prompt from DB report (built AFTER AI + Whisper complete) ─────
+// This is what Claude Bot receives when Roye replies "1". Includes everything.
+
+function buildFixPromptFromReport(report: Record<string, unknown>, transcription: string | null): string {
+  const id = (report.id as string | null)?.slice(0, 8)?.toUpperCase() ?? 'UNKNOWN';
+  const sev = (report.ai_severity as string | null) ?? 'medium';
+  const summary = (report.ai_summary as string | null) ?? 'Bug reported by user';
+  const suggestedFix = (report.ai_suggested_fix as string | null) ?? '';
+  const screen = (report.ai_screen as string | null) ?? '';
+  const steps = (report.ai_steps as string[] | null) ?? [];
+  const dev = (report.device_info as Record<string, string> | null) ?? {};
+  const logs = (report.console_logs as string[] | null) ?? [];
+  const crumbs = (report.breadcrumbs as Array<{ ts: string; screen: string }> | null) ?? [];
+
+  const gameLogs = logs
+    .filter((l) => !l.includes('[BUG-PIPE]') && !l.includes('[FILE-READER]') && !l.includes('[PIPE-TEST]')
+      && !l.includes('[TIMEOUT]') && !l.includes('[BUG-AUDIO]') && !l.includes('[BUG-WA]')
+      && l !== '--- PIPELINE LOGS ---')
+    .slice(-15);
+
+  let prompt = `VAMOS CAPS CAPS-BUGFIX-${id}\n\n`;
+  prompt += `## BUG REPORT — AUTO-FIX\n`;
+  prompt += `**Severity:** ${sev}\n`;
+  if (screen) prompt += `**Screen:** ${screen}\n`;
+  prompt += `**Device:** ${dev.model ?? 'unknown'} | ${dev.osVersion ?? ''}\n\n`;
+
+  if (transcription) {
+    prompt += `## What the user said (transcribed from Hebrew audio):\n"${transcription}"\n\n`;
+  }
+  if (summary) {
+    prompt += `## AI Analysis:\n${summary}\n\n`;
+  }
+  if (suggestedFix) {
+    prompt += `## AI Suggested Fix:\n${suggestedFix}\n\n`;
+  }
+  if (steps.length > 0) {
+    prompt += `## Steps to reproduce:\n`;
+    steps.forEach((s) => { prompt += `- ${s}\n`; });
+    prompt += `\n`;
+  }
+  if (gameLogs.length > 0) {
+    prompt += `## Game console logs:\n\`\`\`\n`;
+    gameLogs.forEach((l) => { prompt += l + '\n'; });
+    prompt += `\`\`\`\n\n`;
+  }
+  if (crumbs.length > 0) {
+    prompt += `## User navigation path:\n`;
+    crumbs.forEach((c) => { prompt += `${(c.ts ?? '?').slice(11, 19)} -> ${c.screen}\n`; });
+    prompt += `\n`;
+  }
+
+  prompt += `## TASK\n`;
+  prompt += `1. Find the relevant file: ${screen || 'check game.tsx and components/'}\n`;
+  prompt += `2. Apply the fix: ${suggestedFix || 'investigate the issue'}\n`;
+  prompt += `3. Run tests: npx tsc --noEmit && npx jest --forceExit\n`;
+  prompt += `4. Deploy OTA: npm run ota -- --message "autofix: ${summary.slice(0, 50)}"\n`;
+  prompt += `5. Git push: git add -A && git commit -m "autofix: ${id}" && git push origin main\n\n`;
+  prompt += `Yes, allow all edits in components/ during this session.\n`;
+  prompt += `VAMOS CAPS CAPS-BUGFIX-${id} -- END\n`;
+
+  return prompt;
+}
+
 // ── Describe image via Claude Vision ───────────────────────────────────────
 
 async function describeImage(mediaUrl: string): Promise<string> {
@@ -439,11 +502,11 @@ async function triggerGitHubAction(
   plan: ClaudePlan,
   project: string,
   eventType: 'claude-fix-no-build' | 'claude-fix-and-deploy',
-): Promise<boolean> {
+): Promise<number | null> {
   const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
   if (!GITHUB_TOKEN) {
     console.error('[GITHUB] GITHUB_TOKEN missing in Edge Function secrets');
-    return false;
+    return null;
   }
   const url = `https://api.github.com/repos/${repo}/dispatches`;
   console.log('[GITHUB] Dispatching to:', url, 'event:', eventType);
@@ -470,15 +533,28 @@ async function triggerGitHubAction(
     });
     if (res.status === 204 || res.status === 200) {
       console.log('[GITHUB] Dispatch OK. Status:', res.status);
-      return true;
+      // Fetch real run ID (wait 2s for GitHub to register the workflow run)
+      try {
+        await new Promise((r) => setTimeout(r, 2000));
+        const runsRes = await fetch(
+          `https://api.github.com/repos/${repo}/actions/runs?event=repository_dispatch&per_page=1`,
+          { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } },
+        );
+        const runsData = await runsRes.json().catch(() => ({}));
+        const runId = (runsData.workflow_runs?.[0]?.id as number | null) ?? null;
+        console.log('[GITHUB] Run ID:', runId);
+        return runId ?? 1; // fallback to 1 if GitHub hasn't registered yet
+      } catch {
+        return 1; // fallback
+      }
     } else {
       const body = await res.text().catch(() => '');
       console.error('[GITHUB] Dispatch failed. Status:', res.status, '| Body:', body.slice(0, 500));
-      return false;
+      return null;
     }
   } catch (err) {
     console.error('[GITHUB] Exception during dispatch:', err);
-    return false;
+    return null;
   }
 }
 
@@ -561,6 +637,10 @@ function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | nu
   if (transcription) msg += `\nUser said: "${transcription.slice(0, 300)}"\n`;
   else if (desc) msg += `\nUser note: ${desc}\n`;
   msg += `\nLogs: ${logs.length} | Breadcrumbs: ${crumbs.length}\n`;
+  const audioLink = (report.audio_url as string | null) ?? '';
+  const videoLink = (report.video_url as string | null) ?? '';
+  if (audioLink) msg += `Audio: ${audioLink}\n`;
+  if (videoLink) msg += `Screenshot: ${videoLink}\n`;
   msg += '\n';
   msg += '*Reply:*\n';
   msg += '1 = Fix now (auto-fix)\n';
@@ -614,10 +694,10 @@ async function handleBugReply(
         effort: 'MEDIUM' as const,
         project: 'caps-poker',
       };
-      const dispatched = await triggerGitHubAction(claudePlan, 'caps-poker', 'claude-fix-no-build');
-      if (dispatched) {
-        await supabase.from('whatsapp_sessions').update({ github_run_id: 1, status: 'bug_fixing' }).eq('id', session.id);
-        return 'Auto-fix dispatched to Claude Bot. Will notify when done.';
+      const runId = await triggerGitHubAction(claudePlan, 'caps-poker', 'claude-fix-no-build');
+      if (runId !== null) {
+        await supabase.from('whatsapp_sessions').update({ github_run_id: runId, status: 'bug_fixing' }).eq('id', session.id);
+        return `Auto-fix dispatched to Claude Bot (run #${runId}). Will notify when done.`;
       } else {
         return 'Auto-fix failed to dispatch. Check GITHUB_TOKEN in Edge Function secrets (Supabase Dashboard → Edge Functions → whatsapp-bot-handler → Secrets).';
       }
@@ -1079,7 +1159,7 @@ serve(async (req: Request) => {
         if (bugReportId) {
           const { data } = await supabase
             .from('bug_reports')
-            .select('ai_summary,ai_severity,ai_suggested_fix,ai_screen,device_info,metadata,console_logs,breadcrumbs,description,audio_url,video_url')
+            .select('id,ai_summary,ai_severity,ai_suggested_fix,ai_screen,ai_steps,device_info,metadata,console_logs,breadcrumbs,description,audio_url,video_url')
             .eq('id', bugReportId).single();
           bugReport = data;
           console.log('[whatsapp-bot] Bug report fetched:', { sev: bugReport?.ai_severity, summary: (bugReport?.ai_summary as string | null)?.slice(0, 50) });
@@ -1189,9 +1269,16 @@ Respond with valid JSON only (no markdown fences):
           }
         }
 
+        // Build rich fix_prompt NOW — after AI triage + Whisper transcription are done.
+        // This is what Claude Bot receives when Roye replies "1".
+        const richFixPrompt = bugReport
+          ? buildFixPromptFromReport(bugReport, bugAudioTranscription)
+          : (bugFixPrompt ?? 'Bug fix requested');
+        console.log('[whatsapp-bot] richFixPrompt length:', richFixPrompt.length);
+
         // Build rich message from DB data (fallback to json.message if DB empty)
         const bugMsg = bugReport
-          ? buildBugMessage(bugReport, bugFixPrompt, bugAudioTranscription)
+          ? buildBugMessage(bugReport, richFixPrompt, bugAudioTranscription)
           : (json.message ?? 'Bug report received');
         const bugAiSummary = (bugReport?.ai_summary as string | null) ?? (json.aiSummary as string | null);
         const effectiveAudio = audioUrl ?? (bugReport?.audio_url as string | null);
@@ -1206,7 +1293,7 @@ Respond with valid JSON only (no markdown fences):
             media_type: 'bug',
             claude_plan: {
               bug_report_id: bugReportId,
-              fix_prompt: bugFixPrompt,
+              fix_prompt: richFixPrompt,
               ai_summary: bugAiSummary,
               audio_url: effectiveAudio,
               screenshot_url: effectiveScreenshot,
