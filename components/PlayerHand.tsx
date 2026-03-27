@@ -83,7 +83,8 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
-  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(cards.length / 2)) : Math.max(1, cards.length);
+  const safeCards = cards ?? [];
+  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / 2)) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
@@ -95,9 +96,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   })();
   const cardH = Math.round(cardW * 1.15);
 
-  const midpoint = Math.ceil(cards.length / 2);
-  const topRow = cards.slice(0, midpoint);
-  const bottomRow = cards.slice(midpoint);
+  const midpoint = Math.ceil(safeCards.length / 2);
+  const topRow = safeCards.slice(0, midpoint);
+  const bottomRow = safeCards.slice(midpoint);
 
   const renderCard = (card: Card, globalIndex: number) => (
     <AnimatedCardSlot
@@ -116,10 +117,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
       <View style={styles.labelRow}>
         <Text style={styles.label}>{t().yourHand}</Text>
         <View style={styles.countBadge}>
-          <Text style={styles.countBadgeText}>{cards.length}</Text>
+          <Text style={styles.countBadgeText}>{safeCards.length}</Text>
         </View>
       </View>
-      {cards.length > 0 ? (
+      {safeCards.length > 0 ? (
         <View style={styles.grid}>
           {useTwoRows ? (
             <>
@@ -134,7 +135,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
             </>
           ) : (
             <View style={styles.webRow}>
-              {cards.map((card, i) => renderCard(card, i))}
+              {safeCards.map((card, i) => renderCard(card, i))}
             </View>
           )}
         </View>
