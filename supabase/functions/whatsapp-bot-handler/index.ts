@@ -1008,7 +1008,7 @@ serve(async (req: Request) => {
         const screenshotUrl: string | null = json.screenshotUrl ?? json.videoUrl ?? null;
         const audioUrl: string | null = json.audioUrl ?? null;
 
-        // Query full report from DB — AI triage already completed in app before this call
+        // Query full report from DB
         let bugReport: Record<string, unknown> | null = null;
         if (bugReportId) {
           const { data } = await supabase
@@ -1017,6 +1017,85 @@ serve(async (req: Request) => {
             .eq('id', bugReportId).single();
           bugReport = data;
           console.log('[whatsapp-bot] Bug report fetched:', { sev: bugReport?.ai_severity, summary: (bugReport?.ai_summary as string | null)?.slice(0, 50) });
+        }
+
+        // FIX 1: If AI triage not done yet (app sent WhatsApp before inline triage finished),
+        // run it now inside the Edge Function with 15s timeout.
+        if (bugReportId && bugReport && !((bugReport.ai_summary as string | null)?.trim())) {
+          console.log('[whatsapp-bot] ai_summary empty — running AI triage now');
+          try {
+            const _report = bugReport;
+            const _logs   = (_report.console_logs as string[] | null) ?? [];
+            const _crumbs = (_report.breadcrumbs  as Array<{ ts: string; screen: string }> | null) ?? [];
+            const _dev    = (_report.device_info  as Record<string, string> | null) ?? {};
+            const _desc   = (_report.description  as string | null) ?? '';
+
+            // FIX 3: Filter [BUG-PIPE] / expo-file-system noise; prioritise [ERR]/error lines
+            const _filtered  = _logs.filter((l) => !l.includes('[BUG-PIPE]') && !l.includes('expo-file-system')).slice(-30);
+            const _errLines  = _filtered.filter((l) => l.includes('[ERR]') || l.includes('[FAIL]') || l.includes('Error') || l.includes('error')).slice(-15);
+            const _logText   = (_errLines.length > 0 ? _errLines : _filtered.slice(-15)).join('\n');
+            const _crumbText = _crumbs.map((c) => `${(c.ts ?? '?').slice(11, 19)} -> ${c.screen}`).join('\n');
+
+            const _prompt = `You are a senior QA engineer for CAPS Poker — a mobile Omaha poker game in React Native.
+
+THIS IS A BUG REPORT FROM A REAL USER. Analyze the ACTUAL GAME BUG, not pipeline metadata.
+
+Device: ${_dev.model ?? 'Unknown'} | ${_dev.osName ?? _dev.platform ?? 'iOS'} ${_dev.osVersion ?? ''} | Build ${_dev.buildNumber ?? ''}
+User description: ${_desc || '(none — analyze logs and breadcrumbs)'}
+
+Console logs (errors/failures — pipeline noise removed):
+${_logText || '(no error logs)'}
+
+User navigation (breadcrumbs):
+${_crumbText || '(no breadcrumbs)'}
+
+RULES:
+- DO NOT report tester_name, metadata fields, or undefined values as bugs — those are pipeline fields
+- Focus on GAME errors: crashes, wrong cards, broken UI, bad state
+- If [ERR] lines exist — those describe the bug
+- If nothing clear: "No obvious game bug — review audio/screenshot manually"
+
+Respond with valid JSON only (no markdown fences):
+{"severity":"low"|"medium"|"high"|"critical","summary":"one sentence game bug","suggested_fix":"technical suggestion","screen":"affected file/screen","steps":["step 1","step 2"]}`;
+
+            const _aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+              body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, messages: [{ role: 'user', content: _prompt }] }),
+              signal: AbortSignal.timeout(15000),
+            });
+
+            if (_aiRes.ok) {
+              const _aiData = await _aiRes.json();
+              const _raw = (_aiData.content?.[0]?.text ?? '{}').trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+              let _triage: Record<string, unknown> = {};
+              try { _triage = JSON.parse(_raw); } catch { /* ignore */ }
+              console.log('[whatsapp-bot] AI triage:', JSON.stringify(_triage).slice(0, 150));
+
+              if (_triage.summary) {
+                await supabase.from('bug_reports').update({
+                  ai_severity:      _triage.severity      ?? 'medium',
+                  ai_summary:       _triage.summary,
+                  ai_suggested_fix: _triage.suggested_fix ?? null,
+                  ai_screen:        _triage.screen        ?? null,
+                  ai_steps:         _triage.steps         ?? null,
+                }).eq('id', bugReportId);
+
+                const { data: _enriched } = await supabase
+                  .from('bug_reports')
+                  .select('ai_summary,ai_severity,ai_suggested_fix,ai_screen,device_info,metadata,console_logs,breadcrumbs,description,audio_url,video_url')
+                  .eq('id', bugReportId).single();
+                if (_enriched) {
+                  bugReport = _enriched;
+                  console.log('[whatsapp-bot] Enriched. severity:', _enriched.ai_severity, 'summary:', (_enriched.ai_summary as string | null)?.slice(0, 60));
+                }
+              }
+            } else {
+              console.error('[whatsapp-bot] AI triage API error:', _aiRes.status, (await _aiRes.text().catch(() => '')).slice(0, 200));
+            }
+          } catch (_aiErr) {
+            console.error('[whatsapp-bot] AI triage failed (non-blocking):', _aiErr);
+          }
         }
 
         // Build rich message from DB data (fallback to json.message if DB empty)
