@@ -93,7 +93,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
     if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
     return Math.min(88, Math.max(70, maxCardW));
   })();
-  const cardH = Math.round(cardW * 1.4);
+  const cardH = Math.round(cardW * 1.15);
 
   const midpoint = Math.ceil(cards.length / 2);
   const topRow = cards.slice(0, midpoint);
