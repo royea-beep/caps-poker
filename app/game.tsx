@@ -14,7 +14,6 @@ import Animated, {
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import ChipsDisplay from '../components/ChipsDisplay';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
 import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE, getCardDimensions } from '../constants/gameConfig';
@@ -908,7 +907,10 @@ function GameScreenInner() {
                 <Text style={styles.waitingText}>Waiting for bots...</Text>
               )}
             </View>
-            <ChipsDisplay amount={chips} />
+            <View style={styles.headerChips}>
+              <Text style={styles.headerChipsEmoji}>💰</Text>
+              <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
+            </View>
           </View>
 
           {/* Boards — 2 columns */}
@@ -1016,7 +1018,10 @@ function GameScreenInner() {
             <Text style={styles.calculatingText}>Calculating results...</Text>
           )}
         </View>
-        <ChipsDisplay amount={chips} />
+        <View style={styles.headerChips}>
+          <Text style={styles.headerChipsEmoji}>💰</Text>
+          <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
+        </View>
       </View>
 
       {/* Bot status bar */}
@@ -1183,6 +1188,27 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
     textTransform: 'uppercase' as any,
+  },
+  headerChips: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(4),
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderRadius: rv(12),
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(10),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.25)',
+  },
+  headerChipsEmoji: {
+    fontSize: rf(14),
+    lineHeight: rf(18),
+  },
+  headerChipsAmount: {
+    color: COLORS.gold,
+    fontSize: rf(14),
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   botSection: {
     paddingVertical: rs(4),

@@ -15,6 +15,10 @@ export const ECONOMY_FLAGS = {
   walletSyncEnabled: false,
   /** Show ad-for-chips reward button */
   adRewardEnabled: false,
+  /** Sit & Go mode — not yet available */
+  sit_n_go_enabled: false,
+  /** Battle Pass mode — not yet available */
+  battle_pass_enabled: false,
 } as const;
 
 export const ECONOMY_VALUES = {

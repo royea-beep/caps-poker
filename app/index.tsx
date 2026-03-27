@@ -62,6 +62,7 @@ export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
 const NUDGE_AT_GAMES = [3, 8, 20];
 const NUDGE_DISMISSED_KEY = 'nudgeDismissedAt';
+const DAILY_REWARD_POPUP_SESSION_KEY = 'caps_daily_reward_popup_shown';
 
 const isWeb = Platform.OS === 'web';
 
@@ -298,6 +299,149 @@ const toastStyles = StyleSheet.create({
   },
 });
 
+// ─── Daily Reward Modal — shown on app open if reward is claimable ────────────
+function DailyRewardModal({
+  reward,
+  streak,
+  onClaim,
+  onDismiss,
+}: {
+  reward: number;
+  streak: number;
+  onClaim: () => void;
+  onDismiss: () => void;
+}) {
+  const isHE = getLanguage() === 'he';
+  const opacity = useRef(new AnimatedRN.Value(0)).current;
+  const scale = useRef(new AnimatedRN.Value(0.88)).current;
+  useEffect(() => {
+    AnimatedRN.parallel([
+      AnimatedRN.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      AnimatedRN.spring(scale, { toValue: 1, useNativeDriver: true, friction: 7, tension: 80 }),
+    ]).start();
+  }, []);
+  const dismiss = (cb: () => void) => {
+    AnimatedRN.parallel([
+      AnimatedRN.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+      AnimatedRN.timing(scale, { toValue: 0.92, duration: 180, useNativeDriver: true }),
+    ]).start(cb);
+  };
+  return (
+    <AnimatedRN.View style={[dailyRewardModalStyles.overlay, { opacity }]}>
+      <Pressable style={StyleSheet.absoluteFillObject} onPress={() => dismiss(onDismiss)} />
+      <AnimatedRN.View style={[dailyRewardModalStyles.card, { transform: [{ scale }] }]}>
+        <Text style={dailyRewardModalStyles.emoji}>🎁</Text>
+        <Text style={dailyRewardModalStyles.title}>
+          {isHE ? 'פרס יומי!' : 'Daily Reward!'}
+        </Text>
+        <Text style={dailyRewardModalStyles.chips}>
+          {`+${reward.toLocaleString()} chips`}
+        </Text>
+        {streak > 1 && (
+          <Text style={dailyRewardModalStyles.streak}>
+            {isHE ? `🔥 ${streak} ימים ברצף` : `🔥 ${streak}-day streak!`}
+          </Text>
+        )}
+        <Pressable
+          style={dailyRewardModalStyles.claimBtn}
+          onPress={() => dismiss(onClaim)}
+        >
+          <Text style={dailyRewardModalStyles.claimBtnText}>
+            {isHE ? '✅ קחו את הפרס' : '✅ Claim Reward'}
+          </Text>
+        </Pressable>
+        <Pressable onPress={() => dismiss(onDismiss)} hitSlop={8} style={dailyRewardModalStyles.laterBtn}>
+          <Text style={dailyRewardModalStyles.laterText}>
+            {isHE ? 'אחר כך' : 'Later'}
+          </Text>
+        </Pressable>
+      </AnimatedRN.View>
+    </AnimatedRN.View>
+  );
+}
+
+const dailyRewardModalStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject as any,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    zIndex: 400,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: rs(24),
+  },
+  card: {
+    backgroundColor: '#1C0508',
+    borderRadius: rv(20),
+    borderWidth: 1.5,
+    borderColor: 'rgba(201,168,76,0.5)',
+    padding: rs(28),
+    alignItems: 'center',
+    gap: rs(8),
+    maxWidth: 340,
+    width: '100%',
+    ...Platform.select({
+      ios: { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 24 },
+      android: { elevation: 16 },
+      web: { boxShadow: '0 8px 40px rgba(201,168,76,0.3)' } as any,
+    }),
+  },
+  emoji: {
+    fontSize: rf(52),
+    lineHeight: rf(60),
+  },
+  title: {
+    color: '#c9a84c',
+    fontSize: rf(22),
+    fontWeight: '800',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  chips: {
+    color: '#ffffff',
+    fontSize: rf(32),
+    fontWeight: '900',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  streak: {
+    color: '#FFA500',
+    fontSize: rf(15),
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  claimBtn: {
+    backgroundColor: '#22C55E',
+    borderRadius: rv(14),
+    paddingVertical: rs(14),
+    paddingHorizontal: rs(36),
+    marginTop: rs(8),
+    width: '100%',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12 },
+      android: { elevation: 8 },
+      web: { boxShadow: '0 4px 16px rgba(34,197,94,0.4)' } as any,
+    }),
+  },
+  claimBtnText: {
+    color: '#ffffff',
+    fontSize: rf(17),
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  laterBtn: {
+    marginTop: rs(4),
+    paddingVertical: rs(6),
+    paddingHorizontal: rs(16),
+  },
+  laterText: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: rf(13),
+    fontWeight: '400',
+    textDecorationLine: 'underline',
+  },
+});
+
 // ─── Welcome modal — shown before first game / tutorial replay ─────────────────
 function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
   const isHE = getLanguage() === 'he';
@@ -431,6 +575,10 @@ export default function HomeScreen() {
   const [showNudge, setShowNudge] = useState(false);
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
   const [welcomeToastName, setWelcomeToastName] = useState('');
+  // Daily reward popup — shown once per session on mount if claimable
+  const [showDailyRewardPopup, setShowDailyRewardPopup] = useState(false);
+  const [pendingDailyReward, setPendingDailyReward] = useState(0);
+  const [pendingDailyStreak, setPendingDailyStreak] = useState(1);
 
   // Rotating tagline — cycles through all 10
   const [tagline] = useState<string>(() => {
@@ -454,13 +602,28 @@ export default function HomeScreen() {
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
       AsyncStorage.getItem(NUDGE_DISMISSED_KEY),
-    ]).then(([gamesVal, dismissedVal]) => {
+      AsyncStorage.getItem(DAILY_REWARD_POPUP_SESSION_KEY),
+    ]).then(([gamesVal, dismissedVal, popupShownVal]) => {
       const played = gamesVal ? parseInt(gamesVal, 10) || 0 : 0;
       setGamesPlayed(played);
       // Show nudge if: guest + nudge point + not recently dismissed
       const dismissedAt = dismissedVal ? parseInt(dismissedVal, 10) || 0 : 0;
       if (!user && NUDGE_AT_GAMES.includes(played) && played > dismissedAt) {
         setShowNudge(true);
+      }
+      // Show daily reward popup if claimable and not yet shown this session
+      if (ECONOMY_FLAGS.dailyRewardEnabled && !popupShownVal) {
+        const store = useGameStore.getState();
+        const now = new Date();
+        if (canClaimDailyReward(store.lastDailyRewardClaim, now)) {
+          const nextStreak = getNextStreak(store.lastDailyRewardClaim, store.dailyRewardStreak, now);
+          const reward = calculateDailyReward(nextStreak);
+          setPendingDailyReward(reward);
+          setPendingDailyStreak(nextStreak);
+          setShowDailyRewardPopup(true);
+          // Mark as shown for this session
+          AsyncStorage.setItem(DAILY_REWARD_POPUP_SESSION_KEY, '1').catch(() => {});
+        }
       }
     }).catch(() => { setGamesPlayed(0); });
   }, []);
@@ -532,6 +695,18 @@ export default function HomeScreen() {
     Alert.alert('Daily Reward!', `+${reward} chips${nextStreak > 1 ? ` (${nextStreak}-day streak!)` : ''}`);
   }, [lastDailyRewardClaim, dailyRewardStreak]);
 
+  // Handler for claiming from the auto-popup (uses pre-computed reward values)
+  const handlePopupClaim = useCallback(() => {
+    setShowDailyRewardPopup(false);
+    const now = new Date();
+    const store = useGameStore.getState();
+    store.addChips(pendingDailyReward);
+    store.trackChipsEarned(pendingDailyReward);
+    store.setLastDailyRewardClaim(now.toISOString());
+    store.setDailyRewardStreak(pendingDailyStreak);
+    CapsHooks.dailyRewardClaimed(pendingDailyStreak, pendingDailyReward);
+  }, [pendingDailyReward, pendingDailyStreak]);
+
   const handleGoogleSignIn = useCallback(async () => {
     setShowNudge(false);
     setSigningIn(true);
@@ -574,6 +749,16 @@ export default function HomeScreen() {
 
       {/* Welcome modal — shown before first game or tutorial replay */}
       {showWelcome && <WelcomeModal onStart={handleWelcomeStart} onSkip={handleWelcomeSkip} />}
+
+      {/* Daily reward popup — auto-shown on app open if claimable, once per session */}
+      {showDailyRewardPopup && (
+        <DailyRewardModal
+          reward={pendingDailyReward}
+          streak={pendingDailyStreak}
+          onClaim={handlePopupClaim}
+          onDismiss={() => setShowDailyRewardPopup(false)}
+        />
+      )}
 
       {/* Side menu — always rendered, pointer-events controlled by visible */}
       <SideMenu
@@ -717,6 +902,34 @@ export default function HomeScreen() {
             <Text style={styles.dailyPillText}>🎁 Claim Daily Reward</Text>
           </Pressable>
         )}
+
+        {/* Mode buttons — grayed out when feature flag is off */}
+        <View style={styles.modeButtonRow}>
+          <View
+            style={[styles.modeBtn, !ECONOMY_FLAGS.sit_n_go_enabled && styles.modeBtnDisabled]}
+            pointerEvents={ECONOMY_FLAGS.sit_n_go_enabled ? 'auto' : 'none'}
+          >
+            <Text style={[styles.modeBtnIcon]}>🎯</Text>
+            <Text style={[styles.modeBtnLabel, !ECONOMY_FLAGS.sit_n_go_enabled && styles.modeBtnLabelDisabled]}>
+              Sit & Go
+            </Text>
+            {!ECONOMY_FLAGS.sit_n_go_enabled && (
+              <Text style={styles.comingSoonLabel}>Coming Soon</Text>
+            )}
+          </View>
+          <View
+            style={[styles.modeBtn, !ECONOMY_FLAGS.battle_pass_enabled && styles.modeBtnDisabled]}
+            pointerEvents={ECONOMY_FLAGS.battle_pass_enabled ? 'auto' : 'none'}
+          >
+            <Text style={[styles.modeBtnIcon]}>⚔️</Text>
+            <Text style={[styles.modeBtnLabel, !ECONOMY_FLAGS.battle_pass_enabled && styles.modeBtnLabelDisabled]}>
+              Battle Pass
+            </Text>
+            {!ECONOMY_FLAGS.battle_pass_enabled && (
+              <Text style={styles.comingSoonLabel}>Coming Soon</Text>
+            )}
+          </View>
+        </View>
 
       </View>
 
@@ -929,5 +1142,49 @@ const styles = StyleSheet.create({
   // Battle Pass XP bar touchable wrapper
   xpBarTouchable: {
     width: '100%',
+  },
+
+  // Mode buttons row (Sit & Go, Battle Pass)
+  modeButtonRow: {
+    flexDirection: 'row',
+    gap: rs(10),
+    width: '100%',
+    justifyContent: 'center',
+  },
+  modeBtn: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: rv(14),
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(8),
+    gap: rs(2),
+  },
+  modeBtnDisabled: {
+    opacity: 0.4,
+  },
+  modeBtnIcon: {
+    fontSize: rf(22),
+    lineHeight: rf(28),
+  },
+  modeBtnLabel: {
+    color: '#ffffff',
+    fontSize: rf(12),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  modeBtnLabelDisabled: {
+    color: 'rgba(255,255,255,0.6)',
+  },
+  comingSoonLabel: {
+    color: 'rgba(201,168,76,0.7)',
+    fontSize: rf(9),
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase' as any,
+    textAlign: 'center',
   },
 });
