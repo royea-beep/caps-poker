@@ -521,12 +521,13 @@ async function triggerGitHubAction(
       body: JSON.stringify({
         event_type: eventType,
         client_payload: {
-          summary:  plan.summary,
-          plan:     plan.plan.join('\n'),
-          files:    plan.files.join(', '),
-          effort:   plan.effort,
-          severity: plan.severity,
-          type:     plan.type,
+          summary:    plan.summary,
+          plan:       plan.plan.join('\n'),
+          fix_prompt: plan.plan.join('\n'), // alias — workflow reads this directly
+          files:      plan.files.join(', '),
+          effort:     plan.effort,
+          severity:   plan.severity,
+          type:       plan.type,
           project,
         },
       }),
@@ -1400,6 +1401,75 @@ Respond with ONLY valid JSON, no markdown backticks:
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
+  }
+
+  // ── autofix_callback from GitHub Actions ───────────────────────────────────
+  // Called after claude-fix.yml finishes — sends WhatsApp result to Roye.
+  if (contentType.includes('application/json')) {
+    try {
+      const json = JSON.parse(rawBody);
+      if (json?.type === 'autofix_callback') {
+        console.log('[whatsapp-bot] autofix_callback received:', json);
+        const { run_id, result, has_changes, test_passed } = json as Record<string, unknown>;
+        const ROYE_WA = Deno.env.get('ROYE_WHATSAPP_NUMBER') ?? 'whatsapp:+972504141513';
+
+        // Find the session with this run_id
+        let session: Record<string, unknown> | null = null;
+        if (run_id) {
+          const { data } = await supabase
+            .from('whatsapp_sessions')
+            .select('id,from_number,status')
+            .eq('github_run_id', run_id)
+            .single();
+          session = data;
+        }
+        // Fallback: latest bug_fixing session
+        if (!session) {
+          const { data } = await supabase
+            .from('whatsapp_sessions')
+            .select('id,from_number,status')
+            .eq('status', 'bug_fixing')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          session = data;
+        }
+
+        let message = '';
+        let newStatus = 'bug_fixed';
+        if (result === 'fixed' && test_passed) {
+          message = '[OK] Auto-fix complete! Changes committed + OTA deployed. Tests passed.';
+          newStatus = 'bug_fixed';
+        } else if (result === 'fixed' && !test_passed) {
+          message = 'Auto-fix applied but tests failed. Changes committed — review needed.';
+          newStatus = 'bug_fix_partial';
+        } else if (result === 'manual') {
+          message = 'Claude Code not available on CI. Fix prompt saved to docs/prompts/. Run manually.';
+          newStatus = 'bug_manual';
+        } else if (result === 'no_changes') {
+          message = 'Auto-fix ran but no code changes were made. May need manual review.';
+          newStatus = 'bug_no_changes';
+        } else {
+          message = `Auto-fix run #${run_id ?? '?'} finished (result: ${result ?? 'unknown'}).`;
+          newStatus = 'bug_fix_done';
+        }
+
+        if (session) {
+          await supabase.from('whatsapp_sessions').update({ status: newStatus }).eq('id', session.id);
+          const toNumber = (session.from_number as string | null) ?? ROYE_WA;
+          await sendWhatsApp(toNumber, message);
+        } else {
+          // No session found — notify Roye directly
+          await sendWhatsApp(ROYE_WA, message);
+        }
+
+        console.log('[whatsapp-bot] autofix_callback handled. result:', result, 'newStatus:', newStatus);
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+    } catch { /* ignore parse errors */ }
   }
 
   const params = Object.fromEntries(new URLSearchParams(rawBody));

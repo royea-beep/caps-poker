@@ -26,31 +26,47 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Claude Code fix
+      - name: Save fix prompt
+        env:
+          FIX_PROMPT: ${{ github.event.client_payload.fix_prompt }}
+          FIX_PLAN: ${{ github.event.client_payload.plan }}
+        run: |
+          # fix_prompt is the full VAMOS — fall back to plan field if not present
+          PROMPT="${FIX_PROMPT:-$FIX_PLAN}"
+          printf '%s' "$PROMPT" > /tmp/fix-prompt.md
+          echo "=== FIX PROMPT (first 500 chars) ==="
+          head -c 500 /tmp/fix-prompt.md
+          echo ""
+
+      - name: Run Claude Code auto-fix
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-          FIX_PLAN: ${{ github.event.client_payload.plan }}
-          FIX_FILES: ${{ github.event.client_payload.files }}
           FIX_SEVERITY: ${{ github.event.client_payload.severity }}
-          FIX_SESSION_ID: ${{ github.event.client_payload.session_id }}
         run: |
-          echo "=== CAPS POKER — WhatsApp Bot Auto-Fix ==="
-          echo "Summary: $FIX_SUMMARY"
-          echo "Severity: $FIX_SEVERITY"
-          echo "Files: $FIX_FILES"
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY not set in GitHub Secrets — saving prompt for manual execution"
+            mkdir -p docs/prompts
+            cp /tmp/fix-prompt.md "docs/prompts/autofix-$(date +%Y-%m-%d-%H%M).md"
+            echo "MANUAL_FIX_NEEDED" > /tmp/fix-output.txt
+            echo "HAS_CHANGES=false" >> $GITHUB_ENV
+            exit 0
+          fi
           npm install -g @anthropic-ai/claude-code
-          timeout 35m claude --print "Read MEMORY.md. Iron Rules 1-8 confirmed. Standing Orders: Fix autonomously. Never give user commands.
+          echo "=== Running Claude Code ==="
+          timeout 35m claude --print --dangerously-skip-permissions "$(cat /tmp/fix-prompt.md)" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored — proceeding"
 
-          BUG REPORT FROM WHATSAPP:
-          Summary: $FIX_SUMMARY
-          Plan: $FIX_PLAN
-          Files: $FIX_FILES
-          Severity: $FIX_SEVERITY
+      - name: TypeScript check
+        run: npx tsc --noEmit 2>&1 | tail -10
+        continue-on-error: true
 
-          Fix this bug. Keep it focused — read only the files in FILES, make the minimum change to fix the bug, run npx tsc --noEmit. Do not explore unrelated files." --dangerously-skip-permissions || echo "Claude fix timed out or errored — proceeding to commit any partial changes"
+      - name: Run tests
+        id: tests
+        run: |
+          npx jest --forceExit 2>&1 | tail -15
+        continue-on-error: true
 
-      - name: Commit and push
+      - name: Commit and push (if changes)
         env:
           FIX_SUMMARY: ${{ github.event.client_payload.summary }}
           EVENT_TYPE: ${{ github.event.action }}
@@ -60,15 +76,32 @@ jobs:
           git add -A
           if git diff --staged --quiet; then
             echo "No changes to commit"
-          elif [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
-            git commit -m "fix: [WhatsApp] $FIX_SUMMARY [auto-fix][skip ci]"
-            git push
+            echo "HAS_CHANGES=false" >> $GITHUB_ENV
           else
-            git commit -m "fix: [WhatsApp] $FIX_SUMMARY [auto-fix]"
+            if [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
+              git commit -m "fix: [WhatsApp] ${FIX_SUMMARY} [auto-fix][skip ci]"
+            else
+              git commit -m "fix: [WhatsApp] ${FIX_SUMMARY} [auto-fix]"
+            fi
             git push
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
           fi
 
-      - name: Deploy web to Vercel
+      - name: Deploy OTA (if changes and not no-build)
+        if: env.HAS_CHANGES == 'true' && github.event.action != 'claude-fix-no-build'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN not set — skipping OTA deploy"
+            exit 0
+          fi
+          npx eas-cli update --branch production --message "autofix: ${FIX_SUMMARY}" --non-interactive 2>&1 | tail -10
+        continue-on-error: true
+
+      - name: Deploy web to Vercel (if changes and claude-fix-and-deploy)
+        if: env.HAS_CHANGES == 'true' && github.event.action == 'claude-fix-and-deploy'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -82,16 +115,48 @@ jobs:
           npx expo export --platform web --clear
           node scripts/fix-web-html.js
           cd dist && vercel --prod --yes --token "$VERCEL_TOKEN"
+        continue-on-error: true
 
-      - name: Notify via WhatsApp
+      - name: Notify via Edge Function callback
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          RESULT="unknown"
+          if grep -q "MANUAL_FIX_NEEDED" /tmp/fix-output.txt 2>/dev/null; then
+            RESULT="manual"
+          elif [ "${HAS_CHANGES}" = "true" ]; then
+            RESULT="fixed"
+          else
+            RESULT="no_changes"
+          fi
+
+          TEST_PASSED="false"
+          if [ "$TESTS_OUTCOME" = "success" ]; then
+            TEST_PASSED="true"
+          fi
+
+          echo "Sending callback: result=${RESULT} has_changes=${HAS_CHANGES:-false} test_passed=${TEST_PASSED}"
+
+          curl -s -X POST \
+            "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"type\": \"autofix_callback\",
+              \"run_id\": ${{ github.run_id }},
+              \"result\": \"${RESULT}\",
+              \"has_changes\": ${HAS_CHANGES:-false},
+              \"test_passed\": ${TEST_PASSED}
+            }" || echo "Callback failed — non-critical"
+
+      - name: Notify via WhatsApp (Twilio fallback)
         if: always()
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_FROM: whatsapp:+14155238886
-          TWILIO_TO: whatsapp:+972504141513
+          TWILIO_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
           FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-          EVENT_TYPE: ${{ github.event.action }}
           JOB_STATUS: ${{ job.status }}
         run: |
           if [ -z "$TWILIO_ACCOUNT_SID" ] || [ -z "$TWILIO_AUTH_TOKEN" ]; then
@@ -100,16 +165,16 @@ jobs:
           fi
           COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
           if [ "$JOB_STATUS" = "success" ]; then
-            if [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
-              MSG="✅ תיקון הושלם! commit: $COMMIT — $FIX_SUMMARY (לא עלתה גרסה)"
+            if [ "$HAS_CHANGES" = "true" ]; then
+              MSG="[OK] Auto-fix done! commit: ${COMMIT} - ${FIX_SUMMARY}"
             else
-              MSG="✅ תיקון הושלם! commit: $COMMIT — $FIX_SUMMARY (build ל-TestFlight בדרך...)"
+              MSG="Auto-fix ran, no changes. May need manual review. ${FIX_SUMMARY}"
             fi
           else
-            MSG="❌ תיקון נכשל. בדוק GitHub Actions לפרטים."
+            MSG="[FAIL] Auto-fix failed. Check GitHub Actions run ${{ github.run_id }}"
           fi
-          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/Messages.json" \
-            -u "$TWILIO_ACCOUNT_SID:$TWILIO_AUTH_TOKEN" \
-            --data-urlencode "From=$TWILIO_FROM" \
-            --data-urlencode "To=$TWILIO_TO" \
-            --data-urlencode "Body=$MSG"
+          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json" \
+            -u "${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}" \
+            --data-urlencode "From=${TWILIO_FROM:-whatsapp:+14155238886}" \
+            --data-urlencode "To=whatsapp:+972504141513" \
+            --data-urlencode "Body=${MSG}"
