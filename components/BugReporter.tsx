@@ -248,70 +248,65 @@ async function submitBugReport(opts: {
   return id;
 }
 
-// ─── AI Triage (runs AFTER insert, fire-and-forget) ───────────────────────────
+// ─── AI Triage (runs AFTER insert, only if user typed a description) ─────────
+// NOTE: whatsapp-bot-handler does the REAL triage (with Whisper transcription).
+// This inline triage only runs if the user typed a text description — because
+// in that case there's no audio to transcribe and we can give a quick result.
+// We do NOT call analyze-bug-report — it has an old prompt that reads metadata
+// fields and produces garbage output ("tester undefined"), overwriting good data.
 
 async function triggerAITriage(
   reportId: string,
   description: string,
   consoleLogs: string[],
 ): Promise<{ summary: string; severity: string } | null> {
-  const extra = Constants.expoConfig?.extra as Record<string, string> | undefined;
-  const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra?.supabaseUrl;
-  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || extra?.supabaseAnonKey;
-  if (!url || !key) return null;
+  // Skip if no description — whatsapp-bot-handler will do better triage with Whisper
+  if (!description.trim()) {
+    console.log('[BUG-PIPE] Step 5: No text description — skipping inline triage (Edge Fn will use Whisper)');
+    return null;
+  }
+
+  const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
 
   const logText = consoleLogs.slice(-20).join('\n');
-  const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
 
-  // Try inline Claude Haiku triage first (fast)
-  if (apiKey) {
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 300,
-          messages: [{ role: 'user', content: `CAPS QA. Classify this bug report.
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001', max_tokens: 300,
+        messages: [{ role: 'user', content: `CAPS QA. Classify this bug report.
 Console logs (last 20):
 ${logText}
-Description: "${description}"
-Reply JSON: {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence","severity":"low"|"medium"|"high"}` }],
-        }),
-      });
-      if (res.ok) {
-        const d = await res.json();
-        const result = JSON.parse(d.content?.[0]?.text ?? '{}');
+User description: "${description}"
+Reply JSON (no markdown): {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence about the bug","severity":"low"|"medium"|"high"}` }],
+      }),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      const raw = (d.content?.[0]?.text ?? '{}').trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      const result = JSON.parse(raw);
+      const summary = typeof result.summary === 'string' ? result.summary : '';
+      // Reject if summary looks like metadata garbage
+      if (summary && !summary.toLowerCase().includes('undefined') && !summary.toLowerCase().includes('tester')) {
         const sb = getSupabase();
         if (sb) {
           await sb.from('bug_reports').update({
             classification: result.classification === 'UNRELATED' ? 'UNRELATED' : 'RELEVANT',
-            ai_summary: typeof result.summary === 'string' ? result.summary : '',
+            ai_summary: summary,
           }).eq('id', reportId);
-          console.log('[BUG-PIPE] Step 5: ✅ AI triage saved. severity:', result.severity, 'summary:', result.summary);
-          return { summary: String(result.summary ?? ''), severity: String(result.severity ?? 'medium') };
+          console.log('[BUG-PIPE] Step 5: ✅ Inline triage saved. severity:', result.severity, 'summary:', summary.slice(0, 60));
+          return { summary, severity: String(result.severity ?? 'medium') };
         }
+      } else {
+        console.log('[BUG-PIPE] Step 5: Inline triage returned bad output — leaving for Edge Fn to handle');
       }
-    } catch (e) {
-      console.error('[BUG-PIPE] Step 5: Inline triage failed, trying edge function:', e);
     }
+  } catch (e) {
+    console.error('[BUG-PIPE] Step 5: Inline triage failed:', e);
   }
-
-  // Also call edge function (fire-and-forget) (it can do deeper analysis with full row from DB)
-  fetch(`${url}/functions/v1/analyze-bug-report`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: key },
-    body: JSON.stringify({
-      bug_report_id: reportId,
-      description,
-      report_type: 'video',
-      app_version: VERSION,
-      language: 'he',
-      project_name: 'Caps',
-      github_repo: 'royea-beep/caps',
-      breadcrumbs: getBreadcrumbs().slice(-10).map((c) => ({ message: c.screen, timestamp: c.ts })),
-      base_url: 'https://caps.ftable.co.il',
-    }),
-  }).catch(() => {});
   return null;
 }
 

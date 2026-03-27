@@ -53,8 +53,14 @@ jobs:
             exit 0
           fi
           npm install -g @anthropic-ai/claude-code
+          echo "=== Building full prompt with project map ==="
+          # Prepend project map so Claude Code knows the file structure
+          CONTEXT="$(cat docs/caps-project-map.md 2>/dev/null || echo 'No project map')"
+          FIX_TASK="$(cat /tmp/fix-prompt.md)"
+          printf '%s\n\n---\n\n%s' "$CONTEXT" "$FIX_TASK" > /tmp/full-prompt.md
+          echo "Full prompt size: $(wc -c < /tmp/full-prompt.md) bytes"
           echo "=== Running Claude Code ==="
-          timeout 35m claude --print --dangerously-skip-permissions "$(cat /tmp/fix-prompt.md)" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored — proceeding"
+          timeout 35m claude --print --dangerously-skip-permissions "$(cat /tmp/full-prompt.md)" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored — proceeding"
 
       - name: TypeScript check
         run: npx tsc --noEmit 2>&1 | tail -10
