@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated, TouchableOpacity } from 'react-native';
 // ZERO Reanimated on results screen — game.tsx has 7 active shared values during transition
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -88,6 +88,28 @@ export default function ResultsScreen() {
   const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
   const scrollRef = useRef<any>(null);
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-continue timer (FIX 2)
+  const AUTO_CONTINUE_SECS = 8;
+  const [autoContinueCountdown, setAutoContinueCountdown] = useState(AUTO_CONTINUE_SECS);
+  const [autoContinueActive, setAutoContinueActive] = useState(false);
+  const autoContinueRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoContinueMountedRef = useRef(true);
+
+  // Win celebration overlay (FIX 3)
+  const [showWinOverlay, setShowWinOverlay] = useState(false);
+  const winOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const winOverlayScale = useRef(new Animated.Value(0.7)).current;
+  // Colored dots for win animation (RN Animated only — no confetti library, Hermes-safe)
+  const WIN_DOT_COLORS = ['#FFD700', '#4CAF50', '#00BFFF', '#FF6B6B', '#c9a84c', '#39FF14', '#FF69B4', '#FFD700'];
+  const WIN_DOT_COUNT = 8;
+  const winDotAnims = useRef<{ x: Animated.Value; y: Animated.Value; opacity: Animated.Value }[]>(
+    Array.from({ length: WIN_DOT_COUNT }, () => ({
+      x: new Animated.Value(0),
+      y: new Animated.Value(0),
+      opacity: new Animated.Value(0),
+    }))
+  ).current;
 
   const {
     screenOpacity, glowAnim, completeScale, dealBtnOpacity, dealBtnScale,
@@ -244,6 +266,86 @@ export default function ResultsScreen() {
     } catch {}
   }, []);
 
+  // Auto-continue countdown (FIX 2) — starts 1.5s after mount to let animations settle
+  useEffect(() => {
+    if (!revealData || isMultiplayer || autoSim === 'true') return;
+    autoContinueMountedRef.current = true;
+    const startDelay = setTimeout(() => {
+      if (!autoContinueMountedRef.current) return;
+      setAutoContinueActive(true);
+      setAutoContinueCountdown(AUTO_CONTINUE_SECS);
+      autoContinueRef.current = setInterval(() => {
+        if (!autoContinueMountedRef.current) {
+          if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
+          return;
+        }
+        setAutoContinueCountdown((prev) => {
+          if (prev <= 1) {
+            if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, 1500);
+    return () => {
+      autoContinueMountedRef.current = false;
+      clearTimeout(startDelay);
+      if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
+    };
+  }, []);
+
+  // When countdown hits 0 — auto-advance
+  useEffect(() => {
+    if (autoContinueActive && autoContinueCountdown === 0) {
+      // Re-use the same navigation logic as handleNextHand (defined below) via ref
+      autoContinueTriggerRef.current?.();
+    }
+  }, [autoContinueActive, autoContinueCountdown]);
+
+  // Ref so the countdown effect can call handleNextHand without capturing stale closure
+  const autoContinueTriggerRef = useRef<(() => void) | null>(null);
+
+  // Win celebration overlay (FIX 3) — shown for 3s when player wins chips
+  useEffect(() => {
+    if (!revealData || revealData.netChips <= 0) return;
+    // Delay slightly so the results screen fade-in finishes first
+    const showTimer = setTimeout(() => {
+      setShowWinOverlay(true);
+      // Animate overlay in
+      Animated.parallel([
+        Animated.timing(winOverlayOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.spring(winOverlayScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }),
+      ]).start();
+      // Launch colored dots burst
+      winDotAnims.forEach((dot, i) => {
+        dot.x.setValue(0);
+        dot.y.setValue(0);
+        dot.opacity.setValue(1);
+        const angle = (i / WIN_DOT_COUNT) * 2 * Math.PI;
+        const dist = 80 + Math.random() * 60;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist - 40;
+        Animated.parallel([
+          Animated.timing(dot.x, { toValue: tx, duration: 600, useNativeDriver: true }),
+          Animated.timing(dot.y, { toValue: ty, duration: 600, useNativeDriver: true }),
+          Animated.sequence([
+            Animated.timing(dot.opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
+            Animated.timing(dot.opacity, { toValue: 0, duration: 500, delay: 100, useNativeDriver: true }),
+          ]),
+        ]).start();
+      });
+      // Auto-hide overlay after 3s
+      const hideTimer = setTimeout(() => {
+        Animated.timing(winOverlayOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+          setShowWinOverlay(false);
+        });
+      }, 3000);
+      return () => clearTimeout(hideTimer);
+    }, 700);
+    return () => clearTimeout(showTimer);
+  }, []);
+
   const handleNextHand = useCallback(() => {
     if (!revealData) return;
     const boardCount = revealData.boardCount;
@@ -311,6 +413,15 @@ export default function ResultsScreen() {
   const handleHome = useCallback(() => { clearRevealData(); router.replace('/'); }, [clearRevealData, router]);
   const handleRematch = useCallback(() => { clearRevealData(); router.replace('/game'); }, [clearRevealData, router]);
 
+  // Wire auto-continue trigger to handleNextHand (must be after handleNextHand is defined)
+  autoContinueTriggerRef.current = handleNextHand;
+
+  // Cancel auto-continue when user taps any action manually
+  const cancelAutoContinue = useCallback(() => {
+    if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
+    setAutoContinueActive(false);
+  }, []);
+
   if (!revealData) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -375,6 +486,34 @@ export default function ResultsScreen() {
           onDone={() => setPendingAchievements((prev) => prev.slice(1))}
         />
       )}
+
+      {/* Win celebration overlay (FIX 3) — "You won X chips!" for 3s */}
+      {showWinOverlay && revealData && revealData.netChips > 0 && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.winOverlay,
+            { opacity: winOverlayOpacity, transform: [{ scale: winOverlayScale }] },
+          ]}
+        >
+          {/* Colored dot burst */}
+          {winDotAnims.map((dot, i) => (
+            <Animated.View
+              key={`dot-${i}`}
+              style={[
+                styles.winDot,
+                {
+                  backgroundColor: WIN_DOT_COLORS[i % WIN_DOT_COLORS.length],
+                  transform: [{ translateX: dot.x }, { translateY: dot.y }],
+                  opacity: dot.opacity,
+                },
+              ]}
+            />
+          ))}
+          <Text style={styles.winOverlayText}>You won {revealData.netChips} chips! 🎉</Text>
+        </Animated.View>
+      )}
+
       <Animated.View style={{ flex: 1, opacity: screenOpacity }}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
@@ -534,6 +673,19 @@ export default function ResultsScreen() {
             </View>
           )}
 
+          {/* Auto-continue countdown (FIX 2) */}
+          {autoContinueActive && !isMultiplayer && (
+            <TouchableOpacity
+              style={styles.autoContinueBar}
+              onPress={cancelAutoContinue}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.autoContinueText}>
+                Auto-continuing in {autoContinueCountdown}... (tap to cancel)
+              </Text>
+            </TouchableOpacity>
+          )}
+
           {/* Action buttons */}
           <View style={styles.buttons}>
             {waitingForNextHand ? (
@@ -548,7 +700,7 @@ export default function ResultsScreen() {
                 <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }] }}>
                   <DealMeInButton
                     label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}
-                    onPress={handleNextHand}
+                    onPress={() => { cancelAutoContinue(); handleNextHand(); }}
                   />
                 </Animated.View>
                 {savedHandId && !isMultiplayer && (
@@ -559,8 +711,8 @@ export default function ResultsScreen() {
                   </Animated.View>
                 )}
                 <View style={styles.rematchRow}>
-                  {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={handleRematch} style={{ flex: 1 }} />}
-                  <Button title="HOME" variant="secondary" onPress={handleHome} style={!isMultiplayer ? { flex: 1 } : {}} />
+                  {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { cancelAutoContinue(); handleRematch(); }} style={{ flex: 1 }} />}
+                  <Button title="HOME" variant="secondary" onPress={() => { cancelAutoContinue(); handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
                 </View>
               </>
             )}
@@ -627,5 +779,52 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(255,215,0,0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 16,
+  },
+  // Auto-continue countdown (FIX 2)
+  autoContinueBar: {
+    width: '100%',
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.35)',
+    borderRadius: rv(8),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(12),
+    alignItems: 'center',
+    marginBottom: rs(4),
+  },
+  autoContinueText: {
+    color: COLORS.gold,
+    fontSize: rf(13),
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  // Win celebration overlay (FIX 3)
+  winOverlay: {
+    position: 'absolute',
+    top: '30%',
+    left: '10%',
+    right: '10%',
+    backgroundColor: 'rgba(28,5,8,0.92)',
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    borderRadius: rv(16),
+    paddingVertical: rs(20),
+    paddingHorizontal: rs(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 80,
+  },
+  winOverlayText: {
+    color: '#FFD700',
+    fontSize: rf(20),
+    fontWeight: '900',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  winDot: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
 });
