@@ -73,12 +73,19 @@ export default function CardComponent({
   const height = cardHeight ?? (small ? rs(74) : rs(82));
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
+  const cardConfig = useGameStore((s) => s.cardConfig);
   const theme = getTheme(visualTheme);
+
+  // Card sizing — use DB config ratios when available, fall back to hardcoded defaults
+  const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.42;
+  const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.32;
+  const hideCornerFromConfig = cardConfig ? !cardConfig.show_corner_indicator : false;
+  const effectiveHideCorner = hideCornerLabels || hideCornerFromConfig;
 
   const cornerRankSize = Math.max(14, Math.floor(width * 0.35));
   const cornerSuitSize = Math.max(12, Math.floor(width * 0.25));
-  const centerRankSize = Math.floor(height * 0.42);
-  const centerSuitSize = Math.floor(height * 0.32);
+  const centerRankSize = Math.floor(height * mainRankRatio);
+  const centerSuitSize = Math.floor(height * mainSuitRatio);
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -279,8 +286,8 @@ export default function CardComponent({
           frontAnimStyle,
         ]}
       >
-        {/* Top-left corner: small rank + suit — hidden when hideCornerLabels is true */}
-        {!hideCornerLabels && (
+        {/* Top-left corner: small rank + suit — hidden when hideCornerLabels or DB config says hide */}
+        {!effectiveHideCorner && (
           <View style={styles.cornerTL}>
             <Text style={[styles.rankText, { color: suitColor, fontSize: cornerRankSize }]}>
               {card.rank}

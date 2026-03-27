@@ -17,11 +17,13 @@ interface ShareSectionProps {
   completeBonusAmount: number;
   potPerBoard: number;
   numberOfPlayers: number;
+  /** Called after a successful share action so callers can award earn_chips */
+  onShareComplete?: () => void;
 }
 
 export function ShareSection({
   shareData, autoShareUrl, boards, netChips, isComplete,
-  completeBonusAmount, potPerBoard, numberOfPlayers,
+  completeBonusAmount, potPerBoard, numberOfPlayers, onShareComplete,
 }: ShareSectionProps) {
   const gameShareRef = useRef<any>(null);
   const gameStoryRef = useRef<any>(null);
@@ -36,6 +38,7 @@ export function ShareSection({
     const text = generateShareText(shareData, url);
     await captureAndShare(ref, text);
     setSharingGame(false);
+    onShareComplete?.();
   };
 
   const doCopy = async () => {

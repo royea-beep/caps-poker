@@ -32,6 +32,8 @@ import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
+import { earnChips } from '../utils/supabaseEconomy';
+import { getDeviceId } from '../utils/leaderboard';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
 // @ts-ignore — parallel agent file, exists at deploy time
@@ -98,6 +100,19 @@ export default function ResultsScreen() {
 
   // Win celebration overlay (FIX 3)
   const [showWinOverlay, setShowWinOverlay] = useState(false);
+
+  // Economy earn-chips floating toast
+  const [earnToast, setEarnToast] = useState<string | null>(null);
+  const earnToastOpacity = useRef(new Animated.Value(0)).current;
+  const showEarnToast = (msg: string) => {
+    setEarnToast(msg);
+    earnToastOpacity.setValue(0);
+    Animated.sequence([
+      Animated.timing(earnToastOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.delay(1400),
+      Animated.timing(earnToastOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
+    ]).start(() => setEarnToast(null));
+  };
   const winOverlayOpacity = useRef(new Animated.Value(0)).current;
   const winOverlayScale = useRef(new Animated.Value(0.7)).current;
   // Colored dots for win animation (RN Animated only — no confetti library, Hermes-safe)
@@ -246,6 +261,33 @@ export default function ResultsScreen() {
       });
       setPendingAchievements(toasts);
     }
+
+    // Economy: earn_chips via Supabase RPC — fire-and-forget, never block UI
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        if (revealData.netChips > 0) {
+          // hand_won: +25 chips
+          const wonResult = await earnChips(deviceId, 'hand_won');
+          if (wonResult?.chips_earned) {
+            gs.addChips(wonResult.chips_earned);
+            gs.trackChipsEarned(wonResult.chips_earned);
+            showEarnToast(`+${wonResult.chips_earned} 🎰`);
+            // streak_5_wins: +100 chips if player just hit 5 win streak
+            if (gs.currentWinStreak === 5) {
+              const streakResult = await earnChips(deviceId, 'streak_5_wins');
+              if (streakResult?.chips_earned) {
+                gs.addChips(streakResult.chips_earned);
+                gs.trackChipsEarned(streakResult.chips_earned);
+                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 🎰 5 Win Streak!`), 1800);
+              }
+            }
+          }
+        }
+      } catch {
+        // silent — economy RPCs never crash the game
+      }
+    })();
 
     // Battle Pass XP + mission tracking
     try {
@@ -487,6 +529,26 @@ export default function ResultsScreen() {
         />
       )}
 
+      {/* Economy earn-chips floating toast */}
+      {earnToast && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            bottom: 140,
+            alignSelf: 'center',
+            backgroundColor: 'rgba(20,20,20,0.88)',
+            borderRadius: 24,
+            paddingHorizontal: 22,
+            paddingVertical: 10,
+            opacity: earnToastOpacity,
+            zIndex: 200,
+          }}
+        >
+          <Text style={{ color: '#FFD700', fontSize: 22, fontWeight: '900' }}>{earnToast}</Text>
+        </Animated.View>
+      )}
+
       {/* Win celebration overlay (FIX 3) — "You won X chips!" for 3s */}
       {showWinOverlay && revealData && revealData.netChips > 0 && (
         <Animated.View
@@ -601,6 +663,17 @@ export default function ResultsScreen() {
             completeBonusAmount={completeBonusAmount}
             potPerBoard={revealData.potPerBoard}
             numberOfPlayers={numberOfPlayers}
+            onShareComplete={async () => {
+              try {
+                const deviceId = await getDeviceId();
+                const shareResult = await earnChips(deviceId, 'share_hand');
+                if (shareResult?.chips_earned) {
+                  useGameStore.getState().addChips(shareResult.chips_earned);
+                  useGameStore.getState().trackChipsEarned(shareResult.chips_earned);
+                  showEarnToast(`+${shareResult.chips_earned} 🎰`);
+                }
+              } catch {}
+            }}
           />
 
           {/* Placement efficiency */}
