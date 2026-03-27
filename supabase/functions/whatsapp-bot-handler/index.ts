@@ -102,7 +102,7 @@ function sanitizeForTwilio(text: string): string {
     .trim()
 }
 
-async function sendWhatsApp(to: string, body: string): Promise<string | null> {
+async function sendWhatsApp(to: string, body: string, mediaUrl?: string): Promise<string | null> {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
     console.error('[sendWhatsApp] Twilio credentials missing! Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM as Edge Function secrets.');
     return null;
@@ -114,6 +114,7 @@ async function sendWhatsApp(to: string, body: string): Promise<string | null> {
     To: to,
     Body: safeBody,
   });
+  if (mediaUrl) params.append('MediaUrl0', mediaUrl);
   const creds = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
   const res = await fetch(url, {
     method: 'POST',
@@ -470,7 +471,48 @@ ${recText}`;
 const MERGE_WINDOW_MS = 60_000;
 const AUTO_CANCEL_STALE_MS = 5 * 60_000; // Only cancel old sessions (>5 min)
 
-// ── Bug Report Reply Handler (reply 1/2/3) ──────────────────────────────────────────
+// ── Build rich bug message for WhatsApp (7-option triage) ─────────────────────
+
+function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | null): string {
+  const deviceInfo = report.device_info as Record<string, string> | null;
+  const metadata = report.metadata as Record<string, unknown> | null;
+  const sev = ((report.ai_severity as string | null) ?? 'MEDIUM').toUpperCase();
+  const sevMap: Record<string, string> = { LOW: '[LOW]', MEDIUM: '[MED]', HIGH: '[HIGH]', CRITICAL: '[CRIT]' };
+
+  const model = deviceInfo?.model ?? 'Unknown device';
+  const osVer = deviceInfo?.osVersion ?? '';
+  const build = deviceInfo?.buildNumber ?? '';
+  const duration = (metadata?.recordingDuration as number | null) ?? 0;
+  const frames = (metadata?.frameCount as number | null) ?? 0;
+  const logs = (report.console_logs as string[] | null) ?? [];
+  const crumbs = (report.breadcrumbs as Array<{ ts: string; screen: string }> | null) ?? [];
+  const screen = (report.ai_screen as string | null) ?? '';
+  const fix = (report.ai_suggested_fix as string | null) ?? '';
+  const desc = (report.description as string | null) ?? '';
+
+  let msg = '*BUG REPORT*\n';
+  msg += `${model} | iOS ${osVer} | Build ${build}\n`;
+  msg += `${sevMap[sev] ?? '[?]'} Severity: ${sev}\n`;
+  msg += `Recording: ${duration}s | ${frames} frames\n`;
+  msg += '\n';
+  msg += `*AI Summary:*\n${(report.ai_summary as string | null) ?? 'Analyzing...'}\n`;
+  if (screen) msg += `\nScreen: ${screen}\n`;
+  if (fix) msg += `Fix: ${fix.slice(0, 200)}\n`;
+  if (desc) msg += `\nUser note: ${desc}\n`;
+  msg += `\nLogs: ${logs.length} | Breadcrumbs: ${crumbs.length}\n`;
+  msg += '\n';
+  msg += '*Reply:*\n';
+  msg += '1 = Fix now (auto-fix)\n';
+  msg += '2 = Add to sprint\n';
+  msg += '3 = Low priority (backlog)\n';
+  msg += '4 = Show logs + breadcrumbs\n';
+  msg += '5 = Send audio\n';
+  msg += '6 = Not a bug - dismiss\n';
+  msg += '7 = Ask tester for more info\n';
+  return msg;
+}
+
+// ── Bug Report Reply Handler (reply 1-7) ────────────────────────────────────────────
 
 const BUG_REPLY_WINDOW_MS = 10 * 60 * 1000;
 
@@ -484,14 +526,22 @@ async function handleBugReply(
   const reportId = plan?.bug_report_id as string | null;
   const fixPrompt = plan?.fix_prompt as string | null;
   const aiSummary = plan?.ai_summary as string | null;
+  const audioUrl = (plan?.audio_url as string | null) ?? null;
   const trimmed = msgText.trim();
+
+  // Fetch report for options 4 and 5
+  let report: Record<string, unknown> | null = null;
+  if (['4', '5'].includes(trimmed) && reportId) {
+    const { data } = await supabase.from('bug_reports')
+      .select('ai_summary,ai_suggested_fix,ai_screen,audio_url,video_url,console_logs,breadcrumbs,ai_severity')
+      .eq('id', reportId).single();
+    report = data;
+  }
 
   if (trimmed === '1') {
     await supabase.from('whatsapp_sessions').update({ status: 'bug_approved' }).eq('id', session.id);
     if (reportId) {
-      await supabase.from('bug_notifications')
-        .update({ approved_at: new Date().toISOString() })
-        .eq('bug_report_id', reportId);
+      await supabase.from('bug_notifications').update({ approved_at: new Date().toISOString() }).eq('bug_report_id', reportId);
     }
     if (fixPrompt) {
       const claudePlan = {
@@ -504,41 +554,60 @@ async function handleBugReply(
         project: 'caps-poker',
       };
       await triggerGitHubAction(claudePlan, 'caps-poker', 'claude-fix-no-build');
-      return '[FIX] Auto-fix triggered! Claude Bot is working on it...';
+      return 'Auto-fix triggered! Claude Bot is working on it...';
     }
-    return '[FIX] Marked as approved.';
+    return 'Marked as approved.';
   }
 
   if (trimmed === '2') {
-    await supabase.from('whatsapp_sessions').update({ status: 'bug_analyzing' }).eq('id', session.id);
-    if (!reportId) return 'No report ID.';
-    const { data: rep } = await supabase.from('bug_reports')
-      .select('ai_summary,ai_suggested_fix,ai_screen,audio_url,video_url,console_logs,breadcrumbs')
-      .eq('id', reportId).single();
-    if (!rep) return 'Bug report not found.';
-    const ls = [
-      '*FULL BUG ANALYSIS*',
-      rep.ai_summary ? `AI: ${rep.ai_summary}` : '',
-      rep.ai_suggested_fix ? `Fix: ${rep.ai_suggested_fix}` : '',
-      rep.ai_screen ? `Screen: ${rep.ai_screen}` : '',
-      rep.audio_url ? `Audio: ${rep.audio_url}` : '',
-      rep.video_url ? `Screenshot: ${rep.video_url}` : '',
-      `Logs: ${(rep.console_logs ?? []).length} | Breadcrumbs: ${(rep.breadcrumbs ?? []).length}`,
-    ].filter(Boolean);
-    return ls.join('\n');
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_sprint' }).eq('id', session.id);
+    if (reportId) await supabase.from('bug_reports').update({ status: 'sprint_queued' }).eq('id', reportId);
+    return 'Added to next sprint.';
   }
 
   if (trimmed === '3') {
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_backlog' }).eq('id', session.id);
+    if (reportId) await supabase.from('bug_reports').update({ status: 'backlog' }).eq('id', reportId);
+    return 'Moved to backlog (low priority).';
+  }
+
+  if (trimmed === '4') {
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_analyzing' }).eq('id', session.id);
+    if (!report) return 'Bug report not found.';
+    const logs = (report.console_logs as string[] | null) ?? [];
+    const crumbs = (report.breadcrumbs as Array<{ ts: string; screen: string }> | null) ?? [];
+    const logLines = logs.slice(-20).map((l) => l.slice(0, 100)).join('\n');
+    const crumbLines = crumbs.map((c) => `${(c.ts ?? '').slice(11, 19)} -> ${c.screen ?? '?'}`).join('\n');
+    let logsMsg = '*CONSOLE LOGS (last 20):*\n' + (logLines || '(none)');
+    logsMsg += '\n\n*BREADCRUMBS:*\n' + (crumbLines || '(none)');
+    if (logsMsg.length > 1500) logsMsg = logsMsg.slice(0, 1500) + '\n... (truncated)';
+    return logsMsg;
+  }
+
+  if (trimmed === '5') {
+    const url = audioUrl ?? (report?.audio_url as string | null);
+    if (url) {
+      await sendWhatsApp(from, 'Audio recording:', url);
+      return null; // already sent directly
+    }
+    return 'No audio available for this report.';
+  }
+
+  if (trimmed === '6') {
     await supabase.from('whatsapp_sessions').update({ status: 'bug_dismissed' }).eq('id', session.id);
     if (reportId) {
       await Promise.allSettled([
-        supabase.from('bug_notifications')
-          .update({ dismissed_at: new Date().toISOString() })
-          .eq('bug_report_id', reportId),
+        supabase.from('bug_notifications').update({ dismissed_at: new Date().toISOString() }).eq('bug_report_id', reportId),
         supabase.from('bug_reports').update({ status: 'dismissed' }).eq('id', reportId),
       ]);
     }
     return 'Bug dismissed.';
+  }
+
+  if (trimmed === '7') {
+    await supabase.from('whatsapp_sessions').update({ status: 'bug_needs_info' }).eq('id', session.id);
+    if (reportId) await supabase.from('bug_reports').update({ status: 'needs_info' }).eq('id', reportId);
+    return 'Marked as needs more info. Tester will be asked next time they open the app.';
   }
 
   return null;
@@ -934,17 +1003,44 @@ serve(async (req: Request) => {
       if (json?.bug_notification) {
         console.log('[whatsapp-bot] Bug notification received, reportId:', json.reportId);
         const ROYE_WA = Deno.env.get('ROYE_WHATSAPP_NUMBER') ?? 'whatsapp:+972504141513';
-        const bugMsg = json.message ?? 'Bug report received';
         const bugReportId = json.reportId ?? null;
         const bugFixPrompt = json.fixPrompt ?? null;
-        const bugAiSummary = json.aiSummary ?? null;
+        const screenshotUrl: string | null = json.screenshotUrl ?? json.videoUrl ?? null;
+        const audioUrl: string | null = json.audioUrl ?? null;
+
+        // Query full report from DB — AI triage already completed in app before this call
+        let bugReport: Record<string, unknown> | null = null;
+        if (bugReportId) {
+          const { data } = await supabase
+            .from('bug_reports')
+            .select('ai_summary,ai_severity,ai_suggested_fix,ai_screen,device_info,metadata,console_logs,breadcrumbs,description,audio_url,video_url')
+            .eq('id', bugReportId).single();
+          bugReport = data;
+          console.log('[whatsapp-bot] Bug report fetched:', { sev: bugReport?.ai_severity, summary: (bugReport?.ai_summary as string | null)?.slice(0, 50) });
+        }
+
+        // Build rich message from DB data (fallback to json.message if DB empty)
+        const bugMsg = bugReport
+          ? buildBugMessage(bugReport, bugFixPrompt)
+          : (json.message ?? 'Bug report received');
+        const bugAiSummary = (bugReport?.ai_summary as string | null) ?? (json.aiSummary as string | null);
+        const effectiveAudio = audioUrl ?? (bugReport?.audio_url as string | null);
+        const effectiveScreenshot = screenshotUrl ?? (bugReport?.video_url as string | null);
+
+        // Insert session
         try {
           await supabase.from('whatsapp_sessions').insert({
             message_sid: `bug-${Date.now()}`,
             from_number: ROYE_WA,
             raw_input: bugMsg,
             media_type: 'bug',
-            claude_plan: { bug_report_id: bugReportId, fix_prompt: bugFixPrompt, ai_summary: bugAiSummary },
+            claude_plan: {
+              bug_report_id: bugReportId,
+              fix_prompt: bugFixPrompt,
+              ai_summary: bugAiSummary,
+              audio_url: effectiveAudio,
+              screenshot_url: effectiveScreenshot,
+            },
             status: 'bug_pending',
           });
         } catch { /* non-critical */ }
@@ -960,14 +1056,19 @@ serve(async (req: Request) => {
             });
           } catch { /* non-critical */ }
         }
+
         let bugWaSent = false;
         let bugTwilioSid: string | null = null;
         let bugWaError: string | null = null;
         try {
-          bugTwilioSid = await sendWhatsApp(ROYE_WA, bugMsg);
+          // Send main message with screenshot embedded as media
+          bugTwilioSid = await sendWhatsApp(ROYE_WA, bugMsg, effectiveScreenshot ?? undefined);
           bugWaSent = bugTwilioSid !== null;
+          // Send audio as second message
+          if (bugTwilioSid && effectiveAudio) {
+            await sendWhatsApp(ROYE_WA, 'Audio recording:', effectiveAudio).catch(() => {});
+          }
           if (bugTwilioSid) {
-            // Update session with real Twilio SID and mark as sent
             supabase.from('whatsapp_sessions')
               .update({ message_sid: bugTwilioSid, status: 'bug_sent' })
               .eq('from_number', ROYE_WA).eq('status', 'bug_pending')
@@ -1117,7 +1218,7 @@ serve(async (req: Request) => {
   }
 
   // ── Check bug_pending FIRST — routes 1/2/3 to bug report handler ────────────
-  if (['1', '2', '3'].includes(upperBody)) {
+  if (['1', '2', '3', '4', '5', '6', '7'].includes(upperBody)) {
     const bugWinStart = new Date(Date.now() - BUG_REPLY_WINDOW_MS).toISOString();
     const { data: bugSession } = await supabase
       .from('whatsapp_sessions').select('*')
