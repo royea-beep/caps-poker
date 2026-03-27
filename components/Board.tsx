@@ -328,10 +328,6 @@ export default function Board({
             )}
           </View>
           <View style={styles.potArea}>
-            <View style={styles.potRow}>
-              <Text style={[styles.potLabel, { color: theme.accent }]}>{potAmount}</Text>
-              <View style={[styles.potDot, { backgroundColor: theme.accent }]} />
-            </View>
             {winner && <FloatingChips amount={potAmount} winner={winner} />}
           </View>
         </View>
