@@ -7,6 +7,7 @@ import { ConnectedPlayerInfo, GameSession, RevealData } from '../types/gameTypes
 import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
 import { HomeThemeId, DEFAULT_HOME_THEME, ButtonStyle } from '../constants/homeThemes';
 import { FriendsBgId } from '../constants/friendsBgs';
+import { CardDisplayConfig } from '../utils/supabaseEconomy';
 
 export type OrientationType = 'portrait' | 'landscape';
 export type VisualTheme = 'classic' | 'fiveo';
@@ -42,6 +43,10 @@ interface GameStore {
 
   // Transient session state (NOT persisted)
   sessionStartChips: number;
+
+  // Card display config from Supabase app_config (NOT persisted — fetched on start)
+  cardConfig: CardDisplayConfig | null;
+  setCardConfig: (cfg: CardDisplayConfig) => void;
 
   // Reveal data (NOT persisted — passed between game → reveal screens)
   revealData: RevealData | null;
@@ -140,6 +145,9 @@ export const useGameStore = create<GameStore>()(
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
 
+      // Card display config (not persisted)
+      cardConfig: null,
+
       // Reveal data (not persisted)
       revealData: null,
 
@@ -181,6 +189,7 @@ export const useGameStore = create<GameStore>()(
       setOrientation: (v: OrientationType) => set({ orientation: v }),
       setVisualTheme: (v: VisualTheme) => set({ visualTheme: v }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
+      setCardConfig: (cfg: CardDisplayConfig) => set({ cardConfig: cfg }),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
           const merged = { ...state.config, ...partial };

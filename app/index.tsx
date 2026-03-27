@@ -51,6 +51,8 @@ import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { HOME_THEMES } from '../constants/homeThemes';
 import { migrateGuestToUser } from '../utils/guestMigration';
+import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
+import { getDeviceId } from '../utils/leaderboard';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
 // @ts-ignore — parallel agent file, exists at deploy time
@@ -596,6 +598,28 @@ export default function HomeScreen() {
   useEffect(() => {
     setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
+
+    // Economy: daily_login earn_chips (idempotent — safe every open)
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const result = await earnChips(deviceId, 'daily_login');
+        if (result?.chips_earned) {
+          const store = useGameStore.getState();
+          store.addChips(result.chips_earned);
+          store.trackChipsEarned(result.chips_earned);
+        }
+      } catch {}
+    })();
+
+    // Fetch card display config from Supabase (once per session)
+    void (async () => {
+      try {
+        const cfg = await fetchCardDisplayConfig();
+        useGameStore.getState().setCardConfig(cfg);
+      } catch {}
+    })();
+
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
       if (!val) setShowTutorial(true);
     }).catch(() => {});
