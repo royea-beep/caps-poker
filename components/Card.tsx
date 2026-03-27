@@ -24,6 +24,7 @@ interface CardProps {
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
   hideCornerLabels?: boolean;
+  suitsOnly?: boolean; // hide rank entirely, show only suit symbol at bottom-left
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -66,6 +67,7 @@ export default function CardComponent({
   cardWidth,
   cardHeight,
   hideCornerLabels = false,
+  suitsOnly = false,
 }: CardProps) {
   const width = cardWidth ?? (small ? rs(52) : rs(58));
   const height = cardHeight ?? (small ? rs(74) : rs(82));
@@ -295,21 +297,35 @@ export default function CardComponent({
           </View>
         )}
 
-        {/* Center: large rank + suit below */}
-        <View style={styles.centerDisplay}>
-          <Text style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
-            {card.rank}
-          </Text>
-          <Text style={[styles.centerSuitText, {
-            color: suitColor,
-            fontSize: centerSuitSize,
-            textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 6,
-          }]}>
-            {SUIT_SYMBOLS[card.suit]}
-          </Text>
-        </View>
+        {/* Center: large rank + suit below — or suit-only at bottom-left */}
+        {suitsOnly ? (
+          <View style={styles.suitBottomLeft}>
+            <Text style={[styles.suitOnlyText, {
+              color: suitColor,
+              fontSize: Math.floor(height * 0.44),
+              textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 4,
+            }]}>
+              {SUIT_SYMBOLS[card.suit]}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.centerDisplay}>
+            <Text style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
+              {card.rank}
+            </Text>
+            <Text style={[styles.centerSuitText, {
+              color: suitColor,
+              fontSize: centerSuitSize,
+              textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 6,
+            }]}>
+              {SUIT_SYMBOLS[card.suit]}
+            </Text>
+          </View>
+        )}
       </Animated.View>
     </View>
   );
@@ -367,5 +383,18 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.35,
+  },
+  suitBottomLeft: {
+    position: 'absolute',
+    bottom: 4,
+    left: 6,
+  },
+  suitOnlyText: {
+    fontWeight: '700',
+    lineHeight: undefined,
+    ...Platform.select({
+      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
+      default: {},
+    }),
   },
 });

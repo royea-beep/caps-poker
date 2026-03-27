@@ -159,7 +159,7 @@ export default function Board({
   const [hintInfoVisible, setHintInfoVisible] = useState(false);
   const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Explicit card size hierarchy: community (largest) > board slot (medium) > hand (smallest)
-  const commH = rv(screenW, 56, 72, 90, 65);
+  const commH = rv(screenW, 48, 62, 78, 56);
   const commW = Math.round(commH * 0.72);
   const ch = cardHeightProp ?? rv(screenW, 46, 59, 74, 53);
   const cw = Math.round(ch * 0.72);
@@ -370,6 +370,7 @@ export default function Board({
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               hideCornerLabels
+              suitsOnly
             />
           ))}
           <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
@@ -384,6 +385,7 @@ export default function Board({
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               flipDuration={flipDuration}
               hideCornerLabels
+              suitsOnly
             />
           ))}
         </View>
