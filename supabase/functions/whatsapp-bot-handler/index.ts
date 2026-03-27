@@ -218,19 +218,37 @@ function buildFixPromptFromReport(report: Record<string, unknown>, transcription
     .slice(-15);
 
   let prompt = `VAMOS CAPS CAPS-BUGFIX-${id}\n\n`;
+
+  // PROJECT MAP — embedded so Claude Code knows exactly where files are
+  prompt += `## PROJECT MAP (CAPS Poker — React Native + Expo SDK 55, TypeScript strict)\n`;
+  prompt += `Key files:\n`;
+  prompt += `- components/Card.tsx — Single card component. Props: card, faceDown, small, highlighted, dimmed, cardWidth, cardHeight, hideCornerLabels\n`;
+  prompt += `- components/PlayerHand.tsx — Player's 4 hole cards at bottom ("YOUR HAND" area). All cards already use hideCornerLabels={true}\n`;
+  prompt += `- components/Board.tsx — One game board (community cards + player card placement slots)\n`;
+  prompt += `- components/BoardReveal.tsx — Full-screen reveal animation after cards placed\n`;
+  prompt += `- app/game.tsx — Main game screen with boards + PlayerHand + timer + bot\n`;
+  prompt += `- app/results.tsx — Results screen ("X beats Y"). ZERO Reanimated here — use RN Animated only\n`;
+  prompt += `- app/index.tsx — Lobby + PLAY button\n`;
+  prompt += `- utils/responsive.ts — rv(mobile,mobileWeb,tablet,desktop,native) and rs(n) for all sizes. Base width 390pt.\n`;
+  prompt += `- constants/gameConfig.ts — Card type, COLORS, game constants\n`;
+  prompt += `Styling: bg #1C0508, boardBg #6B1520, gold #c9a84c. Dark theme always.\n`;
+  prompt += `NEVER: Dimensions.get() at module level (crashes web) | expo-file-system legacy functions | Alert.alert on web\n`;
+  prompt += `NEVER: withRepeat(-1) in Reanimated | ConfettiCannon | CompleteOverlay (180+ views = Hermes crash)\n\n`;
+
   prompt += `## BUG REPORT — AUTO-FIX\n`;
-  prompt += `**Severity:** ${sev}\n`;
-  if (screen) prompt += `**Screen:** ${screen}\n`;
-  prompt += `**Device:** ${dev.model ?? 'unknown'} | ${dev.osVersion ?? ''}\n\n`;
+  prompt += `**ID:** ${id} | **Severity:** ${sev}\n`;
+  if (screen) prompt += `**Screen/Component:** ${screen}\n`;
+  prompt += `**Device:** ${dev.model ?? 'unknown'} | ${dev.osVersion ?? ''} | Build ${dev.buildNumber ?? ''}\n\n`;
 
   if (transcription) {
-    prompt += `## What the user said (transcribed from Hebrew audio):\n"${transcription}"\n\n`;
+    prompt += `## WHAT THE USER SAID (Hebrew audio transcribed by Whisper — THIS IS THE PRIMARY REQUIREMENT):\n`;
+    prompt += `"${transcription}"\n\n`;
   }
   if (summary) {
-    prompt += `## AI Analysis:\n${summary}\n\n`;
+    prompt += `## AI ANALYSIS:\n${summary}\n\n`;
   }
   if (suggestedFix) {
-    prompt += `## AI Suggested Fix:\n${suggestedFix}\n\n`;
+    prompt += `## SUGGESTED FIX:\n${suggestedFix}\n\n`;
   }
   if (steps.length > 0) {
     prompt += `## Steps to reproduce:\n`;
@@ -248,14 +266,16 @@ function buildFixPromptFromReport(report: Record<string, unknown>, transcription
     prompt += `\n`;
   }
 
-  prompt += `## TASK\n`;
-  prompt += `1. Find the relevant file: ${screen || 'check game.tsx and components/'}\n`;
-  prompt += `2. Apply the fix: ${suggestedFix || 'investigate the issue'}\n`;
-  prompt += `3. Run tests: npx tsc --noEmit && npx jest --forceExit\n`;
-  prompt += `4. Deploy OTA: npm run ota -- --message "autofix: ${summary.slice(0, 50)}"\n`;
-  prompt += `5. Git push: git add -A && git commit -m "autofix: ${id}" && git push origin main\n\n`;
+  prompt += `## TASK — DO THIS IN ORDER:\n`;
+  prompt += `1. Read the relevant file(s) using the PROJECT MAP above — do NOT guess file names\n`;
+  prompt += `2. Find the exact code that needs to change based on the user's description\n`;
+  prompt += `3. Make the change — verify it actually solves what the user described\n`;
+  prompt += `4. If a prop was already added (like hideCornerLabels), check if it's actually being USED correctly\n`;
+  prompt += `5. npx tsc --noEmit\n`;
+  prompt += `6. npx jest --forceExit\n`;
+  prompt += `7. git add -A && git commit -m "autofix(${id}): ${summary.slice(0, 50)}" && git push origin main\n\n`;
   prompt += `Yes, allow all edits in components/ during this session.\n`;
-  prompt += `VAMOS CAPS CAPS-BUGFIX-${id} -- END\n`;
+  prompt += `VAMOS CAPS CAPS-BUGFIX-${id} — END\n`;
 
   return prompt;
 }
@@ -1435,22 +1455,29 @@ Respond with ONLY valid JSON, no markdown backticks:
           session = data;
         }
 
+        const { message: callbackMsg, claude_available } = json as Record<string, unknown>;
         let message = '';
         let newStatus = 'bug_fixed';
         if (result === 'fixed' && test_passed) {
-          message = '[OK] Auto-fix complete! Changes committed + OTA deployed. Tests passed.';
+          message = '[OK] Auto-fix complete! Code committed + OTA deployed. All tests pass.';
           newStatus = 'bug_fixed';
         } else if (result === 'fixed' && !test_passed) {
-          message = 'Auto-fix applied but tests failed. Changes committed — review needed.';
+          message = 'Auto-fix applied but some tests failed. Changes committed — review needed.';
           newStatus = 'bug_fix_partial';
+        } else if (result === 'manual_no_key') {
+          message = 'ANTHROPIC_API_KEY not in GitHub Secrets. Add it at: github.com/royea-beep/caps-poker/settings/secrets/actions — then reply "1" again.';
+          newStatus = 'bug_manual';
+        } else if (result === 'claude_failed') {
+          message = 'Claude Code install failed in CI. Prompt saved to docs/prompts/. Send to local Claude Bot for manual fix.';
+          newStatus = 'bug_manual';
         } else if (result === 'manual') {
-          message = 'Claude Code not available on CI. Fix prompt saved to docs/prompts/. Run manually.';
+          message = 'Claude Code not available on CI. Prompt saved to docs/prompts/. Run locally.';
           newStatus = 'bug_manual';
         } else if (result === 'no_changes') {
-          message = 'Auto-fix ran but no code changes were made. May need manual review.';
+          message = 'Claude Code analyzed the code but made no changes — fix may need more context. Check run: github.com/royea-beep/caps-poker/actions';
           newStatus = 'bug_no_changes';
         } else {
-          message = `Auto-fix run #${run_id ?? '?'} finished (result: ${result ?? 'unknown'}).`;
+          message = (callbackMsg as string | null) ?? `Auto-fix run #${run_id ?? '?'} finished (result: ${result ?? 'unknown'}).`;
           newStatus = 'bug_fix_done';
         }
 
