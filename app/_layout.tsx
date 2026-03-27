@@ -205,23 +205,33 @@ export default function RootLayout() {
   // Track screen navigation as breadcrumbs for bug reports
   useEffect(() => { addBreadcrumb(currentPath); }, [currentPath]);
 
+  // Crash detection + session init — ORDER MATTERS:
+  // checkDirtyShutdown MUST run before initCrashSession (which overwrites CLEAN_EXIT_KEY).
+  // If initCrashSession runs first, its AsyncStorage writes land in the FIFO queue before
+  // checkDirtyShutdown's reads → reads see the NEW values → false positive every open.
   useEffect(() => {
-    debugLog('🔵 app started')
-    try {
-      initCrashSession()
-      startCrashRecording()
-      setCurrentScreen('Splash')
-    } catch (e) {
-      debugLog(`[CrashEvidence] Failed to start — app continues without it: ${e}`, 'warn')
+    if (Platform.OS === 'web') {
+      // Web: just init session, no crash detection
+      try { initCrashSession(); startCrashRecording(); setCurrentScreen('Splash'); } catch {}
+      return;
     }
-  }, []);
+    const initSequence = async () => {
+      // Step 1: check BOTH detectors BEFORE initCrashSession overwrites AsyncStorage
+      await checkDirtyShutdown(sendCrashToWhatsApp).catch(() => {});
+      await checkPreviousCrashWithGuards();
+      // Step 2: NOW start new session (safe to overwrite CLEAN_EXIT_KEY = false)
+      debugLog('🔵 app started')
+      try {
+        initCrashSession();
+        startCrashRecording();
+        setCurrentScreen('Splash');
+      } catch (e) {
+        debugLog(`[CrashEvidence] Failed to start — app continues without it: ${e}`, 'warn')
+      }
+    };
+    initSequence().catch(() => {});
 
-  // AppState: flush + mark clean exit when backgrounded; detect dirty-shutdown on launch
-  useEffect(() => {
-    if (Platform.OS === 'web') return
-    // Check for dirty shutdown from previous session
-    checkDirtyShutdown(sendCrashToWhatsApp).catch(() => {})
-    // Mark clean exit when going to background
+    // AppState: flush + mark clean exit when backgrounded
     const { AppState } = require('react-native')
     const sub = AppState.addEventListener('change', (state: string) => {
       if (state === 'background' || state === 'inactive') {
@@ -233,42 +243,64 @@ export default function RootLayout() {
     return () => sub.remove()
   }, []);
 
-  // Dirty shutdown detector — runs on every app open (native only)
-  // If a previous game was active when the app died → send WhatsApp crash alert
-  useEffect(() => {
+  // checkPreviousCrash with grace period (5s) + debounce (1 per hour)
+  // Prevents false positives from rapid reopen or normal swipe-to-close
+  async function checkPreviousCrashWithGuards() {
     if (Platform.OS === 'web') return;
-    debugLog('🔍 checking previous crash...');
-    checkPreviousCrash().then(async (crashTs) => {
+    debugLog('🔍 checking previous crash (game-active detector)...');
+    try {
+      const crashTs = await checkPreviousCrash();
       if (!crashTs) {
         debugLog('🔍 no dirty flag — clean start');
         return;
       }
       const age = Math.round((Date.now() - crashTs) / 1000);
       debugLog(`💀 DIRTY SHUTDOWN detected — game was active ${age}s ago`, 'error');
+
+      // Grace period: swipe-to-close from background can sometimes not fire cleanShutdown.
+      // If the "crash" was less than 5 seconds ago, it's a rapid reopen — not a real crash.
+      if (age < 5) {
+        debugLog('🔍 crash age < 5s — skipping (rapid reopen, not a real crash)');
+        return;
+      }
+
+      // Debounce: max 1 crash notification per hour (prevents spam on repeated false positives)
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const NOTIF_KEY = 'caps_last_crash_notif';
+      const lastNotifStr = await AsyncStorage.getItem(NOTIF_KEY).catch(() => null);
+      if (lastNotifStr) {
+        const elapsed = Date.now() - parseInt(lastNotifStr, 10);
+        if (elapsed < 3600000) {
+          debugLog(`🔍 crash debounced — last notif ${Math.round(elapsed / 60000)}min ago (max 1/hour)`);
+          return;
+        }
+      }
+      await AsyncStorage.setItem(NOTIF_KEY, String(Date.now())).catch(() => {});
+
       try {
         const { build, version } = (() => {
           try {
             const Application = require('expo-application');
             const Constants = require('expo-constants').default;
             const cfg = Constants.expoConfig;
-            const nativeBuild = Platform.OS !== 'web' ? (Application.nativeBuildVersion ?? null) : null;
+            const nativeBuild = (Platform.OS as string) !== 'web' ? (Application.nativeBuildVersion ?? null) : null;
             return { build: nativeBuild ?? cfg?.ios?.buildNumber ?? 'unknown', version: cfg?.version ?? 'unknown' };
           } catch { return { build: 'unknown', version: 'unknown' }; }
         })();
-        // Read screenshots saved to disk during previous session
         const screenshots = await getLastCrashScreenshots();
         debugLog(`💀 crash screenshots on disk: ${screenshots.length}`);
         debugLog(`💀 sending WhatsApp crash alert (build=${build} v${version})...`);
         await sendCrashAlert(null, null, `dirty-shutdown (${age}s ago)`, screenshots, { build, version });
         debugLog('💀 WhatsApp crash alert sent ✅');
-        // Clean up screenshots after successful send
         await clearCrashScreenshots();
         debugLog('💀 crash screenshots cleared from disk ✅');
       } catch (e) {
         debugLog(`💀 crash alert failed: ${e}`, 'error');
       }
-    }).catch((e) => { debugLog(`🔍 checkPreviousCrash threw: ${e}`, 'error'); });
-  }, []);
+    } catch (e) {
+      debugLog(`🔍 checkPreviousCrash threw: ${e}`, 'error');
+    }
+  }
 
   // OTA nuclear check — immediate + every 30s while app is open (production only)
   useEffect(() => {
