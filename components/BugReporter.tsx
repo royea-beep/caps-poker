@@ -25,7 +25,7 @@ import { getGlobalLogs, debugLog } from './DebugOverlay';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
 import { getSupabase } from '../utils/supabase';
-import { getConsoleLogs } from '../utils/logBuffer';
+import { getConsoleLogs, getGameLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
 import { readFileAsBytes } from '../utils/fileReader';
 import { withTimeout } from '../utils/withTimeout';
@@ -502,10 +502,11 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         const deviceInfo = collectDeviceInfo();
         console.log('[BUG-PIPE] Step 4c: ✅', JSON.stringify(deviceInfo));
 
-        // 4d: Collect console logs
+        // 4d: Collect console logs — getAllLogs() for DB record, getGameLogs() for AI triage
         console.log('[BUG-PIPE] Step 4d: Collecting console logs...');
-        const consoleLogs = getConsoleLogs();
-        console.log('[BUG-PIPE] Step 4d: ✅', consoleLogs.length, 'lines');
+        const consoleLogs = getConsoleLogs();   // game + pipeline (labeled) → DB record
+        const gameLogsForAI = getGameLogs();    // game-only → AI triage (no pipeline noise)
+        console.log('[BUG-PIPE] Step 4d: ✅', consoleLogs.length, 'total |', gameLogsForAI.length, 'game logs');
 
         // 4e: Collect breadcrumbs
         console.log('[BUG-PIPE] Step 4e: Collecting breadcrumbs...');
@@ -536,7 +537,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         if (reportId) {
           console.log('[BUG-PIPE] Step 5: Triggering AI triage for report ID:', reportId);
           const aiResult = await withTimeout(
-            triggerAITriage(reportId, noteToSend, consoleLogs),
+            triggerAITriage(reportId, noteToSend, gameLogsForAI),
             8000,
             null,
             'ai-triage',

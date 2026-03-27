@@ -156,6 +156,47 @@ async function transcribeAudio(mediaUrl: string): Promise<string> {
   return data.text ?? '';
 }
 
+// ── Transcribe bug report audio (Supabase Storage — public URL, no Twilio auth) ────
+// Used in bug_notification block to give AI the user's verbal description.
+
+async function transcribeBugAudio(audioUrl: string): Promise<string | null> {
+  if (!OPENAI_API_KEY) {
+    console.error('[TRANSCRIBE] OPENAI_API_KEY missing');
+    return null;
+  }
+  try {
+    console.log('[TRANSCRIBE] Downloading audio:', audioUrl.slice(0, 80));
+    const audioRes = await fetch(audioUrl, { signal: AbortSignal.timeout(15000) });
+    if (!audioRes.ok) {
+      console.error('[TRANSCRIBE] Download failed:', audioRes.status);
+      return null;
+    }
+    const audioBlob = await audioRes.blob();
+    // Detect extension from URL
+    const ext = audioUrl.includes('.m4a') ? 'm4a' : audioUrl.includes('.mp3') ? 'mp3' : 'mp4';
+    const form = new FormData();
+    form.append('file', audioBlob, `recording.${ext}`);
+    form.append('model', 'whisper-1');
+    form.append('language', 'he');  // Hebrew-first; Whisper auto-detects if wrong
+    const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: form,
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await whisperRes.json().catch(() => ({}));
+    if (data.text) {
+      console.log('[TRANSCRIBE] OK:', String(data.text).slice(0, 100));
+      return String(data.text);
+    }
+    console.error('[TRANSCRIBE] Whisper error:', JSON.stringify(data).slice(0, 200));
+    return null;
+  } catch (err) {
+    console.error('[TRANSCRIBE] Exception:', err);
+    return null;
+  }
+}
+
 // ── Describe image via Claude Vision ───────────────────────────────────────
 
 async function describeImage(mediaUrl: string): Promise<string> {
@@ -398,28 +439,47 @@ async function triggerGitHubAction(
   plan: ClaudePlan,
   project: string,
   eventType: 'claude-fix-no-build' | 'claude-fix-and-deploy',
-): Promise<void> {
+): Promise<boolean> {
   const repo = REPO_MAP[project] ?? REPO_MAP['caps-poker'];
-  await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${GITHUB_TOKEN}`,
-      Accept: 'application/vnd.github+json',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      event_type: eventType,
-      client_payload: {
-        summary:  plan.summary,
-        plan:     plan.plan.join('\n'),
-        files:    plan.files.join(', '),
-        effort:   plan.effort,
-        severity: plan.severity,
-        type:     plan.type,
-        project,
+  if (!GITHUB_TOKEN) {
+    console.error('[GITHUB] GITHUB_TOKEN missing in Edge Function secrets');
+    return false;
+  }
+  const url = `https://api.github.com/repos/${repo}/dispatches`;
+  console.log('[GITHUB] Dispatching to:', url, 'event:', eventType);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github+json',
+        'content-type': 'application/json',
       },
-    }),
-  });
+      body: JSON.stringify({
+        event_type: eventType,
+        client_payload: {
+          summary:  plan.summary,
+          plan:     plan.plan.join('\n'),
+          files:    plan.files.join(', '),
+          effort:   plan.effort,
+          severity: plan.severity,
+          type:     plan.type,
+          project,
+        },
+      }),
+    });
+    if (res.status === 204 || res.status === 200) {
+      console.log('[GITHUB] Dispatch OK. Status:', res.status);
+      return true;
+    } else {
+      const body = await res.text().catch(() => '');
+      console.error('[GITHUB] Dispatch failed. Status:', res.status, '| Body:', body.slice(0, 500));
+      return false;
+    }
+  } catch (err) {
+    console.error('[GITHUB] Exception during dispatch:', err);
+    return false;
+  }
 }
 
 // ── Format reply message ────────────────────────────────────────────────────
@@ -473,7 +533,7 @@ const AUTO_CANCEL_STALE_MS = 5 * 60_000; // Only cancel old sessions (>5 min)
 
 // ── Build rich bug message for WhatsApp (7-option triage) ─────────────────────
 
-function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | null): string {
+function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | null, transcription?: string | null): string {
   const deviceInfo = report.device_info as Record<string, string> | null;
   const metadata = report.metadata as Record<string, unknown> | null;
   const sev = ((report.ai_severity as string | null) ?? 'MEDIUM').toUpperCase();
@@ -498,7 +558,8 @@ function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | nu
   msg += `*AI Summary:*\n${(report.ai_summary as string | null) ?? 'Analyzing...'}\n`;
   if (screen) msg += `\nScreen: ${screen}\n`;
   if (fix) msg += `Fix: ${fix.slice(0, 200)}\n`;
-  if (desc) msg += `\nUser note: ${desc}\n`;
+  if (transcription) msg += `\nUser said: "${transcription.slice(0, 300)}"\n`;
+  else if (desc) msg += `\nUser note: ${desc}\n`;
   msg += `\nLogs: ${logs.length} | Breadcrumbs: ${crumbs.length}\n`;
   msg += '\n';
   msg += '*Reply:*\n';
@@ -553,8 +614,13 @@ async function handleBugReply(
         effort: 'MEDIUM' as const,
         project: 'caps-poker',
       };
-      await triggerGitHubAction(claudePlan, 'caps-poker', 'claude-fix-no-build');
-      return 'Auto-fix triggered! Claude Bot is working on it...';
+      const dispatched = await triggerGitHubAction(claudePlan, 'caps-poker', 'claude-fix-no-build');
+      if (dispatched) {
+        await supabase.from('whatsapp_sessions').update({ github_run_id: 1, status: 'bug_fixing' }).eq('id', session.id);
+        return 'Auto-fix dispatched to Claude Bot. Will notify when done.';
+      } else {
+        return 'Auto-fix failed to dispatch. Check GITHUB_TOKEN in Edge Function secrets (Supabase Dashboard → Edge Functions → whatsapp-bot-handler → Secrets).';
+      }
     }
     return 'Marked as approved.';
   }
@@ -1019,6 +1085,26 @@ serve(async (req: Request) => {
           console.log('[whatsapp-bot] Bug report fetched:', { sev: bugReport?.ai_severity, summary: (bugReport?.ai_summary as string | null)?.slice(0, 50) });
         }
 
+        // FIX 2: Transcribe bug report audio (if available) — give AI the user's verbal description
+        let bugAudioTranscription: string | null = null;
+        const _bugAudioUrl = audioUrl ?? (bugReport?.audio_url as string | null);
+        if (_bugAudioUrl && OPENAI_API_KEY) {
+          console.log('[whatsapp-bot] Transcribing bug report audio...');
+          try {
+            bugAudioTranscription = await transcribeBugAudio(_bugAudioUrl);
+            if (bugAudioTranscription && bugReportId) {
+              // Save transcription to DB description field (if description is empty)
+              const existingDesc = (bugReport?.description as string | null) ?? '';
+              if (!existingDesc.trim()) {
+                await supabase.from('bug_reports').update({ description: bugAudioTranscription }).eq('id', bugReportId);
+                if (bugReport) bugReport = { ...bugReport, description: bugAudioTranscription };
+              }
+            }
+          } catch (_tErr) {
+            console.error('[whatsapp-bot] Audio transcription failed (non-blocking):', _tErr);
+          }
+        }
+
         // FIX 1: If AI triage not done yet (app sent WhatsApp before inline triage finished),
         // run it now inside the Edge Function with 15s timeout.
         if (bugReportId && bugReport && !((bugReport.ai_summary as string | null)?.trim())) {
@@ -1030,21 +1116,26 @@ serve(async (req: Request) => {
             const _dev    = (_report.device_info  as Record<string, string> | null) ?? {};
             const _desc   = (_report.description  as string | null) ?? '';
 
-            // FIX 3: Filter [BUG-PIPE] / expo-file-system noise; prioritise [ERR]/error lines
-            const _filtered  = _logs.filter((l) => !l.includes('[BUG-PIPE]') && !l.includes('expo-file-system')).slice(-30);
+            // Filter [BUG-PIPE] / expo-file-system / pipeline separator noise
+            const _filtered  = _logs.filter((l) => !l.includes('[BUG-PIPE]') && !l.includes('[BUG-AUDIO]') && !l.includes('[BUG-WA]') && !l.includes('[FILE-READER]') && !l.includes('expo-file-system') && l !== '--- PIPELINE LOGS ---').slice(-30);
             const _errLines  = _filtered.filter((l) => l.includes('[ERR]') || l.includes('[FAIL]') || l.includes('Error') || l.includes('error')).slice(-15);
             const _logText   = (_errLines.length > 0 ? _errLines : _filtered.slice(-15)).join('\n');
             const _crumbText = _crumbs.map((c) => `${(c.ts ?? '?').slice(11, 19)} -> ${c.screen}`).join('\n');
+
+            // User input: transcription > text description > nothing
+            const _userInput = bugAudioTranscription
+              ? `User's voice recording (transcribed): "${bugAudioTranscription}"`
+              : (_desc ? `User's text description: "${_desc}"` : 'No user description. Analyze logs and breadcrumbs only.');
 
             const _prompt = `You are a senior QA engineer for CAPS Poker — a mobile Omaha poker game in React Native.
 
 THIS IS A BUG REPORT FROM A REAL USER. Analyze the ACTUAL GAME BUG, not pipeline metadata.
 
 Device: ${_dev.model ?? 'Unknown'} | ${_dev.osName ?? _dev.platform ?? 'iOS'} ${_dev.osVersion ?? ''} | Build ${_dev.buildNumber ?? ''}
-User description: ${_desc || '(none — analyze logs and breadcrumbs)'}
+${_userInput}
 
-Console logs (errors/failures — pipeline noise removed):
-${_logText || '(no error logs)'}
+Console logs (game errors/failures — pipeline noise removed):
+${_logText || '(no game error logs — base analysis on user description)'}
 
 User navigation (breadcrumbs):
 ${_crumbText || '(no breadcrumbs)'}
@@ -1100,7 +1191,7 @@ Respond with valid JSON only (no markdown fences):
 
         // Build rich message from DB data (fallback to json.message if DB empty)
         const bugMsg = bugReport
-          ? buildBugMessage(bugReport, bugFixPrompt)
+          ? buildBugMessage(bugReport, bugFixPrompt, bugAudioTranscription)
           : (json.message ?? 'Bug report received');
         const bugAiSummary = (bugReport?.ai_summary as string | null) ?? (json.aiSummary as string | null);
         const effectiveAudio = audioUrl ?? (bugReport?.audio_url as string | null);
