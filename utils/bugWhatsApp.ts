@@ -117,12 +117,14 @@ export async function sendBugReportToWhatsApp(payload: BugWhatsAppPayload): Prom
       body: JSON.stringify({
         bug_notification: true,
         reportId: payload.reportId,
+        // Edge Function queries DB to build rich 7-option message — we pass raw data
+        screenshotUrl: payload.videoUrl,  // screenshot stored as videoUrl in DB
+        audioUrl: payload.audioUrl,
+        fixPrompt: payload.fixPrompt,
+        // Fallback message if DB fetch fails
         message,
         aiSummary: payload.aiSummary,
         aiSeverity: payload.aiSeverity,
-        audioUrl: payload.audioUrl,
-        videoUrl: payload.videoUrl,
-        fixPrompt: payload.fixPrompt,
       }),
     }).then((r) => { console.log('[BUG-WA] Edge function response:', r.status); }),
     fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
