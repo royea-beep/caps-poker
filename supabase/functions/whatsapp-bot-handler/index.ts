@@ -1185,54 +1185,76 @@ serve(async (req: Request) => {
           }
         }
 
-        // FIX 1: If AI triage not done yet (app sent WhatsApp before inline triage finished),
-        // run it now inside the Edge Function with 15s timeout.
-        if (bugReportId && bugReport && !((bugReport.ai_summary as string | null)?.trim())) {
-          console.log('[whatsapp-bot] ai_summary empty — running AI triage now');
+        // FIX 1: Run AI triage if: (a) ai_summary is empty, OR (b) existing summary looks wrong
+        // (contains "undefined", "tester", etc.) — meaning the app's inline triage ran on bad data.
+        // Also re-run if we now have a transcription that wasn't available when inline triage ran.
+        const _existingSummary = (bugReport?.ai_summary as string | null) ?? '';
+        const _summaryLooksBad = !_existingSummary.trim()
+          || _existingSummary.toLowerCase().includes('undefined')
+          || _existingSummary.toLowerCase().includes('tester')
+          || _existingSummary.toLowerCase().includes('metadata')
+          || _existingSummary === 'Bug reported by user';
+        const _shouldRetriage = bugReportId && bugReport && (_summaryLooksBad || (!!bugAudioTranscription && !_existingSummary.includes(bugAudioTranscription.slice(0, 20))));
+
+        if (_shouldRetriage) {
+          console.log('[whatsapp-bot] Running AI triage. summaryLooksBad:', _summaryLooksBad, '| hasTranscription:', !!bugAudioTranscription);
           try {
-            const _report = bugReport;
+            const _report = bugReport!;
             const _logs   = (_report.console_logs as string[] | null) ?? [];
             const _crumbs = (_report.breadcrumbs  as Array<{ ts: string; screen: string }> | null) ?? [];
             const _dev    = (_report.device_info  as Record<string, string> | null) ?? {};
-            const _desc   = (_report.description  as string | null) ?? '';
 
-            // Filter [BUG-PIPE] / expo-file-system / pipeline separator noise
-            const _filtered  = _logs.filter((l) => !l.includes('[BUG-PIPE]') && !l.includes('[BUG-AUDIO]') && !l.includes('[BUG-WA]') && !l.includes('[FILE-READER]') && !l.includes('expo-file-system') && l !== '--- PIPELINE LOGS ---').slice(-30);
-            const _errLines  = _filtered.filter((l) => l.includes('[ERR]') || l.includes('[FAIL]') || l.includes('Error') || l.includes('error')).slice(-15);
-            const _logText   = (_errLines.length > 0 ? _errLines : _filtered.slice(-15)).join('\n');
+            // STRICTLY filtered game logs — NO pipeline noise, NO metadata fields
+            const _gameLogs = _logs.filter((l) => {
+              if (!l) return false;
+              if (l.includes('[BUG-PIPE]')) return false;
+              if (l.includes('[BUG-AUDIO]')) return false;
+              if (l.includes('[BUG-WA]')) return false;
+              if (l.includes('[FILE-READER]')) return false;
+              if (l.includes('[PIPE-TEST]')) return false;
+              if (l.includes('[TIMEOUT]')) return false;
+              if (l.includes('[CRASH]')) return false;
+              if (l.includes('expo-file-system')) return false;
+              if (l === '--- PIPELINE LOGS ---') return false;
+              return true;
+            }).slice(-20);
+
             const _crumbText = _crumbs.map((c) => `${(c.ts ?? '?').slice(11, 19)} -> ${c.screen}`).join('\n');
 
-            // User input: transcription > text description > nothing
-            const _userInput = bugAudioTranscription
-              ? `User's voice recording (transcribed): "${bugAudioTranscription}"`
-              : (_desc ? `User's text description: "${_desc}"` : 'No user description. Analyze logs and breadcrumbs only.');
+            // The transcription is THE PRIMARY SOURCE OF TRUTH
+            const _userDescription = bugAudioTranscription || (_report.description as string | null) || null;
 
-            const _prompt = `You are a senior QA engineer for CAPS Poker — a mobile Omaha poker game in React Native.
+            const _prompt = `Analyze this bug report from CAPS Poker (a mobile Omaha poker card game, React Native + Expo).
 
-THIS IS A BUG REPORT FROM A REAL USER. Analyze the ACTUAL GAME BUG, not pipeline metadata.
+${_userDescription
+  ? `## USER'S DESCRIPTION (THIS IS THE MOST IMPORTANT PART):\n"${_userDescription}"\n\nThe user recorded this as a voice message in Hebrew. This is what they want fixed. Your entire analysis should be based on THIS.`
+  : `## No user description provided.\nAnalyze based on logs and navigation path only.`}
 
-Device: ${_dev.model ?? 'Unknown'} | ${_dev.osName ?? _dev.platform ?? 'iOS'} ${_dev.osVersion ?? ''} | Build ${_dev.buildNumber ?? ''}
-${_userInput}
+## Device:
+${_dev.model ?? 'Unknown'} | ${_dev.osName ?? _dev.platform ?? 'iOS'} ${_dev.osVersion ?? ''} | Build ${_dev.buildNumber ?? ''}
 
-Console logs (game errors/failures — pipeline noise removed):
-${_logText || '(no game error logs — base analysis on user description)'}
+${_gameLogs.length > 0 ? `## Game console logs (last ${_gameLogs.length} entries):\n${_gameLogs.join('\n')}` : '## No game logs captured.'}
 
-User navigation (breadcrumbs):
-${_crumbText || '(no breadcrumbs)'}
+## User navigation path:
+${_crumbText || 'No breadcrumbs'}
 
-RULES:
-- DO NOT report tester_name, metadata fields, or undefined values as bugs — those are pipeline fields
-- Focus on GAME errors: crashes, wrong cards, broken UI, bad state
-- If [ERR] lines exist — those describe the bug
-- If nothing clear: "No obvious game bug — review audio/screenshot manually"
+## CRITICAL RULES:
+1. The user's description (transcribed from audio) is the PRIMARY source. Base your analysis on what THEY said.
+2. If the user describes a UI issue (like "remove the small numbers", "everything is crowded"), analyze THAT.
+3. Do NOT analyze internal fields like tester_name, metadata format, or pipeline status.
+4. Do NOT mention "undefined", "null", "missing fields", or "tester" — those are internal app fields, not bugs.
+5. Be specific: name the React Native component, the screen file, the style property.
+6. CAPS Poker context: cards have rank+suit display, boards show community cards, "YOUR HAND" is the player's hole cards at the bottom of the screen.
 
-Respond with valid JSON only (no markdown fences):
-{"severity":"low"|"medium"|"high"|"critical","summary":"one sentence game bug","suggested_fix":"technical suggestion","screen":"affected file/screen","steps":["step 1","step 2"]}`;
+Respond with ONLY valid JSON, no markdown backticks:
+{"severity":"low|medium|high|critical","summary":"One sentence about the ACTUAL bug the user described","suggested_fix":"Technical fix — which file, which component, what to change","screen":"The .tsx file or component name","steps":["Step 1","Step 2","Step 3"],"extra_bugs":[]}`;
+
+            console.log('[TRIAGE] Calling Claude API. hasTranscription:', !!_userDescription, _userDescription ? '| "' + _userDescription.slice(0, 50) + '..."' : '');
 
             const _aiRes = await fetch('https://api.anthropic.com/v1/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-              body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, messages: [{ role: 'user', content: _prompt }] }),
+              body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: _prompt }] }),
               signal: AbortSignal.timeout(15000),
             });
 
@@ -1241,12 +1263,16 @@ Respond with valid JSON only (no markdown fences):
               const _raw = (_aiData.content?.[0]?.text ?? '{}').trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
               let _triage: Record<string, unknown> = {};
               try { _triage = JSON.parse(_raw); } catch { /* ignore */ }
-              console.log('[whatsapp-bot] AI triage:', JSON.stringify(_triage).slice(0, 150));
+              console.log('[TRIAGE] Parsed:', (_triage.severity as string | null), '|', (_triage.summary as string | null)?.slice(0, 80));
 
-              if (_triage.summary) {
+              // Accept result if summary looks real (no "undefined"/"tester" pollution)
+              const _triageSummary = (_triage.summary as string | null) ?? '';
+              const _triageOk = !!_triageSummary && !_triageSummary.toLowerCase().includes('undefined') && !_triageSummary.toLowerCase().includes('tester');
+
+              if (_triageOk) {
                 await supabase.from('bug_reports').update({
                   ai_severity:      _triage.severity      ?? 'medium',
-                  ai_summary:       _triage.summary,
+                  ai_summary:       _triageSummary,
                   ai_suggested_fix: _triage.suggested_fix ?? null,
                   ai_screen:        _triage.screen        ?? null,
                   ai_steps:         _triage.steps         ?? null,
@@ -1254,18 +1280,36 @@ Respond with valid JSON only (no markdown fences):
 
                 const { data: _enriched } = await supabase
                   .from('bug_reports')
-                  .select('ai_summary,ai_severity,ai_suggested_fix,ai_screen,device_info,metadata,console_logs,breadcrumbs,description,audio_url,video_url')
+                  .select('id,ai_summary,ai_severity,ai_suggested_fix,ai_screen,ai_steps,device_info,metadata,console_logs,breadcrumbs,description,audio_url,video_url')
                   .eq('id', bugReportId).single();
                 if (_enriched) {
                   bugReport = _enriched;
-                  console.log('[whatsapp-bot] Enriched. severity:', _enriched.ai_severity, 'summary:', (_enriched.ai_summary as string | null)?.slice(0, 60));
+                  console.log('[TRIAGE] Enriched. severity:', _enriched.ai_severity, 'summary:', (_enriched.ai_summary as string | null)?.slice(0, 60));
+                }
+              } else {
+                // AI gave bad output — use transcription directly as fallback summary
+                if (_userDescription && bugReportId) {
+                  const _fallbackSummary = 'User reported: ' + _userDescription.slice(0, 150);
+                  await supabase.from('bug_reports').update({
+                    ai_severity: 'medium',
+                    ai_summary: _fallbackSummary,
+                    ai_suggested_fix: 'Review the audio recording and screenshot for details',
+                  }).eq('id', bugReportId);
+                  if (bugReport) bugReport = { ...bugReport, ai_summary: _fallbackSummary, ai_severity: 'medium' };
+                  console.log('[TRIAGE] Used transcription fallback summary');
                 }
               }
             } else {
-              console.error('[whatsapp-bot] AI triage API error:', _aiRes.status, (await _aiRes.text().catch(() => '')).slice(0, 200));
+              console.error('[TRIAGE] AI API error:', _aiRes.status, (await _aiRes.text().catch(() => '')).slice(0, 200));
+              // Fallback: save transcription as summary
+              if (_userDescription && bugReportId) {
+                const _fallbackSummary = 'User reported: ' + _userDescription.slice(0, 150);
+                await supabase.from('bug_reports').update({ ai_severity: 'medium', ai_summary: _fallbackSummary }).eq('id', bugReportId);
+                if (bugReport) bugReport = { ...bugReport, ai_summary: _fallbackSummary, ai_severity: 'medium' };
+              }
             }
           } catch (_aiErr) {
-            console.error('[whatsapp-bot] AI triage failed (non-blocking):', _aiErr);
+            console.error('[TRIAGE] AI failed (non-blocking):', _aiErr);
           }
         }
 
