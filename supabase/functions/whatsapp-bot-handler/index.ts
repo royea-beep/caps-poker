@@ -548,7 +548,7 @@ async function handleBugReply(
         type: 'BUG' as const,
         summary: aiSummary ?? 'Bug fix from report',
         severity: 'MEDIUM' as const,
-        plan: [fixPrompt.slice(0, 500)],
+        plan: [fixPrompt],
         files: [],
         effort: 'MEDIUM' as const,
         project: 'caps-poker',
