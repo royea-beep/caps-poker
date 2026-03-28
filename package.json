@@ -25,6 +25,7 @@
     "expo-insights": "~55.0.11",
     "expo-linking": "~55.0.7",
     "expo-localization": "~55.0.9",
+    "expo-notifications": "~55.0.14",
     "expo-router": "~55.0.5",
     "expo-screen-orientation": "~55.0.9",
     "expo-sensors": "~55.0.8",

@@ -3,13 +3,13 @@ import { getSupabase } from './supabase';
 import { getDeviceId } from './leaderboard';
 import { debugLog } from '../components/DebugOverlay';
 
-// expo-notifications is not installed — all functions are stubs.
-// Push notification support can be added in a future session by:
-//   1. npx expo install expo-notifications
-//   2. Adding "expo-notifications" to plugins in app.json
-//   3. Running: eas credentials --platform ios (to regenerate provisioning profile with Push Notifications)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Notifications: any = null;
+let Notifications: any = null;
+try {
+  Notifications = require('expo-notifications');
+} catch {
+  debugLog('[push] expo-notifications not available', 'warn');
+}
 
 /** Request notification permissions. Returns true if granted. */
 export async function requestPermissions(): Promise<boolean> {
@@ -70,9 +70,18 @@ export async function getExpoPushToken(): Promise<string | null> {
   try {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return null;
-    const token = await Notifications.getExpoPushTokenAsync();
+    // projectId required on iOS for managed Expo workflow
+    let projectId: string | undefined;
+    try {
+      const Constants = require('expo-constants').default;
+      projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    } catch {}
+    const token = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    );
     return token?.data || null;
-  } catch {
+  } catch (err) {
+    debugLog(`[push] getExpoPushToken failed: ${err}`, 'warn');
     return null;
   }
 }
