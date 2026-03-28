@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { rs } from '../utils/responsive';
 import { useGameStore } from '../store/gameStore';
-import { getTheme } from '../constants/visualThemes';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -23,7 +22,7 @@ interface CardProps {
   cardWidth?: number;
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
-  hideCornerLabels?: boolean;
+  hideCornerLabels?: boolean; // kept for prop compatibility — corners always hidden
   suitsOnly?: boolean; // hide rank entirely, show only suit symbol at bottom-left
 }
 
@@ -74,18 +73,12 @@ export default function CardComponent({
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
-  const theme = getTheme(visualTheme);
-
   // Card sizing — use DB config ratios when available, fall back to hardcoded defaults
   const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.42;
   const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.32;
-  const hideCornerFromConfig = cardConfig ? !cardConfig.show_corner_indicator : false;
-  const effectiveHideCorner = hideCornerLabels || hideCornerFromConfig;
 
-  const cornerRankSize = Math.max(14, Math.floor(width * 0.35));
-  const cornerSuitSize = Math.max(12, Math.floor(width * 0.25));
-  const centerRankSize = Math.floor(height * mainRankRatio);
-  const centerSuitSize = Math.floor(height * mainSuitRatio);
+  const centerRankSize = Math.max(14, Math.floor(height * mainRankRatio));
+  const centerSuitSize = Math.max(12, Math.floor(height * mainSuitRatio));
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -286,24 +279,6 @@ export default function CardComponent({
           frontAnimStyle,
         ]}
       >
-        {/* Top-left corner: small rank + suit — hidden when hideCornerLabels or DB config says hide */}
-        {!effectiveHideCorner && (
-          <View style={styles.cornerTL}>
-            <Text style={[styles.rankText, { color: suitColor, fontSize: cornerRankSize }]}>
-              {card.rank}
-            </Text>
-            <Text style={[styles.suitText, {
-              color: suitColor,
-              fontSize: cornerSuitSize,
-              textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-            }]}>
-              {SUIT_SYMBOLS[card.suit]}
-            </Text>
-          </View>
-        )}
-
         {/* Center: large rank + suit below — or suit-only at bottom-left */}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
@@ -344,12 +319,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     margin: 1,
   },
-  cornerTL: {
-    position: 'absolute',
-    top: 2,
-    left: 4,
-    alignItems: 'center',
-  },
   centerDisplay: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -365,19 +334,6 @@ const styles = StyleSheet.create({
   centerSuitText: {
     fontWeight: '700',
     marginTop: -6,
-  },
-  rankText: {
-    fontWeight: '900',
-    lineHeight: undefined,
-    ...Platform.select({
-      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
-      default: {},
-    }),
-  },
-  suitText: {
-    fontWeight: '700',
-    marginTop: -4,
-    lineHeight: undefined,
   },
   backCenter: {
     flex: 1,
