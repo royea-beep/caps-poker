@@ -51,6 +51,7 @@ import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
 import { rf, rs, rv } from '../utils/responsive';
+import Constants from 'expo-constants';
 import { t, getLanguage } from '../utils/i18n';
 import { HOME_THEMES } from '../constants/homeThemes';
 import { migrateGuestToUser } from '../utils/guestMigration';
@@ -1077,6 +1078,11 @@ export default function HomeScreen() {
 
       {/* Welcome toast after sign-in */}
       {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
+
+      {/* Version badge — bottom-right, always visible, non-intrusive */}
+      <Text style={styles.versionBadge} pointerEvents="none">
+        v{Constants.expoConfig?.version ?? '1.9.4'} ({Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.extra?.buildNumber ?? '116'})
+      </Text>
     </SafeAreaView>
   );
 }
@@ -1268,6 +1274,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     color: 'rgba(255,255,255,0.15)',
     fontSize: rf(10),
+  },
+
+  versionBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 12,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.35)',
+    zIndex: 0,
   },
 
   // Battle Pass XP bar touchable wrapper
