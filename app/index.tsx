@@ -15,6 +15,9 @@ import {
   Alert,
   Pressable,
   useWindowDimensions,
+  Share,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
@@ -53,6 +56,8 @@ import { HOME_THEMES } from '../constants/homeThemes';
 import { migrateGuestToUser } from '../utils/guestMigration';
 import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
+import { trackEvent } from '../utils/heatmap';
+import { getSupabase } from '../utils/supabase';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
 // @ts-ignore — parallel agent file, exists at deploy time
@@ -582,6 +587,16 @@ export default function HomeScreen() {
   const [pendingDailyReward, setPendingDailyReward] = useState(0);
   const [pendingDailyStreak, setPendingDailyStreak] = useState(1);
 
+  // Referral system (D6)
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralCodeInput, setReferralCodeInput] = useState('');
+  const [referralSubmitting, setReferralSubmitting] = useState(false);
+  const [referralToast, setReferralToast] = useState<string | null>(null);
+
+  // Play of the Day (D10)
+  type PotdData = { available: boolean; player?: string; data?: { cards?: string[]; pot_won?: number; hand_name?: string }; views?: number } | null;
+  const [potd, setPotd] = useState<PotdData>(null);
+
   // Rotating tagline — cycles through all 10
   const [tagline] = useState<string>(() => {
     const idx = taglineMountCount % TAGLINES.length;
@@ -617,6 +632,16 @@ export default function HomeScreen() {
       try {
         const cfg = await fetchCardDisplayConfig();
         useGameStore.getState().setCardConfig(cfg);
+      } catch {}
+    })();
+
+    // Fetch Play of the Day (D10) — fire and forget
+    void (async () => {
+      try {
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data } = await sb.rpc('get_play_of_the_day');
+        if (data?.available) setPotd(data);
       } catch {}
     })();
 
@@ -682,6 +707,8 @@ export default function HomeScreen() {
       }
     }
     trackAction('play_pressed');
+    // Heatmap (D7)
+    getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
     if (gamesPlayed === 0) {
       setShowWelcome(true);
       return;
@@ -743,6 +770,60 @@ export default function HomeScreen() {
     setShowNudge(false);
     AsyncStorage.setItem(NUDGE_DISMISSED_KEY, String(gamesPlayed)).catch(() => {});
   }, [gamesPlayed]);
+
+  // Referral: show toast helper
+  const showReferralToast = useCallback((msg: string) => {
+    setReferralToast(msg);
+    setTimeout(() => setReferralToast(null), 2800);
+  }, []);
+
+  // Referral: Invite Friends — create code + native share (D6)
+  const handleInviteFriends = useCallback(async () => {
+    try {
+      const deviceId = await getDeviceId();
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data, error } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
+      if (error || !data?.code) {
+        showReferralToast('Could not create invite link. Try again.');
+        return;
+      }
+      const code: string = data.code;
+      const message = `🃏 Come play CAPS with me! Enter code ${code} and get 100 💰 bonus! https://caps.app/invite/${code}`;
+      await Share.share({ message });
+    } catch {
+      // silent — share cancelled or unavailable
+    }
+  }, [showReferralToast]);
+
+  // Referral: redeem code (D6)
+  const handleRedeemCode = useCallback(async () => {
+    const code = referralCodeInput.trim().toUpperCase();
+    if (code.length !== 6) {
+      showReferralToast('Enter a 6-character code.');
+      return;
+    }
+    setReferralSubmitting(true);
+    try {
+      const deviceId = await getDeviceId();
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data, error } = await sb.rpc('redeem_referral', { p_device_id: deviceId, p_code: code });
+      if (error || !data?.success) {
+        showReferralToast(data?.message ?? 'Invalid or already used code.');
+      } else {
+        useGameStore.getState().addChips(100);
+        useGameStore.getState().trackChipsEarned(100);
+        showReferralToast('+100 💰 Welcome bonus!');
+        setReferralCodeInput('');
+        setShowReferralModal(false);
+      }
+    } catch {
+      showReferralToast('Something went wrong. Try again.');
+    } finally {
+      setReferralSubmitting(false);
+    }
+  }, [referralCodeInput, showReferralToast]);
 
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
 
@@ -898,11 +979,26 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
+        {/* Play of the Day card (D10) — only shown when available */}
+        {potd?.available && potd.data && (
+          <View style={styles.potdCard}>
+            <Text style={styles.potdTitle}>🏆 Play of the Day</Text>
+            <Text style={styles.potdPlayer} numberOfLines={1}>
+              {potd.player ?? 'Anonymous'} · {potd.data.hand_name ?? 'Best Hand'}
+            </Text>
+            <Text style={styles.potdPot}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>
+          </View>
+        )}
+
         {/* Mode buttons */}
         <View style={styles.modeButtonRow}>
           <Pressable
             style={[styles.modeBtn, styles.modeBtnBlue]}
-            onPress={() => router.push('/sit-and-go' as any)}
+            onPress={() => {
+              // Heatmap (D7)
+              getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
+              router.push('/sit-and-go' as any);
+            }}
           >
             <Text style={[styles.modeBtnIcon]}>🎯</Text>
             <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>
@@ -911,7 +1007,62 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* Referral — Invite Friends (D6) */}
+        <View style={styles.referralRow}>
+          <Pressable onPress={handleInviteFriends} style={styles.inviteBtn}>
+            <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
+          </Pressable>
+          {gamesPlayed < 3 && (
+            <Pressable onPress={() => setShowReferralModal(true)} hitSlop={8}>
+              <Text style={styles.gotCodeLink}>Got an invite code?</Text>
+            </Pressable>
+          )}
+        </View>
+
       </View>
+
+      {/* Referral toast (D6) */}
+      {referralToast && (
+        <AnimatedRN.View style={styles.referralToast} pointerEvents="none">
+          <Text style={styles.referralToastText}>{referralToast}</Text>
+        </AnimatedRN.View>
+      )}
+
+      {/* Redeem code modal (D6) */}
+      <Modal
+        visible={showReferralModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReferralModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowReferralModal(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>🎁 Enter Invite Code</Text>
+            <Text style={styles.modalSub}>6-character code from a friend</Text>
+            <TextInput
+              style={styles.codeInput}
+              value={referralCodeInput}
+              onChangeText={v => setReferralCodeInput(v.toUpperCase().slice(0, 6))}
+              placeholder="A3F2B1"
+              placeholderTextColor="rgba(255,255,255,0.25)"
+              autoCapitalize="characters"
+              maxLength={6}
+              returnKeyType="done"
+              onSubmitEditing={handleRedeemCode}
+            />
+            <Pressable
+              style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}
+              onPress={handleRedeemCode}
+              disabled={referralSubmitting}
+            >
+              <Text style={styles.redeemBtnText}>{referralSubmitting ? 'Checking...' : 'Redeem +100 💰'}</Text>
+            </Pressable>
+            <Pressable onPress={() => setShowReferralModal(false)} hitSlop={8} style={{ marginTop: rs(8) }}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {__DEV__ && (
         <Text style={styles.debugInfo}>
@@ -1173,5 +1324,158 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase' as any,
     textAlign: 'center',
+  },
+
+  // Play of the Day (D10)
+  potdCard: {
+    width: '100%',
+    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.22)',
+    borderRadius: rv(12),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(14),
+    flexDirection: 'column',
+    gap: rs(2),
+    maxHeight: 80,
+  },
+  potdTitle: {
+    color: '#c9a84c',
+    fontSize: rf(11),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  potdPlayer: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: rf(12),
+    fontWeight: '600',
+  },
+  potdPot: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(11),
+    fontWeight: '400',
+  },
+
+  // Referral row (D6)
+  referralRow: {
+    alignItems: 'center',
+    gap: rs(6),
+  },
+  inviteBtn: {
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    borderRadius: rv(20),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(20),
+  },
+  inviteBtnText: {
+    color: '#c9a84c',
+    fontSize: rf(13),
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  gotCodeLink: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: rf(11),
+    fontWeight: '400',
+    textDecorationLine: 'underline',
+  },
+
+  // Referral toast (D6)
+  referralToast: {
+    position: 'absolute',
+    bottom: rs(90),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(34,197,94,0.92)',
+    borderRadius: rv(24),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(20),
+    zIndex: 350,
+    maxWidth: '85%' as any,
+  },
+  referralToastText: {
+    color: '#ffffff',
+    fontSize: rf(13),
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Referral modal (D6)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: rs(24),
+  },
+  modalCard: {
+    backgroundColor: '#1C0508',
+    borderRadius: rv(18),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.4)',
+    padding: rs(26),
+    alignItems: 'center',
+    gap: rs(10),
+    maxWidth: 340,
+    width: '100%',
+    ...Platform.select({
+      ios: { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20 },
+      android: { elevation: 12 },
+      web: { boxShadow: '0 8px 32px rgba(201,168,76,0.25)' } as any,
+    }),
+  },
+  modalTitle: {
+    color: '#c9a84c',
+    fontSize: rf(19),
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  modalSub: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: rf(13),
+    fontWeight: '400',
+    textAlign: 'center',
+    marginTop: -rs(4),
+  },
+  codeInput: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    borderRadius: rv(12),
+    color: '#ffffff',
+    fontSize: rf(22),
+    fontWeight: '700',
+    letterSpacing: 8,
+    textAlign: 'center',
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(16),
+    width: '100%',
+  },
+  redeemBtn: {
+    backgroundColor: '#22C55E',
+    borderRadius: rv(12),
+    paddingVertical: rs(13),
+    paddingHorizontal: rs(32),
+    alignItems: 'center',
+    width: '100%',
+    ...Platform.select({
+      ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 12 },
+      android: { elevation: 8 },
+      web: { boxShadow: '0 4px 16px rgba(34,197,94,0.4)' } as any,
+    }),
+  },
+  redeemBtnText: {
+    color: '#ffffff',
+    fontSize: rf(15),
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  modalCancelText: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: rf(13),
+    fontWeight: '400',
+    textDecorationLine: 'underline',
   },
 });
