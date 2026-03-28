@@ -390,6 +390,12 @@ export default function ResultsScreen() {
 
   const handleNextHand = useCallback(() => {
     if (!revealData) return;
+    // Heatmap (D7)
+    import('../utils/heatmap').then(({ trackEvent }) => {
+      import('../utils/leaderboard').then(({ getDeviceId: gdi }) => {
+        gdi().then(id => trackEvent('results', 'play_again', id)).catch(() => {});
+      }).catch(() => {});
+    }).catch(() => {});
     const boardCount = revealData.boardCount;
 
     if (isMultiplayer) {
@@ -666,6 +672,10 @@ export default function ResultsScreen() {
             onShareComplete={async () => {
               try {
                 const deviceId = await getDeviceId();
+                // Heatmap (D7)
+                import('../utils/heatmap').then(({ trackEvent }) => {
+                  trackEvent('results', 'share_whatsapp', deviceId);
+                }).catch(() => {});
                 const shareResult = await earnChips(deviceId, 'share_hand');
                 if (shareResult?.chips_earned) {
                   useGameStore.getState().addChips(shareResult.chips_earned);

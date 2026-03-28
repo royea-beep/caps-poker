@@ -758,7 +758,13 @@ function GameScreenInner() {
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
-    trackAction('deal_pressed')
+    trackAction('deal_pressed');
+    // Heatmap (D7)
+    import('../utils/heatmap').then(({ trackEvent }) => {
+      import('../utils/leaderboard').then(({ getDeviceId }) => {
+        getDeviceId().then(id => trackEvent('game', 'deal_pressed', id)).catch(() => {});
+      }).catch(() => {});
+    }).catch(() => {});
     debugLog('H1 handleReady called');
     if (!allBoardsFull) { debugLog('H1.1 NOT allBoardsFull — abort'); return; }
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);

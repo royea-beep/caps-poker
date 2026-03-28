@@ -139,19 +139,32 @@ export async function registerAndSavePushToken(): Promise<string | null> {
 
   const client = getSupabase();
   if (client) {
+    // Call register_push_token RPC (D5) — upserts token + platform via stored procedure
     client
-      .from('push_tokens')
-      .upsert(
-        {
-          device_id: deviceId,
-          token,
-          platform: Platform.OS,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'device_id,token' },
-      )
+      .rpc('register_push_token', {
+        p_device_id: deviceId,
+        p_token: token,
+        p_platform: Platform.OS,
+      })
       .then(({ error }: { error: { message: string } | null }) => {
-        if (error) debugLog(`[push_tokens] upsert failed: ${error.message}`, 'warn');
+        if (error) {
+          // Fallback: direct upsert if RPC not available yet
+          debugLog(`[push_tokens] RPC failed (${error.message}), falling back to direct upsert`, 'warn');
+          client
+            .from('push_tokens')
+            .upsert(
+              {
+                device_id: deviceId,
+                token,
+                platform: Platform.OS,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'device_id,token' },
+            )
+            .then(({ error: e2 }: { error: { message: string } | null }) => {
+              if (e2) debugLog(`[push_tokens] upsert fallback failed: ${e2.message}`, 'warn');
+            });
+        }
       });
   }
 

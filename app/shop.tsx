@@ -60,6 +60,10 @@ export default function ShopScreen() {
     setBuying(item.event_type);
     try {
       const deviceId = await getDeviceId();
+      // Heatmap (D7)
+      import('../utils/heatmap').then(({ trackEvent }) => {
+        trackEvent('shop', 'buy_' + item.event_type, deviceId);
+      }).catch(() => {});
       const result = await spendChips(deviceId, item.event_type);
       if (result?.success) {
         // Update local chip balance
