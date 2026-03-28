@@ -75,6 +75,14 @@
         {
           "microphonePermission": "Allow Caps Poker to record audio for bug reports"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1C0508",
+          "defaultChannel": "default"
+        }
       ]
     ],
     "owner": "royea"
