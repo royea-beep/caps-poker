@@ -647,7 +647,10 @@ function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | nu
   const fix = (report.ai_suggested_fix as string | null) ?? '';
   const desc = (report.description as string | null) ?? '';
 
-  let msg = '*BUG REPORT*\n';
+  const reportNum = (report.report_number as number | null) ?? null;
+  const reportNumStr = reportNum !== null ? `#${reportNum}` : '';
+
+  let msg = `🐛 *באג ${reportNumStr}*\n`;
   msg += `${model} | iOS ${osVer} | Build ${build}\n`;
   msg += `${sevMap[sev] ?? '[?]'} Severity: ${sev}\n`;
   msg += `Recording: ${duration}s | ${frames} frames\n`;
@@ -663,14 +666,23 @@ function buildBugMessage(report: Record<string, unknown>, fixPrompt: string | nu
   if (audioLink) msg += `Audio: ${audioLink}\n`;
   if (videoLink) msg += `Screenshot: ${videoLink}\n`;
   msg += '\n';
-  msg += '*Reply:*\n';
-  msg += '1 = Fix now (auto-fix)\n';
-  msg += '2 = Add to sprint\n';
-  msg += '3 = Low priority (backlog)\n';
-  msg += '4 = Show logs + breadcrumbs\n';
-  msg += '5 = Send audio\n';
-  msg += '6 = Not a bug - dismiss\n';
-  msg += '7 = Ask tester for more info\n';
+  if (reportNum !== null) {
+    msg += `*Reply:*\n`;
+    msg += `${reportNum}:1 = תיקון אוטומטי (auto-fix)\n`;
+    msg += `${reportNum}:2 = הוסף לספרינט\n`;
+    msg += `${reportNum}:3 = בקלוג (עדיפות נמוכה)\n`;
+    msg += `${reportNum}:6 = לא באג - בטל\n`;
+    msg += `Or just reply 1-7 for the most recent report.\n`;
+  } else {
+    msg += '*Reply:*\n';
+    msg += '1 = Fix now (auto-fix)\n';
+    msg += '2 = Add to sprint\n';
+    msg += '3 = Low priority (backlog)\n';
+    msg += '4 = Show logs + breadcrumbs\n';
+    msg += '5 = Send audio\n';
+    msg += '6 = Not a bug - dismiss\n';
+    msg += '7 = Ask tester for more info\n';
+  }
   return msg;
 }
 
@@ -1120,16 +1132,35 @@ serve(async (req: Request) => {
         const autoFixEnabled = cfg?.value?.enabled ?? false;
 
         // Record crash_pending session so user replies 1-7 are routed correctly
+        let newCrashSessionId: string | null = null;
+        let crashReportNumber: number | null = null;
         try {
-          await supabase.from('whatsapp_sessions').insert({
+          const { data: crashInserted } = await supabase.from('whatsapp_sessions').insert({
             message_sid: `crash-${Date.now()}`,
             from_number: ROYE_NUMBER,
             raw_input: msg,
             media_type: 'crash',
             claude_plan: { debugLogs: json.debugLogs ?? [], metadata: json.metadata ?? {}, videoUrl: json.videoUrl, screenshotUrl: json.screenshotUrl },
             status: 'crash_pending',
-          });
+          }).select('id, status, report_number').single();
+          newCrashSessionId = (crashInserted as Record<string, unknown> | null)?.id as string | null;
+          crashReportNumber = (crashInserted as Record<string, unknown> | null)?.report_number as number | null;
+
+          // Task 4: If DB trigger auto-dismissed this as dirty-shutdown, skip WhatsApp
+          const crashStatus = (crashInserted as Record<string, unknown> | null)?.status as string | null;
+          if (crashStatus === 'crash_skipped') {
+            console.log('[whatsapp-bot] Dirty-shutdown crash auto-skipped by DB trigger');
+            return new Response(JSON.stringify({ sent: false, skipped: true, reason: 'dirty_shutdown' }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            });
+          }
         } catch { /* fire and forget */ }
+
+        // Build crash message — prefix with report_number if available
+        const crashMsgWithNum = crashReportNumber !== null
+          ? `💥 *קריסה #${crashReportNumber}*\n${msg}`
+          : msg;
 
         // Send WhatsApp — wrapped in try/catch so a Twilio error never breaks the response
         let whatsappSent = false;
@@ -1145,13 +1176,12 @@ serve(async (req: Request) => {
               body: JSON.stringify({ debugLogs: json.debugLogs, metadata: json.metadata, autoApply: true, from: ROYE_NUMBER }),
             }).catch(() => {});
           } else {
-            const crashSid = await sendWhatsApp(ROYE_NUMBER, msg);
+            const crashSid = await sendWhatsApp(ROYE_NUMBER, crashMsgWithNum);
             whatsappSent = crashSid !== null;
-            if (crashSid) {
+            if (crashSid && newCrashSessionId) {
               supabase.from('whatsapp_sessions')
                 .update({ message_sid: crashSid })
-                .eq('from_number', ROYE_NUMBER).eq('status', 'crash_pending')
-                .order('created_at', { ascending: false }).limit(1)
+                .eq('id', newCrashSessionId)
                 .then(() => {}).catch(() => {});
             }
           }
@@ -1349,9 +1379,10 @@ Respond with ONLY valid JSON, no markdown backticks:
         const effectiveAudio = audioUrl ?? (bugReport?.audio_url as string | null);
         const effectiveScreenshot = screenshotUrl ?? (bugReport?.video_url as string | null);
 
-        // Insert session
+        // Insert session and fetch report_number
+        let insertedSession: { status: string; report_number: number | null } | null = null;
         try {
-          await supabase.from('whatsapp_sessions').insert({
+          const { data: insertedRows } = await supabase.from('whatsapp_sessions').insert({
             message_sid: `bug-${Date.now()}`,
             from_number: ROYE_WA,
             raw_input: bugMsg,
@@ -1364,8 +1395,15 @@ Respond with ONLY valid JSON, no markdown backticks:
               screenshot_url: effectiveScreenshot,
             },
             status: 'bug_pending',
-          });
+          }).select('id, status, report_number').single();
+          insertedSession = insertedRows as { status: string; report_number: number | null } | null;
         } catch { /* non-critical */ }
+
+        // Rebuild bugMsg with report_number now that we have it
+        const reportNumber = insertedSession?.report_number ?? null;
+        const finalBugMsg = bugReport
+          ? buildBugMessage({ ...bugReport, report_number: reportNumber }, richFixPrompt, bugAudioTranscription)
+          : bugMsg;
         if (bugReportId) {
           try {
             await supabase.from('bug_notifications').insert({
@@ -1384,7 +1422,7 @@ Respond with ONLY valid JSON, no markdown backticks:
         let bugWaError: string | null = null;
         try {
           // Send main message with screenshot embedded as media
-          bugTwilioSid = await sendWhatsApp(ROYE_WA, bugMsg, effectiveScreenshot ?? undefined);
+          bugTwilioSid = await sendWhatsApp(ROYE_WA, finalBugMsg, effectiveScreenshot ?? undefined);
           bugWaSent = bugTwilioSid !== null;
           // Send audio as second message
           if (bugTwilioSid && effectiveAudio) {
@@ -1476,6 +1514,14 @@ Respond with ONLY valid JSON, no markdown backticks:
         } else if (result === 'no_changes') {
           message = 'Claude Code analyzed the code but made no changes — fix may need more context. Check run: github.com/royea-beep/caps-poker/actions';
           newStatus = 'bug_no_changes';
+          // Escalate via RPC so DB trigger can re-queue or notify
+          const escalateSessionId = session?.id as string | null;
+          if (escalateSessionId) {
+            supabase.rpc('escalate_no_changes', {
+              p_session_id: escalateSessionId,
+              p_reason: 'Claude Code analyzed the code but determined no changes were needed. The issue may require manual investigation or more context.',
+            }).then(() => {}).catch(() => {});
+          }
         } else {
           message = (callbackMsg as string | null) ?? `Auto-fix run #${run_id ?? '?'} finished (result: ${result ?? 'unknown'}).`;
           newStatus = 'bug_fix_done';
@@ -1615,40 +1661,71 @@ Respond with ONLY valid JSON, no markdown backticks:
     }
   }
 
-  // ── Check bug_pending FIRST — routes 1/2/3 to bug report handler ────────────
-  if (['1', '2', '3', '4', '5', '6', '7'].includes(upperBody)) {
-    const bugWinStart = new Date(Date.now() - BUG_REPLY_WINDOW_MS).toISOString();
-    const { data: bugSession } = await supabase
-      .from('whatsapp_sessions').select('*')
-      .eq('from_number', from).eq('status', 'bug_pending')
-      .gte('created_at', bugWinStart)
-      .order('created_at', { ascending: false }).limit(1).single();
-    if (bugSession) {
-      const bugReply = await handleBugReply(msgBody, bugSession, supabase, from);
-      if (bugReply) {
-        await sendWhatsApp(from, bugReply);
+  // ── Route incoming replies through handle_whatsapp_reply() RPC ───────────────
+  // Handles: numbered replies (1-7), report-prefixed replies (82:1), and crash keywords
+  const isReplyCandidate = (
+    /^\d+$/.test(upperBody) ||
+    /^\d+:\d+$/.test(upperBody) ||
+    ['FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)
+  );
+
+  if (isReplyCandidate) {
+    const { data: rpcData } = await supabase.rpc('handle_whatsapp_reply', {
+      p_from_number: from,
+      p_reply: msgBody.trim(),
+    });
+
+    if (rpcData?.success) {
+      // RPC handled it — special case: option 5 (audio) needs to send media directly
+      if (rpcData.action === 'send_audio' && rpcData.audio_url) {
+        await sendWhatsApp(from, 'Audio recording:', rpcData.audio_url);
+      } else if (rpcData.message_he) {
+        await sendWhatsApp(from, rpcData.message_he);
+      }
+      return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+    } else if (rpcData?.success === false) {
+      // RPC explicitly failed — send error message but continue (may be a new report)
+      if (rpcData?.message_he && rpcData.message_he !== 'not_a_reply') {
+        await sendWhatsApp(from, rpcData.message_he || 'שגיאה בעיבוד התגובה');
         return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
       }
+      // rpcData.message_he === 'not_a_reply' or rpcData is null → fall through to legacy handlers
     }
-  }
 
-    // ── Check crash_pending FIRST — routes 1-7 replies to crash control panel ─
-  if (['1','2','3','4','5','6','7','FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)) {
-    const windowStart = new Date(Date.now() - CRASH_REPLY_WINDOW_MS).toISOString();
-    const { data: crashSession } = await supabase
-      .from('whatsapp_sessions')
-      .select('*')
-      .eq('from_number', from)
-      .eq('status', 'crash_pending')
-      .gte('created_at', windowStart)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-    if (crashSession) {
-      const reply = await handleCrashReply(msgBody, supabase, from);
-      if (reply) {
-        await sendWhatsApp(from, reply);
-        return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+    // ── Fallback: legacy inline handlers (when RPC is not deployed yet) ──────
+    if (['1', '2', '3', '4', '5', '6', '7'].includes(upperBody)) {
+      const bugWinStart = new Date(Date.now() - BUG_REPLY_WINDOW_MS).toISOString();
+      const { data: bugSession } = await supabase
+        .from('whatsapp_sessions').select('*')
+        .eq('from_number', from).eq('status', 'bug_pending')
+        .gte('created_at', bugWinStart)
+        .order('created_at', { ascending: false }).limit(1).single();
+      if (bugSession) {
+        const bugReply = await handleBugReply(msgBody, bugSession, supabase, from);
+        if (bugReply) {
+          await sendWhatsApp(from, bugReply);
+          return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+        }
+      }
+    }
+
+    if (['1','2','3','4','5','6','7','FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)) {
+      const windowStart = new Date(Date.now() - CRASH_REPLY_WINDOW_MS).toISOString();
+      const { data: crashSession } = await supabase
+        .from('whatsapp_sessions')
+        .select('*')
+        .eq('from_number', from)
+        .eq('status', 'crash_pending')
+        .gte('created_at', windowStart)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (crashSession) {
+        const reply = await handleCrashReply(msgBody, supabase, from);
+        if (reply) {
+          await sendWhatsApp(from, reply);
+          return new Response('<Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' } });
+        }
       }
     }
   }
