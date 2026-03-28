@@ -890,35 +890,6 @@ export default function HomeScreen() {
         {/* Balance */}
         <ChipsDisplay amount={chips} label="Balance" size="large" />
 
-        {/* Battle Pass XP bar — compact, tappable */}
-        {(() => {
-          let bpCurrentXP = 0;
-          let bpCurrentTier = 1;
-          let bpProgress = 0;
-          let bpXpInTier = 0;
-          let bpXpNeeded = 100;
-          try {
-            const bpSnap = useBattlePassStore();
-            bpCurrentXP = bpSnap.currentXP;
-            bpCurrentTier = bpSnap.currentTier;
-            const prog = getProgressToNextTier(bpCurrentXP);
-            bpProgress = prog.progress;
-            bpXpInTier = prog.xpInTier;
-            bpXpNeeded = prog.xpNeeded;
-          } catch { return null; }
-          return (
-            <Pressable onPress={() => router.push('/battle-pass' as any)} style={styles.xpBarTouchable}>
-              <XPBar
-                currentXP={bpCurrentXP}
-                currentTier={bpCurrentTier}
-                progress={bpProgress}
-                xpInTier={bpXpInTier}
-                xpNeeded={bpXpNeeded}
-                compact
-              />
-            </Pressable>
-          );
-        })()}
 
         {/* Daily reward — one motivational element at bottom */}
         {canClaim && (
@@ -927,32 +898,17 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Mode buttons — grayed out when feature flag is off */}
+        {/* Mode buttons */}
         <View style={styles.modeButtonRow}>
-          <View
-            style={[styles.modeBtn, !ECONOMY_FLAGS.sit_n_go_enabled && styles.modeBtnDisabled]}
-            pointerEvents={ECONOMY_FLAGS.sit_n_go_enabled ? 'auto' : 'none'}
+          <Pressable
+            style={[styles.modeBtn, styles.modeBtnBlue]}
+            onPress={() => router.push('/sit-and-go' as any)}
           >
             <Text style={[styles.modeBtnIcon]}>🎯</Text>
-            <Text style={[styles.modeBtnLabel, !ECONOMY_FLAGS.sit_n_go_enabled && styles.modeBtnLabelDisabled]}>
-              Sit & Go
+            <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>
+              Sit &amp; Go (100 💰)
             </Text>
-            {!ECONOMY_FLAGS.sit_n_go_enabled && (
-              <Text style={styles.comingSoonLabel}>Coming Soon</Text>
-            )}
-          </View>
-          <View
-            style={[styles.modeBtn, !ECONOMY_FLAGS.battle_pass_enabled && styles.modeBtnDisabled]}
-            pointerEvents={ECONOMY_FLAGS.battle_pass_enabled ? 'auto' : 'none'}
-          >
-            <Text style={[styles.modeBtnIcon]}>⚔️</Text>
-            <Text style={[styles.modeBtnLabel, !ECONOMY_FLAGS.battle_pass_enabled && styles.modeBtnLabelDisabled]}>
-              Battle Pass
-            </Text>
-            {!ECONOMY_FLAGS.battle_pass_enabled && (
-              <Text style={styles.comingSoonLabel}>Coming Soon</Text>
-            )}
-          </View>
+          </Pressable>
         </View>
 
       </View>
@@ -1188,6 +1144,13 @@ const styles = StyleSheet.create({
   },
   modeBtnDisabled: {
     opacity: 0.4,
+  },
+  modeBtnBlue: {
+    borderColor: 'rgba(0,191,255,0.5)',
+    backgroundColor: 'rgba(0,191,255,0.1)',
+  },
+  modeBtnLabelBlue: {
+    color: '#00BFFF',
   },
   modeBtnIcon: {
     fontSize: rf(22),

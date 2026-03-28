@@ -68,7 +68,7 @@ const TOTAL_PLAYERS = 6;
 const TOTAL_ROUNDS = 5; // 6 players → 5 elimination rounds → 1 winner
 const BOT_NAMES = ['Joey', 'Monica', 'Ross', 'Phoebe', 'Chandler'];
 const COUNTDOWN_SECONDS = 30;
-const ENTRY_FEE = 150;
+const ENTRY_FEE = 100;
 const PRIZE_POOL = ENTRY_FEE * TOTAL_PLAYERS;
 
 // ─── Room Code Utils ─────────────────────────────────────────────────────────
