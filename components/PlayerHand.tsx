@@ -89,12 +89,12 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   const cardW = (() => {
-    if (Platform.OS !== 'web') return Math.min(29, Math.max(22, maxCardW));
+    if (Platform.OS !== 'web') return Math.min(38, Math.max(24, maxCardW));
     if (device.isMobileWeb)  return Math.min(60, Math.max(40, maxCardW));
     if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
     return Math.min(88, Math.max(70, maxCardW));
   })();
-  const cardH = Math.round(cardW * 1.15);
+  const cardH = Math.round(cardW / 0.72);
 
   const midpoint = Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, midpoint);
