@@ -370,7 +370,6 @@ export default function Board({
               cardHeight={commH}
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
-              hideCornerLabels
               suitsOnly
             />
           ))}
@@ -385,7 +384,6 @@ export default function Board({
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               flipDuration={flipDuration}
-              hideCornerLabels
               suitsOnly
             />
           ))}

@@ -60,7 +60,7 @@ function AnimatedCardSlot({
         onPress={() => onSelectCard(card)}
         style={[styles.cardWrapper, isSelected && styles.selected]}
       >
-        <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} hideCornerLabels />
+        <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
         {isSelected && (
           <View style={styles.selBadge}>
             <Text style={styles.selBadgeText}>{selIndex + 1}</Text>
