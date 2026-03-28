@@ -22,7 +22,7 @@ interface CardProps {
   cardWidth?: number;
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
-  hideCornerLabels?: boolean; // kept for prop compatibility — corners always hidden
+  hideCornerLabels?: boolean; // when true, hides the small top-left rank+suit corner label
   suitsOnly?: boolean; // hide rank entirely, show only suit symbol at bottom-left
 }
 
@@ -279,6 +279,18 @@ export default function CardComponent({
           frontAnimStyle,
         ]}
       >
+        {/* Top-left corner: small rank + suit indicator */}
+        {!hideCornerLabels && (
+          <View style={styles.cornerTopLeft}>
+            <Text style={[styles.cornerRank, { color: suitColor, fontSize: Math.max(8, Math.floor(height * 0.20)) }]}>
+              {card.rank}
+            </Text>
+            <Text style={[styles.cornerSuit, { color: suitColor, fontSize: Math.max(7, Math.floor(height * 0.16)) }]}>
+              {SUIT_SYMBOLS[card.suit]}
+            </Text>
+          </View>
+        )}
+
         {/* Center: large rank + suit below — or suit-only at bottom-left */}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
@@ -346,6 +358,25 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.35,
+  },
+  cornerTopLeft: {
+    position: 'absolute',
+    top: 3,
+    left: 4,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  cornerRank: {
+    fontWeight: '900',
+    lineHeight: undefined,
+    ...Platform.select({
+      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
+      default: {},
+    }),
+  },
+  cornerSuit: {
+    fontWeight: '700',
+    marginTop: -2,
   },
   suitBottomLeft: {
     position: 'absolute',
