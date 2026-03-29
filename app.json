@@ -88,8 +88,7 @@
           "color": "#1C0508",
           "defaultChannel": "default"
         }
-      ],
-      "expo-asset"
+      ]
     ],
     "owner": "royea",
     "newArchEnabled": false
