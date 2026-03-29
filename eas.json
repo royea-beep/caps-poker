@@ -36,7 +36,10 @@
       "channel": "production",
       "ios": {
         "buildConfiguration": "Release",
-        "autoIncrement": true
+        "autoIncrement": true,
+        "ascApiKeyPath": "./AuthKey_6WF8UY7742.p8",
+        "ascApiKeyId": "6WF8UY7742",
+        "ascApiKeyIssuerId": "686f97b8-3f8a-40b7-a6cd-5293a3168439"
       },
       "android": {
         "buildType": "app-bundle"
@@ -62,7 +65,9 @@
         "ascApiKeyPath": "./AuthKey_HH732W7XQJ.p8",
         "ascApiKeyId": "HH732W7XQJ",
         "ascApiKeyIssuerId": "686f97b8-3f8a-40b7-a6cd-5293a3168439",
-        "groups": ["External Testers"]
+        "groups": [
+          "External Testers"
+        ]
       }
     },
     "ci": {
