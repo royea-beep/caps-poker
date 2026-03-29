@@ -59,6 +59,7 @@ import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
 import { trackEvent } from '../utils/heatmap';
 import { getSupabase } from '../utils/supabase';
+import { scheduleLocal, cancelReengagement } from '../utils/notifications';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
 // @ts-ignore — parallel agent file, exists at deploy time
@@ -593,6 +594,7 @@ export default function HomeScreen() {
   const [referralCodeInput, setReferralCodeInput] = useState('');
   const [referralSubmitting, setReferralSubmitting] = useState(false);
   const [referralToast, setReferralToast] = useState<string | null>(null);
+  const [myReferralCode, setMyReferralCode] = useState<string | null>(null);
 
   // Play of the Day (D10)
   type PotdData = { available: boolean; player?: string; data?: { cards?: string[]; pot_won?: number; hand_name?: string }; views?: number } | null;
@@ -607,6 +609,17 @@ export default function HomeScreen() {
   const taglineOpacity = useSharedValue(0);
   useEffect(() => { taglineOpacity.value = withTiming(1, { duration: 800 }); }, []);
   const taglineAnimStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
+
+  // Load own referral code on mount (Task C) + cancel any re-engagement notification
+  useEffect(() => {
+    void cancelReengagement();
+    getDeviceId().then(async (deviceId) => {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
+      if (data?.code) setMyReferralCode(data.code);
+    }).catch(() => {});
+  }, []);
 
   // PLAY button scale — RN Animated (not Reanimated)
   const playScale = useRef(new AnimatedRN.Value(1)).current;
@@ -745,6 +758,7 @@ export default function HomeScreen() {
     store.setDailyRewardStreak(nextStreak);
     CapsHooks.dailyRewardClaimed(nextStreak, reward);
     Alert.alert('Daily Reward!', `+${reward} chips${nextStreak > 1 ? ` (${nextStreak}-day streak!)` : ''}`);
+    void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
   }, [lastDailyRewardClaim, dailyRewardStreak]);
 
   // Handler for claiming from the auto-popup (uses pre-computed reward values)
@@ -757,6 +771,7 @@ export default function HomeScreen() {
     store.setLastDailyRewardClaim(now.toISOString());
     store.setDailyRewardStreak(pendingDailyStreak);
     CapsHooks.dailyRewardClaimed(pendingDailyStreak, pendingDailyReward);
+    void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
   }, [pendingDailyReward, pendingDailyStreak]);
 
   const handleGoogleSignIn = useCallback(async () => {
@@ -778,24 +793,34 @@ export default function HomeScreen() {
     setTimeout(() => setReferralToast(null), 2800);
   }, []);
 
-  // Referral: Invite Friends — create code + native share (D6)
+  // Referral: Invite Friends — use cached code or create on demand (D6+)
   const handleInviteFriends = useCallback(async () => {
     try {
-      const deviceId = await getDeviceId();
-      const sb = getSupabase();
-      if (!sb) return;
-      const { data, error } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
-      if (error || !data?.code) {
-        showReferralToast('Could not create invite link. Try again.');
-        return;
+      let code = myReferralCode;
+      if (!code) {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data, error } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
+        if (error || !data?.code) {
+          showReferralToast('Could not create invite link. Try again.');
+          return;
+        }
+        code = data.code as string;
+        setMyReferralCode(code);
       }
-      const code: string = data.code;
       const message = `🃏 Come play CAPS with me! Enter code ${code} and get 100 💰 bonus! https://caps.app/invite/${code}`;
       await Share.share({ message });
     } catch {
       // silent — share cancelled or unavailable
     }
-  }, [showReferralToast]);
+  }, [myReferralCode, showReferralToast]);
+
+  // Copy own code via share sheet
+  const handleCopyCode = useCallback(async () => {
+    if (!myReferralCode) return;
+    try { await Share.share({ message: myReferralCode }); } catch { /* silent */ }
+  }, [myReferralCode]);
 
   // Referral: redeem code (D6)
   const handleRedeemCode = useCallback(async () => {
@@ -1008,11 +1033,26 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Referral — Invite Friends (D6) */}
+        {/* Referral — Persistent Code Card (S104) */}
         <View style={styles.referralRow}>
-          <Pressable onPress={handleInviteFriends} style={styles.inviteBtn}>
-            <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
-          </Pressable>
+          {myReferralCode ? (
+            <View style={styles.referralCard}>
+              <Text style={styles.referralCardLabel}>YOUR CODE</Text>
+              <Text style={styles.referralCardCode}>{myReferralCode}</Text>
+              <View style={styles.referralCardButtons}>
+                <Pressable onPress={handleCopyCode} style={styles.referralActionBtn}>
+                  <Text style={styles.referralActionBtnText}>📋 Copy</Text>
+                </Pressable>
+                <Pressable onPress={handleInviteFriends} style={styles.referralActionBtn}>
+                  <Text style={styles.referralActionBtnText}>📤 Share</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable onPress={handleInviteFriends} style={styles.inviteBtn}>
+              <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
+            </Pressable>
+          )}
           {gamesPlayed < 3 && (
             <Pressable onPress={() => setShowReferralModal(true)} hitSlop={8}>
               <Text style={styles.gotCodeLink}>Got an invite code?</Text>
@@ -1375,6 +1415,46 @@ const styles = StyleSheet.create({
   referralRow: {
     alignItems: 'center',
     gap: rs(6),
+  },
+  referralCard: {
+    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.25)',
+    borderRadius: rv(12),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(16),
+    alignItems: 'center',
+    gap: rs(3),
+  },
+  referralCardLabel: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: rf(9),
+    fontWeight: '600' as const,
+    letterSpacing: 1.2,
+  },
+  referralCardCode: {
+    color: '#c9a84c',
+    fontSize: rf(22),
+    fontWeight: '700' as const,
+    letterSpacing: 4,
+  },
+  referralCardButtons: {
+    flexDirection: 'row' as const,
+    gap: rs(8),
+    marginTop: rs(3),
+  },
+  referralActionBtn: {
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    borderRadius: rv(16),
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(14),
+  },
+  referralActionBtnText: {
+    color: '#c9a84c',
+    fontSize: rf(12),
+    fontWeight: '600' as const,
   },
   inviteBtn: {
     backgroundColor: 'rgba(201,168,76,0.12)',
