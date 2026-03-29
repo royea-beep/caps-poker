@@ -24,6 +24,8 @@ import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
+import { getSupabase } from '../utils/supabase';
+import { getDeviceId } from '../utils/leaderboard';
 import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, getCardsPerPlayer } from '../constants/gameConfig';
 import {
   BoardState,
@@ -57,6 +59,7 @@ interface SitAndGoPlayer {
 }
 
 type SitAndGoPhase =
+  | 'entry'
   | 'lobby'
   | 'arranging'
   | 'waiting'
@@ -70,6 +73,9 @@ const BOT_NAMES = ['Joey', 'Monica', 'Ross', 'Phoebe', 'Chandler'];
 const COUNTDOWN_SECONDS = 30;
 const ENTRY_FEE = 100;
 const PRIZE_POOL = ENTRY_FEE * TOTAL_PLAYERS;
+const PRIZE_1ST = Math.round(PRIZE_POOL * 0.6); // 360
+const PRIZE_2ND = Math.round(PRIZE_POOL * 0.3); // 180
+const PRIZE_3RD = Math.round(PRIZE_POOL * 0.1); // 60
 
 // ─── Room Code Utils ─────────────────────────────────────────────────────────
 
@@ -90,9 +96,13 @@ export default function SitAndGoScreen() {
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
   const addChips = useGameStore((s) => s.addChips);
+  const playerName = useGameStore((s) => s.playerName);
 
   // Sit & Go state
-  const [phase, setPhase] = useState<SitAndGoPhase>('lobby');
+  const [phase, setPhase] = useState<SitAndGoPhase>('entry');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [humanPrize, setHumanPrize] = useState(0);
+  const [humanPlace, setHumanPlace] = useState(0);
   const [round, setRound] = useState(1);
   const [players, setPlayers] = useState<SitAndGoPlayer[]>([]);
   const [lobbyCount, setLobbyCount] = useState(1);
@@ -130,6 +140,18 @@ export default function SitAndGoScreen() {
     };
   }, []);
 
+  // ─── Eliminate RPC (fire-and-forget) ────────────────────────────────────
+
+  const callEliminateRpc = useCallback(async (sid: string | null) => {
+    if (!sid) return;
+    const sb = getSupabase();
+    if (!sb) return;
+    try {
+      const dId = await getDeviceId();
+      await sb.rpc('sng_eliminate', { p_device_id: dId, p_session_id: sid });
+    } catch { /* silent — local state is source of truth */ }
+  }, []);
+
   // ─── Lobby animation ────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -157,10 +179,26 @@ export default function SitAndGoScreen() {
         clearInterval(interval);
         // Auto-start after brief delay
         setTimeout(() => {
-          if (mountedRef.current) {
-            addChips(-ENTRY_FEE);
-            startRound(initial, 1);
-          }
+          if (!mountedRef.current) return;
+          addChips(-ENTRY_FEE);
+          // Wire join_sit_n_go_solo RPC (fire-and-forget — game starts regardless)
+          void (async () => {
+            const sb = getSupabase();
+            if (sb) {
+              try {
+                const dId = await getDeviceId();
+                const { data } = await sb.rpc('join_sit_n_go_solo', {
+                  p_device_id: dId,
+                  p_player_name: playerName || 'You',
+                });
+                const result = data as { session_id?: string } | null;
+                if (result?.session_id && mountedRef.current) {
+                  setSessionId(result.session_id);
+                }
+              } catch { /* silent */ }
+            }
+          })();
+          startRound(initial, 1);
         }, 1000);
       }
     }, 500);
@@ -301,21 +339,31 @@ export default function SitAndGoScreen() {
   const handleContinue = useCallback(() => {
     setPlayers((prev) => {
       const alive = prev.filter((p) => !p.eliminated);
+
       if (alive.length <= 2) {
-        // Final showdown done — determine winner
+        // Final showdown — determine 1st and 2nd place
         const sorted = [...alive].sort((a, b) => b.score - a.score);
-        const winner = sorted[0];
-        if (winner.isHuman) {
-          addChips(PRIZE_POOL);
+        const first = sorted[0];
+        const second = sorted[1];
+
+        const humanFirst = first?.isHuman;
+        const humanSecond = second?.isHuman;
+        const prize = humanFirst ? PRIZE_1ST : humanSecond ? PRIZE_2ND : 0;
+        const place = humanFirst ? 1 : humanSecond ? 2 : 0;
+
+        if (prize > 0) {
+          addChips(prize);
+          setHumanPrize(prize);
+          setHumanPlace(place);
+          void callEliminateRpc(sessionId);
           setPhase('winner');
         } else {
-          setEliminatedName(winner.name);
           setPhase('eliminated');
         }
         return prev;
       }
 
-      // Find lowest scorer among alive (excluding ties with higher players)
+      // Eliminate the lowest scorer this round
       const sorted = [...alive].sort((a, b) => a.score - b.score);
       const lowestPlayer = sorted[0];
 
@@ -326,14 +374,27 @@ export default function SitAndGoScreen() {
       setEliminatedName(lowestPlayer.name);
 
       const newAlive = updated.filter((p) => !p.eliminated);
+
       if (lowestPlayer.isHuman) {
+        // Human eliminated — check if 3rd place prize applies
+        const finishPlace = alive.length; // e.g. 3 alive → human finishes 3rd
+        const prize = finishPlace === 3 ? PRIZE_3RD : 0;
+        if (prize > 0) {
+          addChips(prize);
+          setHumanPrize(prize);
+          setHumanPlace(3);
+          void callEliminateRpc(sessionId);
+        }
         setPhase('eliminated');
         return updated;
       }
 
       if (newAlive.length <= 1) {
-        // Human is last standing
-        addChips(PRIZE_POOL);
+        // Only human left — human wins 1st
+        addChips(PRIZE_1ST);
+        setHumanPrize(PRIZE_1ST);
+        setHumanPlace(1);
+        void callEliminateRpc(sessionId);
         setPhase('winner');
         return updated;
       }
@@ -348,7 +409,7 @@ export default function SitAndGoScreen() {
 
       return updated;
     });
-  }, [round, startRound, addChips]);
+  }, [round, startRound, addChips, sessionId, callEliminateRpc]);
 
   // ─── Card interaction handlers ──────────────────────────────────────────
 
@@ -440,6 +501,57 @@ export default function SitAndGoScreen() {
 
   // ─── Render ─────────────────────────────────────────────────────────────
 
+  // Entry phase — show mode info before starting
+  if (phase === 'entry') {
+    const canAfford = chips >= ENTRY_FEE;
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.topBar}>
+          <Button title="BACK" variant="ghost" onPress={() => router.replace('/')} style={{ paddingVertical: 8, paddingHorizontal: 12 }} />
+        </View>
+        <View style={styles.centered}>
+          <Text style={styles.trophyEmoji}>🃏</Text>
+          <Text style={styles.heading}>SIT & GO</Text>
+          <Text style={styles.subheading}>SOLO VS BOTS</Text>
+
+          <View style={styles.lobbyBox}>
+            <Text style={styles.lobbyTitle}>Prize Structure</Text>
+            {[
+              { place: '🥇 1st', prize: PRIZE_1ST, label: '60%' },
+              { place: '🥈 2nd', prize: PRIZE_2ND, label: '30%' },
+              { place: '🥉 3rd', prize: PRIZE_3RD, label: '10%' },
+            ].map(({ place, prize, label }) => (
+              <View key={place} style={styles.lobbySlot}>
+                <Text style={styles.lobbyName}>{place}</Text>
+                <Text style={[styles.lobbyName, { color: COLORS.gold, marginLeft: 'auto' as any }]}>
+                  {prize} chips ({label})
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={[styles.subheading, { marginTop: 8 }]}>
+            Entry Fee: {ENTRY_FEE} chips  |  6 Players
+          </Text>
+
+          {!canAfford && (
+            <Text style={{ color: COLORS.danger, fontSize: 13, textAlign: 'center' }}>
+              אין מספיק צ&apos;יפים — שחק כדי להרוויח
+            </Text>
+          )}
+
+          <Button
+            title={canAfford ? 'START SOLO GAME' : `Need ${ENTRY_FEE} chips`}
+            variant="gold"
+            disabled={!canAfford}
+            onPress={() => { if (canAfford) setPhase('lobby'); }}
+          />
+          <Text style={styles.lobbyCounter}>{chips} chips available</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Lobby phase
   if (phase === 'lobby') {
     return (
@@ -449,7 +561,7 @@ export default function SitAndGoScreen() {
           <Text style={styles.subheading}>6 Players  |  Entry: {ENTRY_FEE} chips</Text>
 
           <View style={styles.lobbyBox}>
-            <Text style={styles.lobbyTitle}>Waiting for players...</Text>
+            <Text style={styles.lobbyTitle}>Filling bots...</Text>
             {Array.from({ length: TOTAL_PLAYERS }).map((_, i) => (
               <View key={i} style={styles.lobbySlot}>
                 <View
@@ -534,74 +646,88 @@ export default function SitAndGoScreen() {
     );
   }
 
-  // Winner phase
+  // Winner phase (1st or 2nd place — both get prizes)
   if (phase === 'winner') {
+    const placeLabel = humanPlace === 1 ? '🥇 1ST PLACE' : humanPlace === 2 ? '🥈 2ND PLACE' : '🏆 TOP 3';
+    const placeEmoji = humanPlace === 1 ? '⭐' : humanPlace === 2 ? '🥈' : '🥉';
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.trophyEmoji}>{'\u2B50'}</Text>
-          <Text style={styles.heading}>YOU WIN!</Text>
-          <Text style={styles.subheading}>Sit & Go Champion</Text>
-          <ChipsDisplay amount={PRIZE_POOL} label="Prize Pool Won" size="large" />
+          <Text style={styles.trophyEmoji}>{placeEmoji}</Text>
+          <Text style={styles.heading}>{humanPlace === 1 ? 'YOU WIN!' : 'GREAT GAME!'}</Text>
+          <Text style={styles.subheading}>{placeLabel}  |  Solo vs Bots</Text>
+          <ChipsDisplay amount={humanPrize} label="Prize Won" size="large" />
 
           <View style={styles.standingsList}>
             {[...players]
               .sort((a, b) => b.score - a.score)
-              .map((p, i) => (
-                <View key={p.id} style={[styles.standingRow, i === 0 && styles.standingChampion]}>
-                  <Text style={styles.standingRank}>
-                    {i === 0 ? '\u{1F451}' : `#${i + 1}`}
-                  </Text>
-                  <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
-                    {p.name}
-                  </Text>
-                  <Text style={styles.standingScore}>{p.score} pts</Text>
-                  {p.eliminated && <Text style={styles.eliminatedTag}>OUT</Text>}
-                </View>
-              ))}
+              .map((p, i) => {
+                const prizeChips = i === 0 ? PRIZE_1ST : i === 1 ? PRIZE_2ND : i === 2 ? PRIZE_3RD : 0;
+                const medalEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '❌';
+                return (
+                  <View key={p.id} style={[styles.standingRow, i === 0 && styles.standingChampion]}>
+                    <Text style={styles.standingRank}>{medalEmoji}</Text>
+                    <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
+                      {p.name}
+                    </Text>
+                    {prizeChips > 0 ? (
+                      <Text style={[styles.standingScore, { color: COLORS.gold }]}>+{prizeChips}</Text>
+                    ) : (
+                      <Text style={styles.eliminatedTag}>OUT</Text>
+                    )}
+                  </View>
+                );
+              })}
           </View>
 
-          <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
+          <Button title="🎮 PLAY AGAIN" variant="gold" onPress={() => { setPhase('entry'); setSessionId(null); setHumanPrize(0); setHumanPlace(0); }} />
+          <Button title="HOME" variant="ghost" onPress={() => router.replace('/')} />
         </View>
       </SafeAreaView>
     );
   }
 
-  // Eliminated phase
+  // Eliminated phase (4th–6th place, or 3rd with small prize)
   if (phase === 'eliminated') {
-    const alive = players.filter((p) => !p.eliminated);
-    const humanPlayer = players.find((p) => p.isHuman);
-    const humanEliminated = humanPlayer?.eliminated;
-    const placement = humanEliminated
-      ? players.filter((p) => !p.eliminated).length + 1
-      : 1;
-
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
+          <Text style={styles.trophyEmoji}>{humanPrize > 0 ? '🥉' : '💀'}</Text>
           <Text style={styles.heading}>
-            {humanEliminated ? 'ELIMINATED' : 'GAME OVER'}
+            {humanPrize > 0 ? '3RD PLACE' : 'ELIMINATED'}
           </Text>
           <Text style={styles.subheading}>
-            You finished #{placement} of {TOTAL_PLAYERS}
+            {humanPrize > 0 ? `+${humanPrize} chips prize` : 'Better luck next time!'}
           </Text>
+
+          {humanPrize > 0 && (
+            <ChipsDisplay amount={humanPrize} label="3rd Place Prize" size="large" />
+          )}
 
           <View style={styles.standingsList}>
             {[...players]
               .sort((a, b) => b.score - a.score)
-              .map((p, i) => (
-                <View key={p.id} style={[styles.standingRow, p.eliminated && styles.standingEliminated]}>
-                  <Text style={styles.standingRank}>#{i + 1}</Text>
-                  <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
-                    {p.name}
-                  </Text>
-                  <Text style={styles.standingScore}>{p.score} pts</Text>
-                  {p.eliminated && <Text style={styles.eliminatedTag}>OUT</Text>}
-                </View>
-              ))}
+              .map((p, i) => {
+                const prizeChips = i === 0 ? PRIZE_1ST : i === 1 ? PRIZE_2ND : i === 2 ? PRIZE_3RD : 0;
+                const medalEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '❌';
+                return (
+                  <View key={p.id} style={[styles.standingRow, p.eliminated && styles.standingEliminated]}>
+                    <Text style={styles.standingRank}>{medalEmoji}</Text>
+                    <Text style={[styles.standingName, p.isHuman && styles.standingNameYou]}>
+                      {p.name}
+                    </Text>
+                    {prizeChips > 0 ? (
+                      <Text style={[styles.standingScore, { color: COLORS.gold }]}>+{prizeChips}</Text>
+                    ) : (
+                      <Text style={styles.eliminatedTag}>OUT</Text>
+                    )}
+                  </View>
+                );
+              })}
           </View>
 
-          <Button title="BACK TO HOME" variant="gold" onPress={() => router.replace('/')} />
+          <Button title="🎮 PLAY AGAIN" variant="gold" onPress={() => { setPhase('entry'); setSessionId(null); setHumanPrize(0); setHumanPlace(0); }} />
+          <Button title="HOME" variant="ghost" onPress={() => router.replace('/')} />
         </View>
       </SafeAreaView>
     );
