@@ -6,7 +6,7 @@
 
 export const ECONOMY_FLAGS = {
   /** Deduct buy-in chips before dealing cards */
-  matchCostEnabled: false,
+  matchCostEnabled: true,
   /** Show daily reward claim button on home screen */
   dailyRewardEnabled: true,
   /** Show free refill button when bankrupt (replaces "Reset Chips") */
@@ -16,7 +16,7 @@ export const ECONOMY_FLAGS = {
   /** Show ad-for-chips reward button */
   adRewardEnabled: false,
   /** Sit & Go mode — not yet available */
-  sit_n_go_enabled: false,
+  sit_n_go_enabled: true,
   /** Battle Pass mode — not yet available */
   battle_pass_enabled: false,
 } as const;

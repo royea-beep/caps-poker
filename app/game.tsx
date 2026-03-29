@@ -35,6 +35,7 @@ import { markAppActive as markGameActive } from '@caps/debugger';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
+import { scheduleReengagement } from '../utils/notifications';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
@@ -507,6 +508,7 @@ function GameScreenInner() {
 
     debugLog(`8 addChips: ${results.playerChipsWon}`);
     addChips(results.playerChipsWon);
+    void scheduleReengagement(); // re-engagement notification after each game
     debugLog('9 addChips done');
     void logStep('D:addChips_done');
 
