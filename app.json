@@ -16,7 +16,6 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.capspoker.app",
       "buildNumber": "116",
-      "newArchEnabled": false,
       "infoPlist": {
         "UIRequiresFullScreen": true,
         "UISupportedInterfaceOrientations": [
@@ -25,12 +24,18 @@
           "UIInterfaceOrientationLandscapeRight"
         ],
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "aps-environment": "production"
       }
     },
     "android": {
       "package": "com.capspoker.app",
       "versionCode": 90,
-      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.INTERNET"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
+      ],
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#1C0508",
@@ -83,8 +88,10 @@
           "color": "#1C0508",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-asset"
     ],
-    "owner": "royea"
+    "owner": "royea",
+    "newArchEnabled": false
   }
 }
