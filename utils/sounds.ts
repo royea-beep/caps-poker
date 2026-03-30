@@ -56,6 +56,14 @@ try { soundFiles.boardLose  = require('../assets/sounds/boardLose.wav');  } catc
 // Pre-created players — fast playback, no async on each call
 const players: Partial<Record<SoundName, any>> = {};
 
+// S90: Volume levels — subtle background sounds
+const VOLUME_MAP: Partial<Record<SoundName, number>> = {
+  cardPlace: 0.2, cardSelect: 0.2, cardFlip: 0.2,
+  chipsWin: 0.4, lose: 0.4, boardWin: 0.4, boardLose: 0.4,
+  revealStart: 0.3, timerLow: 0.4,
+  complete: 0.5, buzzer: 0.5,
+};
+
 export async function preloadSounds(): Promise<void> {
   if (!createAudioPlayer) return;
   // Initialize audio session: play even when silent switch is on (iOS)
@@ -73,6 +81,8 @@ export async function preloadSounds(): Promise<void> {
     if (!file) continue;
     try {
       players[name as SoundName] = createAudioPlayer!(file);
+      try { players[name as SoundName].volume = VOLUME_MAP[name as SoundName] ?? 0.3; } catch {}
+      try { players[name as SoundName].volume = VOLUME_MAP[name as SoundName] ?? 0.3; } catch {}
     } catch {
       // Sound file invalid or missing — skip
     }
