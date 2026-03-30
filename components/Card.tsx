@@ -1,16 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, Animated } from 'react-native';
 import { rs } from '../utils/responsive';
 import { useGameStore } from '../store/gameStore';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
 import { Card as CardType } from '../constants/gameConfig';
+
+// Card Display Bible (S81 — PERMANENT — never change without "UNLOCK CARD BIBLE"):
+// - Every card shows ONLY: large centered rank + large centered suit
+// - NO corner indicators anywhere
+// - Font formula: Math.max(cardWidth * 0.38, 16) rank, Math.max(cardWidth * 0.28, 12) suit
+// - ALL card types use identical formula (board, hand, community, revealed)
+// - 3D flip: RN Animated only — ZERO Reanimated
 
 interface CardProps {
   card?: CardType;
@@ -22,7 +21,7 @@ interface CardProps {
   cardWidth?: number;
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
-  suitsOnly?: boolean; // hide rank entirely, show only suit symbol at bottom-left
+  suitsOnly?: boolean;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -32,14 +31,11 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '\u2660',
 };
 
-// 5-0 Poker colors
-const RED_COLOR = '#E8192C';   // hearts + diamonds
-const BLACK_COLOR = '#000000'; // spades + clubs
-const CARD_FACE_BG = '#FFFFFF';
+const RED_COLOR = '#E8192C';
+const BLACK_COLOR = '#000000';
 const CARD_BACK_BG = '#0f1a3e';
 const CARD_BACK_BORDER = '#c9a84c';
 
-// 4-color suit system — Classic
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
   diamonds: '#1565C0',
@@ -47,7 +43,6 @@ const SUIT_COLORS_4: Record<string, string> = {
   clubs:    '#228B22',
 };
 
-// 4-color suit system — Five-O (clubs = deep teal-green, matching reference)
 const SUIT_COLORS_4_FIVEO: Record<string, string> = {
   hearts:   '#E8192C',
   diamonds: '#1565C0',
@@ -71,74 +66,69 @@ export default function CardComponent({
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
-  // Card sizing — width-based for readability (S80: tester feedback)
+
+  // Card sizing — width-based (S80/S81 Card Bible)
   const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.38;
   const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.28;
-
   const centerRankSize = Math.max(16, Math.floor(width * mainRankRatio));
   const centerSuitSize = Math.max(12, Math.floor(width * mainSuitRatio));
 
+  // 3D flip — RN Animated only, ZERO Reanimated (S81)
+  // flipAnim: 0 = face-down (back visible), 1 = face-up (front visible)
+  const flipAnim = useRef(new Animated.Value(faceDown ? 0 : 1)).current;
+  // Glow lift — native driver (transform only)
+  const glowAnim = useRef(new Animated.Value(highlighted ? 1 : 0)).current;
+
   const prevFaceDownRef = useRef(faceDown);
-  const flipProgress = useSharedValue(faceDown ? 0 : 1);
-  const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
-    if (prevFaceDownRef.current === true && faceDown === false && card) {
-      flipProgress.value = 0;
-      flipProgress.value = withTiming(1, { duration: flipDuration });
+    if (prevFaceDownRef.current === true && !faceDown && card) {
+      Animated.timing(flipAnim, {
+        toValue: 1,
+        duration: flipDuration,
+        useNativeDriver: true,
+      }).start();
     } else {
-      flipProgress.value = faceDown ? 0 : 1;
+      flipAnim.setValue(faceDown ? 0 : 1);
     }
     prevFaceDownRef.current = faceDown;
   }, [faceDown]);
 
   useEffect(() => {
-    if (highlighted) {
-      glowOpacity.value = withSpring(1, { damping: 12, stiffness: 120 });
-    } else if (glowOpacity.value > 0) {
-      // Only animate to 0 if not already 0 — prevents 50+ no-op worklets on results mount
-      glowOpacity.value = withTiming(0, { duration: 200 });
-    }
+    Animated.timing(glowAnim, {
+      toValue: highlighted ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   }, [highlighted]);
 
-  const backAnimStyle = useAnimatedStyle(() => {
-    const rotateY = interpolate(flipProgress.value, [0, 0.5], [0, 90], Extrapolation.CLAMP);
-    return {
-      transform: [{ perspective: 800 }, { rotateY: `${rotateY}deg` }],
-      opacity: flipProgress.value <= 0.5 ? 1 : 0,
-    };
+  // Back face: rotates 0deg to 90deg during first half, then opacity 0
+  const backRotateY = flipAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['0deg', '90deg', '90deg'],
+  });
+  const backOpacity = flipAnim.interpolate({
+    inputRange: [0, 0.499, 0.5, 1],
+    outputRange: [1, 1, 0, 0],
   });
 
-  const frontAnimStyle = useAnimatedStyle(() => {
-    const rotateY = interpolate(flipProgress.value, [0.5, 1], [-90, 0], Extrapolation.CLAMP);
-    return {
-      transform: [{ perspective: 800 }, { rotateY: `${rotateY}deg` }],
-      opacity: flipProgress.value > 0.5 ? 1 : 0,
-      position: 'absolute' as const,
-      top: 0,
-      left: 0,
-    };
+  // Front face: hidden first half, rotates -90deg to 0deg during second half
+  const frontRotateY = flipAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['-90deg', '-90deg', '0deg'],
+  });
+  const frontOpacity = flipAnim.interpolate({
+    inputRange: [0, 0.499, 0.5, 1],
+    outputRange: [0, 0, 1, 1],
   });
 
-  // Gold glow when selected/highlighted
-  const highlightAnimStyle = useAnimatedStyle(() => ({
-    borderWidth: glowOpacity.value > 0.01 ? 2.5 : 1,
-    borderColor: glowOpacity.value > 0.01 ? '#c9a84c' : 'rgba(0,0,0,0.15)',
-    shadowColor: '#c9a84c',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: glowOpacity.value * 0.9,
-    shadowRadius: glowOpacity.value * 14,
-    elevation: glowOpacity.value * 10,
-    transform: [
-      { scale: 1 + glowOpacity.value * 0.03 },
-      { translateY: glowOpacity.value * -6 },
-    ],
-  }));
+  // Glow: scale up + lift (native driver)
+  const glowScale = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] });
+  const glowTranslateY = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
 
   // Face-down back card — diamond lattice pattern
   const renderBack = () => {
-    const cardStyle = [
-      styles.card,
+    const cardStyle: any[] = [
       {
         width,
         height,
@@ -147,23 +137,18 @@ export default function CardComponent({
         borderWidth: 1.5,
         borderColor: CARD_BACK_BORDER,
         overflow: 'hidden' as const,
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
       },
       Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 2, height: 3 },
-          shadowOpacity: 0.4,
-          shadowRadius: 6,
-        },
+        ios: { shadowColor: '#000', shadowOffset: { width: 2, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6 },
         android: { elevation: 5 },
-        default: {
-          boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
-        } as any,
+        default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
       }),
     ];
 
     if (Platform.OS === 'web') {
-      const svgStr = `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.22' transform='rotate(45 6 1.5)'/></svg>`;
+      const svgStr = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.22' transform='rotate(45 6 1.5)'/></svg>";
       return (
         <View style={cardStyle}>
           <View style={[StyleSheet.absoluteFillObject, {
@@ -178,7 +163,6 @@ export default function CardComponent({
       );
     }
 
-    // Native: grid of small rotated diamonds
     const cols = Math.ceil(width / 12);
     const rows = Math.ceil(height / 12);
     const dots: React.ReactElement[] = [];
@@ -201,7 +185,6 @@ export default function CardComponent({
         );
       }
     }
-
     return (
       <View style={cardStyle}>
         <View style={StyleSheet.absoluteFillObject}>{dots}</View>
@@ -213,71 +196,86 @@ export default function CardComponent({
     );
   };
 
+  const faceUpShadow = visualTheme === 'fiveo'
+    ? Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 2, height: 4 }, shadowOpacity: 0.65, shadowRadius: 10 } as any,
+        android: { elevation: 10 } as any,
+        default: { boxShadow: '2px 4px 14px rgba(0,0,0,0.70)' } as any,
+      })
+    : Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4 } as any,
+        android: { elevation: 5 } as any,
+        default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
+      });
+
   if (!card) {
-    return renderBack();
+    return (
+      <Animated.View
+        style={[
+          { width, height },
+          { transform: [{ perspective: 1000 }, { rotateY: backRotateY }] },
+        ]}
+      >
+        {renderBack()}
+      </Animated.View>
+    );
   }
 
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
   const activeSuitColors4 = visualTheme === 'fiveo' ? SUIT_COLORS_4_FIVEO : SUIT_COLORS_4;
   const suitColor = fourColorSuits ? (activeSuitColors4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
-
-  const faceUpShadow = visualTheme === 'fiveo'
-    ? Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 2, height: 4 },
-          shadowOpacity: 0.65,
-          shadowRadius: 10,
-        } as any,
-        android: { elevation: 10 } as any,
-        default: {
-          boxShadow: '2px 4px 14px rgba(0,0,0,0.70)',
-        } as any,
-      })
-    : Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 2, height: 3 },
-          shadowOpacity: 0.4,
-          shadowRadius: 6,
-        } as any,
-        android: { elevation: 6 } as any,
-        default: {
-          boxShadow: '2px 3px 10px rgba(0,0,0,0.45)',
-        } as any,
-      });
-
   const suitBorderColor = isRed ? 'rgba(211,47,47,0.28)' : 'rgba(80,80,80,0.22)';
+
+  // Highlight border — static conditional (instant feedback for card selection)
+  const highlightBorder = highlighted
+    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
+    : { borderWidth: 1, borderColor: suitBorderColor };
+  const highlightShadow = highlighted && Platform.OS === 'ios'
+    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 14 }
+    : {};
 
   return (
     <View style={{ width, height }}>
-      {/* Back face */}
-      <Animated.View style={[{ width, height }, backAnimStyle]}>
+      {/* Back face — 3D flip */}
+      <Animated.View
+        style={[
+          { position: 'absolute', top: 0, left: 0, width, height },
+          { transform: [{ perspective: 1000 }, { rotateY: backRotateY }] },
+          { opacity: backOpacity },
+        ]}
+      >
         {renderBack()}
       </Animated.View>
 
-      {/* Front face — 5-0 poker style */}
+      {/* Front face — 3D flip + glow lift */}
       <Animated.View
         style={[
           styles.card,
           {
+            position: 'absolute' as const,
+            top: 0,
+            left: 0,
             width,
             height,
             backgroundColor: '#FFFFFF',
             borderRadius: 9,
-            borderWidth: 1,
-            borderColor: suitBorderColor,
           },
-          Platform.OS === 'web' && {
-            background: `linear-gradient(160deg, #ffffff 0%, #f6f6f2 100%)`,
-          } as any,
+          Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f6f6f2 100%)' } as any,
           faceUpShadow,
-          highlightAnimStyle,
+          highlightBorder,
+          highlightShadow,
           dimmed && styles.dimmed,
-          frontAnimStyle,
+          {
+            transform: [
+              { perspective: 1000 },
+              { rotateY: frontRotateY },
+              { scale: glowScale },
+              { translateY: glowTranslateY },
+            ],
+            opacity: frontOpacity,
+          },
         ]}
       >
-        {/* Center: large rank + suit below — or suit-only at bottom-left */}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
             <Text style={[styles.suitOnlyText, {

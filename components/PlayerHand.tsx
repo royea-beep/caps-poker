@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   selected: {
     borderColor: COLORS.gold,
-    transform: [{ translateY: -4 }, { scale: 1.06 }],
+    transform: [{ translateY: -8 }, { rotate: '-3deg' }, { scale: 1.08 }],
     borderRadius: rv(6),
     ...Platform.select({
       ios: {
