@@ -153,7 +153,8 @@ export default function Board({
   isWinner,
   communityScale = 1.2,
 }: BoardProps) {
-  const { width: screenW } = useWindowDimensions();
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height — never jumps when bot places cards
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const [hintInfoVisible, setHintInfoVisible] = useState(false);
@@ -295,7 +296,7 @@ export default function Board({
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: theme.boardBg, borderColor: boardAccent },
+        { backgroundColor: theme.boardBg, borderColor: boardAccent, height: BOARD_HEIGHT },
         Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
         active && styles.active,
         selected && styles.selected,
