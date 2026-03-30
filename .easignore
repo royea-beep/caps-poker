@@ -1,0 +1,32 @@
+# EAS Build ignore file
+# Mirrors .gitignore but explicitly excludes .expo/ which can cause
+# EACCES permission errors on EAS workers (mkdir .expo/web fails)
+
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+.env*.local
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+/ios
+/android
+CLAUDE.md
+.vercel
+.claude/settings.local.json
