@@ -19,6 +19,8 @@ import { getHandHistory } from '../utils/handHistory';
 import { computeStats, HAND_RANK_ORDER, PlayerStats } from '../utils/statsEngine';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
+import { getDeviceId } from '../utils/leaderboard';
+import { getSupabase } from '../utils/supabase';
 
 // ─── Chip Line Chart (pure RN Views — no SVG library) ──────────────────────
 
@@ -143,6 +145,15 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 
 type FilterPeriod = 'today' | 'week' | 'all';
 
+interface DbStats {
+  hands_played: number;
+  wins: number;
+  win_rate: number;
+  roi: number;
+  vpip: number;
+  best_hand: number;
+}
+
 export default function StatsScreen() {
   const router = useRouter();
   const { width: screenW } = useWindowDimensions();
@@ -150,6 +161,7 @@ export default function StatsScreen() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterPeriod>('all');
+  const [dbStats, setDbStats] = useState<DbStats | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -164,6 +176,13 @@ export default function StatsScreen() {
         useNativeDriver: true,
       }).start();
     });
+    // Load DB-backed Poker IQ stats (fire-and-forget)
+    getDeviceId().then(async (deviceId) => {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data } = await sb.rpc('get_player_stats', { p_device_id: deviceId });
+      if (data) setDbStats(data as DbStats);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -307,6 +326,33 @@ export default function StatsScreen() {
               sub={`${stats.completeRate}% rate`}
             />
           </View>
+
+          {/* ── Section 1.5: Poker IQ (DB stats) ───────────────────── */}
+          {dbStats && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>POKER IQ</Text>
+              <View style={styles.overviewGrid}>
+                <StatCard
+                  label="HANDS (DB)"
+                  value={String(dbStats.hands_played)}
+                  sub={`${dbStats.wins}W`}
+                />
+                <StatCard
+                  label="WIN %"
+                  value={`${Math.round(dbStats.win_rate)}%`}
+                  sub={dbStats.win_rate >= 50 ? '🔥' : '❄️'}
+                />
+                <StatCard
+                  label="ROI"
+                  value={`${dbStats.roi >= 0 ? '+' : ''}${Math.round(dbStats.roi)}%`}
+                />
+                <StatCard
+                  label="BEST POT"
+                  value={`+${dbStats.best_hand}`}
+                />
+              </View>
+            </View>
+          )}
 
           {/* ── Section 2: Chip performance chart ───────────────────── */}
           <View style={styles.section}>

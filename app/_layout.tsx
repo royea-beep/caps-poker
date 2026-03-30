@@ -49,6 +49,12 @@ if (Platform.OS !== 'web') {
   } catch {}
 }
 
+// RevenueCat IAP — lazy-load on native only
+let Purchases: typeof import('react-native-purchases').default | null = null;
+if (Platform.OS !== 'web') {
+  try { Purchases = require('react-native-purchases').default; } catch {}
+}
+
 // GestureHandlerRootView can fail to hydrate on web — use plain View
 const RootWrapper = Platform.OS === 'web' ? View : GestureHandlerRootView;
 
@@ -333,6 +339,15 @@ export default function RootLayout() {
     preloadSounds();
     if (Platform.OS !== 'web') {
       registerAndSavePushToken().catch(() => {});
+      // Configure RevenueCat for IAP
+      if (Purchases) {
+        try {
+          const rcKey = Platform.OS === 'ios'
+            ? (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '')
+            : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '');
+          if (rcKey) Purchases.configure({ apiKey: rcKey });
+        } catch { /* non-blocking */ }
+      }
     }
 
     // Load Playfair Display from Google Fonts on web
