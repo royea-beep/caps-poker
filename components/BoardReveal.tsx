@@ -82,6 +82,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const [botFaceDown] = useState([false, false, false, false]); // S86: always open
   const [showHandNames, setShowHandNames] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [showTapHint, setShowTapHint] = useState(false);
 
   // RN Animated — zero Reanimated
   const handNameOpacity = useRef(new AnimatedRN.Value(0)).current;
@@ -153,6 +154,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     // S86: botFaceDown is always [false,false,false,false] — no setter needed
     setShowHandNames(true);
     setShowResult(true);
+    setShowTapHint(true); // Skip: show hint immediately
     handNameOpacity.setValue(1);
     resultScale.setValue(1);
     hintOpacity.setValue(0);
@@ -181,6 +183,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     // S86: bot cards NEVER reset to face-down — they're always visible in BoardReveal
     setShowHandNames(false);
     setShowResult(false);
+    setShowTapHint(false);
     handNameOpacity.setValue(0);
     resultScale.setValue(0);
     hintOpacity.setValue(1);
@@ -476,10 +479,12 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             <AnimatedRN.Text style={[styles.hint, { opacity: hintOpacity }]}>
               {t().tapToReveal}
             </AnimatedRN.Text>
-          ) : (
-            <Text style={styles.hint}>
-              {currentIdx + 1 < totalBoards ? t().tapForNextBoard : '▶ TAP FOR RESULTS'}
+          ) : showTapHint ? (
+            <Text style={[styles.hint, styles.hintContinue]}>
+              {currentIdx + 1 < totalBoards ? (getLanguage() === 'he' ? 'לחץ להמשך →' : 'Tap to continue →') : (getLanguage() === 'he' ? 'לחץ לתוצאות →' : '▶ TAP FOR RESULTS')}
             </Text>
+          ) : (
+            <Text style={styles.hint}>{' '}</Text>
           )}
         </Pressable>
 
@@ -606,5 +611,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2,
     textAlign: 'center',
+  },
+  hintContinue: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(12),
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
 });

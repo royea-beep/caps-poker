@@ -252,7 +252,7 @@ serve(async (req: Request) => {
     } else {
       const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
       if (anthropicKey && !text.startsWith('/')) {
-        const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, system: 'You are the CAPS Poker assistant. Help Roye manage the app, analyze bugs, and make decisions. Be concise. Answer in Hebrew if the user writes in Hebrew.', messages: [{ role: 'user', content: text }] }) }).catch(() => null);
+        const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, system: 'You are the CAPS Poker assistant. CAPS is an iOS Omaha poker game with multiple boards. You help the developer (Roye) manage the app, analyze bugs, and make decisions. Be concise. Answer in Hebrew if the user writes in Hebrew. You have context about: build 295, OTA live, TestFlight live, recent sprints S78-S89.', messages: [{ role: 'user', content: text }] }) }).catch(() => null);
         const cd = cr ? await cr.json().catch(() => ({})) : {};
         const reply = (cd.content?.[0]?.text as string | null) ?? null;
         if (reply) { await sendTelegram(chatId, reply); return new Response('OK', { status: 200 }); }
