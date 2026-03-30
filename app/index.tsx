@@ -66,6 +66,12 @@ import { useBattlePassStore } from '../stores/battlePassStore';
 import { getProgressToNextTier } from '../utils/battlePass';
 // @ts-ignore — parallel agent file, exists at deploy time
 import XPBar from '../components/XPBar';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { useLevelStore } from '../stores/levelStore';
+// @ts-ignore — parallel agent file, exists at deploy time  
+import LevelBadge from '../components/LevelBadge';
+// @ts-ignore — parallel agent file, exists at deploy time
+import LevelUpModal from '../components/LevelUpModal';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -618,6 +624,10 @@ export default function HomeScreen() {
 
   // Battle Pass XP bar
   const bpCurrentXP = useBattlePassStore((s) => s.currentXP);
+  const levelXP = useLevelStore((s: any) => s.xp);
+  const playerLevel = useLevelStore((s: any) => s.level);
+  const [showLevelUp, setShowLevelUp] = React.useState(false);
+  const [levelUpTo, setLevelUpTo] = React.useState(1);
   const bpCurrentTier = useBattlePassStore((s) => s.currentTier);
   const { progress: bpProgress, xpInTier: bpXpInTier, xpNeeded: bpXpNeeded } = getProgressToNextTier(bpCurrentXP);
 
@@ -1074,6 +1084,14 @@ export default function HomeScreen() {
           />
         </Pressable>
 
+        {/* Level progress bar */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 4 }}>
+          <LevelBadge level={playerLevel} size="sm" />
+          <View style={{ flex: 1, height: 6, backgroundColor: '#1a0e06', borderRadius: 3, overflow: 'hidden' }}>
+            <View style={{ width: `${Math.min(100, (levelXP / (playerLevel * playerLevel * 50)) * 100)}%`, height: '100%', backgroundColor: '#c96a1a', borderRadius: 3 }} />
+          </View>
+        </View>
+
         {/* Daily reward — prominent pill when claimable, streak info otherwise */}
         {canClaim ? (
           <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
@@ -1123,6 +1141,14 @@ export default function HomeScreen() {
             <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>
               Sit &amp; Go (100 💰)
             </Text>
+          </Pressable>
+        
+          <Pressable
+            style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
+            onPress={() => router.push('/quick-poker' as any)}
+          >
+            <Text style={styles.modeBtnIcon}>⚡</Text>
+            <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>Quick Poker (200 💰)</Text>
           </Pressable>
         </View>
 
@@ -1240,7 +1266,9 @@ export default function HomeScreen() {
       <Text style={styles.versionBadge} pointerEvents="none">
         v{Constants.expoConfig?.version ?? '1.9.4'} ({Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.extra?.buildNumber ?? '116'})
       </Text>
-    </SafeAreaView>
+    
+      <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
+      </SafeAreaView>
   );
 }
 
