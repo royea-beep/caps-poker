@@ -1152,6 +1152,19 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* Action row: Missions · Stats · Achievements */}
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, paddingHorizontal: 4 }}>
+          <Pressable onPress={() => router.push('/missions' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ color: '#f5e6d3', fontSize: 13, fontWeight: '700' }}>🎯 Missions</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/stats' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ color: '#f5e6d3', fontSize: 13, fontWeight: '700' }}>📊 Stats</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/achievements' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ color: '#f5e6d3', fontSize: 13, fontWeight: '700' }}>🏆 Badges</Text>
+          </Pressable>
+        </View>
+
         {/* Friend Activity Feed */}
         <View style={styles.feedSection}>
           <Text style={styles.feedTitle}>🏆 Recent Wins</Text>
