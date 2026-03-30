@@ -1232,6 +1232,10 @@ export default function HomeScreen() {
               returnKeyType="done"
               onSubmitEditing={handleRedeemCode}
             />
+            {/* S89: 6-char counter clarifies what the 6 means */}
+            <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, alignSelf: 'flex-end', marginTop: -4 }}>
+              {referralCodeInput.length}/6 תווים
+            </Text>
             <Pressable
               style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}
               onPress={handleRedeemCode}
