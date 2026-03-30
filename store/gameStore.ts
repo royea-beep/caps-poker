@@ -40,6 +40,7 @@ interface GameStore {
   totalChipsSpent: number;
   unlockedAchievements: string[];
   currentWinStreak: number;
+  bestWinStreak: number;
 
   // Transient session state (NOT persisted)
   sessionStartChips: number;
@@ -141,6 +142,7 @@ export const useGameStore = create<GameStore>()(
       totalChipsSpent: 0,
       unlockedAchievements: [],
       currentWinStreak: 0,
+      bestWinStreak: 0,
 
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
@@ -223,7 +225,10 @@ export const useGameStore = create<GameStore>()(
             : [...state.unlockedAchievements, id],
         })),
       incrementWinStreak: () =>
-        set((state) => ({ currentWinStreak: state.currentWinStreak + 1 })),
+        set((state) => {
+          const next = state.currentWinStreak + 1;
+          return { currentWinStreak: next, bestWinStreak: Math.max(state.bestWinStreak, next) };
+        }),
       resetWinStreak: () => set({ currentWinStreak: 0 }),
 
       // Language version action
@@ -273,7 +278,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
     }
   )
 );

@@ -80,6 +80,7 @@ export default function ResultsScreen() {
   const handsPlayed = useGameStore((s) => s.handsPlayed);
   const handsWon = useGameStore((s) => s.handsWon);
   const currentWinStreak = useGameStore((s) => s.currentWinStreak);
+  const bestWinStreak = useGameStore((s) => s.bestWinStreak);
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
   const [xpGained, setXpGained] = useState(0);
@@ -597,6 +598,23 @@ export default function ResultsScreen() {
             </Text>
           </View>
 
+          {/* Win streak badge */}
+          {currentWinStreak >= 2 && (
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakBadgeText}>🔥 {currentWinStreak} WIN STREAK!</Text>
+              {bestWinStreak >= 2 && currentWinStreak < bestWinStreak && (
+                <Text style={styles.streakBestText}>Best: {bestWinStreak}</Text>
+              )}
+            </View>
+          )}
+
+          {/* Chips earned + shop CTA */}
+          {netChips > 0 && (
+            <Pressable onPress={() => router.push('/shop' as any)} style={styles.shopCta}>
+              <Text style={styles.shopCtaText}>🪙 +{netChips} chips earned · <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
+            </Pressable>
+          )}
+
           {/* Battle Pass XP banner */}
           {xpGained > 0 && (() => {
             let bpCurrentXP = 0;
@@ -909,5 +927,40 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+  },
+  shopCta: {
+    paddingVertical: rs(6),
+    paddingHorizontal: rs(14),
+  },
+  shopCtaText: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(12),
+    textAlign: 'center',
+  },
+  shopCtaLink: {
+    color: '#c9a84c',
+    fontWeight: '700',
+  },
+  streakBadge: {
+    alignSelf: 'center',
+    paddingVertical: rs(6),
+    paddingHorizontal: rs(16),
+    borderRadius: rs(20),
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 149, 0, 0.4)',
+    alignItems: 'center',
+    gap: rs(2),
+  },
+  streakBadgeText: {
+    fontSize: rf(16),
+    fontWeight: '800',
+    color: '#FF9500',
+    letterSpacing: 0.5,
+  },
+  streakBestText: {
+    fontSize: rf(11),
+    color: 'rgba(255,149,0,0.7)',
+    fontWeight: '600',
   },
 });
