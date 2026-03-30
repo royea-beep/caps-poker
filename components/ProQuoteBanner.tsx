@@ -19,9 +19,9 @@ export const PRO_QUOTES_ENABLED_KEY = 'caps_show_pro_quotes';
 export const PRO_VOICES_ENABLED_KEY = 'caps_pro_voices_enabled';
 const VOICE_DISCLAIMER_SEEN_KEY = 'caps_voice_disclaimer_seen';
 
-// Lazy expo-av — not available on web / some envs
-let Audio: any = null;
-try { Audio = require('expo-av').Audio; } catch {}
+// Lazy expo-audio — not available on web / some envs
+let createAudioPlayer: ((source: any, options?: any) => any) | null = null;
+try { createAudioPlayer = require('expo-audio').createAudioPlayer; } catch {}
 
 // ── Kill switch cache (5-minute TTL) ──────────────────────────────────────
 let killSwitchCache: { value: boolean; ts: number } | null = null;
@@ -47,37 +47,39 @@ async function checkKillSwitch(): Promise<boolean> {
   }
 }
 
-// ── Active sound instance (module-level — one clip at a time) ─────────────
-let currentSound: any = null;
+// ── Active player instance (module-level — one clip at a time) ──────────
+let currentPlayer: any = null;
 
 async function playVoiceClip(audioFile: any): Promise<void> {
-  if (!Audio || !audioFile) return;
+  if (!createAudioPlayer || !audioFile) return;
   try {
-    if (currentSound) {
-      await currentSound.stopAsync().catch(() => {});
-      await currentSound.unloadAsync().catch(() => {});
-      currentSound = null;
+    if (currentPlayer) {
+      currentPlayer.pause();
+      currentPlayer.remove();
+      currentPlayer = null;
     }
-    const { sound } = await Audio.Sound.createAsync(audioFile, { shouldPlay: true, volume: 0.8 });
-    currentSound = sound;
-    sound.setOnPlaybackStatusUpdate((status: any) => {
+    const player = createAudioPlayer(audioFile, { volume: 0.8 });
+    currentPlayer = player;
+    player.addListener('playbackStatusUpdate', (status: any) => {
       if (status.isLoaded && status.didJustFinish) {
-        sound.unloadAsync().catch(() => {});
-        if (currentSound === sound) currentSound = null;
+        player.remove();
+        if (currentPlayer === player) currentPlayer = null;
       }
     });
+    player.play();
   } catch (e) {
     debugLog(`[ProQuoteBanner] Voice playback failed: ${e}`, 'warn');
   }
 }
 
 async function stopVoiceClip(): Promise<void> {
-  if (currentSound) {
-    await currentSound.stopAsync().catch(() => {});
-    await currentSound.unloadAsync().catch(() => {});
-    currentSound = null;
+  if (currentPlayer) {
+    currentPlayer.pause();
+    currentPlayer.remove();
+    currentPlayer = null;
   }
 }
+
 
 interface ProQuoteBannerProps {
   context: ProQuote['context'];
