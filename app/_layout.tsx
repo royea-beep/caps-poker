@@ -67,7 +67,7 @@ try {
     version: Constants.expoConfig?.version ?? '1.0.0',
     supabaseUrl: extra.supabaseUrl ?? '',
     supabaseAnonKey: extra.supabaseAnonKey ?? '',
-    whatsappEdgeFunctionUrl: `${extra.supabaseUrl ?? ''}/functions/v1/whatsapp-bot-handler`,
+    whatsappEdgeFunctionUrl: `${extra.supabaseUrl ?? ''}/functions/v1/telegram-bot-handler`,
     alertPhone: '+972526173700',
     enabled: typeof __DEV__ !== 'undefined' && __DEV__,
     screenshotFps: 2,
