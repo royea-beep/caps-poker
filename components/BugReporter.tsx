@@ -21,6 +21,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, K
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
@@ -209,6 +210,8 @@ async function submitBugReport(opts: {
       frameCount: opts.frameCount,
       recordingDuration: opts.elapsed,
       expoVersion: Constants.expoConfig?.sdkVersion ?? '55',
+      otaUpdateId: Updates.updateId ?? 'embedded',
+      otaChannel: (Updates as any).channel ?? 'production',
     },
   };
 

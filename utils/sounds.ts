@@ -82,7 +82,6 @@ export async function preloadSounds(): Promise<void> {
     try {
       players[name as SoundName] = createAudioPlayer!(file);
       try { players[name as SoundName].volume = VOLUME_MAP[name as SoundName] ?? 0.3; } catch {}
-      try { players[name as SoundName].volume = VOLUME_MAP[name as SoundName] ?? 0.3; } catch {}
     } catch {
       // Sound file invalid or missing — skip
     }

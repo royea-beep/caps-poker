@@ -68,8 +68,8 @@ async function handleBugReply(msgText: string, session: Record<string, unknown>,
     }
     return '✅ Marked as approved.';
   }
-  if (trimmed === '2') { await supabase.from('whatsapp_sessions').update({ status: 'bug_sprint' }).eq('id', session.id); if (reportId) await supabase.from('bug_reports').update({ status: 'sprint_queued' }).eq('id', reportId); return '📋 Added to sprint.'; }
-  if (trimmed === '3') { await supabase.from('whatsapp_sessions').update({ status: 'bug_backlog' }).eq('id', session.id); if (reportId) await supabase.from('bug_reports').update({ status: 'backlog' }).eq('id', reportId); return '📦 Moved to backlog.'; }
+  if (trimmed === '2') { await supabase.from('whatsapp_sessions').update({ status: 'bug_sprint' }).eq('id', session.id); if (reportId) await supabase.from('bug_reports').update({ status: 'sprint_queued' }).eq('id', reportId); return `📋 Bug${reportId ? ' #' + (session.report_number ?? '') : ''} added to next sprint.`; }
+  if (trimmed === '3') { await supabase.from('whatsapp_sessions').update({ status: 'bug_backlog' }).eq('id', session.id); if (reportId) await supabase.from('bug_reports').update({ status: 'backlog' }).eq('id', reportId); return `📦 Bug${reportId ? ' #' + (session.report_number ?? '') : ''} moved to backlog.`; }
   if (trimmed === '4') {
     await supabase.from('whatsapp_sessions').update({ status: 'bug_analyzing' }).eq('id', session.id);
     if (!report) return 'Bug report not found.';
@@ -141,6 +141,9 @@ function buildBugMessage(report: Record<string, unknown>): string {
   msg += `Logs: ${logs.length} | Crumbs: ${crumbs.length}\n`;
   if (audio) msg += `Audio: ${audio}\n`;
   if (video) msg += `Screenshot: ${video}\n`;
+  const CURRENT_OTA = 'fe21b607';
+  const testerOTA = ((report.metadata as Record<string, string> | null)?.otaUpdateId ?? 'unknown').slice(0, 8);
+  if (testerOTA !== 'embedded' && testerOTA !== 'unknown' && testerOTA !== CURRENT_OTA) msg += `⚠️ OLD OTA: ${testerOTA} (current: ${CURRENT_OTA})\n`;
   msg += '\nReply:\n';
   if (reportNum !== null) { msg += `${reportNum}:1 Fix | ${reportNum}:2 Sprint | ${reportNum}:3 Backlog | ${reportNum}:6 Dismiss`; }
   else { msg += '1 Fix | 2 Sprint | 3 Backlog | 4 Logs | 5 Audio | 6 Dismiss | 7 Needs info'; }
@@ -153,6 +156,15 @@ serve(async (req: Request) => {
   let json: Record<string, unknown>;
   try { json = await req.json(); } catch { return new Response('Bad JSON', { status: 400 }); }
   console.log('[tg-bot] keys:', Object.keys(json).join(', '));
+
+  if (json.github_callback) {
+    const gcb = json as Record<string, unknown>;
+    const ok = gcb.status === 'success';
+    const rn = gcb.report_num ?? '?';
+    const msg = ok ? `✅ Bug #${rn} FIXED\nOTA deploying... ETA 2 min.\nCommit: ${gcb.commit_hash ?? '?'}` : `❌ Auto-fix failed for bug #${rn}\nRun: ${gcb.run_id ?? '?'}\nReason: ${gcb.error_reason ?? 'unknown'}`;
+    await sendTelegram(TELEGRAM_CHAT_ID, msg);
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+  }
 
   if (json.crash_notification) {
     const msg = (json.message as string | null) ?? 'CAPS CRASH (no details)';
@@ -207,6 +219,18 @@ serve(async (req: Request) => {
         } catch { /* */ }
       }
     }
+      if (transcription && reportId) {
+        // A: Update description if empty (transcription-before-triage fix)
+        await supabase.from('bug_reports').update({ description: transcription.slice(0, 500) }).eq('id', reportId).is('description', null);
+        // Run AI triage with transcription content
+        const ak = Deno.env.get('ANTHROPIC_API_KEY');
+        if (ak) {
+          const tr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': ak, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 200, messages: [{ role: 'user', content: 'Bug transcription: "' + transcription.slice(0,300) + '". Reply JSON only: {"severity":"LOW|MEDIUM|HIGH|CRITICAL","summary":"one sentence"}' }] }) }).catch(() => null);
+          const td = tr ? await tr.json().catch(() => ({})) : {};
+          const tt = (td.content?.[0]?.text as string | null) ?? '';
+          try { const pa = JSON.parse(tt.match(/\{[\s\S]*\}/)?.[0] ?? '{}'); if (pa.severity && pa.summary) await supabase.from('bug_reports').update({ ai_severity: pa.severity.toLowerCase(), ai_summary: pa.summary }).eq('id', reportId); } catch { /* */ }
+        }
+      }
     let fixPrompt: string | null = null;
     if (report) {
       const id = reportId?.slice(0, 8).toUpperCase() ?? 'UNKNOWN';
