@@ -568,6 +568,8 @@ export default function HomeScreen() {
   const updateConfig = useGameStore((s) => s.updateConfig);
   const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
   const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
+  const currentWinStreak = useGameStore((s) => s.currentWinStreak);
+  const bestWinStreak = useGameStore((s) => s.bestWinStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
   const homeThemeId = useGameStore((s) => s.homeTheme);
   const theme = HOME_THEMES[homeThemeId];
@@ -596,6 +598,29 @@ export default function HomeScreen() {
   const [referralToast, setReferralToast] = useState<string | null>(null);
   const [myReferralCode, setMyReferralCode] = useState<string | null>(null);
 
+  // Friend Activity Feed — recent Sit&Go sessions
+  type FeedItem = { player_id: string; winner_id: string | null; chips_won: number | null; ended_at: string };
+  const [activityFeed, setActivityFeed] = useState<FeedItem[]>([]);
+
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb) return;
+    getDeviceId().then(async (deviceId) => {
+      const { data } = await sb
+        .from('sit_n_go_sessions')
+        .select('player_id, winner_id, chips_won, ended_at')
+        .eq('player_id', deviceId)
+        .order('ended_at', { ascending: false })
+        .limit(5);
+      if (data) setActivityFeed(data as FeedItem[]);
+    }).catch(() => {});
+  }, []);
+
+  // Battle Pass XP bar
+  const bpCurrentXP = useBattlePassStore((s) => s.currentXP);
+  const bpCurrentTier = useBattlePassStore((s) => s.currentTier);
+  const { progress: bpProgress, xpInTier: bpXpInTier, xpNeeded: bpXpNeeded } = getProgressToNextTier(bpCurrentXP);
+
   // Play of the Day (D10)
   type PotdData = { available: boolean; player?: string; data?: { cards?: string[]; pot_won?: number; hand_name?: string }; views?: number } | null;
   const [potd, setPotd] = useState<PotdData>(null);
@@ -623,6 +648,29 @@ export default function HomeScreen() {
 
   // PLAY button scale — RN Animated (not Reanimated)
   const playScale = useRef(new AnimatedRN.Value(1)).current;
+
+  // Chip float-up animation (+N when chips earned)
+  const chipFloatY = useRef(new AnimatedRN.Value(0)).current;
+  const chipFloatOpacity = useRef(new AnimatedRN.Value(0)).current;
+  const [chipFloatText, setChipFloatText] = useState('');
+  const prevChipsRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevChipsRef.current !== null && chips > prevChipsRef.current) {
+      const delta = chips - prevChipsRef.current;
+      setChipFloatText(`+${delta}`);
+      chipFloatY.setValue(0);
+      chipFloatOpacity.setValue(1);
+      AnimatedRN.parallel([
+        AnimatedRN.timing(chipFloatY, { toValue: -rs(32), duration: 900, useNativeDriver: true }),
+        AnimatedRN.sequence([
+          AnimatedRN.delay(400),
+          AnimatedRN.timing(chipFloatOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+        ]),
+      ]).start();
+    }
+    prevChipsRef.current = chips;
+  }, [chips]);
 
   useEffect(() => {
     setCurrentScreen('Home');
@@ -911,6 +959,25 @@ export default function HomeScreen() {
           <Text style={[styles.hamburgerText, { color: theme.accent }]}>☰</Text>
         </Pressable>
         <View style={styles.topBarRight}>
+          {/* Chip balance — tap to shop */}
+          <View style={styles.topChipWrap}>
+            {chips === 0 ? (
+              <Pressable onPress={() => router.push('/shop' as any)} hitSlop={8} style={styles.topChipGetBtn}>
+                <Text style={styles.topChipGetText}>GET CHIPS</Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => router.push('/shop' as any)} hitSlop={8} style={styles.topChipBtn}>
+                <Text style={[
+                  styles.topChipText,
+                  chips < 100 ? { color: '#F59E0B' } : { color: '#FFFFFF' },
+                ]}>🪙 {chips.toLocaleString()}</Text>
+              </Pressable>
+            )}
+            <AnimatedRN.Text style={[
+              styles.chipFloatText,
+              { opacity: chipFloatOpacity, transform: [{ translateY: chipFloatY }] },
+            ]}>{chipFloatText}</AnimatedRN.Text>
+          </View>
           {user?.user_metadata?.avatar_url ? (
             <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
               <Image
@@ -997,12 +1064,40 @@ export default function HomeScreen() {
         {/* Balance */}
         <ChipsDisplay amount={chips} label="Balance" size="large" />
 
+        {/* XP Bar — Battle Pass progress */}
+        <Pressable onPress={() => router.push('/stats' as any)} style={styles.xpBarTouchable}>
+          <XPBar
+            currentXP={bpCurrentXP}
+            currentTier={bpCurrentTier}
+            progress={bpProgress}
+            xpInTier={bpXpInTier}
+            xpNeeded={bpXpNeeded}
+            compact
+          />
+        </Pressable>
 
-        {/* Daily reward — one motivational element at bottom */}
-        {canClaim && (
-          <Pressable onPress={handleClaimDailyReward} style={styles.dailyPill}>
+        {/* Daily reward — prominent pill when claimable, streak info otherwise */}
+        {canClaim ? (
+          <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
             <Text style={styles.dailyPillText}>🎁 Claim Daily Reward</Text>
+            {dailyRewardStreak > 0 && (
+              <Text style={styles.dailyPillStreak}>🔥 Day {dailyRewardStreak + 1}</Text>
+            )}
           </Pressable>
+        ) : dailyRewardStreak >= 2 ? (
+          <View style={styles.dailyStreakInfo}>
+            <Text style={styles.dailyStreakInfoText}>🔥 {dailyRewardStreak}-day streak → tomorrow: +{calculateDailyReward(dailyRewardStreak + 1)} chips</Text>
+          </View>
+        ) : null}
+
+        {/* Win streak — shown if streak >= 2 */}
+        {currentWinStreak >= 2 && (
+          <View style={styles.homeStreakRow}>
+            <Text style={styles.homeStreakText}>🔥 {currentWinStreak}-win streak</Text>
+            {bestWinStreak > currentWinStreak && (
+              <Text style={styles.homeStreakBest}> · Best: {bestWinStreak}</Text>
+            )}
+          </View>
         )}
 
         {/* Play of the Day card (D10) — only shown when available */}
@@ -1031,6 +1126,30 @@ export default function HomeScreen() {
               Sit &amp; Go (100 💰)
             </Text>
           </Pressable>
+        </View>
+
+        {/* Friend Activity Feed */}
+        <View style={styles.feedSection}>
+          <Text style={styles.feedTitle}>🏆 Recent Wins</Text>
+          {activityFeed.length === 0 ? (
+            <Text style={styles.feedEmpty}>Play a Sit&Go to see your history</Text>
+          ) : (
+            activityFeed.map((item, i) => {
+              const won = item.winner_id === item.player_id;
+              return (
+                <View key={i} style={styles.feedItem}>
+                  <Text style={styles.feedItemText}>
+                    {won
+                      ? `✅ You won Sit&Go — +${item.chips_won ?? 0} 💰`
+                      : `❌ Sit&Go — better luck next time`}
+                  </Text>
+                  <Text style={styles.feedItemTime}>
+                    {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}
+                  </Text>
+                </View>
+              );
+            })
+          )}
         </View>
 
         {/* Referral — Persistent Code Card (S104) */}
@@ -1189,6 +1308,60 @@ const styles = StyleSheet.create({
     fontSize: rf(24),
     lineHeight: rf(30),
   },
+  topChipWrap: {
+    position: 'relative',
+    alignItems: 'flex-end',
+  },
+  topChipBtn: {
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(8),
+    borderRadius: rs(12),
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  topChipText: {
+    fontSize: rf(14),
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  topChipGetBtn: {
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(10),
+    borderRadius: rs(12),
+    backgroundColor: '#DC2626',
+  },
+  topChipGetText: {
+    fontSize: rf(12),
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  homeStreakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(14),
+    borderRadius: rs(14),
+    backgroundColor: 'rgba(255,149,0,0.12)',
+  },
+  homeStreakText: {
+    fontSize: rf(13),
+    fontWeight: '700',
+    color: '#FF9500',
+  },
+  homeStreakBest: {
+    fontSize: rf(12),
+    color: 'rgba(255,149,0,0.65)',
+    fontWeight: '500',
+  },
+  chipFloatText: {
+    position: 'absolute',
+    top: -rs(4),
+    right: 0,
+    fontSize: rf(13),
+    fontWeight: '700',
+    color: '#2ecc71',
+    pointerEvents: 'none',
+  },
 
   // Main content — centered vertically
   content: {
@@ -1307,6 +1480,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: 'center',
   },
+  dailyPillClaim: {
+    alignItems: 'center',
+    gap: rs(2),
+  },
+  dailyPillStreak: {
+    color: 'rgba(232,201,106,0.7)',
+    fontSize: rf(11),
+    fontWeight: '600',
+  },
+  dailyStreakInfo: {
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(14),
+  },
+  dailyStreakInfoText: {
+    color: 'rgba(255,149,0,0.75)',
+    fontSize: rf(12),
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 
   debugInfo: {
     position: 'absolute',
@@ -1379,6 +1571,46 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase' as any,
     textAlign: 'center',
+  },
+
+  // Friend Activity Feed
+  feedSection: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: rv(12),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: rs(10),
+    gap: rs(6),
+  },
+  feedTitle: {
+    color: COLORS.gold,
+    fontSize: rf(11),
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase' as const,
+    marginBottom: rs(2),
+  },
+  feedEmpty: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: rf(12),
+    textAlign: 'center',
+    paddingVertical: rs(4),
+  },
+  feedItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  feedItemText: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: rf(12),
+    flex: 1,
+  },
+  feedItemTime: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: rf(10),
+    marginLeft: rs(6),
   },
 
   // Play of the Day (D10)
