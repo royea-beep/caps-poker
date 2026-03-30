@@ -158,12 +158,11 @@ export default function Board({
   const theme = getTheme(visualTheme);
   const [hintInfoVisible, setHintInfoVisible] = useState(false);
   const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Explicit card size hierarchy: community (largest) > board slot (medium) > hand (smallest)
-  const commH = rv(screenW, 48, 62, 78, 56);
-  const commW = Math.round(commH * 0.72);
+  // S81 Card Bible: community and player cards SAME formula (tester: flop was smaller)
   const ch = cardHeightProp ?? rv(screenW, 46, 59, 74, 53);
   const cw = Math.round(ch * 0.72);
-  // Empty slots are ~30% smaller during arrangement
+  const commH = ch; // SAME as player cards (S81 fix)
+  const commW = cw;
   const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
   const slotW = Math.round(slotH * 0.7);
 

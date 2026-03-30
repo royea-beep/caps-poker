@@ -233,7 +233,7 @@ function buildFixPromptFromReport(report: Record<string, unknown>, transcription
   prompt += `- constants/gameConfig.ts — Card type, COLORS, game constants\n`;
   prompt += `Styling: bg #1C0508, boardBg #6B1520, gold #c9a84c. Dark theme always.\n`;
   prompt += `NEVER: Dimensions.get() at module level (crashes web) | expo-file-system legacy functions | Alert.alert on web\n`;
-  prompt += `NEVER: withRepeat(-1) in Reanimated | ConfettiCannon | CompleteOverlay (180+ views = Hermes crash)\n\n`;
+  prompt += `NEVER: withRepeat(-1) in Reanimated | ConfettiCannon (use pure RN Animated particles instead)\n\n`;
 
   prompt += `## BUG REPORT — AUTO-FIX\n`;
   prompt += `**ID:** ${id} | **Severity:** ${sev}\n`;
@@ -1664,9 +1664,8 @@ Respond with ONLY valid JSON, no markdown backticks:
   // ── Route incoming replies through handle_whatsapp_reply() RPC ───────────────
   // Handles: numbered replies (1-7), report-prefixed replies (82:1), and crash keywords
   const isReplyCandidate = (
-    /^\d+$/.test(upperBody) ||
-    /^\d+:\d+$/.test(upperBody) ||
-    ['FIX','SKIP','MARATHON','AUTO','DASHBOARD','תקן','דלג','אוטו','דשבורד'].includes(upperBody)
+    /^\d+(:\d+)?(\s|$)/.test(msgBody.trim()) ||
+    ['FIX','SKIP','MARATHON','AUTO','DASHBOARD','RETRY','R','תקן','דלג','אוטו','דשבורד','נסה שוב'].includes(upperBody)
   );
 
   if (isReplyCandidate) {

@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { DealMeInButton } from '../components/DealMeInButton';
 import { BoardResultCard } from '../components/BoardResultCard';
 import { CompleteBanner } from '../components/CompleteBanner';
+import CompleteOverlay from '../components/CompleteOverlay';
 import { ShareSection } from '../components/ShareSection';
 import { EfficiencyCard } from '../components/EfficiencyCard';
 import ChipsDisplay from '../components/ChipsDisplay';
@@ -133,6 +134,8 @@ export default function ResultsScreen() {
     completeFlashOpacity, completeTitleScale, chipTranslates, showCompleteOverlay,
   } = useResultsAnimations(revealData);
 
+  // CompleteOverlay particle burst (S81)
+  const [completeOverlayDone, setCompleteOverlayDone] = useState(false);
   const CARD_W = Math.min(Platform.OS === 'web' ? 56 : 36, Math.max(24, Math.floor((SCREEN_W - 56) / 6.5)));
   const CARD_H = Math.round(CARD_W * 1.4);
 
@@ -505,6 +508,14 @@ export default function ResultsScreen() {
       <FriendsBg />
 
       {/* COMPLETE celebration overlay — screen flash + chip shower */}
+      {showCompleteOverlay && isComplete && !completeOverlayDone && (
+        <CompleteOverlay
+          winner="player"
+          bonusAmount={completeBonusAmount}
+          duration={3}
+          onDone={() => setCompleteOverlayDone(true)}
+        />
+      )}
       {showCompleteOverlay && isComplete && (
         <>
           {/* Gold screen flash */}
