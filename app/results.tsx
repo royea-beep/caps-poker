@@ -94,7 +94,7 @@ export default function ResultsScreen() {
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-continue timer (FIX 2)
-  const AUTO_CONTINUE_SECS = 8;
+  const AUTO_CONTINUE_SECS = 12;
   const [autoContinueCountdown, setAutoContinueCountdown] = useState(AUTO_CONTINUE_SECS);
   const [autoContinueActive, setAutoContinueActive] = useState(false);
   const autoContinueRef = useRef<ReturnType<typeof setInterval> | null>(null);

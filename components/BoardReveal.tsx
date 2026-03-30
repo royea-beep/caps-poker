@@ -292,8 +292,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       }
     }, t(3000)));  // S78: result (was 3350ms)
 
-    // WIN/LOSE badge visible from 3350ms; auto-advance at 8s (S86: was 5s — badge unreadable)
-    timers.current.push(setTimeout(doAdvance, t(8000)));
+    // WIN/LOSE badge visible from 3350ms; auto-advance at 12s (S86: was 5s — badge unreadable)
+    timers.current.push(setTimeout(doAdvance, t(12000)));
+
+    // S89: Show 'Tap to continue' hint after 4s of result showing (result at 3s, hint at 7s)
+    timers.current.push(setTimeout(() => { setShowTapHint(true); }, t(7000)));
 
     // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
     if (isFirstGame && currentIdxRef.current === 0) {
