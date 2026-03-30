@@ -292,12 +292,12 @@ const baStyles = StyleSheet.create({
     zIndex: 10,
   },
   floatingBtn: {
-    paddingVertical: 14,
+    paddingVertical: rs(14),
     paddingHorizontal: rs(28),
-    minHeight: 52,
+    minHeight: rs(52),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: rv(24),
+    borderRadius: rb(12),
     ...Platform.select({
       ios: {
         shadowColor: '#000',

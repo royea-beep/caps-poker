@@ -22,7 +22,6 @@ interface CardProps {
   cardWidth?: number;
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
-  hideCornerLabels?: boolean; // when true, hides the small top-left rank+suit corner label
   suitsOnly?: boolean; // hide rank entirely, show only suit symbol at bottom-left
 }
 
@@ -65,7 +64,6 @@ export default function CardComponent({
   flipDuration = 800,
   cardWidth,
   cardHeight,
-  hideCornerLabels = false,
   suitsOnly = false,
 }: CardProps) {
   const width = cardWidth ?? (small ? rs(52) : rs(58));
@@ -73,12 +71,12 @@ export default function CardComponent({
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
-  // Card sizing — use DB config ratios when available, fall back to hardcoded defaults
-  const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.42;
-  const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.32;
+  // Card sizing — width-based for readability (S80: tester feedback)
+  const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.38;
+  const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.28;
 
-  const centerRankSize = Math.max(14, Math.floor(height * mainRankRatio));
-  const centerSuitSize = Math.max(12, Math.floor(height * mainSuitRatio));
+  const centerRankSize = Math.max(16, Math.floor(width * mainRankRatio));
+  const centerSuitSize = Math.max(12, Math.floor(width * mainSuitRatio));
 
   const prevFaceDownRef = useRef(faceDown);
   const flipProgress = useSharedValue(faceDown ? 0 : 1);
@@ -279,18 +277,6 @@ export default function CardComponent({
           frontAnimStyle,
         ]}
       >
-        {/* Top-left corner: small rank + suit indicator */}
-        {!hideCornerLabels && (
-          <View style={styles.cornerTopLeft}>
-            <Text style={[styles.cornerRank, { color: suitColor, fontSize: Math.max(8, Math.floor(height * 0.20)) }]}>
-              {card.rank}
-            </Text>
-            <Text style={[styles.cornerSuit, { color: suitColor, fontSize: Math.max(7, Math.floor(height * 0.16)) }]}>
-              {SUIT_SYMBOLS[card.suit]}
-            </Text>
-          </View>
-        )}
-
         {/* Center: large rank + suit below — or suit-only at bottom-left */}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
@@ -358,25 +344,6 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.35,
-  },
-  cornerTopLeft: {
-    position: 'absolute',
-    top: 3,
-    left: 4,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  cornerRank: {
-    fontWeight: '900',
-    lineHeight: undefined,
-    ...Platform.select({
-      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
-      default: {},
-    }),
-  },
-  cornerSuit: {
-    fontWeight: '700',
-    marginTop: -2,
   },
   suitBottomLeft: {
     position: 'absolute',
