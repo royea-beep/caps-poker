@@ -249,7 +249,7 @@ async function submitBugReport(opts: {
 }
 
 // ─── AI Triage (runs AFTER insert, only if user typed a description) ─────────
-// NOTE: whatsapp-bot-handler does the REAL triage (with Whisper transcription).
+// NOTE: telegram-bot-handler does the REAL triage (with Whisper transcription).
 // This inline triage only runs if the user typed a text description — because
 // in that case there's no audio to transcribe and we can give a quick result.
 // We do NOT call analyze-bug-report — it has an old prompt that reads metadata
@@ -260,7 +260,7 @@ async function triggerAITriage(
   description: string,
   consoleLogs: string[],
 ): Promise<{ summary: string; severity: string } | null> {
-  // Skip if no description — whatsapp-bot-handler will do better triage with Whisper
+  // Skip if no description — telegram-bot-handler will do better triage with Whisper
   if (!description.trim()) {
     console.log('[BUG-PIPE] Step 5: No text description — skipping inline triage (Edge Fn will use Whisper)');
     return null;

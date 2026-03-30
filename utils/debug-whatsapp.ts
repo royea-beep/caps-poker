@@ -1,12 +1,12 @@
 /**
- * Debug WhatsApp Alert — sends auto-debug report via the whatsapp-bot-handler Edge Function.
+ * Debug WhatsApp Alert — sends auto-debug report via the telegram-bot-handler Edge Function.
  * Reuses the same sendCrashAlert mechanism already wired and working.
  */
 import { DebugReport } from './auto-debug'
 import { CrashReport } from './crash-evidence'
 import { debugLog } from '../components/DebugOverlay'
 
-const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler'
+const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler'
 const NTFY_TOPIC = 'caps-crash-roye'
 
 export async function sendCrashToWhatsApp(report: CrashReport): Promise<boolean> {

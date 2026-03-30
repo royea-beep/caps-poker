@@ -4,7 +4,7 @@
  */
 import { debugLog } from '../components/DebugOverlay';
 
-const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler';
+const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler';
 
 export async function sendCrashAlert(
   videoUrl: string | null,

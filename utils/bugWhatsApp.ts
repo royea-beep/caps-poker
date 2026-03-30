@@ -1,9 +1,9 @@
 /**
- * Bug Report WhatsApp notification — sends via whatsapp-bot-handler Edge Function.
+ * Bug Report WhatsApp notification — sends via telegram-bot-handler Edge Function.
  * Same Twilio infrastructure as crash reports.
  */
 
-const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler';
+const BOT_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler';
 const NTFY_TOPIC = 'caps-bugs';
 
 export interface BugWhatsAppPayload {

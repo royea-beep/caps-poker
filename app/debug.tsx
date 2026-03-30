@@ -63,7 +63,7 @@ const CAPS_QA_CHECKS: QACheck[] = [
     test: async () => {
       try {
         const r = await fetch(
-          'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler',
+          'https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler',
           { method: 'HEAD' },
         )
         return r.status < 500
