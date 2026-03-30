@@ -28,6 +28,7 @@ import {
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
+import { sortHand } from '../utils/sortHand';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -111,6 +112,7 @@ function GameScreenInner() {
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const storeOrientation = useGameStore((s) => s.orientation);
+  const handSortMethod = useGameStore((s) => s.handSortMethod);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const isLandscape = false; // S86: portrait-only — Iron Rule 2
@@ -403,7 +405,7 @@ function GameScreenInner() {
   useEffect(() => {
     const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
     setBoards(initialBoards);
-    setPlayerHand(pHand);
+    setPlayerHand(sortHand(pHand, handSortMethod));
     setBotsReady(new Array(numberOfBots).fill(false));
     botsReadyCountRef.current = 0;
     playerReadyRef.current = false;

@@ -339,6 +339,35 @@ function FourColorSuitsToggle() {
   );
 }
 
+
+function HandSortToggle() {
+  const handSortMethod = useGameStore((s) => s.handSortMethod);
+  const setHandSortMethod = useGameStore((s) => s.setHandSortMethod);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Card Sort</Text>
+        <Text style={styles.rowHint}>{handSortMethod === 'caps' ? 'Auto (Trips→Pairs→Suits)' : 'Pairs+Suits'}</Text>
+      </View>
+      <View style={styles.selectorRow}>
+        <Pressable
+          onPress={() => { hapticLight(); setHandSortMethod('caps'); }}
+          style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
+        >
+          <Text style={[styles.selectorText, handSortMethod === 'caps' && styles.selectorTextActive]}>Auto</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { hapticLight(); setHandSortMethod('user'); }}
+          style={[styles.selectorBtn, handSortMethod === 'user' && styles.selectorBtnActive]}
+        >
+          <Text style={[styles.selectorText, handSortMethod === 'user' && styles.selectorTextActive]}>Pairs</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 // Preview cards: A♠ (face-up) + face-down
 const ACE_SPADES = { rank: 'A' as const, suit: 'spades' as const, id: 'preview-as' };
 const KING_HEARTS = { rank: 'K' as const, suit: 'hearts' as const, id: 'preview-kh' };
@@ -722,6 +751,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
         <CardThemePicker />
         <FourColorSuitsToggle />
+        <HandSortToggle />
 
         <Text style={styles.sectionTitle}>TIMING</Text>
         <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />

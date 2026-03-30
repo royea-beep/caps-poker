@@ -28,6 +28,7 @@ interface GameStore {
   buttonStyle: ButtonStyle;
   friendsBg: FriendsBgId;
   fourColorSuits: boolean;
+  handSortMethod: 'caps' | 'user';
   orientation: OrientationType | null;
   visualTheme: VisualTheme | null;
   setVisualTheme: (v: VisualTheme) => void;
@@ -78,6 +79,7 @@ interface GameStore {
   setButtonStyle: (style: ButtonStyle) => void;
   setFriendsBg: (bg: FriendsBgId) => void;
   setFourColorSuits: (v: boolean) => void;
+  setHandSortMethod: (method: 'caps' | 'user') => void;
   setOrientation: (v: OrientationType) => void;
   updateConfig: (partial: Partial<GameConfig>) => void;
   resetConfig: () => void;
@@ -131,6 +133,7 @@ export const useGameStore = create<GameStore>()(
       buttonStyle: 'solid' as ButtonStyle,
       friendsBg: 'none' as FriendsBgId,
       fourColorSuits: false,
+      handSortMethod: 'caps' as 'caps' | 'user',
       orientation: null,
       visualTheme: null,
 
@@ -188,6 +191,7 @@ export const useGameStore = create<GameStore>()(
       setButtonStyle: (style: ButtonStyle) => set({ buttonStyle: style }),
       setFriendsBg: (bg: FriendsBgId) => set({ friendsBg: bg }),
       setFourColorSuits: (v: boolean) => set({ fourColorSuits: v }),
+      setHandSortMethod: (method: 'caps' | 'user') => set({ handSortMethod: method }),
       setOrientation: (v: OrientationType) => set({ orientation: v }),
       setVisualTheme: (v: VisualTheme) => set({ visualTheme: v }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
@@ -278,7 +282,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
     }
   )
 );
