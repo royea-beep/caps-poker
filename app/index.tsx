@@ -73,6 +73,8 @@ import { useLevelStore } from '../stores/levelStore';
 import LevelBadge from '../components/LevelBadge';
 // @ts-ignore — parallel agent file, exists at deploy time
 import LevelUpModal from '../components/LevelUpModal';
+// @ts-ignore — parallel agent file, exists at deploy time
+import { WeeklyRecapModal } from '../components/WeeklyRecapModal';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -627,6 +629,7 @@ export default function HomeScreen() {
   const playerLevel = useLevelStore((s: any) => s.level);
   const [showLevelUp, setShowLevelUp] = React.useState(false);
   const [levelUpTo, setLevelUpTo] = React.useState(1);
+  const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const bpCurrentTier = useBattlePassStore((s) => s.currentTier);
   const { progress: bpProgress, xpInTier: bpXpInTier, xpNeeded: bpXpNeeded } = getProgressToNextTier(bpCurrentXP);
 
@@ -745,6 +748,15 @@ export default function HomeScreen() {
         }
       }
     }).catch(() => { setGamesPlayed(0); });
+
+    // Weekly Recap — show on Sunday
+    const today = new Date();
+    if (today.getDay() === 0) { // Sunday = 0
+      const weekKey = `recap_${today.getFullYear()}_${Math.ceil(today.getDate() / 7)}`;
+      AsyncStorage.getItem('recap_week').then(stored => {
+        if (stored !== weekKey) setShowWeeklyRecap(true);
+      });
+    }
   }, []);
 
   // Migrate guest data when user signs in for the first time
@@ -1285,6 +1297,7 @@ export default function HomeScreen() {
       </Text>
     
       <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
+      <WeeklyRecapModal visible={showWeeklyRecap} onDismiss={() => setShowWeeklyRecap(false)} />
       </SafeAreaView>
   );
 }
