@@ -455,6 +455,8 @@ export default function RootLayout() {
             <Stack.Screen name="leaderboard" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="orientation-pick" options={{ animation: 'fade' }} />
             <Stack.Screen name="theme-pick" options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="quick-poker" options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="chip-store" options={{ animation: 'slide_from_right' }} />
           </Stack>
         </WebContainer>
       </BugReporter>

@@ -41,7 +41,8 @@ export type EarnEvent =
   | 'hand_won'
   | 'share_hand'
   | 'streak_5_wins'
-  | 'daily_login';
+  | 'daily_login'
+  | 'quick_poker_win';
 
 export interface EarnResult {
   chips_earned: number;
