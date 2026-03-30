@@ -54,6 +54,7 @@ import { rf, rs, rv } from '../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../utils/i18n';
 import { HOME_THEMES } from '../constants/homeThemes';
+import { todaysQuote } from '../constants/proQuotes';
 import { migrateGuestToUser } from '../utils/guestMigration';
 import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
@@ -1030,6 +1031,7 @@ export default function HomeScreen() {
             {tagline}
           </Animated.Text>
           <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
+          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.55, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(13) }} numberOfLines={2}>“{todaysQuote.text}” — {todaysQuote.author}</Text>
         </View>
 
         {/* PLAY button — always green, center stage */}

@@ -66,3 +66,130 @@ export function getRandomQuote(context: ProQuote['context']): ProQuote {
   const filtered = PRO_QUOTES.filter(q => q.context === context);
   return filtered[Math.floor(Math.random() * filtered.length)];
 }
+
+/* ─── S90: 100 poker wisdom quotes — daily rotation ─── */
+export interface DailyQuote { text: string; author: string; }
+
+export const DAILY_QUOTES: DailyQuote[] = [
+  { text: 'Poker is not about the cards you are dealt, but how you play them.', author: 'Phil Ivey' },
+  { text: 'Every fold saves chips for a better spot.', author: 'Daniel Negreanu' },
+  { text: 'The best hand does not always win. The best player does.', author: 'Doyle Brunson' },
+  { text: 'Patience is not waiting. It is knowing when to attack.', author: 'Stu Ungar' },
+  { text: 'Four boards, one mind. That is CAPS.', author: 'CAPS Poker' },
+  { text: 'In Omaha, every card earns its place.', author: 'Phil Galfond' },
+  { text: 'The cards you hold matter less than the reads you make.', author: 'Phil Hellmuth' },
+  { text: 'A great player always knows where they stand.', author: 'Johnny Moss' },
+  { text: 'Variance is not your enemy. Misplaying your edge is.', author: 'David Sklansky' },
+  { text: 'Never show your cards unless they are on the winner pile.', author: 'Amarillo Slim' },
+  { text: 'In multi-board poker, a split victory is still victory.', author: 'CAPS Poker' },
+  { text: 'Reading the board is easy. Reading the player takes years.', author: 'Chip Reese' },
+  { text: 'The first loss is the cheapest. Do not chase.', author: 'Herbert O. Yardley' },
+  { text: 'Trust your read. Then trust your math.', author: 'Dan Harrington' },
+  { text: 'Every session is a test of discipline, not just cards.', author: 'Barry Greenstein' },
+  { text: 'Four boards means four chances to outthink your opponent.', author: 'CAPS Poker' },
+  { text: 'Position is not just where you sit. It is how much you see.', author: 'Gus Hansen' },
+  { text: 'Aggression builds pots. Patience wins them.', author: 'Tom Dwan' },
+  { text: 'The money you save folding is real money won.', author: 'Vanessa Selbst' },
+  { text: 'Your stack speaks louder than your words.', author: 'Phil Ivey' },
+  { text: 'Omaha rewards the patient mind that tracks every out.', author: 'Bob Ciaffone' },
+  { text: 'Strong hands invite traps. Play the player, not the hand.', author: 'Phil Ivey' },
+  { text: 'A bad beat is just variance wearing a mask.', author: 'Daniel Negreanu' },
+  { text: 'The game ends when chips change hands, not when cards fall.', author: 'Doyle Brunson' },
+  { text: 'In CAPS, spreading your hand is spreading your power.', author: 'CAPS Poker' },
+  { text: 'Know your pot odds before the hand is dealt.', author: 'Mike Caro' },
+  { text: 'The best bluff is the one that never has to be called.', author: 'Erik Seidel' },
+  { text: 'Poker is a people game played with cards.', author: 'Phil Hellmuth' },
+  { text: 'Control the information. Control the pot.', author: 'David Sklansky' },
+  { text: 'Tilt costs more than bad beats.', author: 'Johnny Chan' },
+  { text: 'In Omaha you have four cards — use all four in your thinking.', author: 'Phil Galfond' },
+  { text: 'Slow down before the river. Speed up after.', author: 'Chris Ferguson' },
+  { text: 'CAPS rewards allocation. Know when to stack one board.', author: 'CAPS Poker' },
+  { text: 'Never play out of fear. Always play out of logic.', author: 'Stu Ungar' },
+  { text: 'The flop changes everything. The turn confirms it.', author: 'Brian Townsend' },
+  { text: 'Bankroll management is the skill that keeps you in the game.', author: 'Amarillo Slim' },
+  { text: 'No read is wasted. Every detail tells a story.', author: 'Chip Reese' },
+  { text: 'In multi-board games, tempo is a weapon.', author: 'CAPS Poker' },
+  { text: 'A check-raise is a sentence. Make sure it says what you mean.', author: 'Mason Malmuth' },
+  { text: 'The worst call is made when you already know you should fold.', author: 'Dan Harrington' },
+  { text: 'Live to fight another street.', author: 'Tom Dwan' },
+  { text: 'Every card you place is a decision. Make it count.', author: 'CAPS Poker' },
+  { text: 'If you cannot spot the sucker at the table, it might be you.', author: 'Paul Newman' },
+  { text: 'The player who masters position masters the game.', author: 'Gus Hansen' },
+  { text: 'Reads expire. Math does not.', author: 'Bill Chen' },
+  { text: 'Great Omaha players think in combinations, not single cards.', author: 'Bob Ciaffone' },
+  { text: 'Play your stack, not your ego.', author: 'Barry Greenstein' },
+  { text: 'Great players make in seconds what others take hours to decide.', author: 'Patrik Antonius' },
+  { text: 'Four boards means four decisions. Each one matters equally.', author: 'CAPS Poker' },
+  { text: 'The mental game is where championships are won.', author: 'Jared Tendler' },
+  { text: 'Patience under pressure is the hallmark of champions.', author: 'Phil Ivey' },
+  { text: 'Know your outs before the flop hits the felt.', author: 'Doyle Brunson' },
+  { text: 'In CAPS, the board you sacrifice can win you the match.', author: 'CAPS Poker' },
+  { text: 'Poker is a marathon measured in hands, not hours.', author: 'Daniel Negreanu' },
+  { text: 'Even aces need help on the river.', author: 'Phil Hellmuth' },
+  { text: 'The reraise says everything your face tries to hide.', author: 'Stu Ungar' },
+  { text: 'Every session teaches you something. Study the lessons.', author: 'Erik Seidel' },
+  { text: 'CAPS is chess played at the speed of poker.', author: 'CAPS Poker' },
+  { text: 'Fear is just tilt wearing a suit.', author: 'Chris Ferguson' },
+  { text: 'The table is always teaching. Are you always listening?', author: 'Chip Reese' },
+  { text: 'Omaha: the game where second-best costs you everything.', author: 'Phil Galfond' },
+  { text: 'A fold well-timed is a pot saved.', author: 'Johnny Moss' },
+  { text: 'Big pots attract big mistakes. Think twice before committing.', author: 'Dan Harrington' },
+  { text: 'In CAPS, four boards is four opportunities to outread.', author: 'CAPS Poker' },
+  { text: 'Discipline separates winners from breakeven players.', author: 'Vanessa Selbst' },
+  { text: 'You cannot always win but you can always make the right play.', author: 'Phil Ivey' },
+  { text: 'Study your leaks like a detective studies crime scenes.', author: 'Jared Tendler' },
+  { text: 'Position beats cards. Position beats bluffs. Position beats tilt.', author: 'Gus Hansen' },
+  { text: 'Omaha punishes impatience more than any other format.', author: 'Bob Ciaffone' },
+  { text: 'The flop is a question. Your bet is the answer.', author: 'Tom Dwan' },
+  { text: 'Multi-board thinking: sacrifice one, dominate three.', author: 'CAPS Poker' },
+  { text: 'Your last hand should never affect your next decision.', author: 'Barry Greenstein' },
+  { text: 'A strong player is at home in any situation.', author: 'Johnny Chan' },
+  { text: 'Never bluff a calling station. Give action where it is due.', author: 'Doyle Brunson' },
+  { text: 'In CAPS, the player who adapts board by board wins.', author: 'CAPS Poker' },
+  { text: 'Think in ranges, not hands.', author: 'David Sklansky' },
+  { text: 'The cards are random. Your decisions do not have to be.', author: 'Bill Chen' },
+  { text: 'Omaha: wrap draws win pots. Nut draws win sessions.', author: 'Phil Galfond' },
+  { text: 'Never go broke holding top pair.', author: 'Mason Malmuth' },
+  { text: 'Execution is the gap between knowledge and results.', author: 'Patrik Antonius' },
+  { text: 'CAPS: where Omaha strategy meets board allocation mastery.', author: 'CAPS Poker' },
+  { text: 'Mental strength is your biggest bankroll.', author: 'Jared Tendler' },
+  { text: 'The pot is not yours until it reaches your stack.', author: 'Erik Seidel' },
+  { text: 'Chasing is a tax on impatience.', author: 'Chris Ferguson' },
+  { text: 'In CAPS, controlling one board can shift momentum on all four.', author: 'CAPS Poker' },
+  { text: 'Make your opponents play your game, not theirs.', author: 'Phil Ivey' },
+  { text: 'Respect the min-raise. It always means something.', author: 'Vanessa Selbst' },
+  { text: 'The best hand before the flop is just a starting point.', author: 'Daniel Negreanu' },
+  { text: 'Four cards in Omaha is not permission to play them all.', author: 'Bob Ciaffone' },
+  { text: 'Your edge compounds over thousands of hands. Trust the process.', author: 'Bill Chen' },
+  { text: 'CAPS teaches you to read the war, not just the battle.', author: 'CAPS Poker' },
+  { text: 'Stack protection is strategy. Do not let ego override it.', author: 'Stu Ungar' },
+  { text: 'In poker as in life, the patient hand wins.', author: 'Doyle Brunson' },
+  { text: 'Adapt or lose. The table never stays the same.', author: 'Gus Hansen' },
+  { text: 'Four boards, infinite strategy. That is the beauty of CAPS.', author: 'CAPS Poker' },
+  { text: 'The most important skill is knowing your own tendencies.', author: 'Jared Tendler' },
+  { text: 'When in doubt, go back to fundamentals.', author: 'Dan Harrington' },
+  { text: 'Every session is a new game. Bring a fresh mind.', author: 'Phil Hellmuth' },
+  { text: 'The river never lies. Only players do.', author: 'Phil Ivey' },
+  { text: 'In CAPS, your allocation strategy is your signature.', author: 'CAPS Poker' },
+];
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+export function getTodaysQuote(): DailyQuote {
+  const now = new Date();
+  const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  const shuffled = seededShuffle(DAILY_QUOTES, seed);
+  const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+  return shuffled[Math.floor(minutesSinceMidnight / 10) % shuffled.length];
+}
+
+export const todaysQuote: DailyQuote = getTodaysQuote();
