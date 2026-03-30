@@ -923,7 +923,7 @@ function GameScreenInner() {
 
           {/* Boards — 2 columns */}
           <View style={[landscapeStyles.boardsGrid]}>
-            {boards.map((board, i) => (
+            {(boards ?? []).map((board, i) => (
               <Animated.View key={i} style={[landscapeStyles.boardCell, boardShakeStyles[i]]}>
                 <Board
                   index={i}
