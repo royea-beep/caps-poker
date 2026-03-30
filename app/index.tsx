@@ -1061,8 +1061,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Balance */}
-        <ChipsDisplay amount={chips} label="Balance" size="large" />
 
         {/* XP Bar — Battle Pass progress */}
         <Pressable onPress={() => router.push('/stats' as any)} style={styles.xpBarTouchable}>
@@ -1107,7 +1105,7 @@ export default function HomeScreen() {
             <Text style={styles.potdPlayer} numberOfLines={1}>
               {potd.player ?? 'Anonymous'} · {potd.data.hand_name ?? 'Best Hand'}
             </Text>
-            <Text style={styles.potdPot}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
           </View>
         )}
 

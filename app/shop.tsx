@@ -20,7 +20,16 @@ import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
-import { fetchPokerShop, spendChips, ShopItem, ShopData } from '../utils/supabaseEconomy';
+import { fetchPokerShop, spendChips, ShopItem, ShopData, callRPC } from '../utils/supabaseEconomy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getSupabase } from '../utils/supabase';
+
+// Lazy-load RevenueCat (native only)
+let Purchases: typeof import('react-native-purchases').default | null = null;
+if (Platform.OS !== 'web') {
+  try { Purchases = require('react-native-purchases').default; } catch {}
+}
+type RCPackage = { identifier: string; product: { priceString: string; title: string } };
 
 export default function ShopScreen() {
   const router = useRouter();
@@ -32,6 +41,10 @@ export default function ShopScreen() {
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // IAP packages from RevenueCat
+  const [starterPack, setStarterPack] = useState<RCPackage | null>(null);
+  const [monthlyPack, setMonthlyPack] = useState<RCPackage | null>(null);
+  const [iapLoading, setIapLoading] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -53,7 +66,59 @@ export default function ShopScreen() {
 
   useEffect(() => {
     void loadShop();
+    // Load RevenueCat offerings
+    if (Purchases && Platform.OS !== 'web') {
+      Purchases.getOfferings().then((offerings) => {
+        const pkgs = (offerings.current?.availablePackages ?? []) as RCPackage[];
+        setStarterPack(pkgs.find(p => p.identifier === 'starter_pack') ?? null);
+        setMonthlyPack(pkgs.find(p => p.identifier === 'monthly_sub') ?? null);
+      }).catch(() => {});
+    }
   }, [loadShop]);
+
+  const handleBuyStarterPack = async () => {
+    if (!starterPack || iapLoading || !Purchases) return;
+    setIapLoading(true);
+    try {
+      await Purchases.purchasePackage(starterPack as any);
+      // Award 5000 chips via earn_chips RPC (or locally as fallback)
+      const deviceId = await getDeviceId();
+      const result = await callRPC<{ chips_earned: number; new_balance: number }>('earn_chips', {
+        p_device_id: deviceId,
+        p_event_type: 'iap_starter_pack',
+      });
+      const earned = result?.chips_earned ?? 5000;
+      addChips(earned);
+      trackChipsSpent(0); // no chips spent — real money purchase
+      showToast(`+${earned} 💰 Starter Pack!`);
+    } catch (e: any) {
+      if (!e.userCancelled) showToast('Purchase failed. Try again.');
+    } finally {
+      setIapLoading(false);
+    }
+  };
+
+  const handleBuySubscription = async () => {
+    if (!monthlyPack || iapLoading || !Purchases) return;
+    setIapLoading(true);
+    try {
+      await Purchases.purchasePackage(monthlyPack as any);
+      await AsyncStorage.setItem('caps_is_subscriber', 'true');
+      // Update DB if authenticated
+      const sb = getSupabase();
+      if (sb) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.user?.id) {
+          await sb.from('profiles').update({ is_subscriber: true }).eq('id', session.user.id);
+        }
+      }
+      showToast('🏆 VIP Activated! 1000 chips/day unlocked.');
+    } catch (e: any) {
+      if (!e.userCancelled) showToast('Purchase failed. Try again.');
+    } finally {
+      setIapLoading(false);
+    }
+  };
 
   const handleBuy = async (item: ShopItem) => {
     if (buying) return;
@@ -129,6 +194,59 @@ export default function ShopScreen() {
           contentContainerStyle={styles.itemList}
           showsVerticalScrollIndicator={false}
         >
+          {/* ─── IAP Section ─────────────────────────────────────── */}
+          {Platform.OS !== 'web' && (
+            <View style={styles.iapSection}>
+              <Text style={styles.sectionTitle}>Premium</Text>
+              {/* Starter Pack */}
+              <View style={styles.iapCard}>
+                <View style={styles.iapInfo}>
+                  <Text style={styles.iapTitle}>🎰 Starter Pack</Text>
+                  <Text style={styles.iapDesc}>+5,000 chips · One-time purchase</Text>
+                  {starterPack && (
+                    <Text style={styles.iapPrice}>{starterPack.product.priceString}</Text>
+                  )}
+                </View>
+                <Pressable
+                  style={[styles.iapBtn, (iapLoading || !starterPack) && styles.iapBtnDisabled]}
+                  onPress={handleBuyStarterPack}
+                  disabled={iapLoading || !starterPack}
+                >
+                  {iapLoading ? (
+                    <ActivityIndicator color="#000" size="small" />
+                  ) : (
+                    <Text style={styles.iapBtnText}>
+                      {starterPack ? 'Buy' : 'Soon'}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+              {/* Monthly Subscription */}
+              <View style={styles.iapCard}>
+                <View style={styles.iapInfo}>
+                  <Text style={styles.iapTitle}>👑 VIP Monthly</Text>
+                  <Text style={styles.iapDesc}>1,000 chips/day · Auto-renews</Text>
+                  {monthlyPack && (
+                    <Text style={styles.iapPrice}>{monthlyPack.product.priceString}/mo</Text>
+                  )}
+                </View>
+                <Pressable
+                  style={[styles.iapBtn, (iapLoading || !monthlyPack) && styles.iapBtnDisabled]}
+                  onPress={handleBuySubscription}
+                  disabled={iapLoading || !monthlyPack}
+                >
+                  {iapLoading ? (
+                    <ActivityIndicator color="#000" size="small" />
+                  ) : (
+                    <Text style={styles.iapBtnText}>
+                      {monthlyPack ? 'Subscribe' : 'Soon'}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          )}
+
           <Text style={styles.sectionTitle}>Available Items</Text>
           {shopData.items.map((item) => (
             <View key={item.event_type} style={styles.itemCard}>
@@ -263,6 +381,56 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: rs(4),
     alignSelf: 'flex-start',
+  },
+  iapSection: {
+    width: '100%',
+    gap: rs(8),
+    marginBottom: rs(4),
+  },
+  iapCard: {
+    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderRadius: rv(14),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    padding: rs(14),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(12),
+  },
+  iapInfo: {
+    flex: 1,
+    gap: rs(3),
+  },
+  iapTitle: {
+    color: '#fff',
+    fontSize: rf(15),
+    fontWeight: '800',
+  },
+  iapDesc: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(12),
+  },
+  iapPrice: {
+    color: COLORS.gold,
+    fontSize: rf(13),
+    fontWeight: '700',
+    marginTop: rs(2),
+  },
+  iapBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: rv(10),
+    paddingHorizontal: rs(14),
+    paddingVertical: rs(10),
+    minWidth: rs(80),
+    alignItems: 'center',
+  },
+  iapBtnDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  iapBtnText: {
+    color: '#000',
+    fontSize: rf(13),
+    fontWeight: '800',
   },
   itemList: {
     padding: rs(16),

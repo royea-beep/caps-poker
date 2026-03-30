@@ -36,6 +36,24 @@ import {
 } from '../utils/gameLogic';
 import { GamePhase } from '../types/gameTypes';
 import { playSound } from '../utils/sounds';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SNG_WIN_COUNT_KEY = 'caps_sng_win_count';
+
+// Request store review after first Sit&Go win
+async function maybeRequestReview(): Promise<void> {
+  try {
+    const val = await AsyncStorage.getItem(SNG_WIN_COUNT_KEY);
+    const count = (val ? parseInt(val, 10) : 0) + 1;
+    await AsyncStorage.setItem(SNG_WIN_COUNT_KEY, String(count));
+    if (count === 1) {
+      const StoreReview = require('expo-store-review');
+      if (await StoreReview.hasAction()) {
+        await StoreReview.requestReview();
+      }
+    }
+  } catch { /* non-blocking */ }
+}
 
 let Haptics: any = null;
 try {
@@ -356,6 +374,7 @@ export default function SitAndGoScreen() {
           setHumanPrize(prize);
           setHumanPlace(place);
           void callEliminateRpc(sessionId);
+          void maybeRequestReview();
           setPhase('winner');
         } else {
           setPhase('eliminated');
@@ -395,6 +414,7 @@ export default function SitAndGoScreen() {
         setHumanPrize(PRIZE_1ST);
         setHumanPlace(1);
         void callEliminateRpc(sessionId);
+        void maybeRequestReview();
         setPhase('winner');
         return updated;
       }

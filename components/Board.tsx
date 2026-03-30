@@ -370,7 +370,6 @@ export default function Board({
               cardHeight={commH}
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
-              suitsOnly
             />
           ))}
           <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
@@ -384,7 +383,6 @@ export default function Board({
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               flipDuration={flipDuration}
-              suitsOnly
             />
           ))}
         </View>
@@ -393,7 +391,7 @@ export default function Board({
         <View style={styles.cardRow}>
           {isArrangement && playerCards.length === 0 && onAutoFill && (
             <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText}>⚡ AUTO</Text>
+              <Text style={styles.autoBtnText}>⚡ AUTO-PLACE</Text>
             </Pressable>
           )}
           {playerCards.length > 0 ? (
