@@ -43,7 +43,7 @@ const CARD_BACK_BORDER = '#c9a84c';
 // 4-color suit system — Classic
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
-  diamonds: '#1E90FF',
+  diamonds: '#1565C0',
   spades:   '#1a1a2e',
   clubs:    '#228B22',
 };
@@ -51,7 +51,7 @@ const SUIT_COLORS_4: Record<string, string> = {
 // 4-color suit system — Five-O (clubs = deep teal-green, matching reference)
 const SUIT_COLORS_4_FIVEO: Record<string, string> = {
   hearts:   '#E8192C',
-  diamonds: '#1E90FF',
+  diamonds: '#1565C0',
   spades:   '#1a1a2e',
   clubs:    '#006644',
 };
