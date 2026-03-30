@@ -250,7 +250,14 @@ serve(async (req: Request) => {
       const reply = mt === 'bug' ? await handleBugReply(text.trim(), sess, supabase, chatId) : mt === 'crash' ? await handleCrashReply(text.trim(), supabase, chatId) : null;
       if (reply) await sendTelegram(chatId, reply);
     } else {
-      await sendTelegram(chatId, `Received: "${text.slice(0, 80)}"\n\nNo active session.`);
+      const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+      if (anthropicKey && !text.startsWith('/')) {
+        const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, system: 'You are the CAPS Poker assistant. Help Roye manage the app, analyze bugs, and make decisions. Be concise. Answer in Hebrew if the user writes in Hebrew.', messages: [{ role: 'user', content: text }] }) }).catch(() => null);
+        const cd = cr ? await cr.json().catch(() => ({})) : {};
+        const reply = (cd.content?.[0]?.text as string | null) ?? null;
+        if (reply) { await sendTelegram(chatId, reply); return new Response('OK', { status: 200 }); }
+      }
+      await sendTelegram(chatId, 'No active session. Send a bug/crash reply or ask me anything!');
     }
     return new Response('OK', { status: 200 });
   }

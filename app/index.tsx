@@ -160,19 +160,17 @@ function HeroCardFan() {
 }
 
 const TAGLINES = [
-  "Place Your Cards. Own Every Board.",
-  "Every Card Counts. Every Board Matters.",
-  "Omaha Like You've Never Played It.",
-  "Stack the Boards. Take the Chips.",
-  "Play All 4. Win the Night.",
-  "Think Ahead. Play All Boards.",
-  "The Poker Game That Never Sleeps.",
-  "More Boards. More Action. More Fun.",
+  "Place your cards. Own every board.",
+  "Every card counts. Every board matters.",
+  "Split your hand. Win the table.",
+  "Four cards. Four boards. One winner.",
+  "Omaha, multiplied.",
+  "Think deeper. Play smarter.",
+  "Stack the boards. Take the chips.",
   "Deal. Place. Dominate.",
-  "Where Every Board Is a Battle.",
+  "The poker game that never sleeps.",
+  "Where every board is a battle.",
 ];
-let taglineMountCount = 0;
-
 const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
 
 // ─── Sign-in nudge banner — slide-up, non-blocking ─────────────────────────────
@@ -637,9 +635,8 @@ export default function HomeScreen() {
 
   // Rotating tagline — cycles through all 10
   const [tagline] = useState<string>(() => {
-    const idx = taglineMountCount % TAGLINES.length;
-    taglineMountCount++;
-    return TAGLINES[idx];
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    return TAGLINES[dayOfYear % TAGLINES.length];
   });
   const taglineOpacity = useSharedValue(0);
   useEffect(() => { taglineOpacity.value = withTiming(1, { duration: 800 }); }, []);
@@ -1086,6 +1083,7 @@ export default function HomeScreen() {
 
         {/* Level progress bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 4 }}>
+          <Text style={{ color: '#c96a1a', fontSize: 9, fontWeight: '600', opacity: 0.7, letterSpacing: 0.5 }}>LVL</Text>
           <LevelBadge level={playerLevel} size="sm" />
           <View style={{ flex: 1, height: 6, backgroundColor: '#1a0e06', borderRadius: 3, overflow: 'hidden' }}>
             <View style={{ width: `${Math.min(100, (levelXP / (playerLevel * playerLevel * 50)) * 100)}%`, height: '100%', backgroundColor: '#c96a1a', borderRadius: 3 }} />
