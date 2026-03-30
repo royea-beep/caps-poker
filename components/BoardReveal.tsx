@@ -204,21 +204,21 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       setTurnFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(800)));
+    }, t(600)));   // S78: tighter turn flip (was 800ms)
 
     // 2300ms — flip river card (800ms turn + 1500ms dramatic pause)
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('cardFlip');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-    }, t(2300)));
+    }, t(1100)));  // S78: tighter river (was 2300ms, 500ms gap after turn)
 
     // 2450ms — fade out hint
     timers.current.push(setTimeout(() => {
       const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: t(400), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(2450)));
+    }, t(1200)));  // S78: hint fade after river (was 2450ms)
 
     // 2750ms — show hand names (fade in, both simultaneously)
     timers.current.push(setTimeout(() => {
@@ -226,7 +226,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(2750)));
+    }, t(2400)));  // S78: hand names (was 2750ms)
 
     // 2950ms — community spotlight: dim non-highlighted cards
     timers.current.push(setTimeout(() => {
@@ -263,7 +263,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           a.start();
         }
       });
-    }, t(2950)));
+    }, t(2600)));  // S78: spotlight (was 2950ms)
 
     // 3350ms — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
@@ -290,10 +290,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       } else if (boardForResult?.winner === 'bot') {
         playSound('boardLose');
       }
-    }, t(3350)));
+    }, t(3000)));  // S78: result (was 3350ms)
 
     // 4800ms — auto-advance
-    timers.current.push(setTimeout(doAdvance, t(4800)));
+    timers.current.push(setTimeout(doAdvance, t(5000)));  // S78: +200ms read time
 
     // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
     if (isFirstGame && currentIdxRef.current === 0) {
@@ -351,7 +351,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const handCardW = Math.min(70, Math.floor((screenW - pad - handGap * 3) / 4));
   const handCardH = Math.round(handCardW * 1.4);
 
-  const resultColor = board.winner === 'player' ? '#4CAF50' : board.winner === 'bot' ? '#F44336' : '#fff';
+  const resultColor = board.winner === 'player' ? '#2ecc71' : board.winner === 'bot' ? '#F44336' : '#fff';
   const tx = t();
   const resultText = board.winner === 'player' ? tx.youWin : board.winner === 'bot' ? tx.youLose : tx.tie;
   const chipSign = board.winner === 'player' ? '+' : board.winner === 'bot' ? '-' : '±';
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
     borderRadius: rv(5),
   },
   dotDone: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2ecc71',
   },
   dotCurrent: {
     backgroundColor: COLORS.gold,
