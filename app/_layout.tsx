@@ -7,7 +7,7 @@ console.warn = (...args: any[]) => {
 import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { initLogBuffer } from '../utils/logBuffer';
-import { addBreadcrumb } from '../utils/breadcrumbs';
+import { addBreadcrumb, getBreadcrumbs } from '../utils/breadcrumbs';
 // Initialize log buffer immediately at module load — before any component renders
 initLogBuffer();
 import { View, Text, Platform, StyleSheet } from 'react-native';
@@ -268,6 +268,23 @@ export default function RootLayout() {
       if (age < 5) {
         debugLog('🔍 crash age < 5s — skipping (rapid reopen, not a real crash)');
         return;
+      }
+
+      // False-positive filter: skip if user never reached an active game screen.
+      // Dirty-shutdown triggered by force-close on Splash/Home with few steps = not a real crash.
+      const crumbs = getBreadcrumbs();
+      const lastScreen = crumbs.length > 0 ? crumbs[crumbs.length - 1].screen : '/';
+      const GAME_SCREENS = ['/game', '/multiplayer-game', '/results', '/lobby', '/sit-and-go', '/tournament', '/coaching', '/replay'];
+      const wasOnGameScreen = GAME_SCREENS.some(s => lastScreen.startsWith(s));
+      if (!wasOnGameScreen && crumbs.length <= 3) {
+        const { getGameLogs } = require('../utils/logBuffer');
+        const gameLogs: string[] = getGameLogs();
+        const hasErrors = gameLogs.some(l => l.startsWith('[ERR]'));
+        const hasErrorStack = gameLogs.some(l => l.includes('Error:') || l.includes('at ') && l.includes('.tsx'));
+        if (!hasErrors && !hasErrorStack) {
+          debugLog(`🔍 dirty-shutdown skipped — last screen: ${lastScreen}, breadcrumbs: ${crumbs.length}, no errors (force-close/OS-kill filter)`);
+          return;
+        }
       }
 
       // Debounce: max 1 crash notification per hour (prevents spam on repeated false positives)
