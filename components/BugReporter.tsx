@@ -390,23 +390,33 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
   async function startAudio() {
     if (Platform.OS === 'web') return;
-    console.log('[BUG-PIPE] Step 2b: Configuring audio mode for recording...');
+    console.log('[BUG-AUDIO] Step 2b: Configuring audio mode for recording...');
     try {
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-      console.log('[BUG-PIPE] Step 2b: ✅ Audio mode set');
+      await withTimeout(
+        setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true }),
+        15000,
+        undefined,
+        'set-audio-mode'
+      );
+      console.log('[BUG-AUDIO] Step 2b: ✅ Audio mode set');
     } catch (err) {
-      console.error('[BUG-PIPE] Step 2b: ❌ setAudioModeAsync FAILED:', err);
+      console.warn('[BugReporter] audio failed: setAudioModeAsync error:', err);
       return;
     }
-    console.log('[BUG-PIPE] Step 2b: Preparing recorder...');
+    console.log('[BUG-AUDIO] Step 2b: Preparing recorder...');
     try {
-      await audioRecorder.prepareToRecordAsync();
-      console.log('[BUG-PIPE] Step 2b: ✅ Prepared');
+      await withTimeout(
+        audioRecorder.prepareToRecordAsync(),
+        15000,
+        undefined,
+        'prepare-recorder'
+      );
+      console.log('[BUG-AUDIO] Step 2b: ✅ Prepared');
       audioRecorder.record();
-      console.log('[BUG-PIPE] Step 2b: ✅ record() called');
+      console.log('[BUG-AUDIO] Step 2b: ✅ record() called');
       setAudioAvailable(true);
     } catch (err) {
-      console.error('[BUG-PIPE] Step 2b: ❌ prepareToRecordAsync/record FAILED:', err);
+      console.warn('[BugReporter] audio failed: prepareToRecordAsync/record error:', err);
       setAudioAvailable(false);
     }
   }
@@ -455,7 +465,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const handleStop = useCallback(async (_autoStopped = false) => {
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
     console.log('[BUG-PIPE] Step 3: Stopping all recordings...');
-    const [, audioUri, frames] = await Promise.all([stopRecording(), withTimeout(stopAudio(), 3000, null, 'stop-audio'), getLastCrashScreenshots()]);
+    const [, audioUri, frames] = await Promise.all([stopRecording(), withTimeout(stopAudio(), 8000, null, 'stop-audio'), getLastCrashScreenshots()]);
     console.log('[BUG-PIPE] Step 3a: Screen capture stopped. Total frames:', frames.length);
     capturedAudioUri.current = audioUri;
     capturedFrameCount.current = frames.length;
