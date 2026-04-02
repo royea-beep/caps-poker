@@ -68,7 +68,7 @@ jobs:
         run: |
           if command -v claude &> /dev/null; then
             echo "=== Running Claude Code ==="
-            timeout 35m claude --print --dangerously-skip-permissions "$(cat /tmp/fix-prompt.md)" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored — proceeding"
+            timeout 35m claude --dangerously-skip-permissions "$(cat /tmp/fix-prompt.md)" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored — proceeding"
             echo "=== Claude Code finished ==="
           else
             echo "Claude Code CLI not available after install"
