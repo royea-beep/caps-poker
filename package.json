@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "generate-icons": "node scripts/generate-icon.js",
-    "ota": "NODE_OPTIONS='--max-old-space-size=8192' eas update --branch production --environment production",
+    "ota": "NODE_OPTIONS='--max-old-space-size=8192' npx expo export --platform ios --platform android --output-dir /tmp/caps_ota --dump-assetmap --source-maps && NODE_OPTIONS='--max-old-space-size=8192' eas update --branch production --environment production --input-dir /tmp/caps_ota --skip-bundler",
     "postinstall": "node -e \"const fs=require('fs'),p=require.resolve('@expo/image-utils/build/Cache');let c=fs.readFileSync(p,'utf8');if(c.includes('.expo/web/cache/production/images')){c=c.split('.expo/web/cache/production/images').join('/tmp/expo-image-cache');fs.writeFileSync(p,c);console.log('patched @expo/image-utils');}else{console.log('already patched or not found');}\""
   },
   "dependencies": {
