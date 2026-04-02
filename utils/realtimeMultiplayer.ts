@@ -81,6 +81,7 @@ export interface RealtimeServerCallbacks {
   onNewHandDealt?: () => void;
   onDisconnected?: () => void;
   onChat?: (msg: ChatMsg) => void;
+  onReadyPressed?: (playerName: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -135,6 +136,7 @@ export interface RealtimeClientCallbacks {
   onDisconnected?: () => void;
   onError?: (error: Error) => void;
   onChat?: (msg: ChatMsg) => void;
+  onReadyPressed?: (playerName: string) => void;
 }
 
 // ===========================================================================
@@ -392,6 +394,13 @@ export class RealtimeServer {
         this.callbacks.onChat?.(msg);
         // Re-broadcast to all so everyone sees it
         this.broadcastToAll('CHAT', msg);
+        break;
+      }
+      case 'READY_PRESSED': {
+        const playerName: string = data?.playerName ?? 'Opponent';
+        this.callbacks.onReadyPressed?.(playerName);
+        // Re-broadcast to all guests so they start countdown
+        this.broadcastToAll('READY_PRESSED', { playerName });
         break;
       }
     }
@@ -1082,6 +1091,11 @@ export class RealtimeClient {
       case 'CHAT': {
         const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now() };
         this.callbacks.onChat?.(msg);
+        break;
+      }
+      case 'READY_PRESSED': {
+        const playerName: string = data?.playerName ?? 'Opponent';
+        this.callbacks.onReadyPressed?.(playerName);
         break;
       }
     }
