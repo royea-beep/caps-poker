@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 
 /** Maximum content width for web layout containment. 900px on desktop, fills phone screens. */
-export const WEB_MAX_WIDTH = 900;
+export const WEB_MAX_WIDTH = 430;
 
 /**
  * Web-only layout containment wrapper.
