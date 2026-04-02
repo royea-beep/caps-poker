@@ -35,6 +35,9 @@ const hapticNotify = (type: any) => {
   Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
 
+const FREE_TIME_SECS = 30;
+const COUNTDOWN_SECS = 30;
+
 // Layout constants
 const TOP_BAR_H = 44;
 const MODE_BADGE_H = 24;
@@ -113,6 +116,12 @@ export default function MultiplayerGameScreen() {
   const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>(initialPhase);
   const [disconnectBanner, setDisconnectBanner] = useState<string | null>(null);
   const [spectatorCount, setSpectatorCount] = useState(0);
+
+  // Free time + countdown state
+  const [freeTimeLeft, setFreeTimeLeft] = useState(FREE_TIME_SECS);
+  const [readyEnabled, setReadyEnabled] = useState(false);
+  const countdownStartedRef = useRef(false);
+  const freeTimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Chat (internet MP only) ---
   const isInternetMP = typeof (mpServer as any)?.sendChat === 'function' || typeof (mpClient as any)?.sendChat === 'function';
@@ -522,10 +531,46 @@ export default function MultiplayerGameScreen() {
   }, []);
 
   const timer = useGameTimer({
-    initialSeconds: config.arrangementTime,
+    initialSeconds: COUNTDOWN_SECS,
     onExpire: handleTimerExpire,
-    autoStart: true,
+    autoStart: false,
   });
+
+  // Start 30s countdown (idempotent — first caller wins)
+  const startCountdown = useCallback(() => {
+    if (countdownStartedRef.current) return;
+    countdownStartedRef.current = true;
+    timer.reset(COUNTDOWN_SECS);
+    timer.start();
+  }, [timer]);
+
+  // Free time countdown on mount — 30s before READY button appears
+  useEffect(() => {
+    freeTimeIntervalRef.current = setInterval(() => {
+      setFreeTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (freeTimeIntervalRef.current) clearInterval(freeTimeIntervalRef.current);
+          setReadyEnabled(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (freeTimeIntervalRef.current) clearInterval(freeTimeIntervalRef.current);
+    };
+  }, []);
+
+  // --- Wire onReadyPressed (host receives from guests via rebroadcast, guests receive from host) ---
+  useEffect(() => {
+    if (!isHost || !mpServer) return;
+    mpServer.updateCallbacks({ onReadyPressed: () => { if (mountedRef.current) startCountdown(); } });
+  }, [isHost, mpServer, startCountdown]);
+
+  useEffect(() => {
+    if (isHost || !mpClient) return;
+    mpClient.updateCallbacks({ onReadyPressed: () => { if (mountedRef.current) startCountdown(); } });
+  }, [isHost, mpClient, startCountdown]);
 
   const handleTimeBank = useCallback(() => {
     if (timeBankUsed) return;
@@ -631,7 +676,16 @@ export default function MultiplayerGameScreen() {
     } else if (!isHost && mpClient) {
       mpClient.sendReady(assignments);
     }
-  }, [allBoardsFull, timer, boards, isHost, mpServer, mpClient]);
+
+    // Broadcast READY_PRESSED so all players start their countdown
+    const payload = { playerName: myPlayerName };
+    if (isHost && (mpServer as any)?.broadcastToAll) {
+      (mpServer as any).broadcastToAll('READY_PRESSED', payload);
+    } else if (!isHost && (mpClient as any)?.send) {
+      (mpClient as any).send('READY_PRESSED', payload);
+    }
+    startCountdown();
+  }, [allBoardsFull, timer, boards, isHost, mpServer, mpClient, myPlayerName, startCountdown]);
 
   const handleBack = useCallback(() => {
     const leave = () => {
@@ -663,9 +717,9 @@ export default function MultiplayerGameScreen() {
   };
 
   const displayTimeLeft = timer.timeLeft;
-  const timerColor = displayTimeLeft > 30
+  const timerColor = displayTimeLeft > 20
     ? COLORS.success
-    : displayTimeLeft > 15
+    : displayTimeLeft > 10
     ? COLORS.gold
     : COLORS.danger;
 
@@ -679,7 +733,14 @@ export default function MultiplayerGameScreen() {
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topInfo}>
-          {isArranging && (
+          {isArranging && !timer.isRunning && freeTimeLeft > 0 && (
+            <View style={[styles.timerContainer, { borderColor: COLORS.success }]}>
+              <Text style={[styles.timerText, { color: COLORS.success }]}>
+                Free {freeTimeLeft}s
+              </Text>
+            </View>
+          )}
+          {isArranging && timer.isRunning && (
             <View style={[
               styles.timerContainer,
               { borderColor: timerColor },
@@ -748,15 +809,15 @@ export default function MultiplayerGameScreen() {
         />
       )}
 
-      {/* Time bank button — visible when timer < 20s and not yet used */}
-      {isArranging && displayTimeLeft < 20 && !timeBankUsed && (
+      {/* Time bank button — visible when countdown running and < 20s left */}
+      {isArranging && timer.isRunning && displayTimeLeft < 20 && !timeBankUsed && (
         <Pressable style={styles.timeBankBtn} onPress={handleTimeBank}>
           <Text style={styles.timeBankText}>⏱ +15s</Text>
         </Pressable>
       )}
 
-      {/* Ready button */}
-      {isArranging && (
+      {/* Ready button — only after free time ends */}
+      {isArranging && readyEnabled && (
         <View style={styles.readySection}>
           <Button
             title={allBoardsFull ? 'READY' : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`}
