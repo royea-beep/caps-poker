@@ -32,8 +32,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY is NOT set in GitHub Secrets!"
-            echo "Add it at: github.com/royea-beep/caps-poker/settings/secrets/actions"
+            echo "::error::ANTHROPIC_API_KEY is NOT set!"
             echo "CLAUDE_AVAILABLE=false" >> $GITHUB_ENV
           else
             echo "ANTHROPIC_API_KEY is set (length: ${#ANTHROPIC_API_KEY})"
@@ -45,7 +44,6 @@ jobs:
           FIX_PROMPT: ${{ github.event.client_payload.fix_prompt }}
           FIX_PLAN: ${{ github.event.client_payload.plan }}
         run: |
-          # fix_prompt is the full VAMOS with project map â fall back to plan if not present
           PROMPT="${FIX_PROMPT:-$FIX_PLAN}"
           printf '%s' "$PROMPT" > /tmp/fix-prompt.md
           echo "=== FIX PROMPT (first 500 chars) ==="
@@ -57,33 +55,30 @@ jobs:
         if: env.CLAUDE_AVAILABLE == 'true'
         run: |
           npm install -g @anthropic-ai/claude-code 2>&1 | tail -5
-          which claude 2>/dev/null && echo "Claude Code: INSTALLED at $(which claude)" || echo "Claude Code: NOT FOUND"
+          which claude 2>/dev/null && echo "Claude Code: INSTALLED" || echo "Claude Code: NOT FOUND"
 
       - name: Run Claude Code auto-fix
         if: env.CLAUDE_AVAILABLE == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-          FIX_SEVERITY: ${{ github.event.client_payload.severity }}
         run: |
           if command -v claude &> /dev/null; then
             echo "=== Running Claude Code ==="
-            timeout 35m claude -p "$(cat /tmp/fix-prompt.md)" --dangerously-skip-permissions --allowedTools "Bash,Read,Write,Edit" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored â proceeding"
+            timeout 35m claude -p "$(cat /tmp/fix-prompt.md)" --dangerously-skip-permissions --allowedTools "Bash,Read,Write,Edit" 2>&1 | tee /tmp/fix-output.txt || echo "Claude Code exited"
             echo "=== Claude Code finished ==="
           else
-            echo "Claude Code CLI not available after install"
+            echo "Claude Code not available"
             mkdir -p docs/prompts
             cp /tmp/fix-prompt.md "docs/prompts/autofix-$(date +%Y-%m-%d-%H%M).md"
             echo "MANUAL_FIX_NEEDED" > /tmp/fix-output.txt
           fi
 
-      - name: Save prompt for manual fix (if no API key)
+      - name: Save prompt if no API key
         if: env.CLAUDE_AVAILABLE != 'true'
         run: |
           mkdir -p docs/prompts
           cp /tmp/fix-prompt.md "docs/prompts/autofix-$(date +%Y-%m-%d-%H%M).md"
           echo "MANUAL_FIX_NEEDED_NO_KEY" > /tmp/fix-output.txt
-          echo "::warning::ANTHROPIC_API_KEY not set â prompt saved to docs/prompts/"
 
       - name: TypeScript check
         run: npx tsc --noEmit 2>&1 | tail -10
@@ -91,8 +86,7 @@ jobs:
 
       - name: Run tests
         id: tests
-        run: |
-          npx jest --forceExit 2>&1 | tail -15
+        run: npx jest --forceExit 2>&1 | tail -15
         continue-on-error: true
 
       - name: Detect changes
@@ -107,49 +101,27 @@ jobs:
             echo "HAS_CHANGES=true" >> $GITHUB_ENV
           fi
 
-      - name: Commit and push (if changes)
+      - name: Commit and push
         if: env.HAS_CHANGES == 'true'
         env:
           FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-          EVENT_TYPE: ${{ github.event.action }}
         run: |
           git config user.email "claude-bot@caps-poker.app"
           git config user.name "Claude Bot"
-          if [ "$EVENT_TYPE" = "claude-fix-no-build" ]; then
-            git commit -m "fix: [WhatsApp] ${FIX_SUMMARY} [auto-fix][skip ci]"
-          else
-            git commit -m "fix: [WhatsApp] ${FIX_SUMMARY} [auto-fix]"
-          fi
+          git commit -m "fix: [auto] ${FIX_SUMMARY} [skip ci]"
           git push
 
-      - name: Deploy OTA (if changes and not no-build)
+      - name: Deploy OTA
         if: env.HAS_CHANGES == 'true' && github.event.action != 'claude-fix-no-build'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           FIX_SUMMARY: ${{ github.event.client_payload.summary }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "::warning::EXPO_TOKEN not set â skipping OTA deploy"
+            echo "No EXPO_TOKEN - skipping OTA"
             exit 0
           fi
           npx eas-cli update --branch production --message "autofix: ${FIX_SUMMARY}" --non-interactive 2>&1 | tail -10
-        continue-on-error: true
-
-      - name: Deploy web to Vercel (if claude-fix-and-deploy)
-        if: env.HAS_CHANGES == 'true' && github.event.action == 'claude-fix-and-deploy'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "No VERCEL_TOKEN â skipping web deploy"
-            exit 0
-          fi
-          npm install -g vercel
-          npx expo export --platform web --clear
-          node scripts/fix-web-html.js
-          cd dist && vercel --prod --yes --token "$VERCEL_TOKEN"
         continue-on-error: true
 
       - name: Determine result
@@ -165,16 +137,13 @@ jobs:
             echo "RESULT=no_changes" >> $GITHUB_ENV
           fi
 
-      - name: Notify via Edge Function callback
+      - name: Notify Telegram
         if: always()
         env:
           TESTS_OUTCOME: ${{ steps.tests.outcome }}
         run: |
           TEST_PASSED="false"
           if [ "$TESTS_OUTCOME" = "success" ]; then TEST_PASSED="true"; fi
-
-          echo "Sending callback: result=${RESULT} has_changes=${HAS_CHANGES:-false} test_passed=${TEST_PASSED} claude_available=${CLAUDE_AVAILABLE:-false}"
-
           curl -s -X POST \
             "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler" \
             -H "Content-Type: application/json" \
@@ -185,42 +154,4 @@ jobs:
               \"has_changes\": ${HAS_CHANGES:-false},
               \"test_passed\": ${TEST_PASSED},
               \"claude_available\": ${CLAUDE_AVAILABLE:-false}
-            }" || echo "Callback failed â non-critical"
-
-      - name: Notify via WhatsApp (Twilio fallback)
-        if: always()
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
-          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          if [ -z "$TWILIO_ACCOUNT_SID" ] || [ -z "$TWILIO_AUTH_TOKEN" ]; then
-            echo "Twilio secrets not set â skipping WhatsApp notification"
-            exit 0
-          fi
-          COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-          case "$RESULT" in
-            fixed)
-              if [ "$HAS_CHANGES" = "true" ]; then
-                MSG="[OK] Auto-fix done! commit: ${COMMIT} - ${FIX_SUMMARY}"
-              else
-                MSG="Auto-fix ran, no changes needed. ${FIX_SUMMARY}"
-              fi
-              ;;
-            manual_no_key)
-              MSG="[KEY MISSING] Add ANTHROPIC_API_KEY to GitHub Secrets to enable auto-fix"
-              ;;
-            no_changes)
-              MSG="[NO CHANGES] Claude ran but found nothing to change. Check: github.com/royea-beep/caps-poker/actions/runs/${{ github.run_id }}"
-              ;;
-            *)
-              MSG="[FAIL] Auto-fix run ${{ github.run_id }} - ${JOB_STATUS}: ${FIX_SUMMARY}"
-              ;;
-          esac
-          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json" \
-            -u "${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}" \
-            --data-urlencode "From=${TWILIO_FROM:-whatsapp:+14155238886}" \
-            --data-urlencode "To=whatsapp:+972504141513" \
-            --data-urlencode "Body=${MSG}"
+            }" || echo "Callback failed"
