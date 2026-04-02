@@ -64,7 +64,7 @@ jobs:
         run: |
           if command -v claude &> /dev/null; then
             echo "=== Running Claude Code ==="
-            timeout 35m claude -p "$(cat /tmp/fix-prompt.md)" --dangerously-skip-permissions --allowedTools "Bash,Read,Write,Edit" 2>&1 | tee /tmp/fix-output.txt || echo "Claude Code exited"
+            cat /tmp/fix-prompt.md | timeout 35m claude -p --dangerously-skip-permissions --allowedTools "Bash,Read,Write,Edit" 2>&1 | tee /tmp/fix-output.txt || echo "Claude Code exited"
             echo "=== Claude Code finished ==="
           else
             echo "Claude Code not available"
