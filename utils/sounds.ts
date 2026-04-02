@@ -24,7 +24,7 @@ try {
   createAudioPlayer = expoAudio.createAudioPlayer;
   setAudioModeAsync = expoAudio.setAudioModeAsync;
 } catch {
-  // expo-audio not available (web / build issue) — sounds disabled
+  // expo-audio not available (web / build issue) â sounds disabled
 }
 
 const soundFiles: Record<SoundName, ReturnType<typeof require> | null> = {
@@ -53,12 +53,12 @@ try { soundFiles.revealStart = require('../assets/sounds/revealStart.wav'); } ca
 try { soundFiles.boardWin   = require('../assets/sounds/boardWin.wav');   } catch {}
 try { soundFiles.boardLose  = require('../assets/sounds/boardLose.wav');  } catch {}
 
-// Pre-created players — fast playback, no async on each call
+// Pre-created players â fast playback, no async on each call
 const players: Partial<Record<SoundName, any>> = {};
 
-// S90: Volume levels — subtle background sounds
+// S90: Volume levels â subtle background sounds
 const VOLUME_MAP: Partial<Record<SoundName, number>> = {
-  cardPlace: 0.2, cardSelect: 0.2, cardFlip: 0.2,
+  cardPlace: 0, cardSelect: 0, cardFlip: 0, // DISABLED — same sound 40x/game is annoying
   chipsWin: 0.4, lose: 0.4, boardWin: 0.4, boardLose: 0.4,
   revealStart: 0.3, timerLow: 0.4,
   complete: 0.5, buzzer: 0.5,
@@ -74,7 +74,7 @@ export async function preloadSounds(): Promise<void> {
         shouldPlayInBackground: false,
       });
     } catch {
-      // Not supported in this environment — continue
+      // Not supported in this environment â continue
     }
   }
   for (const [name, file] of Object.entries(soundFiles)) {
@@ -83,7 +83,7 @@ export async function preloadSounds(): Promise<void> {
       players[name as SoundName] = createAudioPlayer!(file);
       try { players[name as SoundName].volume = VOLUME_MAP[name as SoundName] ?? 0.3; } catch {}
     } catch {
-      // Sound file invalid or missing — skip
+      // Sound file invalid or missing â skip
     }
   }
 }
