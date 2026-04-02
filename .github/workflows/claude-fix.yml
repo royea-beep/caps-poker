@@ -45,7 +45,7 @@ jobs:
           FIX_PROMPT: ${{ github.event.client_payload.fix_prompt }}
           FIX_PLAN: ${{ github.event.client_payload.plan }}
         run: |
-          # fix_prompt is the full VAMOS with project map — fall back to plan if not present
+          # fix_prompt is the full VAMOS with project map â fall back to plan if not present
           PROMPT="${FIX_PROMPT:-$FIX_PLAN}"
           printf '%s' "$PROMPT" > /tmp/fix-prompt.md
           echo "=== FIX PROMPT (first 500 chars) ==="
@@ -68,7 +68,7 @@ jobs:
         run: |
           if command -v claude &> /dev/null; then
             echo "=== Running Claude Code ==="
-            timeout 35m claude --dangerously-skip-permissions "$(cat /tmp/fix-prompt.md)" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored — proceeding"
+            timeout 35m claude -p "$(cat /tmp/fix-prompt.md)" --dangerously-skip-permissions --allowedTools "Bash,Read,Write,Edit" 2>&1 | tee /tmp/fix-output.txt || echo "Claude fix timed out or errored â proceeding"
             echo "=== Claude Code finished ==="
           else
             echo "Claude Code CLI not available after install"
@@ -83,7 +83,7 @@ jobs:
           mkdir -p docs/prompts
           cp /tmp/fix-prompt.md "docs/prompts/autofix-$(date +%Y-%m-%d-%H%M).md"
           echo "MANUAL_FIX_NEEDED_NO_KEY" > /tmp/fix-output.txt
-          echo "::warning::ANTHROPIC_API_KEY not set — prompt saved to docs/prompts/"
+          echo "::warning::ANTHROPIC_API_KEY not set â prompt saved to docs/prompts/"
 
       - name: TypeScript check
         run: npx tsc --noEmit 2>&1 | tail -10
@@ -129,7 +129,7 @@ jobs:
           FIX_SUMMARY: ${{ github.event.client_payload.summary }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "::warning::EXPO_TOKEN not set — skipping OTA deploy"
+            echo "::warning::EXPO_TOKEN not set â skipping OTA deploy"
             exit 0
           fi
           npx eas-cli update --branch production --message "autofix: ${FIX_SUMMARY}" --non-interactive 2>&1 | tail -10
@@ -143,7 +143,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
-            echo "No VERCEL_TOKEN — skipping web deploy"
+            echo "No VERCEL_TOKEN â skipping web deploy"
             exit 0
           fi
           npm install -g vercel
@@ -176,7 +176,7 @@ jobs:
           echo "Sending callback: result=${RESULT} has_changes=${HAS_CHANGES:-false} test_passed=${TEST_PASSED} claude_available=${CLAUDE_AVAILABLE:-false}"
 
           curl -s -X POST \
-            "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/whatsapp-bot-handler" \
+            "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler" \
             -H "Content-Type: application/json" \
             -d "{
               \"type\": \"autofix_callback\",
@@ -185,7 +185,7 @@ jobs:
               \"has_changes\": ${HAS_CHANGES:-false},
               \"test_passed\": ${TEST_PASSED},
               \"claude_available\": ${CLAUDE_AVAILABLE:-false}
-            }" || echo "Callback failed — non-critical"
+            }" || echo "Callback failed â non-critical"
 
       - name: Notify via WhatsApp (Twilio fallback)
         if: always()
@@ -197,7 +197,7 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           if [ -z "$TWILIO_ACCOUNT_SID" ] || [ -z "$TWILIO_AUTH_TOKEN" ]; then
-            echo "Twilio secrets not set — skipping WhatsApp notification"
+            echo "Twilio secrets not set â skipping WhatsApp notification"
             exit 0
           fi
           COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
