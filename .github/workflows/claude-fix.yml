@@ -8,7 +8,6 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
-  id-token: write
 
 jobs:
   fix:
@@ -19,11 +18,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Save initial HEAD
+        run: echo "INITIAL_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Run Claude Code Action
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
+          direct_prompt: |
             You are fixing a bug in CAPS Poker (React Native + Expo SDK 55).
 
             ${{ github.event.client_payload.fix_prompt || github.event.client_payload.plan }}
@@ -36,24 +38,28 @@ jobs:
             - Run: npx tsc --noEmit
             - Run: npx jest --forceExit
             - Commit with: git add -A && git commit -m "fix: [auto] ${{ github.event.client_payload.summary }}" && git push
-          claude_args: "--dangerously-skip-permissions --allowedTools Bash,Read,Write,Edit"
+          allowed_tools: "Bash,Read,Write,Edit"
+          timeout_minutes: "25"
 
       - name: Notify Telegram
         if: always()
         run: |
-          if git log --oneline -1 | grep -q "\[auto\]"; then
+          git fetch origin main
+          CURRENT_SHA=$(git rev-parse origin/main)
+          if [ "$CURRENT_SHA" != "$INITIAL_SHA" ]; then
             RESULT="fixed"
             HAS_CHANGES="true"
           else
             RESULT="no_changes"
             HAS_CHANGES="false"
           fi
+          echo "Result: $RESULT (initial=$INITIAL_SHA current=$CURRENT_SHA)"
           curl -s -X POST \
             "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler" \
             -H "Content-Type: application/json" \
             -d "{
               \"type\": \"autofix_callback\",
               \"run_id\": ${{ github.run_id }},
-              \"result\": \"${RESULT}\",
-              \"has_changes\": ${HAS_CHANGES}
+              \"result\": \"$RESULT\",
+              \"has_changes\": $HAS_CHANGES
             }" || echo "Callback failed"
