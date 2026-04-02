@@ -6,144 +6,61 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check secrets
+      - name: Check API key
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY is NOT set!"
-            echo "CLAUDE_AVAILABLE=false" >> $GITHUB_ENV
-          else
-            echo "ANTHROPIC_API_KEY is set (length: ${#ANTHROPIC_API_KEY})"
-            echo "CLAUDE_AVAILABLE=true" >> $GITHUB_ENV
+            echo "::error::ANTHROPIC_API_KEY not set"
+            exit 1
           fi
+          echo "API key present (length ${#ANTHROPIC_API_KEY})"
 
-      - name: Save fix prompt
-        env:
-          FIX_PROMPT: ${{ github.event.client_payload.fix_prompt }}
-          FIX_PLAN: ${{ github.event.client_payload.plan }}
-        run: |
-          PROMPT="${FIX_PROMPT:-$FIX_PLAN}"
-          printf '%s' "$PROMPT" > /tmp/fix-prompt.md
-          echo "=== FIX PROMPT (first 500 chars) ==="
-          head -c 500 /tmp/fix-prompt.md
-          echo ""
-          echo "=== PROMPT SIZE: $(wc -c < /tmp/fix-prompt.md) bytes ==="
+      - name: Run Claude Code Action
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            You are fixing a bug in CAPS Poker (React Native + Expo SDK 55).
+            Here is the fix request:
 
-      - name: Install Claude Code
-        if: env.CLAUDE_AVAILABLE == 'true'
-        run: |
-          npm install -g @anthropic-ai/claude-code 2>&1 | tail -5
-          which claude 2>/dev/null && echo "Claude Code: INSTALLED" || echo "Claude Code: NOT FOUND"
+            ${{ github.event.client_payload.fix_prompt || github.event.client_payload.plan }}
 
-      - name: Run Claude Code auto-fix
-        if: env.CLAUDE_AVAILABLE == 'true'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if command -v claude &> /dev/null; then
-            echo "=== Running Claude Code ==="
-            cat /tmp/fix-prompt.md | timeout 35m claude -p --dangerously-skip-permissions --allowedTools "Bash,Read,Write,Edit" 2>&1 | tee /tmp/fix-output.txt || echo "Claude Code exited"
-            echo "=== Claude Code finished ==="
-          else
-            echo "Claude Code not available"
-            mkdir -p docs/prompts
-            cp /tmp/fix-prompt.md "docs/prompts/autofix-$(date +%Y-%m-%d-%H%M).md"
-            echo "MANUAL_FIX_NEEDED" > /tmp/fix-output.txt
-          fi
+            Summary: ${{ github.event.client_payload.summary }}
 
-      - name: Save prompt if no API key
-        if: env.CLAUDE_AVAILABLE != 'true'
-        run: |
-          mkdir -p docs/prompts
-          cp /tmp/fix-prompt.md "docs/prompts/autofix-$(date +%Y-%m-%d-%H%M).md"
-          echo "MANUAL_FIX_NEEDED_NO_KEY" > /tmp/fix-output.txt
+            RULES:
+            - Read the relevant files FIRST
+            - Apply the fix
+            - Run: npx tsc --noEmit
+            - Run: npx jest --forceExit
+            - If tests pass, commit with: git add -A && git commit -m "fix: [auto] ${{ github.event.client_payload.summary }}" && git push
+          allowed_tools: "Bash,Read,Write,Edit"
+          timeout_minutes: "25"
 
-      - name: TypeScript check
-        run: npx tsc --noEmit 2>&1 | tail -10
-        continue-on-error: true
-
-      - name: Run tests
-        id: tests
-        run: npx jest --forceExit 2>&1 | tail -15
-        continue-on-error: true
-
-      - name: Detect changes
-        run: |
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            echo "HAS_CHANGES=false" >> $GITHUB_ENV
-          else
-            echo "=== Changes detected ==="
-            git diff --cached --stat
-            echo "HAS_CHANGES=true" >> $GITHUB_ENV
-          fi
-
-      - name: Commit and push
-        if: env.HAS_CHANGES == 'true'
-        env:
-          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-        run: |
-          git config user.email "claude-bot@caps-poker.app"
-          git config user.name "Claude Bot"
-          git commit -m "fix: [auto] ${FIX_SUMMARY} [skip ci]"
-          git push
-
-      - name: Deploy OTA
-        if: env.HAS_CHANGES == 'true' && github.event.action != 'claude-fix-no-build'
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          FIX_SUMMARY: ${{ github.event.client_payload.summary }}
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "No EXPO_TOKEN - skipping OTA"
-            exit 0
-          fi
-          npx eas-cli update --branch production --message "autofix: ${FIX_SUMMARY}" --non-interactive 2>&1 | tail -10
-        continue-on-error: true
-
-      - name: Determine result
+      - name: Check results and notify
         if: always()
         run: |
-          if grep -q "MANUAL_FIX_NEEDED_NO_KEY" /tmp/fix-output.txt 2>/dev/null; then
-            echo "RESULT=manual_no_key" >> $GITHUB_ENV
-          elif grep -q "MANUAL_FIX_NEEDED" /tmp/fix-output.txt 2>/dev/null; then
-            echo "RESULT=claude_failed" >> $GITHUB_ENV
-          elif [ "${HAS_CHANGES}" = "true" ]; then
-            echo "RESULT=fixed" >> $GITHUB_ENV
+          if git log --oneline -1 | grep -q "\[auto\]"; then
+            RESULT="fixed"
+            HAS_CHANGES="true"
           else
-            echo "RESULT=no_changes" >> $GITHUB_ENV
+            RESULT="no_changes"
+            HAS_CHANGES="false"
           fi
 
-      - name: Notify Telegram
-        if: always()
-        env:
-          TESTS_OUTCOME: ${{ steps.tests.outcome }}
-        run: |
-          TEST_PASSED="false"
-          if [ "$TESTS_OUTCOME" = "success" ]; then TEST_PASSED="true"; fi
           curl -s -X POST \
             "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler" \
             -H "Content-Type: application/json" \
@@ -151,7 +68,5 @@ jobs:
               \"type\": \"autofix_callback\",
               \"run_id\": ${{ github.run_id }},
               \"result\": \"${RESULT}\",
-              \"has_changes\": ${HAS_CHANGES:-false},
-              \"test_passed\": ${TEST_PASSED},
-              \"claude_available\": ${CLAUDE_AVAILABLE:-false}
+              \"has_changes\": ${HAS_CHANGES}
             }" || echo "Callback failed"
