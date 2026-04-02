@@ -48,24 +48,24 @@ import { BoardArrangement } from '../components/BoardArrangement';
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
 
-// Tooltip text â inline EN/HE
+// Tooltip text Ã¢ÂÂ inline EN/HE
 const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
 const TIPS = [
-  () => TIP('These are your cards. Place 4 on each board.', '××× ××§××¤×× ×©××. ×ª×©×× 4 ×¢× ×× ×××¨×.'),
-  () => TIP('Tap a card, then tap an empty slot.', '×××¥ ×¢× ×§××£, ××× ×¢× ××§×× ×¨××§.'),
-  () => TIP('Nice! 3 more cards on this board.', '××¢×××! ×¢×× 3 ×§××¤×× ×¢× ××××¨× ×××.'),
-  () => TIP('Hand strength shown here. Better hands win more!', '×× ××¨×× ××× ×××§× ××× ×©××.'),
-  // Tip 5 (index 4) â 2-of-4 rule explainer. autoDismissMs=6000 in JSX.
+  () => TIP('These are your cards. Place 4 on each board.', 'ÃÂÃÂÃÂ ÃÂÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂ©ÃÂÃÂ. ÃÂªÃÂ©ÃÂÃÂ 4 ÃÂ¢ÃÂ ÃÂÃÂ ÃÂÃÂÃÂ¨ÃÂ.'),
+  () => TIP('Tap a card, then tap an empty slot.', 'ÃÂÃÂÃÂ¥ ÃÂ¢ÃÂ ÃÂ§ÃÂÃÂ£, ÃÂÃÂÃÂ ÃÂ¢ÃÂ ÃÂÃÂ§ÃÂÃÂ ÃÂ¨ÃÂÃÂ§.'),
+  () => TIP('Nice! 3 more cards on this board.', 'ÃÂÃÂ¢ÃÂÃÂÃÂ! ÃÂ¢ÃÂÃÂ 3 ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂ¢ÃÂ ÃÂÃÂÃÂÃÂ¨ÃÂ ÃÂÃÂÃÂ.'),
+  () => TIP('Hand strength shown here. Better hands win more!', 'ÃÂÃÂ ÃÂÃÂ¨ÃÂÃÂ ÃÂÃÂÃÂ ÃÂÃÂÃÂ§ÃÂ ÃÂÃÂÃÂ ÃÂ©ÃÂÃÂ.'),
+  // Tip 5 (index 4) Ã¢ÂÂ 2-of-4 rule explainer. autoDismissMs=6000 in JSX.
   () => TIP(
-    'The game picks your BEST 2 cards + 3 from the board automatically. You don\'t choose â the strongest combination wins!',
-    '×××©××§ ××××¨ ××××××××ª 2 ××§××¤×× ×××××× ×©×× + 3 ×××©××××. ×× ×¦×¨×× ×××××¨ â ××©×××× ××××§ ××××ª×¨ ×× ×¦×!'
+    'The game picks your BEST 2 cards + 3 from the board automatically. You don\'t choose Ã¢ÂÂ the strongest combination wins!',
+    'ÃÂÃÂÃÂ©ÃÂÃÂ§ ÃÂÃÂÃÂÃÂ¨ ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂª 2 ÃÂÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂÃÂÃÂ ÃÂ©ÃÂÃÂ + 3 ÃÂÃÂÃÂ©ÃÂÃÂÃÂÃÂ. ÃÂÃÂ ÃÂ¦ÃÂ¨ÃÂÃÂ ÃÂÃÂÃÂÃÂÃÂ¨ Ã¢ÂÂ ÃÂÃÂ©ÃÂÃÂÃÂÃÂ ÃÂÃÂÃÂÃÂ§ ÃÂÃÂÃÂÃÂªÃÂ¨ ÃÂÃÂ ÃÂ¦ÃÂ!'
   ),
-  () => TIP('All set! Tap READY to reveal.', '××××! ×××¥ READY ×××©××¤×.'),
+  () => TIP('All set! Tap READY to reveal.', 'ÃÂÃÂÃÂÃÂ! ÃÂÃÂÃÂ¥ READY ÃÂÃÂÃÂ©ÃÂÃÂ¤ÃÂ.'),
 ];
 
 // Log crash steps to Supabase so we know which step ran last before native kill
 async function logStep(step: string, extra?: string) {
-  debugLog(`[STEP] ${step}${extra ? ` â ${extra}` : ''}`);
+  debugLog(`[STEP] ${step}${extra ? ` Ã¢ÂÂ ${extra}` : ''}`);
   try {
     const sb = getSupabase();
     if (!sb) return;
@@ -75,15 +75,15 @@ async function logStep(step: string, extra?: string) {
       url: 'game/navigateToReveal',
       report_type: 'text',
     });
-  } catch { /* silent â never block game flow */ }
+  } catch { /* silent Ã¢ÂÂ never block game flow */ }
 }
 
-// Lazy-load expo-haptics â not available on web
+// Lazy-load expo-haptics Ã¢ÂÂ not available on web
 let Haptics: any = null;
 try {
   Haptics = require('expo-haptics');
 } catch {
-  // expo-haptics not available (web) â haptics disabled
+  // expo-haptics not available (web) Ã¢ÂÂ haptics disabled
 }
 
 const haptic = (style: any) => {
@@ -97,8 +97,8 @@ const COUNTDOWN_SECONDS = 30;
 
 // Layout constants
 const TOP_BAR_H = 44;
-const BOT_STATUS_H = 24;       // label + paddingVertical â 24px
-const FLOATING_ACTIONS_H = 68; // paddingVertical:10Ã2 + button paddingVertical:12Ã2 + text â 68px
+const BOT_STATUS_H = 24;       // label + paddingVertical Ã¢ÂÂ 24px
+const FLOATING_ACTIONS_H = 68; // paddingVertical:10ÃÂ2 + button paddingVertical:12ÃÂ2 + text Ã¢ÂÂ 68px
 const HINT_H = 26;             // selectionHint / boardError bar
 const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + header(18) + cardRow gaps(6) + margins
 
@@ -109,13 +109,13 @@ function GameScreenInner() {
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
-  const playerAvatar = useGameStore((s) => s.playerAvatar) || 'ð°';
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || 'Ã°ÂÂÂ°';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const storeOrientation = useGameStore((s) => s.orientation);
   const handSortMethod = useGameStore((s) => s.handSortMethod);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
-  const isLandscape = false; // S86: portrait-only â Iron Rule 2
+  const isLandscape = false; // S86: portrait-only Ã¢ÂÂ Iron Rule 2
   const addChips = useGameStore((s) => s.addChips);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
@@ -124,21 +124,21 @@ function GameScreenInner() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
-  // Player hand: 2 rows of cards + label. Card height â round(min(36,max(28,availW/8)) * 1.4)
-  // Approximate by screen height bracket: smaller phones â smaller cards â shorter hand section
+  // Player hand: 2 rows of cards + label. Card height Ã¢ÂÂ round(min(36,max(28,availW/8)) * 1.4)
+  // Approximate by screen height bracket: smaller phones Ã¢ÂÂ smaller cards Ã¢ÂÂ shorter hand section
   const PLAYER_HAND_H = SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  // Mobile web card height scales with board count â more boards = tighter = needs clarity boost
+  // Mobile web card height scales with board count Ã¢ÂÂ more boards = tighter = needs clarity boost
   const mobileWebCardH = CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60;
   const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
   const communityScale = nativeCardDims.communityScale;
   // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
   // During arrangement: commH = ch*communityScale, slotH = ch*0.7, plus 4pt cardRow padding.
-  // ch*(communityScale + 0.7) + 4 <= boardSpace â maxCh = floor((boardSpace-4)/(communityScale+0.7))
-  // Landscape uses a 2-column grid with more height per row â no cap needed there.
+  // ch*(communityScale + 0.7) + 4 <= boardSpace Ã¢ÂÂ maxCh = floor((boardSpace-4)/(communityScale+0.7))
+  // Landscape uses a 2-column grid with more height per row Ã¢ÂÂ no cap needed there.
   const CARD_ROW_PAD = 4;
   const maxNativeCardH = Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
   const nativeCardH = isLandscape
@@ -146,10 +146,10 @@ function GameScreenInner() {
     : Math.min(nativeCardDims.cardHeight, maxNativeCardH);
   const BOARD_CARD_H = rvOld(
     screenW,
-    mobileWebCardH,              // mobile web (iPhone Safari) â board-count aware
+    mobileWebCardH,              // mobile web (iPhone Safari) Ã¢ÂÂ board-count aware
     72,                          // tablet web
     100,                         // desktop web
-    nativeCardH,                 // native â height-capped so AUTO button is always visible
+    nativeCardH,                 // native Ã¢ÂÂ height-capped so AUTO button is always visible
   );
   const isWeb = Platform.OS === 'web';
 
@@ -209,32 +209,32 @@ function GameScreenInner() {
   const playerReadyRef = useRef(false);
   const botsReadyCountRef = useRef(0);
 
-  useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]); // no cleanup needed â sync ref update
-  useEffect(() => { boardsRef.current = boards; }, [boards]); // no cleanup needed â sync ref update
+  useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]); // no cleanup needed Ã¢ÂÂ sync ref update
+  useEffect(() => { boardsRef.current = boards; }, [boards]); // no cleanup needed Ã¢ÂÂ sync ref update
 
   const isArranging = phase.type === 'arranging' && !playerReady;
 
-  // ââ Guided first game tooltips âââââââââââââââââââââââââââââââââââââââââââââ
+  // Ã¢ÂÂÃ¢ÂÂ Guided first game tooltips Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   const advanceTooltip = useCallback(() => {
     setTooltipVisible(false);
-    // Tip 2 auto-shows 300ms after tip 1 dismissed â handled by step watcher below
+    // Tip 2 auto-shows 300ms after tip 1 dismissed Ã¢ÂÂ handled by step watcher below
   }, []);
 
-  // Tip 1 â cards dealt (step 0 â 1)
+  // Tip 1 Ã¢ÂÂ cards dealt (step 0 Ã¢ÂÂ 1)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 0 || playerHand.length === 0) return;
     const id = setTimeout(() => { setTooltipStep(1); setTooltipVisible(true); }, 500);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, playerHand.length]);
 
-  // Tip 2 â auto after tip 1 dismissed (step 1 â 2, tooltipVisible just became false)
+  // Tip 2 Ã¢ÂÂ auto after tip 1 dismissed (step 1 Ã¢ÂÂ 2, tooltipVisible just became false)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 1 || tooltipVisible) return;
     const id = setTimeout(() => { setTooltipStep(2); setTooltipVisible(true); }, 300);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, tooltipVisible]);
 
-  // Tip 3 â first card placed (step 2 â 3)
+  // Tip 3 Ã¢ÂÂ first card placed (step 2 Ã¢ÂÂ 3)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 2) return;
     const anyCardPlaced = boards.some((b) => b.playerCards.length >= 1);
@@ -243,7 +243,7 @@ function GameScreenInner() {
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
 
-  // Tip 4 â first board full (step 3 â 4)
+  // Tip 4 Ã¢ÂÂ first board full (step 3 Ã¢ÂÂ 4)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 3) return;
     const hasFullBoard = boards.some((b) => b.playerCards.length === CARDS_PER_BOARD);
@@ -252,14 +252,14 @@ function GameScreenInner() {
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
 
-  // Tip 5 â auto after tip 4 dismissed (step 4 â 5): 2-of-4 rule explainer
+  // Tip 5 Ã¢ÂÂ auto after tip 4 dismissed (step 4 Ã¢ÂÂ 5): 2-of-4 rule explainer
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 4 || tooltipVisible) return;
     const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 400);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, tooltipVisible]);
 
-  // Tip 6 â all boards full (step 5 â 6): ready to submit
+  // Tip 6 Ã¢ÂÂ all boards full (step 5 Ã¢ÂÂ 6): ready to submit
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 5) return;
     const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
@@ -267,7 +267,7 @@ function GameScreenInner() {
     const id = setTimeout(() => { setTooltipStep(6); setTooltipVisible(true); }, 500);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
-  // ââ End guided tooltips ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // Ã¢ÂÂÃ¢ÂÂ End guided tooltips Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
   // Start 30s countdown
   const startCountdown = useCallback((finisherName: string) => {
@@ -300,9 +300,9 @@ function GameScreenInner() {
   }, []);
 
   // Pre-calculate results in background as soon as countdown starts (first finisher done)
-  // By the time both are ready, results are already computed â zero-wait navigation
-  // IMPORTANT: must guard BOTH bot cards AND player cards â pre-calc fires when the first
-  // finisher triggers the countdown. If bot finishes first, playerCards is still empty â
+  // By the time both are ready, results are already computed Ã¢ÂÂ zero-wait navigation
+  // IMPORTANT: must guard BOTH bot cards AND player cards Ã¢ÂÂ pre-calc fires when the first
+  // finisher triggers the countdown. If bot finishes first, playerCards is still empty Ã¢ÂÂ
   // evaluator returns "High Card" for every player hand (the S48 stale result bug).
   useEffect(() => {
     if (!countdownActive) return;
@@ -316,25 +316,25 @@ function GameScreenInner() {
           b.playerCards.length >= CARDS_PER_BOARD
         );
         if (!botsDone || !playerDone) {
-          debugLog('[GAME] pre-calc skipped â cards not fully placed yet, will calc fresh on navigate');
+          debugLog('[GAME] pre-calc skipped Ã¢ÂÂ cards not fully placed yet, will calc fresh on navigate');
           return;
         }
         precalculatedResultsRef.current = calculateHandResultsMulti(boardsRef.current, numberOfPlayers, config);
         debugLog('[GAME] pre-calculation done during countdown');
       } catch (e) {
-        debugLog(`[GAME] pre-calculation failed â will recalculate on navigate: ${e}`, 'warn');
+        debugLog(`[GAME] pre-calculation failed Ã¢ÂÂ will recalculate on navigate: ${e}`, 'warn');
         precalculatedResultsRef.current = null;
       }
     }, 0);
     return () => clearTimeout(t);
   }, [countdownActive]);
 
-  // Countdown sound escalation: timerLow at 10s (from startCountdown), per-second at 5â1, timerLow at 0
-  // no cleanup needed â fire-and-forget sound/haptic calls, no subscriptions
+  // Countdown sound escalation: timerLow at 10s (from startCountdown), per-second at 5Ã¢ÂÂ1, timerLow at 0
+  // no cleanup needed Ã¢ÂÂ fire-and-forget sound/haptic calls, no subscriptions
   useEffect(() => {
     if (!countdownActive) return;
     // Per-second ticks from 5s down to 1s (escalating urgency)
-    if (countdown <= 5 && countdown >= 1) playSound('timerLow');
+    if (countdown === 10 || countdown === 3) playSound('timerLow'); // Only 2 beeps, not 5
     // Time up: play buzzer sound
     if (countdown === 0) {
       playSound('buzzer');
@@ -342,8 +342,8 @@ function GameScreenInner() {
     }
   }, [countdownActive, countdown]);
 
-  // When countdown hits 0 â auto-place remaining cards and navigate directly
-  // no cleanup needed â one-time state transition, no subscriptions or timers
+  // When countdown hits 0 Ã¢ÂÂ auto-place remaining cards and navigate directly
+  // no cleanup needed Ã¢ÂÂ one-time state transition, no subscriptions or timers
   useEffect(() => {
     if (countdownActive && countdown === 0 && !playerReady) {
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
@@ -362,7 +362,7 @@ function GameScreenInner() {
   // Cleanup
   useEffect(() => {
     mountedRef.current = true;
-    debugLog(`game.tsx mounted â ${numberOfPlayers}p ${boardCount} boards`);
+    debugLog(`game.tsx mounted Ã¢ÂÂ ${numberOfPlayers}p ${boardCount} boards`);
     setCurrentScreen('Game')
     onGameStart().catch(() => {});
     return () => {
@@ -383,7 +383,7 @@ function GameScreenInner() {
   }, []);
 
   // Load games-played counter + guided mode flag
-  // no cleanup needed â one-time AsyncStorage read, promise resolves after unmount harmlessly
+  // no cleanup needed Ã¢ÂÂ one-time AsyncStorage read, promise resolves after unmount harmlessly
   useEffect(() => {
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
@@ -394,14 +394,14 @@ function GameScreenInner() {
       const guided = played === 0 || guidedVal === 'true';
       setIsFirstGame(guided);
       if (guided && guidedVal === 'true') {
-        // Clear forced flag â won't fire again unless Tutorial replayed
+        // Clear forced flag Ã¢ÂÂ won't fire again unless Tutorial replayed
         AsyncStorage.removeItem(GUIDED_FORCED_KEY).catch(() => {});
       }
     }).catch(() => {});
   }, []);
 
   // Initialize game
-  // no cleanup needed â bot timers are pushed to timeoutsRef.current, cleared by the central cleanup effect above
+  // no cleanup needed Ã¢ÂÂ bot timers are pushed to timeoutsRef.current, cleared by the central cleanup effect above
   useEffect(() => {
     const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
     setBoards(initialBoards);
@@ -419,7 +419,7 @@ function GameScreenInner() {
       trackChipsSpent(buyIn);
     }
 
-    // Bot timers â when first bot finishes, it triggers the countdown
+    // Bot timers Ã¢ÂÂ when first bot finishes, it triggers the countdown
     for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
       const delay = config.botSpeedMin + Math.random() * (config.botSpeedMax - config.botSpeedMin);
       const botCards = botHands[botIdx];
@@ -430,10 +430,10 @@ function GameScreenInner() {
           const updated = [...prev];
           updated[botIdx] = true;
           const anyPrevReady = prev.some(Boolean);
-          // Solo: bots never start countdown — player has free thinking time
+          // Solo: bots never start countdown â player has free thinking time
           return updated;
         });
-        // If player already pressed READY and all bots are now done â navigate directly
+        // If player already pressed READY and all bots are now done Ã¢ÂÂ navigate directly
         botsReadyCountRef.current++;
         if (playerReadyRef.current && botsReadyCountRef.current >= numberOfBots) {
           doNavigateRef.current(boardsRef.current);
@@ -443,11 +443,11 @@ function GameScreenInner() {
     }
   }, []);
 
-  // Navigate to reveal â DIRECT (no InteractionManager, no async chain)
+  // Navigate to reveal Ã¢ÂÂ DIRECT (no InteractionManager, no async chain)
   // Called as soon as both player and all bots are ready.
   const doNavigate = useCallback((currentBoards: BoardState[]) => {
     debugLog('1 doNavigate called');
-    if (hasNavigatedRef.current || !mountedRef.current) { debugLog('1.1 already navigated or unmounted â abort'); return; }
+    if (hasNavigatedRef.current || !mountedRef.current) { debugLog('1.1 already navigated or unmounted Ã¢ÂÂ abort'); return; }
     debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
 
@@ -540,18 +540,18 @@ function GameScreenInner() {
       AsyncStorage.setItem(GAMES_PLAYED_KEY, String(count + 1)).catch(() => {});
     }).catch(() => {});
 
-    // Cancel all shake animations before navigation â prevents worklet overlap during transition
+    // Cancel all shake animations before navigation Ã¢ÂÂ prevents worklet overlap during transition
     cancelAnimation(shake0); shake0.value = 0;
     cancelAnimation(shake1); shake1.value = 0;
     cancelAnimation(shake2); shake2.value = 0;
     cancelAnimation(shake3); shake3.value = 0;
 
-    // Mark game active before navigating to results â dirty shutdown detector
-    debugLog('ð® setting game active flag (dirty shutdown detector)');
+    // Mark game active before navigating to results Ã¢ÂÂ dirty shutdown detector
+    debugLog('Ã°ÂÂÂ® setting game active flag (dirty shutdown detector)');
     void markGameActive();
 
     // Show safe reveal overlay before navigating (skip in auto-sim to avoid delays)
-    debugLog('14 showSafeReveal path â setting overlay');
+    debugLog('14 showSafeReveal path Ã¢ÂÂ setting overlay');
     if (autoSim !== 'true') {
       const revealSummary = revealBoards.map((b) => ({
         winner: b.winner ?? 'tie' as const,
@@ -585,10 +585,10 @@ function GameScreenInner() {
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
-  useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]); // no cleanup needed â sync ref update
+  useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]); // no cleanup needed Ã¢ÂÂ sync ref update
 
   const onRevealDone = useCallback(() => {
-    debugLog('15 onRevealDone called â clearing overlay');
+    debugLog('15 onRevealDone called Ã¢ÂÂ clearing overlay');
     setShowSafeReveal(false);
     setPendingRevealBoards([]);
     debugLog('16 navigating to results');
@@ -602,7 +602,7 @@ function GameScreenInner() {
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
 
-  // Tap card in hand â toggle in selectedCardIds (up to 4)
+  // Tap card in hand Ã¢ÂÂ toggle in selectedCardIds (up to 4)
   const handleSelectCard = useCallback(
     (card: Card) => {
       if (!isArranging) return;
@@ -616,21 +616,21 @@ function GameScreenInner() {
         if (prev.length < 4) {
           return [...prev, card.id];
         }
-        // At max (4) â replace the last selected with new card
+        // At max (4) Ã¢ÂÂ replace the last selected with new card
         return [...prev.slice(0, 3), card.id];
       });
     },
     [isArranging]
   );
 
-  // Returns true if card is already placed on ANY board â cross-board duplicate guard
+  // Returns true if card is already placed on ANY board Ã¢ÂÂ cross-board duplicate guard
   const isCardOnAnyBoard = useCallback(
     (cardId: string, currentBoards: BoardState[]) =>
       currentBoards.some((b) => b.playerCards.some((pc) => pc.id === cardId)),
     []
   );
 
-  // Tap board â place all selectedCardIds (or first hand card if none selected)
+  // Tap board Ã¢ÂÂ place all selectedCardIds (or first hand card if none selected)
   // FIX: compute cardsToPlace outside setBoards updater; call setPlayerHand separately
   // in same event handler so React batches all three setState calls together, eliminating
   // the intermediate render where a card appears in both the board and the hand.
@@ -640,13 +640,13 @@ function GameScreenInner() {
       const currentHand = playerHandRef.current;
       if (currentHand.length === 0) return;
 
-      // Read board from current closure â safe since boards is a dep of this callback
+      // Read board from current closure Ã¢ÂÂ safe since boards is a dep of this callback
       const board = boards[boardIndex];
       if (!board) return;
 
       const emptySlots = CARDS_PER_BOARD - board.playerCards.length;
       if (emptySlots <= 0) {
-        // Board full â shake + error
+        // Board full Ã¢ÂÂ shake + error
         const sv = boardShakes[boardIndex];
         if (sv) {
           sv.value = withSequence(
@@ -679,7 +679,7 @@ function GameScreenInner() {
       playSound('cardPlace');
       const placedIds = new Set(cardsToPlace.map((c) => c.id));
 
-      // All three setState calls are in the same synchronous event handler â
+      // All three setState calls are in the same synchronous event handler Ã¢ÂÂ
       // React 18 batches them into one render, preventing duplicate-card flicker
       setBoards((prev) => {
         const prevBoard = prev[boardIndex];
@@ -703,7 +703,7 @@ function GameScreenInner() {
     [isArranging, selectedCardIds, boards, isCardOnAnyBoard]
   );
 
-  // Tap placed card â remove from board
+  // Tap placed card Ã¢ÂÂ remove from board
   const handleRemoveCardFromBoard = useCallback(
     (boardIndex: number, card: Card) => {
       if (!isArranging) return;
@@ -723,7 +723,7 @@ function GameScreenInner() {
     [isArranging]
   );
 
-  // AUTO fill â place first N available hand cards into an empty board
+  // AUTO fill Ã¢ÂÂ place first N available hand cards into an empty board
   // FIX: same batched setState approach as handleBoardPress + cross-board duplicate guard
   const handleAutoFill = useCallback(
     (boardIndex: number) => {
@@ -770,7 +770,7 @@ function GameScreenInner() {
       }).catch(() => {});
     }).catch(() => {});
     debugLog('H1 handleReady called');
-    if (!allBoardsFull) { debugLog('H1.1 NOT allBoardsFull â abort'); return; }
+    if (!allBoardsFull) { debugLog('H1.1 NOT allBoardsFull Ã¢ÂÂ abort'); return; }
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     void logStep('handleReady_pressed');
     debugLog('H3 hapticNotify');
@@ -789,10 +789,10 @@ function GameScreenInner() {
     if (!countdownActive) { debugLog('H9.1 startCountdown'); startCountdown('You'); }
     debugLog(`H10 botsReady=${botsReadyCountRef.current}/${numberOfBots}`);
     if (botsReadyCountRef.current >= numberOfBots) {
-      debugLog('H10.1 all bots done â calling doNavigate');
+      debugLog('H10.1 all bots done Ã¢ÂÂ calling doNavigate');
       doNavigateRef.current(boardsRef.current);
     } else {
-      debugLog('H10.2 bots still running â waiting');
+      debugLog('H10.2 bots still running Ã¢ÂÂ waiting');
     }
   }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
 
@@ -801,13 +801,13 @@ function GameScreenInner() {
     if (autoSim !== 'true') return;
     const simCount = parseInt(autoSimCount ?? '1', 10);
     const currentHand = parseInt(currentSimHand ?? '1', 10);
-    debugLog(`ð¤ AUTO-SIM: hand ${currentHand}/${simCount} â auto-fill in 1.5s`);
+    debugLog(`Ã°ÂÂ¤Â AUTO-SIM: hand ${currentHand}/${simCount} Ã¢ÂÂ auto-fill in 1.5s`);
     const t1 = setTimeout(() => {
-      debugLog('ð¤ AUTO-SIM: filling all boards');
+      debugLog('Ã°ÂÂ¤Â AUTO-SIM: filling all boards');
       for (let i = 0; i < boardCount; i++) handleAutoFill(i);
     }, 1500);
     const t2 = setTimeout(() => {
-      debugLog('ð¤ AUTO-SIM: pressing READY');
+      debugLog('Ã°ÂÂ¤Â AUTO-SIM: pressing READY');
       handleReady();
     }, 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -818,7 +818,7 @@ function GameScreenInner() {
       router.replace('/');
     };
 
-    // On web, Alert.alert uses window.confirm which is unreliable â navigate directly
+    // On web, Alert.alert uses window.confirm which is unreliable Ã¢ÂÂ navigate directly
     if (Platform.OS === 'web') {
       leave();
       return;
@@ -850,7 +850,7 @@ function GameScreenInner() {
   const cardsRemaining = playerHand.length;
   const TIMER_SIZE = rv(52);
 
-  // ââ Landscape / widescreen layout ââââââââââââââââââââââââââââââââââââââââââ
+  // Ã¢ÂÂÃ¢ÂÂ Landscape / widescreen layout Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   if (isLandscape) {
     return (
       <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
@@ -860,7 +860,7 @@ function GameScreenInner() {
             <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
           </View>
         )}
-        {/* LEFT â Your hand */}
+        {/* LEFT Ã¢ÂÂ Your hand */}
         <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <View style={landscapeStyles.panelTitleRow}>
             <Text style={landscapeStyles.panelAvatarText}>{playerAvatar}</Text>
@@ -899,7 +899,7 @@ function GameScreenInner() {
           )}
         </View>
 
-        {/* CENTER â boards grid */}
+        {/* CENTER Ã¢ÂÂ boards grid */}
         <View style={landscapeStyles.centerPanel}>
           {/* Mini top bar */}
           <View style={styles.topBar}>
@@ -918,12 +918,12 @@ function GameScreenInner() {
               )}
             </View>
             <View style={styles.headerChips}>
-              <Text style={styles.headerChipsEmoji}>ð°</Text>
+              <Text style={styles.headerChipsEmoji}>Ã°ÂÂÂ°</Text>
               <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
             </View>
           </View>
 
-          {/* Boards â 2 columns */}
+          {/* Boards Ã¢ÂÂ 2 columns */}
           <View style={[landscapeStyles.boardsGrid]}>
             {(boards ?? []).map((board, i) => (
               <Animated.View key={i} style={[landscapeStyles.boardCell, boardShakeStyles[i]]}>
@@ -950,14 +950,14 @@ function GameScreenInner() {
           </View>
         </View>
 
-        {/* RIGHT â bot + ready */}
+        {/* RIGHT Ã¢ÂÂ bot + ready */}
         <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <Text style={landscapeStyles.panelTitle}>
             {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
-              {allBotsReady ? `â ${t().ready}` : 'â¦'}
+              {allBotsReady ? `Ã¢ÂÂ ${t().ready}` : 'Ã¢ÂÂ¦'}
             </Text>
           </View>
           {isArranging && (
@@ -973,7 +973,7 @@ function GameScreenInner() {
           )}
           {playerReady && allBotsReady && showContinueButton && (
             <Pressable style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
-              <Text style={styles.continueBtnText}>CONTINUE â</Text>
+              <Text style={styles.continueBtnText}>CONTINUE Ã¢ÂÂ</Text>
             </Pressable>
           )}
         </View>
@@ -983,7 +983,7 @@ function GameScreenInner() {
       </SafeAreaView>
     );
   }
-  // ââ End landscape layout ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // Ã¢ÂÂÃ¢ÂÂ End landscape layout Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
@@ -1029,7 +1029,7 @@ function GameScreenInner() {
           )}
         </View>
         <View style={styles.headerChips}>
-          <Text style={styles.headerChipsEmoji}>ð°</Text>
+          <Text style={styles.headerChipsEmoji}>Ã°ÂÂÂ°</Text>
           <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
         </View>
       </View>
@@ -1037,19 +1037,19 @@ function GameScreenInner() {
       {/* Bot status bar */}
       <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]}>
         <View style={styles.botStatusRow}>
-          <Text style={styles.botEmoji}>ð¤</Text>
+          <Text style={styles.botEmoji}>Ã°ÂÂ¤Â</Text>
           <Text style={styles.botNameLabel}>
             {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
-              {allBotsReady ? `â ${t().ready}` : 'â¦'}
+              {allBotsReady ? `Ã¢ÂÂ ${t().ready}` : 'Ã¢ÂÂ¦'}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Timer progress bar â thin bar below bot section, only during countdown */}
+      {/* Timer progress bar Ã¢ÂÂ thin bar below bot section, only during countdown */}
       {countdownActive && isArranging && (
         <TimerBar countdown={countdown} total={COUNTDOWN_SECONDS} color={timerColor} />
       )}
@@ -1095,7 +1095,7 @@ function GameScreenInner() {
           setCountdown((prev) => prev + 15);
         }}
         onContinue={() => {
-          debugLog('[GAME] fallback button pressed â calling doNavigate manually');
+          debugLog('[GAME] fallback button pressed Ã¢ÂÂ calling doNavigate manually');
           doNavigateRef.current(boardsRef.current);
         }}
         potPerBoard={config.potPerBoard}
@@ -1110,7 +1110,7 @@ function GameScreenInner() {
         />
       )}
 
-      {/* Guided first-game tooltips (tips 1â6) â non-blocking */}
+      {/* Guided first-game tooltips (tips 1Ã¢ÂÂ6) Ã¢ÂÂ non-blocking */}
       {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
         <GuidedTooltip
           text={TIPS[tooltipStep - 1]?.() ?? ''}
