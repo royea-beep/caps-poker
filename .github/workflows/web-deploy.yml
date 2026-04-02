@@ -1,0 +1,47 @@
+name: Web Deploy (Vercel)
+
+# Builds Expo web bundle and deploys to caps.ftable.co.il
+# Triggers on push to main or manually
+# Required secrets: EXPO_TOKEN, VERCEL_TOKEN
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: web-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-web:
+    name: Build & Deploy Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Export Expo web bundle
+        env:
+          CI: 'true'
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx expo export --platform web --output-dir dist --clear
+
+      - name: Patch index.html + write vercel.json
+        run: node scripts/fix-web-html.js
+
+      - name: Deploy to Vercel (production)
+        working-directory: dist
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
