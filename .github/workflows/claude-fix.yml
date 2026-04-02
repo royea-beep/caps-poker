@@ -8,6 +8,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
 
 jobs:
   fix:
@@ -18,24 +19,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check API key
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY not set"
-            exit 1
-          fi
-          echo "API key present (length ${#ANTHROPIC_API_KEY})"
-
       - name: Run Claude Code Action
-        id: claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: |
+          prompt: |
             You are fixing a bug in CAPS Poker (React Native + Expo SDK 55).
-            Here is the fix request:
 
             ${{ github.event.client_payload.fix_prompt || github.event.client_payload.plan }}
 
@@ -46,11 +35,10 @@ jobs:
             - Apply the fix
             - Run: npx tsc --noEmit
             - Run: npx jest --forceExit
-            - If tests pass, commit with: git add -A && git commit -m "fix: [auto] ${{ github.event.client_payload.summary }}" && git push
-          allowed_tools: "Bash,Read,Write,Edit"
-          timeout_minutes: "25"
+            - Commit with: git add -A && git commit -m "fix: [auto] ${{ github.event.client_payload.summary }}" && git push
+          claude_args: "--dangerously-skip-permissions --allowedTools Bash,Read,Write,Edit"
 
-      - name: Check results and notify
+      - name: Notify Telegram
         if: always()
         run: |
           if git log --oneline -1 | grep -q "\[auto\]"; then
@@ -60,7 +48,6 @@ jobs:
             RESULT="no_changes"
             HAS_CHANGES="false"
           fi
-
           curl -s -X POST \
             "https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/telegram-bot-handler" \
             -H "Content-Type: application/json" \
