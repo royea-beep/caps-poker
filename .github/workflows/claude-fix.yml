@@ -21,6 +21,12 @@ jobs:
       - name: Save initial HEAD
         run: echo "INITIAL_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
+      - name: Create fix branch
+        run: |
+          BRANCH="fix/auto-$(date +%s)"
+          git checkout -b "$BRANCH"
+          echo "FIX_BRANCH=$BRANCH" >> $GITHUB_ENV
+
       - name: Run Claude Code Action
         uses: anthropics/claude-code-action@v1
         with:
@@ -37,21 +43,46 @@ jobs:
             - Apply the fix
             - Run: npx tsc --noEmit
             - Run: npx jest --forceExit
-            - Commit with: git add -A && git commit -m "fix: [auto] ${{ github.event.client_payload.summary }}" && git push
+            - Commit and push to the CURRENT branch (NOT main):
+              git add -A && git commit -m "fix: [auto] ${{ github.event.client_payload.summary }}" && git push origin HEAD
           allowed_tools: "Bash,Read,Write,Edit"
           timeout_minutes: "25"
+
+      - name: Test and merge if passing
+        if: always()
+        run: |
+          BRANCH="${FIX_BRANCH}"
+          git fetch origin "$BRANCH" 2>/dev/null || true
+          BRANCH_SHA=$(git rev-parse "origin/$BRANCH" 2>/dev/null || git rev-parse HEAD)
+          if [ "$BRANCH_SHA" = "$INITIAL_SHA" ]; then
+            echo "RESULT=no_changes" >> $GITHUB_ENV
+            exit 0
+          fi
+          # Run tests on the fix branch
+          npm ci --prefer-offline 2>/dev/null || npm ci
+          npx tsc --noEmit 2>&1 | tail -5
+          npx jest --forceExit 2>&1 | tail -5
+          if [ $? -eq 0 ]; then
+            git config user.email "actions@github.com"
+            git config user.name "GitHub Actions"
+            git checkout main
+            git merge "$BRANCH" --no-ff -m "merge: auto-fix $BRANCH"
+            git push origin main
+            git push origin --delete "$BRANCH" || true
+            echo "RESULT=fixed" >> $GITHUB_ENV
+          else
+            echo "RESULT=tests_failed" >> $GITHUB_ENV
+          fi
 
       - name: Notify Telegram
         if: always()
         run: |
+          RESULT="${RESULT:-no_changes}"
           git fetch origin main
           CURRENT_SHA=$(git rev-parse origin/main)
+          HAS_CHANGES="false"
           if [ "$CURRENT_SHA" != "$INITIAL_SHA" ]; then
-            RESULT="fixed"
             HAS_CHANGES="true"
-          else
-            RESULT="no_changes"
-            HAS_CHANGES="false"
           fi
           echo "Result: $RESULT (initial=$INITIAL_SHA current=$CURRENT_SHA)"
           curl -s -X POST \

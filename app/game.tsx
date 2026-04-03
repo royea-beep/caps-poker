@@ -1126,6 +1126,19 @@ function GameScreenInner() {
       )}
 
       {/* Guided first-game tooltips (tips 1Ã¢ÂÂ6) Ã¢ÂÂ non-blocking */}
+      {/* Tutorial dim overlay — steps 1-2 only, focuses attention, non-blocking */}
+      {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
+        <View
+          style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', zIndex: 40, alignItems: 'center', justifyContent: tooltipStep === 1 ? 'flex-end' : 'flex-start', paddingBottom: tooltipStep === 1 ? rs(200) : 0, paddingTop: tooltipStep === 2 ? rs(80) : 0 }}
+          pointerEvents="none"
+        >
+          <Text style={{ color: '#c9a84c', fontSize: rs(32), opacity: 0.9 }}>
+            {tooltipStep === 1 ? '↓' : '↑'}
+          </Text>
+        </View>
+      )}
+
+      {/* Guided first-game tooltips (tips 1–6) — non-blocking */}
       {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
         <GuidedTooltip
           text={TIPS[tooltipStep - 1]?.() ?? ''}
