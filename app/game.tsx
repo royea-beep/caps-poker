@@ -28,6 +28,7 @@ import {
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { playSound, startAmbient, stopAmbient } from '../utils/sounds';
+import { track } from '../utils/analytics';
 import { sortHand } from '../utils/sortHand';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
@@ -277,6 +278,7 @@ function GameScreenInner() {
     setCountdownActive(true);
     setCountdown(COUNTDOWN_SECONDS);
     playSound('timerLow');
+    track('cards_placed', {}, 'game');
 
     countdownRef.current = setInterval(() => {
       // Guard: component may have unmounted between ticks (iOS New Architecture)
@@ -426,6 +428,7 @@ function GameScreenInner() {
     playerReadyRef.current = false;
     hasNavigatedRef.current = false;
     CapsHooks.gameStarted('solo');
+    track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount }, 'game');
 
     // Deduct buy-in
     const buyIn = getMatchCost(config.potPerBoard, boardCount);

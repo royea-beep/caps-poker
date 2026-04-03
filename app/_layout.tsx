@@ -190,6 +190,8 @@ export default function RootLayout() {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
       if (v === 'true') setDebugEnabled(true);
     }).catch(() => {});
+    // Initialize analytics (fire-and-forget — caches deviceId + supabase ref)
+    import('../utils/analytics').then(({ initAnalytics }) => { void initAnalytics(); }).catch(() => {});
   }, []);
 
   // Global JS error handler — catches unhandled errors on native
