@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated, TouchableOpacity, Share } from 'react-native';
-// ZERO Reanimated on results screen â game.tsx has 7 active shared values during transition
+// ZERO Reanimated on results screen — game.tsx has 7 active shared values during transition
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
@@ -37,13 +37,13 @@ import { debugLog } from '../components/DebugOverlay';
 import { earnChips } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
-// @ts-ignore â parallel agent file, exists at deploy time
+// @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
-// @ts-ignore â parallel agent file, exists at deploy time
+// @ts-ignore — parallel agent file, exists at deploy time
 import { BATTLE_PASS_CONFIG } from '../constants/battlePassConfig';
-// @ts-ignore â parallel agent file, exists at deploy time
+// @ts-ignore — parallel agent file, exists at deploy time
 import { getProgressToNextTier } from '../utils/battlePass';
-// @ts-ignore â parallel agent file, exists at deploy time
+// @ts-ignore — parallel agent file, exists at deploy time
 import XPBar from '../components/XPBar';
 
 const SUIT_SYM: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
@@ -81,7 +81,7 @@ function getEfficiencyHint(boards: Array<{ playerCards: any[]; openCards: any[];
 }
 
 async function logResultsStep(step: string, extra?: string) {
-  debugLog(`[RESULTS-STEP] ${step}${extra ? ` â ${extra}` : ''}`);
+  debugLog(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
   try {
     const sb = getSupabase();
     if (!sb) return;
@@ -155,7 +155,7 @@ export default function ResultsScreen() {
   };
   const winOverlayOpacity = useRef(new Animated.Value(0)).current;
   const winOverlayScale = useRef(new Animated.Value(0.7)).current;
-  // Colored dots for win animation (RN Animated only â no confetti library, Hermes-safe)
+  // Colored dots for win animation (RN Animated only — no confetti library, Hermes-safe)
   const WIN_DOT_COLORS = ['#FFD700', '#4CAF50', '#00BFFF', '#FF6B6B', '#c9a84c', '#39FF14', '#FF69B4', '#FFD700'];
   const WIN_DOT_COUNT = 8;
   const winDotAnims = useRef<{ x: Animated.Value; y: Animated.Value; opacity: Animated.Value }[]>(
@@ -198,7 +198,7 @@ export default function ResultsScreen() {
     }
   }, [autoSim]);
 
-  // Guard: no data â go home
+  // Guard: no data → go home
   useEffect(() => {
     if (!revealData) router.replace('/');
   }, [revealData, router]);
@@ -211,7 +211,7 @@ export default function ResultsScreen() {
     if (revealData.netChips > 0) {
       incrementHandsWon();
       updateBiggestWin(revealData.netChips);
-      // Win sound â delayed slightly so it plays after screen fade-in
+      // Win sound — delayed slightly so it plays after screen fade-in
       setTimeout(() => { void playSound('chipsWin'); }, 500);
     } else if (revealData.netChips < 0) {
       setTimeout(() => { void playSound('lose'); }, 500);
@@ -221,7 +221,7 @@ export default function ResultsScreen() {
       setTimeout(() => { void playSound('complete'); }, 800);
     }
 
-    // [BANKROLL] Verify bankroll sync â logs in-memory vs persisted value
+    // [BANKROLL] Verify bankroll sync — logs in-memory vs persisted value
     console.log('[BANKROLL] chips in store:', chips, 'netChips:', revealData.netChips);
     AsyncStorage.getItem('caps-poker-storage').then(stored => {
       if (stored) {
@@ -296,13 +296,13 @@ export default function ResultsScreen() {
     };
     saveHandForWebReplay(autoShareData).then((url) => { if (url) setAutoShareUrl(url); }).catch(() => {});
 
-    // "Try 4 boards" nudge â shown after first game (3-board intro)
+    // "Try 4 boards" nudge — shown after first game (3-board intro)
     AsyncStorage.getItem('caps_games_played').then((val) => {
       const played = parseInt(val ?? '0', 10);
       if (played === 1 && revealData.boardCount === 3) setShowUpgradeNudge(true);
     }).catch(() => {});
 
-    // Achievement checks â run after stats are incremented
+    // Achievement checks — run after stats are incremented
     const gs = useGameStore.getState();
     const newWin = revealData.netChips > 0;
     if (newWin) gs.incrementWinStreak(); else gs.resetWinStreak();
@@ -329,7 +329,7 @@ export default function ResultsScreen() {
       setPendingAchievements(toasts);
     }
 
-    // Economy: earn_chips via Supabase RPC â fire-and-forget, never block UI
+    // Economy: earn_chips via Supabase RPC — fire-and-forget, never block UI
     void (async () => {
       try {
         const deviceId = await getDeviceId();
@@ -339,20 +339,20 @@ export default function ResultsScreen() {
           if (wonResult?.chips_earned) {
             gs.addChips(wonResult.chips_earned);
             gs.trackChipsEarned(wonResult.chips_earned);
-            showEarnToast(`+${wonResult.chips_earned} ð°`);
+            showEarnToast(`+${wonResult.chips_earned} 💰`);
             // streak_5_wins: +100 chips if player just hit 5 win streak
             if (gs.currentWinStreak === 5) {
               const streakResult = await earnChips(deviceId, 'streak_5_wins');
               if (streakResult?.chips_earned) {
                 gs.addChips(streakResult.chips_earned);
                 gs.trackChipsEarned(streakResult.chips_earned);
-                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} ð° 5 Win Streak!`), 1800);
+                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 💰 5 Win Streak!`), 1800);
               }
             }
           }
         }
       } catch {
-        // silent â economy RPCs never crash the game
+        // silent — economy RPCs never crash the game
       }
     })();
 
@@ -405,7 +405,7 @@ export default function ResultsScreen() {
     }, 'results');
   }, []);
 
-  // Auto-continue countdown (FIX 2) â starts 1.5s after mount to let animations settle
+  // Auto-continue countdown (FIX 2) — starts 1.5s after mount to let animations settle
   useEffect(() => {
     if (!revealData || isMultiplayer || autoSim === 'true') return;
     autoContinueMountedRef.current = true;
@@ -434,7 +434,7 @@ export default function ResultsScreen() {
     };
   }, []);
 
-  // When countdown hits 0 â auto-advance
+  // When countdown hits 0 — auto-advance
   useEffect(() => {
     if (autoContinueActive && autoContinueCountdown === 0) {
       // Re-use the same navigation logic as handleNextHand (defined below) via ref
@@ -445,7 +445,7 @@ export default function ResultsScreen() {
   // Ref so the countdown effect can call handleNextHand without capturing stale closure
   const autoContinueTriggerRef = useRef<(() => void) | null>(null);
 
-  // Win celebration overlay (FIX 3) â shown for 3s when player wins chips
+  // Win celebration overlay (FIX 3) — shown for 3s when player wins chips
   useEffect(() => {
     if (!revealData || revealData.netChips <= 0) return;
     // Delay slightly so the results screen fade-in finishes first
@@ -618,7 +618,7 @@ export default function ResultsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
 
-      {/* COMPLETE celebration overlay â screen flash + chip shower */}
+      {/* COMPLETE celebration overlay — screen flash + chip shower */}
       {showCompleteOverlay && isComplete && !completeOverlayDone && (
         <CompleteOverlay
           winner="player"
@@ -634,7 +634,7 @@ export default function ResultsScreen() {
             pointerEvents="none"
             style={[styles.completeFlash, { opacity: completeFlashOpacity }]}
           />
-          {/* Chip shower â 6 chips fall from top */}
+          {/* Chip shower — 6 chips fall from top */}
           {chipTranslates.map((chipY, idx) => (
             <Animated.Text
               key={`chip-${idx}`}
@@ -644,13 +644,13 @@ export default function ResultsScreen() {
                 { left: CHIP_X_POSITIONS[idx] as any, transform: [{ translateY: chipY }] },
               ]}
             >
-              ð¡
+              🪙
             </Animated.Text>
           ))}
         </>
       )}
 
-      {/* Achievement toasts â shown one at a time */}
+      {/* Achievement toasts — shown one at a time */}
       {pendingAchievements.length > 0 && (
         <AchievementToast
           achievement={pendingAchievements[0]}
@@ -678,7 +678,7 @@ export default function ResultsScreen() {
         </Animated.View>
       )}
 
-      {/* Win celebration overlay (FIX 3) â "You won X chips!" for 3s */}
+      {/* Win celebration overlay (FIX 3) — "You won X chips!" for 3s */}
       {showWinOverlay && revealData && revealData.netChips > 0 && (
         <Animated.View
           pointerEvents="none"
@@ -701,7 +701,7 @@ export default function ResultsScreen() {
               ]}
             />
           ))}
-          <Text style={styles.winOverlayText}>You won {revealData.netChips} chips! ð</Text>
+          <Text style={styles.winOverlayText}>You won {revealData.netChips} chips! 🎉</Text>
         </Animated.View>
       )}
 
@@ -715,15 +715,20 @@ export default function ResultsScreen() {
             </Text>
             <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
               <Text style={{ color: COLORS.neonGreen }}>{playerWins}</Text>
-              <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> â </Text>
+              <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
               <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
             </Text>
+            {playerWins === botWins && netChips > 0 && (
+              <Text style={styles.tieBonusText}>
+                {getLanguage() === 'he' ? `בונוס תיקו: +${netChips} ג'טונים` : `Tie bonus: +${netChips} chips`}
+              </Text>
+            )}
           </View>
 
           {/* Win streak badge */}
           {currentWinStreak >= 2 && (
             <View style={styles.streakBadge}>
-              <Text style={styles.streakBadgeText}>ð¥ {currentWinStreak} WIN STREAK!</Text>
+              <Text style={styles.streakBadgeText}>🔥 {currentWinStreak} WIN STREAK!</Text>
               {bestWinStreak >= 2 && currentWinStreak < bestWinStreak && (
                 <Text style={styles.streakBestText}>Best: {bestWinStreak}</Text>
               )}
@@ -733,7 +738,7 @@ export default function ResultsScreen() {
           {/* Chips earned + shop CTA */}
           {netChips > 0 && (
             <Pressable onPress={() => router.push('/shop' as any)} style={styles.shopCta}>
-              <Text style={styles.shopCtaText}>ðª +{netChips} chips earned Â· <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
+              <Text style={styles.shopCtaText}>💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
             </Pressable>
           )}
 
@@ -757,12 +762,12 @@ export default function ResultsScreen() {
             const isWinnerForBanner = netChips > 0;
             return (
               <View style={styles.xpBanner}>
-                <Text style={styles.xpBannerTitle}>âï¸ +{xpGained} XP</Text>
+                <Text style={styles.xpBannerTitle}>⭐ +{xpGained} XP</Text>
                 <Text style={styles.xpBannerBreakdown}>
                   {'Game: ' + BATTLE_PASS_CONFIG.xpPerGame}
-                  {boardsWonForBanner > 0 ? (' Â· Boards: +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
-                  {isWinnerForBanner ? (' Â· Win: +' + BATTLE_PASS_CONFIG.xpPerGameWin) : ''}
-                  {isComplete ? (' Â· Complete: +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
+                  {boardsWonForBanner > 0 ? (' | Boards: +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
+                  {isWinnerForBanner ? (' | Win: +' + BATTLE_PASS_CONFIG.xpPerGameWin) : ''}
+                  {isComplete ? (' | Complete: +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
                 </Text>
                 <XPBar
                   currentXP={bpCurrentXP}
@@ -776,7 +781,7 @@ export default function ResultsScreen() {
             );
           })()}
 
-          {/* Board result cards â staggered fade-in */}
+          {/* Board result cards — staggered fade-in */}
           {boards.map((board, i) => {
             if (i >= visibleBoardCount) return null;
             if (!boardTranslates.current[i]) boardTranslates.current[i] = new Animated.Value(30);
@@ -820,7 +825,7 @@ export default function ResultsScreen() {
                 if (shareResult?.chips_earned) {
                   useGameStore.getState().addChips(shareResult.chips_earned);
                   useGameStore.getState().trackChipsEarned(shareResult.chips_earned);
-                  showEarnToast(`+${shareResult.chips_earned} ð°`);
+                  showEarnToast(`+${shareResult.chips_earned} 💰`);
                 }
               } catch {}
             }}
@@ -841,7 +846,7 @@ export default function ResultsScreen() {
           {/* Best hand highlight */}
           {bestName ? (
             <View style={styles.bestHandRow}>
-              <Text style={styles.bestHandText}>â­ Best hand: {bestName} on Board {bestBoard}</Text>
+              <Text style={styles.bestHandText}>⭐ Best hand: {bestName} on Board {bestBoard}</Text>
             </View>
           ) : null}
 
@@ -854,7 +859,7 @@ export default function ResultsScreen() {
             <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
           </View>
 
-          {/* COMPLETE celebration title â scale pop */}
+          {/* COMPLETE celebration title — scale pop */}
           {isComplete && (
             <Animated.Text
               style={[styles.completeCelebTitle, { transform: [{ scale: completeTitleScale }] }]}
@@ -875,7 +880,7 @@ export default function ResultsScreen() {
                   +{netChips}
                 </Animated.Text>
               ) : (
-                <Text style={[styles.netAmount, { color: netChips === 0 ? COLORS.textDim : COLORS.neonRed }]}>{netChips === 0 ? 'Â±0' : netChips}</Text>
+                <Text style={[styles.netAmount, { color: netChips === 0 ? COLORS.textDim : COLORS.neonRed }]}>{netChips === 0 ? '±0' : netChips}</Text>
               )}
             </View>
           </View>
@@ -883,12 +888,12 @@ export default function ResultsScreen() {
           {/* Current balance */}
           <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
 
-          {/* First game: upgrade nudge â "Try 4 boards next!" */}
+          {/* First game: upgrade nudge — "Try 4 boards next!" */}
           {showUpgradeNudge && (
             <View style={styles.upgradeNudge}>
               <Text style={styles.upgradeNudgeText}>
                 {getLanguage() === 'he'
-                  ? '×××× ×××ª××¨ ××××? × ×¡× 4 ×××¨×××!'
+                  ? 'מוכן לאתגר המלא? נסה 4 בורדים!'
                   : 'Ready for the full challenge? Try 4 boards next!'}
               </Text>
               <View style={styles.upgradeNudgeRow}>
@@ -896,7 +901,7 @@ export default function ResultsScreen() {
                   style={styles.upgradeNudgeBtn}
                   onPress={() => { updateConfig({ numberOfPlayers: 2 }); setShowUpgradeNudge(false); }}
                 >
-                  <Text style={styles.upgradeNudgeBtnText}>4 BOARDS â</Text>
+                  <Text style={styles.upgradeNudgeBtnText}>4 BOARDS →</Text>
                 </Pressable>
                 <Pressable onPress={() => setShowUpgradeNudge(false)}>
                   <Text style={styles.upgradeNudgeDismiss}>Later</Text>
@@ -938,7 +943,7 @@ export default function ResultsScreen() {
                 {savedHandId && !isMultiplayer && (
                   <Animated.View style={{ opacity: dealBtnOpacity, alignItems: 'center', marginTop: rs(8) }}>
                     <Pressable style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
-                      <Text style={styles.coachingBtnText}>ð¡ COACHING</Text>
+                      <Text style={styles.coachingBtnText}>💡 COACHING</Text>
                     </Pressable>
                   </Animated.View>
                 )}
@@ -972,6 +977,7 @@ const styles = StyleSheet.create({
   title: { fontSize: rf(24), fontWeight: '900', color: COLORS.gold, letterSpacing: 6 },
   scoreDisplay: { fontSize: rf(42), fontWeight: '900' },
   scoreSep: { color: COLORS.textDim, fontSize: rf(32), fontWeight: '300' },
+  tieBonusText: { color: COLORS.gold, fontSize: rf(13), fontWeight: '600', opacity: 0.75, marginTop: rs(2) },
   netSection: { width: '100%' },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: rs(4) },
   netLabel: { color: COLORS.textMuted, fontSize: rf(16), fontWeight: '600' },

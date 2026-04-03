@@ -196,10 +196,12 @@ function GameScreenInner() {
     winner: 'player'|'bot'|'tie';
     playerHandName: string;
     botHandName: string;
+    allBotHandNames: string[];
     openCards: Card[];
     closedCards: Card[];
     playerCards: Card[];
     botCards: Card[];
+    allBotCards: Card[][];
     potAmount: number;
     playerHighlightIds: string[];
     botHighlightIds: string[];
@@ -575,10 +577,12 @@ function GameScreenInner() {
         winner: b.winner ?? 'tie' as const,
         playerHandName: b.playerHandName ?? '',
         botHandName: b.botHandName ?? '',
+        allBotHandNames: b.allBotHandNames ?? [],
         openCards: b.openCards,
         closedCards: b.closedCards,
         playerCards: b.playerCards,
         botCards: (b.allBotCards?.[0]) ?? [],
+        allBotCards: b.allBotCards ?? [],
         potAmount: b.potAmount,
         playerHighlightIds: b.playerHighlightIds ?? [],
         botHighlightIds: b.botHighlightIds ?? [],

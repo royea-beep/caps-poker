@@ -21,6 +21,7 @@ import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
+import { getHandName } from '../utils/handNames';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
 import GuidedTooltip from './GuidedTooltip';
@@ -32,10 +33,12 @@ interface RevealBoard {
   winner: 'player' | 'bot' | 'tie';
   playerHandName: string;
   botHandName: string;
+  allBotHandNames?: string[];
   openCards: Card[];
   closedCards: Card[];
   playerCards: Card[];
   botCards: Card[];
+  allBotCards?: Card[][];
   potAmount: number;
   playerHighlightIds: string[];
   botHighlightIds: string[];
@@ -359,6 +362,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
   const resultColor = board.winner === 'player' ? '#2ecc71' : board.winner === 'bot' ? '#F44336' : '#fff';
   const tx = t();
+  const lang = getLanguage() === 'he' ? 'he' : 'en';
   const resultText = board.winner === 'player' ? tx.youWin : board.winner === 'bot' ? tx.youLose : tx.tie;
   const chipSign = board.winner === 'player' ? '+' : board.winner === 'bot' ? '-' : '±';
   const chipColor = board.winner === 'player' ? COLORS.goldBright : board.winner === 'bot' ? '#F44336' : '#aaa';
@@ -386,32 +390,46 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             </View>
           </View>
 
-          {/* Bot cards — face-down until revealed (top) */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, styles.sectionLabelBot]}>BOT</Text>
-            {/* Pulse wrapper — group scale on all bot cards before flip (iterations:2) */}
-            <AnimatedRN.View style={[styles.cardRow, { gap: handGap, transform: [{ scale: botPulseScale }] }]}>
-              {board.botCards.map((c, i) => (
-                <AnimatedRN.View
-                  key={c.id}
-                  style={{ transform: [{ scale: botCardScales[i] }], opacity: botSpotlightOpacities[i] }}
-                >
-                  <CardComponent
-                    card={c}
-                    faceDown={botFaceDown[i] ?? false}
-                    flipDuration={300}
-                    cardWidth={handCardW}
-                    cardHeight={handCardH}
-                  />
-                </AnimatedRN.View>
-              ))}
-            </AnimatedRN.View>
-            {showHandNames && board.botHandName ? (
-              <AnimatedRN.Text style={[styles.handNameBadge, { opacity: handNameOpacity }]}>
-                {board.botHandName}
-              </AnimatedRN.Text>
-            ) : null}
-          </View>
+          {/* Bot cards — show all bots if allBotCards available, else fall back to single botCards */}
+          {(board.allBotCards && board.allBotCards.length > 1 ? board.allBotCards : [board.botCards]).map((botHand, botIdx) => {
+            const isFirstBot = botIdx === 0;
+            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `BOT ${botIdx + 1}` : 'BOT';
+            const rawBotHandName = board.allBotHandNames?.[botIdx] ?? (isFirstBot ? board.botHandName : '');
+            const botHandName = getHandName(rawBotHandName, lang);
+            return (
+              <View key={`bot-${botIdx}`} style={styles.section}>
+                <Text style={[styles.sectionLabel, styles.sectionLabelBot]}>{botLabel}</Text>
+                {/* First bot uses animated pulse; additional bots rendered without animation */}
+                {isFirstBot ? (
+                  <AnimatedRN.View style={[styles.cardRow, { gap: handGap, transform: [{ scale: botPulseScale }] }]}>
+                    {botHand.map((c, i) => (
+                      <AnimatedRN.View
+                        key={c.id}
+                        style={{ transform: [{ scale: botCardScales[i] }], opacity: botSpotlightOpacities[i] }}
+                      >
+                        <CardComponent card={c} faceDown={botFaceDown[i] ?? false} flipDuration={300} cardWidth={handCardW} cardHeight={handCardH} />
+                      </AnimatedRN.View>
+                    ))}
+                  </AnimatedRN.View>
+                ) : (
+                  <View style={[styles.cardRow, { gap: handGap }]}>
+                    {botHand.map((c, i) => (
+                      <CardComponent key={c.id} card={c} faceDown={false} flipDuration={300} cardWidth={handCardW} cardHeight={handCardH} />
+                    ))}
+                  </View>
+                )}
+                {showHandNames && botHandName ? (
+                  isFirstBot ? (
+                    <AnimatedRN.Text style={[styles.handNameBadge, { opacity: handNameOpacity }]}>
+                      {botHandName}
+                    </AnimatedRN.Text>
+                  ) : (
+                    <Text style={styles.handNameBadge}>{botHandName}</Text>
+                  )
+                ) : null}
+              </View>
+            );
+          })}
 
           {/* Community cards — flop face-up, turn+river flip in sequence (middle) */}
           <View style={styles.section}>
@@ -449,7 +467,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             </View>
             {showHandNames && (
               <AnimatedRN.Text style={[styles.handNameBadge, styles.handNamePlayer, { opacity: handNameOpacity }]}>
-                {board.playerHandName}
+                {getHandName(board.playerHandName, lang)}
               </AnimatedRN.Text>
             )}
           </View>
