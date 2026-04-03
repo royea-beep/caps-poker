@@ -75,12 +75,15 @@ import LevelBadge from '../components/LevelBadge';
 import LevelUpModal from '../components/LevelUpModal';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { WeeklyRecapModal } from '../components/WeeklyRecapModal';
+import { StreakPopup } from '../components/StreakPopup';
+import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../components/OnboardingOverlay';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
 const NUDGE_AT_GAMES = [3, 8, 20];
 const NUDGE_DISMISSED_KEY = 'nudgeDismissedAt';
 const DAILY_REWARD_POPUP_SESSION_KEY = 'caps_daily_reward_popup_shown';
+const STREAK_POPUP_SESSION_KEY = 'caps_streak_popup_shown';
 
 const isWeb = Platform.OS === 'web';
 
@@ -597,6 +600,11 @@ export default function HomeScreen() {
   const [showDailyRewardPopup, setShowDailyRewardPopup] = useState(false);
   const [pendingDailyReward, setPendingDailyReward] = useState(0);
   const [pendingDailyStreak, setPendingDailyStreak] = useState(1);
+  // Supabase streak popup + onboarding
+  const [showStreakPopup, setShowStreakPopup] = useState(false);
+  const [streakData, setStreakData] = useState<{ current_streak: number; reward: number; next_reward: number; milestones?: unknown } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const pendingStreakRef = useRef(false);
 
   // Referral system (D6)
   const [showReferralModal, setShowReferralModal] = useState(false);
@@ -749,6 +757,39 @@ export default function HomeScreen() {
       }
     }).catch(() => { setGamesPlayed(0); });
 
+    // Onboarding — show once for first-time users
+    void AsyncStorage.getItem(ONBOARDING_SEEN_KEY).then(seen => {
+      if (!seen) setShowOnboarding(true);
+    }).catch(() => {});
+
+    // Supabase daily streak — claim_daily_streak RPC
+    void (async () => {
+      try {
+        const shownThisSession = await AsyncStorage.getItem(STREAK_POPUP_SESSION_KEY);
+        if (shownThisSession) return;
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data } = await sb.rpc('claim_daily_streak', { p_device_id: deviceId });
+        if (!data) return;
+        if (data.claimed) {
+          const store = useGameStore.getState();
+          store.addChips(data.reward);
+          store.trackChipsEarned(data.reward);
+          setStreakData(data);
+          await AsyncStorage.setItem(STREAK_POPUP_SESSION_KEY, '1').catch(() => {});
+          const seenOnboarding = await AsyncStorage.getItem(ONBOARDING_SEEN_KEY);
+          if (seenOnboarding) {
+            setShowStreakPopup(true);
+          } else {
+            pendingStreakRef.current = true;
+          }
+        } else if (data.already_claimed) {
+          setStreakData(data);
+        }
+      } catch {}
+    })();
+
     // Weekly Recap — show on Sunday
     const today = new Date();
     if (today.getDay() === 0) { // Sunday = 0
@@ -841,6 +882,14 @@ export default function HomeScreen() {
     CapsHooks.dailyRewardClaimed(pendingDailyStreak, pendingDailyReward);
     void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
   }, [pendingDailyReward, pendingDailyStreak]);
+
+  const handleOnboardingDone = useCallback(() => {
+    setShowOnboarding(false);
+    if (pendingStreakRef.current && streakData) {
+      pendingStreakRef.current = false;
+      setShowStreakPopup(true);
+    }
+  }, [streakData]);
 
   const handleGoogleSignIn = useCallback(async () => {
     setShowNudge(false);
@@ -998,6 +1047,11 @@ export default function HomeScreen() {
               { opacity: chipFloatOpacity, transform: [{ translateY: chipFloatY }] },
             ]}>{chipFloatText}</AnimatedRN.Text>
           </View>
+          {streakData && streakData.current_streak > 1 && (
+            <View style={styles.streakBadgePill}>
+              <Text style={styles.streakBadgePillText}>🔥 {streakData.current_streak}</Text>
+            </View>
+          )}
           {user?.user_metadata?.avatar_url ? (
             <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
               <Image
@@ -1296,6 +1350,16 @@ export default function HomeScreen() {
         v{Constants.expoConfig?.version ?? '1.9.4'} ({Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.extra?.buildNumber ?? '116'})
       </Text>
     
+      {showOnboarding && <OnboardingOverlay onDone={handleOnboardingDone} />}
+      {showStreakPopup && streakData && (
+        <StreakPopup
+          streak={streakData.current_streak}
+          reward={streakData.reward}
+          nextReward={streakData.next_reward}
+          milestones={streakData.milestones as any}
+          onCollect={() => setShowStreakPopup(false)}
+        />
+      )}
       <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
       <WeeklyRecapModal visible={showWeeklyRecap} onDismiss={() => setShowWeeklyRecap(false)} />
       </SafeAreaView>
@@ -1571,6 +1635,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255,255,255,0.35)',
     zIndex: 0,
+  },
+
+  streakBadgePill: {
+    backgroundColor: 'rgba(201,106,26,0.2)',
+    borderRadius: rv(10),
+    paddingVertical: rs(3),
+    paddingHorizontal: rs(7),
+    borderWidth: 1,
+    borderColor: 'rgba(201,106,26,0.35)',
+  },
+  streakBadgePillText: {
+    color: '#c96a1a',
+    fontSize: rf(11),
+    fontWeight: '700',
   },
 
   // Battle Pass XP bar touchable wrapper
