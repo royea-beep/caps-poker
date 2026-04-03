@@ -104,3 +104,35 @@ export async function playSound(name: SoundName): Promise<void> {
     // Silently ignore all audio errors
   }
 }
+
+// ─── Ambient sound — casino background loop ───────────────────────────────────
+let ambientPlayer: any = null;
+let ambientPlaying = false;
+
+export async function startAmbient(): Promise<void> {
+  if (!createAudioPlayer || ambientPlaying) return;
+  try {
+    let enabled = true;
+    try {
+      const AS = require('@react-native-async-storage/async-storage').default;
+      const val = await AS.getItem('caps_ambient_enabled');
+      if (val === 'false') enabled = false;
+    } catch {}
+    if (!enabled) return;
+    let ambientFile: any = null;
+    try { ambientFile = require('../assets/sounds/ambient.mp3'); } catch {}
+    if (!ambientFile) return; // ambient.mp3 not yet present — infrastructure ready
+    ambientPlayer = createAudioPlayer!(ambientFile);
+    ambientPlayer.loop = true;
+    ambientPlayer.volume = 0.15;
+    ambientPlayer.play();
+    ambientPlaying = true;
+  } catch {}
+}
+
+export async function stopAmbient(): Promise<void> {
+  if (ambientPlayer) {
+    try { ambientPlayer.pause(); } catch {}
+    ambientPlaying = false;
+  }
+}
