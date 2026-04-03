@@ -207,6 +207,33 @@ function SoundToggle() {
   );
 }
 
+function AmbientToggle() {
+  const [ambientEnabled, setAmbientEnabled] = useState(true);
+  useEffect(() => {
+    AsyncStorage.getItem('caps_ambient_enabled').then(v => {
+      if (v === 'false') setAmbientEnabled(false);
+    }).catch(() => {});
+  }, []);
+  const toggle = () => {
+    const next = !ambientEnabled;
+    setAmbientEnabled(next);
+    AsyncStorage.setItem('caps_ambient_enabled', String(next)).catch(() => {});
+  };
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Ambient Sound</Text>
+        <Text style={styles.rowHint}>Casino background music</Text>
+      </View>
+      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]}>
+        <Text style={[styles.toggleText, ambientEnabled && styles.toggleTextActive]}>
+          {ambientEnabled ? 'ON' : 'OFF'}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function PlayerCountSelector() {
   const value = useGameStore((s) => s.config.numberOfPlayers);
   const updateConfig = useGameStore((s) => s.updateConfig);
@@ -765,6 +792,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>AUDIO & NOTIFICATIONS</Text>
         <SoundToggle />
+        <AmbientToggle />
         <NotificationsToggle />
 
         <Text style={styles.sectionTitle}>TOOLS</Text>

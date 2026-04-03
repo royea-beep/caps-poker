@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated, TouchableOpacity, Share } from 'react-native';
 // ZERO Reanimated on results screen â game.tsx has 7 active shared values during transition
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -523,6 +523,23 @@ export default function ResultsScreen() {
   const handleHome = useCallback(() => { clearRevealData(); router.replace('/'); }, [clearRevealData, router]);
   const handleRematch = useCallback(() => { clearRevealData(); router.replace('/game'); }, [clearRevealData, router]);
 
+  const handleShareHand = useCallback(async () => {
+    if (!revealData) return;
+    const boardsWon = revealData.boards.filter((b) => b.winner === 'player').length;
+    const totalBoards = revealData.boards.length;
+    const effPct = Math.round(boardsWon / totalBoards * 100);
+    const link = autoShareUrl ?? 'https://caps.ftable.co.il';
+    const text = `🃏 CAPS Poker — I won ${boardsWon}/${totalBoards} boards!\nEfficiency: ${effPct}%\nPlay: ${link}`;
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        Alert.alert('Copied!', 'Hand summary copied to clipboard.');
+      } else {
+        await Share.share({ message: text });
+      }
+    } catch {}
+  }, [revealData, autoShareUrl]);
+
   // Wire auto-continue trigger to handleNextHand (must be after handleNextHand is defined)
   autoContinueTriggerRef.current = handleNextHand;
 
@@ -889,6 +906,13 @@ export default function ResultsScreen() {
                     </Pressable>
                   </Animated.View>
                 )}
+                {!isMultiplayer && (
+                  <View style={styles.shareRow}>
+                    <Pressable style={styles.shareBtn} onPress={handleShareHand}>
+                      <Text style={styles.shareBtnText}>📤 Share Hand</Text>
+                    </Pressable>
+                  </View>
+                )}
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { cancelAutoContinue(); handleRematch(); }} style={{ flex: 1 }} />}
                   <Button title="HOME" variant="secondary" onPress={() => { cancelAutoContinue(); handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
@@ -918,6 +942,9 @@ const styles = StyleSheet.create({
   netAmount: { fontSize: rf(28), fontWeight: '900' },
   buttons: { width: '100%', gap: rs(10), marginTop: rs(4) },
   rematchRow: { flexDirection: 'row', gap: rs(10) },
+  shareRow: { width: '100%', alignItems: 'center' },
+  shareBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: rv(16), backgroundColor: 'rgba(255,255,255,0.06)' },
+  shareBtnText: { color: 'rgba(255,255,255,0.7)', fontSize: rf(14), fontWeight: '700', letterSpacing: 0.5 },
   coachingBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: COLORS.gold, borderRadius: rv(16), backgroundColor: 'rgba(255,215,0,0.08)' },
   coachingBtnText: { color: COLORS.gold, fontSize: rf(14), fontWeight: '800', letterSpacing: 1.5 },
   waitingNextHand: { backgroundColor: COLORS.feltLight, paddingVertical: rs(14), borderRadius: rv(10), borderWidth: 1, borderColor: COLORS.boardBorder, alignItems: 'center' },

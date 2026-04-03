@@ -77,6 +77,8 @@ import LevelUpModal from '../components/LevelUpModal';
 import { WeeklyRecapModal } from '../components/WeeklyRecapModal';
 import { StreakPopup } from '../components/StreakPopup';
 import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../components/OnboardingOverlay';
+import { getHandHistory, HandRecord } from '../utils/handHistory';
+import { ACHIEVEMENTS } from '../utils/achievements';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -702,6 +704,14 @@ export default function HomeScreen() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const pendingStreakRef = useRef(false);
 
+  // Home data cards — missions + leaderboard
+  const [missionData, setMissionData] = useState<{ title: string; progress: number; total: number; reward: number } | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<{ rank: number; total: number } | null>(null);
+  const [recentHands, setRecentHands] = useState<HandRecord[]>([]);
+  const handsPlayed = useGameStore((s) => s.handsPlayed);
+  const handsWon = useGameStore((s) => s.handsWon);
+  const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
+
   // Referral system (D6)
   const [showReferralModal, setShowReferralModal] = useState(false);
   const [referralCodeInput, setReferralCodeInput] = useState('');
@@ -894,6 +904,41 @@ export default function HomeScreen() {
         if (stored !== weekKey) setShowWeeklyRecap(true);
       });
     }
+
+    // Home data cards — missions + leaderboard
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        try { await sb.rpc('assign_daily_missions', { p_device_id: deviceId }); } catch {}
+        const { data: missions } = await sb.rpc('get_daily_missions', { p_device_id: deviceId });
+        if (Array.isArray(missions) && missions.length > 0) {
+          const m = missions[0] as any;
+          setMissionData({ title: m.title ?? m.name ?? 'Mission', progress: m.progress ?? 0, total: m.target ?? m.required ?? 1, reward: m.reward_chips ?? m.reward ?? 0 });
+        }
+      } catch {}
+    })();
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data: lb } = await sb.rpc('get_leaderboard', { p_device_id: deviceId });
+        if (lb) {
+          const entries = Array.isArray(lb) ? lb : (lb.entries ?? []);
+          const myEntry = entries.find((e: any) => e.is_me || e.device_id === deviceId);
+          const rank = myEntry?.rank ?? myEntry?.position ?? null;
+          const total = entries.length || (lb.total ?? 0);
+          if (rank) setLeaderboardData({ rank: Number(rank), total: Number(total) });
+        }
+      } catch {}
+    })();
+  }, []);
+
+  // Load recent hands from local history
+  useEffect(() => {
+    getHandHistory().then(history => setRecentHands(history.slice(0, 5))).catch(() => {});
   }, []);
 
   // Migrate guest data when user signs in for the first time
@@ -1199,6 +1244,27 @@ export default function HomeScreen() {
           <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.55, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(13) }} numberOfLines={2}>“{todaysQuote.text}” — {todaysQuote.author}</Text>
         </View>
 
+        {/* Player count selector — 2P / 3P / 4P */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+          {([2, 3, 4] as const).map(n => (
+            <Pressable
+              key={n}
+              onPress={() => updateConfig({ numberOfPlayers: n })}
+              style={{
+                paddingHorizontal: 16, paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: config.numberOfPlayers === n ? '#6B1520' : 'transparent',
+                borderWidth: 1,
+                borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
+              }}
+            >
+              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: rs(14), fontWeight: '700' }}>
+                {n}P
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         {/* PLAY button — always green, center stage */}
         <View style={styles.playSection}>
           <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
@@ -1317,6 +1383,46 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* Data cards — 2x2 grid: Missions | Leaderboard | Achievements | Stats */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%', marginTop: 4 }}>
+          {/* Mission card */}
+          <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
+            <Text style={homeDataCardStyles.label}>🎯 MISSION</Text>
+            {missionData ? (
+              <>
+                <Text style={homeDataCardStyles.value} numberOfLines={1}>{missionData.title}</Text>
+                <Text style={homeDataCardStyles.sub}>{missionData.progress}/{missionData.total} · +{missionData.reward} 💰</Text>
+              </>
+            ) : (
+              <Text style={homeDataCardStyles.sub}>Tap to view</Text>
+            )}
+          </Pressable>
+          {/* Leaderboard card */}
+          <Pressable onPress={() => router.push('/leaderboard' as any)} style={homeDataCardStyles.card}>
+            <Text style={homeDataCardStyles.label}>🏆 RANK</Text>
+            {leaderboardData ? (
+              <>
+                <Text style={homeDataCardStyles.value}>#{leaderboardData.rank}</Text>
+                <Text style={homeDataCardStyles.sub}>of {leaderboardData.total}</Text>
+              </>
+            ) : (
+              <Text style={homeDataCardStyles.sub}>Play to rank</Text>
+            )}
+          </Pressable>
+          {/* Achievements card */}
+          <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
+            <Text style={homeDataCardStyles.label}>🏅 BADGES</Text>
+            <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
+            <Text style={homeDataCardStyles.sub}>unlocked</Text>
+          </Pressable>
+          {/* Stats card */}
+          <Pressable onPress={() => router.push('/stats' as any)} style={homeDataCardStyles.card}>
+            <Text style={homeDataCardStyles.label}>📊 STATS</Text>
+            <Text style={homeDataCardStyles.value}>{handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'}</Text>
+            <Text style={homeDataCardStyles.sub}>{handsPlayed} hands</Text>
+          </Pressable>
+        </View>
+
         {/* Action row: Missions · Stats · Achievements */}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, paddingHorizontal: 4 }}>
           <Pressable onPress={() => router.push('/missions' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
@@ -1353,6 +1459,32 @@ export default function HomeScreen() {
             })
           )}
         </View>
+
+        {/* Recent Hands — last 5 from local history */}
+        {recentHands.length > 0 && (
+          <View style={{ width: '100%', marginTop: 4 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Recent Hands</Text>
+            {recentHands.map((hand, i) => {
+              const boardsWon = hand.boards.filter(b => b.winner === 'player').length;
+              const effPct = Math.round(boardsWon / hand.boardCount * 100);
+              const minsAgo = Math.round((Date.now() - hand.timestamp) / 60000);
+              const timeStr = minsAgo < 60 ? `${minsAgo}m ago` : minsAgo < 1440 ? `${Math.round(minsAgo / 60)}h ago` : `${Math.round(minsAgo / 1440)}d ago`;
+              return (
+                <Pressable
+                  key={hand.id}
+                  onPress={() => router.push(`/hand-history?handId=${hand.id}` as any)}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
+                >
+                  <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
+                    {boardsWon}/{hand.boardCount} boards
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: rs(12) }}>{effPct}% eff</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: rs(11) }}>{timeStr}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
         {/* Referral — Persistent Code Card (S104) */}
         <View style={styles.referralRow}>
@@ -1464,6 +1596,36 @@ export default function HomeScreen() {
       </SafeAreaView>
   );
 }
+
+const homeDataCardStyles = StyleSheet.create({
+  card: {
+    flex: 1,
+    minWidth: '45%' as any,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: rv(12),
+    padding: rs(12),
+    gap: rs(3),
+  },
+  label: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: rs(10),
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase' as const,
+  },
+  value: {
+    color: '#c9a84c',
+    fontSize: rs(20),
+    fontWeight: '900',
+  },
+  sub: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: rs(11),
+    fontWeight: '500',
+  },
+});
 
 const styles = StyleSheet.create({
   container: {

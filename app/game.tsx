@@ -27,7 +27,7 @@ import {
   calculateHandResultsMulti,
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
-import { playSound } from '../utils/sounds';
+import { playSound, startAmbient, stopAmbient } from '../utils/sounds';
 import { sortHand } from '../utils/sortHand';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
@@ -366,10 +366,12 @@ function GameScreenInner() {
     debugLog(`game.tsx mounted Ã¢ÂÂ ${numberOfPlayers}p ${boardCount} boards`);
     setCurrentScreen('Game')
     onGameStart().catch(() => {});
+    void startAmbient();
     return () => {
       mountedRef.current = false;
       debugLog('game.tsx unmounting');
       onGameEnd().catch(() => {});
+      void stopAmbient();
       timeoutsRef.current.forEach((t) => clearTimeout(t));
       timeoutsRef.current = [];
       if (countdownRef.current) {
