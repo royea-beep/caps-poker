@@ -257,6 +257,31 @@ export default function ResultsScreen() {
     saveHandToHistory(handRecord).catch(() => {});
     setSavedHandId(handRecord.id);
 
+    // Supabase hand_history sync — non-blocking backup (AsyncStorage is primary)
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const bWon = revealData.boards.filter((b) => b.winner === 'player').length;
+        const effPct = Math.round(bWon / revealData.boards.length * 100);
+        await sb.from('hand_history').insert({
+          device_id: deviceId,
+          boards_data: revealData.boards.map((b) => ({
+            community: [...(b.openCards ?? []), ...(b.closedCards ?? [])].map((c) => ({ rank: c.rank, suit: c.suit })),
+            player: (b.playerCards ?? []).map((c) => ({ rank: c.rank, suit: c.suit })),
+            won: b.winner === 'player',
+            hand_name: b.playerHandName,
+          })),
+          boards_won: bWon,
+          boards_total: revealData.boards.length,
+          efficiency_pct: effPct,
+          bot_difficulty: config.botDifficulty ?? 'easy',
+          player_count: revealData.numberOfPlayers,
+        });
+      } catch {} // Non-blocking — AsyncStorage is the primary store
+    })();
+
     // Auto-save to shared_hands (ensures rows exist even if user never taps share)
     const autoShareData: ShareData = {
       boards: revealData.boards,

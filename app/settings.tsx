@@ -806,6 +806,15 @@ export default function SettingsScreen() {
           }}
           style={{ marginBottom: 12 }}
         />
+        <Button
+          title="🃏 How to Play (Onboarding)"
+          variant="secondary"
+          onPress={async () => {
+            await AsyncStorage.removeItem('hasSeenOnboarding').catch(() => {});
+            router.replace('/');
+          }}
+          style={{ marginBottom: 12 }}
+        />
         <Button title={t().simulationMode} variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
         {__DEV__ && (
           <>

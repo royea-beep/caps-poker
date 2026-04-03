@@ -30,11 +30,13 @@ export interface Card {
   id: string;
 }
 
+/** @deprecated Default for 2 players only. Use getBoardCount(numberOfPlayers) for dynamic count. */
 export const NUM_BOARDS = 4;
 export const CARDS_PER_BOARD = 4;
 export const BOARD_COMMUNITY_CARDS = 5;
 export const BOARD_OPEN_CARDS = 3;
 export const BOARD_CLOSED_CARDS = 2;
+/** @deprecated Default for 2 players only. Use getCardsPerPlayer(numberOfPlayers) for dynamic count. */
 export const PLAYER_HAND_SIZE = 16;
 
 /** Board count depends on player count (52-card deck constraint) */
