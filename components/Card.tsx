@@ -145,6 +145,7 @@ export default function CardComponent({
         android: { elevation: 5 },
         default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
       }),
+      Platform.OS === 'web' && { background: 'linear-gradient(180deg, #142244 0%, #0a1230 100%)' } as any,
     ];
 
     if (Platform.OS === 'web') {
@@ -200,7 +201,7 @@ export default function CardComponent({
     ? Platform.select({
         ios: { shadowColor: '#000', shadowOffset: { width: 2, height: 4 }, shadowOpacity: 0.65, shadowRadius: 10 } as any,
         android: { elevation: 10 } as any,
-        default: { boxShadow: '2px 4px 14px rgba(0,0,0,0.70)' } as any,
+        default: { boxShadow: '2px 4px 14px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,255,255,0.15)' } as any,
       })
     : Platform.select({
         ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4 } as any,
@@ -225,10 +226,14 @@ export default function CardComponent({
   const activeSuitColors4 = visualTheme === 'fiveo' ? SUIT_COLORS_4_FIVEO : SUIT_COLORS_4;
   const suitColor = fourColorSuits ? (activeSuitColors4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
   const suitBorderColor = isRed ? 'rgba(211,47,47,0.28)' : 'rgba(80,80,80,0.22)';
+  const isFaceCard = ['J', 'Q', 'K', 'A'].includes(card.rank);
 
   // Highlight border — static conditional (instant feedback for card selection)
+  // Face cards (J/Q/K/A) get subtle gold border for prestige
   const highlightBorder = highlighted
     ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
+    : isFaceCard
+    ? { borderWidth: 1.5, borderColor: 'rgba(201,168,76,0.45)' as const }
     : { borderWidth: 1, borderColor: suitBorderColor };
   const highlightShadow = highlighted && Platform.OS === 'ios'
     ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 14 }
@@ -276,6 +281,10 @@ export default function CardComponent({
           },
         ]}
       >
+        {/* Subtle bottom shadow for depth — native only (web uses CSS gradient) */}
+        {Platform.OS !== 'web' && (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000', opacity: 0.03, top: '60%' }]} pointerEvents="none" />
+        )}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
             <Text style={[styles.suitOnlyText, {

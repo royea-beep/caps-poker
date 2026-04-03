@@ -87,6 +87,101 @@ const STREAK_POPUP_SESSION_KEY = 'caps_streak_popup_shown';
 
 const isWeb = Platform.OS === 'web';
 
+// ─── Web landing page — shown on first web visit before game ─────────────────
+function WebLandingHero({ onPlay }: { onPlay: () => void }) {
+  return (
+    <View style={webLandingStyles.overlay}>
+      <View style={webLandingStyles.hero}>
+        <Text style={webLandingStyles.suitRow}>♠ ♥ ♦ ♣</Text>
+        <Text style={webLandingStyles.title}>CAPS POKER</Text>
+        <Text style={webLandingStyles.tagline}>5 Boards. 4 Cards. Your Strategy.</Text>
+
+        <View style={webLandingStyles.howToPlay}>
+          <Text style={webLandingStyles.step}>♠ Place your 4 cards across 5 poker boards</Text>
+          <Text style={webLandingStyles.step}>♥ Each board makes a separate poker hand</Text>
+          <Text style={webLandingStyles.step}>♦ Win more boards than the dealer to earn chips</Text>
+        </View>
+
+        <Pressable style={webLandingStyles.playButton} onPress={onPlay}>
+          <Text style={webLandingStyles.playButtonText}>PLAY NOW</Text>
+        </Pressable>
+
+        <Text style={webLandingStyles.mobileNote}>
+          📱 Best experience on mobile — available on TestFlight
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const webLandingStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject as object,
+    zIndex: 1000,
+    backgroundColor: '#1C0508',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hero: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    maxWidth: 480,
+    width: '100%',
+  },
+  suitRow: {
+    color: 'rgba(201,168,76,0.35)',
+    fontSize: 22,
+    letterSpacing: 10,
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 42,
+    fontWeight: '800' as const,
+    color: '#8B6914',
+    letterSpacing: 6,
+    marginBottom: 8,
+    ...Platform.select({ web: { fontFamily: 'Playfair Display, Georgia, serif' } as any, default: {} }),
+  },
+  tagline: {
+    fontSize: 18,
+    color: '#c9a84c',
+    marginBottom: 36,
+    textAlign: 'center' as const,
+    letterSpacing: 0.5,
+  },
+  howToPlay: {
+    marginBottom: 36,
+    gap: 14,
+    width: '100%',
+  },
+  step: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.55)',
+    textAlign: 'center' as const,
+    lineHeight: 22,
+  },
+  playButton: {
+    backgroundColor: '#6B1520',
+    paddingHorizontal: 52,
+    paddingVertical: 18,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#8B6914',
+    marginBottom: 24,
+  },
+  playButtonText: {
+    fontSize: 20,
+    fontWeight: '900' as const,
+    color: '#ffffff',
+    letterSpacing: 3,
+  },
+  mobileNote: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.3)',
+    textAlign: 'center' as const,
+  },
+});
+
 // ─── Floating suit particles ──────────────────────────────────────────────────
 const PARTICLE_CONFIG = [
   { x: 0.05, suit: '♠', size: 22, opacity: 0.045, dur: 14000, delay: 0 },
@@ -588,6 +683,7 @@ export default function HomeScreen() {
   const user = useAuthUser();
   const prevUserRef = useRef<typeof user>(undefined);
   const playerName = useGameStore((s) => s.playerName) || 'Player';
+  const [hasStartedGame, setHasStartedGame] = useState(!isWeb); // web shows landing page first
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -981,6 +1077,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* Web landing page — shown on first web visit (native: never shown) */}
+      {isWeb && !hasStartedGame && <WebLandingHero onPlay={() => setHasStartedGame(true)} />}
+
       <FriendsBg />
 
       {/* Floating suit particles — decorative background */}
