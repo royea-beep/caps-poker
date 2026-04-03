@@ -10,6 +10,7 @@ import { CompleteBanner } from '../components/CompleteBanner';
 import CompleteOverlay from '../components/CompleteOverlay';
 import { ShareSection } from '../components/ShareSection';
 import { EfficiencyCard } from '../components/EfficiencyCard';
+import { evaluateOmahaHand } from '../utils/handEvaluator';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { FriendsBg } from '../components/FriendsBg';
 import { useResultsAnimations } from '../hooks/useResultsAnimations';
@@ -43,6 +44,40 @@ import { BATTLE_PASS_CONFIG } from '../constants/battlePassConfig';
 import { getProgressToNextTier } from '../utils/battlePass';
 // @ts-ignore â parallel agent file, exists at deploy time
 import XPBar from '../components/XPBar';
+
+const SUIT_SYM: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+
+function getEfficiencyHint(boards: Array<{ playerCards: any[]; openCards: any[]; closedCards: any[] }>): string {
+  let bestImprovement = 0;
+  let bestHint = '';
+  for (let i = 0; i < boards.length; i++) {
+    for (let j = i + 1; j < boards.length; j++) {
+      const communityI = [...(boards[i].openCards ?? []), ...(boards[i].closedCards ?? [])];
+      const communityJ = [...(boards[j].openCards ?? []), ...(boards[j].closedCards ?? [])];
+      const cardsI: any[] = boards[i].playerCards ?? [];
+      const cardsJ: any[] = boards[j].playerCards ?? [];
+      if (cardsI.length === 0 || cardsJ.length === 0) continue;
+      const baseI = evaluateOmahaHand(cardsI, communityI).rank;
+      const baseJ = evaluateOmahaHand(cardsJ, communityJ).rank;
+      for (const cardI of cardsI) {
+        for (const cardJ of cardsJ) {
+          const newCardsI = cardsI.map((c: any) => c.id === cardI.id ? cardJ : c);
+          const newCardsJ = cardsJ.map((c: any) => c.id === cardJ.id ? cardI : c);
+          const newI = evaluateOmahaHand(newCardsI, communityI).rank;
+          const newJ = evaluateOmahaHand(newCardsJ, communityJ).rank;
+          const improvement = (newI + newJ) - (baseI + baseJ);
+          if (improvement > bestImprovement) {
+            bestImprovement = improvement;
+            const sym = SUIT_SYM[cardI.suit] ?? cardI.suit;
+            const pct = Math.min(99, Math.round(improvement * 11));
+            bestHint = `Moving ${cardI.rank}${sym} from Board ${i + 1} to Board ${j + 1} would improve by ${pct}%`;
+          }
+        }
+      }
+    }
+  }
+  return bestImprovement > 0 ? bestHint : '';
+}
 
 async function logResultsStep(step: string, extra?: string) {
   debugLog(`[RESULTS-STEP] ${step}${extra ? ` â ${extra}` : ''}`);
@@ -102,6 +137,8 @@ export default function ResultsScreen() {
 
   // Win celebration overlay (FIX 3)
   const [showWinOverlay, setShowWinOverlay] = useState(false);
+
+  const [efficiencyHint, setEfficiencyHint] = useState<string | null>(null);
 
   // Economy earn-chips floating toast
   const [earnToast, setEarnToast] = useState<string | null>(null);
@@ -309,6 +346,27 @@ export default function ResultsScreen() {
       if (isWinner) bpStore.trackMissionProgress('games_won', 1);
       if (isComplete) bpStore.trackMissionProgress('complete', 1);
       setXpGained(earned);
+    } catch {}
+
+    // Record hand result for adaptive bot difficulty
+    void (async () => {
+      try {
+        const boardsWon = revealData.boards.filter((b) => b.winner === 'player').length;
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        await sb.rpc('record_hand_result', {
+          p_device_id: deviceId,
+          p_won: revealData.netChips > 0,
+          p_boards_won: boardsWon,
+          p_boards_total: revealData.boards.length,
+        });
+      } catch {}
+    })();
+
+    // Post-game efficiency hint — find best card swap across boards
+    try {
+      setEfficiencyHint(getEfficiencyHint(revealData.boards));
     } catch {}
   }, []);
 
@@ -718,6 +776,15 @@ export default function ResultsScreen() {
           {/* Placement efficiency */}
           <EfficiencyCard boards={boards as any} screenW={SCREEN_W} />
 
+          {/* Efficiency hint — simple 1-liner swap suggestion */}
+          {efficiencyHint !== null && (
+            <View style={styles.hintRow}>
+              <Text style={styles.hintText}>
+                {efficiencyHint ? `💡 Tip: ${efficiencyHint}` : '⭐ Perfect placement! No improvement possible.'}
+              </Text>
+            </View>
+          )}
+
           {/* Best hand highlight */}
           {bestName ? (
             <View style={styles.bestHandRow}>
@@ -857,6 +924,8 @@ const styles = StyleSheet.create({
   waitingNextHandText: { color: COLORS.textSecondary, fontSize: rf(16), fontWeight: '600' },
   bestHandRow: { width: '100%', paddingHorizontal: rs(4), paddingVertical: rs(6) },
   bestHandText: { color: '#FFD700', fontSize: rf(13), fontStyle: 'italic', textAlign: 'center' },
+  hintRow: { width: '100%', paddingHorizontal: rs(4), paddingVertical: rs(4) },
+  hintText: { color: 'rgba(255,255,255,0.45)', fontSize: rf(12), textAlign: 'center', lineHeight: rf(17) },
   statsRow: { width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(8), paddingVertical: rs(6) },
   statItem: { color: 'rgba(255,255,255,0.5)', fontSize: rf(12) },
   statSep: { color: 'rgba(255,255,255,0.2)', fontSize: rf(12) },

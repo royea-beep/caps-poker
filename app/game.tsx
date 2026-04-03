@@ -208,6 +208,7 @@ function GameScreenInner() {
   const hasNavigatedRef = useRef(false);
   const playerReadyRef = useRef(false);
   const botsReadyCountRef = useRef(0);
+  const adaptiveDifficultyRef = useRef<string>(config.botDifficulty ?? 'easy');
 
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]); // no cleanup needed Ã¢ÂÂ sync ref update
   useEffect(() => { boardsRef.current = boards; }, [boards]); // no cleanup needed Ã¢ÂÂ sync ref update
@@ -403,6 +404,18 @@ function GameScreenInner() {
   // Initialize game
   // no cleanup needed Ã¢ÂÂ bot timers are pushed to timeoutsRef.current, cleared by the central cleanup effect above
   useEffect(() => {
+    // Fetch adaptive bot difficulty (fire-and-forget — ref is read by bot timers below)
+    void (async () => {
+      try {
+        const { getDeviceId: gdi } = await import('../utils/leaderboard');
+        const deviceId = await gdi();
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data } = await sb.rpc('get_bot_difficulty', { p_device_id: deviceId });
+        if (data) adaptiveDifficultyRef.current = data as string;
+      } catch {}
+    })();
+
     const { boards: initialBoards, playerHand: pHand, botHands } = initializeGameMulti(numberOfPlayers);
     setBoards(initialBoards);
     setPlayerHand(sortHand(pHand, handSortMethod));
@@ -425,7 +438,7 @@ function GameScreenInner() {
       const botCards = botHands[botIdx];
       const botTimer = setTimeout(() => {
         if (!mountedRef.current) return;
-        setBoards((prev) => placeSingleBotCards(botCards, prev, botIdx, (config.botDifficulty ?? 'easy') as import('../utils/botStrategy').BotDifficulty));
+        setBoards((prev) => placeSingleBotCards(botCards, prev, botIdx, adaptiveDifficultyRef.current as import('../utils/botStrategy').BotDifficulty));
         setBotsReady((prev) => {
           const updated = [...prev];
           updated[botIdx] = true;
