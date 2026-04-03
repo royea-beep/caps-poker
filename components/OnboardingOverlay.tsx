@@ -20,14 +20,14 @@ const SCREENS = [
   {
     emoji: '🃏',
     subtitle: 'What is CAPS?',
-    title: '5 BOARDS. 4 CARDS.\nYOUR STRATEGY.',
-    body: 'Place your cards across 5 poker boards\nto make the best hands possible.',
+    title: 'MULTIPLE BOARDS.\nONE DECK.',
+    body: 'Each board has 5 community cards. You get 4 cards per board. More players = fewer boards — it all fits in one 52-card deck.',
   },
   {
     emoji: '✅',
     subtitle: 'How to Win',
-    title: 'WIN MORE BOARDS =\nMORE CHIPS',
-    body: 'Each board is a separate poker hand.\nWin 3 out of 5 to beat the dealer.',
+    title: 'WIN MORE BOARDS\nTHAN THE DEALER',
+    body: 'Each board is a separate poker hand — your cards vs the dealer. Win the majority of boards to earn chips!',
   },
   {
     emoji: '🔥',

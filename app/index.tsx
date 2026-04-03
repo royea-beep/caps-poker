@@ -99,9 +99,9 @@ function WebLandingHero({ onPlay }: { onPlay: () => void }) {
         <Text style={webLandingStyles.tagline}>5 Boards. 4 Cards. Your Strategy.</Text>
 
         <View style={webLandingStyles.howToPlay}>
-          <Text style={webLandingStyles.step}>♠ Place your 4 cards across 5 poker boards</Text>
-          <Text style={webLandingStyles.step}>♥ Each board makes a separate poker hand</Text>
-          <Text style={webLandingStyles.step}>♦ Win more boards than the dealer to earn chips</Text>
+          <Text style={webLandingStyles.step}>♠ Place your cards across multiple poker boards</Text>
+          <Text style={webLandingStyles.step}>♥ Each board is a separate hand — yours vs the dealer</Text>
+          <Text style={webLandingStyles.step}>♦ Win the majority of boards to earn chips</Text>
         </View>
 
         <Pressable style={webLandingStyles.playButton} onPress={onPlay}>
