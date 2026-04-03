@@ -213,7 +213,7 @@ export function BoardResultCard({
           </Text>
           {(board.playerHighlightIds ?? []).length > 0 && (
             <Text style={styles.bestSelectedLabel}>
-              {lang === 'he' ? '★ 2 הטובים נבחרו' : '★ Best 2 selected'}
+              {lang === 'he' ? '★ היד הטובה מ-9 קלפים' : '★ Best hand from 9 cards'}
             </Text>
           )}
         </View>
