@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { rs, rf, rv } from '../utils/responsive';
+import { track } from '../utils/analytics';
 
 export const ONBOARDING_SEEN_KEY = 'hasSeenOnboarding';
 
@@ -50,12 +51,18 @@ export function OnboardingOverlay({ onDone }: OnboardingOverlayProps) {
     Animated.timing(overlayOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
   }, []);
 
-  const dismiss = () => {
+  const dismiss = (skipped = false) => {
     AsyncStorage.setItem(ONBOARDING_SEEN_KEY, 'true').catch(() => {});
+    if (skipped) {
+      track('onboarding_skipped', { at_screen: screen + 1 }, 'onboarding');
+    } else {
+      track('onboarding_completed', {}, 'onboarding');
+    }
     Animated.timing(overlayOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => onDone());
   };
 
   const goToScreen = (next: number) => {
+    track('onboarding_screen', { screen: next + 1 }, 'onboarding');
     Animated.timing(contentOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
       setScreen(next);
       Animated.timing(contentOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
@@ -76,7 +83,7 @@ export function OnboardingOverlay({ onDone }: OnboardingOverlayProps) {
   return (
     <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
       {/* Skip */}
-      <Pressable onPress={dismiss} style={styles.skipBtn} hitSlop={12}>
+      <Pressable onPress={() => dismiss(true)} style={styles.skipBtn} hitSlop={12}>
         <Text style={styles.skipText}>Skip</Text>
       </Pressable>
 
@@ -99,7 +106,7 @@ export function OnboardingOverlay({ onDone }: OnboardingOverlayProps) {
 
       {/* CTA */}
       {isLast ? (
-        <Pressable onPress={dismiss} style={styles.ctaBtn}>
+        <Pressable onPress={() => dismiss(false)} style={styles.ctaBtn}>
           <Text style={styles.ctaBtnText}>DEAL ME IN</Text>
         </Pressable>
       ) : (

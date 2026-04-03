@@ -35,6 +35,7 @@ import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { earnChips } from '../utils/supabaseEconomy';
+import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
 // @ts-ignore â parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
@@ -393,6 +394,15 @@ export default function ResultsScreen() {
     try {
       setEfficiencyHint(getEfficiencyHint(revealData.boards));
     } catch {}
+
+    // Analytics — hand completed
+    const bWonCount = revealData.boards.filter((b) => b.winner === 'player').length;
+    track('hand_completed', {
+      boards_won: bWonCount,
+      boards_total: revealData.boards.length,
+      efficiency_pct: Math.round(bWonCount / revealData.boards.length * 100),
+      won: bWonCount > revealData.boards.length - bWonCount,
+    }, 'results');
   }, []);
 
   // Auto-continue countdown (FIX 2) â starts 1.5s after mount to let animations settle
@@ -550,6 +560,7 @@ export default function ResultsScreen() {
 
   const handleShareHand = useCallback(async () => {
     if (!revealData) return;
+    track('share_pressed', {}, 'results');
     const boardsWon = revealData.boards.filter((b) => b.winner === 'player').length;
     const totalBoards = revealData.boards.length;
     const effPct = Math.round(boardsWon / totalBoards * 100);

@@ -79,6 +79,7 @@ import { StreakPopup } from '../components/StreakPopup';
 import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../components/OnboardingOverlay';
 import { getHandHistory, HandRecord } from '../utils/handHistory';
 import { ACHIEVEMENTS } from '../utils/achievements';
+import { track } from '../utils/analytics';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -800,6 +801,7 @@ export default function HomeScreen() {
   useEffect(() => {
     setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
+    track('app_opened', {}, 'home');
 
     // Economy: daily_login earn_chips (idempotent — safe every open)
     void (async () => {
@@ -882,6 +884,7 @@ export default function HomeScreen() {
           const store = useGameStore.getState();
           store.addChips(data.reward);
           store.trackChipsEarned(data.reward);
+          track('streak_claimed', { day: data.current_streak }, 'home');
           setStreakData(data);
           await AsyncStorage.setItem(STREAK_POPUP_SESSION_KEY, '1').catch(() => {});
           const seenOnboarding = await AsyncStorage.getItem(ONBOARDING_SEEN_KEY);
@@ -971,6 +974,7 @@ export default function HomeScreen() {
       }
     }
     trackAction('play_pressed');
+    track('game_started', { player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
     if (gamesPlayed === 0) {
