@@ -43,6 +43,13 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Setup iOS credentials (create PP + build creds via Apple ASC API)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: node scripts/ci-setup-ios-creds.js
+
       - name: EAS Build + Auto-Submit to TestFlight (External Testers)
         env:
           EXPO_APPLE_ID: royearguan@gmail.com
