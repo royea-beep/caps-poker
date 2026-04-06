@@ -242,7 +242,6 @@ function PlayerCountSelector() {
     2: '2 Players (vs 1 Bot)',
     3: '3 Players (vs 2 Bots)',
     4: '4 Players (vs 3 Bots)',
-    5: '5 Players (vs 4 Bots)',
   };
 
   return (
@@ -252,7 +251,7 @@ function PlayerCountSelector() {
         <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
       </View>
       <View style={styles.selectorRow}>
-        {([2, 3, 4, 5] as const).map((n) => (
+        {([2, 3, 4] as const).map((n) => (
           <Pressable
             key={n}
             onPress={() => { updateConfig({ numberOfPlayers: n }); CapsHooks.settingsChanged('numberOfPlayers', n); }}
