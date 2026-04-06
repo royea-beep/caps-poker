@@ -121,7 +121,7 @@ function GameScreenInner() {
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
 
-  const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4 | 5;
+  const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4;
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 

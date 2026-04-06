@@ -37,7 +37,7 @@ export interface MultiDealResult {
  * - 3 players: 12 cards each, 3 boards (51 used, 1 discarded)
  * - 4 players: 8 cards each, 2 boards (42 used, 10 discarded)
  */
-export function dealCardsMultiplayer(playerCount: 2 | 3 | 4 | 5): MultiDealResult {
+export function dealCardsMultiplayer(playerCount: 2 | 3 | 4): MultiDealResult {
   const cardsPerPlayer = playerCount === 2 ? 16 : playerCount === 3 ? 12 : 8;
   const boardCount = playerCount === 2 ? 4 : playerCount === 3 ? 3 : 2;
 
