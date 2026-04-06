@@ -267,6 +267,38 @@ serve(async (req: Request) => {
     const tgMsg = json.message as Record<string, unknown> | null;
     const chatId = String((tgMsg?.chat as Record<string, unknown> | null)?.id ?? '');
     const text = (tgMsg?.text as string | null) ?? '';
+
+    if (text.trim() === '/status') {
+      const [bugsRes, sessRes] = await Promise.allSettled([
+        supabase.from('bug_reports')
+          .select('status', { count: 'exact', head: false })
+          .in('status', ['open', 'bug_pending', 'needs_info', 'sprint_queued']),
+        supabase.rpc('get_session_stats_7d').maybeSingle(),
+      ]);
+      const bugs = bugsRes.status === 'fulfilled' ? (bugsRes.value.data as Array<Record<string, string>> | null) ?? [] : [];
+      const openBugs = bugs.filter((b) => ['open', 'bug_pending', 'needs_info'].includes(b.status ?? '')).length;
+      const sprintBugs = bugs.filter((b) => b.status === 'sprint_queued').length;
+
+      const { data: fixedRes } = await supabase.from('bug_reports').select('id', { count: 'exact', head: true }).eq('status', 'fixed').gte('updated_at', new Date(Date.now() - 7 * 86400000).toISOString());
+      const fixed7d = (fixedRes as unknown as { count?: number } | null)?.count ?? 0;
+
+      const sessData = sessRes.status === 'fulfilled' ? (sessRes.value.data as Record<string, number> | null) : null;
+      const sessions7d = sessData?.total_sessions ?? 0;
+      const testers7d = sessData?.unique_testers ?? 0;
+
+      const CURRENT_OTA = 'f8193796';
+      let msg = `📊 *CAPS Poker Status*\n\n`;
+      msg += `🐛 Open bugs: ${openBugs}\n`;
+      msg += `📋 Sprint queue: ${sprintBugs}\n`;
+      msg += `✅ Fixed (7d): ${fixed7d}\n`;
+      msg += `📦 OTA: \`${CURRENT_OTA}\`\n\n`;
+      msg += `📈 *Last 7 days:*\n`;
+      msg += `- Testers active: ${testers7d}\n`;
+      msg += `- Sessions: ${sessions7d}\n`;
+
+      await sendTelegram(chatId, msg);
+      return new Response('OK', { status: 200 });
+    }
     if (!TELEGRAM_CHAT_ID || chatId !== TELEGRAM_CHAT_ID) return new Response('OK', { status: 200 });
     if (!text) return new Response('OK', { status: 200 });
     const specificMatch = text.match(/^(\d+):([1-7])$/);

@@ -559,39 +559,68 @@ const dailyRewardModalStyles = StyleSheet.create({
   },
 });
 
-// ─── Welcome modal — shown before first game / tutorial replay ─────────────────
+// ─── Omaha Tutorial Modal — 3-slide, shown on first launch only ──────────────
+const TUTORIAL_SLIDES_HE = [
+  { icon: '🃏', title: 'CAPS Poker', text: 'משחק Omaha חדש — משחקים כמה בורדים במקביל' },
+  { icon: '🏆', title: 'איך זה עובד?', text: 'כל בורד = פוט נפרד.\nניצחת בורד = לקחת chips.\nניצחת הכל = COMPLETE bonus!' },
+  { icon: '♠️', title: 'חוקי Omaha', text: 'לכל שחקן 4 קלפים לכל בורד.\nחייבים להשתמש ב-2 מהקלפים שלך\n+ 3 מהקהילה.' },
+];
+const TUTORIAL_SLIDES_EN = [
+  { icon: '🃏', title: 'CAPS Poker', text: 'A new kind of Omaha poker —\nplay multiple boards at once' },
+  { icon: '🏆', title: 'How it works?', text: 'Each board = separate pot.\nWin a board = take chips.\nWin ALL boards = COMPLETE bonus!' },
+  { icon: '♠️', title: 'Omaha Rules', text: 'Each player gets 4 cards per board.\nYou must use exactly 2 of your cards\n+ 3 community cards.' },
+];
+
 function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
   const isHE = getLanguage() === 'he';
+  const slides = isHE ? TUTORIAL_SLIDES_HE : TUTORIAL_SLIDES_EN;
+  const [slide, setSlide] = useState(0);
   const opacity = useRef(new AnimatedRN.Value(0)).current;
+  const slideOpacity = useRef(new AnimatedRN.Value(1)).current;
+
   useEffect(() => {
     AnimatedRN.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }).start();
   }, []);
+
+  const goToSlide = (next: number) => {
+    AnimatedRN.sequence([
+      AnimatedRN.timing(slideOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
+      AnimatedRN.timing(slideOpacity, { toValue: 1, duration: 120, useNativeDriver: true }),
+    ]).start();
+    setSlide(next);
+  };
+
+  const isLast = slide === slides.length - 1;
+  const current = slides[slide];
+
   return (
     <AnimatedRN.View style={[welcomeStyles.overlay, { opacity }]}>
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onSkip} />
       <View style={welcomeStyles.card}>
-        <Text style={welcomeStyles.title}>🃏 CAPS POKER</Text>
-        {isHE ? (
-          <>
-            <Text style={welcomeStyles.line}>פוקר מסוג חדש.</Text>
-            <Text style={welcomeStyles.line}>אתה מקבל קלפים.</Text>
-            <Text style={welcomeStyles.line}>שים אותם על הבורדים.</Text>
-            <Text style={welcomeStyles.line}>היד הכי טובה מנצחת.</Text>
-            <Text style={welcomeStyles.sub}>אל תדאג — נלווה אותך במשחק הראשון!</Text>
-          </>
+        {/* Dots */}
+        <View style={welcomeStyles.dots}>
+          {slides.map((_, i) => (
+            <View key={i} style={[welcomeStyles.dot, i === slide && welcomeStyles.dotActive]} />
+          ))}
+        </View>
+
+        <AnimatedRN.View style={[{ alignItems: 'center', gap: rs(8), width: '100%' }, { opacity: slideOpacity }]}>
+          <Text style={welcomeStyles.slideIcon}>{current.icon}</Text>
+          <Text style={welcomeStyles.title}>{current.title}</Text>
+          <Text style={welcomeStyles.slideText}>{current.text}</Text>
+        </AnimatedRN.View>
+
+        {isLast ? (
+          <Pressable onPress={() => { track('tutorial_completed', {}, 'home'); onStart(); }} style={welcomeStyles.startBtn}>
+            <Text style={welcomeStyles.startBtnText}>{isHE ? 'יאללה!' : "LET'S PLAY!"}</Text>
+          </Pressable>
         ) : (
-          <>
-            <Text style={welcomeStyles.line}>A new kind of poker.</Text>
-            <Text style={welcomeStyles.line}>You get cards.</Text>
-            <Text style={welcomeStyles.line}>Place them on boards.</Text>
-            <Text style={welcomeStyles.line}>Best hand wins each board.</Text>
-            <Text style={welcomeStyles.sub}>{"Don't worry — we'll guide you through your first game!"}</Text>
-          </>
+          <Pressable onPress={() => goToSlide(slide + 1)} style={welcomeStyles.startBtn}>
+            <Text style={welcomeStyles.startBtnText}>{isHE ? 'הבא ›' : 'Next ›'}</Text>
+          </Pressable>
         )}
-        <Pressable onPress={onStart} style={welcomeStyles.startBtn}>
-          <Text style={welcomeStyles.startBtnText}>{isHE ? 'יאללה!' : "LET'S GO!"}</Text>
-        </Pressable>
-        <Pressable onPress={onSkip} hitSlop={8}>
+
+        <Pressable onPress={() => { track('tutorial_skipped', { slide_index: slide }, 'home'); onSkip(); }} hitSlop={8}>
           <Text style={welcomeStyles.skipText}>{isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}</Text>
         </Pressable>
       </View>
@@ -664,6 +693,31 @@ const welcomeStyles = StyleSheet.create({
     fontWeight: '400',
     marginTop: rs(10),
     textDecorationLine: 'underline',
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: rs(6),
+    marginBottom: rs(16),
+  },
+  dot: {
+    width: rs(7),
+    height: rs(7),
+    borderRadius: rs(4),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  dotActive: {
+    backgroundColor: '#c9a84c',
+  },
+  slideIcon: {
+    fontSize: rf(36),
+    marginBottom: rs(4),
+  },
+  slideText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: rf(14),
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: rf(21),
   },
 });
 
