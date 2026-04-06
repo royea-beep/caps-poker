@@ -37,83 +37,33 @@ const TEAM_ID         = '3K9KJNGL9U';
 
 // ─── CSR generation ──────────────────────────────────────────────────────────
 function generateCSR() {
-  // Generate RSA 2048 key + self-signed CSR in PEM format
-  // Apple requires a CSR to issue a certificate
-  const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
-  const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+  // Use OpenSSL (available on Ubuntu CI) for correct CSR generation.
+  // Apple is strict about CSR format — manual DER encoding is error-prone.
+  const { execSync } = require('child_process');
+  const os = require('os');
+  const path = require('path');
 
-  // Build CSR manually using DER encoding
-  // Subject: CN=CAPS Poker Distribution, O=3K9KJNGL9U, C=US
-  const subjectDN = buildDN([
-    { oid: '2.5.4.6', value: 'US' },         // C
-    { oid: '2.5.4.10', value: TEAM_ID },      // O
-    { oid: '2.5.4.3', value: 'iPhone Distribution: CAPS Poker' }, // CN
-  ]);
+  const tmpDir = os.tmpdir();
+  const keyFile = path.join(tmpDir, 'dist-cert-key.pem');
+  const csrFile = path.join(tmpDir, 'dist-cert-csr.pem');
+  const subject = `/C=US/O=${TEAM_ID}/CN=Apple Distribution: Roye Arguan`;
 
-  const pubKeyDer = publicKey.export({ type: 'spki', format: 'der' });
+  try {
+    // Generate RSA 2048 private key
+    execSync(`openssl genrsa -out "${keyFile}" 2048`, { stdio: 'pipe' });
+    // Generate CSR signed with SHA256
+    execSync(`openssl req -new -key "${keyFile}" -out "${csrFile}" -subj "${subject}"`, { stdio: 'pipe' });
 
-  // CSR structure: CertificationRequestInfo
-  const version = Buffer.from([0x02, 0x01, 0x00]); // INTEGER 0
-  const subjectBytes = subjectDN;
-  const pubKeyInfo = pubKeyDer;
-  const attributes = Buffer.from([0xa0, 0x00]); // empty [0]
+    const privateKeyPem = fs.readFileSync(keyFile, 'utf8');
+    const csrPem = fs.readFileSync(csrFile, 'utf8');
 
-  const certReqInfo = derSequence(Buffer.concat([version, subjectBytes, pubKeyInfo, attributes]));
+    // Cleanup temp files
+    try { fs.unlinkSync(keyFile); fs.unlinkSync(csrFile); } catch {}
 
-  // Sign the CertificationRequestInfo with SHA256withRSA
-  const signer = crypto.createSign('SHA256');
-  signer.update(certReqInfo);
-  const signature = signer.sign(privateKey);
-
-  // Signature algorithm: SHA256withRSA (1.2.840.113549.1.1.11)
-  const sigAlg = Buffer.from('300d06092a864886f70d01010b0500', 'hex');
-  const sigBitStr = Buffer.concat([Buffer.from([0x03]), derLength(signature.length + 1), Buffer.from([0x00]), signature]);
-
-  const csr = derSequence(Buffer.concat([certReqInfo, sigAlg, sigBitStr]));
-  const csrPem = `-----BEGIN CERTIFICATE REQUEST-----\n${csr.toString('base64').match(/.{1,64}/g).join('\n')}\n-----END CERTIFICATE REQUEST-----\n`;
-  return { privateKeyPem, csrPem };
-}
-
-function derLength(len) {
-  if (len < 128) return Buffer.from([len]);
-  if (len < 256) return Buffer.from([0x81, len]);
-  return Buffer.from([0x82, (len >> 8) & 0xff, len & 0xff]);
-}
-
-function derSequence(data) {
-  return Buffer.concat([Buffer.from([0x30]), derLength(data.length), data]);
-}
-
-function derSet(data) {
-  return Buffer.concat([Buffer.from([0x31]), derLength(data.length), data]);
-}
-
-function derOid(oidStr) {
-  const parts = oidStr.split('.').map(Number);
-  const encoded = [40 * parts[0] + parts[1]];
-  for (let i = 2; i < parts.length; i++) {
-    let v = parts[i];
-    if (v === 0) { encoded.push(0); continue; }
-    const bytes = [];
-    while (v > 0) { bytes.unshift(v & 0x7f); v >>= 7; }
-    for (let j = 0; j < bytes.length - 1; j++) bytes[j] |= 0x80;
-    encoded.push(...bytes);
+    return { privateKeyPem, csrPem };
+  } catch (e) {
+    throw new Error('OpenSSL CSR generation failed: ' + e.message);
   }
-  const oidBytes = Buffer.from(encoded);
-  return Buffer.concat([Buffer.from([0x06]), derLength(oidBytes.length), oidBytes]);
-}
-
-function derUtf8String(str) {
-  const strBytes = Buffer.from(str, 'utf8');
-  return Buffer.concat([Buffer.from([0x0c]), derLength(strBytes.length), strBytes]);
-}
-
-function buildDN(attrs) {
-  const rdns = attrs.map(({ oid, value }) => {
-    const atv = derSequence(Buffer.concat([derOid(oid), derUtf8String(value)]));
-    return derSet(atv);
-  });
-  return derSequence(Buffer.concat(rdns));
 }
 
 // ─── Apple JWT ───────────────────────────────────────────────────────────────
@@ -269,13 +219,17 @@ async function main() {
     console.log('✅ CSR generated');
 
     // Create IOS_DISTRIBUTION cert
-    const csrBase64 = Buffer.from(csrPem).toString('base64');
+    // Apple csrContent = base64-encoded DER (the content between PEM headers, no whitespace)
+    const csrContent = csrPem
+      .split('\n')
+      .filter(l => l.trim() && !l.includes('-----'))
+      .join('');
     const createCertBody = {
       data: {
         type: 'certificates',
         attributes: {
           certificateType: 'IOS_DISTRIBUTION',
-          csrContent: csrBase64,
+          csrContent,
         },
       },
     };
@@ -285,11 +239,14 @@ async function main() {
       const errBody = createCertResp.body.slice(0, 500);
       console.error(errBody);
       // Check if it's a limit issue
-      if (errBody.includes('maximum') || errBody.includes('limit') || errBody.includes('ENTITY_ERROR')) {
+      if (errBody.includes('maximum') || errBody.includes('limit')) {
         console.error('');
         console.error('🚨 Apple Developer Portal has reached the maximum number of certificates.');
         console.error('   ACTION NEEDED: Go to https://developer.apple.com/account/resources/certificates/list');
         console.error('   and revoke one expired/unused Distribution certificate, then re-run the build.');
+      } else if (errBody.includes('Invalid Certificate') || errBody.includes('ENTITY_ERROR')) {
+        console.error('🚨 Apple rejected the CSR as "Invalid Certificate".');
+        console.error('   This usually means the CSR format or signing was incorrect.');
       }
       process.exit(1);
     }
