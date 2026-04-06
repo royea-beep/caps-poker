@@ -1,0 +1,106 @@
+name: Delete ASC Version
+
+on:
+  workflow_dispatch:
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Write API Key
+        run: echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_HH732W7XQJ.p8
+
+      - name: Delete PREPARE_FOR_SUBMISSION version
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          cat > delete-asc-version.js << 'JSEOF'
+          const https = require('https');
+          const fs = require('fs');
+          const crypto = require('crypto');
+
+          const KEY_ID = process.env.APPLE_API_KEY_ID;
+          const ISSUER = process.env.APPLE_API_ISSUER_ID;
+          const APP_ID = '6760429619';
+          const p8 = fs.readFileSync('AuthKey_HH732W7XQJ.p8', 'utf8').trim();
+
+          function jwt() {
+            const hdr = Buffer.from(JSON.stringify({ alg: 'ES256', kid: KEY_ID, typ: 'JWT' })).toString('base64url');
+            const now = Math.floor(Date.now() / 1000);
+            const pld = Buffer.from(JSON.stringify({ iss: ISSUER, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' })).toString('base64url');
+            const sign = crypto.createSign('SHA256');
+            sign.update(`${hdr}.${pld}`);
+            return `${hdr}.${pld}.${sign.sign({ key: p8, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
+          }
+
+          function req(method, path, body = null) {
+            return new Promise((resolve) => {
+              const data = body ? JSON.stringify(body) : null;
+              const r = https.request({
+                hostname: 'api.appstoreconnect.apple.com',
+                path, method,
+                headers: {
+                  Authorization: `Bearer ${jwt()}`,
+                  'Content-Type': 'application/json',
+                  Accept: 'application/json',
+                  ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}),
+                }
+              }, (r2) => {
+                let d = '';
+                r2.on('data', c => d += c);
+                r2.on('end', () => resolve({ status: r2.statusCode, body: d }));
+              });
+              r.on('error', e => resolve({ status: 0, body: e.message }));
+              if (data) r.write(data);
+              r.end();
+            });
+          }
+
+          async function main() {
+            console.log('Fetching all App Store versions...');
+            const vResp = await req('GET', `/v1/apps/${APP_ID}/appStoreVersions?limit=10`);
+            console.log('Status:', vResp.status);
+            const versions = JSON.parse(vResp.body);
+
+            if (!versions.data?.length) {
+              console.log('No versions found:', vResp.body.slice(0, 300));
+              return;
+            }
+
+            console.log('All versions:');
+            for (const v of versions.data) {
+              console.log(`  ${v.attributes.versionString} — ${v.attributes.appStoreState} — id=${v.id}`);
+            }
+
+            const toDelete = versions.data.filter(v => v.attributes.appStoreState === 'PREPARE_FOR_SUBMISSION');
+            if (!toDelete.length) {
+              console.log('\nNo PREPARE_FOR_SUBMISSION versions found — nothing to delete.');
+              return;
+            }
+
+            for (const v of toDelete) {
+              console.log(`\nDeleting ${v.attributes.versionString} (${v.id})...`);
+              const del = await req('DELETE', `/v1/appStoreVersions/${v.id}`);
+              console.log('Delete status:', del.status);
+              if (del.status === 204) {
+                console.log('✅ Deleted successfully.');
+              } else {
+                console.log('Response:', del.body.slice(0, 400));
+              }
+            }
+            console.log('\nDone.');
+          }
+
+          main().catch(e => { console.error('Error:', e.message); process.exit(1); });
+          JSEOF
+          node delete-asc-version.js
+
+      - name: Cleanup
+        if: always()
+        run: rm -f AuthKey_HH732W7XQJ.p8 delete-asc-version.js
