@@ -132,8 +132,8 @@ async function main() {
   const jwt = generateAppleJWT();
 
   // ── Step 1: Test Apple API key ──────────────────────────────────────────
-  console.log('🍎 Testing Apple API key (listing IOS_DISTRIBUTION certs)...');
-  const testResp = await appleRequest('GET', '/v1/certificates?filter[certificateType]=IOS_DISTRIBUTION&limit=20', null, jwt);
+  console.log('🍎 Testing Apple API key (listing all distribution certs)...');
+  const testResp = await appleRequest('GET', '/v1/certificates?limit=20', null, jwt);
   if (testResp.status === 401) {
     console.error('❌ Apple API key HH732W7XQJ returned 401 Unauthorized');
     console.error('   → The key may be revoked in Apple Developer Portal');
@@ -148,7 +148,7 @@ async function main() {
   }
   const certsData = JSON.parse(testResp.body);
   const certCount = certsData.data?.length ?? 0;
-  console.log(`✅ Apple API key valid — found ${certCount} IOS_DISTRIBUTION cert(s)`);
+  console.log(`✅ Apple API key valid — found ${certCount} total cert(s)`);
 
   // ── Step 2: Find best cert from Apple's list ───────────────────────────
   let appleCertId = null;
@@ -156,23 +156,29 @@ async function main() {
     for (const cert of certsData.data) {
       const attrs = cert.attributes || {};
       const serial = (attrs.serialNumber || '').toUpperCase();
+      const certType = attrs.certificateType || '';
       const expiry = attrs.expirationDate || attrs.expirationTimestamp || '';
-      console.log(`  cert: ${cert.id} serial=${serial} expires=${expiry}`);
-      // Prefer 78DD1F12 (serial in EAS), fallback to any valid cert
-      if (serial.includes('78DD1F12')) {
+      const name = attrs.name || '';
+      console.log(`  cert: ${cert.id} type=${certType} serial=${serial} expires=${expiry} name="${name}"`);
+      // Only use IOS_DISTRIBUTION certs
+      const isDistrib = certType.includes('DISTRIBUTION') && !certType.includes('MAC');
+      if (!isDistrib) continue;
+      // Prefer 78DD1F12 (serial in EAS), fallback to any valid IOS_DISTRIBUTION cert
+      if (serial.includes('78DD1F12') || serial.includes('40DCBD62')) {
         appleCertId = cert.id;
-        console.log(`  ✅ Found preferred cert: Apple ID=${cert.id}`);
+        console.log(`  ✅ Found preferred cert: Apple ID=${cert.id} type=${certType}`);
         break;
       }
-      // Fallback: use first cert found
+      // Fallback: use first IOS_DISTRIBUTION cert found
       if (!appleCertId) {
         appleCertId = cert.id;
-        console.log(`  → Using fallback cert: Apple ID=${cert.id}`);
+        console.log(`  → Using IOS_DISTRIBUTION cert: Apple ID=${cert.id}`);
       }
     }
   }
   if (!appleCertId) {
-    console.error('❌ No IOS_DISTRIBUTION certificates found in Apple Developer Portal');
+    console.error('❌ No suitable IOS_DISTRIBUTION certificates found in Apple Developer Portal');
+    console.error('   Cert types found:', certsData.data?.map(c => c.attributes?.certificateType).join(', ') || 'none');
     console.error('   All distribution certificates may be revoked or expired.');
     console.error('   ACTION NEEDED: Create a new Distribution Certificate at');
     console.error('   https://developer.apple.com/account/resources/certificates/add');
