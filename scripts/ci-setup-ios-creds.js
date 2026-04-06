@@ -208,6 +208,7 @@ async function main() {
   let newCertPrivateKey = null;
   let appleCertContent = null;
   let appleCertSerial = null;
+  let easCertId = null; // Will be set whether cert is new or existing
 
   if (!appleCertId) {
     console.log('⚠️  No IOS_DISTRIBUTION cert found — creating new one via Apple API...');
@@ -322,8 +323,85 @@ async function main() {
       process.exit(1);
     }
     console.log(`✅ New cert stored in EAS: ${newEasCertId}`);
-    // Update EAS_CERT_ID to use new cert
-    process.env.NEW_EAS_CERT_ID = newEasCertId;
+    easCertId = newEasCertId;
+  } else {
+    // Reusing existing Apple cert — look up its EAS cert record by Apple portal ID
+    console.log(`🔍 Looking up EAS cert record for Apple cert ${appleCertId}...`);
+    const appCredsData = await easGraphQL(`
+      { app { byId(appId: "${EAS_APP_ID}") {
+        iosAppCredentials {
+          iosAppBuildCredentialsList {
+            distributionCertificate { id developerPortalIdentifier serialNumber }
+          }
+        }
+      }}}
+    `, {});
+    const buildCredsList = appCredsData?.app?.byId?.iosAppCredentials?.[0]?.iosAppBuildCredentialsList || [];
+    for (const cred of buildCredsList) {
+      if (cred.distributionCertificate?.developerPortalIdentifier === appleCertId) {
+        easCertId = cred.distributionCertificate.id;
+        console.log(`  ✅ Found EAS cert record: ${easCertId} (serial ${cred.distributionCertificate.serialNumber})`);
+        break;
+      }
+    }
+    if (!easCertId) {
+      // Cert exists in Apple but not in EAS — we can't use it without the private key
+      // Force creation of a new cert by deleting this one and creating fresh
+      console.log(`  ⚠️  Apple cert ${appleCertId} not found in EAS — must create new cert`);
+      console.log(`  🗑️  Deleting Apple cert ${appleCertId} to make room for a new one...`);
+      const deleteResp = await appleRequest('DELETE', `/v1/certificates/${appleCertId}`, null, jwt);
+      console.log(`  Delete status: ${deleteResp.status}`);
+
+      // Now create fresh cert
+      const { privateKeyPem, csrPem } = generateCSR();
+      newCertPrivateKey = privateKeyPem;
+      console.log('✅ CSR generated');
+      const csrContent = csrPem.split('\n').filter(l => l.trim() && !l.includes('-----')).join('');
+      const createCertResp2 = await appleRequest('POST', '/v1/certificates', {
+        data: { type: 'certificates', attributes: { certificateType: 'IOS_DISTRIBUTION', csrContent } }
+      }, jwt);
+      if (createCertResp2.status !== 201 && createCertResp2.status !== 200) {
+        console.error(`❌ Failed to create replacement cert: ${createCertResp2.status} ${createCertResp2.body.slice(0,300)}`);
+        process.exit(1);
+      }
+      const newCertData = JSON.parse(createCertResp2.body);
+      appleCertId = newCertData.data?.id;
+      appleCertContent = newCertData.data?.attributes?.certificateContent;
+      appleCertSerial = newCertData.data?.attributes?.serialNumber;
+      console.log(`✅ Created replacement cert: ${appleCertId} serial=${appleCertSerial}`);
+
+      // Store in EAS (reuse the P12 creation code path below by jumping to storage)
+      // Set appleCertContent so P12 creation below works
+    }
+  }
+
+  // If appleCertContent is set (delete+recreate path in else branch), store in EAS now
+  if (appleCertContent && !easCertId) {
+    console.log('⬆️  Storing replacement cert in EAS...');
+    const { execSync: execSync2 } = require('child_process');
+    const p12Pass2 = 'caps2026';
+    fs.writeFileSync('/tmp/dist_cert.pem',
+      `-----BEGIN CERTIFICATE-----\n${appleCertContent.match(/.{1,64}/g).join('\n')}\n-----END CERTIFICATE-----\n`);
+    fs.writeFileSync('/tmp/dist_key.pem', newCertPrivateKey);
+    execSync2(`openssl pkcs12 -export -out /tmp/dist.p12 -inkey /tmp/dist_key.pem -in /tmp/dist_cert.pem -passout pass:${p12Pass2} -legacy`, { stdio: 'pipe' });
+    const certP12b64 = fs.readFileSync('/tmp/dist.p12').toString('base64');
+    console.log('✅ P12 created');
+    const tQ = await easGraphQL(`{ account { byId(accountId: "${EAS_ACCOUNT_ID}") { appleTeamsPaginated(first: 5) { edges { node { id appleTeamIdentifier } } } } } }`, {});
+    let atId2 = (tQ?.account?.byId?.appleTeamsPaginated?.edges || []).find(t => t.node.appleTeamIdentifier === TEAM_ID)?.node?.id;
+    if (!atId2) {
+      const atM = await easGraphQL(`mutation($a:ID!,$t:String!,$n:String!){appleTeam{createAppleTeam(accountId:$a,appleTeamInput:{appleTeamIdentifier:$t,appleTeamName:$n}){id}}}`, { a: EAS_ACCOUNT_ID, t: TEAM_ID, n: 'CAPS Poker' });
+      atId2 = atM?.appleTeam?.createAppleTeam?.id;
+    }
+    const sD = await easGraphQL(`mutation($a:ID!,$c:AppleDistributionCertificateInput!){appleDistributionCertificate{createAppleDistributionCertificate(accountId:$a,appleDistributionCertificateInput:$c){id serialNumber}}}`,
+      { a: EAS_ACCOUNT_ID, c: { certP12: certP12b64, certPassword: p12Pass2, certPrivateSigningKey: newCertPrivateKey, developerPortalIdentifier: appleCertId, appleTeamId: atId2 } });
+    easCertId = sD?.appleDistributionCertificate?.createAppleDistributionCertificate?.id;
+    if (!easCertId) { console.error('❌ Failed to store replacement cert in EAS:', JSON.stringify(sD)); process.exit(1); }
+    console.log(`✅ Replacement cert stored in EAS: ${easCertId}`);
+  }
+
+  if (!easCertId) {
+    console.error('❌ easCertId not resolved — cannot create build credentials');
+    process.exit(1);
   }
 
   // ── Step 3: Get Apple bundle ID ────────────────────────────────────────
@@ -441,9 +519,7 @@ async function main() {
   console.log(`✅ EAS provisioning profile created: ${easPPId}`);
 
   // ── Step 7: Create iosAppBuildCredentials ─────────────────────────────
-  // Use newly created cert if available, otherwise fall back to existing valid cert
-  const easCertIdToUse = process.env.NEW_EAS_CERT_ID || EAS_CERT_ID;
-  console.log(`🔗 Creating iOS app build credentials (cert=${easCertIdToUse})...`);
+  console.log(`🔗 Creating iOS app build credentials (cert=${easCertId})...`);
   const createCredsData = await easGraphQL(`
     mutation CreateIosAppBuildCredentials(
       $input: IosAppBuildCredentialsInput!
@@ -464,7 +540,7 @@ async function main() {
   `, {
     input: {
       iosDistributionType: 'APP_STORE',
-      distributionCertificateId: easCertIdToUse,
+      distributionCertificateId: easCertId,
       provisioningProfileId: easPPId,
     },
     iosAppCredentialsId: EAS_IOS_CREDS_ID,
