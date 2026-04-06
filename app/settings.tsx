@@ -242,6 +242,7 @@ function PlayerCountSelector() {
     2: '2 Players (vs 1 Bot)',
     3: '3 Players (vs 2 Bots)',
     4: '4 Players (vs 3 Bots)',
+    5: '5 Players (vs 4 Bots)',
   };
 
   return (

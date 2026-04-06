@@ -802,6 +802,10 @@ export default function HomeScreen() {
     setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
     track('app_opened', {}, 'home');
+    track('home_screen_loaded', {
+      build: Constants.expoConfig?.version ?? 'unknown',
+      platform: Platform.OS,
+    }, 'home');
 
     // Economy: daily_login earn_chips (idempotent — safe every open)
     void (async () => {
@@ -974,6 +978,7 @@ export default function HomeScreen() {
       }
     }
     trackAction('play_pressed');
+    track('play_button_tapped', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
     track('game_started', { player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
@@ -1762,6 +1767,7 @@ const styles = StyleSheet.create({
   titleSection: {
     alignItems: 'center',
     gap: 2,
+    zIndex: 2,
   },
   suitSymbols: {
     fontSize: rf(16),
@@ -1772,6 +1778,7 @@ const styles = StyleSheet.create({
   titleCaps: {
     fontWeight: '900',
     letterSpacing: 8,
+    textShadowColor: 'rgba(0,0,0,0.85)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 24,
   },

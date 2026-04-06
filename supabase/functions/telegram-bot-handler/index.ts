@@ -129,7 +129,10 @@ function buildBugMessage(report: Record<string, unknown>): string {
   msg += `${di?.model ?? 'Unknown'} | iOS ${di?.osVersion ?? ''} | Build ${di?.buildNumber ?? ''}\n`;
   msg += `${sevEmoji[sev] ?? '?'} Severity: ${sev}\n`;
   msg += `${(meta?.recordingDuration as number | null) ?? 0}s | ${(meta?.frameCount as number | null) ?? 0} frames\n\n`;
-  msg += `*AI Summary:*\n${(report.ai_summary as string | null) ?? 'Analyzing...'}\n`;
+  const isSilent = ((report.ai_summary as string | null) ?? '').startsWith('Silent report from');
+  msg += isSilent
+    ? `*Status:* 🔕 Silent report — no audio, no description\n`
+    : `*AI Summary:*\n${(report.ai_summary as string | null) ?? 'Analyzing...'}\n`;
   const screen = (report.ai_screen as string | null) ?? '';
   const fix = (report.ai_suggested_fix as string | null) ?? '';
   const desc = (report.description as string | null) ?? '';
@@ -229,6 +232,15 @@ serve(async (req: Request) => {
           const td = tr ? await tr.json().catch(() => ({})) : {};
           const tt = (td.content?.[0]?.text as string | null) ?? '';
           try { const pa = JSON.parse(tt.match(/\{[\s\S]*\}/)?.[0] ?? '{}'); if (pa.severity && pa.summary) await supabase.from('bug_reports').update({ ai_severity: pa.severity.toLowerCase(), ai_summary: pa.summary }).eq('id', reportId); } catch { /* */ }
+        }
+      } else if (reportId) {
+        // B: Silent report — no audio and no description. Skip AI, mark for manual review.
+        const reportDesc = (report?.description as string | null) ?? null;
+        if (!reportDesc) {
+          const lastScreen = (report?.screen as string | null) ?? 'unknown screen';
+          const silentSummary = `Silent report from ${lastScreen} — screenshot only`;
+          await supabase.from('bug_reports').update({ ai_summary: silentSummary, ai_severity: 'low' }).eq('id', reportId);
+          if (report) { report.ai_summary = silentSummary; report.ai_severity = 'low'; }
         }
       }
     let fixPrompt: string | null = null;
