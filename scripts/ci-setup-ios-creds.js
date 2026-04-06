@@ -518,38 +518,95 @@ async function main() {
   }
   console.log(`✅ EAS provisioning profile created: ${easPPId}`);
 
-  // ── Step 7: Create iosAppBuildCredentials ─────────────────────────────
-  console.log(`🔗 Creating iOS app build credentials (cert=${easCertId})...`);
-  const createCredsData = await easGraphQL(`
-    mutation CreateIosAppBuildCredentials(
-      $input: IosAppBuildCredentialsInput!
-      $iosAppCredentialsId: ID!
-    ) {
-      iosAppBuildCredentials {
-        createIosAppBuildCredentials(
-          iosAppBuildCredentialsInput: $input
-          iosAppCredentialsId: $iosAppCredentialsId
-        ) {
-          id
-          iosDistributionType
-          distributionCertificate { id serialNumber validityNotAfter }
-          provisioningProfile { id developerPortalIdentifier expiration status }
+  // ── Step 7: Create or update iosAppBuildCredentials ──────────────────
+  console.log(`🔗 Setting iOS app build credentials (cert=${easCertId})...`);
+
+  // Check if APP_STORE build credentials already exist
+  const existingBuildCredsData = await easGraphQL(`
+    query GetIosAppBuildCredentials($iosAppCredentialsId: ID!) {
+      iosAppCredentials {
+        byId(id: $iosAppCredentialsId) {
+          iosAppBuildCredentialsList {
+            id
+            iosDistributionType
+            distributionCertificate { id serialNumber validityNotAfter }
+            provisioningProfile { id developerPortalIdentifier expiration status }
+          }
         }
       }
     }
-  `, {
-    input: {
-      iosDistributionType: 'APP_STORE',
-      distributionCertificateId: easCertId,
-      provisioningProfileId: easPPId,
-    },
-    iosAppCredentialsId: EAS_IOS_CREDS_ID,
-  });
-  const buildCreds = createCredsData?.iosAppBuildCredentials?.createIosAppBuildCredentials;
-  if (!buildCreds) {
-    console.error('❌ Failed to create iOS app build credentials in EAS');
-    console.error(JSON.stringify(createCredsData, null, 2));
-    process.exit(1);
+  `, { iosAppCredentialsId: EAS_IOS_CREDS_ID });
+
+  const existingBuildCredsList = existingBuildCredsData?.iosAppCredentials?.byId?.iosAppBuildCredentialsList || [];
+  const existingAppStoreCreds = existingBuildCredsList.find(c => c.iosDistributionType === 'APP_STORE');
+
+  let buildCreds;
+  if (existingAppStoreCreds) {
+    console.log(`🔄 Updating existing iOS app build credentials (id=${existingAppStoreCreds.id})...`);
+    const updateCredsData = await easGraphQL(`
+      mutation UpdateIosAppBuildCredentials(
+        $input: IosAppBuildCredentialsInput!
+        $id: ID!
+      ) {
+        iosAppBuildCredentials {
+          updateIosAppBuildCredentials(
+            iosAppBuildCredentialsInput: $input
+            id: $id
+          ) {
+            id
+            iosDistributionType
+            distributionCertificate { id serialNumber validityNotAfter }
+            provisioningProfile { id developerPortalIdentifier expiration status }
+          }
+        }
+      }
+    `, {
+      input: {
+        iosDistributionType: 'APP_STORE',
+        distributionCertificateId: easCertId,
+        provisioningProfileId: easPPId,
+      },
+      id: existingAppStoreCreds.id,
+    });
+    buildCreds = updateCredsData?.iosAppBuildCredentials?.updateIosAppBuildCredentials;
+    if (!buildCreds) {
+      console.error('❌ Failed to update iOS app build credentials in EAS');
+      console.error(JSON.stringify(updateCredsData, null, 2));
+      process.exit(1);
+    }
+  } else {
+    console.log(`🆕 Creating new iOS app build credentials...`);
+    const createCredsData = await easGraphQL(`
+      mutation CreateIosAppBuildCredentials(
+        $input: IosAppBuildCredentialsInput!
+        $iosAppCredentialsId: ID!
+      ) {
+        iosAppBuildCredentials {
+          createIosAppBuildCredentials(
+            iosAppBuildCredentialsInput: $input
+            iosAppCredentialsId: $iosAppCredentialsId
+          ) {
+            id
+            iosDistributionType
+            distributionCertificate { id serialNumber validityNotAfter }
+            provisioningProfile { id developerPortalIdentifier expiration status }
+          }
+        }
+      }
+    `, {
+      input: {
+        iosDistributionType: 'APP_STORE',
+        distributionCertificateId: easCertId,
+        provisioningProfileId: easPPId,
+      },
+      iosAppCredentialsId: EAS_IOS_CREDS_ID,
+    });
+    buildCreds = createCredsData?.iosAppBuildCredentials?.createIosAppBuildCredentials;
+    if (!buildCreds) {
+      console.error('❌ Failed to create iOS app build credentials in EAS');
+      console.error(JSON.stringify(createCredsData, null, 2));
+      process.exit(1);
+    }
   }
   console.log('✅ iOS build credentials ready:');
   console.log(`   Credentials ID: ${buildCreds.id}`);
