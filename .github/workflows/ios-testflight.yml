@@ -50,13 +50,16 @@ jobs:
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: node scripts/ci-setup-ios-creds.js
 
-      - name: EAS Build + Auto-Submit to TestFlight (External Testers)
+      - name: EAS Build
         env:
-          EXPO_APPLE_ID: royearguan@gmail.com
-          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
-        run: eas build --platform ios --profile production --non-interactive --auto-submit-with-profile production
+        run: eas build --platform ios --profile production --non-interactive
+
+      - name: Submit to TestFlight
+        env:
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: eas submit --platform ios --profile ci --latest --non-interactive
 
       - name: Cleanup key file
         if: always()
