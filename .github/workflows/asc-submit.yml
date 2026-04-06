@@ -121,8 +121,29 @@ jobs:
               console.log('   Compliance status:', eResp.status);
             }
 
-            // 5. Submit for review
-            console.log('5. Submitting for App Store Review...');
+            // 5. Check for existing submission and delete it first
+            console.log('5. Checking existing submission...');
+            const existSubResp = await req('GET', `/v1/appStoreVersions/${versionId}/appStoreVersionSubmission`);
+            console.log('   Existing submission status:', existSubResp.status);
+            if (existSubResp.status === 200) {
+              const existSub = JSON.parse(existSubResp.body);
+              const existSubId = existSub.data?.id;
+              const existSubState = existSub.data?.attributes?.state;
+              console.log('   Existing submission state:', existSubState, 'ID:', existSubId);
+              if (existSubState === 'WAITING_FOR_REVIEW' || existSubState === 'IN_REVIEW') {
+                console.log('\n✅ App is ALREADY IN REVIEW! No action needed.');
+                console.log('   Track: https://appstoreconnect.apple.com/apps/6760429619');
+                process.exit(0);
+              }
+              if (existSubId) {
+                console.log('   Deleting existing submission to resubmit...');
+                const delResp = await req('DELETE', `/v1/appStoreVersionSubmissions/${existSubId}`);
+                console.log('   Delete status:', delResp.status);
+              }
+            }
+
+            // 6. Submit for review
+            console.log('6. Submitting for App Store Review...');
             const sResp = await req('POST', '/v1/appStoreVersionSubmissions', {
               data: {
                 type: 'appStoreVersionSubmissions',
