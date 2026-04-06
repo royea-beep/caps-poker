@@ -132,8 +132,8 @@ async function main() {
   const jwt = generateAppleJWT();
 
   // ── Step 1: Test Apple API key ──────────────────────────────────────────
-  console.log('🍎 Testing Apple API key...');
-  const testResp = await appleRequest('GET', '/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=20', null, jwt);
+  console.log('🍎 Testing Apple API key (listing IOS_DISTRIBUTION certs)...');
+  const testResp = await appleRequest('GET', '/v1/certificates?filter[certificateType]=IOS_DISTRIBUTION&limit=20', null, jwt);
   if (testResp.status === 401) {
     console.error('❌ Apple API key HH732W7XQJ returned 401 Unauthorized');
     console.error('   → The key may be revoked in Apple Developer Portal');
@@ -147,26 +147,36 @@ async function main() {
     process.exit(1);
   }
   const certsData = JSON.parse(testResp.body);
-  console.log(`✅ Apple API key valid — found ${certsData.data?.length ?? 0} distribution cert(s)`);
+  const certCount = certsData.data?.length ?? 0;
+  console.log(`✅ Apple API key valid — found ${certCount} IOS_DISTRIBUTION cert(s)`);
 
-  // ── Step 2: Find cert J4YQW7L9V2 in Apple's list ──────────────────────
+  // ── Step 2: Find best cert from Apple's list ───────────────────────────
   let appleCertId = null;
-  if (certsData.data) {
+  if (certsData.data && certCount > 0) {
     for (const cert of certsData.data) {
-      // J4YQW7L9V2 is the legacy portal ID, Apple's v1 API uses 'id' field
       const attrs = cert.attributes || {};
-      const serial = attrs.serialNumber || '';
-      console.log(`  cert: ${cert.id} serial=${serial} status=${attrs.certificateType}`);
-      if (serial.toUpperCase().includes('78DD1F12')) {
+      const serial = (attrs.serialNumber || '').toUpperCase();
+      const expiry = attrs.expirationDate || attrs.expirationTimestamp || '';
+      console.log(`  cert: ${cert.id} serial=${serial} expires=${expiry}`);
+      // Prefer 78DD1F12 (serial in EAS), fallback to any valid cert
+      if (serial.includes('78DD1F12')) {
         appleCertId = cert.id;
-        console.log(`  ✅ Found valid cert: Apple ID=${cert.id} serial=${serial}`);
+        console.log(`  ✅ Found preferred cert: Apple ID=${cert.id}`);
+        break;
+      }
+      // Fallback: use first cert found
+      if (!appleCertId) {
+        appleCertId = cert.id;
+        console.log(`  → Using fallback cert: Apple ID=${cert.id}`);
       }
     }
   }
   if (!appleCertId) {
-    // Try by portal ID directly
-    console.log(`⚠️  Cert 78DD1F12 not found in list — trying by portal ID ${APPLE_CERT_PORTAL_ID}`);
-    appleCertId = APPLE_CERT_PORTAL_ID;
+    console.error('❌ No IOS_DISTRIBUTION certificates found in Apple Developer Portal');
+    console.error('   All distribution certificates may be revoked or expired.');
+    console.error('   ACTION NEEDED: Create a new Distribution Certificate at');
+    console.error('   https://developer.apple.com/account/resources/certificates/add');
+    process.exit(1);
   }
 
   // ── Step 3: Get Apple bundle ID ────────────────────────────────────────
