@@ -523,21 +523,26 @@ async function main() {
 
   // Check if APP_STORE build credentials already exist
   const existingBuildCredsData = await easGraphQL(`
-    query GetIosAppBuildCredentials($iosAppCredentialsId: ID!) {
-      iosAppCredentials {
-        byId(id: $iosAppCredentialsId) {
-          iosAppBuildCredentialsList {
+    {
+      app {
+        byId(appId: "${EAS_APP_ID}") {
+          iosAppCredentials {
             id
-            iosDistributionType
-            distributionCertificate { id serialNumber validityNotAfter }
-            provisioningProfile { id developerPortalIdentifier expiration status }
+            iosAppBuildCredentialsList {
+              id
+              iosDistributionType
+              distributionCertificate { id serialNumber validityNotAfter }
+              provisioningProfile { id developerPortalIdentifier expiration status }
+            }
           }
         }
       }
     }
-  `, { iosAppCredentialsId: EAS_IOS_CREDS_ID });
+  `, {});
 
-  const existingBuildCredsList = existingBuildCredsData?.iosAppCredentials?.byId?.iosAppBuildCredentialsList || [];
+  const allAppCreds = existingBuildCredsData?.app?.byId?.iosAppCredentials || [];
+  const targetAppCreds = allAppCreds.find(c => c.id === EAS_IOS_CREDS_ID) || allAppCreds[0];
+  const existingBuildCredsList = targetAppCreds?.iosAppBuildCredentialsList || [];
   const existingAppStoreCreds = existingBuildCredsList.find(c => c.iosDistributionType === 'APP_STORE');
 
   let buildCreds;
