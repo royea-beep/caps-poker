@@ -1,0 +1,151 @@
+name: Submit to App Store Review
+
+on:
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Write ASC API Key
+        run: |
+          echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_HH732W7XQJ.p8
+
+      - name: Submit Build to App Store Review
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          cat > submit.js << 'JSEOF'
+          const https = require('https');
+          const fs = require('fs');
+          const crypto = require('crypto');
+
+          const KEY_ID = process.env.APPLE_API_KEY_ID;
+          const ISSUER = process.env.APPLE_API_ISSUER_ID;
+          const APP_ID = '6760429619';
+          const p8 = fs.readFileSync('AuthKey_HH732W7XQJ.p8', 'utf8').trim();
+
+          function jwt() {
+            const hdr = Buffer.from(JSON.stringify({ alg: 'ES256', kid: KEY_ID, typ: 'JWT' })).toString('base64url');
+            const now = Math.floor(Date.now() / 1000);
+            const pld = Buffer.from(JSON.stringify({ iss: ISSUER, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' })).toString('base64url');
+            const sign = crypto.createSign('SHA256');
+            sign.update(`${hdr}.${pld}`);
+            return `${hdr}.${pld}.${sign.sign({ key: p8, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
+          }
+
+          function req(method, path, body = null) {
+            return new Promise((resolve) => {
+              const data = body ? JSON.stringify(body) : null;
+              const r = https.request({
+                hostname: 'api.appstoreconnect.apple.com',
+                path, method,
+                headers: {
+                  Authorization: `Bearer ${jwt()}`,
+                  'Content-Type': 'application/json',
+                  Accept: 'application/json',
+                  ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}),
+                }
+              }, (r2) => {
+                let d = '';
+                r2.on('data', c => d += c);
+                r2.on('end', () => resolve({ status: r2.statusCode, body: d }));
+              });
+              r.on('error', (e) => resolve({ status: 0, body: e.message }));
+              if (data) r.write(data);
+              r.end();
+            });
+          }
+
+          async function main() {
+            // 1. Get editable version
+            console.log('1. Getting app versions...');
+            const vResp = await req('GET', `/v1/apps/${APP_ID}/appStoreVersions?filter[appStoreState]=PREPARE_FOR_SUBMISSION,REJECTED,DEVELOPER_REJECTED&limit=5`);
+            console.log('   Status:', vResp.status);
+            const versions = JSON.parse(vResp.body);
+            console.log('   Versions:', versions.data?.map(v => `${v.attributes.versionString}(${v.attributes.appStoreState})`).join(', ') || 'none');
+
+            let versionId = versions.data?.[0]?.id;
+
+            if (!versionId) {
+              // Check all versions to understand current state
+              const allVResp = await req('GET', `/v1/apps/${APP_ID}/appStoreVersions?limit=10`);
+              const allV = JSON.parse(allVResp.body);
+              console.log('   All versions:', allV.data?.map(v => `${v.attributes.versionString}(${v.attributes.appStoreState})`).join(', ') || 'none');
+
+              console.log('   Creating version 2.0.0...');
+              const cResp = await req('POST', '/v1/appStoreVersions', {
+                data: {
+                  type: 'appStoreVersions',
+                  attributes: { platform: 'IOS', versionString: '2.0.0', releaseType: 'MANUAL', usesIdfa: false },
+                  relationships: { app: { data: { type: 'apps', id: APP_ID } } }
+                }
+              });
+              console.log('   Create status:', cResp.status, cResp.body.slice(0, 300));
+              versionId = JSON.parse(cResp.body).data?.id;
+            }
+
+            console.log('   Version ID:', versionId);
+            if (!versionId) { console.error('No version ID — cannot submit'); process.exit(1); }
+
+            // 2. Find latest valid build
+            console.log('2. Finding latest build...');
+            const bResp = await req('GET', `/v1/builds?filter[app]=${APP_ID}&filter[processingState]=VALID&sort=-uploadedDate&limit=20`);
+            const builds = JSON.parse(bResp.body);
+            console.log('   All builds:', builds.data?.map(b => `${b.attributes.version}(${b.attributes.processingState})`).join(', ') || 'none');
+            const latestBuild = builds.data?.[0];
+            console.log('   Latest build ID:', latestBuild?.id, 'version:', latestBuild?.attributes?.version);
+
+            // 3. Link build to version
+            if (latestBuild && versionId) {
+              console.log('3. Linking build to version...');
+              const lResp = await req('PATCH', `/v1/appStoreVersions/${versionId}`, {
+                data: { type: 'appStoreVersions', id: versionId, relationships: { build: { data: { type: 'builds', id: latestBuild.id } } } }
+              });
+              console.log('   Link status:', lResp.status);
+              if (lResp.status !== 200) console.log('   Link response:', lResp.body.slice(0, 200));
+
+              // 4. Export compliance
+              console.log('4. Setting export compliance (no encryption)...');
+              const eResp = await req('PATCH', `/v1/builds/${latestBuild.id}`, {
+                data: { type: 'builds', id: latestBuild.id, attributes: { usesNonExemptEncryption: false } }
+              });
+              console.log('   Compliance status:', eResp.status);
+            }
+
+            // 5. Submit for review
+            console.log('5. Submitting for App Store Review...');
+            const sResp = await req('POST', '/v1/appStoreVersionSubmissions', {
+              data: {
+                type: 'appStoreVersionSubmissions',
+                relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: versionId } } }
+              }
+            });
+            console.log('   Submit status:', sResp.status);
+            console.log('   Response:', sResp.body.slice(0, 600));
+
+            if (sResp.status === 201 || sResp.status === 200) {
+              console.log('\n✅ SUBMITTED TO APP STORE REVIEW!');
+              console.log('   Apple will review within 24-48 hours.');
+              console.log('   Track: https://appstoreconnect.apple.com/apps/6760429619');
+            } else {
+              console.log('\n⚠️  Submit had issues — check response above.');
+              process.exit(1);
+            }
+          }
+
+          main().catch(e => { console.error('Error:', e.message); process.exit(1); });
+          JSEOF
+          node submit.js
+
+      - name: Cleanup
+        if: always()
+        run: rm -f AuthKey_HH732W7XQJ.p8 submit.js
