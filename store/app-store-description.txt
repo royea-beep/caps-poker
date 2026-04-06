@@ -1,0 +1,34 @@
+=== APP NAME (30 chars) ===
+CAPS Poker
+
+=== SUBTITLE (30 chars) ===
+Omaha on multiple boards at once
+
+=== DESCRIPTION ===
+CAPS is a new way to play poker.
+
+Play 2, 3, or 4 boards at the same time.
+Each board has its own pot. Win a board, take the chips.
+Win ALL boards — you get a COMPLETE bonus: 50% extra.
+
+It's Omaha poker. Reimagined.
+
+HOW TO PLAY:
+You get 4 cards per board. Arrange them. Community cards are revealed automatically. Best Omaha hand wins each board.
+
+FEATURES:
+• Solo play vs AI
+• 2, 3, or 4 player modes
+• 3D floating cards
+• Daily rewards and win streaks
+• Full Omaha hand evaluation
+• No real money. No gambling. Virtual chips only.
+
+=== KEYWORDS (under 100 chars) ===
+omaha poker,poker game,card game,poker offline,multi board,caps poker,poker ios,poker cards
+
+=== WHAT'S NEW ===
+• 3D floating cards — premium feel
+• Improved hand sorting
+• Results screen stays longer
+• Bug reporting pipeline improved

@@ -403,6 +403,12 @@ export default function ResultsScreen() {
       efficiency_pct: Math.round(bWonCount / revealData.boards.length * 100),
       won: bWonCount > revealData.boards.length - bWonCount,
     }, 'results');
+    track('game_ended', {
+      boards_won: bWonCount,
+      boards_total: revealData.boards.length,
+      won: bWonCount > revealData.boards.length - bWonCount,
+      net_chips: revealData.netChips,
+    }, 'results');
   }, []);
 
   // Auto-continue countdown (FIX 2) — starts 1.5s after mount to let animations settle
