@@ -44,6 +44,11 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: EAS Build + Auto-Submit to TestFlight (External Testers)
+        env:
+          EXPO_APPLE_ID: royearguan@gmail.com
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: eas build --platform ios --profile production --non-interactive --auto-submit-with-profile production
 
       - name: Cleanup key file
