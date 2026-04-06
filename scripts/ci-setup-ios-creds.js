@@ -28,14 +28,93 @@ const APPLE_ISSUER_ID = process.env.APPLE_API_ISSUER_ID;
 const EXPO_TOKEN      = process.env.EXPO_TOKEN;
 
 const EAS_API         = 'api.expo.dev';
-const APPLE_CERT_PORTAL_ID = 'J4YQW7L9V2';      // Apple portal ID for cert serial 78DD1F12
-const EAS_CERT_ID     = '8bf63564-2a8a-4724-830e-e8a0ed6d4902';
 const EAS_ACCOUNT_ID  = '1c06cc8a-50cd-4eee-b8d1-2fdbd3683eef';
 const EAS_APP_ID      = '114b97d5-5cb3-4798-9a97-8233a6a37c07';
 const EAS_IOS_CREDS_ID = '039c8567-e3b9-4dcc-94af-2282c132738b';
 const EAS_APP_IDENTIFIER_ID = 'bb6b0809-981f-4ff5-9179-34b611742160';
 const BUNDLE_ID       = 'com.capspoker.app';
 const TEAM_ID         = '3K9KJNGL9U';
+
+// ─── CSR generation ──────────────────────────────────────────────────────────
+function generateCSR() {
+  // Generate RSA 2048 key + self-signed CSR in PEM format
+  // Apple requires a CSR to issue a certificate
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+
+  // Build CSR manually using DER encoding
+  // Subject: CN=CAPS Poker Distribution, O=3K9KJNGL9U, C=US
+  const subjectDN = buildDN([
+    { oid: '2.5.4.6', value: 'US' },         // C
+    { oid: '2.5.4.10', value: TEAM_ID },      // O
+    { oid: '2.5.4.3', value: 'iPhone Distribution: CAPS Poker' }, // CN
+  ]);
+
+  const pubKeyDer = publicKey.export({ type: 'spki', format: 'der' });
+
+  // CSR structure: CertificationRequestInfo
+  const version = Buffer.from([0x02, 0x01, 0x00]); // INTEGER 0
+  const subjectBytes = subjectDN;
+  const pubKeyInfo = pubKeyDer;
+  const attributes = Buffer.from([0xa0, 0x00]); // empty [0]
+
+  const certReqInfo = derSequence(Buffer.concat([version, subjectBytes, pubKeyInfo, attributes]));
+
+  // Sign the CertificationRequestInfo with SHA256withRSA
+  const signer = crypto.createSign('SHA256');
+  signer.update(certReqInfo);
+  const signature = signer.sign(privateKey);
+
+  // Signature algorithm: SHA256withRSA (1.2.840.113549.1.1.11)
+  const sigAlg = Buffer.from('300d06092a864886f70d01010b0500', 'hex');
+  const sigBitStr = Buffer.concat([Buffer.from([0x03]), derLength(signature.length + 1), Buffer.from([0x00]), signature]);
+
+  const csr = derSequence(Buffer.concat([certReqInfo, sigAlg, sigBitStr]));
+  const csrPem = `-----BEGIN CERTIFICATE REQUEST-----\n${csr.toString('base64').match(/.{1,64}/g).join('\n')}\n-----END CERTIFICATE REQUEST-----\n`;
+  return { privateKeyPem, csrPem };
+}
+
+function derLength(len) {
+  if (len < 128) return Buffer.from([len]);
+  if (len < 256) return Buffer.from([0x81, len]);
+  return Buffer.from([0x82, (len >> 8) & 0xff, len & 0xff]);
+}
+
+function derSequence(data) {
+  return Buffer.concat([Buffer.from([0x30]), derLength(data.length), data]);
+}
+
+function derSet(data) {
+  return Buffer.concat([Buffer.from([0x31]), derLength(data.length), data]);
+}
+
+function derOid(oidStr) {
+  const parts = oidStr.split('.').map(Number);
+  const encoded = [40 * parts[0] + parts[1]];
+  for (let i = 2; i < parts.length; i++) {
+    let v = parts[i];
+    if (v === 0) { encoded.push(0); continue; }
+    const bytes = [];
+    while (v > 0) { bytes.unshift(v & 0x7f); v >>= 7; }
+    for (let j = 0; j < bytes.length - 1; j++) bytes[j] |= 0x80;
+    encoded.push(...bytes);
+  }
+  const oidBytes = Buffer.from(encoded);
+  return Buffer.concat([Buffer.from([0x06]), derLength(oidBytes.length), oidBytes]);
+}
+
+function derUtf8String(str) {
+  const strBytes = Buffer.from(str, 'utf8');
+  return Buffer.concat([Buffer.from([0x0c]), derLength(strBytes.length), strBytes]);
+}
+
+function buildDN(attrs) {
+  const rdns = attrs.map(({ oid, value }) => {
+    const atv = derSequence(Buffer.concat([derOid(oid), derUtf8String(value)]));
+    return derSet(atv);
+  });
+  return derSequence(Buffer.concat(rdns));
+}
 
 // ─── Apple JWT ───────────────────────────────────────────────────────────────
 function generateAppleJWT() {
@@ -176,13 +255,118 @@ async function main() {
       }
     }
   }
+  let newCertPrivateKey = null;
+  let appleCertContent = null;
+  let appleCertSerial = null;
+
   if (!appleCertId) {
-    console.error('❌ No suitable IOS_DISTRIBUTION certificates found in Apple Developer Portal');
-    console.error('   Cert types found:', certsData.data?.map(c => c.attributes?.certificateType).join(', ') || 'none');
-    console.error('   All distribution certificates may be revoked or expired.');
-    console.error('   ACTION NEEDED: Create a new Distribution Certificate at');
-    console.error('   https://developer.apple.com/account/resources/certificates/add');
-    process.exit(1);
+    console.log('⚠️  No IOS_DISTRIBUTION cert found — creating new one via Apple API...');
+    console.log(`   Cert types currently in account: ${certsData.data?.map(c => c.attributes?.certificateType).join(', ') || 'none'}`);
+
+    // Generate CSR
+    const { privateKeyPem, csrPem } = generateCSR();
+    newCertPrivateKey = privateKeyPem;
+    console.log('✅ CSR generated');
+
+    // Create IOS_DISTRIBUTION cert
+    const csrBase64 = Buffer.from(csrPem).toString('base64');
+    const createCertBody = {
+      data: {
+        type: 'certificates',
+        attributes: {
+          certificateType: 'IOS_DISTRIBUTION',
+          csrContent: csrBase64,
+        },
+      },
+    };
+    const createCertResp = await appleRequest('POST', '/v1/certificates', createCertBody, jwt);
+    if (createCertResp.status !== 201 && createCertResp.status !== 200) {
+      console.error(`❌ Failed to create IOS_DISTRIBUTION cert: ${createCertResp.status}`);
+      const errBody = createCertResp.body.slice(0, 500);
+      console.error(errBody);
+      // Check if it's a limit issue
+      if (errBody.includes('maximum') || errBody.includes('limit') || errBody.includes('ENTITY_ERROR')) {
+        console.error('');
+        console.error('🚨 Apple Developer Portal has reached the maximum number of certificates.');
+        console.error('   ACTION NEEDED: Go to https://developer.apple.com/account/resources/certificates/list');
+        console.error('   and revoke one expired/unused Distribution certificate, then re-run the build.');
+      }
+      process.exit(1);
+    }
+    const createdCert = JSON.parse(createCertResp.body);
+    appleCertId = createdCert.data?.id;
+    appleCertContent = createdCert.data?.attributes?.certificateContent;
+    appleCertSerial = createdCert.data?.attributes?.serialNumber;
+    if (!appleCertId) {
+      console.error('❌ Cert created but no ID in response');
+      process.exit(1);
+    }
+    console.log(`✅ Created new IOS_DISTRIBUTION cert: ${appleCertId} serial=${appleCertSerial}`);
+
+    // Store the new cert in EAS so eas build can use it
+    console.log('⬆️  Storing new cert in EAS...');
+    if (!appleCertContent) {
+      console.error('❌ No certificateContent in Apple response — cannot store in EAS');
+      process.exit(1);
+    }
+
+    // Create a P12 from the cert + private key
+    // For EAS, we need certP12 (base64 p12) and certPassword
+    // Since we generated the private key, we can create the P12 with openssl
+    // Store the private key + cert PEM for later
+    fs.writeFileSync('/tmp/dist_cert.pem',
+      `-----BEGIN CERTIFICATE-----\n${appleCertContent.match(/.{1,64}/g).join('\n')}\n-----END CERTIFICATE-----\n`);
+    fs.writeFileSync('/tmp/dist_key.pem', newCertPrivateKey);
+
+    const { execSync } = require('child_process');
+    const p12Password = 'caps2026';
+    execSync(`openssl pkcs12 -export -out /tmp/dist.p12 -inkey /tmp/dist_key.pem -in /tmp/dist_cert.pem -passout pass:${p12Password} -legacy`, { stdio: 'pipe' });
+    const certP12Base64 = fs.readFileSync('/tmp/dist.p12').toString('base64');
+    console.log('✅ P12 created');
+
+    // Store cert in EAS
+    const appleTeamQuery = await easGraphQL(`
+      { account { byId(accountId: "${EAS_ACCOUNT_ID}") { appleTeamsPaginated(first: 5) { edges { node { id appleTeamIdentifier } } } } } }
+    `, {});
+    const teams = appleTeamQuery?.account?.byId?.appleTeamsPaginated?.edges || [];
+    let appleTeamId = teams.find(t => t.node.appleTeamIdentifier === TEAM_ID)?.node?.id;
+    if (!appleTeamId) {
+      console.log('   Apple team not in EAS yet — creating...');
+      const teamMutData = await easGraphQL(`
+        mutation CreateAppleTeam($accountId: ID!, $teamId: String!, $teamName: String!) {
+          appleTeam { createAppleTeam(accountId: $accountId, appleTeamInput: { appleTeamIdentifier: $teamId, appleTeamName: $teamName }) { id appleTeamIdentifier } }
+        }
+      `, { accountId: EAS_ACCOUNT_ID, teamId: TEAM_ID, teamName: 'CAPS Poker' });
+      appleTeamId = teamMutData?.appleTeam?.createAppleTeam?.id;
+    }
+    console.log(`   EAS Apple team ID: ${appleTeamId}`);
+
+    const storeCertData = await easGraphQL(`
+      mutation CreateAppleDistributionCertificate($accountId: ID!, $certInput: AppleDistributionCertificateInput!) {
+        appleDistributionCertificate {
+          createAppleDistributionCertificate(accountId: $accountId, appleDistributionCertificateInput: $certInput) {
+            id serialNumber validityNotAfter
+          }
+        }
+      }
+    `, {
+      accountId: EAS_ACCOUNT_ID,
+      certInput: {
+        certP12: certP12Base64,
+        certPassword: p12Password,
+        certPrivateSigningKey: newCertPrivateKey,
+        developerPortalIdentifier: appleCertId,
+        appleTeamId: appleTeamId,
+      },
+    });
+    const newEasCertId = storeCertData?.appleDistributionCertificate?.createAppleDistributionCertificate?.id;
+    if (!newEasCertId) {
+      console.error('❌ Failed to store cert in EAS:', JSON.stringify(storeCertData));
+      process.exit(1);
+    }
+    console.log(`✅ New cert stored in EAS: ${newEasCertId}`);
+    // Update EAS_CERT_ID to use new cert
+    process.env.NEW_EAS_CERT_ID = newEasCertId;
   }
 
   // ── Step 3: Get Apple bundle ID ────────────────────────────────────────
@@ -300,7 +484,9 @@ async function main() {
   console.log(`✅ EAS provisioning profile created: ${easPPId}`);
 
   // ── Step 7: Create iosAppBuildCredentials ─────────────────────────────
-  console.log('🔗 Creating iOS app build credentials...');
+  // Use newly created cert if available, otherwise fall back to existing valid cert
+  const easCertIdToUse = process.env.NEW_EAS_CERT_ID || EAS_CERT_ID;
+  console.log(`🔗 Creating iOS app build credentials (cert=${easCertIdToUse})...`);
   const createCredsData = await easGraphQL(`
     mutation CreateIosAppBuildCredentials(
       $input: IosAppBuildCredentialsInput!
@@ -321,7 +507,7 @@ async function main() {
   `, {
     input: {
       iosDistributionType: 'APP_STORE',
-      distributionCertificateId: EAS_CERT_ID,
+      distributionCertificateId: easCertIdToUse,
       provisioningProfileId: easPPId,
     },
     iosAppCredentialsId: EAS_IOS_CREDS_ID,
