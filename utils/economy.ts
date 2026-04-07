@@ -72,11 +72,14 @@ export function getNextStreak(
 
 /**
  * Calculate the chip reward for a given streak value.
- * Formula: base + (min(streak, cap) - 1) × bonus
- * Streak 1 = base only. Streak 7 = base + 6×bonus.
+ * Day 1-6: 50 + (streak-1) × 25 chips
+ * Day 7+:  500 chips (weekly milestone)
+ * Day 30+: 2000 chips (monthly milestone)
  */
 export function calculateDailyReward(streak: number): number {
-  const clampedStreak = Math.max(1, Math.min(streak, ECONOMY_VALUES.dailyRewardStreakCap));
+  if (streak >= 30) return 2000;
+  if (streak >= 7) return 500;
+  const clampedStreak = Math.max(1, Math.min(streak, 6));
   return (
     ECONOMY_VALUES.dailyRewardBase +
     (clampedStreak - 1) * ECONOMY_VALUES.dailyRewardStreakBonus

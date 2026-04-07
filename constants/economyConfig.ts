@@ -22,12 +22,12 @@ export const ECONOMY_FLAGS = {
 } as const;
 
 export const ECONOMY_VALUES = {
-  /** Base daily reward in chips */
-  dailyRewardBase: 200,
-  /** Extra chips per consecutive login day */
-  dailyRewardStreakBonus: 50,
-  /** Max streak days for bonus calculation */
-  dailyRewardStreakCap: 7,
+  /** Base daily reward in chips (Day 1) */
+  dailyRewardBase: 50,
+  /** Extra chips per consecutive login day (Days 2-6) */
+  dailyRewardStreakBonus: 25,
+  /** Max streak days tracked (Day 7 = weekly bonus, Day 30 = monthly bonus) */
+  dailyRewardStreakCap: 30,
   /** Chips granted on free refill */
   freeRefillAmount: 500,
   /** Cooldown between free refills in ms (0 = unlimited) */

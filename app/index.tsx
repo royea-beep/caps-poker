@@ -50,6 +50,7 @@ import { CapsHooks } from '../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
 import { FriendsBg } from '../components/FriendsBg';
 import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
+import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
 import { rf, rs, rv } from '../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../utils/i18n';
@@ -744,6 +745,7 @@ export default function HomeScreen() {
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showInteractiveTutorial, setShowInteractiveTutorial] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
   const [showNudge, setShowNudge] = useState(false);
@@ -892,8 +894,13 @@ export default function HomeScreen() {
       } catch {}
     })();
 
+    // Interactive tutorial (S98) — shown if not yet seen (independent of old tutorial key)
+    AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY).then(val => {
+      if (!val) setShowInteractiveTutorial(true);
+    }).catch(() => {});
+    // Old static tutorial — kept for Settings "replay tutorial" flow
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
-      if (!val) setShowTutorial(true);
+      if (!val) setShowTutorial(false); // superseded by interactive tutorial
     }).catch(() => {});
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
@@ -1199,8 +1206,13 @@ export default function HomeScreen() {
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
 
-      {/* Tutorial overlay — 5-slide static tutorial */}
-      {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
+      {/* Interactive Tutorial (S98) — 3 steps with real cards, first-launch */}
+      {showInteractiveTutorial && (
+        <InteractiveTutorial onDone={() => setShowInteractiveTutorial(false)} />
+      )}
+
+      {/* Tutorial overlay — 5-slide static tutorial (Settings replay only) */}
+      {showTutorial && !showInteractiveTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
 
       {/* Welcome modal — shown before first game or tutorial replay */}
       {showWelcome && <WelcomeModal onStart={handleWelcomeStart} onSkip={handleWelcomeSkip} />}
@@ -1381,9 +1393,19 @@ export default function HomeScreen() {
               <Text style={styles.dailyPillStreak}>🔥 Day {dailyRewardStreak + 1}</Text>
             )}
           </Pressable>
-        ) : dailyRewardStreak >= 2 ? (
+        ) : dailyRewardStreak >= 1 ? (
           <View style={styles.dailyStreakInfo}>
-            <Text style={styles.dailyStreakInfoText}>🔥 {dailyRewardStreak}-day streak → tomorrow: +{calculateDailyReward(dailyRewardStreak + 1)} chips</Text>
+            {(() => {
+              const nextStreak = dailyRewardStreak + 1;
+              const nextReward = calculateDailyReward(nextStreak);
+              const isMilestone = nextStreak === 7 || nextStreak === 30;
+              const milestoneLabel = nextStreak === 30 ? ' (Monthly Bonus!)' : nextStreak === 7 ? ' (Weekly Bonus!)' : '';
+              return (
+                <Text style={styles.dailyStreakInfoText}>
+                  {`🔥 Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}
+                </Text>
+              );
+            })()}
           </View>
         ) : null}
 
