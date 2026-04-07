@@ -1181,7 +1181,7 @@ export default function HomeScreen() {
     ? ({ background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as any)
     : {};
 
-  const playBtnWidth = Math.round(screenW * 0.70);
+  const playBtnWidth = Math.round(screenW * 0.75);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -1355,12 +1355,12 @@ export default function HomeScreen() {
           {/* Stakes label */}
           <Text style={styles.stakesLabel}>
             {config.potPerBoard === 0
-              ? 'Casual (Free)'
+              ? 'Casual · Free'
               : config.potPerBoard <= 25
-              ? `Low Stakes (${config.potPerBoard})`
+              ? `Low Stakes · ${config.potPerBoard}/board`
               : config.potPerBoard <= 100
-              ? `Mid Stakes (${config.potPerBoard})`
-              : `High Stakes (${config.potPerBoard})`}
+              ? `Mid Stakes · ${config.potPerBoard}/board`
+              : `High Stakes · ${config.potPerBoard}/board`}
           </Text>
         </View>
 
@@ -1379,8 +1379,7 @@ export default function HomeScreen() {
 
         {/* Level progress bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 4 }}>
-          <Text style={{ color: '#c96a1a', fontSize: 9, fontWeight: '600', opacity: 0.7, letterSpacing: 0.5 }}>LVL</Text>
-          <LevelBadge level={playerLevel} size="sm" />
+          <Text style={{ color: '#c96a1a', fontSize: 11, fontWeight: '700', letterSpacing: 0.3, minWidth: 44 }}>LVL {playerLevel}</Text>
           <View style={{ flex: 1, height: 6, backgroundColor: '#1a0e06', borderRadius: 3, overflow: 'hidden' }}>
             <View style={{ width: `${Math.min(100, (levelXP / (playerLevel * playerLevel * 50)) * 100)}%`, height: '100%', backgroundColor: '#c96a1a', borderRadius: 3 }} />
           </View>

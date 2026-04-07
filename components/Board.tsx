@@ -368,6 +368,7 @@ export default function Board({
               faceDown={false}
               cardWidth={commW}
               cardHeight={commH}
+              isCommunityCard
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
@@ -380,6 +381,7 @@ export default function Board({
               faceDown={!revealed}
               cardWidth={commW}
               cardHeight={commH}
+              isCommunityCard
               highlighted={revealed && boardHighlightIds.includes(c.id)}
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
               flipDuration={flipDuration}
