@@ -1294,7 +1294,7 @@ export default function HomeScreen() {
           >
             CAPS
           </Text>
-          <Text style={[styles.titlePoker, { color: theme.subtitleColor }]}>POKER</Text>
+          <Text style={styles.titlePoker}>POKER</Text>
           <HeroCardFan />
           <Animated.Text
             style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
@@ -1365,18 +1365,6 @@ export default function HomeScreen() {
         </View>
 
 
-        {/* XP Bar — Battle Pass progress */}
-        <Pressable onPress={() => router.push('/stats' as any)} style={styles.xpBarTouchable}>
-          <XPBar
-            currentXP={bpCurrentXP}
-            currentTier={bpCurrentTier}
-            progress={bpProgress}
-            xpInTier={bpXpInTier}
-            xpNeeded={bpXpNeeded}
-            compact
-          />
-        </Pressable>
-
         {/* Level progress bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 4 }}>
           <Text style={{ color: '#c96a1a', fontSize: 11, fontWeight: '700', letterSpacing: 0.3, minWidth: 44 }}>LVL {playerLevel}</Text>
@@ -1409,12 +1397,12 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Play of the Day card (D10) — only shown when available */}
-        {potd?.available && potd.data && (
+        {/* Play of the Day card (D10) — only shown when player name is known */}
+        {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
             <Text style={styles.potdTitle}>🏆 Play of the Day</Text>
             <Text style={styles.potdPlayer} numberOfLines={1}>
-              {potd.player ?? 'Anonymous'} · {potd.data.hand_name ?? 'Best Hand'}
+              {potd.player} · {potd.data.hand_name ?? 'Best Hand'}
             </Text>
             {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
           </View>
@@ -1482,19 +1470,6 @@ export default function HomeScreen() {
             <Text style={homeDataCardStyles.label}>📊 STATS</Text>
             <Text style={homeDataCardStyles.value}>{handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'}</Text>
             <Text style={homeDataCardStyles.sub}>{handsPlayed} hands</Text>
-          </Pressable>
-        </View>
-
-        {/* Action row: Missions · Stats · Achievements */}
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, paddingHorizontal: 4 }}>
-          <Pressable onPress={() => router.push('/missions' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ color: '#f5e6d3', fontSize: 13, fontWeight: '700' }}>🎯 Missions</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/stats' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ color: '#f5e6d3', fontSize: 13, fontWeight: '700' }}>📊 Stats</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/achievements' as any)} style={{ flex: 1, backgroundColor: '#1a0e06', borderWidth: 1, borderColor: '#3d2a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ color: '#f5e6d3', fontSize: 13, fontWeight: '700' }}>🏆 Badges</Text>
           </Pressable>
         </View>
 
@@ -1836,11 +1811,12 @@ const styles = StyleSheet.create({
     textShadowRadius: 24,
   },
   titlePoker: {
-    fontSize: rf(13),
-    fontWeight: '400',
-    letterSpacing: 16,
+    fontSize: rf(18),
+    fontWeight: '600',
+    letterSpacing: 3,
     textTransform: 'uppercase',
-    opacity: 0.55,
+    color: '#c9a84c',
+    opacity: 1.0,
     marginTop: -2,
     marginBottom: 2,
   },
