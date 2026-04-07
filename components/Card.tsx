@@ -22,6 +22,7 @@ interface CardProps {
   cardHeight?: number;
   themeOverride?: string; // kept for prop compatibility
   suitsOnly?: boolean;
+  isCommunityCard?: boolean;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -60,6 +61,7 @@ export default function CardComponent({
   cardWidth,
   cardHeight,
   suitsOnly = false,
+  isCommunityCard = false,
 }: CardProps) {
   const width = cardWidth ?? (small ? rs(52) : rs(58));
   const height = cardHeight ?? (small ? rs(74) : rs(82));
@@ -78,6 +80,10 @@ export default function CardComponent({
   const flipAnim = useRef(new Animated.Value(faceDown ? 0 : 1)).current;
   // Glow lift — native driver (transform only)
   const glowAnim = useRef(new Animated.Value(highlighted ? 1 : 0)).current;
+  // Float idle animation (S96) — community: -10px/3s, player: -5px/2s
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const floatDistance = isCommunityCard ? -10 : -5;
+  const floatDuration = isCommunityCard ? 3000 : 2000;
 
   const prevFaceDownRef = useRef(faceDown);
 
@@ -102,6 +108,19 @@ export default function CardComponent({
     }).start();
   }, [highlighted]);
 
+  useEffect(() => {
+    // Float loop — native only (Animated.loop is safe for Hermes)
+    if (Platform.OS === 'web') return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: 1, duration: floatDuration / 2, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: floatDuration / 2, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => { loop.stop(); };
+  }, []);
+
   // Back face: rotates 0deg to 90deg during first half, then opacity 0
   const backRotateY = flipAnim.interpolate({
     inputRange: [0, 0.5, 1],
@@ -125,6 +144,8 @@ export default function CardComponent({
   // Glow: scale up + lift (native driver)
   const glowScale = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] });
   const glowTranslateY = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
+  // Float idle (S96)
+  const floatY = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, floatDistance] });
 
   // Face-down back card — diamond lattice pattern
   const renderBack = () => {
@@ -204,9 +225,9 @@ export default function CardComponent({
         default: { boxShadow: '2px 4px 14px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,255,255,0.15)' } as any,
       })
     : Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4 } as any,
-        android: { elevation: 5 } as any,
-        default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 12 } as any,
+        android: { elevation: 14 } as any,
+        default: { boxShadow: '0 8px 24px rgba(0,0,0,0.55)' } as any,
       });
 
   if (!card) {
@@ -276,6 +297,7 @@ export default function CardComponent({
               { rotateY: frontRotateY },
               { scale: glowScale },
               { translateY: glowTranslateY },
+              { translateY: floatY },
             ],
             opacity: frontOpacity,
           },
