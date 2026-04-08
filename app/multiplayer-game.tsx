@@ -125,7 +125,12 @@ export default function MultiplayerGameScreen() {
 
   // --- Chat (internet MP only) ---
   const isInternetMP = typeof (mpServer as any)?.sendChat === 'function' || typeof (mpClient as any)?.sendChat === 'function';
-  const isConnected = isInternetMP && (mpServer !== null || mpClient !== null);
+  const isConnected = isInternetMP && (
+    (mpServer !== null) ||
+    (mpClient !== null && typeof (mpClient as any).isConnected === 'function'
+      ? (mpClient as any).isConnected()
+      : mpClient !== null)
+  );
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const myPlayerName = connectedPlayers.find((p) => p.seat === playerIndex)?.name ?? `Seat ${playerIndex + 1}`;
   const chatIdCounter = useRef(0);
