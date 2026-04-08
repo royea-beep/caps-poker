@@ -18,6 +18,7 @@ import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
+import { useGameColors } from '../utils/useGameColors';
 import { getHandHint } from '../utils/handHint';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
@@ -157,6 +158,7 @@ export default function Board({
   const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height — never jumps when bot places cards
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
+  const gameColors = useGameColors();
   const [hintInfoVisible, setHintInfoVisible] = useState(false);
   const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // S81 Card Bible: community and player cards SAME formula (tester: flop was smaller)
@@ -461,9 +463,9 @@ export default function Board({
         </View>
 
         {winner && (
-          <Animated.View style={[styles.winnerBadge, winner === 'player' ? styles.playerBadge : winner === 'bot' ? styles.botBadge : styles.tieBadge, bannerAnimStyle]}>
+          <Animated.View style={[styles.winnerBadge, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : styles.tieBadge, bannerAnimStyle]}>
             <Text style={styles.winnerText}>
-              {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
+              {winner === 'player' ? '✓ WIN' : winner === 'bot' ? '✗ LOSE' : '± TIE'}
             </Text>
             {winner === 'player' && playerHandName ? (
               <Text style={styles.bannerHandName}>{playerHandName}</Text>
