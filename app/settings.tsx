@@ -367,6 +367,33 @@ function FourColorSuitsToggle() {
 }
 
 
+function ColorblindToggle() {
+  const colorblindMode = useGameStore((s) => s.colorblindMode);
+  const setColorblindMode = useGameStore((s) => s.setColorblindMode);
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Colorblind Mode</Text>
+        <Text style={styles.rowHint}>{colorblindMode ? 'Blue = Win, Orange = Lose' : 'Green = Win, Red = Lose'}</Text>
+      </View>
+      <View style={styles.selectorRow}>
+        <Pressable
+          onPress={() => { hapticLight(); setColorblindMode(false); }}
+          style={[styles.selectorBtn, !colorblindMode && styles.selectorBtnActive]}
+        >
+          <Text style={[styles.selectorText, !colorblindMode && styles.selectorTextActive]}>Off</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { hapticLight(); setColorblindMode(true); }}
+          style={[styles.selectorBtn, colorblindMode && styles.selectorBtnActive]}
+        >
+          <Text style={[styles.selectorText, colorblindMode && styles.selectorTextActive]}>On</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function HandSortToggle() {
   const handSortMethod = useGameStore((s) => s.handSortMethod);
   const setHandSortMethod = useGameStore((s) => s.setHandSortMethod);
@@ -778,6 +805,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
         <CardThemePicker />
         <FourColorSuitsToggle />
+        <ColorblindToggle />
         <HandSortToggle />
 
         <Text style={styles.sectionTitle}>TIMING</Text>

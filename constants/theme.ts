@@ -102,3 +102,31 @@ export const THEME = {
   spacing,
   typography: fontWeight,
 } as const;
+
+// ─── Win/Lose palettes — default and colorblind-safe ─────────────────────────
+export const DEFAULT_WIN_LOSE = {
+  win: '#2ecc71',        // green
+  winLight: '#E8F5E9',
+  winText: '#1B5E20',
+  lose: '#F44336',       // red
+  loseLight: '#FFEBEE',
+  loseText: '#B71C1C',
+} as const;
+
+export const COLORBLIND_WIN_LOSE = {
+  win: '#1565C0',        // blue (safe for deuteranopia/protanopia)
+  winLight: '#E3F2FD',
+  winText: '#0D47A1',
+  lose: '#E65100',       // orange
+  loseLight: '#FFF3E0',
+  loseText: '#BF360C',
+} as const;
+
+export interface WinLosePalette {
+  win: string;
+  winLight: string;
+  winText: string;
+  lose: string;
+  loseLight: string;
+  loseText: string;
+}

@@ -23,6 +23,7 @@ import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { getHandName } from '../utils/handNames';
 import { useGameStore } from '../store/gameStore';
+import { useGameColors } from '../utils/useGameColors';
 import { getTheme } from '../constants/visualThemes';
 import GuidedTooltip from './GuidedTooltip';
 
@@ -345,6 +346,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     };
   }, [currentIdx]);
 
+  const gameColors = useGameColors();
   const board = boards[currentIdx];
   if (!board) return null;
 
@@ -360,12 +362,12 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const handCardW = Math.min(70, Math.floor((screenW - pad - handGap * 3) / 4));
   const handCardH = Math.round(handCardW * 1.4);
 
-  const resultColor = board.winner === 'player' ? '#2ecc71' : board.winner === 'bot' ? '#F44336' : '#fff';
+  const resultColor = board.winner === 'player' ? gameColors.win : board.winner === 'bot' ? gameColors.lose : '#fff';
   const tx = t();
   const lang = getLanguage() === 'he' ? 'he' : 'en';
   const resultText = board.winner === 'player' ? tx.youWin : board.winner === 'bot' ? tx.youLose : tx.tie;
   const chipSign = board.winner === 'player' ? '+' : board.winner === 'bot' ? '-' : '±';
-  const chipColor = board.winner === 'player' ? COLORS.goldBright : board.winner === 'bot' ? '#F44336' : '#aaa';
+  const chipColor = board.winner === 'player' ? COLORS.goldBright : board.winner === 'bot' ? gameColors.lose : '#aaa';
 
   return (
     <Modal visible animationType="fade" transparent={false} statusBarTranslucent>

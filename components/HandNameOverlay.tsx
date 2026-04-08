@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { rv, rf, rs } from '../utils/responsive';
+import { useGameColors } from '../utils/useGameColors';
 
 interface HandNameOverlayProps {
   handName: string;
@@ -13,6 +14,7 @@ interface HandNameOverlayProps {
 }
 
 export default function HandNameOverlay({ handName, isWinner }: HandNameOverlayProps) {
+  const gameColors = useGameColors();
   const translateX = useSharedValue(40);
   const opacity = useSharedValue(0);
 
@@ -28,7 +30,7 @@ export default function HandNameOverlay({ handName, isWinner }: HandNameOverlayP
 
   return (
     <Animated.View style={[styles.pill, animStyle]}>
-      <Animated.Text style={[styles.text, isWinner ? styles.win : styles.lose]}>
+      <Animated.Text style={[styles.text, isWinner ? { color: gameColors.win } : styles.lose]}>
         {handName}
       </Animated.Text>
     </Animated.View>

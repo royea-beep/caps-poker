@@ -28,6 +28,8 @@ interface GameStore {
   buttonStyle: ButtonStyle;
   friendsBg: FriendsBgId;
   fourColorSuits: boolean;
+  colorblindMode: boolean;
+  setColorblindMode: (enabled: boolean) => void;
   handSortMethod: 'caps' | 'user';
   orientation: OrientationType | null;
   visualTheme: VisualTheme | null;
@@ -133,6 +135,8 @@ export const useGameStore = create<GameStore>()(
       buttonStyle: 'solid' as ButtonStyle,
       friendsBg: 'none' as FriendsBgId,
       fourColorSuits: false,
+      colorblindMode: false,
+      setColorblindMode: (enabled: boolean) => set({ colorblindMode: enabled }),
       handSortMethod: 'caps' as 'caps' | 'user',
       orientation: null,
       visualTheme: null,
@@ -282,7 +286,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
+      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, colorblindMode: state.colorblindMode, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
     }
   )
 );
