@@ -25,7 +25,7 @@ const HOST_PRESENCE_WAIT_MS = 3000;
 const HOST_PRESENCE_POLL_MS = 300;
 const DELIVERY_RETRY_INTERVAL_MS = 2000;
 const DELIVERY_MAX_RETRIES = 5;
-const HOST_LOST_GRACE_MS = 5000;
+const HOST_LOST_GRACE_MS = 10000; // 10s grace for real-world WiFi hiccups (was 5s)
 export const WAITING_STATE_TIMEOUT_MS = 60000;
 
 interface PendingDelivery {
