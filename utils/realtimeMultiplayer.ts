@@ -545,6 +545,7 @@ export class RealtimeServer {
         timeLimit: config.arrangementTime,
         playerCount,
         boardCount: boards.length,
+        yourSeat: client.seat,
       };
 
       if (client.isHost) {
