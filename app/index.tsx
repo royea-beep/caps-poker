@@ -61,6 +61,7 @@ import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
 import { trackEvent } from '../utils/heatmap';
 import { getSupabase } from '../utils/supabase';
+import { isOnlineMultiplayerAvailable } from '../utils/realtimeMultiplayer';
 import { scheduleLocal, cancelReengagement } from '../utils/notifications';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
@@ -1455,6 +1456,26 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* Play with Friends — Internet MP entry (S100) */}
+        {isOnlineMultiplayerAvailable() && (
+          <View style={styles.friendsRow}>
+            <Pressable
+              style={[styles.modeBtn, { backgroundColor: '#0e2d1a', flex: 1 }]}
+              onPress={() => router.push('/lobby/internet-host' as any)}
+            >
+              <Text style={styles.modeBtnIcon}>🌐</Text>
+              <Text style={[styles.modeBtnLabel, { color: '#4ade80' }]}>Host Game</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.modeBtn, { backgroundColor: '#0e1a2d', flex: 1 }]}
+              onPress={() => router.push('/lobby/internet-join' as any)}
+            >
+              <Text style={styles.modeBtnIcon}>🎮</Text>
+              <Text style={[styles.modeBtnLabel, { color: '#60a5fa' }]}>Join Game</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Data cards — 2x2 grid: Missions | Leaderboard | Achievements | Stats */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%', marginTop: 4 }}>
           {/* Mission card */}
@@ -1985,6 +2006,12 @@ const styles = StyleSheet.create({
     gap: rs(10),
     width: '100%',
     justifyContent: 'center',
+  },
+  friendsRow: {
+    flexDirection: 'row',
+    gap: rs(10),
+    width: '100%',
+    marginTop: rs(-4),
   },
   modeBtn: {
     flex: 1,
