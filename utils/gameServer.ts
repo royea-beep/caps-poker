@@ -24,6 +24,7 @@ import {
   HandCompletePayload,
 } from '../constants/networkConfig';
 import { generateRoomCode } from './roomCode';
+import { getLocalIP, startDiscoveryServer, stopDiscoveryServer } from './localNetwork';
 import { MultiBoardState } from '../types/gameTypes';
 import {
   dealNewHand,
@@ -72,6 +73,8 @@ export class GameServer {
   private stopping: boolean = false;
   private lastHeartbeatCheck: number = Date.now();
   private nextHandRequests: Set<string> = new Set();
+  private discoveryServer: any = null;
+  private resolvedHostIP: string = '';
   private gameConfig: GameConfig | null = null;
 
   constructor(
@@ -93,6 +96,10 @@ export class GameServer {
     return this.roomCode;
   }
 
+  getHostIP(): string {
+    return this.resolvedHostIP;
+  }
+
   getClients(): ConnectedClient[] {
     return Array.from(this.clients.values());
   }
@@ -100,6 +107,9 @@ export class GameServer {
   async start(port: number = NETWORK_CONFIG.port): Promise<string> {
     this.roomCode = generateRoomCode();
     this.stopping = false;
+
+    // Get real device IP before starting server
+    this.resolvedHostIP = await getLocalIP();
 
     // Add host as first player (seat 0)
     this.clients.set(this.hostId, {
@@ -122,10 +132,11 @@ export class GameServer {
         });
 
         this.server.listen({ port, host: '0.0.0.0' }, () => {
-          const address = this.server.address();
-          const hostIP = address?.address || '0.0.0.0';
           this.startHeartbeatMonitor();
-          resolve(hostIP);
+          // Start discovery server so guests can auto-find this host
+          this.discoveryServer = startDiscoveryServer(this.roomCode);
+          // Return real device IP (resolved before start) or fallback
+          resolve(this.resolvedHostIP || '0.0.0.0');
         });
 
         this.server.on('error', (err: Error) => {
@@ -424,6 +435,7 @@ export class GameServer {
         timeLimit: config.arrangementTime,
         playerCount,
         boardCount,
+        yourSeat: client.seat,
       };
 
       if (client.isHost) {
@@ -629,6 +641,9 @@ export class GameServer {
       }
     }
     this.clients.clear();
+
+    stopDiscoveryServer(this.discoveryServer);
+    this.discoveryServer = null;
 
     if (this.server) {
       try {

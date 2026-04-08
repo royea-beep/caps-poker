@@ -76,6 +76,7 @@ export interface CardsDealtPayload {
   timeLimit: number;
   playerCount: number;
   boardCount: number;
+  yourSeat: number;
 }
 
 export interface PlayerReadyPayload {
