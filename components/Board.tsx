@@ -362,6 +362,10 @@ export default function Board({
         )}
 
         {/* Community cards: flop + turn/river (slightly larger for readability) */}
+        {/* A3: COMMUNITY label — gold pill for visual hierarchy */}
+        <View style={styles.communityLabelWrap}>
+          <Text style={styles.communityLabelText}>COMMUNITY</Text>
+        </View>
         <View style={styles.cardRow}>
           {(openCards ?? []).map((c) => (
             <CardComponent
@@ -626,6 +630,22 @@ const styles = StyleSheet.create({
     opacity: 0.3,
     marginHorizontal: rs(3),
     alignSelf: 'center',
+  },
+  communityLabelWrap: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    paddingHorizontal: rs(10),
+    paddingVertical: rs(2),
+    borderRadius: rs(8),
+    borderWidth: 0.5,
+    borderColor: '#c9a84c',
+    marginBottom: rs(1),
+  },
+  communityLabelText: {
+    fontSize: rf(8),
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: '#c9a84c',
   },
   emptySlot: {
     borderRadius: rs(8),

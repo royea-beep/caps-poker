@@ -218,7 +218,13 @@ export default function CardComponent({
     );
   };
 
-  const faceUpShadow = visualTheme === 'fiveo'
+  const faceUpShadow = isCommunityCard
+    ? Platform.select({
+        ios: {} as any, // iOS shadow handled by highlightShadow for community
+        android: { elevation: 10 } as any,
+        default: { boxShadow: '0 0 12px rgba(201,168,76,0.4)' } as any,
+      })
+    : visualTheme === 'fiveo'
     ? Platform.select({
         ios: { shadowColor: '#000', shadowOffset: { width: 2, height: 4 }, shadowOpacity: 0.65, shadowRadius: 10 } as any,
         android: { elevation: 10 } as any,
@@ -251,13 +257,18 @@ export default function CardComponent({
 
   // Highlight border — static conditional (instant feedback for card selection)
   // Face cards (J/Q/K/A) get subtle gold border for prestige
+  // Community cards get gold frame for visual hierarchy (S105)
   const highlightBorder = highlighted
     ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
+    : isCommunityCard
+    ? { borderWidth: 2, borderColor: '#c9a84c' as const }
     : isFaceCard
     ? { borderWidth: 1.5, borderColor: 'rgba(201,168,76,0.45)' as const }
     : { borderWidth: 1, borderColor: suitBorderColor };
   const highlightShadow = highlighted && Platform.OS === 'ios'
     ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 14 }
+    : isCommunityCard && Platform.OS === 'ios'
+    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 }
     : {};
 
   return (
