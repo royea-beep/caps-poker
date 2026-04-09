@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { debugLog } from '../components/DebugOverlay';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking } from 'react-native';
 import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
 import { t } from '../utils/i18n';
@@ -188,21 +188,40 @@ function RevealSpeedSelector() {
 
 function SoundToggle() {
   const soundEnabled = useGameStore((s) => s.config.soundEnabled);
+  const soundVolume = useGameStore((s) => s.config.soundVolume ?? 0.8);
   const updateConfig = useGameStore((s) => s.updateConfig);
+  const STEPS = 10;
+  const filled = Math.round(soundVolume * STEPS);
 
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Sound Effects</Text>
+        <Text style={styles.rowLabel}>Sound Volume</Text>
       </View>
-      <Pressable
-        onPress={() => { updateConfig({ soundEnabled: !soundEnabled }); CapsHooks.settingsChanged('soundEnabled', !soundEnabled); }}
-        style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
-      >
-        <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
-          {soundEnabled ? 'ON' : 'OFF'}
-        </Text>
-      </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(4) }}>
+        <Pressable
+          onPress={() => { updateConfig({ soundEnabled: !soundEnabled }); CapsHooks.settingsChanged('soundEnabled', !soundEnabled); }}
+          style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
+        >
+          <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
+            {soundEnabled ? 'ON' : 'OFF'}
+          </Text>
+        </Pressable>
+        {soundEnabled && (
+          <View style={{ flexDirection: 'row', gap: rs(2), marginLeft: rs(6) }}>
+            {Array.from({ length: STEPS }).map((_, i) => (
+              <Pressable
+                key={i}
+                onPress={() => updateConfig({ soundVolume: (i + 1) / STEPS })}
+                hitSlop={4}
+              >
+                <View style={[styles.volSegment, i < filled && styles.volSegmentFilled]} />
+              </Pressable>
+            ))}
+            <Text style={styles.volPct}>{Math.round(soundVolume * 100)}%</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -992,6 +1011,13 @@ export default function SettingsScreen() {
           <Text style={styles.creditsText}>⚠️ Not affiliated with any poker player mentioned</Text>
           <Text style={styles.creditsText}>Voices are parody / entertainment only</Text>
         </View>
+        <Pressable
+          onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy')}
+          style={styles.privacyLink}
+        >
+          <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+        </Pressable>
+
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <VersionBadge />
           <Text style={{ color: '#555', fontSize: rf(11), marginTop: 4 }}>
@@ -1195,6 +1221,35 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: COLORS.background,
+  },
+  // S116: volume segments
+  volSegment: {
+    width: rs(10),
+    height: rs(18),
+    borderRadius: rs(2),
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  volSegmentFilled: {
+    backgroundColor: '#c9a84c',
+  },
+  volPct: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: rf(10),
+    fontWeight: '600',
+    marginLeft: rs(4),
+    minWidth: rs(30),
+    textAlign: 'right',
+  },
+  // S116: Privacy Policy
+  privacyLink: {
+    alignSelf: 'center',
+    paddingVertical: rs(12),
+    marginTop: rs(8),
+  },
+  privacyLinkText: {
+    fontSize: rf(12),
+    color: 'rgba(201,168,76,0.5)',
+    textDecorationLine: 'underline',
   },
 });
 

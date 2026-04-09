@@ -109,6 +109,9 @@ export async function playSound(name: SoundName): Promise<void> {
     const player = players[name];
     if (!player) return;
 
+    // S116: apply user volume multiplier
+    const vol = (config.soundVolume ?? 1) * (VOLUME_MAP[name as SoundName] ?? 0.3);
+    try { player.volume = Math.min(1, vol); } catch {}
     try { player.seekTo(0); } catch {}
     player.play();
   } catch {
