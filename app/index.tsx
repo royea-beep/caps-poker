@@ -19,7 +19,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -802,6 +802,8 @@ export default function HomeScreen() {
   const [showLevelUp, setShowLevelUp] = React.useState(false);
   const [levelUpTo, setLevelUpTo] = React.useState(1);
   const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
+  // A3: Share COMPLETE banner after returning from a COMPLETE game
+  const [showCompleteBanner, setShowCompleteBanner] = useState(false);
   const bpCurrentTier = useBattlePassStore((s) => s.currentTier);
   const { progress: bpProgress, xpInTier: bpXpInTier, xpNeeded: bpXpNeeded } = getProgressToNextTier(bpCurrentXP);
 
@@ -831,6 +833,9 @@ export default function HomeScreen() {
 
   // PLAY button scale — RN Animated (not Reanimated)
   const playScale = useRef(new AnimatedRN.Value(1)).current;
+
+  // A2: Daily Reward pulse animation
+  const dailyPulseAnim = useRef(new AnimatedRN.Value(1)).current;
 
   // Chip float-up animation (+N when chips earned)
   const chipFloatY = useRef(new AnimatedRN.Value(0)).current;
@@ -1182,6 +1187,28 @@ export default function HomeScreen() {
 
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
 
+  // A3: Show share banner if last game was COMPLETE
+  useFocusEffect(useCallback(() => {
+    AsyncStorage.getItem('last_was_complete').then(val => {
+      if (val === 'true') {
+        AsyncStorage.removeItem('last_was_complete').catch(() => {});
+        setShowCompleteBanner(true);
+        setTimeout(() => setShowCompleteBanner(false), 8000);
+      }
+    }).catch(() => {});
+  }, []));
+
+  // A2: Start/stop pulse when claimable
+  useEffect(() => {
+    if (!canClaim) { dailyPulseAnim.setValue(1); return; }
+    const anim = AnimatedRN.loop(AnimatedRN.sequence([
+      AnimatedRN.timing(dailyPulseAnim, { toValue: 1.05, duration: 800, useNativeDriver: true }),
+      AnimatedRN.timing(dailyPulseAnim, { toValue: 1.0, duration: 800, useNativeDriver: true }),
+    ]));
+    anim.start();
+    return () => anim.stop();
+  }, [canClaim]);
+
   const titleFontSize = Math.min(42, Math.floor(screenW * 0.105));
 
   // Web title gradient for dark_gold theme
@@ -1209,7 +1236,7 @@ export default function HomeScreen() {
 
       {/* Interactive Tutorial (S98) — 3 steps with real cards, first-launch */}
       {showInteractiveTutorial && (
-        <InteractiveTutorial onDone={() => setShowInteractiveTutorial(false)} />
+        <InteractiveTutorial onDone={() => { setShowInteractiveTutorial(false); router.push('/game' as any); }} />
       )}
 
       {/* Tutorial overlay — 5-slide static tutorial (Settings replay only) */}
@@ -1321,7 +1348,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Player count selector — 2P / 3P / 4P */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }}>
           {([2, 3, 4] as const).map(n => (
             <Pressable
               key={n}
@@ -1340,6 +1367,14 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
+        {/* A1: Omaha hint under selector */}
+        <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.7)', textAlign: 'center', marginBottom: 4 }}>
+          {config.numberOfPlayers === 2
+            ? '4 boards · Omaha · Best hand wins each'
+            : config.numberOfPlayers === 3
+            ? '3 boards · Omaha · Best hand wins each'
+            : '2 boards · Omaha · Best hand wins each'}
+        </Text>
 
         {/* PLAY button — always green, center stage */}
         <View style={styles.playSection}>
@@ -1386,14 +1421,32 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* A3: Share COMPLETE banner */}
+        {showCompleteBanner && (
+          <Pressable
+            onPress={async () => {
+              try {
+                await Share.share({ message: 'I got COMPLETE in CAPS Poker! Won all boards! 🏆\nPlay: testflight.apple.com/join/hD3KvZeC', title: 'CAPS Poker - COMPLETE!' });
+              } catch {}
+              setShowCompleteBanner(false);
+            }}
+            style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1.5, borderColor: '#c9a84c', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}
+          >
+            <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }}>🏆 You got COMPLETE! Share it?</Text>
+          </Pressable>
+        )}
+
         {/* Daily reward — prominent pill when claimable, streak info otherwise */}
         {canClaim ? (
-          <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
-            <Text style={styles.dailyPillText}>🎁 Claim Daily Reward</Text>
-            {dailyRewardStreak > 0 && (
-              <Text style={styles.dailyPillStreak}>🔥 Day {dailyRewardStreak + 1}</Text>
-            )}
-          </Pressable>
+          <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
+            <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
+              {dailyRewardStreak >= 6 ? (
+                <Text style={styles.dailyPillText}>🔥 Day {dailyRewardStreak + 1} Streak! +500 chips!</Text>
+              ) : (
+                <Text style={styles.dailyPillText}>🎁 Claim Daily Reward · Day {dailyRewardStreak + 1}</Text>
+              )}
+            </Pressable>
+          </AnimatedRN.View>
         ) : dailyRewardStreak >= 1 ? (
           <View style={styles.dailyStreakInfo}>
             {(() => {

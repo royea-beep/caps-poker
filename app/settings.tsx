@@ -244,26 +244,38 @@ function PlayerCountSelector() {
     4: '4 Players (vs 3 Bots)',
   };
 
+  // C3: inline explanation per player count
+  const modeHints: Record<number, string> = {
+    2: '4 boards, 16 cards each',
+    3: '3 boards, 12 cards each',
+    4: '2 boards, 8 cards each',
+  };
+
   return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Players</Text>
-        <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
+    <>
+      <View style={styles.row}>
+        <View style={styles.rowLeft}>
+          <Text style={styles.rowLabel}>Players</Text>
+          <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
+        </View>
+        <View style={styles.selectorRow}>
+          {([2, 3, 4] as const).map((n) => (
+            <Pressable
+              key={n}
+              onPress={() => { updateConfig({ numberOfPlayers: n }); CapsHooks.settingsChanged('numberOfPlayers', n); }}
+              style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
+            >
+              <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>
+                {n}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
-      <View style={styles.selectorRow}>
-        {([2, 3, 4] as const).map((n) => (
-          <Pressable
-            key={n}
-            onPress={() => { updateConfig({ numberOfPlayers: n }); CapsHooks.settingsChanged('numberOfPlayers', n); }}
-            style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
-          >
-            <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>
-              {n}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
+      <Text style={{ color: COLORS.gold, opacity: 0.7, fontSize: rf(11), textAlign: 'center', marginBottom: rs(4) }}>
+        {modeHints[value]}
+      </Text>
+    </>
   );
 }
 
@@ -394,31 +406,59 @@ function ColorblindToggle() {
   );
 }
 
+// C1: sample cards for hand sort preview
+const SORT_PREVIEW_CARDS = [
+  { rank: 'A', suit: '♠', isRed: false },
+  { rank: 'K', suit: '♥', isRed: true },
+  { rank: 'A', suit: '♦', isRed: true },
+  { rank: 'J', suit: '♣', isRed: false },
+];
+// caps sort puts pairs (AA) first, then singles by suit
+const SORT_PREVIEW_CAPS = [
+  { rank: 'A', suit: '♠', isRed: false },
+  { rank: 'A', suit: '♦', isRed: true },
+  { rank: 'K', suit: '♥', isRed: true },
+  { rank: 'J', suit: '♣', isRed: false },
+];
+
 function HandSortToggle() {
   const handSortMethod = useGameStore((s) => s.handSortMethod);
   const setHandSortMethod = useGameStore((s) => s.setHandSortMethod);
 
+  const previewCards = handSortMethod === 'caps' ? SORT_PREVIEW_CAPS : SORT_PREVIEW_CARDS;
+
   return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Card Sort</Text>
-        <Text style={styles.rowHint}>{handSortMethod === 'caps' ? 'Auto (Trips→Pairs→Suits)' : 'Pairs+Suits'}</Text>
+    <>
+      <View style={styles.row}>
+        <View style={styles.rowLeft}>
+          <Text style={styles.rowLabel}>Card Sort</Text>
+          <Text style={styles.rowHint}>{handSortMethod === 'caps' ? 'Auto (Trips→Pairs→Suits)' : 'Pairs+Suits'}</Text>
+        </View>
+        <View style={styles.selectorRow}>
+          <Pressable
+            onPress={() => { hapticLight(); setHandSortMethod('caps'); }}
+            style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
+          >
+            <Text style={[styles.selectorText, handSortMethod === 'caps' && styles.selectorTextActive]}>Auto</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { hapticLight(); setHandSortMethod('user'); }}
+            style={[styles.selectorBtn, handSortMethod === 'user' && styles.selectorBtnActive]}
+          >
+            <Text style={[styles.selectorText, handSortMethod === 'user' && styles.selectorTextActive]}>Pairs</Text>
+          </Pressable>
+        </View>
       </View>
-      <View style={styles.selectorRow}>
-        <Pressable
-          onPress={() => { hapticLight(); setHandSortMethod('caps'); }}
-          style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
-        >
-          <Text style={[styles.selectorText, handSortMethod === 'caps' && styles.selectorTextActive]}>Auto</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => { hapticLight(); setHandSortMethod('user'); }}
-          style={[styles.selectorBtn, handSortMethod === 'user' && styles.selectorBtnActive]}
-        >
-          <Text style={[styles.selectorText, handSortMethod === 'user' && styles.selectorTextActive]}>Pairs</Text>
-        </Pressable>
+      {/* C1: hand sort preview */}
+      <View style={{ flexDirection: 'row', gap: rs(6), justifyContent: 'center', marginBottom: rs(8) }}>
+        {previewCards.map((c, i) => (
+          <View key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: rv(6), borderWidth: 1, borderColor: COLORS.boardBorder, paddingHorizontal: rs(7), paddingVertical: rs(4), alignItems: 'center', minWidth: rs(28) }}>
+            <Text style={{ fontSize: rf(12), fontWeight: '900', color: c.isRed ? '#e53935' : '#f0dfc0' }}>{c.rank}</Text>
+            <Text style={{ fontSize: rf(10), color: c.isRed ? '#e53935' : '#f0dfc0' }}>{c.suit}</Text>
+          </View>
+        ))}
       </View>
-    </View>
+    </>
   );
 }
 
@@ -751,6 +791,48 @@ function ProQuotesToggle() {
   );
 }
 
+// C2: Reset All Progress dialog
+function ResetProgressButton() {
+  const resetConfig = useGameStore((s) => s.resetConfig);
+
+  const handleReset = () => {
+    Alert.alert(
+      'Reset All Progress',
+      'This will delete all chips, level, history and streak. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            // Clear all known async storage keys
+            const keys = [
+              'caps-poker-storage',
+              'colorblind_mode',
+              'caps_ambient_enabled',
+              'debug_overlay_enabled',
+              'last_daily_reward_claim',
+              'caps_hand_history',
+            ];
+            await AsyncStorage.multiRemove(keys).catch(() => {});
+            resetConfig();
+            Alert.alert('Progress Reset', 'All progress has been cleared. Restart the app to apply fully.');
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <Pressable
+      onPress={handleReset}
+      style={{ marginBottom: rs(12), paddingVertical: rs(12), borderRadius: rv(10), borderWidth: 1, borderColor: '#C62828', alignItems: 'center' }}
+    >
+      <Text style={{ color: '#C62828', fontSize: rf(13), fontWeight: '700' }}>Reset All Progress</Text>
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const config = useGameStore((s) => s.config);
@@ -899,6 +981,9 @@ export default function SettingsScreen() {
           onPress={resetConfig}
           style={{ marginBottom: 24 }}
         />
+
+        <Text style={styles.sectionTitle}>DANGER ZONE</Text>
+        <ResetProgressButton />
 
         <Text style={styles.sectionTitle}>CREDITS</Text>
         <View style={styles.creditsBox}>

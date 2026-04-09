@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -136,10 +136,24 @@ export interface TimerControllerProps {
 }
 
 export function TimerController({ countdown, total: _total, isActive, firstFinisher: _firstFinisher, timerSize, timerColor, timerPulsing }: TimerControllerProps) {
+  const [tooltipVisible, setTooltipVisible] = useState(false);
   if (!isActive) return null;
   return (
     <View style={tcStyles.wrapper}>
-      <CircularTimer timeLeft={countdown} size={timerSize} color={timerColor} pulsing={timerPulsing} />
+      <TouchableOpacity
+        onPress={() => {
+          setTooltipVisible(true);
+          setTimeout(() => setTooltipVisible(false), 2000);
+        }}
+        activeOpacity={0.8}
+      >
+        <CircularTimer timeLeft={countdown} size={timerSize} color={timerColor} pulsing={timerPulsing} />
+      </TouchableOpacity>
+      {tooltipVisible && (
+        <View style={tcStyles.tooltip}>
+          <Text style={tcStyles.tooltipText}>Time out = cards placed randomly</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -149,4 +163,22 @@ export { TimerBar };
 
 const tcStyles = StyleSheet.create({
   wrapper: { alignItems: 'center' },
+  tooltip: {
+    position: 'absolute',
+    top: '100%',
+    marginTop: 6,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    zIndex: 100,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  tooltipText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });

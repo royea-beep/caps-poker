@@ -47,7 +47,7 @@ export function EfficiencyCard({ boards, screenW }: EfficiencyCardProps) {
         </View>
         {efficiency.percentage < 100 && (
           <View style={styles.optimalSection}>
-            <Text style={styles.optimalTitle}>Optimal arrangement:</Text>
+            <Text style={styles.optimalTitle}>Best possible hand:</Text>
             {efficiency.optimalAssignment.map((boardCards: any[], i: number) => (
               <View key={i} style={styles.optimalRow}>
                 <Text style={styles.optimalBoardLabel}>B{i + 1}</Text>

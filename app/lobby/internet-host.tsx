@@ -13,6 +13,7 @@ import {
   generateOnlineRoomCode,
   isOnlineMultiplayerAvailable,
 } from '../../utils/realtimeMultiplayer';
+import { canCreateRoom, recordRoomCreation } from '../../utils/internetMultiplayer';
 import { CapsHooks } from '../../utils/learning';
 import { getSupabase } from '../../utils/supabase';
 
@@ -34,6 +35,13 @@ export default function InternetHostScreen() {
       setStatus('error');
       return;
     }
+    // G2: Rate limiting
+    if (!canCreateRoom()) {
+      Alert.alert('Too Many Rooms', 'You can create up to 5 rooms per 10 minutes. Please wait.');
+      setStatus('error');
+      return;
+    }
+    recordRoomCreation();
 
     let cancelled = false;
     const server = new RealtimeServer();

@@ -161,10 +161,10 @@ function Step3Visual() {
 
   useEffect(() => {
     const boardAnims = boardLit.map((val, i) =>
-      Animated.timing(val, { toValue: 1, duration: 250, delay: i * 380, useNativeDriver: true })
+      Animated.timing(val, { toValue: 1, duration: 400, delay: i * 600, useNativeDriver: true })
     );
     Animated.sequence([
-      Animated.stagger(380, boardAnims),
+      Animated.stagger(600, boardAnims),
       Animated.parallel([
         Animated.spring(badgeScale, { toValue: 1, friction: 4, tension: 90, useNativeDriver: true }),
         Animated.timing(badgeOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),

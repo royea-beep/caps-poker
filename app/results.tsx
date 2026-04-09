@@ -118,6 +118,7 @@ export default function ResultsScreen() {
   const handsWon = useGameStore((s) => s.handsWon);
   const currentWinStreak = useGameStore((s) => s.currentWinStreak);
   const bestWinStreak = useGameStore((s) => s.bestWinStreak);
+  const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
   const [xpGained, setXpGained] = useState(0);
@@ -409,6 +410,23 @@ export default function ResultsScreen() {
       won: bWonCount > revealData.boards.length - bWonCount,
       net_chips: revealData.netChips,
     }, 'results');
+  }, []);
+
+  // B3: result_viewed_duration — track how long player spends on results screen
+  const viewStartRef = useRef(Date.now());
+  useEffect(() => {
+    viewStartRef.current = Date.now();
+    return () => {
+      if (!revealData) return;
+      const duration = Math.round((Date.now() - viewStartRef.current) / 1000);
+      const bWon = revealData.boards.filter((b) => b.winner === 'player').length;
+      track('result_viewed_duration', {
+        seconds: duration,
+        result: revealData.netChips > 0 ? 'win' : 'lose',
+        boards_won: bWon,
+        is_complete: revealData.isComplete,
+      }, 'results');
+    };
   }, []);
 
   // Auto-continue countdown (FIX 2) — starts 1.5s after mount to let animations settle
@@ -891,6 +909,34 @@ export default function ResultsScreen() {
             </View>
           </View>
 
+          {/* B2: Daily streak bonus display */}
+          {dailyRewardStreak >= 2 && (() => {
+            const streakBonusAmount = dailyRewardStreak >= 30 ? 500 : dailyRewardStreak >= 7 ? 100 : dailyRewardStreak >= 3 ? 20 : 10;
+            return (
+              <View style={styles.streakBonusRow}>
+                <Text style={styles.streakBonusText}>🔥 Day {dailyRewardStreak} streak! +{streakBonusAmount} bonus chips tomorrow</Text>
+              </View>
+            );
+          })()}
+
+          {/* F1: Share COMPLETE button */}
+          {isComplete && (
+            <TouchableOpacity
+              style={styles.shareCompleteBtn}
+              onPress={async () => {
+                try {
+                  await Share.share({
+                    message: 'I got COMPLETE in CAPS Poker! Won all boards! 🏆\nPlay: testflight.apple.com/join/hD3KvZeC',
+                    title: 'CAPS Poker - COMPLETE!',
+                  });
+                  track('complete_shared', {}, 'results');
+                } catch {}
+              }}
+            >
+              <Text style={styles.shareCompleteBtnText}>🏆 Share COMPLETE!</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Current balance */}
           <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
 
@@ -1117,5 +1163,38 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     color: 'rgba(255,149,0,0.7)',
     fontWeight: '600',
+  },
+  streakBonusRow: {
+    alignSelf: 'stretch',
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(16),
+    borderRadius: rs(12),
+    backgroundColor: 'rgba(255,149,0,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,149,0,0.25)',
+    alignItems: 'center',
+    marginVertical: rs(4),
+  },
+  streakBonusText: {
+    fontSize: rf(13),
+    fontWeight: '700',
+    color: '#FF9500',
+    textAlign: 'center',
+  },
+  shareCompleteBtn: {
+    alignSelf: 'stretch',
+    paddingVertical: rs(13),
+    borderRadius: rs(14),
+    backgroundColor: 'rgba(201,168,76,0.15)',
+    borderWidth: 1.5,
+    borderColor: '#c9a84c',
+    alignItems: 'center',
+    marginVertical: rs(6),
+  },
+  shareCompleteBtnText: {
+    fontSize: rf(15),
+    fontWeight: '900',
+    color: '#c9a84c',
+    letterSpacing: 0.5,
   },
 });
