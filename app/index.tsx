@@ -750,6 +750,7 @@ export default function HomeScreen() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
   const [showNudge, setShowNudge] = useState(false);
+  const [mpMode, setMpMode] = useState<'internet' | 'local'>('internet');
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
   const [welcomeToastName, setWelcomeToastName] = useState('');
   // Daily reward popup — shown once per session on mount if claimable
@@ -1506,26 +1507,59 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Play Online — Host + Join (S112: removed duplicate ⚡ Play Online button) */}
+        {/* Play Online — S116: Online / Same WiFi tabs */}
         {isOnlineMultiplayerAvailable() && (
           <>
           <Text style={styles.sectionLabel}>PLAY ONLINE</Text>
-          <View style={styles.friendsRow}>
+          <View style={styles.mpTabsRow}>
             <Pressable
-              style={[styles.modeBtn, { backgroundColor: '#0e2d1a', flex: 1 }]}
-              onPress={() => router.push('/lobby/internet-host' as any)}
+              onPress={() => setMpMode('internet')}
+              style={[styles.mpTab, mpMode === 'internet' && styles.mpTabActive]}
             >
-              <Text style={styles.modeBtnIcon}>🌐</Text>
-              <Text style={[styles.modeBtnLabel, { color: '#4ade80' }]}>Host Game</Text>
+              <Text style={[styles.mpTabText, mpMode === 'internet' && styles.mpTabTextActive]}>🌐 Online</Text>
             </Pressable>
             <Pressable
-              style={[styles.modeBtn, { backgroundColor: '#0e1a2d', flex: 1 }]}
-              onPress={() => router.push('/lobby/internet-join' as any)}
+              onPress={() => setMpMode('local')}
+              style={[styles.mpTab, mpMode === 'local' && styles.mpTabActive]}
             >
-              <Text style={styles.modeBtnIcon}>🎮</Text>
-              <Text style={[styles.modeBtnLabel, { color: '#60a5fa' }]}>Join Game</Text>
+              <Text style={[styles.mpTabText, mpMode === 'local' && styles.mpTabTextActive]}>📶 Same WiFi</Text>
             </Pressable>
           </View>
+          {mpMode === 'internet' ? (
+            <View style={styles.friendsRow}>
+              <Pressable
+                style={[styles.modeBtn, { backgroundColor: '#0e2d1a', flex: 1 }]}
+                onPress={() => router.push('/lobby/internet-host' as any)}
+              >
+                <Text style={styles.modeBtnIcon}>🌐</Text>
+                <Text style={[styles.modeBtnLabel, { color: '#4ade80' }]}>Host Game</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modeBtn, { backgroundColor: '#0e1a2d', flex: 1 }]}
+                onPress={() => router.push('/lobby/internet-join' as any)}
+              >
+                <Text style={styles.modeBtnIcon}>🎮</Text>
+                <Text style={[styles.modeBtnLabel, { color: '#60a5fa' }]}>Join Game</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.friendsRow}>
+              <Pressable
+                style={[styles.modeBtn, { backgroundColor: '#1a1a0e', flex: 1 }]}
+                onPress={() => router.push('/lobby/host' as any)}
+              >
+                <Text style={styles.modeBtnIcon}>📶</Text>
+                <Text style={[styles.modeBtnLabel, { color: '#facc15' }]}>Host Local</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modeBtn, { backgroundColor: '#0e1a1a', flex: 1 }]}
+                onPress={() => router.push('/lobby/join' as any)}
+              >
+                <Text style={styles.modeBtnIcon}>🔗</Text>
+                <Text style={[styles.modeBtnLabel, { color: '#34d399' }]}>Join Local</Text>
+              </Pressable>
+            </View>
+          )}
           </>
         )}
 
@@ -2113,6 +2147,35 @@ const styles = StyleSheet.create({
   },
   modeBtnLabelDisabled: {
     color: 'rgba(255,255,255,0.6)',
+  },
+  // S116: MP mode tabs
+  mpTabsRow: {
+    flexDirection: 'row',
+    gap: rs(8),
+    width: '100%',
+    marginBottom: rs(6),
+  },
+  mpTab: {
+    flex: 1,
+    paddingVertical: rs(8),
+    borderRadius: rv(8),
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+  },
+  mpTabActive: {
+    backgroundColor: 'rgba(201,168,76,0.15)',
+    borderColor: '#c9a84c',
+  },
+  mpTabText: {
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)',
+  },
+  mpTabTextActive: {
+    color: '#c9a84c',
+    fontWeight: '700',
   },
   comingSoonLabel: {
     color: 'rgba(201,168,76,0.7)',

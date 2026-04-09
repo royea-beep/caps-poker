@@ -247,6 +247,18 @@ export default function InternetJoinScreen() {
 
         {status === 'connected' && (
           <>
+            {/* S116: Connected! banner */}
+            <View style={styles.connectedBanner}>
+              <Text style={styles.connectedIcon}>✓</Text>
+              <View>
+                <Text style={styles.connectedText}>Connected!</Text>
+                <Text style={styles.connectedSub}>
+                  {players.length > 0
+                    ? `Waiting for ${players.find(p => p.id !== players[players.length - 1]?.id)?.name ?? 'host'} to start...`
+                    : 'Waiting for host to start...'}
+                </Text>
+              </View>
+            </View>
             <View style={styles.divider} />
             <Text style={styles.label}>PLAYERS ({players.length})</Text>
             {players.map((p) => (
@@ -254,7 +266,6 @@ export default function InternetJoinScreen() {
                 <Text style={styles.playerName}>{p.name}</Text>
               </View>
             ))}
-            <Text style={styles.statusText}>Waiting for host to start...</Text>
             <ProQuoteBanner context="waiting" rotating rotateInterval={6000} />
           </>
         )}
@@ -407,5 +418,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: rf(14),
     fontWeight: '700',
+  },
+  // S116: Connected! banner
+  connectedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(12),
+    backgroundColor: 'rgba(76,175,80,0.12)',
+    borderRadius: rs(12),
+    padding: rs(14),
+    borderWidth: 0.5,
+    borderColor: '#4CAF50',
+    marginTop: rs(16),
+    width: '100%',
+  },
+  connectedIcon: {
+    fontSize: rf(24),
+    color: '#4CAF50',
+  },
+  connectedText: {
+    fontSize: rf(16),
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+  connectedSub: {
+    fontSize: rf(12),
+    color: 'rgba(76,175,80,0.7)',
+    marginTop: rs(2),
   },
 });

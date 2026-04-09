@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../constants/gameConfig';
 import { rv, rf, rs } from '../utils/responsive';
 import { t, isRTL } from '../utils/i18n';
+import { HandBadge } from './HandBadge';
 
 export const TUTORIAL_SEEN_KEY = 'caps_tutorial_seen';
 
@@ -74,13 +75,16 @@ function Step2Visual() {
   }, []);
 
   return (
-    <View style={vis.cardFlyRow}>
-      {translateYs.map((ty, i) => (
-        <Animated.View key={i} style={[vis.flyCard, { transform: [{ translateY: ty }], opacity: opacities2[i] }]}>
-          <Text style={vis.flyCardText}>🃏</Text>
-          <Text style={vis.flyCardNum}>×4</Text>
-        </Animated.View>
-      ))}
+    <View style={[vis.cardFlyRow, { flexDirection: 'column', gap: rs(8) }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: rs(8) }}>
+        {translateYs.map((ty, i) => (
+          <Animated.View key={i} style={[vis.flyCard, { transform: [{ translateY: ty }], opacity: opacities2[i] }]}>
+            <Text style={vis.flyCardText}>🃏</Text>
+            <Text style={vis.flyCardNum}>×4</Text>
+          </Animated.View>
+        ))}
+      </View>
+      <HandBadge handName="Two Pair" size="small" />
     </View>
   );
 }
@@ -89,32 +93,42 @@ function Step2Visual() {
 
 function Step3Visual() {
   const pulse = useRef(new Animated.Value(1)).current;
+  const arrowBounce = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loop = Animated.sequence([
       Animated.timing(pulse, { toValue: 0.3, duration: 600, useNativeDriver: true }),
       Animated.timing(pulse, { toValue: 1, duration: 600, useNativeDriver: true }),
     ]);
-    // Finite repeat — iron rule: no withRepeat(-1)
     const seq = Animated.loop(loop, { iterations: 4 });
     seq.start();
-    return () => seq.stop();
+    const arrowLoop = Animated.loop(Animated.sequence([
+      Animated.timing(arrowBounce, { toValue: -5, duration: 380, useNativeDriver: true }),
+      Animated.timing(arrowBounce, { toValue: 0, duration: 380, useNativeDriver: true }),
+    ]), { iterations: 8 });
+    arrowLoop.start();
+    return () => { seq.stop(); arrowLoop.stop(); };
   }, []);
 
   const cards = ['A♠', 'K♥', '—', 'Q♦', 'J♣', '—', '10♠', 'A♥'];
   const highlighted = [0, 1, 3, 4, 7]; // player[0,1] + community[0,1,2]
 
   return (
-    <View style={vis.omahaRow}>
-      {cards.map((c, i) => {
-        if (c === '—') return <Text key={i} style={vis.plus}>+</Text>;
-        const isHighlighted = highlighted.includes(i);
-        return (
-          <Animated.View key={i} style={[vis.miniCard, isHighlighted && { opacity: pulse }]}>
-            <Text style={[vis.miniCardText, isHighlighted && vis.miniCardHighlight]}>{c}</Text>
-          </Animated.View>
-        );
-      })}
+    <View style={{ alignItems: 'center', gap: rs(4) }}>
+      <Animated.Text style={[vis.arrowHint, { transform: [{ translateY: arrowBounce }] }]}>
+        ↓ Your 2 + 3 Community
+      </Animated.Text>
+      <View style={vis.omahaRow}>
+        {cards.map((c, i) => {
+          if (c === '—') return <Text key={i} style={vis.plus}>+</Text>;
+          const isHighlighted = highlighted.includes(i);
+          return (
+            <Animated.View key={i} style={[vis.miniCard, isHighlighted && { opacity: pulse }]}>
+              <Text style={[vis.miniCardText, isHighlighted && vis.miniCardHighlight]}>{c}</Text>
+            </Animated.View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -175,6 +189,7 @@ interface TutorialProps {
 
 export default function Tutorial({ onDone }: TutorialProps) {
   const [step, setStep] = useState(0);
+  const [skipToast, setSkipToast] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const rtl = isRTL();
   const tx = t();
@@ -213,7 +228,8 @@ export default function Tutorial({ onDone }: TutorialProps) {
 
   const handleSkip = () => {
     AsyncStorage.setItem(TUTORIAL_SEEN_KEY, 'true').catch(() => {});
-    onDone();
+    setSkipToast(true);
+    setTimeout(() => { setSkipToast(false); onDone(); }, 2000);
   };
 
   const current = STEPS[step];
@@ -222,6 +238,13 @@ export default function Tutorial({ onDone }: TutorialProps) {
 
   return (
     <View style={styles.overlay}>
+      {/* S116: skip toast */}
+      {skipToast && (
+        <View style={styles.skipToast} pointerEvents="none">
+          <Text style={styles.skipToastText}>Replay tutorial in Settings →</Text>
+        </View>
+      )}
+
       {/* SKIP button */}
       <Pressable
         style={[styles.skipBtn, rtl ? styles.skipBtnLeft : styles.skipBtnRight]}
@@ -368,6 +391,24 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1,
   },
+  // S116: skip toast
+  skipToast: {
+    position: 'absolute',
+    bottom: rs(60),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(20,20,20,0.92)',
+    borderRadius: rv(20),
+    paddingHorizontal: rs(20),
+    paddingVertical: rs(10),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    zIndex: 20,
+  },
+  skipToastText: {
+    color: '#c9a84c',
+    fontSize: rf(13),
+    fontWeight: '600',
+  },
 });
 
 // ─── Visual sub-styles ─────────────────────────────────────────────────────
@@ -493,5 +534,13 @@ const vis = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: '800',
     letterSpacing: 3,
+  },
+  // S116: arrow hint in Step 3
+  arrowHint: {
+    color: COLORS.goldBright,
+    fontSize: rf(11),
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
 });

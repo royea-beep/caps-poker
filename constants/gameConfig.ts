@@ -12,6 +12,7 @@ export const DEFAULT_CONFIG = {
   botSpeedMin: 1500,
   botSpeedMax: 4000,
   soundEnabled: true as boolean,
+  soundVolume: 0.8 as number,
   revealSpeed: 'normal' as 'fast' | 'normal' | 'cinematic',
   botDifficulty: 'easy' as 'easy' | 'medium' | 'hard',
 };
