@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   Platform,
 } from 'react-native';
@@ -84,62 +85,68 @@ function Step1Visual() {
   );
 }
 
-// ─── Step 2: 2 player + 3 community highlighted ──────────────────────────────
+// ─── Step 2: interactive — player taps a card to "place" it ──────────────────
 
-function Step2Visual() {
-  const pulse = useRef(new Animated.Value(1)).current;
+interface Step2VisualProps {
+  onCardPlace: () => void;
+}
 
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.6, duration: 500, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 500, useNativeDriver: true }),
-      ]),
-      { iterations: 5 }
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
+function Step2Visual({ onCardPlace }: Step2VisualProps) {
+  const [placedIdx, setPlacedIdx] = useState<number | null>(null);
+  const checkScale = useRef(new Animated.Value(0)).current;
 
   const isHE = getLanguage() === 'he';
 
+  const handleCardTap = (idx: number) => {
+    if (placedIdx !== null) return; // already placed
+    setPlacedIdx(idx);
+    onCardPlace();
+    Animated.spring(checkScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }).start();
+    track('tutorial_step2_card_placed', { cardIndex: idx });
+  };
+
   return (
     <View style={vis.step2Wrap}>
-      {/* Player cards — use 2 */}
+      {/* Player cards — tap to place */}
       <View style={vis.cardGroup}>
-        <Text style={vis.groupLabel}>{isHE ? 'הקלפים שלך' : 'YOUR CARDS'}</Text>
+        <Text style={vis.groupLabel}>{isHE ? 'לחץ קלף!' : 'TAP A CARD!'}</Text>
         <View style={vis.cardRow}>
           {PLAYER_CARDS.slice(0, 2).map((card, i) => (
-            <Animated.View key={card.id} style={{ opacity: i === 0 ? pulse : 1 }}>
+            <TouchableOpacity key={card.id} onPress={() => handleCardTap(i)} activeOpacity={0.75}>
               <CardComponent
                 card={card}
                 faceDown={false}
-                highlighted
+                highlighted={placedIdx === i}
+                dimmed={placedIdx !== null && placedIdx !== i}
                 cardWidth={rs(40)}
                 cardHeight={rs(56)}
               />
-            </Animated.View>
+            </TouchableOpacity>
           ))}
         </View>
+        {placedIdx !== null && (
+          <Animated.Text style={[vis.placedCheck, { transform: [{ scale: checkScale }] }]}>
+            {isHE ? '✓ מושלם!' : '✓ Perfect!'}
+          </Animated.Text>
+        )}
       </View>
 
       <Text style={vis.plus}>+</Text>
 
-      {/* Community cards — use 3 */}
+      {/* Community cards — always shown */}
       <View style={vis.cardGroup}>
         <Text style={vis.groupLabel}>{isHE ? 'קהילה' : 'COMMUNITY'}</Text>
         <View style={vis.cardRow}>
-          {COMMUNITY_CARDS.slice(0, 3).map((card, i) => (
-            <Animated.View key={card.id} style={{ opacity: i === 1 ? pulse : 1 }}>
-              <CardComponent
-                card={card}
-                faceDown={false}
-                highlighted
-                isCommunityCard
-                cardWidth={rs(36)}
-                cardHeight={rs(50)}
-              />
-            </Animated.View>
+          {COMMUNITY_CARDS.slice(0, 3).map((card) => (
+            <CardComponent
+              key={card.id}
+              card={card}
+              faceDown={false}
+              highlighted
+              isCommunityCard
+              cardWidth={rs(36)}
+              cardHeight={rs(50)}
+            />
           ))}
         </View>
       </View>
@@ -221,6 +228,7 @@ const TOTAL_STEPS = 3;
 
 export default function InteractiveTutorial({ onDone }: InteractiveTutorialProps) {
   const [step, setStep] = useState(0);
+  const [step2CardPlaced, setStep2CardPlaced] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const rtl = isRTL();
   const tx = t();
@@ -232,27 +240,28 @@ export default function InteractiveTutorial({ onDone }: InteractiveTutorialProps
       body: isHE
         ? 'ב-Caps Poker קיבלת 4 קלפי יד לכל בורד — לא 2 כמו ב-Hold\'em!'
         : 'In Caps Poker you get 4 hole cards per board — not 2 like Hold\'em!',
-      Visual: Step1Visual,
+      Visual: () => <Step1Visual />,
     },
     {
-      title: isHE ? 'השתמש ב-2 שלך + 3 קהילה' : 'Use 2 of yours + 3 community',
+      title: isHE ? 'לחץ קלף כדי לשחק!' : 'Tap a card to place it!',
       body: isHE
         ? 'חייב להשתמש בדיוק ב-2 קלפים שלך ו-3 קלפי קהילה — כלל Omaha!'
-        : 'You must use exactly 2 of your cards and 3 community cards — Omaha rule!',
-      Visual: Step2Visual,
+        : 'Use exactly 2 of your cards + 3 community cards — Omaha rule!',
+      Visual: () => <Step2Visual onCardPlace={() => setStep2CardPlaced(true)} />,
     },
     {
       title: isHE ? 'נצח בכל הבורדים = COMPLETE' : 'Win ALL boards = COMPLETE',
       body: isHE
         ? 'נצח בכל 4 הבורדים וקבל בונוס +50% על הסיר!'
         : 'Win all boards and get a +50% pot bonus!',
-      Visual: Step3Visual,
+      Visual: () => <Step3Visual />,
     },
   ];
 
   const goToStep = (next: number) => {
     Animated.timing(fadeAnim, { toValue: 0, duration: 130, useNativeDriver: true }).start(() => {
       setStep(next);
+      setStep2CardPlaced(false);
       Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
     });
   };
@@ -276,6 +285,7 @@ export default function InteractiveTutorial({ onDone }: InteractiveTutorialProps
   const current = STEPS[step];
   const isLast = step === TOTAL_STEPS - 1;
   const Visual = current.Visual;
+  const nextDisabled = step === 1 && !step2CardPlaced;
 
   return (
     <View style={styles.overlay}>
@@ -304,10 +314,15 @@ export default function InteractiveTutorial({ onDone }: InteractiveTutorialProps
           ))}
         </View>
 
-        <Pressable style={[styles.btn, isLast && styles.btnLast]} onPress={handleNext}>
-          <Text style={styles.btnText}>
+        <Pressable
+          style={[styles.btn, isLast && styles.btnLast, nextDisabled && styles.btnDisabled]}
+          onPress={nextDisabled ? undefined : handleNext}
+        >
+          <Text style={[styles.btnText, nextDisabled && styles.btnTextDisabled]}>
             {isLast
               ? (tx.onboarding?.letsPlay ?? (isHE ? 'בואו נשחק!' : "Let's play!"))
+              : nextDisabled
+              ? (isHE ? 'לחץ קלף ↑' : 'Tap a card ↑')
               : (tx.onboarding?.next ?? (isHE ? 'הבא' : 'Next'))}
           </Text>
         </Pressable>
@@ -399,7 +414,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnLast: { backgroundColor: '#4CAF50' },
+  btnDisabled: { backgroundColor: 'rgba(201,168,76,0.25)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)' },
   btnText: { color: '#0a0a0a', fontSize: rf(15), fontWeight: '900', letterSpacing: 1 },
+  btnTextDisabled: { color: 'rgba(201,168,76,0.7)' },
 });
 
 const vis = StyleSheet.create({
@@ -425,6 +442,13 @@ const vis = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.5,
     opacity: 0.85,
+  },
+  placedCheck: {
+    color: '#4CAF50',
+    fontSize: rf(13),
+    fontWeight: '800',
+    marginTop: rs(4),
+    textAlign: 'center',
   },
   plus: {
     color: COLORS.gold,

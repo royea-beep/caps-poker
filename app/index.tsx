@@ -766,6 +766,7 @@ export default function HomeScreen() {
   const [missionData, setMissionData] = useState<{ title: string; progress: number; total: number; reward: number } | null>(null);
   const [leaderboardData, setLeaderboardData] = useState<{ rank: number; total: number } | null>(null);
   const [recentHands, setRecentHands] = useState<HandRecord[]>([]);
+  const [totalHandCount, setTotalHandCount] = useState(0);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
   const handsWon = useGameStore((s) => s.handsWon);
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
@@ -1012,7 +1013,7 @@ export default function HomeScreen() {
 
   // Load recent hands from local history
   useEffect(() => {
-    getHandHistory().then(history => setRecentHands(history.slice(0, 5))).catch(() => {});
+    getHandHistory().then(history => { setRecentHands(history.slice(0, 5)); setTotalHandCount(history.length); }).catch(() => {});
   }, []);
 
   // Migrate guest data when user signs in for the first time
@@ -1509,6 +1510,22 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* ⚡ Play Online — always visible (S107: 28%→60% discovery) */}
+        <Pressable
+          style={styles.onlineBtn}
+          onPress={() => router.push('/lobby/internet-host' as any)}
+        >
+          <Text style={styles.onlineBtnText}>⚡ Play Online</Text>
+          <Text style={styles.onlineBtnSub}>vs real players</Text>
+        </Pressable>
+
+        {/* 📊 Stats — hand count quick access (S107) */}
+        {totalHandCount > 0 && (
+          <Pressable onPress={() => router.push('/hand-history' as any)} style={styles.statsBtn}>
+            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands played</Text>
+          </Pressable>
+        )}
+
         {/* Play with Friends — Internet MP entry (S100) */}
         {isOnlineMultiplayerAvailable() && (
           <View style={styles.friendsRow}>
@@ -1937,7 +1954,7 @@ const styles = StyleSheet.create({
     gap: rs(8),
   },
   playBtn: {
-    minHeight: rv(70),
+    minHeight: rv(72),
     backgroundColor: '#22C55E',
     borderRadius: rv(16),
     alignItems: 'center',
@@ -2097,6 +2114,38 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     textAlign: 'center',
+  },
+  // S107: Play Online + Stats buttons
+  onlineBtn: {
+    borderWidth: 1,
+    borderColor: '#c9a84c',
+    borderRadius: rs(12),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(16),
+    alignItems: 'center',
+    width: '100%',
+    marginTop: rs(4),
+  },
+  onlineBtnText: {
+    fontSize: rf(15),
+    fontWeight: '700',
+    color: '#c9a84c',
+  },
+  onlineBtnSub: {
+    fontSize: rf(10),
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: rs(2),
+  },
+  statsBtn: {
+    alignSelf: 'center',
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
+  },
+  statsBtnText: {
+    fontSize: rf(11),
+    color: 'rgba(255,255,255,0.35)',
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   modeBtnLabelDisabled: {
     color: 'rgba(255,255,255,0.6)',

@@ -190,7 +190,7 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
 
         {/* Subtitle */}
         <Animated.Text style={[styles.subText, { opacity: subOpacity }]}>
-          {winner === 'player' ? 'You swept all boards!' : 'Bot swept all boards!'}
+          {winner === 'player' ? 'You won ALL boards! +50% bonus 🏆' : 'Bot swept all boards!'}
         </Animated.Text>
 
         {/* Bonus row */}
