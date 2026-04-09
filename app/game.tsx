@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, Animated as AnimatedRN } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -178,6 +178,8 @@ function GameScreenInner() {
   const boardShakeStyles = [shakeStyle0, shakeStyle1, shakeStyle2, shakeStyle3];
   const [phase, setPhase] = useState<GamePhase>({ type: 'arranging', timeLeft: 0 });
   const [playerReady, setPlayerReady] = useState(false);
+  // D1: auto-place trail — flash when cards are auto-placed on timeout
+  const autoPlaceFlashAnim = useRef(new AnimatedRN.Value(0)).current;
   const [timeBankUsed, setTimeBankUsed] = useState(false);
 
   // New timer logic: no timer at start, 30s countdown when first player finishes
@@ -359,6 +361,11 @@ function GameScreenInner() {
       setPlayerReady(true);
       setPhase({ type: 'waiting_for_bot' });
       playerReadyRef.current = true;
+      // D1: auto-place trail flash
+      AnimatedRN.sequence([
+        AnimatedRN.timing(autoPlaceFlashAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
+        AnimatedRN.timing(autoPlaceFlashAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
       // Navigate directly with the filled boards
       doNavigateRef.current(filledBoards);
     }
@@ -552,6 +559,10 @@ function GameScreenInner() {
     debugLog('11 setRevealData DONE');
     void logStep('E:setRevealData_done');
 
+    // A3: track last COMPLETE for home screen share banner
+    if (results.isComplete) {
+      AsyncStorage.setItem('last_was_complete', 'true').catch(() => {});
+    }
     debugLog('12 CapsHooks.gameCompleted');
     CapsHooks.gameCompleted(results.playerChipsWon, results.playerChipsWon > 0, 0);
     debugLog('13 AsyncStorage update');
@@ -1015,6 +1026,11 @@ function GameScreenInner() {
           <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
         </View>
       )}
+      {/* D1: auto-place trail flash overlay */}
+      <AnimatedRN.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(201,168,76,0.18)', opacity: autoPlaceFlashAnim, zIndex: 99 }]}
+      />
       <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
       {/* Header bar */}
       <View style={styles.topBar}>
