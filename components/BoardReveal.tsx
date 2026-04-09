@@ -26,6 +26,7 @@ import { useGameStore } from '../store/gameStore';
 import { useGameColors } from '../utils/useGameColors';
 import { getTheme } from '../constants/visualThemes';
 import GuidedTooltip from './GuidedTooltip';
+import { FloatingChips } from './FloatingChips';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -87,6 +88,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const [showHandNames, setShowHandNames] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [showTapHint, setShowTapHint] = useState(false);
+  const [showChipsAnim, setShowChipsAnim] = useState(false);
+  const [showCompleteFlash, setShowCompleteFlash] = useState(false);
 
   // RN Animated — zero Reanimated
   const handNameOpacity = useRef(new AnimatedRN.Value(0)).current;
@@ -102,6 +105,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
   // Chip counter — animates 0→potAmount on result reveal (useNativeDriver:false — text interp)
   const chipCounterAnim = useRef(new AnimatedRN.Value(0)).current;
+  // Chip fade-in — fades in chip amount after counter animation starts (useNativeDriver:true)
+  const chipFadeIn = useRef(new AnimatedRN.Value(0)).current;
+  // Screen flash — gold overlay on COMPLETE (useNativeDriver:true)
+  const screenFlashAnim = useRef(new AnimatedRN.Value(0)).current;
 
   // Pre-flip pulse — group scale on bot cards before they flip (iterations:2)
   const botPulseScale = useRef(new AnimatedRN.Value(1)).current;
@@ -164,13 +171,20 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     hintOpacity.setValue(0);
     botCardScales.forEach(s => s.setValue(1));
     chipCounterAnim.setValue(0);
+    chipFadeIn.setValue(0);
+    screenFlashAnim.setValue(0);
+    setShowChipsAnim(false);
+    setShowCompleteFlash(false);
     botPulseScale.setValue(1);
     communitySpotlightOpacities.forEach(s => s.setValue(1));
     playerSpotlightOpacities.forEach(s => s.setValue(1));
     botSpotlightOpacities.forEach(s => s.setValue(1));
     // Skip: animate chip counter to final immediately
     const skipBoard = boards[currentIdxRef.current];
-    if (skipBoard) chipCounterAnim.setValue(skipBoard.potAmount);
+    if (skipBoard) {
+      chipCounterAnim.setValue(skipBoard.potAmount);
+      if (skipBoard.potAmount > 0 && skipBoard.winner !== 'tie') chipFadeIn.setValue(1);
+    }
     Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
     // Auto-advance after brief reading time
     timers.current.push(setTimeout(doAdvance, 800));
@@ -188,10 +202,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setShowHandNames(false);
     setShowResult(false);
     setShowTapHint(false);
+    setShowChipsAnim(false);
+    setShowCompleteFlash(false);
     handNameOpacity.setValue(0);
     resultScale.setValue(0);
     hintOpacity.setValue(1);
     chipCounterAnim.setValue(0);
+    chipFadeIn.setValue(0);
+    screenFlashAnim.setValue(0);
     botPulseScale.setValue(1);
     communitySpotlightOpacities.forEach(s => s.setValue(1));
     playerSpotlightOpacities.forEach(s => s.setValue(1));
@@ -280,7 +298,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       scaleAnim.start();
       // Chip counter: animate 0 → potAmount (useNativeDriver:false — text interpolation)
       const boardForResult = boards[currentIdxRef.current];
-      if (boardForResult && boardForResult.winner !== 'tie') {
+      if (boardForResult && boardForResult.winner !== 'tie' && boardForResult.potAmount > 0) {
         const counterAnim = AnimatedRN.timing(chipCounterAnim, {
           toValue: boardForResult.potAmount,
           duration: t(800),
@@ -289,6 +307,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
         });
         anims.current.push(counterAnim);
         counterAnim.start();
+        // Fade in chip amount alongside counter
+        const fadeAnim = AnimatedRN.timing(chipFadeIn, {
+          toValue: 1,
+          duration: t(500),
+          useNativeDriver: true,
+        });
+        anims.current.push(fadeAnim);
+        fadeAnim.start();
       }
       // Play win/lose sound
       if (boardForResult?.winner === 'player') {
@@ -297,7 +323,31 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       } else if (boardForResult?.winner === 'bot') {
         playSound('boardLose');
       }
+      // COMPLETE moment — last board + all boards won by player
+      const isLastBoard = currentIdxRef.current === boards.length - 1;
+      const wasComplete = boards.every(b => b.winner === 'player');
+      if (isLastBoard && wasComplete) {
+        setTimeout(() => {
+          playSound('complete');
+          Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success)?.catch?.(() => {});
+          setShowCompleteFlash(true);
+          const flashAnim = AnimatedRN.sequence([
+            AnimatedRN.timing(screenFlashAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+            AnimatedRN.timing(screenFlashAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+          ]);
+          anims.current.push(flashAnim);
+          flashAnim.start(() => setShowCompleteFlash(false));
+        }, 300);
+      }
     }, t(3000)));  // S78: result (was 3350ms)
+
+    // FloatingChips — 800ms after result reveal (potAmount > 0, non-tie)
+    timers.current.push(setTimeout(() => {
+      const b = boards[currentIdxRef.current];
+      if (b && b.potAmount > 0 && b.winner !== 'tie') {
+        setShowChipsAnim(true);
+      }
+    }, t(3800)));
 
     // WIN/LOSE badge visible from 3350ms; auto-advance at 12s (S86: was 5s — badge unreadable)
     timers.current.push(setTimeout(doAdvance, t(12000)));
@@ -339,6 +389,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       hintOpacity.stopAnimation();
       botCardScales.forEach(s => s.stopAnimation());
       chipCounterAnim.stopAnimation();
+      chipFadeIn.stopAnimation();
+      screenFlashAnim.stopAnimation();
       botPulseScale.stopAnimation();
       communitySpotlightOpacities.forEach(s => s.stopAnimation());
       playerSpotlightOpacities.forEach(s => s.stopAnimation());
@@ -479,20 +531,42 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             <AnimatedRN.View style={[styles.resultRow, { transform: [{ scale: resultScale }] }]}>
               <Text style={[styles.resultText, { color: resultColor }]}>{resultText}</Text>
               {board.winner === 'tie' ? (
-                <Text style={[styles.chipDelta, { color: chipColor }]}>±0</Text>
+                <Text style={styles.chipTie}>Tie board</Text>
+              ) : board.potAmount === 0 ? (
+                <Text style={[styles.chipDelta, { color: chipColor }]}>—</Text>
               ) : (
-                <AnimatedRN.Text style={[styles.chipDelta, { color: chipColor }]}>
-                  {chipCounterAnim.interpolate({
-                    inputRange: [0, board.potAmount],
-                    outputRange: [`${chipSign}0`, `${chipSign}${board.potAmount}`],
-                    extrapolate: 'clamp',
-                  })}
-                </AnimatedRN.Text>
+                <AnimatedRN.View style={{ opacity: chipFadeIn }}>
+                  <AnimatedRN.Text style={[styles.chipDelta, { color: chipColor }]}>
+                    {chipCounterAnim.interpolate({
+                      inputRange: [0, board.potAmount],
+                      outputRange: [`${chipSign}0`, `${chipSign}${board.potAmount} 🪙`],
+                      extrapolate: 'clamp',
+                    })}
+                  </AnimatedRN.Text>
+                </AnimatedRN.View>
+              )}
+              {board.winner === 'player' && board.playerHandName && board.botHandName && (
+                <Text style={styles.handComparison}>
+                  {getHandName(board.playerHandName, lang)} beats {getHandName(board.botHandName, lang)}
+                </Text>
+              )}
+              {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
+                <View style={styles.completeBanner}>
+                  <Text style={styles.completeBannerText}>COMPLETE!</Text>
+                  <Text style={styles.completeBannerSub}>You won ALL boards! +50% bonus 🏆</Text>
+                </View>
               )}
             </AnimatedRN.View>
           ) : (
             <View style={styles.resultRowPlaceholder} />
           )}
+
+          {/* FloatingChips — per-board chip delta animation */}
+          <FloatingChips
+            amount={board.winner === 'player' ? board.potAmount : -board.potAmount}
+            visible={showChipsAnim}
+            onDone={() => setShowChipsAnim(false)}
+          />
 
           {/* Hint text */}
           {!showResult ? (
@@ -507,6 +581,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             <Text style={styles.hint}>{' '}</Text>
           )}
         </Pressable>
+
+        {/* COMPLETE screen flash — gold overlay */}
+        {showCompleteFlash && (
+          <AnimatedRN.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,215,0,0.12)', opacity: screenFlashAnim }]}
+          />
+        )}
 
         {/* Guided first-game tooltips (tips 6-8) */}
         {isFirstGame && (
@@ -624,6 +706,42 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1,
     textAlign: 'center',
+  },
+  chipTie: {
+    color: '#aaa',
+    fontSize: rf(16),
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  handComparison: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: rf(12),
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: rs(2),
+  },
+  completeBanner: {
+    alignItems: 'center',
+    marginTop: rs(8),
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    paddingHorizontal: rs(20),
+    paddingVertical: rs(8),
+    borderRadius: rv(10),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.35)',
+  },
+  completeBannerText: {
+    color: COLORS.goldBright,
+    fontSize: rf(18),
+    fontWeight: '900',
+    letterSpacing: 3,
+  },
+  completeBannerSub: {
+    color: COLORS.goldLight,
+    fontSize: rf(12),
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: rs(2),
   },
   hint: {
     color: 'rgba(255,255,255,0.3)',
