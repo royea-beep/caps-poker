@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, Platform } from 'react-native';
 import { rf, rs, rv } from '../../utils/responsive';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,17 @@ import { COLORS } from '../../constants/gameConfig';
 import { RealtimeClient, isOnlineMultiplayerAvailable, GameStateSnapshot } from '../../utils/realtimeMultiplayer';
 import { CapsHooks } from '../../utils/learning';
 import ProQuoteBanner from '../../components/ProQuoteBanner';
+
+// Lazy-load expo-camera — not available on web, requires native build
+let CameraView: any = null;
+let useCameraPermissions: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const cam = require('expo-camera');
+    CameraView = cam.CameraView;
+    useCameraPermissions = cam.useCameraPermissions;
+  } catch {}
+}
 
 export default function InternetJoinScreen() {
   const router = useRouter();
@@ -23,6 +34,8 @@ export default function InternetJoinScreen() {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
   const clientRef = useRef<RealtimeClient | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions ? useCameraPermissions() : [null, async () => {}];
 
   const handleJoin = useCallback(async () => {
     const trimmed = code.trim();
@@ -125,6 +138,24 @@ export default function InternetJoinScreen() {
     }
   }, [code, playerName, setMpClient, setMultiplayerMode, setRoomCode, setConnectedPlayers, router]);
 
+  const openScanner = useCallback(async () => {
+    if (!CameraView) return; // not available on web/native build needed
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) return;
+    }
+    setScanning(true);
+  }, [cameraPermission, requestCameraPermission]);
+
+  const handleQRScanned = useCallback(({ data }: { data: string }) => {
+    if (!scanning) return;
+    const parsed = data.replace('caps://join/', '').replace(/[^0-9]/g, '').slice(0, 6);
+    if (parsed.length === 6) {
+      setCode(parsed);
+      setScanning(false);
+    }
+  }, [scanning]);
+
   const handleCancel = useCallback(() => {
     if (clientRef.current) {
       clientRef.current.disconnect();
@@ -159,6 +190,13 @@ export default function InternetJoinScreen() {
           autoFocus
         />
 
+        {/* QR Scan button — native only (S108) */}
+        {CameraView && status === 'idle' && (
+          <TouchableOpacity style={styles.scanBtn} onPress={openScanner}>
+            <Text style={styles.scanBtnText}>📷 Scan QR Code</Text>
+          </TouchableOpacity>
+        )}
+
         {status === 'idle' && (
           <View style={styles.actionRow}>
             <Button
@@ -180,6 +218,27 @@ export default function InternetJoinScreen() {
               style={{ flex: 1 }}
             />
           </View>
+        )}
+
+        {/* QR Scanner modal */}
+        {scanning && CameraView && (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setScanning(false)}>
+            <View style={styles.scanModal}>
+              <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing="back"
+                onBarcodeScanned={handleQRScanned}
+                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+              />
+              <View style={styles.scanOverlay}>
+                <View style={styles.scanFrame} />
+                <Text style={styles.scanHint}>Point at the QR code from the host</Text>
+                <TouchableOpacity style={styles.scanClose} onPress={() => setScanning(false)}>
+                  <Text style={styles.scanCloseText}>✕ Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         )}
 
         {status === 'connecting' && (
@@ -292,5 +351,61 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: rf(14),
     marginTop: rs(12),
+  },
+  scanBtn: {
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    borderRadius: rv(10),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(20),
+    marginTop: rs(8),
+  },
+  scanBtnText: {
+    color: COLORS.gold,
+    fontSize: rf(14),
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  scanModal: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scanOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanFrame: {
+    width: rs(220),
+    height: rs(220),
+    borderWidth: 3,
+    borderColor: COLORS.gold,
+    borderRadius: rs(16),
+    backgroundColor: 'transparent',
+  },
+  scanHint: {
+    color: '#fff',
+    fontSize: rf(13),
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: rs(20),
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(6),
+    borderRadius: rs(8),
+  },
+  scanClose: {
+    marginTop: rs(24),
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(32),
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: rs(10),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  scanCloseText: {
+    color: '#fff',
+    fontSize: rf(14),
+    fontWeight: '700',
   },
 });
