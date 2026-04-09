@@ -61,7 +61,7 @@ const VOLUME_MAP: Partial<Record<SoundName, number>> = {
   cardPlace: 0, cardSelect: 0, cardFlip: 0, // DISABLED — same sound 40x/game is annoying
   chipsWin: 0.4, lose: 0.4, boardWin: 0.4, boardLose: 0.4,
   revealStart: 0.3, timerLow: 0.4,
-  complete: 0.5, buzzer: 0.5,
+  complete: 0.7, buzzer: 0.5,
 };
 
 export async function preloadSounds(): Promise<void> {
