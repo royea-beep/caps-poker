@@ -157,6 +157,10 @@ jobs:
               console.log('\n✅ SUBMITTED TO APP STORE REVIEW!');
               console.log('   Apple will review within 24-48 hours.');
               console.log('   Track: https://appstoreconnect.apple.com/apps/6760429619');
+            } else if (sResp.status === 403 && sResp.body.includes('DELETE')) {
+              // 403 "Allowed operation is: DELETE" = submission already exists = already in review
+              console.log('\n✅ ALREADY SUBMITTED — App is WAITING_FOR_REVIEW (submission exists).');
+              console.log('   Track: https://appstoreconnect.apple.com/apps/6760429619');
             } else {
               console.log('\n⚠️  Submit had issues — check response above.');
               process.exit(1);
