@@ -1270,11 +1270,8 @@ export default function HomeScreen() {
         onSignOut={signOut}
       />
 
-      {/* Top bar — hamburger + avatar */}
-      <View style={styles.topBar}>
-        <Pressable onPress={() => setMenuOpen(true)} style={styles.hamburgerBtn} hitSlop={12}>
-          <Text style={[styles.hamburgerText, { color: theme.accent }]}>☰</Text>
-        </Pressable>
+      {/* Top bar — avatar + chips (S112: hamburger removed) */}
+      <View style={[styles.topBar, { justifyContent: 'flex-end' }]}>
         <View style={styles.topBarRight}>
           {/* Chip balance — tap to shop */}
           <View style={styles.topChipWrap}>
@@ -1345,7 +1342,8 @@ export default function HomeScreen() {
             {tagline}
           </Animated.Text>
           <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.55, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(13) }} numberOfLines={2}>“{todaysQuote.text}” — {todaysQuote.author}</Text>
+          <Text style={{ color: theme.subtitleColor, fontSize: rf(10.5), opacity: 0.6, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(14) }} numberOfLines={3} ellipsizeMode="tail">"{todaysQuote.text}"</Text>
+          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.4, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
         </View>
 
         {/* Player count selector — 2P / 3P / 4P */}
@@ -1397,19 +1395,10 @@ export default function HomeScreen() {
             </Pressable>
           </AnimatedRN.View>
 
-          {/* Board config hint — small, below button */}
+          {/* Board config hint — English only (S112) */}
           <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
-            {t().boardsPlayers(getBoardCount(config.numberOfPlayers), config.numberOfPlayers)}
-          </Text>
-          {/* Stakes label */}
-          <Text style={styles.stakesLabel}>
-            {config.potPerBoard === 0
-              ? 'Casual · Free'
-              : config.potPerBoard <= 25
-              ? `Low Stakes · ${config.potPerBoard}/board`
-              : config.potPerBoard <= 100
-              ? `Mid Stakes · ${config.potPerBoard}/board`
-              : `High Stakes · ${config.potPerBoard}/board`}
+            {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
+            {config.potPerBoard > 0 ? ` · ${config.potPerBoard <= 25 ? 'Low' : config.potPerBoard <= 100 ? 'Mid' : 'High'} Stakes · ${config.potPerBoard}/board` : ' · Free'}
           </Text>
         </View>
 
@@ -1510,24 +1499,17 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* ⚡ Play Online — always visible (S107: 28%→60% discovery) */}
-        <Pressable
-          style={styles.onlineBtn}
-          onPress={() => router.push('/lobby/internet-host' as any)}
-        >
-          <Text style={styles.onlineBtnText}>⚡ Play Online</Text>
-          <Text style={styles.onlineBtnSub}>vs real players</Text>
-        </Pressable>
-
-        {/* 📊 Stats — hand count quick access (S107) */}
+        {/* 📊 Stats — hand count quick access */}
         {totalHandCount > 0 && (
           <Pressable onPress={() => router.push('/hand-history' as any)} style={styles.statsBtn}>
             <Text style={styles.statsBtnText}>📊 {totalHandCount} hands played</Text>
           </Pressable>
         )}
 
-        {/* Play with Friends — Internet MP entry (S100) */}
+        {/* Play Online — Host + Join (S112: removed duplicate ⚡ Play Online button) */}
         {isOnlineMultiplayerAvailable() && (
+          <>
+          <Text style={styles.sectionLabel}>PLAY ONLINE</Text>
           <View style={styles.friendsRow}>
             <Pressable
               style={[styles.modeBtn, { backgroundColor: '#0e2d1a', flex: 1 }]}
@@ -1544,45 +1526,22 @@ export default function HomeScreen() {
               <Text style={[styles.modeBtnLabel, { color: '#60a5fa' }]}>Join Game</Text>
             </Pressable>
           </View>
+          </>
         )}
 
-        {/* Data cards — 2x2 grid: Missions | Leaderboard | Achievements | Stats */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%', marginTop: 4 }}>
-          {/* Mission card */}
-          <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>🎯 MISSION</Text>
-            {missionData ? (
-              <>
-                <Text style={homeDataCardStyles.value} numberOfLines={1}>{missionData.title}</Text>
-                <Text style={homeDataCardStyles.sub}>{missionData.progress}/{missionData.total} · +{missionData.reward} 💰</Text>
-              </>
-            ) : (
-              <Text style={homeDataCardStyles.sub}>Tap to view</Text>
-            )}
-          </Pressable>
-          {/* Leaderboard card */}
-          <Pressable onPress={() => router.push('/leaderboard' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>🏆 RANK</Text>
-            {leaderboardData ? (
-              <>
-                <Text style={homeDataCardStyles.value}>#{leaderboardData.rank}</Text>
-                <Text style={homeDataCardStyles.sub}>of {leaderboardData.total}</Text>
-              </>
-            ) : (
-              <Text style={homeDataCardStyles.sub}>Play to rank</Text>
-            )}
-          </Pressable>
-          {/* Achievements card */}
+        {/* Data cards — S112: merged 4→2 (My Progress + Compete) */}
+        <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
+          {/* My Progress card */}
           <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>🏅 BADGES</Text>
+            <Text style={homeDataCardStyles.label}>MY PROGRESS</Text>
             <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
-            <Text style={homeDataCardStyles.sub}>unlocked</Text>
+            <Text style={homeDataCardStyles.sub}>badges · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} wins</Text>
           </Pressable>
-          {/* Stats card */}
-          <Pressable onPress={() => router.push('/stats' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>📊 STATS</Text>
-            <Text style={homeDataCardStyles.value}>{handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'}</Text>
-            <Text style={homeDataCardStyles.sub}>{handsPlayed} hands</Text>
+          {/* Compete card */}
+          <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
+            <Text style={homeDataCardStyles.label}>COMPETE</Text>
+            <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
+            <Text style={homeDataCardStyles.sub}>missions · {leaderboardData ? `#${leaderboardData.rank}` : '#--'} rank</Text>
           </Pressable>
         </View>
 
@@ -1726,11 +1685,6 @@ export default function HomeScreen() {
       {/* Welcome toast after sign-in */}
       {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
 
-      {/* Version badge — bottom-right, always visible, non-intrusive */}
-      <Text style={styles.versionBadge} pointerEvents="none">
-        v{Constants.expoConfig?.version ?? '1.9.4'} ({Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.extra?.buildNumber ?? '116'})
-      </Text>
-    
       {showOnboarding && <OnboardingOverlay onDone={handleOnboardingDone} />}
       {showStreakPopup && streakData && (
         <StreakPopup
@@ -2146,6 +2100,16 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.35)',
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  sectionLabel: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: rf(10),
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase' as any,
+    alignSelf: 'flex-start',
+    marginBottom: rs(4),
+    marginTop: rs(4),
   },
   modeBtnLabelDisabled: {
     color: 'rgba(255,255,255,0.6)',
