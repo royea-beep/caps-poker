@@ -10,6 +10,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -27,6 +28,8 @@ import { useGameColors } from '../utils/useGameColors';
 import { getTheme } from '../constants/visualThemes';
 import GuidedTooltip from './GuidedTooltip';
 import { FloatingChips } from './FloatingChips';
+import { HandBadge } from './HandBadge';
+import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -99,8 +102,12 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const [showChipsAnim, setShowChipsAnim] = useState(false);
   const [showCompleteFlash, setShowCompleteFlash] = useState(false);
   const [showProgressBar, setShowProgressBar] = useState(false);
+  const [showWinHighlight, setShowWinHighlight] = useState(false);
+  const [showIntermission, setShowIntermission] = useState(false);
   // Progress bar: 1→0 over remaining time after result (useNativeDriver:false — width)
   const advanceProgress = useRef(new AnimatedRN.Value(1)).current;
+  // River squeeze: scaleY 1→0.08→1 (useNativeDriver:true)
+  const riverSqueezeAnim = useRef(new AnimatedRN.Value(1)).current;
 
   // RN Animated — zero Reanimated
   const handNameOpacity = useRef(new AnimatedRN.Value(0)).current;
@@ -207,6 +214,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     screenFlashAnim.setValue(0);
     setShowChipsAnim(false);
     setShowCompleteFlash(false);
+    setShowWinHighlight(true);
+    setShowIntermission(false);
+    riverSqueezeAnim.setValue(1);
     botPulseScale.setValue(1);
     communitySpotlightOpacities.forEach(s => s.setValue(1));
     playerSpotlightOpacities.forEach(s => s.setValue(1));
@@ -238,7 +248,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setShowChipsAnim(false);
     setShowCompleteFlash(false);
     setShowProgressBar(false);
+    setShowWinHighlight(false);
+    setShowIntermission(false);
     advanceProgress.setValue(1);
+    riverSqueezeAnim.setValue(1);
     handNameOpacity.setValue(0);
     resultScale.setValue(0);
     hintOpacity.setValue(1);
@@ -275,11 +288,18 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
     }, t(1600)));
 
-    // t(2800) — River: flip card 4 with climax riverReveal sound
+    // t(2800) — River SQUEEZE: scaleY 1→0.08→1 (dramatic peel before flip)
     timers.current.push(setTimeout(() => {
-      setRiverFaceDown(false);
-      playSound('riverReveal');
-      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
+      const squeezeAnim = AnimatedRN.sequence([
+        AnimatedRN.timing(riverSqueezeAnim, {
+          toValue: 0.08, duration: t(250), easing: Easing.inOut(Easing.cubic), useNativeDriver: true,
+        }),
+        AnimatedRN.spring(riverSqueezeAnim, {
+          toValue: 1, tension: 120, friction: 7, useNativeDriver: true,
+        }),
+      ]);
+      anims.current.push(squeezeAnim);
+      squeezeAnim.start();
     }, t(2800)));
 
     // t(3000) — fade out hint
@@ -289,15 +309,23 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       a.start();
     }, t(3000)));
 
-    // t(3600) — show hand names
+    // t(3300) — River FLIP reveal (after squeeze completes)
+    timers.current.push(setTimeout(() => {
+      setRiverFaceDown(false);
+      playSound('riverReveal');
+      Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
+    }, t(3300)));
+
+    // t(3600) — show hand names + win highlight (gold glow on winning cards)
     timers.current.push(setTimeout(() => {
       setShowHandNames(true);
+      setShowWinHighlight(true);
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
     }, t(3600)));
 
-    // t(3900) — community spotlight: dim non-highlighted cards
+    // t(3700) — community spotlight: dim non-highlighted cards
     timers.current.push(setTimeout(() => {
       const b = boards[currentIdxRef.current];
       if (!b) return;
@@ -322,7 +350,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           a.start();
         }
       });
-      // Bot: dim cards not in botHighlightIds — S110: 0.55 (was 0.35) for legibility
+      // Bot: dim cards not in botHighlightIds — 0.55 for legibility
       b.botCards.forEach((c, i) => {
         if (!b.botHighlightIds.includes(c.id)) {
           const a = AnimatedRN.timing(botSpotlightOpacities[i], {
@@ -332,9 +360,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           a.start();
         }
       });
-    }, t(3900)));
+    }, t(3700)));
 
-    // t(4300) — show win/lose result (scale in) + chip counter animation
+    // t(4100) — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
       setShowResult(true);
       const scaleAnim = AnimatedRN.spring(resultScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true });
@@ -383,7 +411,25 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           flashAnim.start(() => setShowCompleteFlash(false));
         }, 300);
       }
-    }, t(4300)));  // S110: result after River (was 3000ms)
+    }, t(4100)));
+
+    // S114: Progress bar — starts with result at t(4100), depletes over remaining time to auto-advance
+    timers.current.push(setTimeout(() => {
+      setShowProgressBar(true);
+      const progressAnim = AnimatedRN.timing(advanceProgress, {
+        toValue: 0,
+        duration: t(14000) - t(4100),
+        useNativeDriver: false,
+      });
+      anims.current.push(progressAnim);
+      progressAnim.start();
+    }, t(4100)));
+
+    // t(4500) — Board Score Intermission overlay (shows for 1.5s)
+    timers.current.push(setTimeout(() => {
+      setShowIntermission(true);
+      timers.current.push(setTimeout(() => setShowIntermission(false), t(1500)));
+    }, t(4500)));
 
     // FloatingChips — 800ms after result reveal
     timers.current.push(setTimeout(() => {
@@ -391,25 +437,13 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       if (b && b.potAmount > 0 && b.winner !== 'tie') {
         setShowChipsAnim(true);
       }
-    }, t(5100)));
+    }, t(4900)));
 
-    // S113: Progress bar — starts with result at t(4300), depletes over remaining time to auto-advance
-    timers.current.push(setTimeout(() => {
-      setShowProgressBar(true);
-      const progressAnim = AnimatedRN.timing(advanceProgress, {
-        toValue: 0,
-        duration: t(14000) - t(4300),
-        useNativeDriver: false,
-      });
-      anims.current.push(progressAnim);
-      progressAnim.start();
-    }, t(4300)));
-
-    // Auto-advance at 14s (S110: extended for staged reveal, was 12s)
+    // Auto-advance at 14s
     timers.current.push(setTimeout(doAdvance, t(14000)));
 
-    // Show 'Tap to continue' hint ~4s after result shows (result at 4.3s → hint at 8.5s)
-    timers.current.push(setTimeout(() => { setShowTapHint(true); }, t(8500)));
+    // Show 'Tap to continue' hint after intermission clears
+    timers.current.push(setTimeout(() => { setShowTapHint(true); }, t(6200)));
 
     // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
     if (isFirstGame && currentIdxRef.current === 0) {
@@ -452,6 +486,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       communitySpotlightOpacities.forEach(s => s.stopAnimation());
       playerSpotlightOpacities.forEach(s => s.stopAnimation());
       botSpotlightOpacities.forEach(s => s.stopAnimation());
+      riverSqueezeAnim.stopAnimation();
     };
   }, [currentIdx]);
 
@@ -481,6 +516,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const resultText = board.winner === 'player' ? tx.youWin : board.winner === 'bot' ? tx.youLose : tx.tie;
   const chipSign = board.winner === 'player' ? '+' : board.winner === 'bot' ? '-' : '±';
   const chipColor = board.winner === 'player' ? COLORS.goldBright : board.winner === 'bot' ? gameColors.lose : '#aaa';
+  // S114: narrow loss detection (rank diff ≤1)
+  const playerRank = HAND_RANK[board.playerHandName] ?? 0;
+  const botRank = HAND_RANK[board.botHandName] ?? 0;
+  const isNarrowLoss = board.winner === 'bot' && botRank - playerRank <= 1;
+  // S114: big win triggers Share button
+  const isBigWin = board.winner === 'player' && BIG_HANDS.includes(board.playerHandName);
+  const isComplete = boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1;
+  const showShare = isBigWin || isComplete;
 
   return (
     <Modal visible animationType="fade" transparent={false} statusBarTranslucent>
@@ -541,13 +584,13 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                     ))}
                   </View>
                 )}
-                {showHandNames && botHandName ? (
+                {showHandNames && rawBotHandName ? (
                   isFirstBot ? (
-                    <AnimatedRN.Text style={[styles.handNameBadge, { opacity: handNameOpacity }]}>
-                      {botHandName}
-                    </AnimatedRN.Text>
+                    <AnimatedRN.View style={{ opacity: handNameOpacity }}>
+                      <HandBadge handName={rawBotHandName} />
+                    </AnimatedRN.View>
                   ) : (
-                    <Text style={styles.handNameBadge}>{botHandName}</Text>
+                    <HandBadge handName={rawBotHandName} size="small" />
                   )
                 ) : null}
               </View>
@@ -558,17 +601,28 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>COMMUNITY</Text>
             <View style={[styles.cardRow, { gap: commGap }]}>
-              {allCommunity.map((c, i) => (
-                <AnimatedRN.View key={c.id} style={{ opacity: communitySpotlightOpacities[i] }}>
-                  <CardComponent
-                    card={c}
-                    faceDown={i < 3 ? flopFaceDown : i === 3 ? turnFaceDown : riverFaceDown}
-                    flipDuration={400}
-                    cardWidth={commCardW}
-                    cardHeight={commCardH}
-                  />
-                </AnimatedRN.View>
-              ))}
+              {allCommunity.map((c, i) => {
+                const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);
+                const isRiver = i === 4;
+                return (
+                  <AnimatedRN.View
+                    key={c.id}
+                    style={[
+                      { opacity: communitySpotlightOpacities[i] },
+                      isRiver && { transform: [{ scaleY: riverSqueezeAnim }] },
+                      isHighlighted && styles.winGlow,
+                    ]}
+                  >
+                    <CardComponent
+                      card={c}
+                      faceDown={i < 3 ? flopFaceDown : i === 3 ? turnFaceDown : riverFaceDown}
+                      flipDuration={400}
+                      cardWidth={commCardW}
+                      cardHeight={commCardH}
+                    />
+                  </AnimatedRN.View>
+                );
+              })}
             </View>
           </View>
 
@@ -589,9 +643,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
               ))}
             </View>
             {showHandNames && (
-              <AnimatedRN.Text style={[styles.handNameBadge, styles.handNamePlayer, { opacity: handNameOpacity }]}>
-                {getHandName(board.playerHandName, lang)}
-              </AnimatedRN.Text>
+              <AnimatedRN.View style={{ opacity: handNameOpacity }}>
+                <HandBadge handName={board.playerHandName} />
+              </AnimatedRN.View>
             )}
           </View>
 
@@ -619,11 +673,25 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                   {getHandName(board.playerHandName, lang)} beats {getHandName(board.botHandName, lang)}
                 </Text>
               )}
+              {isNarrowLoss && (
+                <Text style={styles.soClose}>So close! 😬</Text>
+              )}
               {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
                 <View style={styles.completeBanner}>
                   <Text style={styles.completeBannerText}>COMPLETE!</Text>
                   <Text style={styles.completeBannerSub}>You won ALL boards! +50% bonus 🏆</Text>
                 </View>
+              )}
+              {showShare && (
+                <Pressable
+                  style={styles.shareBtn}
+                  onPress={() => {
+                    const label = board.playerHandName || 'big hand';
+                    Share.share({ message: `I just hit a ${label} in CAPS Poker! 🃏` });
+                  }}
+                >
+                  <Text style={styles.shareBtnText}>Share 📤</Text>
+                </Pressable>
               )}
             </AnimatedRN.View>
           ) : (
@@ -669,6 +737,19 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             pointerEvents="none"
             style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,215,0,0.12)', opacity: screenFlashAnim }]}
           />
+        )}
+
+        {/* S114: Board Score Intermission overlay */}
+        {showIntermission && (
+          <View style={styles.intermissionOverlay} pointerEvents="none">
+            <Text style={styles.intermissionBoard}>Board {currentIdx + 1} of {boards.length}</Text>
+            <Text style={[styles.intermissionResult, { color: resultColor }]}>{resultText}</Text>
+            {board.potAmount > 0 && board.winner !== 'tie' && (
+              <Text style={[styles.intermissionChip, { color: chipColor }]}>
+                {chipSign}{board.potAmount} chips
+              </Text>
+            )}
+          </View>
         )}
 
         {/* Guided first-game tooltips (tips 6-8) */}
@@ -845,5 +926,66 @@ const styles = StyleSheet.create({
   progressBar: {
     height: rs(3),
     backgroundColor: '#c9a84c',
+  },
+  // S114: winning card gold glow
+  winGlow: {
+    borderRadius: rs(4),
+    shadowColor: '#FFD700',
+    shadowOpacity: 0.9,
+    shadowRadius: rs(8),
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
+  // S114: "So close!" narrow loss
+  soClose: {
+    color: 'rgba(255,152,0,0.85)',
+    fontSize: rf(13),
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: rs(2),
+  },
+  // S114: Share button
+  shareBtn: {
+    marginTop: rs(10),
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: rv(8),
+    paddingHorizontal: rs(20),
+    paddingVertical: rs(8),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  shareBtnText: {
+    color: '#fff',
+    fontSize: rf(13),
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  // S114: Board Score Intermission overlay
+  intermissionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rs(6),
+  },
+  intermissionBoard: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: rf(13),
+    fontWeight: '600',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  intermissionResult: {
+    fontSize: rf(40),
+    fontWeight: '900',
+    letterSpacing: 3,
+    textAlign: 'center',
+  },
+  intermissionChip: {
+    fontSize: rf(24),
+    fontWeight: '800',
+    letterSpacing: 1,
+    textAlign: 'center',
   },
 });
