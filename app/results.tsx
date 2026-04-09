@@ -23,7 +23,7 @@ import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
-import { saveHandToHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
+import { saveHandToHistory, getHandHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { saveHandForWebReplay, ShareData } from '../utils/shareHand';
 import { rf, rs, rb, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
@@ -146,6 +146,9 @@ export default function ResultsScreen() {
   // S108: Floating chip delta animation
   const [showFloatingChips, setShowFloatingChips] = useState(false);
 
+  // S115: session stats (last 3h)
+  const [sessionHistory, setSessionHistory] = useState<HandRecord[]>([]);
+
   // Economy earn-chips floating toast
   const [earnToast, setEarnToast] = useState<string | null>(null);
   const earnToastOpacity = useRef(new Animated.Value(0)).current;
@@ -181,6 +184,11 @@ export default function ResultsScreen() {
   const [completeOverlayDone, setCompleteOverlayDone] = useState(false);
   const CARD_W = Math.min(Platform.OS === 'web' ? 56 : 36, Math.max(24, Math.floor((SCREEN_W - 56) / 6.5)));
   const CARD_H = Math.round(CARD_W * 1.4);
+  // S115: community cards 15% bigger, bot cards 10% smaller
+  const COMM_CARD_W = Math.round(CARD_W * 1.15);
+  const COMM_CARD_H = Math.round(CARD_H * 1.15);
+  const BOT_CARD_W = Math.round(CARD_W * 0.9);
+  const BOT_CARD_H = Math.round(CARD_H * 0.9);
 
   // Mount: debug logging + dirty shutdown cleanup
   useEffect(() => {
@@ -214,6 +222,14 @@ export default function ResultsScreen() {
     const timer = setTimeout(() => setShowFloatingChips(true), 1500);
     return () => clearTimeout(timer);
   }, [revealData]);
+
+  // S115: Load hand history for session stats
+  useEffect(() => {
+    getHandHistory().then((h) => {
+      const sessionStart = Date.now() - 3 * 60 * 60 * 1000;
+      setSessionHistory(h.filter((r) => r.timestamp > sessionStart));
+    }).catch(() => {});
+  }, []);
 
   // Stats tracking + auto-save
   useEffect(() => {
@@ -646,6 +662,11 @@ export default function ResultsScreen() {
   let bestRank = 99; let bestName = ''; let bestBoard = 0;
   boards.forEach((b, i) => { const r = HAND_ORDER.indexOf(b.playerHandName); if (r >= 0 && r < bestRank) { bestRank = r; bestName = b.playerHandName; bestBoard = i + 1; } });
 
+  // S115: session stats
+  const sessionWins = sessionHistory.filter((h) => h.netChips > 0).length;
+  const sessionLosses = sessionHistory.filter((h) => h.netChips < 0).length;
+  const sessionChips = sessionHistory.reduce((sum, h) => sum + h.netChips, 0);
+
   // Chip x-positions (left %) for shower
   const CHIP_X_POSITIONS = ['10%', '22%', '35%', '50%', '65%', '80%'] as const;
 
@@ -750,7 +771,13 @@ export default function ResultsScreen() {
       )}
 
       <Animated.View style={{ flex: 1, opacity: screenOpacity }}>
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={() => { if (autoContinueActive) cancelAutoContinue(); }}
+          scrollEventThrottle={200}
+        >
 
           {/* Title + score */}
           <View style={styles.titleSection}>
@@ -837,6 +864,10 @@ export default function ResultsScreen() {
                 pot={potPerBoardTotal}
                 cardW={CARD_W}
                 cardH={CARD_H}
+                commCardW={COMM_CARD_W}
+                commCardH={COMM_CARD_H}
+                botCardW={BOT_CARD_W}
+                botCardH={BOT_CARD_H}
                 translateY={boardTranslates.current[i]}
                 winBorderColor={winBorderColor}
                 winBadgeAnim={winBadgeAnim}
@@ -982,6 +1013,59 @@ export default function ResultsScreen() {
             </View>
           )}
 
+          {/* S115: Session stats — shows when 2+ games in session */}
+          {sessionHistory.length >= 2 && (
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionLabel}>This session</Text>
+              <Text style={styles.sessionStats}>
+                {sessionWins}W / {sessionLosses}L
+                <Text style={{ color: sessionChips >= 0 ? '#c9a84c' : '#ef5350' }}>
+                  {' · '}{sessionChips >= 0 ? '+' : ''}{sessionChips}🪙
+                </Text>
+              </Text>
+            </View>
+          )}
+
+          {/* S115: Board breakdown — compact one-row-per-board summary */}
+          {boards.length > 0 && (
+            <View style={styles.breakdownSection}>
+              <Text style={styles.breakdownTitle}>Board by board</Text>
+              {boards.map((board, i) => {
+                const playerWon = board.winner === 'player';
+                const chipChange = playerWon ? potPerBoardTotal : -potPerBoardTotal;
+                return (
+                  <View key={i} style={styles.breakdownRow}>
+                    <View style={styles.breakdownLeft}>
+                      <Text style={styles.breakdownNum}>Board {i + 1}</Text>
+                      <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]}>
+                        {playerWon ? '✓' : board.winner === 'tie' ? '=' : '✗'}
+                      </Text>
+                    </View>
+                    <View style={styles.breakdownMid}>
+                      <Text style={styles.breakdownHand}>{board.playerHandName || '—'}</Text>
+                      {!playerWon && board.botHandName ? (
+                        <Text style={styles.breakdownVs}>vs {board.botHandName}</Text>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]}>
+                      {board.winner === 'tie' ? '±0🪙' : `${playerWon ? '+' : ''}${chipChange}🪙`}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* S115: Hand history link */}
+          {!isMultiplayer && (
+            <TouchableOpacity
+              onPress={() => router.push('/hand-history' as any)}
+              style={styles.historyLink}
+            >
+              <Text style={styles.historyLinkText}>View hand history →</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Auto-continue countdown (FIX 2) */}
           {autoContinueActive && !isMultiplayer && (
             <TouchableOpacity
@@ -990,12 +1074,12 @@ export default function ResultsScreen() {
               activeOpacity={0.7}
             >
               <Text style={styles.autoContinueText}>
-                Auto-continuing in {autoContinueCountdown}... (tap to cancel)
+                Auto-continuing in {autoContinueCountdown}s · tap to stay
               </Text>
             </TouchableOpacity>
           )}
 
-          {/* Action buttons */}
+          {/* Action buttons (without DealMeIn — moved to sticky bottom) */}
           <View style={styles.buttons}>
             {waitingForNextHand ? (
               <View style={styles.waitingNextHand}>
@@ -1006,12 +1090,6 @@ export default function ResultsScreen() {
               </View>
             ) : (
               <>
-                <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }] }}>
-                  <DealMeInButton
-                    label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}
-                    onPress={() => { cancelAutoContinue(); handleNextHand(); }}
-                  />
-                </Animated.View>
                 {savedHandId && !isMultiplayer && (
                   <Animated.View style={{ opacity: dealBtnOpacity, alignItems: 'center', marginTop: rs(8) }}>
                     <Pressable style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
@@ -1036,13 +1114,25 @@ export default function ResultsScreen() {
 
         </ScrollView>
       </Animated.View>
+
+      {/* S115: Sticky Play Again button — always visible at bottom */}
+      {!waitingForNextHand && !isMultiplayer && (
+        <View style={styles.stickyBottom}>
+          <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }], width: '75%' }}>
+            <DealMeInButton
+              label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}
+              onPress={() => { cancelAutoContinue(); handleNextHand(); }}
+            />
+          </Animated.View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scrollContent: { padding: rs(16), paddingBottom: rs(32), gap: rs(12), alignItems: 'center' },
+  scrollContent: { padding: rs(16), paddingBottom: rs(110), gap: rs(12), alignItems: 'center' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: COLORS.gold, fontSize: rf(20), fontWeight: '800' },
   titleSection: { alignItems: 'center', gap: rs(8) },
@@ -1094,13 +1184,13 @@ const styles = StyleSheet.create({
   },
   completeCelebTitle: {
     color: '#FFD700',
-    fontSize: rf(22),
+    fontSize: rf(32),
     fontWeight: '900',
     letterSpacing: 3,
     textAlign: 'center',
     textShadowColor: 'rgba(255,215,0,0.5)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
+    textShadowRadius: 20,
   },
   // Auto-continue countdown (FIX 2)
   autoContinueBar: {
@@ -1216,5 +1306,105 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#c9a84c',
     letterSpacing: 0.5,
+  },
+  // S115: sticky Play Again
+  stickyBottom: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    backgroundColor: 'rgba(10,10,10,0.95)',
+    paddingHorizontal: rs(20),
+    paddingBottom: rs(28),
+    paddingTop: rs(12),
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(201,168,76,0.25)',
+    alignItems: 'center',
+  },
+  // S115: session stats row
+  sessionRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: rs(4),
+    paddingVertical: rs(8),
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: rv(8),
+  },
+  sessionLabel: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: rf(11),
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  sessionStats: {
+    color: '#fff',
+    fontSize: rf(13),
+    fontWeight: '700',
+  },
+  // S115: board breakdown
+  breakdownSection: {
+    width: '100%',
+    marginVertical: rs(4),
+    paddingHorizontal: rs(4),
+  },
+  breakdownTitle: {
+    fontSize: rf(11),
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: 1.5,
+    marginBottom: rs(8),
+    textTransform: 'uppercase',
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: rs(8),
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255,255,255,0.07)',
+  },
+  breakdownLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(6),
+    width: rs(80),
+  },
+  breakdownNum: {
+    fontSize: rf(12),
+    color: 'rgba(255,255,255,0.45)',
+  },
+  breakdownIcon: {
+    fontSize: rf(14),
+    fontWeight: '800',
+  },
+  breakdownMid: {
+    flex: 1,
+  },
+  breakdownHand: {
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: '#fff',
+  },
+  breakdownVs: {
+    fontSize: rf(10),
+    color: 'rgba(255,255,255,0.35)',
+    marginTop: rs(1),
+  },
+  breakdownChips: {
+    fontSize: rf(13),
+    fontWeight: '700',
+    minWidth: rs(55),
+    textAlign: 'right',
+  },
+  // S115: hand history link
+  historyLink: {
+    alignSelf: 'center',
+    paddingVertical: rs(8),
+    marginTop: rs(4),
+    marginBottom: rs(8),
+  },
+  historyLinkText: {
+    fontSize: rf(12),
+    color: 'rgba(201,168,76,0.55)',
+    fontWeight: '600',
   },
 });

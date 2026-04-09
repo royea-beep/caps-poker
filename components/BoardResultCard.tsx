@@ -34,6 +34,10 @@ interface BoardResultCardProps {
   pot: number;
   cardW: number;
   cardH: number;
+  commCardW?: number;
+  commCardH?: number;
+  botCardW?: number;
+  botCardH?: number;
   translateY: Animated.Value;
   winBorderColor: any; // Animated interpolation from parent
   winBadgeAnim: Animated.Value;
@@ -45,9 +49,14 @@ interface BoardResultCardProps {
 
 export function BoardResultCard({
   board, boardIndex, pot, cardW, cardH, translateY,
+  commCardW, commCardH, botCardW, botCardH,
   winBorderColor, winBadgeAnim, shareData, autoShareUrl,
   isComplete, completeBonusAmount,
 }: BoardResultCardProps) {
+  const cW = commCardW ?? cardW;
+  const cH = commCardH ?? cardH;
+  const bW = botCardW ?? cardW;
+  const bH = botCardH ?? cardH;
   const boardShareRef = useRef<any>(null);
   const boardStoryRef = useRef<any>(null);
   const [sharing, setSharing] = useState(false);
@@ -156,8 +165,8 @@ export function BoardResultCard({
                     key={c.id}
                     card={c}
                     faceDown={false}
-                    cardWidth={cardW}
-                    cardHeight={cardH}
+                    cardWidth={bW}
+                    cardHeight={bH}
                     highlighted={botIdx === 0 && (board.botHighlightIds ?? []).includes(c.id)}
                     dimmed={botIdx === 0 && !(board.botHighlightIds ?? []).includes(c.id) && (board.botHighlightIds ?? []).length > 0}
                   />
@@ -173,14 +182,14 @@ export function BoardResultCard({
         {/* Community cards */}
         <View style={styles.cardsRow}>
           {(board.openCards ?? []).map((c: any) => (
-            <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cardW} cardHeight={cardH}
+            <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cW} cardHeight={cH}
               highlighted={(board.boardHighlightIds ?? []).includes(c.id)}
               dimmed={!(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
             />
           ))}
           <View style={styles.cardSeparator} />
           {(board.closedCards ?? []).map((c: any) => (
-            <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cardW} cardHeight={cardH}
+            <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cW} cardHeight={cH}
               highlighted={(board.boardHighlightIds ?? []).includes(c.id)}
               dimmed={!(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
             />
