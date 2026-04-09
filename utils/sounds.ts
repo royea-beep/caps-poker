@@ -15,7 +15,10 @@ export type SoundName =
   | 'buzzer'
   | 'revealStart'
   | 'boardWin'
-  | 'boardLose';
+  | 'boardLose'
+  | 'turnReveal'
+  | 'riverReveal'
+  | 'boardTransition';
 
 let createAudioPlayer: ((source: any, options?: any) => any) | null = null;
 let setAudioModeAsync: ((options: any) => Promise<void>) | null = null;
@@ -39,6 +42,9 @@ const soundFiles: Record<SoundName, ReturnType<typeof require> | null> = {
   revealStart: null,
   boardWin: null,
   boardLose: null,
+  turnReveal: null,
+  riverReveal: null,
+  boardTransition: null,
 };
 
 try { soundFiles.cardPlace  = require('../assets/sounds/cardPlace.wav');  } catch {}
@@ -52,6 +58,10 @@ try { soundFiles.buzzer     = require('../assets/sounds/buzzer.wav');     } catc
 try { soundFiles.revealStart = require('../assets/sounds/revealStart.wav'); } catch {}
 try { soundFiles.boardWin   = require('../assets/sounds/boardWin.wav');   } catch {}
 try { soundFiles.boardLose  = require('../assets/sounds/boardLose.wav');  } catch {}
+// turnReveal/riverReveal/boardTransition reuse existing files at distinct volumes
+try { soundFiles.turnReveal     = require('../assets/sounds/cardFlip.wav');   } catch {}
+try { soundFiles.riverReveal    = require('../assets/sounds/chipsWin.wav');   } catch {}
+try { soundFiles.boardTransition = require('../assets/sounds/cardPlace.wav'); } catch {}
 
 // Pre-created players â fast playback, no async on each call
 const players: Partial<Record<SoundName, any>> = {};
@@ -62,6 +72,7 @@ const VOLUME_MAP: Partial<Record<SoundName, number>> = {
   chipsWin: 0.4, lose: 0.4, boardWin: 0.4, boardLose: 0.4,
   revealStart: 0.3, timerLow: 0.4,
   complete: 0.7, buzzer: 0.5,
+  turnReveal: 0.35, riverReveal: 0.5, boardTransition: 0.12,
 };
 
 export async function preloadSounds(): Promise<void> {
