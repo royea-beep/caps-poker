@@ -45,6 +45,7 @@ import BoardReveal from '../components/BoardReveal';
 import GuidedTooltip from '../components/GuidedTooltip';
 import { TimerController, TimerBar } from '../components/TimerController';
 import { BoardArrangement } from '../components/BoardArrangement';
+import { useLevelStore } from '../stores/levelStore';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -112,6 +113,7 @@ function GameScreenInner() {
   const chips = useGameStore((s) => s.chips);
   const playerAvatar = useGameStore((s) => s.playerAvatar) || 'Ã°ÂÂÂ°';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
+  const playerLevel = useLevelStore((s: any) => s.level) ?? 1;
   const storeOrientation = useGameStore((s) => s.orientation);
   const handSortMethod = useGameStore((s) => s.handSortMethod);
   const visualTheme = useGameStore((s) => s.visualTheme);
@@ -193,6 +195,7 @@ function GameScreenInner() {
   const playerHandRef = useRef(playerHand);
   const boardsRef = useRef(boards);
   const [showContinueButton, setShowContinueButton] = useState(false);
+  const [autoPlaceToastVisible, setAutoPlaceToastVisible] = useState(false);
   const [showSafeReveal, setShowSafeReveal] = useState(false);
   const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
     winner: 'player'|'bot'|'tie';
@@ -883,7 +886,7 @@ function GameScreenInner() {
 
   const readyBotCount = botsReady.filter(Boolean).length;
   const cardsRemaining = playerHand.length;
-  const TIMER_SIZE = rv(52);
+  const TIMER_SIZE = timerPulsing ? rv(64) : rv(52);
 
   // Ã¢ÂÂÃ¢ÂÂ Landscape / widescreen layout Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   if (isLandscape) {
@@ -943,7 +946,7 @@ function GameScreenInner() {
             </Pressable>
             <View style={styles.topCenter}>
               {countdownActive && isArranging && (
-                <TimerController countdown={countdown} total={COUNTDOWN_SECONDS} isActive={countdownActive && isArranging} firstFinisher={firstFinisher} timerSize={44} timerColor={timerColor} timerPulsing={timerPulsing} />
+                <TimerController countdown={countdown} total={COUNTDOWN_SECONDS} isActive={countdownActive && isArranging} firstFinisher={firstFinisher} timerSize={timerPulsing ? 54 : 44} timerColor={timerColor} timerPulsing={timerPulsing} />
               )}
               {!countdownActive && isArranging && (
                 <Text style={styles.freePlayLabel}>Arrange freely</Text>
@@ -1172,6 +1175,13 @@ function GameScreenInner() {
           position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
           autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
         />
+      )}
+
+      {/* S113: Auto-place toast */}
+      {autoPlaceToastVisible && (
+        <View style={styles.autoPlaceToast} pointerEvents="none">
+          <Text style={styles.autoPlaceToastText}>⏱ Time out — cards placed automatically</Text>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -1448,6 +1458,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 2,
   },
+  autoPlaceToast: {
+    position: 'absolute',
+    bottom: rs(60),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(8),
+    borderRadius: rs(16),
+    zIndex: 999,
+  },
+  autoPlaceToastText: {
+    fontSize: rf(12),
+    color: '#fff',
+    fontWeight: '500',
+  },
 });
 
 const landscapeStyles = StyleSheet.create({
@@ -1504,6 +1529,11 @@ const landscapeStyles = StyleSheet.create({
   },
   panelAvatarText: {
     fontSize: rf(14),
+  },
+  panelLvl: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: rf(9),
+    fontWeight: '500',
   },
   readyBtn: {
     marginTop: 'auto' as any,

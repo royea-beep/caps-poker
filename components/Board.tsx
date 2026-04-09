@@ -96,7 +96,7 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
   return (
     <Pressable onPress={onPress}>
       <Animated.View style={[styles.emptySlot, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, animStyle]}>
-        {isArrangement && <Text style={styles.plusText}>♦</Text>}
+        {isArrangement && <Text style={styles.plusText}>tap</Text>}
       </Animated.View>
     </Pressable>
   );
@@ -161,6 +161,8 @@ export default function Board({
   const gameColors = useGameColors();
   const [hintInfoVisible, setHintInfoVisible] = useState(false);
   const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [botTooltipVisible, setBotTooltipVisible] = useState(false);
+  const botTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // S81 Card Bible: community and player cards SAME formula (tester: flop was smaller)
   const ch = cardHeightProp ?? rv(screenW, 46, 59, 74, 53);
   const cw = Math.round(ch * 0.72);
@@ -341,17 +343,30 @@ export default function Board({
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
               <Text style={styles.rowLabel}>{multiBot ? `${t().bot}${botIdx + 1}` : t().bot}</Text>
               {(botCardSet ?? []).map((c) => (
-                <CardComponent
+                <Pressable
                   key={c.id}
-                  card={c}
-                  faceDown={!revealed}
-                  cardWidth={cw}
-                  cardHeight={ch}
-                  highlighted={botIdx === 0 && revealed && botHighlightIds.includes(c.id)}
-                  dimmed={botIdx === 0 && revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
-                  flipDuration={flipDuration}
-                />
+                  onPress={!revealed ? () => {
+                    if (botTooltipTimer.current) clearTimeout(botTooltipTimer.current);
+                    setBotTooltipVisible(true);
+                    botTooltipTimer.current = setTimeout(() => setBotTooltipVisible(false), 2000);
+                  } : undefined}
+                >
+                  <CardComponent
+                    card={c}
+                    faceDown={!revealed}
+                    cardWidth={cw}
+                    cardHeight={ch}
+                    highlighted={botIdx === 0 && revealed && botHighlightIds.includes(c.id)}
+                    dimmed={botIdx === 0 && revealed && !botHighlightIds.includes(c.id) && botHighlightIds.length > 0}
+                    flipDuration={flipDuration}
+                  />
+                </Pressable>
               ))}
+              {!revealed && botTooltipVisible && (
+                <View style={styles.botTooltip}>
+                  <Text style={styles.botTooltipText}>Revealed after River</Text>
+                </View>
+              )}
               {revealed && (allBotHandNames?.[botIdx] || (botIdx === 0 && botHandName)) && (
                 <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}>
                   {allBotHandNames?.[botIdx] || botHandName}
@@ -380,18 +395,22 @@ export default function Board({
             />
           ))}
           <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
-          {(closedCards ?? []).map((c) => (
-            <CardComponent
-              key={c.id}
-              card={c}
-              faceDown={!revealed}
-              cardWidth={commW}
-              cardHeight={commH}
-              isCommunityCard
-              highlighted={revealed && boardHighlightIds.includes(c.id)}
-              dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
-              flipDuration={flipDuration}
-            />
+          {(closedCards ?? []).map((c, i) => (
+            <View key={c.id} style={styles.communityCardWrap}>
+              <CardComponent
+                card={c}
+                faceDown={!revealed}
+                cardWidth={commW}
+                cardHeight={commH}
+                isCommunityCard
+                highlighted={revealed && boardHighlightIds.includes(c.id)}
+                dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
+                flipDuration={flipDuration}
+              />
+              {!revealed && (
+                <Text style={styles.cardLabel}>{i === 0 ? 'Turn' : 'River'}</Text>
+              )}
+            </View>
           ))}
         </View>
 
@@ -437,7 +456,7 @@ export default function Board({
             const explText = expl ? (isHE ? expl.he : expl.en) : '';
             return (
               <View style={styles.hintRow}>
-                <Text style={styles.hintText}>{hint}</Text>
+                <Text style={styles.hintText}>💡 {hint}</Text>
                 {expl && (
                   <Pressable
                     onPress={() => {
@@ -449,7 +468,7 @@ export default function Board({
                         return !v;
                       });
                     }}
-                    hitSlop={6}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
                     <Text style={styles.hintInfoIcon}>ⓘ</Text>
@@ -667,6 +686,33 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     fontWeight: '700',
   },
+  communityCardWrap: {
+    alignItems: 'center',
+  },
+  cardLabel: {
+    fontSize: rf(9),
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: rs(2),
+    letterSpacing: 0.5,
+    opacity: 0.7,
+  },
+  botTooltip: {
+    position: 'absolute',
+    top: -rs(22),
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    borderRadius: rs(6),
+    paddingHorizontal: rs(6),
+    paddingVertical: rs(3),
+    alignItems: 'center',
+  },
+  botTooltipText: {
+    color: '#fff',
+    fontSize: rf(9),
+    fontWeight: '600',
+  },
   handName: {
     color: COLORS.textMuted,
     fontSize: rf(8),
@@ -681,12 +727,13 @@ const styles = StyleSheet.create({
     marginLeft: rs(4),
     flexWrap: 'wrap',
     gap: rs(2),
+    minHeight: rs(44),
+    paddingVertical: rs(4),
   },
   hintText: {
     color: COLORS.textMuted,
-    fontSize: rf(7),
+    fontSize: rf(12),
     fontWeight: '600',
-    opacity: 0.7,
   },
   hintInfoBtn: {
     paddingHorizontal: rs(2),

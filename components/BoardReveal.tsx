@@ -98,6 +98,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const [showTapHint, setShowTapHint] = useState(false);
   const [showChipsAnim, setShowChipsAnim] = useState(false);
   const [showCompleteFlash, setShowCompleteFlash] = useState(false);
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  // Progress bar: 1→0 over remaining time after result (useNativeDriver:false — width)
+  const advanceProgress = useRef(new AnimatedRN.Value(1)).current;
 
   // RN Animated — zero Reanimated
   const handNameOpacity = useRef(new AnimatedRN.Value(0)).current;
@@ -234,6 +237,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setShowTapHint(false);
     setShowChipsAnim(false);
     setShowCompleteFlash(false);
+    setShowProgressBar(false);
+    advanceProgress.setValue(1);
     handNameOpacity.setValue(0);
     resultScale.setValue(0);
     hintOpacity.setValue(1);
@@ -387,6 +392,18 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
         setShowChipsAnim(true);
       }
     }, t(5100)));
+
+    // S113: Progress bar — starts with result at t(4300), depletes over remaining time to auto-advance
+    timers.current.push(setTimeout(() => {
+      setShowProgressBar(true);
+      const progressAnim = AnimatedRN.timing(advanceProgress, {
+        toValue: 0,
+        duration: t(14000) - t(4300),
+        useNativeDriver: false,
+      });
+      anims.current.push(progressAnim);
+      progressAnim.start();
+    }, t(4300)));
 
     // Auto-advance at 14s (S110: extended for staged reveal, was 12s)
     timers.current.push(setTimeout(doAdvance, t(14000)));
@@ -636,6 +653,16 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           />
         </Pressable>
 
+        {/* S113: Auto-advance progress bar — gold depleting bar at bottom */}
+        {showProgressBar && (
+          <View style={styles.progressWrap} pointerEvents="none">
+            <AnimatedRN.View style={[
+              styles.progressBar,
+              { width: advanceProgress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }
+            ]} />
+          </View>
+        )}
+
         {/* COMPLETE screen flash — gold overlay */}
         {showCompleteFlash && (
           <AnimatedRN.View
@@ -806,5 +833,17 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 1.5,
+  },
+  progressWrap: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: rs(3),
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  progressBar: {
+    height: rs(3),
+    backgroundColor: '#c9a84c',
   },
 });
