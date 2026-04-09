@@ -1210,8 +1210,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: rs(36),
+    height: rs(36),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',

@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   },
   handNameBadge: {
     color: COLORS.textPrimary,
-    fontSize: rf(14),
+    fontSize: rf(16),
     fontWeight: '700',
     letterSpacing: 1,
     textAlign: 'center',
