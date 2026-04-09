@@ -261,7 +261,7 @@ export default function CardComponent({
   const highlightBorder = highlighted
     ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
     : isCommunityCard
-    ? { borderWidth: 2, borderColor: '#c9a84c' as const }
+    ? { borderWidth: rs(2.5), borderColor: '#c9a84c' as const }
     : isFaceCard
     ? { borderWidth: 1.5, borderColor: 'rgba(201,168,76,0.45)' as const }
     : { borderWidth: 1, borderColor: suitBorderColor };

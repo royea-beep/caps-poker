@@ -395,7 +395,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {/* Bot cards — show all bots if allBotCards available, else fall back to single botCards */}
           {(board.allBotCards && board.allBotCards.length > 1 ? board.allBotCards : [board.botCards]).map((botHand, botIdx) => {
             const isFirstBot = botIdx === 0;
-            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `BOT ${botIdx + 1}` : 'BOT';
+            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `🤖 BOT ${botIdx + 1}` : '🤖 BOT';
             const rawBotHandName = board.allBotHandNames?.[botIdx] ?? (isFirstBot ? board.botHandName : '');
             const botHandName = getHandName(rawBotHandName, lang);
             return (

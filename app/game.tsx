@@ -620,18 +620,40 @@ function GameScreenInner() {
   const doNavigateRef = useRef(doNavigate);
   useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]); // no cleanup needed Ã¢ÂÂ sync ref update
 
+  const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
+
   const onRevealDone = useCallback(() => {
-    debugLog('15 onRevealDone called Ã¢ÂÂ clearing overlay');
+    debugLog('15 onRevealDone called - clearing overlay');
     setShowSafeReveal(false);
     setPendingRevealBoards([]);
     debugLog('16 navigating to results');
     void logStep('F:before_router_replace');
-    try {
-      router.replace('/results' as any);
-    } catch (e) {
-      try { router.push('/results' as any); } catch {}
+
+    const navigateToResults = () => {
+      try {
+        router.replace('/results' as any);
+      } catch (e) {
+        try { router.push('/results' as any); } catch {}
+      }
+    };
+
+    // Daily reward nudge - show once per day if unclaimed
+    const today = new Date().toDateString();
+    const claimedToday = lastDailyRewardClaim && new Date(lastDailyRewardClaim).toDateString() === today;
+    if (!claimedToday) {
+      track('daily_reward_post_game_shown', {});
+      Alert.alert(
+        '🎁 Daily Reward Ready!',
+        "Claim today's reward before you go!",
+        [
+          { text: 'Claim Now', onPress: () => { router.replace('/' as any); }, style: 'default' },
+          { text: 'See Results', onPress: navigateToResults, style: 'cancel' },
+        ]
+      );
+    } else {
+      navigateToResults();
     }
-  }, [router]);
+  }, [router, lastDailyRewardClaim]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
 
@@ -986,7 +1008,7 @@ function GameScreenInner() {
         {/* RIGHT Ã¢ÂÂ bot + ready */}
         <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <Text style={landscapeStyles.panelTitle}>
-            {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
+            {numberOfBots === 1 ? '🤖 BOT' : `🤖 BOTS ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
