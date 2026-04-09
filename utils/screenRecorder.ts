@@ -61,6 +61,11 @@ export async function startRecording(): Promise<boolean> {
     debugLog('🎥 REC start: skipped (no captureScreen or web)');
     return false;
   }
+  // S111 bug#478: always clear previous interval before creating new one — prevents leak
+  if (screenshotInterval) {
+    clearInterval(screenshotInterval);
+    screenshotInterval = null;
+  }
   if (isRecording) return true;
 
   await ensureScreenshotDir();

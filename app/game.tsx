@@ -620,40 +620,20 @@ function GameScreenInner() {
   const doNavigateRef = useRef(doNavigate);
   useEffect(() => { doNavigateRef.current = doNavigate; }, [doNavigate]); // no cleanup needed Ã¢ÂÂ sync ref update
 
-  const lastDailyRewardClaim = useGameStore((s) => s.lastDailyRewardClaim);
-
   const onRevealDone = useCallback(() => {
     debugLog('15 onRevealDone called - clearing overlay');
     setShowSafeReveal(false);
     setPendingRevealBoards([]);
     debugLog('16 navigating to results');
     void logStep('F:before_router_replace');
-
-    const navigateToResults = () => {
-      try {
-        router.replace('/results' as any);
-      } catch (e) {
-        try { router.push('/results' as any); } catch {}
-      }
-    };
-
-    // Daily reward nudge - show once per day if unclaimed
-    const today = new Date().toDateString();
-    const claimedToday = lastDailyRewardClaim && new Date(lastDailyRewardClaim).toDateString() === today;
-    if (!claimedToday) {
-      track('daily_reward_post_game_shown', {});
-      Alert.alert(
-        '🎁 Daily Reward Ready!',
-        "Claim today's reward before you go!",
-        [
-          { text: 'Claim Now', onPress: () => { router.replace('/' as any); }, style: 'default' },
-          { text: 'See Results', onPress: navigateToResults, style: 'cancel' },
-        ]
-      );
-    } else {
-      navigateToResults();
+    // S111 bug#477: always navigate immediately — never block with Alert
+    // daily reward is surfaced on results screen (streak badge) and index on next visit
+    try {
+      router.replace('/results' as any);
+    } catch (e) {
+      try { router.push('/results' as any); } catch {}
     }
-  }, [router, lastDailyRewardClaim]);
+  }, [router]);
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
 
