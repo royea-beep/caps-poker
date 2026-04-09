@@ -37,6 +37,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { earnChips } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
+import { FloatingChips } from '../components/FloatingChips';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
 // @ts-ignore — parallel agent file, exists at deploy time
@@ -142,6 +143,9 @@ export default function ResultsScreen() {
 
   const [efficiencyHint, setEfficiencyHint] = useState<string | null>(null);
 
+  // S108: Floating chip delta animation
+  const [showFloatingChips, setShowFloatingChips] = useState(false);
+
   // Economy earn-chips floating toast
   const [earnToast, setEarnToast] = useState<string | null>(null);
   const earnToastOpacity = useRef(new Animated.Value(0)).current;
@@ -203,6 +207,13 @@ export default function ResultsScreen() {
   useEffect(() => {
     if (!revealData) router.replace('/');
   }, [revealData, router]);
+
+  // S108: Floating chip delta — show after 1.5s
+  useEffect(() => {
+    if (!revealData || revealData.netChips === 0) return;
+    const timer = setTimeout(() => setShowFloatingChips(true), 1500);
+    return () => clearTimeout(timer);
+  }, [revealData]);
 
   // Stats tracking + auto-save
   useEffect(() => {
@@ -641,6 +652,15 @@ export default function ResultsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
+
+      {/* S108: Floating chip delta animation */}
+      {revealData && (
+        <FloatingChips
+          amount={revealData.netChips}
+          visible={showFloatingChips}
+          onDone={() => setShowFloatingChips(false)}
+        />
+      )}
 
       {/* COMPLETE celebration overlay — screen flash + chip shower */}
       {showCompleteOverlay && isComplete && !completeOverlayDone && (
