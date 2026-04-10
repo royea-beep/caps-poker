@@ -10,6 +10,8 @@ import { getHandHistory, clearHandHistory, HandRecord, HandBoardRecord } from '.
 import { FullGameShareCard } from '../components/ShareCard';
 import { captureAndShare, generateShareText, ShareData } from '../utils/shareHand';
 import { RevealBoardData } from '../types/gameTypes';
+import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
+import { HandBadge } from '../components/HandBadge';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -24,6 +26,28 @@ function formatCard(card: { rank: string; suit: string }): string {
 
 function isRedSuit(suit: string): boolean {
   return suit === 'hearts' || suit === 'diamonds';
+}
+
+/** Best hand name across all boards (highest HAND_RANK wins) */
+function getBestHandName(hand: HandRecord): string {
+  let best = '';
+  let bestRank = -1;
+  for (const b of hand.boards) {
+    const r = HAND_RANK[b.playerHandName] ?? 0;
+    if (r > bestRank) { bestRank = r; best = b.playerHandName; }
+  }
+  return best;
+}
+
+/** Session date header label */
+function formatSessionDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const today = now.toDateString();
+  const yesterday = new Date(now.getTime() - 86400000).toDateString();
+  if (dateStr === today) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function formatTime(ts: number): string {
@@ -80,6 +104,8 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
   const isWin = hand.netChips >= 0;
+  const bestHand = getBestHandName(hand);
+  const isBigHand = BIG_HANDS.includes(bestHand);
 
   const handleShare = useCallback(async () => {
     setSharing(true);
@@ -106,10 +132,15 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
               <Text style={styles.scoreDash}> - </Text>
               <Text style={[styles.scoreText, { color: COLORS.neonRed }]}>{botWins}</Text>
             </View>
+            {bestHand ? (
+              isBigHand
+                ? <HandBadge handName={bestHand} size="small" />
+                : <Text style={styles.handNameLabel}>{bestHand}</Text>
+            ) : null}
           </View>
           <View style={styles.handRight}>
             <Text style={[styles.netChips, { color: isWin ? COLORS.neonGreen : COLORS.neonRed }]}>
-              {isWin ? '+' : ''}{hand.netChips}
+              {isWin ? '+' : ''}{hand.netChips}🪙
             </Text>
             {hand.isComplete && hand.completeBonusAmount > 0 && (
               <Text style={styles.bonusTag}>+{hand.completeBonusAmount} bonus</Text>
@@ -225,10 +256,13 @@ function BoardDetail({ board }: { board: HandBoardRecord }) {
   );
 }
 
+type FilterMode = 'all' | 'wins' | 'losses';
+
 export default function HandHistoryScreen() {
   const router = useRouter();
   const [history, setHistory] = useState<HandRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<FilterMode>('all');
 
   useEffect(() => {
     getHandHistory().then((h) => {
@@ -236,6 +270,18 @@ export default function HandHistoryScreen() {
       setLoading(false);
     });
   }, []);
+
+  const wins = history.filter(h => h.netChips >= 0);
+  const losses = history.filter(h => h.netChips < 0);
+  const filtered = filter === 'all' ? history : filter === 'wins' ? wins : losses;
+
+  // Group by date
+  const grouped = filtered.reduce((acc, hand) => {
+    const date = new Date(hand.timestamp).toDateString();
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(hand);
+    return acc;
+  }, {} as Record<string, HandRecord[]>);
 
   const handleClear = useCallback(() => {
     Alert.alert('Clear History', 'Remove all hand records?', [
@@ -257,34 +303,73 @@ export default function HandHistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>HAND HISTORY</Text>
-          <Text style={styles.subtitle}>Last {history.length} / {MAX_DISPLAY} hands</Text>
-        </View>
+      <View style={styles.headerBar}>
+        <Button title="← Back" variant="ghost" onPress={() => router.back()} style={{ paddingVertical: 6 }} />
+        <Text style={styles.title}>HAND HISTORY</Text>
+        <View style={{ width: 60 }} />
+      </View>
 
+      {/* Filter tabs */}
+      <View style={styles.filterRow}>
+        {(['all', 'wins', 'losses'] as FilterMode[]).map(f => (
+          <TouchableOpacity
+            key={f}
+            onPress={() => setFilter(f)}
+            style={[styles.filterTab, filter === f && styles.filterTabActive]}
+          >
+            <Text style={[styles.filterTabText, filter === f && styles.filterTabTextActive]}>
+              {f === 'all' ? `All (${history.length})` : f === 'wins' ? `Wins (${wins.length})` : `Losses (${losses.length})`}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <Text style={styles.emptyText}>Loading...</Text>
+          <Text style={[styles.emptyText, { marginTop: rs(40) }]}>Loading...</Text>
         ) : history.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>{'\u2660'}</Text>
+            <Text style={styles.emptyIcon}>🃏</Text>
             <Text style={styles.emptyText}>No hands played yet</Text>
-            <Text style={styles.emptySubtext}>Play a hand and it will appear here</Text>
+            <Text style={styles.emptySubtext}>Play your first game to see history here!</Text>
+            <TouchableOpacity style={styles.emptyPlayBtn} onPress={() => router.replace('/' as any)}>
+              <Text style={styles.emptyPlayBtnText}>▶ PLAY NOW</Text>
+            </TouchableOpacity>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>{filter === 'wins' ? '🏆' : '😔'}</Text>
+            <Text style={styles.emptyText}>No {filter} recorded yet</Text>
           </View>
         ) : (
           <>
-            {history.map((hand, i) => (
-              <HandCard key={hand.id} hand={hand} index={i} onReplay={handleReplay} />
-            ))}
+            {Object.entries(grouped).map(([date, hands]) => {
+              const dayWins = hands.filter(h => h.netChips >= 0).length;
+              const dayChips = hands.reduce((s, h) => s + h.netChips, 0);
+              return (
+                <View key={date}>
+                  <View style={styles.sessionHeader}>
+                    <Text style={styles.sessionDate}>{formatSessionDate(date)}</Text>
+                    <Text style={styles.sessionStats}>
+                      {dayWins}W/{hands.length - dayWins}L{'  '}
+                      <Text style={{ color: dayChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }}>
+                        {dayChips >= 0 ? '+' : ''}{dayChips}🪙
+                      </Text>
+                    </Text>
+                  </View>
+                  {hands.map((hand, i) => (
+                    <HandCard key={hand.id} hand={hand} index={i} onReplay={handleReplay} />
+                  ))}
+                </View>
+              );
+            })}
             <View style={styles.clearSection}>
               <Button title="CLEAR HISTORY" variant="ghost" onPress={handleClear} />
             </View>
           </>
         )}
 
-        <View style={styles.footer}>
-          <Button title="BACK" variant="secondary" onPress={() => router.back()} />
-        </View>
+        <View style={styles.footer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -297,26 +382,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollContent: {
-    padding: rs(16),
-    paddingBottom: rs(32),
-    gap: rs(12),
-  },
-  header: {
+  headerBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: rs(4),
-    marginBottom: rs(8),
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.boardBorder,
   },
   title: {
-    fontSize: rf(24),
+    fontSize: rf(18),
     fontWeight: '900',
-    color: COLORS.gold,
-    letterSpacing: 6,
+    color: COLORS.goldBright,
+    letterSpacing: 4,
   },
-  subtitle: {
-    fontSize: rf(13),
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(8),
+    gap: rs(8),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.boardBorder,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: rs(7),
+    borderRadius: rv(8),
+    borderWidth: 1,
+    borderColor: COLORS.boardBorder,
+    alignItems: 'center',
+  },
+  filterTabActive: {
+    backgroundColor: COLORS.gold + '22',
+    borderColor: COLORS.gold,
+  },
+  filterTabText: {
     color: COLORS.textMuted,
+    fontSize: rf(12),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  filterTabTextActive: {
+    color: COLORS.goldBright,
+  },
+  scrollContent: {
+    padding: rs(12),
+    paddingBottom: rs(32),
+    gap: rs(8),
+  },
+  sessionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: rs(4),
+    paddingVertical: rs(6),
+    marginTop: rs(4),
+  },
+  sessionDate: {
+    color: COLORS.textSecondary,
+    fontSize: rf(12),
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  sessionStats: {
+    color: COLORS.textMuted,
+    fontSize: rf(12),
     fontWeight: '600',
+  },
+  handNameLabel: {
+    fontSize: rf(10),
+    color: COLORS.gold,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginTop: rs(2),
   },
 
   // Hand card
@@ -471,11 +610,27 @@ const styles = StyleSheet.create({
     fontSize: rf(16),
     color: COLORS.textMuted,
     fontWeight: '700',
+    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: rf(13),
     color: COLORS.textDim,
     fontWeight: '500',
+    textAlign: 'center',
+    paddingHorizontal: rs(32),
+  },
+  emptyPlayBtn: {
+    marginTop: rs(12),
+    backgroundColor: COLORS.gold,
+    paddingHorizontal: rs(28),
+    paddingVertical: rs(12),
+    borderRadius: rv(10),
+  },
+  emptyPlayBtnText: {
+    color: COLORS.background,
+    fontSize: rf(14),
+    fontWeight: '900',
+    letterSpacing: 2,
   },
 
   // Footer
@@ -483,7 +638,7 @@ const styles = StyleSheet.create({
     marginTop: rs(4),
   },
   footer: {
-    marginTop: rs(8),
+    height: rs(16),
   },
 
   // Share

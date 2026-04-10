@@ -1,6 +1,10 @@
 /**
- * Generate a 6-digit numeric room code (100000-999999).
+ * Generate a 4-digit numeric room code (1000-9999).
  */
 export function generateRoomCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+export function formatRoomCode(code: string): string {
+  return code.toUpperCase();
 }

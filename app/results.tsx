@@ -151,6 +151,7 @@ export default function ResultsScreen() {
 
   // Economy earn-chips floating toast
   const [earnToast, setEarnToast] = useState<string | null>(null);
+  const [eloChange, setEloChange] = useState(0);
   const earnToastOpacity = useRef(new Animated.Value(0)).current;
   const showEarnToast = (msg: string) => {
     setEarnToast(msg);
@@ -401,6 +402,34 @@ export default function ResultsScreen() {
       if (isComplete) bpStore.trackMissionProgress('complete', 1);
       setXpGained(earned);
     } catch {}
+
+    // Daily mission progress — update Supabase (text device_id, fire-and-forget)
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const boardsWon = revealData.boards.filter((b) => b.winner === 'player').length;
+        const isWin = revealData.netChips > 0;
+        await Promise.all([
+          sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_played', p_amount: 1 }),
+          ...(isWin ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_won', p_amount: 1 })] : []),
+          ...(boardsWon > 0 ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'boards_won', p_amount: boardsWon })] : []),
+        ]);
+      } catch {} // Silent — never crash the game
+    })();
+
+    // Update ELO in leaderboard table
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const won = revealData.netChips > 0;
+        const res = await sb.rpc('update_leaderboard_elo', { p_device_id: deviceId, p_won: won });
+        if (res.data) setEloChange(res.data as number);
+      } catch {}
+    })();
 
     // Record hand result for adaptive bot difficulty
     void (async () => {
@@ -1013,6 +1042,15 @@ export default function ResultsScreen() {
             </View>
           )}
 
+          {/* S117: ELO change badge */}
+          {eloChange !== 0 && (
+            <View style={styles.eloChangeBadge}>
+              <Text style={[styles.eloChangeText, { color: eloChange > 0 ? '#4CAF50' : '#ef5350' }]}>
+                {eloChange > 0 ? '▲' : '▼'} {Math.abs(eloChange)} ELO
+              </Text>
+            </View>
+          )}
+
           {/* S115: Session stats — shows when 2+ games in session */}
           {sessionHistory.length >= 2 && (
             <View style={styles.sessionRow}>
@@ -1318,6 +1356,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(201,168,76,0.25)',
     alignItems: 'center',
+  },
+  // S117: ELO change
+  eloChangeBadge: {
+    alignSelf: 'center',
+    paddingHorizontal: rs(14),
+    paddingVertical: rs(4),
+    borderRadius: rv(20),
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  eloChangeText: {
+    fontSize: rf(13),
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   // S115: session stats row
   sessionRow: {

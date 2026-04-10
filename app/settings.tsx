@@ -1012,6 +1012,12 @@ export default function SettingsScreen() {
           <Text style={styles.creditsText}>Voices are parody / entertainment only</Text>
         </View>
         <Pressable
+          onPress={() => router.push('/rank' as any)}
+          style={styles.privacyLink}
+        >
+          <Text style={styles.privacyLinkText}>🏆 Your Rank</Text>
+        </Pressable>
+        <Pressable
           onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy')}
           style={styles.privacyLink}
         >

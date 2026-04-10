@@ -218,10 +218,10 @@ export default function MissionsScreen() {
       const sb = getSupabase();
       if (!sb) { setLoading(false); return; }
 
-      // assign_daily_missions is idempotent — safe to call every mount
-      await sb.rpc('assign_daily_missions', { user_id: userId });
+      // assign_daily_missions_d is idempotent — safe to call every mount (uses text device_id)
+      await sb.rpc('assign_daily_missions_d', { p_device_id: userId });
 
-      const { data, error } = await sb.rpc('get_daily_missions', { user_id: userId });
+      const { data, error } = await sb.rpc('get_daily_missions_d', { p_device_id: userId });
       if (!error && Array.isArray(data)) {
         setMissions(data as Mission[]);
       }
@@ -245,9 +245,9 @@ export default function MissionsScreen() {
       const sb = getSupabase();
       if (!sb) return;
 
-      const { data, error } = await sb.rpc('claim_mission', {
-        user_id:    userId,
-        mission_id: missionId,
+      const { data, error } = await sb.rpc('claim_mission_d', {
+        p_device_id: userId,
+        p_mission_id: missionId,
       });
 
       if (!error && (data as { ok?: boolean } | null)?.ok) {

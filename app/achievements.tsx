@@ -114,6 +114,9 @@ function BadgeCell({
   size: number;
   onPress: () => void;
 }) {
+  const hasProgress = item.progress !== undefined && item.target !== undefined && item.target > 0 && !item.is_earned;
+  const progressPct = hasProgress ? Math.min(1, (item.progress ?? 0) / (item.target ?? 1)) : 0;
+
   return (
     <Pressable
       onPress={onPress}
@@ -138,12 +141,28 @@ function BadgeCell({
         {item.icon}
       </Text>
 
-      {/* bottom-right corner overlay */}
-      <View style={styles.badgeCorner}>
-        <Text style={styles.badgeCornerIcon}>
-          {item.is_earned ? '✓' : '🔒'}
+      {/* Progress bar — shown when in-progress */}
+      {hasProgress && (
+        <View style={styles.badgeProgressWrap}>
+          <View style={[styles.badgeProgressFill, { width: (Math.round(progressPct * 100) + '%') as `${number}%` }]} />
+        </View>
+      )}
+
+      {/* N/M label under icon */}
+      {hasProgress && (
+        <Text style={styles.badgeProgressLabel}>
+          {item.progress}/{item.target}
         </Text>
-      </View>
+      )}
+
+      {/* bottom-right corner overlay — hide when progress label is showing */}
+      {!hasProgress && (
+        <View style={styles.badgeCorner}>
+          <Text style={styles.badgeCornerIcon}>
+            {item.is_earned ? '✓' : '🔒'}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -562,6 +581,27 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     color: TEXT,
     opacity: 0.8,
+  },
+  badgeProgressWrap: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: rs(3),
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  badgeProgressFill: {
+    height: '100%',
+    backgroundColor: ACCENT,
+  },
+  badgeProgressLabel: {
+    position: 'absolute',
+    bottom: rs(4),
+    alignSelf: 'center',
+    color: 'rgba(245,230,211,0.55)',
+    fontSize: rf(8),
+    fontWeight: '700',
   },
 
   // Loading
