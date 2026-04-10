@@ -130,7 +130,7 @@ export const useGameStore = create<GameStore>()(
       handsWon: 0,
       biggestWin: 0,
       playerName: '',
-      playerAvatar: '🎰',
+      playerAvatar: '👤',
       notificationsEnabled: true,
       cardTheme: DEFAULT_CARD_THEME,
       homeTheme: DEFAULT_HOME_THEME,

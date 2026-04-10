@@ -48,7 +48,7 @@ export default function SideMenu({
   const translateX = useRef(new Animated.Value(-menuW)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
-  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
   const playerName = useGameStore((s) => s.playerName) || 'Player';
   // Subscribe to languageVersion so the menu re-renders when language changes
   const languageVersion = useGameStore((s) => s.languageVersion);
