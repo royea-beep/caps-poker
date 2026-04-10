@@ -26,6 +26,13 @@ interface HandLog {
 
 export default function SimulateScreen() {
   const router = useRouter();
+
+  // __DEV__ guard — redirect to home in production builds
+  if (!__DEV__) {
+    router.replace('/');
+    return null;
+  }
+
   const config = useGameStore((s) => s.config);
   const [results, setResults] = useState<SimResultDisplay[]>([]);
   const [running, setRunning] = useState(false);
