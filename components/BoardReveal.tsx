@@ -80,7 +80,7 @@ interface Props {
 
 export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false }: Props) {
   const { width: screenW } = useWindowDimensions();
-  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const opponentName = useGameStore((s) => s.opponentName);
   const visualTheme = useGameStore((s) => s.visualTheme);

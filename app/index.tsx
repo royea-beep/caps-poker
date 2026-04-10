@@ -737,7 +737,7 @@ export default function HomeScreen() {
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
   const homeThemeId = useGameStore((s) => s.homeTheme);
   const theme = HOME_THEMES[homeThemeId];
-  const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
+  const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
 
   const user = useAuthUser();
   const prevUserRef = useRef<typeof user>(undefined);
@@ -1575,7 +1575,7 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
             <Text style={homeDataCardStyles.label}>COMPETE</Text>
             <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
-            <Text style={homeDataCardStyles.sub}>missions · {leaderboardData ? `#${leaderboardData.rank}` : '#--'} rank</Text>
+            <Text style={homeDataCardStyles.sub}>missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} rank` : 'Play to rank'}</Text>
           </Pressable>
         </View>
 

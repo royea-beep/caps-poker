@@ -108,7 +108,7 @@ function ProfileSection() {
   const [pickerVisible, setPickerVisible] = useState(false);
 
   const displayName = playerName || 'Player 1';
-  const displayAvatar = playerAvatar || '🎰';
+  const displayAvatar = playerAvatar || '👤';
 
   return (
     <>

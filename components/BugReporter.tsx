@@ -636,7 +636,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     <View style={{ flex: 1 }}>
       {children}
 
-      {phase === 'idle' && !overlayActive && !isGameScreen && (
+      {__DEV__ && phase === 'idle' && !overlayActive && !isGameScreen && (
         <TouchableOpacity style={[styles.fab, { bottom: fabBottom }]} onPress={openReporter} activeOpacity={0.7} accessibilityLabel="Record bug">
           <Text style={styles.fabText}>{'🐛'}</Text>
         </TouchableOpacity>
