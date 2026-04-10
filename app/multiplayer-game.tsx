@@ -19,6 +19,7 @@ import { CapsHooks } from '../utils/learning';
 import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
+import { OpponentHeader } from '../components/OpponentHeader';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -116,6 +117,10 @@ export default function MultiplayerGameScreen() {
   const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>(initialPhase);
   const [disconnectBanner, setDisconnectBanner] = useState<string | null>(null);
   const [spectatorCount, setSpectatorCount] = useState(0);
+  // Reconnect 15s window state
+  const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectAlertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Free time + countdown state
   const [freeTimeLeft, setFreeTimeLeft] = useState(FREE_TIME_SECS);
@@ -167,6 +172,19 @@ export default function MultiplayerGameScreen() {
   const playerNames = connectedPlayers
     .sort((a, b) => a.seat - b.seat)
     .map((p) => p.name);
+
+  // Opponent info
+  const opponentPlayer = connectedPlayers.find(p => p.seat !== playerIndex);
+  const opponentName = opponentPlayer?.name ?? (playerNames.find((_, i) => i !== playerIndex) ?? 'Opponent');
+  const opponentConnected = opponentPlayer?.connected !== false;
+
+  // Cleanup reconnect timers on unmount
+  useEffect(() => {
+    return () => {
+      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+      if (reconnectAlertTimerRef.current) clearTimeout(reconnectAlertTimerRef.current);
+    };
+  }, []);
 
   const isArranging = phase === 'arranging';
 
@@ -301,32 +319,49 @@ export default function MultiplayerGameScreen() {
       useGameStore.getState().resetMultiplayer();
       router.replace({ pathname: '/lobby/internet-join', params: code ? { prefillCode: code } : {} } as any);
     };
-    const handleHostLost = () => {
+
+    const startReconnectWindow = (bannerMsg: string, onExpire: () => void) => {
       if (!mountedRef.current) return;
-      setDisconnectBanner('Host disconnected');
-      Alert.alert(
-        'Host Disconnected',
-        'The host has left the game.',
-        [{ text: 'Leave', onPress: () => {
-          useGameStore.getState().resetMultiplayer();
-          router.replace('/');
-        }}]
-      );
+      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+      if (reconnectAlertTimerRef.current) clearTimeout(reconnectAlertTimerRef.current);
+      setReconnectCountdown(15);
+      setDisconnectBanner(bannerMsg);
+      let secs = 15;
+      reconnectTimerRef.current = setInterval(() => {
+        secs -= 1;
+        if (!mountedRef.current) { clearInterval(reconnectTimerRef.current!); return; }
+        setReconnectCountdown(secs);
+        if (secs <= 0) {
+          clearInterval(reconnectTimerRef.current!);
+          reconnectTimerRef.current = null;
+          setReconnectCountdown(null);
+        }
+      }, 1000);
+      reconnectAlertTimerRef.current = setTimeout(onExpire, 15000);
+    };
+
+    const handleHostLost = () => {
+      startReconnectWindow('Host disconnected — leaving in', () => {
+        if (!mountedRef.current) return;
+        Alert.alert(
+          'Host Disconnected',
+          'The host has left the game.',
+          [{ text: 'Leave', onPress: () => { useGameStore.getState().resetMultiplayer(); router.replace('/'); } }]
+        );
+      });
     };
     const handleDisconnected = () => {
-      if (!mountedRef.current) return;
-      setDisconnectBanner('Connection lost');
-      Alert.alert(
-        'Connection Lost',
-        'Lost connection to the game room. You can try to rejoin.',
-        [
-          { text: 'Leave', style: 'cancel', onPress: () => {
-            useGameStore.getState().resetMultiplayer();
-            router.replace('/');
-          }},
-          { text: 'Rejoin', onPress: navigateToRejoin },
-        ]
-      );
+      startReconnectWindow('Connection lost — rejoining?', () => {
+        if (!mountedRef.current) return;
+        Alert.alert(
+          'Connection Lost',
+          'Lost connection to the game room. You can try to rejoin.',
+          [
+            { text: 'Leave', style: 'cancel', onPress: () => { useGameStore.getState().resetMultiplayer(); router.replace('/'); } },
+            { text: 'Rejoin', onPress: navigateToRejoin },
+          ]
+        );
+      });
     };
     mpClient.updateCallbacks({ onHostLost: handleHostLost, onDisconnected: handleDisconnected });
   }, [isHost, mpClient, router, storeRoomCode]);
@@ -441,6 +476,9 @@ export default function MultiplayerGameScreen() {
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
+    // Store opponentName for results screen "You beat {name}!" header
+    const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
+    if (oppName) useGameStore.getState().setOpponentName(oppName);
     setPhase('navigating');
     router.replace('/results');
   }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router]);
@@ -526,9 +564,12 @@ export default function MultiplayerGameScreen() {
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
+    // Store opponentName for results screen "You beat {name}!" header
+    const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
+    if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router]);
+  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
@@ -769,18 +810,33 @@ export default function MultiplayerGameScreen() {
         </View>
       </View>
 
-      {/* Disconnect banner (CAPS 10) */}
+      {/* Disconnect / reconnect banner */}
       {disconnectBanner && (
         <View style={styles.disconnectBanner}>
-          <Text style={styles.disconnectText}>{disconnectBanner}</Text>
+          <Text style={styles.disconnectText}>
+            {reconnectCountdown !== null
+              ? `⚠️ ${disconnectBanner} ${reconnectCountdown}s...`
+              : `⚠️ ${disconnectBanner}`}
+          </Text>
         </View>
       )}
 
-      {/* Mode badge with player names */}
+      {/* Mode badge: opponent header (internet MP) or plain text (WiFi) */}
       <View style={styles.modeBadge}>
-        <Text style={styles.modeText}>
-          {playerCount}P {isHost ? 'HOST' : 'GUEST'} | {playerNames[playerIndex] || `Seat ${playerIndex + 1}`}
-        </Text>
+        {isInternetMP && opponentName !== 'Opponent' ? (
+          <View style={styles.opponentRow}>
+            <Text style={styles.vsLabel}>vs</Text>
+            <OpponentHeader
+              name={opponentName}
+              isOnline={opponentConnected}
+              isThinking={phase === 'waiting' && opponentConnected}
+            />
+          </View>
+        ) : (
+          <Text style={styles.modeText}>
+            {playerCount}P {isHost ? 'HOST' : 'GUEST'} | {playerNames[playerIndex] || `Seat ${playerIndex + 1}`}
+          </Text>
+        )}
       </View>
 
       {/* Boards — stacked vertically (same as game.tsx) */}
@@ -981,6 +1037,18 @@ const styles = StyleSheet.create({
   disconnectText: {
     color: COLORS.neonRed,
     fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  opponentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  vsLabel: {
+    color: COLORS.textMuted,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
   },

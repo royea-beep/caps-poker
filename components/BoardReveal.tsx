@@ -82,6 +82,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const { width: screenW } = useWindowDimensions();
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '🎰';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
+  const opponentName = useGameStore((s) => s.opponentName);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const revealBg = getTheme(visualTheme).background; // #1C0508 for Five-O, #0a0a0a for Classic
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -743,7 +744,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
         {showIntermission && (
           <View style={styles.intermissionOverlay} pointerEvents="none">
             <Text style={styles.intermissionBoard}>Board {currentIdx + 1} of {boards.length}</Text>
-            <Text style={[styles.intermissionResult, { color: resultColor }]}>{resultText}</Text>
+            <Text style={[styles.intermissionResult, { color: resultColor }]}>
+              {opponentName
+                ? (board.winner === 'player'
+                    ? `YOU WIN vs ${opponentName}!`
+                    : board.winner === 'bot'
+                    ? `${opponentName} wins this board`
+                    : resultText)
+                : resultText}
+            </Text>
             {board.potAmount > 0 && board.winner !== 'tie' && (
               <Text style={[styles.intermissionChip, { color: chipColor }]}>
                 {chipSign}{board.potAmount} chips

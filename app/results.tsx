@@ -112,7 +112,10 @@ export default function ResultsScreen() {
   const mpClient = useGameStore((s) => s.mpClient);
   const connectedPlayers = useGameStore((s) => s.connectedPlayers);
   const storeRoomCode = useGameStore((s) => s.roomCode);
+  const storeOpponentName = useGameStore((s) => s.opponentName);
+  const multiplayerMode = useGameStore((s) => s.multiplayerMode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
+  const isMpHost = multiplayerMode === 'host';
 
   const updateConfig = useGameStore((s) => s.updateConfig);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
@@ -1042,6 +1045,13 @@ export default function ResultsScreen() {
             </View>
           )}
 
+          {/* S118: Multiplayer result header */}
+          {isMultiplayer && storeOpponentName ? (
+            <Text style={[styles.mpResultHeader, { color: netChips > 0 ? '#c9a84c' : '#ef5350' }]}>
+              {netChips > 0 ? `🏆 You beat ${storeOpponentName}!` : `Defeated by ${storeOpponentName}`}
+            </Text>
+          ) : null}
+
           {/* S117: ELO change badge */}
           {eloChange !== 0 && (
             <View style={styles.eloChangeBadge}>
@@ -1144,6 +1154,17 @@ export default function ResultsScreen() {
                 )}
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { cancelAutoContinue(); handleRematch(); }} style={{ flex: 1 }} />}
+                  {isMultiplayer && isMpHost && (
+                    <Button
+                      title="⚡ REMATCH"
+                      variant="secondary"
+                      onPress={() => {
+                        cancelAutoContinue();
+                        router.replace({ pathname: '/lobby/internet-host', params: { rematch: 'true', roomCode: storeRoomCode ?? '' } } as any);
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                  )}
                   <Button title="HOME" variant="secondary" onPress={() => { cancelAutoContinue(); handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
                 </View>
               </>
@@ -1356,6 +1377,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(201,168,76,0.25)',
     alignItems: 'center',
+  },
+  // S118: MP result header
+  mpResultHeader: {
+    fontSize: rf(20),
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: rs(8),
+    letterSpacing: 0.5,
   },
   // S117: ELO change
   eloChangeBadge: {

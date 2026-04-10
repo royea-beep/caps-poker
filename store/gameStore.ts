@@ -61,6 +61,7 @@ interface GameStore {
   hostIP: string | null;
   connectedPlayers: ConnectedPlayerInfo[];
   gameSession: GameSession | null;
+  opponentName: string;
   // Server/client instances survive screen transitions (stored as `any` to avoid
   // importing native-only modules at the type level)
   mpServer: any | null;
@@ -112,6 +113,7 @@ interface GameStore {
   setConnectedPlayers: (players: ConnectedPlayerInfo[]) => void;
   updatePlayer: (id: string, updates: Partial<ConnectedPlayerInfo>) => void;
   setGameSession: (session: GameSession | null) => void;
+  setOpponentName: (name: string) => void;
   setMpServer: (server: any | null) => void;
   setMpClient: (client: any | null) => void;
   resetMultiplayer: () => void;
@@ -169,6 +171,7 @@ export const useGameStore = create<GameStore>()(
       hostIP: null,
       connectedPlayers: [],
       gameSession: null,
+      opponentName: '',
       mpServer: null,
       mpClient: null,
 
@@ -262,6 +265,7 @@ export const useGameStore = create<GameStore>()(
           ),
         })),
       setGameSession: (session) => set({ gameSession: session }),
+      setOpponentName: (name) => set({ opponentName: name }),
       setMpServer: (server) => set({ mpServer: server }),
       setMpClient: (client) => set({ mpClient: client }),
       resetMultiplayer: () => {
@@ -278,6 +282,7 @@ export const useGameStore = create<GameStore>()(
           hostIP: null,
           connectedPlayers: [],
           gameSession: null,
+          opponentName: '',
           mpServer: null,
           mpClient: null,
         });
