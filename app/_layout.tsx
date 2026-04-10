@@ -18,6 +18,7 @@ import { Stack, useRouter, usePathname } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { setLanguage, Language } from '../utils/i18n';
@@ -447,6 +448,7 @@ export default function RootLayout() {
   if (needsPicker) return <LanguagePicker onSelect={handleLanguageSelect} />;
 
   return (
+    <SafeAreaProvider>
     <RootWrapper style={{ flex: 1, backgroundColor: '#1C0508' }}>
       <StatusBar style="light" />
       <CrashBoundary>
@@ -485,5 +487,6 @@ export default function RootLayout() {
       {debugEnabled && <DebugOverlay />}
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
+    </SafeAreaProvider>
   );
 }
