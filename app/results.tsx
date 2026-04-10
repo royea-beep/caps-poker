@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated, TouchableOpacity, Share } from 'react-native';
 // ZERO Reanimated on results screen — game.tsx has 7 active shared values during transition
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { DealMeInButton } from '../components/DealMeInButton';
 import { BoardResultCard } from '../components/BoardResultCard';
@@ -97,6 +97,7 @@ export default function ResultsScreen() {
   const router = useRouter();
   const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
   const { width: rawW } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
@@ -1176,7 +1177,7 @@ export default function ResultsScreen() {
 
       {/* S115: Sticky Play Again button — always visible at bottom */}
       {!waitingForNextHand && !isMultiplayer && (
-        <View style={styles.stickyBottom}>
+        <View style={[styles.stickyBottom, { paddingBottom: Math.max(insets.bottom, rs(16)) }]}>
           <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }], width: '75%' }}>
             <DealMeInButton
               label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}

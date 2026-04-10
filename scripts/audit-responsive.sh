@@ -23,4 +23,18 @@ MISSING=$(grep -rn "Pressable\|TouchableOpacity" components/ app/ --include="*.t
 echo "  Count: $MISSING (review manually — many are fine with content sizing)"
 
 echo ""
+echo "--- Missing safe area in screens ---"
+for f in app/index.tsx app/game.tsx app/results.tsx app/multiplayer-game.tsx \
+          app/settings.tsx app/hand-history.tsx app/rank.tsx \
+          app/lobby/internet-host.tsx app/lobby/internet-join.tsx; do
+  if [ -f "$f" ]; then
+    if grep -q "useSafeAreaInsets\|SafeAreaView" "$f"; then
+      echo "  OK: $f"
+    else
+      echo "  MISSING: $f"
+    fi
+  fi
+done
+
+echo ""
 echo "=== Done ==="
