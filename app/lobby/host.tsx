@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import {
+  View, Text, StyleSheet, ActivityIndicator, Pressable, Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { rv, rf, rs } from '../../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +13,7 @@ import { getMatchCost, canAffordMatch } from '../../utils/economy';
 import { GameServer, ConnectedClient } from '../../utils/gameServer';
 import { CapsHooks } from '../../utils/learning';
 import ProQuoteBanner from '../../components/ProQuoteBanner';
+import { MP_ERRORS } from '../../utils/localNetwork';
 
 export default function HostLobbyScreen() {
   const router = useRouter();
@@ -23,7 +26,7 @@ export default function HostLobbyScreen() {
   const resetMultiplayer = useGameStore((s) => s.resetMultiplayer);
 
   const [maxPlayers, setMaxPlayers] = useState<2 | 3 | 4>(2);
-  const [hostIP, setHostIPLocal] = useState<string>('...');
+  const [hostIP, setHostIPLocal] = useState<string>('');
   const [roomCode, setRoomCodeLocal] = useState<string>('...');
   const [players, setPlayers] = useState<ConnectedClient[]>([]);
   const [serverStarted, setServerStarted] = useState(false);
@@ -32,6 +35,7 @@ export default function HostLobbyScreen() {
   const serverRef = useRef<GameServer | null>(null);
 
   const startServer = useCallback(async () => {
+    setError(null);
     try {
       const server = new GameServer(
         {
@@ -44,11 +48,9 @@ export default function HostLobbyScreen() {
             );
           },
           onPlayerReady: () => {
-            setPlayers((prev) => [...prev]); // force re-render
+            setPlayers((prev) => [...prev]);
           },
-          onAllPlayersReady: () => {
-            // Will be handled when host starts game
-          },
+          onAllPlayersReady: () => {},
           onError: (err) => {
             setError(err.message);
           },
@@ -63,16 +65,17 @@ export default function HostLobbyScreen() {
       const ip = await server.start();
       serverRef.current = server;
       setMpServer(server);
-      setHostIPLocal(ip);
+      setHostIPLocal(ip || server.getHostIP());
       setRoomCodeLocal(server.getRoomCode());
       setServerStarted(true);
 
-      // Update store
       setMultiplayerMode('host');
       setRoomCode(server.getRoomCode());
       setHostIP(ip);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start server');
+      setError(
+        err instanceof Error ? err.message : MP_ERRORS.SERVER_START_FAIL
+      );
     }
   }, [maxPlayers]);
 
@@ -89,16 +92,14 @@ export default function HostLobbyScreen() {
   const handleStartGame = useCallback(() => {
     if (!serverRef.current || !canStart) return;
 
-    // Affordability gate (only when economy match cost is enabled)
     if (ECONOMY_FLAGS.matchCostEnabled) {
       const cost = getMatchCost(config.potPerBoard, getBoardCount(connectedCount as 2 | 3 | 4));
       if (!canAffordMatch(useGameStore.getState().chips, cost)) {
-        Alert.alert('Not Enough Chips', `You need ${cost} chips to start a game.`);
+        setError(`Not enough chips. You need ${cost} chips to start.`);
         return;
       }
     }
 
-    // Update store with player info
     setConnectedPlayers(
       players
         .filter((p) => p.connected)
@@ -116,7 +117,6 @@ export default function HostLobbyScreen() {
     serverRef.current.startGame(config);
     const { boards, playerHands } = serverRef.current.getDealtCards();
 
-    // Navigate to multiplayer game as host
     router.replace({
       pathname: '/multiplayer-game',
       params: {
@@ -149,22 +149,30 @@ export default function HostLobbyScreen() {
         {error && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorHint}>{MP_ERRORS.NO_WIFI}</Text>
           </View>
         )}
 
+        {/* Room code — big and prominent */}
         <View style={styles.codeSection}>
           <Text style={styles.codeLabel}>ROOM CODE</Text>
           <Text style={styles.codeValue}>{roomCode}</Text>
-          <Text style={styles.ipLabel}>Host IP: {hostIP}</Text>
+          <Text style={styles.codeHint}>Share this code with your opponent</Text>
+          {hostIP ? (
+            <Text style={styles.ipLabel}>Your IP: {hostIP}</Text>
+          ) : (
+            <Text style={styles.ipLabel}>Finding your IP...</Text>
+          )}
         </View>
 
+        {/* Max players selector */}
         <View style={styles.playerCountSection}>
           <Text style={styles.sectionLabel}>MAX PLAYERS</Text>
           <View style={styles.playerCountRow}>
             {([2, 3, 4] as const).map((n) => (
               <Button
                 key={n}
-                title={`${n}`}
+                title={`${n}P`}
                 variant={maxPlayers === n ? 'gold' : 'secondary'}
                 onPress={() => setMaxPlayers(n)}
                 disabled={serverStarted && connectedCount > n}
@@ -174,6 +182,7 @@ export default function HostLobbyScreen() {
           </View>
         </View>
 
+        {/* Players + waiting indicator */}
         <View style={styles.playersSection}>
           <Text style={styles.sectionLabel}>
             PLAYERS ({connectedCount}/{maxPlayers})
@@ -190,20 +199,23 @@ export default function HostLobbyScreen() {
                 {player.isReady && <Text style={styles.readyBadge}>READY</Text>}
               </View>
             ))}
-          {connectedCount < maxPlayers && (
-            <>
+          {connectedCount < maxPlayers && serverStarted && (
+            <View style={styles.waitingRow}>
+              <ActivityIndicator size="small" color={COLORS.gold} />
               <Text style={styles.waitingText}>
                 Waiting for {maxPlayers - connectedCount} more player
                 {maxPlayers - connectedCount > 1 ? 's' : ''}...
               </Text>
-              <ProQuoteBanner context="waiting" rotating rotateInterval={6000} />
-            </>
+            </View>
+          )}
+          {connectedCount < maxPlayers && (
+            <ProQuoteBanner context="waiting" rotating rotateInterval={6000} />
           )}
         </View>
 
         <View style={styles.buttons}>
           <Button
-            title={canStart ? 'START GAME' : `Need ${2 - connectedCount} more`}
+            title={canStart ? 'START GAME →' : `Need ${2 - connectedCount} more player${2 - connectedCount !== 1 ? 's' : ''}`}
             variant="gold"
             disabled={!canStart}
             onPress={handleStartGame}
@@ -223,59 +235,80 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: rs(24),
-    gap: rs(20),
+    gap: rs(16),
   },
   title: {
-    fontSize: rf(24),
+    fontSize: rf(22),
     fontWeight: '900',
     color: COLORS.goldBright,
     letterSpacing: 6,
     textAlign: 'center',
   },
   errorBox: {
-    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    backgroundColor: 'rgba(231, 76, 60, 0.12)',
     padding: rs(12),
     borderRadius: rv(8),
     borderWidth: 1,
     borderColor: COLORS.danger,
+    gap: rs(4),
   },
   errorText: {
     color: COLORS.danger,
     fontSize: rf(13),
+    fontWeight: '700',
     textAlign: 'center',
+  },
+  errorHint: {
+    color: COLORS.textSecondary,
+    fontSize: rf(11),
+    textAlign: 'center',
+    opacity: 0.8,
   },
   codeSection: {
     alignItems: 'center',
-    backgroundColor: COLORS.feltLight,
-    padding: rs(20),
-    borderRadius: rv(12),
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
+    backgroundColor: 'rgba(201,168,76,0.07)',
+    padding: rs(24),
+    borderRadius: rv(16),
+    borderWidth: 1.5,
+    borderColor: COLORS.gold,
+    gap: rs(4),
+    ...Platform.select({
+      ios: { shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 },
+      android: { elevation: 6 },
+      default: { boxShadow: '0 4px 20px rgba(201,168,76,0.2)' } as any,
+    }),
   },
   codeLabel: {
     color: COLORS.textSecondary,
-    fontSize: rf(12),
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 3,
   },
   codeValue: {
     color: COLORS.goldBright,
-    fontSize: rf(48),
+    fontSize: rf(56),
     fontWeight: '900',
-    letterSpacing: 16,
-    marginVertical: rs(8),
+    letterSpacing: 20,
+  },
+  codeHint: {
+    color: COLORS.textSecondary,
+    fontSize: rf(13),
+    textAlign: 'center',
+    marginTop: rs(4),
   },
   ipLabel: {
     color: COLORS.textSecondary,
-    fontSize: rf(13),
+    fontSize: rf(12),
     fontFamily: 'monospace',
+    opacity: 0.7,
+    marginTop: rs(2),
   },
   playerCountSection: {
     gap: rs(8),
   },
   sectionLabel: {
     color: COLORS.textSecondary,
-    fontSize: rf(12),
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 2,
   },
@@ -332,11 +365,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
+  waitingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(10),
+    justifyContent: 'center',
+    marginTop: rs(4),
+  },
   waitingText: {
     color: COLORS.textSecondary,
     fontSize: rf(14),
-    textAlign: 'center',
-    marginTop: rs(8),
   },
   buttons: {
     gap: rs(10),
