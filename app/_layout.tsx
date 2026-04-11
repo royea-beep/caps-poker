@@ -480,6 +480,9 @@ export default function RootLayout() {
             <Stack.Screen name="chip-store" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="missions" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="achievements" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="referral" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="heatmap" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="play-of-day" options={{ animation: 'slide_from_right' }} />
           </Stack>
         </WebContainer>
       </BugReporter>
