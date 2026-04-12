@@ -525,9 +525,10 @@ const styles = StyleSheet.create({
   },
   pressableInner: {
     flex: 1,
-    paddingHorizontal: rs(8),
-    paddingVertical: rs(4),
+    paddingHorizontal: rs(4),
+    paddingVertical: rs(3),
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   active: {
     borderColor: COLORS.gold,

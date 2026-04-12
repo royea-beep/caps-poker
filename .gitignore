@@ -48,3 +48,9 @@ CLAUDE.md
 
 # Claude Code session data (may contain tokens)
 .claude/settings.local.json
+
+# code-review-graph knowledge graph (local only)
+.code-review-graph/
+
+# Skills (per-machine, not tracked in git)
+.claude/skills/

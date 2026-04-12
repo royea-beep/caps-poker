@@ -1226,7 +1226,9 @@ export default function HomeScreen() {
     ? ({ background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as any)
     : {};
 
-  const playBtnWidth = Math.round(screenW * 0.75);
+  // Cap play button width at effective web content width (WEB_MAX_WIDTH=430) to avoid overflow
+  const _effectiveW = (Platform.OS === 'web' && screenW > 430) ? 430 : screenW;
+  const playBtnWidth = Math.round(_effectiveW * 0.75);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>

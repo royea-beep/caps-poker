@@ -135,7 +135,13 @@ function GameScreenInner() {
   const BOARD_GAPS = (boardCount - 1) * 4;
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
   // Mobile web card height scales with board count Ã¢ÂÂ more boards = tighter = needs clarity boost
-  const mobileWebCardH = CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60;
+  // Mobile web card height: width-aware so 5 community cards fit in 2-column board grid.
+  // Board column overhead (reduced padding in BoardArrangement + Board) approx 26px.
+  // cardRow: 5 cards + 4 gaps(6) + separator(7) = 31px overhead inside card row.
+  const _boardColW = Math.max(80, Math.floor(screenW / 2) - 26);
+  const _maxMobileWebCw = Math.max(18, Math.floor((_boardColW - 31) / 5));
+  const _maxMobileWebCh = Math.round(_maxMobileWebCw / 0.72);
+  const mobileWebCardH = Math.min(CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60, _maxMobileWebCh);
   const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
   const communityScale = nativeCardDims.communityScale;
   // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
