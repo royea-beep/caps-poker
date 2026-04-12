@@ -215,6 +215,8 @@ function GameScreenInner() {
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
   const playerReadyRef = useRef(false);
+  // FIX 4: double-tap guard on deal button — prevents two handleReady calls before setState re-renders
+  const isDealingRef = useRef(false);
   const botsReadyCountRef = useRef(0);
   const adaptiveDifficultyRef = useRef<string>(config.botDifficulty ?? 'easy');
 
@@ -438,6 +440,7 @@ function GameScreenInner() {
     setBotsReady(new Array(numberOfBots).fill(false));
     botsReadyCountRef.current = 0;
     playerReadyRef.current = false;
+    isDealingRef.current = false;
     hasNavigatedRef.current = false;
     CapsHooks.gameStarted('solo');
     track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount }, 'game');
@@ -800,6 +803,9 @@ function GameScreenInner() {
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
+    // FIX 4: debounce — prevent double-tap crash (two rapid presses before state update)
+    if (isDealingRef.current) { debugLog('H0 handleReady DEBOUNCED - already dealing'); return; }
+    isDealingRef.current = true;
     trackAction('deal_pressed');
     // Heatmap (D7)
     import('../utils/heatmap').then(({ trackEvent }) => {
@@ -808,7 +814,7 @@ function GameScreenInner() {
       }).catch(() => {});
     }).catch(() => {});
     debugLog('H1 handleReady called');
-    if (!allBoardsFull) { debugLog('H1.1 NOT allBoardsFull Ã¢ÂÂ abort'); return; }
+    if (!allBoardsFull) { isDealingRef.current = false; debugLog('H1.1 NOT allBoardsFull Ã¢ÂÂ abort'); return; }
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     void logStep('handleReady_pressed');
     debugLog('H3 hapticNotify');
@@ -828,7 +834,12 @@ function GameScreenInner() {
     debugLog(`H10 botsReady=${botsReadyCountRef.current}/${numberOfBots}`);
     if (botsReadyCountRef.current >= numberOfBots) {
       debugLog('H10.1 all bots done Ã¢ÂÂ calling doNavigate');
-      doNavigateRef.current(boardsRef.current);
+      if (boardsRef.current && boardsRef.current.length > 0) {
+        doNavigateRef.current(boardsRef.current);
+      } else {
+        debugLog('H10.1E boardsRef is empty — aborting doNavigate', 'error');
+        isDealingRef.current = false;
+      }
     } else {
       debugLog('H10.2 bots still running Ã¢ÂÂ waiting');
     }

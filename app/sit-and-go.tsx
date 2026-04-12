@@ -16,7 +16,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withRepeat,
   withSequence,
 } from 'react-native-reanimated';
 import Board from '../components/Board';

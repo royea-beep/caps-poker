@@ -22,6 +22,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KILL_index } from '../utils/animationKill';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -212,7 +213,11 @@ function FloatingParticle({ x, suit, size, opacity, dur, delay, screenW, screenH
 }) {
   const translateY = useSharedValue(screenH + 50);
   useEffect(() => {
-    translateY.value = withDelay(delay, withRepeat(withTiming(-80, { duration: dur }), 50, false));
+    // FIX 5: gate with KILL_index — 8 concurrent Reanimated animations on launch
+    // compete with splash worklet thread and can cause OOM kill (dirty-shutdown at Splash)
+    if (!KILL_index) {
+      translateY.value = withDelay(delay, withRepeat(withTiming(-80, { duration: dur }), 50, false));
+    }
     return () => { cancelAnimation(translateY); };
   }, []);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
@@ -240,10 +245,13 @@ const FAN_TRANSLATE_Y = [10, 4, 0, 4, 10];
 function HeroCardFan() {
   const breatheScale = useSharedValue(1);
   useEffect(() => {
-    breatheScale.value = withRepeat(
-      withSequence(withTiming(1.025, { duration: 2200 }), withTiming(1.0, { duration: 2200 })),
-      100, false,
-    );
+    // FIX 5c: gate with KILL_index — hero card fan breathe runs concurrently with splash
+    if (!KILL_index) {
+      breatheScale.value = withRepeat(
+        withSequence(withTiming(1.025, { duration: 2200 }), withTiming(1.0, { duration: 2200 })),
+        100, false,
+      );
+    }
     return () => { cancelAnimation(breatheScale); };
   }, []);
   const breatheStyle = useAnimatedStyle(() => ({ transform: [{ scale: breatheScale.value }] }));
