@@ -110,7 +110,7 @@ const barStyles = StyleSheet.create({
     color: '#888',
     fontSize: rf(12),
     width: rs(28),
-    textAlign: 'left',
+    textAlign: 'right',
   },
 });
 
