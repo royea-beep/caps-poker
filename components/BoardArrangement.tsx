@@ -209,8 +209,8 @@ const baStyles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'stretch',
     alignContent: 'stretch',
-    paddingHorizontal: Platform.OS === 'web' ? 12 : 8,
-    paddingVertical: Platform.OS === 'web' ? 8 : 0,
+    paddingHorizontal: Platform.OS === 'web' ? 6 : 8,
+    paddingVertical: Platform.OS === 'web' ? 4 : 0,
     width: '100%',
     flex: 1,
   },
@@ -219,9 +219,9 @@ const baStyles = StyleSheet.create({
   },
   boardCellHalf: {
     width: '50%',
-    minHeight: Platform.OS === 'web' ? 200 : undefined,
-    paddingHorizontal: Platform.OS === 'web' ? 6 : 4,
-    paddingVertical: Platform.OS === 'web' ? 4 : 4,
+    minHeight: Platform.OS === 'web' ? 180 : undefined,
+    paddingHorizontal: Platform.OS === 'web' ? 3 : 4,
+    paddingVertical: Platform.OS === 'web' ? 3 : 4,
   },
   boardCellThird: {
     width: '33.33%',
