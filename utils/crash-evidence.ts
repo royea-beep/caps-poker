@@ -182,10 +182,22 @@ export async function checkDirtyShutdown(
 
     debugLog('[CrashEvidence] dirty shutdown detected — recovering from DB', 'warn')
 
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/debug_sessions?session_id=eq.${lastSessionId}&order=step_number.asc&limit=30`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } },
-    )
+    // FIX 7: 8s timeout on launch fetch — no timeout = iOS kills app at Splash if network is slow
+    const fetchCtrl = new AbortController();
+    const fetchTimeout = setTimeout(() => fetchCtrl.abort(), 8000);
+    let res: Response;
+    try {
+      res = await fetch(
+        `${SUPABASE_URL}/rest/v1/debug_sessions?session_id=eq.${lastSessionId}&order=step_number.asc&limit=30`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, signal: fetchCtrl.signal },
+      );
+    } catch (fetchErr) {
+      clearTimeout(fetchTimeout);
+      debugLog('[CrashEvidence] fetch aborted/failed: ' + String(fetchErr), 'warn');
+      return;
+    } finally {
+      clearTimeout(fetchTimeout);
+    }
     const steps: Array<{ step_number: number; created_at: string; step_type: string; description: string; screen: string }> =
       await res.json().catch(() => [])
 

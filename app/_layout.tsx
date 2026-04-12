@@ -107,18 +107,24 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
   const duration = isWeb ? 1000 : 3500;
 
   useEffect(() => {
-    if (isWeb) {
-      opacity.value = withSequence(
-        withTiming(1, { duration: 300 }),
-        withDelay(400, withTiming(0, { duration: 300 })),
-      );
-      scale.value = withTiming(1.02, { duration: 400 });
-    } else {
-      opacity.value = withSequence(
-        withTiming(1, { duration: 600 }),
-        withDelay(2400, withTiming(0, { duration: 500 })),
-      );
-      scale.value = withTiming(1, { duration: 600 });
+    // FIX 2: wrap Reanimated worklet setup in try/catch — worklet crash on launch
+    // causes iOS to kill the app (dirty-shutdown at Splash). setTimeout still fires.
+    try {
+      if (isWeb) {
+        opacity.value = withSequence(
+          withTiming(1, { duration: 300 }),
+          withDelay(400, withTiming(0, { duration: 300 })),
+        );
+        scale.value = withTiming(1.02, { duration: 400 });
+      } else {
+        opacity.value = withSequence(
+          withTiming(1, { duration: 600 }),
+          withDelay(2400, withTiming(0, { duration: 500 })),
+        );
+        scale.value = withTiming(1, { duration: 600 });
+      }
+    } catch (e) {
+      debugLog('[SplashOverlay] animation setup failed: ' + String(e), 'warn');
     }
     const t = setTimeout(onDone, duration);
     return () => clearTimeout(t);
@@ -167,6 +173,19 @@ export default function RootLayout() {
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [langReady, setLangReady] = useState(false);
   const [needsPicker, setNeedsPicker] = useState(false);
+
+  // FIX 1: absolute failsafe — if SplashOverlay onDone never fires (Reanimated thread dies
+  // or iOS kills setTimeout under memory pressure), force splashDone=true after 5s.
+  // Root cause of 15x dirty-shutdown at Splash: app frozen waiting for splash to dismiss.
+  useEffect(() => {
+    const splashFailsafe = setTimeout(() => {
+      setSplashDone((prev) => {
+        if (!prev) debugLog('[Splash] FAILSAFE: forcing splashDone=true after 5s');
+        return true;
+      });
+    }, 5000);
+    return () => clearTimeout(splashFailsafe);
+  }, []);
 
   // Language detection — runs first, before splash or routing
   useEffect(() => {
@@ -354,29 +373,34 @@ export default function RootLayout() {
     return () => clearInterval(interval);
   }, []);
 
+  // FIX 3: all launch-time ops wrapped in try/catch async fn — unhandled throws = iOS kill
   useEffect(() => {
-    initSession();
-    preloadSounds();
-    if (Platform.OS !== 'web') {
-      registerAndSavePushToken().catch(() => {});
-      // Configure RevenueCat for IAP
-      if (Purchases) {
-        try {
-          const rcKey = Platform.OS === 'ios'
-            ? (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '')
-            : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '');
-          if (rcKey) Purchases.configure({ apiKey: rcKey });
-        } catch { /* non-blocking */ }
+    const initApp = async () => {
+      try { initSession(); } catch (e) { debugLog('[launch] initSession failed: ' + String(e), 'error'); }
+      try { await preloadSounds(); } catch (e) { debugLog('[launch] preloadSounds failed: ' + String(e), 'error'); }
+      if (Platform.OS !== 'web') {
+        registerAndSavePushToken().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
+        // Configure RevenueCat for IAP
+        if (Purchases) {
+          try {
+            const rcKey = Platform.OS === 'ios'
+              ? (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '')
+              : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '');
+            if (rcKey) Purchases.configure({ apiKey: rcKey });
+          } catch { /* non-blocking */ }
+        }
       }
-    }
-
-    // Load Playfair Display from Google Fonts on web
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap';
-      document.head.appendChild(link);
-    }
+      // Load Playfair Display from Google Fonts on web
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        try {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap';
+          document.head.appendChild(link);
+        } catch {}
+      }
+    };
+    void initApp();
   }, []);
 
   // Marathon auto-start — triggered via WhatsApp reply "4"
