@@ -279,7 +279,7 @@ export default function TournamentLobby({ playerName, onJoin }: TournamentLobbyP
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: T.bg,
+    backgroundColor: T?.bg ?? '#1a1a2e',
   },
   header: {
     flexDirection: 'row',

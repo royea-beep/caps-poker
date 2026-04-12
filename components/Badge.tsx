@@ -37,7 +37,7 @@ export function Badge({ label, variant = 'win', small }: BadgeProps) {
     <Animated.View
       style={[
         styles.badge,
-        { backgroundColor: colors.bg },
+        { backgroundColor: colors?.bg ?? '#1a1a2e' },
         variant === 'rank' && styles.rankBorder,
         small && styles.badgeSmall,
         animatedStyle,

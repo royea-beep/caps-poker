@@ -55,7 +55,7 @@ import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../components/Int
 import { rf, rs, rv } from '../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../utils/i18n';
-import { HOME_THEMES } from '../constants/homeThemes';
+import { HOME_THEMES, DEFAULT_HOME_THEME } from '../constants/homeThemes';
 import { todaysQuote } from '../constants/proQuotes';
 import { migrateGuestToUser } from '../utils/guestMigration';
 import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
@@ -744,7 +744,7 @@ export default function HomeScreen() {
   const bestWinStreak = useGameStore((s) => s.bestWinStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
   const homeThemeId = useGameStore((s) => s.homeTheme);
-  const theme = HOME_THEMES[homeThemeId];
+  const theme = HOME_THEMES[homeThemeId as import("../constants/homeThemes").HomeThemeId] ?? HOME_THEMES[DEFAULT_HOME_THEME];
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
 
   const user = useAuthUser();
