@@ -62,7 +62,7 @@ import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
 import { trackEvent } from '../utils/heatmap';
 import { getSupabase } from '../utils/supabase';
-import { isOnlineMultiplayerAvailable } from '../utils/realtimeMultiplayer';
+// isOnlineMultiplayerAvailable — moved to Settings screen (Task 4)
 import { scheduleLocal, cancelReengagement } from '../utils/notifications';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { useBattlePassStore } from '../stores/battlePassStore';
@@ -758,7 +758,7 @@ export default function HomeScreen() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
   const [showNudge, setShowNudge] = useState(false);
-  const [mpMode, setMpMode] = useState<'internet' | 'local'>('internet');
+  // mpMode moved to Settings (PLAY ONLINE section consolidated)
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
   const [welcomeToastName, setWelcomeToastName] = useState('');
   // Daily reward popup — shown once per session on mount if claimable
@@ -791,6 +791,9 @@ export default function HomeScreen() {
   type FeedItem = { player_id: string; winner_id: string | null; chips_won: number | null; ended_at: string };
   const [activityFeed, setActivityFeed] = useState<FeedItem[]>([]);
 
+  type CupItem = { id: string; name_he: string; tier: string; color: string; earned: boolean; progress: number };
+  const [cupData, setCupData] = useState<{ cups: CupItem[]; total: number; earned: number } | null>(null);
+
   useEffect(() => {
     const sb = getSupabase();
     if (!sb) return;
@@ -802,6 +805,15 @@ export default function HomeScreen() {
         .order('ended_at', { ascending: false })
         .limit(5);
       if (data) setActivityFeed(data as FeedItem[]);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb) return;
+    getDeviceId().then(async (deviceId) => {
+      const { data } = await sb.rpc('get_cup_collection', { p_device_id: deviceId });
+      if (data) setCupData(data as { cups: CupItem[]; total: number; earned: number });
     }).catch(() => {});
   }, []);
 
@@ -1195,6 +1207,26 @@ export default function HomeScreen() {
     }
   }, [referralCodeInput, showReferralToast]);
 
+  const handleFriendChallenge = useCallback(async () => {
+    try {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data, error } = await sb.rpc('create_friend_challenge', { p_user_id: user?.id ?? '' });
+      if (error || !data?.code) {
+        Alert.alert(
+          getLanguage() === 'he' ? 'שגיאה' : 'Error',
+          getLanguage() === 'he' ? 'לא ניתן ליצור אתגר. נסה שוב.' : 'Could not create challenge. Try again.',
+        );
+        return;
+      }
+      await Share.share({
+        message: getLanguage() === 'he'
+          ? `🃏 אני מאתגר אותך ב-CAPS Poker!\nקוד: ${data.code}`
+          : `🃏 I challenge you to CAPS Poker!\nCode: ${data.code}`,
+      });
+    } catch {}
+  }, [user?.id]);
+
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
 
   // A3: Show share banner if last game was COMPLETE
@@ -1357,6 +1389,12 @@ export default function HomeScreen() {
           <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.4, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
         </View>
 
+        {/* CAPS brand wordmark — above player selector (Task 1) */}
+        <View style={{ alignItems: 'center', paddingVertical: rs(8) }}>
+          <Text style={{ fontSize: rf(22), fontWeight: '800', color: '#FFD700', letterSpacing: 6 }}>CAPS</Text>
+          <Text style={{ fontSize: rf(9), color: '#A5D6A7', letterSpacing: 2 }}>FOUR CARDS. FOUR BOARDS. ONE WINNER.</Text>
+        </View>
+
         {/* Player count selector — 2P / 3P / 4P */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }}>
           {([2, 3, 4] as const).map(n => (
@@ -1386,6 +1424,11 @@ export default function HomeScreen() {
             : '2 boards · Omaha · Best hand wins each'}
         </Text>
 
+        {/* Online player count — static for now, wire to Supabase Realtime later (Task 5) */}
+        <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
+          32 שחקנים אונליין
+        </Text>
+
         {/* PLAY button — always green, center stage */}
         <View style={styles.playSection}>
           <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
@@ -1413,14 +1456,39 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        {/* Challenge a Friend — Task 3 */}
+        <Pressable
+          style={{
+            borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
+            paddingVertical: rs(14), marginHorizontal: rs(16), marginTop: rs(8),
+            alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
+          }}
+          onPress={handleFriendChallenge}
+        >
+          <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>אתגר חבר</Text>
+          <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>שלח אתגר פוקר לחבר</Text>
+        </Pressable>
 
-        {/* Level progress bar */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 4 }}>
-          <Text style={{ color: '#c96a1a', fontSize: 11, fontWeight: '700', letterSpacing: 0.3, minWidth: 44 }}>LVL {playerLevel}</Text>
-          <View style={{ flex: 1, height: 6, backgroundColor: '#1a0e06', borderRadius: 3, overflow: 'hidden' }}>
-            <View style={{ width: `${Math.min(100, (levelXP / (playerLevel * playerLevel * 50)) * 100)}%`, height: '100%', backgroundColor: '#c96a1a', borderRadius: 3 }} />
-          </View>
-        </View>
+        {/* Cup collection — replaces LVL progress bar (Task 2) */}
+        {cupData && (
+          <>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: rs(8), marginVertical: rs(8) }}>
+              {cupData.cups.map(cup => (
+                <View key={cup.id} style={{
+                  width: rs(36), height: rs(36), borderRadius: rv(8),
+                  backgroundColor: cup.earned ? cup.color : 'rgba(255,255,255,0.1)',
+                  alignItems: 'center', justifyContent: 'center',
+                  opacity: cup.earned ? 1 : 0.4,
+                }}>
+                  <Text style={{ fontSize: rf(16) }}>🏆</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#A5D6A7' }}>
+              {cupData.earned}/{cupData.total} כוסות
+            </Text>
+          </>
+        )}
 
         {/* A3: Share COMPLETE banner */}
         {showCompleteBanner && (
@@ -1517,61 +1585,7 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Play Online — S116: Online / Same WiFi tabs */}
-        {isOnlineMultiplayerAvailable() && (
-          <>
-          <Text style={styles.sectionLabel}>PLAY ONLINE</Text>
-          <View style={styles.mpTabsRow}>
-            <Pressable
-              onPress={() => setMpMode('internet')}
-              style={[styles.mpTab, mpMode === 'internet' && styles.mpTabActive]}
-            >
-              <Text style={[styles.mpTabText, mpMode === 'internet' && styles.mpTabTextActive]}>🌐 Online</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setMpMode('local')}
-              style={[styles.mpTab, mpMode === 'local' && styles.mpTabActive]}
-            >
-              <Text style={[styles.mpTabText, mpMode === 'local' && styles.mpTabTextActive]}>📶 Same WiFi</Text>
-            </Pressable>
-          </View>
-          {mpMode === 'internet' ? (
-            <View style={styles.friendsRow}>
-              <Pressable
-                style={[styles.modeBtn, { backgroundColor: '#0e2d1a', flex: 1 }]}
-                onPress={() => router.push('/lobby/internet-host' as any)}
-              >
-                <Text style={styles.modeBtnIcon}>🌐</Text>
-                <Text style={[styles.modeBtnLabel, { color: '#4ade80' }]}>Host Game</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modeBtn, { backgroundColor: '#0e1a2d', flex: 1 }]}
-                onPress={() => router.push('/lobby/internet-join' as any)}
-              >
-                <Text style={styles.modeBtnIcon}>🎮</Text>
-                <Text style={[styles.modeBtnLabel, { color: '#60a5fa' }]}>Join Game</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.friendsRow}>
-              <Pressable
-                style={[styles.modeBtn, { backgroundColor: '#1a1a0e', flex: 1 }]}
-                onPress={() => router.push('/lobby/host' as any)}
-              >
-                <Text style={styles.modeBtnIcon}>📶</Text>
-                <Text style={[styles.modeBtnLabel, { color: '#facc15' }]}>Host Local</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modeBtn, { backgroundColor: '#0e1a1a', flex: 1 }]}
-                onPress={() => router.push('/lobby/join' as any)}
-              >
-                <Text style={styles.modeBtnIcon}>🔗</Text>
-                <Text style={[styles.modeBtnLabel, { color: '#34d399' }]}>Join Local</Text>
-              </Pressable>
-            </View>
-          )}
-          </>
-        )}
+        {/* Online/WiFi multiplayer moved to Settings screen (Task 4) */}
 
         {/* Data cards — S112: merged 4→2 (My Progress + Compete) */}
         <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
