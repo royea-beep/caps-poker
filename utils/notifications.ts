@@ -138,44 +138,49 @@ export function isNotificationsAvailable(): boolean {
 
 /**
  * Register for push notifications and save the token to Supabase.
- * Uses device_id as identifier (no user auth in Caps).
+ * Includes user_id from supabase.auth so push delivery can target specific users.
  */
 export async function registerAndSavePushToken(): Promise<string | null> {
   const token = await getExpoPushToken();
   if (!token) return null;
 
   const deviceId = await getDeviceId();
-
   const client = getSupabase();
-  if (client) {
-    // Call register_push_token RPC (D5) — upserts token + platform via stored procedure
-    client
-      .rpc('register_push_token', {
-        p_device_id: deviceId,
-        p_token: token,
-        p_platform: Platform.OS,
-      })
-      .then(({ error }: { error: { message: string } | null }) => {
-        if (error) {
-          // Fallback: direct upsert if RPC not available yet
-          debugLog(`[push_tokens] RPC failed (${error.message}), falling back to direct upsert`, 'warn');
-          client
-            .from('push_tokens')
-            .upsert(
-              {
-                device_id: deviceId,
-                token,
-                platform: Platform.OS,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'device_id,token' },
-            )
-            .then(({ error: e2 }: { error: { message: string } | null }) => {
-              if (e2) debugLog(`[push_tokens] upsert fallback failed: ${e2.message}`, 'warn');
-            });
-        }
-      });
-  }
+  if (!client) return token;
+
+  // Get authenticated user — required for push targeting
+  const { data: { user } } = await client.auth.getUser();
+  const userId = user?.id ?? null;
+
+  // Call register_push_token RPC — upserts token + platform + user_id
+  client
+    .rpc('register_push_token', {
+      p_device_id: deviceId,
+      p_token: token,
+      p_platform: Platform.OS,
+      p_user_id: userId,
+    })
+    .then(({ error }: { error: { message: string } | null }) => {
+      if (error) {
+        // Fallback: direct upsert if RPC not available yet
+        debugLog(`[push_tokens] RPC failed (${error.message}), falling back to direct upsert`, 'warn');
+        client
+          .from('push_tokens')
+          .upsert(
+            {
+              device_id: deviceId,
+              token,
+              platform: Platform.OS,
+              user_id: userId,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'device_id,token' },
+          )
+          .then(({ error: e2 }: { error: { message: string } | null }) => {
+            if (e2) debugLog(`[push_tokens] upsert fallback failed: ${e2.message}`, 'warn');
+          });
+      }
+    });
 
   return token;
 }
