@@ -451,6 +451,19 @@ export default function ResultsScreen() {
       } catch {}
     })();
 
+    // Task 7: check_cups — award cups after each hand
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data: cupResult } = await sb.rpc('check_cups', { p_device_id: deviceId });
+        if (cupResult?.awarded?.length > 0) {
+          Alert.alert('🏆 כוס חדשה!', `פתחת: ${cupResult.awarded[0]}`, [{ text: 'מגניב!' }]);
+        }
+      } catch {}
+    })();
+
     // Post-game efficiency hint — find best card swap across boards
     try {
       setEfficiencyHint(getEfficiencyHint(revealData.boards));
