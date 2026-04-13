@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+dist/
+build/
+.next/
+.expo/
+out/
+.cache/
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git internals
+.git/
+
+# Large generated files
+*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Screenshots from QA
+screenshots/
