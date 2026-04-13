@@ -9,3 +9,9 @@
 - CRITICAL: ErrorBoundary uses resetKey pattern
 - Bible audit D1-D10 complete. Battle Pass removed. Tournaments removed.
 - WhatsApp QA pipeline (VAMOS) is active
+
+## Token Discipline
+- /compact after every completed VAMOS
+- /clear when switching between unrelated tasks
+- Default model: Sonnet. Opus only for architecture/debugging
+- Subagent: haiku for file exploration
