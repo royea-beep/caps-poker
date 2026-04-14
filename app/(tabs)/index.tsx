@@ -778,6 +778,18 @@ export default function HomeScreen() {
   const [totalHandCount, setTotalHandCount] = useState(0);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
   const handsWon = useGameStore((s) => s.handsWon);
+
+  // Progressive disclosure stage — derived locally from handsPlayed
+  const stage = handsPlayed === 0 ? 'new'
+    : handsPlayed <= 10 ? 'beginner'
+    : handsPlayed <= 50 ? 'active'
+    : 'veteran';
+  const show_streak = stage !== 'new';
+  const show_friend_challenge = stage !== 'new';
+  const show_cups = stage === 'active' || stage === 'veteran';
+  const show_sng = stage === 'active' || stage === 'veteran';
+  const show_stats = stage === 'active' || stage === 'veteran';
+  const show_veteran = stage === 'veteran';
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
 
   // Referral system (D6)
@@ -1445,7 +1457,7 @@ export default function HomeScreen() {
               accessibilityLabel="Play"
             >
               <View style={styles.playBtnHighlight} pointerEvents="none" />
-              <Text style={styles.playBtnText}>PLAY</Text>
+              <Text style={styles.playBtnText}>שחק!</Text>
             </Pressable>
           </AnimatedRN.View>
 
@@ -1456,21 +1468,31 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Challenge a Friend — Task 3 */}
-        <Pressable
-          style={{
-            borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
-            paddingVertical: rs(14), marginHorizontal: rs(16), marginTop: rs(8),
-            alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
-          }}
-          onPress={handleFriendChallenge}
-        >
-          <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>אתגר חבר</Text>
-          <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>שלח אתגר פוקר לחבר</Text>
-        </Pressable>
+        {/* New player welcome message */}
+        {stage === 'new' && (
+          <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
+            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }}>ברוך הבא ל-CAPS Poker! 🃏</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>לחץ שחק כדי להתחיל את המשחק הראשון שלך</Text>
+          </View>
+        )}
 
-        {/* Cup collection — replaces LVL progress bar (Task 2) */}
-        {cupData && (
+        {/* Challenge a Friend — beginner+ only */}
+        {show_friend_challenge && (
+          <Pressable
+            style={{
+              borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
+              paddingVertical: rs(14), marginHorizontal: rs(16), marginTop: rs(8),
+              alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
+            }}
+            onPress={handleFriendChallenge}
+          >
+            <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>אתגר חבר</Text>
+            <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>שלח אתגר פוקר לחבר</Text>
+          </Pressable>
+        )}
+
+        {/* Cup collection — active+ only */}
+        {show_cups && cupData && (
           <>
             <View style={{ flexDirection: 'row', justifyContent: 'center', gap: rs(8), marginVertical: rs(8) }}>
               {cupData.cups.map(cup => (
@@ -1532,12 +1554,12 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Win streak — shown if streak >= 2 */}
-        {currentWinStreak >= 2 && (
+        {/* Win streak — beginner+ only */}
+        {show_streak && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
-            <Text style={styles.homeStreakText}>🔥 {currentWinStreak}-win streak</Text>
+            <Text style={styles.homeStreakText}>🔥 {currentWinStreak} ניצחונות ברצף</Text>
             {bestWinStreak > currentWinStreak && (
-              <Text style={styles.homeStreakBest}> · Best: {bestWinStreak}</Text>
+              <Text style={styles.homeStreakBest}> · שיא: {bestWinStreak}</Text>
             )}
           </View>
         )}
@@ -1553,82 +1575,82 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Mode buttons */}
-        <View style={styles.modeButtonRow}>
-          <Pressable
-            style={[styles.modeBtn, styles.modeBtnBlue]}
-            onPress={() => {
-              // Heatmap (D7)
-              getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
-              router.push('/sit-and-go' as any);
-            }}
-          >
-            <Text style={[styles.modeBtnIcon]}>🎯</Text>
-            <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>
-              Sit &amp; Go (100 💰)
-            </Text>
-          </Pressable>
-        
-          <Pressable
-            style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
-            onPress={() => router.push('/quick-poker' as any)}
-          >
-            <Text style={styles.modeBtnIcon}>⚡</Text>
-            <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>Quick Poker (200 💰)</Text>
-          </Pressable>
-        </View>
+        {/* Mode buttons — active+ only */}
+        {show_sng && (
+          <View style={styles.modeButtonRow}>
+            <Pressable
+              style={[styles.modeBtn, styles.modeBtnBlue]}
+              onPress={() => {
+                getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
+                router.push('/sit-and-go' as any);
+              }}
+            >
+              <Text style={[styles.modeBtnIcon]}>🎯</Text>
+              <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>סיט אנד גו (100 💰)</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
+              onPress={() => router.push('/quick-poker' as any)}
+            >
+              <Text style={styles.modeBtnIcon}>⚡</Text>
+              <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>פוקר מהיר (200 💰)</Text>
+            </Pressable>
+          </View>
+        )}
 
-        {/* 📊 Stats — hand count quick access */}
-        {totalHandCount > 0 && (
+        {/* 📊 Stats — active+ only */}
+        {show_stats && totalHandCount > 0 && (
           <Pressable onPress={() => router.push('/hand-history' as any)} style={styles.statsBtn}>
-            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands played</Text>
+            <Text style={styles.statsBtnText}>📊 {totalHandCount} ידות שוחקו</Text>
           </Pressable>
         )}
 
         {/* Online/WiFi multiplayer moved to Settings screen (Task 4) */}
 
-        {/* Data cards — S112: merged 4→2 (My Progress + Compete) */}
-        <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
-          {/* My Progress card */}
-          <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>MY PROGRESS</Text>
-            <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
-            <Text style={homeDataCardStyles.sub}>badges · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} wins</Text>
-          </Pressable>
-          {/* Compete card */}
-          <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>COMPETE</Text>
-            <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
-            <Text style={homeDataCardStyles.sub}>missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} rank` : 'Play to rank'}</Text>
-          </Pressable>
-        </View>
+        {/* Data cards — active+ only */}
+        {show_stats && (
+          <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
+            <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
+              <Text style={homeDataCardStyles.label}>ההתקדמות שלי</Text>
+              <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
+              <Text style={homeDataCardStyles.sub}>הישגים · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} ניצחונות</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
+              <Text style={homeDataCardStyles.label}>תחרות</Text>
+              <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
+              <Text style={homeDataCardStyles.sub}>משימות · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} דירוג` : 'שחק כדי לדרג'}</Text>
+            </Pressable>
+          </View>
+        )}
 
-        {/* Friend Activity Feed */}
-        <View style={styles.feedSection}>
-          <Text style={styles.feedTitle}>🏆 Recent Wins</Text>
-          {activityFeed.length === 0 ? (
-            <Text style={styles.feedEmpty}>Play a Sit&Go to see your history</Text>
-          ) : (
-            activityFeed.map((item, i) => {
-              const won = item.winner_id === item.player_id;
-              return (
-                <View key={i} style={styles.feedItem}>
-                  <Text style={styles.feedItemText}>
-                    {won
-                      ? `✅ You won Sit&Go — +${item.chips_won ?? 0} 💰`
-                      : `❌ Sit&Go — better luck next time`}
-                  </Text>
-                  <Text style={styles.feedItemTime}>
-                    {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}
-                  </Text>
-                </View>
-              );
-            })
-          )}
-        </View>
+        {/* Activity Feed + Recent Hands — veteran only */}
+        {show_veteran && (
+          <View style={styles.feedSection}>
+            <Text style={styles.feedTitle}>🏆 ניצחונות אחרונים</Text>
+            {activityFeed.length === 0 ? (
+              <Text style={styles.feedEmpty}>שחק סיט אנד גו כדי לראות את ההיסטוריה שלך</Text>
+            ) : (
+              activityFeed.map((item, i) => {
+                const won = item.winner_id === item.player_id;
+                return (
+                  <View key={i} style={styles.feedItem}>
+                    <Text style={styles.feedItemText}>
+                      {won
+                        ? `✅ ניצחת סיט אנד גו — +${item.chips_won ?? 0} 💰`
+                        : `❌ סיט אנד גו — בפעם הבאה`}
+                    </Text>
+                    <Text style={styles.feedItemTime}>
+                      {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}
+                    </Text>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
 
-        {/* Recent Hands — last 5 from local history */}
-        {recentHands.length > 0 && (
+        {/* Recent Hands — veteran only */}
+        {show_veteran && recentHands.length > 0 && (
           <View style={{ width: '100%', marginTop: 4 }}>
             <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Recent Hands</Text>
             {recentHands.map((hand, i) => {
