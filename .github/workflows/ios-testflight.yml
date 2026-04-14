@@ -1,11 +1,16 @@
 name: iOS TestFlight
 
-# Standard EAS pipeline — matches Wingman approach
-# Secrets required:
-#   EXPO_TOKEN              — Expo account token (EAS builds + managed signing)
-#   APPLE_API_KEY_BASE64    — Base64 of AuthKey_HH732W7XQJ.p8 (ASC API key)
-#   APPLE_API_KEY_ID        — HH732W7XQJ
-#   APPLE_API_ISSUER_ID     — 686f97b8-3f8a-40b7-a6cd-5293a3168439
+# FREE build on GitHub-hosted macOS runner — zero EAS cloud charges
+# Previous approach: ubuntu-latest + eas build --platform ios --non-interactive (paid EAS cloud)
+# New approach: macos-15 + expo prebuild + xcodebuild (same pattern as 9Soccer-Mascots)
+#
+# Secrets required (existing secrets reused — no new secrets needed):
+#   EXPO_TOKEN                    — Expo account token (needed for expo prebuild + build number sync)
+#   APPLE_API_KEY_BASE64          — Base64 of AuthKey_HH732W7XQJ.p8 (ASC API key)
+#   APPLE_API_KEY_ID              — HH732W7XQJ
+#   APPLE_API_ISSUER_ID           — 686f97b8-3f8a-40b7-a6cd-5293a3168439
+#   EXPO_PUBLIC_SUPABASE_URL      — https://gxrpunvhjcrzqnitbqah.supabase.co
+#   EXPO_PUBLIC_SUPABASE_ANON_KEY — Supabase anon key (injected at build time)
 
 on:
   push:
@@ -19,48 +24,376 @@ concurrency:
 jobs:
   build-and-submit:
     name: Build & Submit to TestFlight
-    runs-on: ubuntu-latest
+    runs-on: macos-15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select Xcode (latest stable)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 'latest-stable'
+
+      - name: Verify Xcode version
+        run: xcodebuild -version
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '22'
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Write Apple API Key
-        run: |
-          echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_HH732W7XQJ.p8
-
-      - name: Setup EAS
+      - name: Setup EAS (build number sync + prebuild credentials)
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Setup iOS credentials (create PP + build creds via Apple ASC API)
+      - name: Sync build number from EAS remote (increment + store)
+        id: build_number
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
-        run: node scripts/ci-setup-ios-creds.js
+        run: |
+          # Get current remote buildNumber, increment, write back to EAS remote
+          RAW=$(eas build:version:get --platform ios --profile production --non-interactive --json 2>/dev/null || echo '{"buildNumber":"448"}')
+          CURRENT=$(echo "$RAW" | node -e "process.stdin.setEncoding('utf8');let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);console.log(j.buildNumber||j.ios?.buildNumber||'448')}catch(e){console.log('448')}})")
+          NEXT=$((CURRENT + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
+          echo "build_number=$NEXT" >> $GITHUB_OUTPUT
+          echo "Current: $CURRENT → Next: $NEXT"
+          # Write the new build number back to EAS so it stays in sync
+          eas build:version:set --platform ios --profile production --buildNumber "$NEXT" --non-interactive 2>/dev/null || echo "Version set skipped (non-blocking)"
 
-      - name: EAS Build
+      - name: Setup App Store Connect API key
         env:
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
-        run: eas build --platform ios --profile production --non-interactive
+          API_KEY_ID:     ${{ secrets.APPLE_API_KEY_ID }}
+          API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$API_KEY_BASE64" | base64 --decode > ~/private_keys/AuthKey_${API_KEY_ID}.p8
 
-      - name: Submit to TestFlight
+      - name: Revoke oldest Distribution cert if at quota
         env:
-          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: eas submit --platform ios --profile ci --latest --non-interactive
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          node - << 'SCRIPT'
+          const fs = require('fs')
+          const https = require('https')
+          const { createSign } = require('crypto')
+          const keyId = process.env.API_KEY_ID
+          const issuerId = process.env.API_ISSUER_ID
+          const keyPath = process.env.HOME + '/private_keys/AuthKey_' + keyId + '.p8'
+          const privateKey = fs.readFileSync(keyPath, 'utf8')
+          function makeToken() {
+            const header  = Buffer.from(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' })).toString('base64url')
+            const now = Math.floor(Date.now() / 1000)
+            const payload = Buffer.from(JSON.stringify({ iss: issuerId, iat: now, exp: now + 300, aud: 'appstoreconnect-v1' })).toString('base64url')
+            const signer = createSign('SHA256')
+            signer.update(header + '.' + payload)
+            const sig = signer.sign({ key: privateKey, dsaEncoding: 'ieee-p1363' }, 'base64url')
+            return header + '.' + payload + '.' + sig
+          }
+          function apiReq(method, p, cb) {
+            const req = https.request({ hostname: 'api.appstoreconnect.apple.com', path: p, method: method, headers: { Authorization: 'Bearer ' + makeToken() } }, function(res) {
+              var body = ''; res.on('data', function(d) { body += d })
+              res.on('end', function() { cb(res.statusCode, body) })
+            })
+            req.on('error', function(e) { console.log('API error:', e.message) }); req.end()
+          }
+          apiReq('GET', '/v1/certificates?limit=50', function(status, body) {
+            if (status !== 200) { console.log('List status:', status, '-- skipping'); return }
+            var all = JSON.parse(body).data || []
+            all.forEach(function(c) { console.log('  cert:', c.attributes.certificateType, c.id, c.attributes.expirationDate) })
+            var DIST_TYPES = ['IOS_DISTRIBUTION','DISTRIBUTION','APPLE_DISTRIBUTION','MAC_APP_DISTRIBUTION','DEVELOPER_ID_APPLICATION']
+            var dist = all.filter(function(c) { return DIST_TYPES.indexOf(c.attributes.certificateType) !== -1 })
+            console.log('Distribution certs: ' + dist.length)
+            var dev = all.filter(function(c) { return ['DEVELOPMENT','IOS_DEVELOPMENT'].indexOf(c.attributes.certificateType) !== -1 })
+            console.log('Dev certs to revoke: ' + dev.length + ' (keep 2 newest, revoke rest)')
+            dev.sort(function(a, b) { return new Date(b.attributes.expirationDate) - new Date(a.attributes.expirationDate) })
+            var toRevoke = dist.concat(dev.slice(2))
+            console.log('Total to revoke: ' + toRevoke.length)
+            if (toRevoke.length === 0) { console.log('Nothing to revoke -- OK'); return }
+            var revoked = 0
+            function revokeNext() {
+              if (revoked >= toRevoke.length) { console.log('Done: revoked ' + revoked + ' cert(s)'); return }
+              var cert = toRevoke[revoked]
+              console.log('Revoking ' + cert.attributes.certificateType + ' ' + cert.id)
+              apiReq('DELETE', '/v1/certificates/' + cert.id, function(s2) {
+                console.log('  -> ' + (s2 === 204 ? 'OK' : 'FAILED ' + s2))
+                revoked++; revokeNext()
+              })
+            }
+            revokeNext()
+          })
+          SCRIPT
+
+      - name: Wait for cert revocation to propagate
+        run: sleep 5
+
+      - name: Register App ID via ASC API
+        env:
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          node - << 'SCRIPT'
+          const fs = require('fs')
+          const https = require('https')
+          const { createSign } = require('crypto')
+          const keyId = process.env.API_KEY_ID
+          const issuerId = process.env.API_ISSUER_ID
+          const keyPath = `${process.env.HOME}/private_keys/AuthKey_${keyId}.p8`
+          const privateKey = fs.readFileSync(keyPath, 'utf8')
+          const header  = Buffer.from(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' })).toString('base64url')
+          const now     = Math.floor(Date.now() / 1000)
+          const payload = Buffer.from(JSON.stringify({ iss: issuerId, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' })).toString('base64url')
+          const signer  = createSign('SHA256')
+          signer.update(`${header}.${payload}`)
+          const sig   = signer.sign({ key: privateKey, dsaEncoding: 'ieee-p1363' }, 'base64url')
+          const token = `${header}.${payload}.${sig}`
+          const data = JSON.stringify({ data: { type: 'bundleIds', attributes: {
+            name: 'Caps Poker', identifier: 'com.capspoker.app', platform: 'IOS', seedId: '3K9KJNGL9U'
+          }}})
+          const req = https.request({
+            hostname: 'api.appstoreconnect.apple.com', path: '/v1/bundleIds', method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+          }, res => {
+            let body = ''
+            res.on('data', d => body += d)
+            res.on('end', () => {
+              if (res.statusCode === 201) console.log('Bundle ID com.capspoker.app registered!')
+              else if (res.statusCode === 409) console.log('Bundle ID already exists — OK')
+              else { console.log('ASC response', res.statusCode, body.slice(0, 200)); process.exit(0) }
+            })
+          })
+          req.on('error', e => { console.log('ASC API error (non-fatal):', e.message); process.exit(0) })
+          req.write(data)
+          req.end()
+          SCRIPT
+
+      - name: Expo Prebuild — generate native iOS project
+        env:
+          EXPO_TOKEN:                    ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL:      ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npx expo prebuild --clean --platform ios --non-interactive
+
+      - name: Write ExportOptions.plist
+        run: |
+          cat > ios/ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>3K9KJNGL9U</string>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Build & archive
+        env:
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            -workspace ios/CapsPoker.xcworkspace \
+            -scheme CapsPoker \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/CapsPoker.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID" \
+            -authenticationKeyPath ~/private_keys/AuthKey_${API_KEY_ID}.p8 \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=3K9KJNGL9U \
+            CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }} \
+            MARKETING_VERSION=2.0.1
+
+      - name: Export IPA
+        env:
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/CapsPoker.xcarchive \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath $RUNNER_TEMP/ipa \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID" \
+            -authenticationKeyPath ~/private_keys/AuthKey_${API_KEY_ID}.p8
+
+      - name: Upload to TestFlight
+        env:
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          # altool expects the key at ~/.appstoreconnect/private_keys/
+          mkdir -p ~/.appstoreconnect/private_keys
+          cp ~/private_keys/AuthKey_${API_KEY_ID}.p8 ~/.appstoreconnect/private_keys/
+          IPA_FILE=$(find $RUNNER_TEMP/ipa -name "*.ipa" | head -1)
+          echo "Uploading: $IPA_FILE"
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_FILE" \
+            --apiKey "$API_KEY_ID" \
+            --apiIssuer "$API_ISSUER_ID"
+
+      - name: Distribute to all beta groups via ASC API
+        env:
+          KEY_ID:      ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER_ID:   ${{ secrets.APPLE_API_ISSUER_ID }}
+          PRIVATE_KEY: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        run: |
+          python3 -m venv /tmp/asc-venv
+          /tmp/asc-venv/bin/pip install PyJWT cryptography requests --quiet
+          /tmp/asc-venv/bin/python3 << 'PYEOF'
+          import jwt, time, requests, os, sys, base64
+
+          KEY_ID      = os.environ['KEY_ID']
+          ISSUER_ID   = os.environ['ISSUER_ID']
+          PRIVATE_KEY = base64.b64decode(os.environ['PRIVATE_KEY']).decode('utf-8')
+          BASE_URL    = 'https://api.appstoreconnect.apple.com/v1'
+
+          def make_token():
+              now = int(time.time())
+              payload = {'iss': ISSUER_ID, 'iat': now, 'exp': now + 1200, 'aud': 'appstoreconnect-v1'}
+              return jwt.encode(payload, PRIVATE_KEY, algorithm='ES256', headers={'kid': KEY_ID})
+
+          def hdrs():
+              token = make_token()
+              if isinstance(token, bytes):
+                  token = token.decode()
+              return {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+
+          # 1. Find the app by bundle ID
+          r = requests.get(f'{BASE_URL}/apps?filter[bundleId]=com.capspoker.app&limit=1', headers=hdrs())
+          apps = r.json().get('data', [])
+          if not apps:
+              print('App not found in ASC — skipping distribution step')
+              sys.exit(0)
+          APP_ID = apps[0]['id']
+          print(f'App found: {APP_ID}')
+
+          # 2. Poll for latest build to reach VALID state (max 45 min)
+          print('Waiting for build to become VALID in ASC...')
+          build_id = None
+          build_version = None
+          for attempt in range(45):
+              time.sleep(60)
+              r = requests.get(
+                  f'{BASE_URL}/builds',
+                  headers=hdrs(),
+                  params={'filter[app]': APP_ID, 'sort': '-uploadedDate', 'limit': 5},
+              )
+              print(f'Attempt {attempt+1}/45 — API status={r.status_code}')
+              if r.status_code == 200:
+                  data = r.json().get('data', [])
+                  for build in data:
+                      state   = build['attributes'].get('processingState', '')
+                      version = build['attributes'].get('version', '?')
+                      print(f'  Build version={version} processingState={state}')
+                      if state == 'VALID':
+                          build_id      = build['id']
+                          build_version = version
+                          print(f'Build VALID — id={build_id}, version={version}')
+                          break
+                      elif state == 'INVALID':
+                          print('::error::Build is INVALID (rejected by Apple). Check bundle ID, provisioning profile, and entitlements.')
+                          sys.exit(1)
+                  if build_id:
+                      break
+              elif r.status_code in (401, 403):
+                  print(f'::error::ASC API auth failed ({r.status_code}): {r.text[:300]}')
+                  sys.exit(1)
+              else:
+                  print(f'  Response body: {r.text[:200]}')
+
+          if not build_id:
+              print('::warning::Build did not become VALID within 45 minutes. Add to groups manually in ASC.')
+              sys.exit(0)
+
+          # 3. Find or create an EXTERNAL beta group
+          r = requests.get(f'{BASE_URL}/apps/{APP_ID}/betaGroups', headers=hdrs(), params={'limit': 50})
+          r.raise_for_status()
+          all_groups = r.json().get('data', [])
+          external_groups = [g for g in all_groups if not g['attributes'].get('isInternalGroup', True)]
+          print(f'Found {len(all_groups)} total group(s), {len(external_groups)} external group(s)')
+
+          if not external_groups:
+              print('No external beta group found — creating "CI Testers" group...')
+              cr = requests.post(
+                  f'{BASE_URL}/betaGroups',
+                  headers=hdrs(),
+                  json={'data': {
+                      'type': 'betaGroups',
+                      'attributes': {'name': 'CI Testers', 'publicLinkEnabled': False, 'feedbackEnabled': True},
+                      'relationships': {'app': {'data': {'type': 'apps', 'id': APP_ID}}}
+                  }}
+              )
+              if cr.status_code in (200, 201):
+                  new_group = cr.json()['data']
+                  external_groups = [new_group]
+                  new_gid = new_group['id']
+                  print(f'  Created external group: CI Testers ({new_gid})')
+                  tr = requests.post(
+                      f'{BASE_URL}/betaTesters',
+                      headers=hdrs(),
+                      json={'data': {
+                          'type': 'betaTesters',
+                          'attributes': {'email': 'royearguan@gmail.com', 'firstName': 'Roye', 'lastName': 'Arguan'},
+                          'relationships': {'betaGroups': {'data': [{'type': 'betaGroups', 'id': new_gid}]}}
+                      }}
+                  )
+                  print(f'  Add tester: HTTP {tr.status_code} — {tr.text[:200]}')
+              else:
+                  print(f'  Failed to create group: {cr.status_code} {cr.text[:200]}')
+
+          groups_added = []
+          for g in external_groups:
+              gid   = g['id']
+              gname = g['attributes'].get('name', gid)
+              print(f'  Adding build to external group: {gname} ({gid})')
+              resp = requests.post(
+                  f'{BASE_URL}/betaGroups/{gid}/relationships/builds',
+                  headers=hdrs(),
+                  json={'data': [{'type': 'builds', 'id': build_id}]},
+              )
+              if resp.status_code in (200, 201, 204, 409):
+                  print(f'    OK Added to {gname} (HTTP {resp.status_code})')
+                  groups_added.append(gname)
+              else:
+                  print(f'    FAILED ({resp.status_code}): {resp.text[:300]}')
+
+          # 4. Push TestFlight notification to testers
+          if groups_added:
+              r4 = requests.post(
+                  f'{BASE_URL}/buildBetaNotifications',
+                  headers=hdrs(),
+                  json={'data': {'type': 'buildBetaNotifications',
+                                 'relationships': {'build': {'data': {'type': 'builds', 'id': build_id}}}}}
+              )
+              if r4.status_code in (201, 204):
+                  print('Push notification sent — testers will receive "is now available to test"')
+              else:
+                  print(f'  Notification: {r4.status_code} {r4.text[:200]}')
+
+          print(f'TestFlight distribution complete. Build {build_version} added to: {", ".join(groups_added) or "none"}')
+          PYEOF
 
       - name: Cleanup key file
         if: always()
-        run: rm -f AuthKey_HH732W7XQJ.p8
+        run: rm -f ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
