@@ -7,6 +7,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Animated as AnimatedRN,
+  ActivityIndicator,
   Image,
   View,
   Text,
@@ -1405,8 +1406,13 @@ export default function HomeScreen() {
           <Text style={{ fontSize: rf(9), color: '#A5D6A7', letterSpacing: 2 }}>FOUR CARDS. FOUR BOARDS. ONE WINNER.</Text>
         </View>
 
+        {/* Progressive disclosure — loading spinner until homeV3 resolves */}
+        {user?.id && !homeV3 && (
+          <ActivityIndicator size="small" color="rgba(201,168,76,0.6)" style={{ marginVertical: rs(8) }} />
+        )}
+
         {/* Player count selector — 2P / 3P / 4P — Stage ACTIVE+ only */}
-        {(!homeV3 || homeV3.show_mode_selector) && (
+        {homeV3?.show_mode_selector && (
           <>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }}>
               {([2, 3, 4] as const).map(n => (
@@ -1471,7 +1477,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Challenge a Friend — Stage BEGINNER+ only */}
-        {(!homeV3 || homeV3.show_friend_challenge) && (
+        {homeV3?.show_friend_challenge && (
           <Pressable
             style={{
               borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
@@ -1490,7 +1496,7 @@ export default function HomeScreen() {
         )}
 
         {/* Cup collection — Stage ACTIVE+ only */}
-        {(!homeV3 || homeV3.show_cups) && cupData && (
+        {homeV3?.show_cups && cupData && (
           <>
             <View style={{ flexDirection: 'row', justifyContent: 'center', gap: rs(8), marginVertical: rs(8) }}>
               {cupData.cups.map(cup => (
@@ -1525,8 +1531,8 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Daily reward — Stage NEW+ (show if V3 says so, or not loaded yet) */}
-        {(!homeV3 || homeV3.daily_reward.show) && (canClaim ? (
+        {/* Daily reward — Stage NEW+ */}
+        {homeV3?.daily_reward?.show && (canClaim ? (
           <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
             <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
               <Text style={styles.dailyPillText}>
@@ -1552,7 +1558,7 @@ export default function HomeScreen() {
         ) : null)}
 
         {/* Win streak — Stage BEGINNER+ only */}
-        {(!homeV3 || homeV3.show_streak) && currentWinStreak >= 2 && (
+        {homeV3?.show_streak && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
             <Text style={styles.homeStreakText}>
               {homeV3?.streak_he ?? `🔥 ${currentWinStreak} ניצחונות ברצף`}
@@ -1575,7 +1581,7 @@ export default function HomeScreen() {
         )}
 
         {/* Mode buttons — Stage ACTIVE+ only */}
-        {(!homeV3 || homeV3.show_sng) && (
+        {homeV3?.show_sng && (
           <View style={styles.modeButtonRow}>
             <Pressable
               style={[styles.modeBtn, styles.modeBtnBlue]}
@@ -1603,7 +1609,7 @@ export default function HomeScreen() {
         )}
 
         {/* 📊 Stats — hand count quick access — Stage ACTIVE+ only */}
-        {(!homeV3 || homeV3.show_stats) && totalHandCount > 0 && (
+        {homeV3?.show_stats && totalHandCount > 0 && (
           <Pressable onPress={() => router.push('/hand-history' as any)} style={styles.statsBtn}>
             <Text style={styles.statsBtnText}>📊 {totalHandCount} ידות שוחקו</Text>
           </Pressable>

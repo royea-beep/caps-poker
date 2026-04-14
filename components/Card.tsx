@@ -295,9 +295,9 @@ export default function CardComponent({
             width,
             height,
             backgroundColor: '#FFFFFF',
-            borderRadius: 9,
+            borderRadius: 12,
           },
-          Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f6f6f2 100%)' } as any,
+          Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
           faceUpShadow,
           highlightBorder,
           highlightShadow,
@@ -314,9 +314,9 @@ export default function CardComponent({
           },
         ]}
       >
-        {/* Subtle bottom shadow for depth — native only (web uses CSS gradient) */}
+        {/* Subtle depth gradient — native only */}
         {Platform.OS !== 'web' && (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000', opacity: 0.03, top: '60%' }]} pointerEvents="none" />
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000', opacity: 0.025, top: '65%', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }]} pointerEvents="none" />
         )}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
@@ -331,20 +331,35 @@ export default function CardComponent({
             </Text>
           </View>
         ) : (
-          <View style={styles.centerDisplay}>
-            <Text allowFontScaling={false} style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
-              {card.rank}
-            </Text>
-            <Text allowFontScaling={false} style={[styles.centerSuitText, {
-              color: suitColor,
-              fontSize: centerSuitSize,
-              textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 6,
-            }]}>
-              {SUIT_SYMBOLS[card.suit]}
-            </Text>
-          </View>
+          <>
+            {/* Top-left corner pip */}
+            <View style={styles.cornerTopLeft} pointerEvents="none">
+              <Text allowFontScaling={false} style={[styles.cornerRank, { color: suitColor }]}>{card.rank}</Text>
+              <Text allowFontScaling={false} style={[styles.cornerSuit, { color: suitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+            </View>
+
+            {/* Center rank + suit */}
+            <View style={styles.centerDisplay}>
+              <Text allowFontScaling={false} style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
+                {card.rank}
+              </Text>
+              <Text allowFontScaling={false} style={[styles.centerSuitText, {
+                color: suitColor,
+                fontSize: centerSuitSize,
+                textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 6,
+              }]}>
+                {SUIT_SYMBOLS[card.suit]}
+              </Text>
+            </View>
+
+            {/* Bottom-right corner pip — rotated 180° */}
+            <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
+              <Text allowFontScaling={false} style={[styles.cornerRank, { color: suitColor }]}>{card.rank}</Text>
+              <Text allowFontScaling={false} style={[styles.cornerSuit, { color: suitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+            </View>
+          </>
         )}
       </Animated.View>
     </View>
@@ -356,6 +371,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     margin: 1,
+  },
+  cornerTopLeft: {
+    position: 'absolute',
+    top: 4,
+    left: 5,
+    alignItems: 'center',
+  },
+  cornerBottomRight: {
+    position: 'absolute',
+    bottom: 4,
+    right: 5,
+    alignItems: 'center',
+  },
+  cornerRank: {
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 13,
+  },
+  cornerSuit: {
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 10,
+    marginTop: -1,
   },
   centerDisplay: {
     alignItems: 'center',
