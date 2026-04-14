@@ -62,6 +62,7 @@ import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
 import { trackEvent } from '../utils/heatmap';
 import { getSupabase } from '../utils/supabase';
+import { CapsSystem, HomeScreenV3 } from '../hooks/useCapsSystem';
 // isOnlineMultiplayerAvailable — moved to Settings screen (Task 4)
 import { scheduleLocal, cancelReengagement } from '../utils/notifications';
 // @ts-ignore — parallel agent file, exists at deploy time
@@ -794,6 +795,9 @@ export default function HomeScreen() {
   type CupItem = { id: string; name_he: string; tier: string; color: string; earned: boolean; progress: number };
   const [cupData, setCupData] = useState<{ cups: CupItem[]; total: number; earned: number } | null>(null);
 
+  // Home V3 — progressive disclosure data from DB
+  const [homeV3, setHomeV3] = useState<HomeScreenV3 | null>(null);
+
   useEffect(() => {
     const sb = getSupabase();
     if (!sb) return;
@@ -808,14 +812,20 @@ export default function HomeScreen() {
     }).catch(() => {});
   }, []);
 
+  // Load Home V3 — replaces separate get_cup_collection call
   useEffect(() => {
-    const sb = getSupabase();
-    if (!sb) return;
-    getDeviceId().then(async (deviceId) => {
-      const { data } = await sb.rpc('get_cup_collection', { p_device_id: deviceId });
-      if (data) setCupData(data as { cups: CupItem[]; total: number; earned: number });
-    }).catch(() => {});
-  }, []);
+    if (!user?.id) return;
+    CapsSystem.getHomeScreenV3(user.id)
+      .then((v3) => {
+        if (v3) {
+          setHomeV3(v3);
+          if (v3.cups) {
+            setCupData(v3.cups as { cups: CupItem[]; total: number; earned: number });
+          }
+        }
+      })
+      .catch(() => {});
+  }, [user?.id]);
 
   // Battle Pass XP bar
   const bpCurrentXP = useBattlePassStore((s) => s.currentXP);
@@ -1395,38 +1405,42 @@ export default function HomeScreen() {
           <Text style={{ fontSize: rf(9), color: '#A5D6A7', letterSpacing: 2 }}>FOUR CARDS. FOUR BOARDS. ONE WINNER.</Text>
         </View>
 
-        {/* Player count selector — 2P / 3P / 4P */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }}>
-          {([2, 3, 4] as const).map(n => (
-            <Pressable
-              key={n}
-              onPress={() => updateConfig({ numberOfPlayers: n })}
-              style={{
-                paddingHorizontal: 16, paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor: config.numberOfPlayers === n ? '#6B1520' : 'transparent',
-                borderWidth: 1,
-                borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
-              }}
-            >
-              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: rs(14), fontWeight: '700' }}>
-                {n}P
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        {/* A1: Omaha hint under selector */}
-        <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.7)', textAlign: 'center', marginBottom: 4 }}>
-          {config.numberOfPlayers === 2
-            ? '4 boards · Omaha · Best hand wins each'
-            : config.numberOfPlayers === 3
-            ? '3 boards · Omaha · Best hand wins each'
-            : '2 boards · Omaha · Best hand wins each'}
-        </Text>
+        {/* Player count selector — 2P / 3P / 4P — Stage ACTIVE+ only */}
+        {(!homeV3 || homeV3.show_mode_selector) && (
+          <>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }}>
+              {([2, 3, 4] as const).map(n => (
+                <Pressable
+                  key={n}
+                  onPress={() => updateConfig({ numberOfPlayers: n })}
+                  style={{
+                    paddingHorizontal: 16, paddingVertical: 8,
+                    borderRadius: 20,
+                    backgroundColor: config.numberOfPlayers === n ? '#6B1520' : 'transparent',
+                    borderWidth: 1,
+                    borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
+                  }}
+                >
+                  <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: rs(14), fontWeight: '700' }}>
+                    {n}P
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {/* A1: Omaha hint under selector */}
+            <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.7)', textAlign: 'center', marginBottom: 4 }}>
+              {config.numberOfPlayers === 2
+                ? '4 boards · Omaha · Best hand wins each'
+                : config.numberOfPlayers === 3
+                ? '3 boards · Omaha · Best hand wins each'
+                : '2 boards · Omaha · Best hand wins each'}
+            </Text>
+          </>
+        )}
 
-        {/* Online player count — static for now, wire to Supabase Realtime later (Task 5) */}
+        {/* Online player count — from V3 DB */}
         <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
-          32 שחקנים אונליין
+          {homeV3?.online_count_he ?? '32 שחקנים אונליין'}
         </Text>
 
         {/* PLAY button — always green, center stage */}
@@ -1445,7 +1459,7 @@ export default function HomeScreen() {
               accessibilityLabel="Play"
             >
               <View style={styles.playBtnHighlight} pointerEvents="none" />
-              <Text style={styles.playBtnText}>PLAY</Text>
+              <Text style={styles.playBtnText}>{homeV3?.play_button_he ?? 'שחק עכשיו!'}</Text>
             </Pressable>
           </AnimatedRN.View>
 
@@ -1456,21 +1470,27 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Challenge a Friend — Task 3 */}
-        <Pressable
-          style={{
-            borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
-            paddingVertical: rs(14), marginHorizontal: rs(16), marginTop: rs(8),
-            alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
-          }}
-          onPress={handleFriendChallenge}
-        >
-          <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>אתגר חבר</Text>
-          <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>שלח אתגר פוקר לחבר</Text>
-        </Pressable>
+        {/* Challenge a Friend — Stage BEGINNER+ only */}
+        {(!homeV3 || homeV3.show_friend_challenge) && (
+          <Pressable
+            style={{
+              borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
+              paddingVertical: rs(14), marginHorizontal: rs(16), marginTop: rs(8),
+              alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
+            }}
+            onPress={handleFriendChallenge}
+          >
+            <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>
+              {homeV3?.friend_challenge_he ?? 'אתגר חבר'}
+            </Text>
+            <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>
+              {homeV3?.friend_sub_he ?? 'שלח אתגר פוקר לחבר'}
+            </Text>
+          </Pressable>
+        )}
 
-        {/* Cup collection — replaces LVL progress bar (Task 2) */}
-        {cupData && (
+        {/* Cup collection — Stage ACTIVE+ only */}
+        {(!homeV3 || homeV3.show_cups) && cupData && (
           <>
             <View style={{ flexDirection: 'row', justifyContent: 'center', gap: rs(8), marginVertical: rs(8) }}>
               {cupData.cups.map(cup => (
@@ -1485,7 +1505,7 @@ export default function HomeScreen() {
               ))}
             </View>
             <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#A5D6A7' }}>
-              {cupData.earned}/{cupData.total} כוסות
+              {homeV3?.cups_label_he ?? `${cupData.earned}/${cupData.total} כוסות`}
             </Text>
           </>
         )}
@@ -1505,15 +1525,15 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Daily reward — prominent pill when claimable, streak info otherwise */}
-        {canClaim ? (
+        {/* Daily reward — Stage NEW+ (show if V3 says so, or not loaded yet) */}
+        {(!homeV3 || homeV3.daily_reward.show) && (canClaim ? (
           <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
             <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
-              {dailyRewardStreak >= 6 ? (
-                <Text style={styles.dailyPillText}>🔥 Day {dailyRewardStreak + 1} Streak! +500 chips!</Text>
-              ) : (
-                <Text style={styles.dailyPillText}>🎁 Claim Daily Reward · Day {dailyRewardStreak + 1}</Text>
-              )}
+              <Text style={styles.dailyPillText}>
+                {homeV3?.daily_reward.label_he ?? (dailyRewardStreak >= 6
+                  ? `🔥 יום ${dailyRewardStreak + 1} ברצף! +500 צ׳יפים!`
+                  : `🎁 תבע בונוס יומי · יום ${dailyRewardStreak + 1}`)}
+              </Text>
             </Pressable>
           </AnimatedRN.View>
         ) : dailyRewardStreak >= 1 ? (
@@ -1521,23 +1541,24 @@ export default function HomeScreen() {
             {(() => {
               const nextStreak = dailyRewardStreak + 1;
               const nextReward = calculateDailyReward(nextStreak);
-              const isMilestone = nextStreak === 7 || nextStreak === 30;
-              const milestoneLabel = nextStreak === 30 ? ' (Monthly Bonus!)' : nextStreak === 7 ? ' (Weekly Bonus!)' : '';
+              const milestoneLabel = nextStreak === 30 ? ' (בונוס חודשי!)' : nextStreak === 7 ? ' (בונוס שבועי!)' : '';
               return (
                 <Text style={styles.dailyStreakInfoText}>
-                  {`🔥 Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}
+                  {`🔥 יום ${dailyRewardStreak} ברצף! מחר: +${nextReward} צ׳יפים${milestoneLabel}`}
                 </Text>
               );
             })()}
           </View>
-        ) : null}
+        ) : null)}
 
-        {/* Win streak — shown if streak >= 2 */}
-        {currentWinStreak >= 2 && (
+        {/* Win streak — Stage BEGINNER+ only */}
+        {(!homeV3 || homeV3.show_streak) && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
-            <Text style={styles.homeStreakText}>🔥 {currentWinStreak}-win streak</Text>
+            <Text style={styles.homeStreakText}>
+              {homeV3?.streak_he ?? `🔥 ${currentWinStreak} ניצחונות ברצף`}
+            </Text>
             {bestWinStreak > currentWinStreak && (
-              <Text style={styles.homeStreakBest}> · Best: {bestWinStreak}</Text>
+              <Text style={styles.homeStreakBest}> · שיא: {bestWinStreak}</Text>
             )}
           </View>
         )}
@@ -1553,55 +1574,60 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Mode buttons */}
-        <View style={styles.modeButtonRow}>
-          <Pressable
-            style={[styles.modeBtn, styles.modeBtnBlue]}
-            onPress={() => {
-              // Heatmap (D7)
-              getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
-              router.push('/sit-and-go' as any);
-            }}
-          >
-            <Text style={[styles.modeBtnIcon]}>🎯</Text>
-            <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>
-              Sit &amp; Go (100 💰)
-            </Text>
-          </Pressable>
-        
-          <Pressable
-            style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
-            onPress={() => router.push('/quick-poker' as any)}
-          >
-            <Text style={styles.modeBtnIcon}>⚡</Text>
-            <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>Quick Poker (200 💰)</Text>
-          </Pressable>
-        </View>
+        {/* Mode buttons — Stage ACTIVE+ only */}
+        {(!homeV3 || homeV3.show_sng) && (
+          <View style={styles.modeButtonRow}>
+            <Pressable
+              style={[styles.modeBtn, styles.modeBtnBlue]}
+              onPress={() => {
+                getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
+                router.push('/sit-and-go' as any);
+              }}
+            >
+              <Text style={[styles.modeBtnIcon]}>🎯</Text>
+              <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>
+                {homeV3?.sng_label_he ?? 'Sit & Go (100 💰)'}
+              </Text>
+            </Pressable>
 
-        {/* 📊 Stats — hand count quick access */}
-        {totalHandCount > 0 && (
+            <Pressable
+              style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
+              onPress={() => router.push('/quick-poker' as any)}
+            >
+              <Text style={styles.modeBtnIcon}>⚡</Text>
+              <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>
+                {homeV3?.quick_label_he ?? 'Quick Poker (200 💰)'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* 📊 Stats — hand count quick access — Stage ACTIVE+ only */}
+        {(!homeV3 || homeV3.show_stats) && totalHandCount > 0 && (
           <Pressable onPress={() => router.push('/hand-history' as any)} style={styles.statsBtn}>
-            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands played</Text>
+            <Text style={styles.statsBtnText}>📊 {totalHandCount} ידות שוחקו</Text>
           </Pressable>
         )}
 
         {/* Online/WiFi multiplayer moved to Settings screen (Task 4) */}
 
-        {/* Data cards — S112: merged 4→2 (My Progress + Compete) */}
-        <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
-          {/* My Progress card */}
-          <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>MY PROGRESS</Text>
-            <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
-            <Text style={homeDataCardStyles.sub}>badges · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} wins</Text>
-          </Pressable>
-          {/* Compete card */}
-          <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
-            <Text style={homeDataCardStyles.label}>COMPETE</Text>
-            <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
-            <Text style={homeDataCardStyles.sub}>missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} rank` : 'Play to rank'}</Text>
-          </Pressable>
-        </View>
+        {/* Data cards — Stage VETERAN only */}
+        {(!homeV3 || homeV3.show_stats) && (
+          <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
+            {/* My Progress card */}
+            <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
+              <Text style={homeDataCardStyles.label}>{homeV3?.stats_label_he ?? 'ההתקדמות שלי'}</Text>
+              <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
+              <Text style={homeDataCardStyles.sub}>תגים · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} ניצחונות</Text>
+            </Pressable>
+            {/* Compete card */}
+            <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
+              <Text style={homeDataCardStyles.label}>תחרות</Text>
+              <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
+              <Text style={homeDataCardStyles.sub}>משימות · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank}` : 'שחק לדירוג'}</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Friend Activity Feed */}
         <View style={styles.feedSection}>

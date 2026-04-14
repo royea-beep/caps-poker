@@ -26,6 +26,8 @@ export interface HomeScreenV3 {
   stage: 'new' | 'beginner' | 'active' | 'veteran';
   chips: number;
   welcome_he: string;
+  tagline_he?: string;
+  online_count_he?: string;
   play_button_he: string;
   daily_reward: { show: boolean; label_he: string };
   streak: number;
