@@ -27,7 +27,9 @@
     },
     "testflight": {
       "distribution": "store",
+      "credentialsSource": "remote",
       "ios": {
+        "buildConfiguration": "Release",
         "autoIncrement": true
       }
     },
