@@ -744,7 +744,7 @@ export default function HomeScreen() {
   const bestWinStreak = useGameStore((s) => s.bestWinStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
   const homeThemeId = useGameStore((s) => s.homeTheme);
-  const theme = HOME_THEMES[homeThemeId as import("../constants/homeThemes").HomeThemeId] ?? HOME_THEMES[DEFAULT_HOME_THEME];
+  const theme = HOME_THEMES[homeThemeId as import("../../constants/homeThemes").HomeThemeId] ?? HOME_THEMES[DEFAULT_HOME_THEME];
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
 
   const user = useAuthUser();
