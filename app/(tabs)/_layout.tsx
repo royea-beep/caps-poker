@@ -4,8 +4,10 @@
  * Stack screens (game, results, replay, etc.) live above in app/_layout.tsx
  */
 import { Tabs } from 'expo-router';
-import { Platform, Text } from 'react-native';
+import { Platform, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const SCREEN_W = Dimensions.get('window').width;
 
 const TAB_BG = '#0D0D0D';
 const ACTIVE = '#FFD700';
@@ -35,11 +37,12 @@ export default function TabLayout() {
         },
         tabBarActiveTintColor: ACTIVE,
         tabBarInactiveTintColor: INACTIVE,
+        tabBarShowLabel: SCREEN_W > 375,
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: SCREEN_W <= 375 ? 9 : 10,
           fontWeight: '600',
           letterSpacing: 0.3,
-          marginTop: -2,
+          marginTop: SCREEN_W <= 375 ? -4 : -2,
         },
       }}
     >
