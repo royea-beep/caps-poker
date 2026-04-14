@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "generate-icons": "node scripts/generate-icon.js",
     "ota": "NODE_OPTIONS='--max-old-space-size=8192' npx expo export --platform ios --platform android --output-dir /tmp/caps_ota --dump-assetmap --source-maps && NODE_OPTIONS='--max-old-space-size=8192' eas update --branch production --environment production --input-dir /tmp/caps_ota --skip-bundler",
-    "postinstall": "node -e \"const fs=require('fs'),p=require.resolve('@expo/image-utils/build/Cache');let c=fs.readFileSync(p,'utf8');if(c.includes('.expo/web/cache/production/images')){c=c.split('.expo/web/cache/production/images').join('/tmp/expo-image-cache');fs.writeFileSync(p,c);console.log('patched @expo/image-utils');}else{console.log('already patched or not found');} try{fs.mkdirSync('/tmp/expo-image-cache',{recursive:true});fs.chmodSync('/tmp/expo-image-cache',0o777);console.log('cache dir ready');}catch(e){console.log('cache dir skip:',e.message);}\""
+    "postinstall": "node -e \"const fs=require('fs'),p=require.resolve('@expo/image-utils/build/Cache');let c=fs.readFileSync(p,'utf8');const before=c;c=c.replace(/\\(0,\\s*path_1\\.join\\)\\(projectRoot,\\s*CACHE_LOCATION,/g,'(0,path_1.join)(CACHE_LOCATION,');if(c!==before){fs.writeFileSync(p,c);console.log('patched Cache.js: removed projectRoot from cache path');}else{console.log('Cache.js patch not needed or already applied');}\""
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
