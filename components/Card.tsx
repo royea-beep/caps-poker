@@ -63,8 +63,8 @@ export default function CardComponent({
   suitsOnly = false,
   isCommunityCard = false,
 }: CardProps) {
-  const width = cardWidth ?? (small ? rs(52) : rs(58));
-  const height = cardHeight ?? (small ? rs(74) : rs(82));
+  const width = Math.max(cardWidth ?? (small ? rs(52) : rs(58)), 44);
+  const height = Math.max(cardHeight ?? (small ? rs(74) : rs(82)), 62);
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
@@ -332,10 +332,10 @@ export default function CardComponent({
           </View>
         ) : (
           <View style={styles.centerDisplay}>
-            <Text style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
+            <Text allowFontScaling={false} style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
               {card.rank}
             </Text>
-            <Text style={[styles.centerSuitText, {
+            <Text allowFontScaling={false} style={[styles.centerSuitText, {
               color: suitColor,
               fontSize: centerSuitSize,
               textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
