@@ -22,6 +22,30 @@ export interface HomeScreenV2 {
   active_mission: { id: string; title: string; progress: number; total: number; reward: number } | null;
 }
 
+export interface HomeScreenV3 {
+  stage: 'new' | 'beginner' | 'active' | 'veteran';
+  chips: number;
+  welcome_he: string;
+  play_button_he: string;
+  daily_reward: { show: boolean; label_he: string };
+  streak: number;
+  streak_he: string;
+  show_streak: boolean;
+  show_friend_challenge: boolean;
+  friend_challenge_he: string;
+  friend_sub_he: string;
+  show_cups: boolean;
+  cups: { cups: CupItem[]; total: number; earned: number };
+  cups_label_he: string;
+  show_sng: boolean;
+  sng_label_he: string;
+  quick_label_he: string;
+  show_mode_selector: boolean;
+  show_stats: boolean;
+  stats: { hands_played: number; win_rate: number } | null;
+  stats_label_he: string;
+}
+
 export interface FriendChallenge {
   code: string;
   expires_at: string;
@@ -219,4 +243,8 @@ export const CapsSystem = {
   /** Redeem referral code */
   redeemReferral: (deviceId: string, code: string) =>
     rpc<{ success: boolean; message: string }>('redeem_referral', { p_device_id: deviceId, p_code: code }),
+
+  /** Home screen v3 — progressive disclosure based on stage */
+  getHomeScreenV3: (userId: string) =>
+    rpc<HomeScreenV3>('get_home_screen_v3', { p_user_id: userId }),
 } as const;
