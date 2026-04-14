@@ -254,19 +254,23 @@ jobs:
 
       - name: Distribute to all beta groups via ASC API
         env:
-          KEY_ID:      ${{ secrets.APPLE_API_KEY_ID }}
-          ISSUER_ID:   ${{ secrets.APPLE_API_ISSUER_ID }}
-          PRIVATE_KEY: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          KEY_ID:               ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER_ID:            ${{ secrets.APPLE_API_ISSUER_ID }}
+          PRIVATE_KEY:          ${{ secrets.APPLE_API_KEY_BASE64 }}
+          TARGET_BUILD_VERSION: ${{ env.BUILD_NUMBER }}
         run: |
           python3 -m venv /tmp/asc-venv
           /tmp/asc-venv/bin/pip install PyJWT cryptography requests --quiet
           /tmp/asc-venv/bin/python3 << 'PYEOF'
           import jwt, time, requests, os, sys, base64
 
-          KEY_ID      = os.environ['KEY_ID']
-          ISSUER_ID   = os.environ['ISSUER_ID']
-          PRIVATE_KEY = base64.b64decode(os.environ['PRIVATE_KEY']).decode('utf-8')
-          BASE_URL    = 'https://api.appstoreconnect.apple.com/v1'
+          KEY_ID               = os.environ['KEY_ID']
+          ISSUER_ID            = os.environ['ISSUER_ID']
+          PRIVATE_KEY          = base64.b64decode(os.environ['PRIVATE_KEY']).decode('utf-8')
+          TARGET_BUILD_VERSION = os.environ.get('TARGET_BUILD_VERSION', '')
+          BASE_URL             = 'https://api.appstoreconnect.apple.com/v1'
+
+          print(f'Targeting build version: {TARGET_BUILD_VERSION}')
 
           def make_token():
               now = int(time.time())
@@ -288,8 +292,9 @@ jobs:
           APP_ID = apps[0]['id']
           print(f'App found: {APP_ID}')
 
-          # 2. Poll for latest build to reach VALID state (max 45 min)
-          print('Waiting for build to become VALID in ASC...')
+          # 2. Poll specifically for TARGET_BUILD_VERSION to reach VALID state (max 45 min)
+          # IMPORTANT: filter by version number — never pick up a stale VALID build from a previous run
+          print(f'Waiting for build {TARGET_BUILD_VERSION} to become VALID in ASC...')
           build_id = None
           build_version = None
           for attempt in range(45):
@@ -297,7 +302,7 @@ jobs:
               r = requests.get(
                   f'{BASE_URL}/builds',
                   headers=hdrs(),
-                  params={'filter[app]': APP_ID, 'sort': '-uploadedDate', 'limit': 5},
+                  params={'filter[app]': APP_ID, 'sort': '-uploadedDate', 'limit': 10},
               )
               print(f'Attempt {attempt+1}/45 — API status={r.status_code}')
               if r.status_code == 200:
@@ -306,14 +311,18 @@ jobs:
                       state   = build['attributes'].get('processingState', '')
                       version = build['attributes'].get('version', '?')
                       print(f'  Build version={version} processingState={state}')
-                      if state == 'VALID':
-                          build_id      = build['id']
-                          build_version = version
-                          print(f'Build VALID — id={build_id}, version={version}')
-                          break
-                      elif state == 'INVALID':
-                          print('::error::Build is INVALID (rejected by Apple). Check bundle ID, provisioning profile, and entitlements.')
-                          sys.exit(1)
+                      # Only accept the specific build version we just uploaded
+                      if version == TARGET_BUILD_VERSION:
+                          if state == 'VALID':
+                              build_id      = build['id']
+                              build_version = version
+                              print(f'Build VALID — id={build_id}, version={version}')
+                          elif state == 'INVALID':
+                              print('::error::Build is INVALID (rejected by Apple). Check bundle ID, provisioning profile, and entitlements.')
+                              sys.exit(1)
+                          else:
+                              print(f'  Build {version} still processing ({state}) — waiting...')
+                          break  # Found our target — stop scanning other builds
                   if build_id:
                       break
               elif r.status_code in (401, 403):
