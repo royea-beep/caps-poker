@@ -487,7 +487,7 @@ export default function RootLayout() {
               animationDuration: 250,
             }}
           >
-            <Stack.Screen name="index" options={{ animation: 'fade' }} />
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade', headerShown: false }} />
             <Stack.Screen name="game" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="results" options={{ animation: 'fade_from_bottom' }} />
             <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
