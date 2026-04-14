@@ -20,9 +20,9 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
+import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KILL_index } from '../utils/animationKill';
+import { KILL_index } from '../../utils/animationKill';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -32,12 +32,12 @@ import Animated, {
   withDelay,
   cancelAnimation,
 } from 'react-native-reanimated';
-import CardComponent from '../components/Card';
-import ChipsDisplay from '../components/ChipsDisplay';
-import SideMenu from '../components/SideMenu';
-import { useGameStore } from '../store/gameStore';
-import { COLORS, getBoardCount, Card } from '../constants/gameConfig';
-import { ECONOMY_FLAGS } from '../constants/economyConfig';
+import CardComponent from '../../components/Card';
+import ChipsDisplay from '../../components/ChipsDisplay';
+import SideMenu from '../../components/SideMenu';
+import { useGameStore } from '../../store/gameStore';
+import { COLORS, getBoardCount, Card } from '../../constants/gameConfig';
+import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import {
   getMatchCost,
   canAffordMatch,
@@ -46,43 +46,43 @@ import {
   calculateDailyReward,
   canUseFreeRefill,
   getFreeRefillAmount,
-} from '../utils/economy';
-import { CapsHooks } from '../utils/learning';
-import { useAuthUser, signInWithGoogle, signOut } from '../utils/auth';
-import { FriendsBg } from '../components/FriendsBg';
-import Tutorial, { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
-import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
-import { rf, rs, rv } from '../utils/responsive';
+} from '../../utils/economy';
+import { CapsHooks } from '../../utils/learning';
+import { useAuthUser, signInWithGoogle, signOut } from '../../utils/auth';
+import { FriendsBg } from '../../components/FriendsBg';
+import Tutorial, { TUTORIAL_SEEN_KEY } from '../../components/Tutorial';
+import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../../components/InteractiveTutorial';
+import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
-import { t, getLanguage } from '../utils/i18n';
-import { HOME_THEMES, DEFAULT_HOME_THEME } from '../constants/homeThemes';
-import { todaysQuote } from '../constants/proQuotes';
-import { migrateGuestToUser } from '../utils/guestMigration';
-import { earnChips, fetchCardDisplayConfig } from '../utils/supabaseEconomy';
-import { getDeviceId } from '../utils/leaderboard';
-import { trackEvent } from '../utils/heatmap';
-import { getSupabase } from '../utils/supabase';
+import { t, getLanguage } from '../../utils/i18n';
+import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
+import { todaysQuote } from '../../constants/proQuotes';
+import { migrateGuestToUser } from '../../utils/guestMigration';
+import { earnChips, fetchCardDisplayConfig } from '../../utils/supabaseEconomy';
+import { getDeviceId } from '../../utils/leaderboard';
+import { trackEvent } from '../../utils/heatmap';
+import { getSupabase } from '../../utils/supabase';
 // isOnlineMultiplayerAvailable — moved to Settings screen (Task 4)
-import { scheduleLocal, cancelReengagement } from '../utils/notifications';
+import { scheduleLocal, cancelReengagement } from '../../utils/notifications';
 // @ts-ignore — parallel agent file, exists at deploy time
-import { useBattlePassStore } from '../stores/battlePassStore';
+import { useBattlePassStore } from '../../stores/battlePassStore';
 // @ts-ignore — parallel agent file, exists at deploy time
-import { getProgressToNextTier } from '../utils/battlePass';
+import { getProgressToNextTier } from '../../utils/battlePass';
 // @ts-ignore — parallel agent file, exists at deploy time
-import XPBar from '../components/XPBar';
+import XPBar from '../../components/XPBar';
 // @ts-ignore — parallel agent file, exists at deploy time
-import { useLevelStore } from '../stores/levelStore';
+import { useLevelStore } from '../../stores/levelStore';
 // @ts-ignore — parallel agent file, exists at deploy time  
-import LevelBadge from '../components/LevelBadge';
+import LevelBadge from '../../components/LevelBadge';
 // @ts-ignore — parallel agent file, exists at deploy time
-import LevelUpModal from '../components/LevelUpModal';
+import LevelUpModal from '../../components/LevelUpModal';
 // @ts-ignore — parallel agent file, exists at deploy time
-import { WeeklyRecapModal } from '../components/WeeklyRecapModal';
-import { StreakPopup } from '../components/StreakPopup';
-import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../components/OnboardingOverlay';
-import { getHandHistory, HandRecord } from '../utils/handHistory';
-import { ACHIEVEMENTS } from '../utils/achievements';
-import { track } from '../utils/analytics';
+import { WeeklyRecapModal } from '../../components/WeeklyRecapModal';
+import { StreakPopup } from '../../components/StreakPopup';
+import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../../components/OnboardingOverlay';
+import { getHandHistory, HandRecord } from '../../utils/handHistory';
+import { ACHIEVEMENTS } from '../../utils/achievements';
+import { track } from '../../utils/analytics';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
