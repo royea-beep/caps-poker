@@ -1381,12 +1381,13 @@ const styles = StyleSheet.create({
     paddingVertical: rs(4),
   },
   floatingBtn: {
-    paddingVertical: rs(12),
-    paddingHorizontal: rs(28),
-    minHeight: 44,
+    paddingVertical: 0,
+    paddingHorizontal: rs(16),
+    height: 48,
+    minHeight: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: rv(24),
+    borderRadius: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -1399,12 +1400,12 @@ const styles = StyleSheet.create({
     }),
   },
   undoBtn: {
-    backgroundColor: COLORS.surfaceRaised,
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#C5A028',
   },
   placeBtn: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: '#C5A028',
     flex: 1,
     alignItems: 'center',
     ...Platform.select({
@@ -1448,7 +1449,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   placeBtnText: {
-    color: COLORS.background,
+    color: '#0A0A12',
   },
   continueBtn: {
     position: 'absolute',
