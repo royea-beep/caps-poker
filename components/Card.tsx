@@ -32,10 +32,10 @@ const SUIT_SYMBOLS: Record<string, string> = {
   spades: '\u2660',
 };
 
-const RED_COLOR = '#E8192C';
-const BLACK_COLOR = '#000000';
-const CARD_BACK_BG = '#0f1a3e';
-const CARD_BACK_BORDER = '#c9a84c';
+const RED_COLOR = '#CC0000';
+const BLACK_COLOR = '#1A1A1A';
+const CARD_BACK_BG = '#1A1A2E';
+const CARD_BACK_BORDER = '#C5A028';
 
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
@@ -294,8 +294,8 @@ export default function CardComponent({
             left: 0,
             width,
             height,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 12,
+            backgroundColor: '#FFFEF8',
+            borderRadius: 8,
           },
           Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
           faceUpShadow,

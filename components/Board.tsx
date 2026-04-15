@@ -96,7 +96,7 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
   return (
     <Pressable onPress={onPress}>
       <Animated.View style={[styles.emptySlot, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, animStyle]}>
-        {isArrangement && <Text style={styles.plusText}>tap</Text>}
+        {false && <Text style={styles.plusText}>tap</Text>}
       </Animated.View>
     </Pressable>
   );
@@ -407,7 +407,7 @@ export default function Board({
                 dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
                 flipDuration={flipDuration}
               />
-              {!revealed && (
+              {false && (
                 <Text style={styles.cardLabel}>{i === 0 ? 'Turn' : 'River'}</Text>
               )}
             </View>
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
   emptySlot: {
     borderRadius: rs(8),
     borderWidth: 1.5,
-    borderColor: '#c8a84b44',
+    borderColor: '#8B4513',
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
@@ -796,11 +796,13 @@ const styles = StyleSheet.create({
   },
   autoBtn: {
     paddingHorizontal: rs(10),
-    paddingVertical: rs(5),
+    paddingVertical: rs(3),
+    height: 28,
+    justifyContent: 'center' as const,
     borderRadius: 10,
-    backgroundColor: 'rgba(201,168,76,0.22)',
-    borderWidth: 1.5,
-    borderColor: '#c8a84b',
+    backgroundColor: '#1A1A2E',
+    borderWidth: 1,
+    borderColor: '#C5A028',
     marginRight: rs(4),
     ...Platform.select({
       ios: {
