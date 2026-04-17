@@ -1637,7 +1637,7 @@ export default function HomeScreen() {
 
         {/* Friend Activity Feed */}
         <View style={styles.feedSection}>
-          <Text style={styles.feedTitle}>🏆 Recent Wins</Text>
+          <Text style={styles.feedTitle}>🏆 ניצחונות אחרונים</Text>
           {activityFeed.length === 0 ? (
             <Text style={styles.feedEmpty}>שחק סיט אנד גו כדי לראות היסטוריה</Text>
           ) : (
@@ -1647,8 +1647,8 @@ export default function HomeScreen() {
                 <View key={i} style={styles.feedItem}>
                   <Text style={styles.feedItemText}>
                     {won
-                      ? `✅ You won Sit&Go — +${item.chips_won ?? 0} 💰`
-                      : `❌ Sit&Go — better luck next time`}
+                      ? `✅ ניצחת סיט אנד גו — +${item.chips_won ?? 0} 💰`
+                      : `❌ סיט אנד גו — בפעם הבאה`}
                   </Text>
                   <Text style={styles.feedItemTime}>
                     {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}

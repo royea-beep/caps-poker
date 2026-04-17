@@ -49,36 +49,36 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon label="Home" emoji="🏠" focused={focused} />,
+          title: 'בית',
+          tabBarIcon: ({ focused }) => <TabIcon label="בית" emoji="🏠" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="play"
         options={{
-          title: 'Play',
-          tabBarIcon: ({ focused }) => <TabIcon label="Play" emoji="♠️" focused={focused} />,
+          title: 'שחק',
+          tabBarIcon: ({ focused }) => <TabIcon label="שחק" emoji="♠️" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="friends"
         options={{
-          title: 'Friends',
-          tabBarIcon: ({ focused }) => <TabIcon label="Friends" emoji="👥" focused={focused} />,
+          title: 'חברים',
+          tabBarIcon: ({ focused }) => <TabIcon label="חברים" emoji="👥" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="cups"
         options={{
-          title: 'Cups',
-          tabBarIcon: ({ focused }) => <TabIcon label="Cups" emoji="🏆" focused={focused} />,
+          title: 'כוסות',
+          tabBarIcon: ({ focused }) => <TabIcon label="כוסות" emoji="🏆" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon label="Profile" emoji="👤" focused={focused} />,
+          title: 'פרופיל',
+          tabBarIcon: ({ focused }) => <TabIcon label="פרופיל" emoji="👤" focused={focused} />,
         }}
       />
     </Tabs>
