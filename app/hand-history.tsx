@@ -318,7 +318,7 @@ export default function HandHistoryScreen() {
             style={[styles.filterTab, filter === f && styles.filterTabActive]}
           >
             <Text style={[styles.filterTabText, filter === f && styles.filterTabTextActive]}>
-              {f === 'all' ? `All (${history.length})` : f === 'wins' ? `Wins (${wins.length})` : `Losses (${losses.length})`}
+              {f === 'all' ? `הכל (${history.length})` : f === 'wins' ? `ניצחונות (${wins.length})` : `הפסדים (${losses.length})`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -330,16 +330,16 @@ export default function HandHistoryScreen() {
         ) : history.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>🃏</Text>
-            <Text style={styles.emptyText}>No hands played yet</Text>
-            <Text style={styles.emptySubtext}>Play your first game to see history here!</Text>
+            <Text style={styles.emptyText}>אין ידות שוחקו עדיין</Text>
+            <Text style={styles.emptySubtext}>שחק את המשחק הראשון שלך כדי לראות היסטוריה!</Text>
             <TouchableOpacity style={styles.emptyPlayBtn} onPress={() => router.replace('/' as any)}>
-              <Text style={styles.emptyPlayBtnText}>▶ PLAY NOW</Text>
+              <Text style={styles.emptyPlayBtnText}>▶ שחק עכשיו</Text>
             </TouchableOpacity>
           </View>
         ) : filtered.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>{filter === 'wins' ? '🏆' : '😔'}</Text>
-            <Text style={styles.emptyText}>No {filter} recorded yet</Text>
+            <Text style={styles.emptyText}>אין {filter === 'wins' ? 'ניצחונות' : 'הפסדים'} עדיין</Text>
           </View>
         ) : (
           <>

@@ -378,7 +378,7 @@ export default function BattlePassScreen() {
 
         {/* ── Daily Missions ─────────────────────────────────── */}
         <View style={styles.missionsSection}>
-          <Text style={styles.sectionTitle}>DAILY MISSIONS</Text>
+          <Text style={styles.sectionTitle}>משימות יומיות</Text>
           {dailyMissions.map((mission) => (
             <MissionRow
               key={mission.id}

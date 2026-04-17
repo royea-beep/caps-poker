@@ -1572,11 +1572,11 @@ export default function HomeScreen() {
         {/* Play of the Day card (D10) — only shown when player name is known */}
         {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
-            <Text style={styles.potdTitle}>🏆 Play of the Day</Text>
+            <Text style={styles.potdTitle}>🏆 מהלך היום</Text>
             <Text style={styles.potdPlayer} numberOfLines={1}>
-              {potd.player} · {potd.data.hand_name ?? 'Best Hand'}
+              {potd.player} · {potd.data.hand_name ?? 'יד מנצחת'}
             </Text>
-            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>סיר: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
           </View>
         )}
 
