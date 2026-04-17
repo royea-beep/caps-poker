@@ -216,9 +216,9 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
           {quote.emoji} <Text style={styles.italic}>"{quote.quote}"</Text>
           <Text style={styles.player}> — {quote.player}</Text>
         </Text>
-        <Text style={styles.disclaimer}>🤖 AI Digital Simulation — Not real quotes</Text>
+        <Text style={styles.disclaimer}>🤖 סימולציית AI — לא ציטוטים אמיתיים</Text>
         {voicesEnabled && isPlayingVoice && Platform.OS !== 'web' && (
-          <Text style={styles.audioDisclaimer}>🔊 AI-Generated Voice — Not the real person</Text>
+          <Text style={styles.audioDisclaimer}>🔊 קול מיוצר בAI — לא האדם האמיתי</Text>
         )}
       </Animated.View>
     </View>

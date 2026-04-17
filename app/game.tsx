@@ -973,7 +973,7 @@ function GameScreenInner() {
               )}
             </View>
             <View style={styles.headerChips}>
-              <Text style={styles.headerChipsEmoji}>Ã°ÂÂÂ°</Text>
+              <Text style={styles.headerChipsEmoji}>💰</Text>
               <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
             </View>
           </View>
@@ -1089,7 +1089,7 @@ function GameScreenInner() {
           )}
         </View>
         <View style={styles.headerChips}>
-          <Text style={styles.headerChipsEmoji}>Ã°ÂÂÂ°</Text>
+          <Text style={styles.headerChipsEmoji}>💰</Text>
           <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
         </View>
       </View>
@@ -1197,7 +1197,7 @@ function GameScreenInner() {
       {/* S113: Auto-place toast */}
       {autoPlaceToastVisible && (
         <View style={styles.autoPlaceToast} pointerEvents="none">
-          <Text style={styles.autoPlaceToastText}>⏱ Time out — cards placed automatically</Text>
+          <Text style={styles.autoPlaceToastText}>⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
         </View>
       )}
     </SafeAreaView>

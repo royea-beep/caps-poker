@@ -418,7 +418,7 @@ export default function Board({
         <View style={styles.cardRow}>
           {isArrangement && playerCards.length === 0 && onAutoFill && (
             <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText}>⚡ AUTO-PLACE</Text>
+              <Text style={styles.autoBtnText}>⚡ מיקום אוטומטי</Text>
             </Pressable>
           )}
           {playerCards.length > 0 ? (
