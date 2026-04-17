@@ -261,8 +261,8 @@ export default function StatsScreen() {
         {filterBar}
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={styles.emptyTitle}>No hands played in this period</Text>
-          <Text style={styles.emptySubtitle}>Try "All time" to see your full history</Text>
+          <Text style={styles.emptyTitle}>אין ידות שוחקו בתקופה זו</Text>
+          <Text style={styles.emptySubtitle}>נסה "כל הזמן" כדי לראות את ההיסטוריה המלאה שלך</Text>
         </View>
       </SafeAreaView>
     );

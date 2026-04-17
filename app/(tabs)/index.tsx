@@ -1532,9 +1532,9 @@ export default function HomeScreen() {
           <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
             <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
               {dailyRewardStreak >= 6 ? (
-                <Text style={styles.dailyPillText}>🔥 Day {dailyRewardStreak + 1} Streak! +500 chips!</Text>
+                <Text style={styles.dailyPillText}>🔥 יום {dailyRewardStreak + 1} ברצף! +500 צ׳יפים!</Text>
               ) : (
-                <Text style={styles.dailyPillText}>🎁 Claim Daily Reward · Day {dailyRewardStreak + 1}</Text>
+                <Text style={styles.dailyPillText}>🎁 תבע בונוס יומי · יום {dailyRewardStreak + 1}</Text>
               )}
             </Pressable>
           </AnimatedRN.View>
@@ -1544,10 +1544,10 @@ export default function HomeScreen() {
               const nextStreak = dailyRewardStreak + 1;
               const nextReward = calculateDailyReward(nextStreak);
               const isMilestone = nextStreak === 7 || nextStreak === 30;
-              const milestoneLabel = nextStreak === 30 ? ' (Monthly Bonus!)' : nextStreak === 7 ? ' (Weekly Bonus!)' : '';
+              const milestoneLabel = nextStreak === 30 ? ' (בונוס חודשי!)' : nextStreak === 7 ? ' (בונוס שבועי!)' : '';
               return (
                 <Text style={styles.dailyStreakInfoText}>
-                  {`🔥 Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}
+                  {`🔥 יום ${dailyRewardStreak} ברצף! מחר: +${nextReward} צ׳יפים${milestoneLabel}`}
                 </Text>
               );
             })()}
@@ -1567,11 +1567,11 @@ export default function HomeScreen() {
         {/* Play of the Day card (D10) — only shown when player name is known */}
         {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
-            <Text style={styles.potdTitle}>🏆 Play of the Day</Text>
+            <Text style={styles.potdTitle}>🏆 מהלך היום</Text>
             <Text style={styles.potdPlayer} numberOfLines={1}>
-              {potd.player} · {potd.data.hand_name ?? 'Best Hand'}
+              {potd.player} · {potd.data.hand_name ?? 'יד מנצחת'}
             </Text>
-            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>סיר: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
           </View>
         )}
 

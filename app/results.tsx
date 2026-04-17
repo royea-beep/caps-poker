@@ -379,7 +379,7 @@ export default function ResultsScreen() {
               if (streakResult?.chips_earned) {
                 gs.addChips(streakResult.chips_earned);
                 gs.trackChipsEarned(streakResult.chips_earned);
-                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 💰 5 Win Streak!`), 1800);
+                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 💰 5 ניצחונות ברצף!`), 1800);
               }
             }
           }

@@ -31,22 +31,22 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)}>
-          <Text style={styles.menuEmoji}>🥇</Text><Text style={styles.menuLabel}>Achievements</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji}>🥇</Text><Text style={styles.menuLabel}>הישגים</Text><Text style={styles.menuArrow}>›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/missions' as any)}>
-          <Text style={styles.menuEmoji}>📋</Text><Text style={styles.menuLabel}>Daily Missions</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji}>📋</Text><Text style={styles.menuLabel}>משימות יומיות</Text><Text style={styles.menuArrow}>›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/hand-history' as any)}>
-          <Text style={styles.menuEmoji}>📖</Text><Text style={styles.menuLabel}>Hand History</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji}>📖</Text><Text style={styles.menuLabel}>היסטוריית ידות</Text><Text style={styles.menuArrow}>›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)}>
-          <Text style={styles.menuEmoji}>📊</Text><Text style={styles.menuLabel}>Detailed Stats</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji}>📊</Text><Text style={styles.menuLabel}>סטטיסטיקות מפורטות</Text><Text style={styles.menuArrow}>›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/leaderboard' as any)}>
-          <Text style={styles.menuEmoji}>🏆</Text><Text style={styles.menuLabel}>Leaderboard</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji}>🏆</Text><Text style={styles.menuLabel}>לוח מנצחים</Text><Text style={styles.menuArrow}>›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)}>
-          <Text style={styles.menuEmoji}>⚙️</Text><Text style={styles.menuLabel}>Settings</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji}>⚙️</Text><Text style={styles.menuLabel}>הגדרות</Text><Text style={styles.menuArrow}>›</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
