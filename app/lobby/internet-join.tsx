@@ -168,7 +168,7 @@ export default function InternetJoinScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Button
-          title="Cancel"
+          title="ביטול"
           variant="ghost"
           onPress={handleCancel}
           style={{ paddingVertical: 6 }}
