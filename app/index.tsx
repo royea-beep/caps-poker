@@ -1639,7 +1639,7 @@ export default function HomeScreen() {
         <View style={styles.feedSection}>
           <Text style={styles.feedTitle}>🏆 Recent Wins</Text>
           {activityFeed.length === 0 ? (
-            <Text style={styles.feedEmpty}>Play a Sit&Go to see your history</Text>
+            <Text style={styles.feedEmpty}>שחק סיט אנד גו כדי לראות היסטוריה</Text>
           ) : (
             activityFeed.map((item, i) => {
               const won = item.winner_id === item.player_id;

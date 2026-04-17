@@ -1008,7 +1008,7 @@ function GameScreenInner() {
         {/* RIGHT — bot + ready */}
         <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <Text style={landscapeStyles.panelTitle}>
-            {numberOfBots === 1 ? '🤖 BOT' : `🤖 BOTS ${readyBotCount}/${numberOfBots}`}
+            {numberOfBots === 1 ? '🤖 בוט' : `🤖 בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
@@ -1076,7 +1076,7 @@ function GameScreenInner() {
           )}
           {!countdownActive && isArranging && (
             <Text style={styles.freePlayLabel}>
-              {cardsRemaining === 0 ? t().allPlaced : `ARRANGE ${cardsRemaining} CARDS`}
+              {cardsRemaining === 0 ? t().allPlaced : `סדר ${cardsRemaining} קלפים`}
             </Text>
           )}
           {playerReady && !allBotsReady && (
@@ -1099,7 +1099,7 @@ function GameScreenInner() {
         <View style={styles.botStatusRow}>
           <Text style={styles.botEmoji}>🤖</Text>
           <Text style={styles.botNameLabel}>
-            {numberOfBots === 1 ? 'BOT' : `BOTS ${readyBotCount}/${numberOfBots}`}
+            {numberOfBots === 1 ? 'בוט' : `בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>

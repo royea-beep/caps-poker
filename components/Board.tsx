@@ -379,7 +379,7 @@ export default function Board({
         {/* Community cards: flop + turn/river (slightly larger for readability) */}
         {/* A3: COMMUNITY label — gold pill for visual hierarchy */}
         <View style={styles.communityLabelWrap}>
-          <Text style={styles.communityLabelText}>COMMUNITY</Text>
+          <Text style={styles.communityLabelText}>קהילה</Text>
         </View>
         <View style={styles.cardRow}>
           {(openCards ?? []).map((c) => (

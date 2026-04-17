@@ -600,7 +600,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
           {/* Community cards — flop face-up, turn+river flip in sequence (middle) */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>COMMUNITY</Text>
+            <Text style={styles.sectionLabel}>קהילה</Text>
             <View style={[styles.cardRow, { gap: commGap }]}>
               {allCommunity.map((c, i) => {
                 const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);

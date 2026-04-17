@@ -66,7 +66,7 @@ function BoardView({ board, boardNumber, totalBoards }: { board: HandBoardRecord
 
       {/* Community cards */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>COMMUNITY</Text>
+        <Text style={styles.sectionTitle}>קהילה</Text>
         <View style={styles.communityCards}>
           {board.communityCards.map((c, i) => <CardChip key={i} card={c} />)}
         </View>
