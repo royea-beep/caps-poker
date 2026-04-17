@@ -1400,15 +1400,12 @@ export default function HomeScreen() {
           <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.4, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
         </View>
 
-        {/* CAPS brand wordmark — above player selector (Task 1) */}
-        <View style={{ alignItems: 'center', paddingVertical: rs(8) }}>
-          <Text style={{ fontSize: rf(22), fontWeight: '800', color: '#FFD700', letterSpacing: 6 }}>CAPS</Text>
-          <Text style={{ fontSize: rf(9), color: '#A5D6A7', letterSpacing: 2 }}>FOUR CARDS. FOUR BOARDS. ONE WINNER.</Text>
-        </View>
-
-        {/* Progressive disclosure — loading spinner until homeV3 resolves */}
+        {/* Progressive disclosure — skeleton until homeV3 resolves */}
         {user?.id && !homeV3 && (
-          <ActivityIndicator size="small" color="rgba(201,168,76,0.6)" style={{ marginVertical: rs(8) }} />
+          <View style={{ paddingHorizontal: rs(16), gap: rs(12), marginVertical: rs(8) }}>
+            <View style={{ height: rs(52), borderRadius: rv(12), backgroundColor: 'rgba(107,21,32,0.35)' }} />
+            <View style={{ height: rs(44), borderRadius: rv(8), backgroundColor: 'rgba(18,18,31,0.6)' }} />
+          </View>
         )}
 
         {/* Player count selector — 2P / 3P / 4P — Stage ACTIVE+ only */}
