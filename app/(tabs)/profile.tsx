@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,6 +7,7 @@ import { useGameStore } from '../../store/gameStore';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  useEffect(() => { import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'profile')).catch(() => {}); }, []);
   const handsPlayed = useGameStore(s => s.handsPlayed);
   const handsWon = useGameStore(s => s.handsWon);
   const chips = useGameStore(s => s.chips);

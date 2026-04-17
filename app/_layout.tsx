@@ -29,6 +29,7 @@ import * as Updates from 'expo-updates';
 import 'expo-insights';
 import { preloadSounds } from '../utils/sounds';
 import { registerAndSavePushToken } from '../utils/notifications';
+import * as Notifications from 'expo-notifications';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
 import { getSupabase } from '../utils/supabase';
@@ -380,6 +381,13 @@ export default function RootLayout() {
       try { await preloadSounds(); } catch (e) { debugLog('[launch] preloadSounds failed: ' + String(e), 'error'); }
       if (Platform.OS !== 'web') {
         registerAndSavePushToken().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
+        // Track push notification opens (fire-and-forget, never blocks UX)
+        const _pushSub = Notifications.addNotificationResponseReceivedListener((response) => {
+          import('../utils/analytics').then(({ trackPushOpen }) => {
+            const template = response.notification.request.content.data?.template ?? 'unknown';
+            trackPushOpen(String(template));
+          }).catch(() => {});
+        });
         // Configure RevenueCat for IAP
         if (Purchases) {
           try {

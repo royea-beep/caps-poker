@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,6 +6,7 @@ import { rf, rs, rv } from '../../utils/responsive';
 
 export default function PlayScreen() {
   const router = useRouter();
+  useEffect(() => { import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'play')).catch(() => {}); }, []);
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>PLAY</Text>
