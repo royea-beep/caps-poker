@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "generate-icons": "node scripts/generate-icon.js",
     "ota": "NODE_OPTIONS='--max-old-space-size=8192' npx expo export --platform ios --platform android --output-dir /tmp/caps_ota --dump-assetmap --source-maps && NODE_OPTIONS='--max-old-space-size=8192' eas update --branch production --environment production --input-dir /tmp/caps_ota --skip-bundler",
-    "postinstall": "echo 'postinstall: no patches needed'"
+    "postinstall": "echo 'postinstall: no patches needed'",
+    "visual-audit": "npx tsx tests/visual-audit.spec.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
