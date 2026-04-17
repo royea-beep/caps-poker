@@ -308,7 +308,7 @@ export default function JoinLobbyScreen() {
           </View>
         )}
 
-        <Button title="Cancel" variant="secondary" onPress={handleCancel} />
+        <Button title="ביטול" variant="secondary" onPress={handleCancel} />
       </View>
     </SafeAreaView>
   );

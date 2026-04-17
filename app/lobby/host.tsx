@@ -220,7 +220,7 @@ export default function HostLobbyScreen() {
             disabled={!canStart}
             onPress={handleStartGame}
           />
-          <Button title="Cancel" variant="secondary" onPress={handleCancel} />
+          <Button title="ביטול" variant="secondary" onPress={handleCancel} />
         </View>
       </View>
     </SafeAreaView>
