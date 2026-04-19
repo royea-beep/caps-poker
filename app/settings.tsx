@@ -140,20 +140,44 @@ function ProfileSection() {
 function NotificationsToggle() {
   const enabled = useGameStore((s) => s.notificationsEnabled);
   const setEnabled = useGameStore((s) => s.setNotificationsEnabled);
+  const [retrying, setRetrying] = useState(false);
+
+  async function handleRetry() {
+    setRetrying(true);
+    try {
+      const { retryPushRegistration } = await import('../utils/notifications');
+      const ok = await retryPushRegistration();
+      if (ok) setEnabled(true);
+    } catch {}
+    setRetrying(false);
+  }
 
   return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Push Notifications</Text>
+    <View>
+      <View style={styles.row}>
+        <View style={styles.rowLeft}>
+          <Text style={styles.rowLabel}>Push Notifications</Text>
+        </View>
+        <Pressable
+          onPress={() => { setEnabled(!enabled); CapsHooks.settingsChanged('notifications', !enabled); }}
+          style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
+        >
+          <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
+            {enabled ? 'ON' : 'OFF'}
+          </Text>
+        </Pressable>
       </View>
-      <Pressable
-        onPress={() => { setEnabled(!enabled); CapsHooks.settingsChanged('notifications', !enabled); }}
-        style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
-      >
-        <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
-          {enabled ? 'ON' : 'OFF'}
-        </Text>
-      </Pressable>
+      {!enabled && Platform.OS !== 'web' && (
+        <Pressable
+          style={styles.retryPushBtn}
+          onPress={handleRetry}
+          disabled={retrying}
+        >
+          <Text style={styles.retryPushText}>
+            {retrying ? 'Registering…' : 'Enable Notifications'}
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -1227,6 +1251,22 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: COLORS.background,
+  },
+  retryPushBtn: {
+    marginHorizontal: rs(16),
+    marginTop: rs(6),
+    marginBottom: rs(4),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(16),
+    borderRadius: rs(8),
+    borderWidth: 1,
+    borderColor: '#c9a84c',
+    alignItems: 'center',
+  },
+  retryPushText: {
+    color: '#c9a84c',
+    fontSize: rf(13),
+    fontWeight: '700',
   },
   // S116: volume segments
   volSegment: {

@@ -136,13 +136,49 @@ export function isNotificationsAvailable(): boolean {
   return Notifications !== null;
 }
 
+/** Insert a push registration failure into crash_reports for monitoring. */
+async function logPushFailure(reason: string, detail?: string): Promise<void> {
+  const client = getSupabase();
+  if (!client) return;
+  try {
+    await client.from('crash_reports').insert({
+      project: 'caps',
+      crash_code: 'push_registration_failed',
+      error_message: reason,
+      error_stack: detail ?? null,
+      last_screen: 'App._layout',
+      status: 'open',
+    });
+  } catch {
+    // non-blocking
+  }
+}
+
 /**
  * Register for push notifications and save the token to Supabase.
- * Includes user_id from supabase.auth so push delivery can target specific users.
+ * On any failure, logs to crash_reports so push coverage can be monitored.
  */
 export async function registerAndSavePushToken(): Promise<string | null> {
+  if (!Notifications) {
+    await logPushFailure('expo-notifications not available');
+    return null;
+  }
+
   const token = await getExpoPushToken();
-  if (!token) return null;
+  if (!token) {
+    // Distinguish between denied permissions vs. token fetch failure
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        await logPushFailure('permission_denied', `status=${status}`);
+      } else {
+        await logPushFailure('token_fetch_failed', 'getExpoPushToken returned null despite granted permission');
+      }
+    } catch (e) {
+      await logPushFailure('permission_check_threw', String(e));
+    }
+    return null;
+  }
 
   const deviceId = await getDeviceId();
   const client = getSupabase();
@@ -177,10 +213,39 @@ export async function registerAndSavePushToken(): Promise<string | null> {
             { onConflict: 'device_id,token' },
           )
           .then(({ error: e2 }: { error: { message: string } | null }) => {
-            if (e2) debugLog(`[push_tokens] upsert fallback failed: ${e2.message}`, 'warn');
+            if (e2) {
+              debugLog(`[push_tokens] upsert fallback failed: ${e2.message}`, 'warn');
+              logPushFailure('upsert_fallback_failed', e2.message);
+            }
           });
+      } else {
+        debugLog('[push] token registered successfully');
       }
     });
 
   return token;
+}
+
+/**
+ * Retry push registration — call from Settings when user taps "Enable Notifications".
+ * Opens OS settings if previously denied; otherwise re-runs registration.
+ * Returns true if a token was successfully obtained.
+ */
+export async function retryPushRegistration(): Promise<boolean> {
+  if (!Notifications) return false;
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'denied') {
+      // User previously denied — send them to OS settings (iOS 16+)
+      const Linking = require('expo-linking');
+      if (typeof Linking.openSettings === 'function') {
+        await Linking.openSettings();
+      }
+      return false;
+    }
+    const token = await registerAndSavePushToken();
+    return token !== null;
+  } catch {
+    return false;
+  }
 }
