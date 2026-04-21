@@ -74,6 +74,7 @@ export interface CardDisplayConfig {
   main_suit_size_ratio: number;
   board_card_width_ratio: number;
   hole_card_width_ratio: number;
+  card_layout: 'v1' | 'v2';
 }
 
 const DEFAULT_CARD_DISPLAY_CONFIG: CardDisplayConfig = {
@@ -82,6 +83,7 @@ const DEFAULT_CARD_DISPLAY_CONFIG: CardDisplayConfig = {
   main_suit_size_ratio: 0.32,
   board_card_width_ratio: 0,
   hole_card_width_ratio: 0,
+  card_layout: 'v1',
 };
 
 /**
