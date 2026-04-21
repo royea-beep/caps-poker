@@ -37,6 +37,10 @@ const BLACK_COLOR = '#1A1A1A';
 const CARD_BACK_BG = '#1A1A2E';
 const CARD_BACK_BORDER = '#C5A028';
 
+// V2 Minimalist palette
+const V2_RED = '#c41e3a';
+const V2_BLACK = '#18181b';
+
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
   diamonds: '#1565C0',
@@ -236,6 +240,15 @@ export default function CardComponent({
         default: { boxShadow: '0 8px 24px rgba(0,0,0,0.55)' } as any,
       });
 
+  const v2Shadow = Platform.select({
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8 } as any,
+    android: { elevation: 4 } as any,
+    default: { boxShadow: '0 2px 8px rgba(0,0,0,0.12)' } as any,
+  });
+  const v2Border = highlighted
+    ? { borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' as const }
+    : { borderWidth: 0 };
+
   if (!card) {
     return (
       <Animated.View
@@ -254,6 +267,9 @@ export default function CardComponent({
   const suitColor = fourColorSuits ? (activeSuitColors4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
   const suitBorderColor = isRed ? 'rgba(211,47,47,0.28)' : 'rgba(80,80,80,0.22)';
   const isFaceCard = ['J', 'Q', 'K', 'A'].includes(card.rank);
+
+  const isV2 = cardConfig?.card_layout === 'v2';
+  const v2SuitColor = isRed ? V2_RED : V2_BLACK;
 
   // Highlight border — static conditional (instant feedback for card selection)
   // Face cards (J/Q/K/A) get subtle gold border for prestige
@@ -294,13 +310,13 @@ export default function CardComponent({
             left: 0,
             width,
             height,
-            backgroundColor: '#FFFEF8',
-            borderRadius: 8,
+            backgroundColor: isV2 ? '#FFFFFF' : '#FFFEF8',
+            borderRadius: isV2 ? 10 : 8,
           },
-          Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
-          faceUpShadow,
-          highlightBorder,
-          highlightShadow,
+          !isV2 && Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
+          isV2 ? v2Shadow : faceUpShadow,
+          isV2 ? v2Border : highlightBorder,
+          !isV2 && highlightShadow,
           dimmed && styles.dimmed,
           {
             transform: [
@@ -330,6 +346,20 @@ export default function CardComponent({
               {SUIT_SYMBOLS[card.suit]}
             </Text>
           </View>
+        ) : isV2 ? (
+          <>
+            {/* V2 Minimalist: top-left corner only */}
+            <View style={styles.cornerTopLeft} pointerEvents="none">
+              <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
+              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+            </View>
+            {/* V2 Minimalist: large center suit only */}
+            <View style={styles.centerDisplay}>
+              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor }]}>
+                {SUIT_SYMBOLS[card.suit]}
+              </Text>
+            </View>
+          </>
         ) : (
           <>
             {/* Top-left corner pip */}
@@ -433,6 +463,35 @@ const styles = StyleSheet.create({
     lineHeight: undefined,
     ...Platform.select({
       web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
+      default: {},
+    }),
+  },
+  // V2 Minimalist styles
+  v2CornerRank: {
+    fontSize: 20,
+    fontWeight: '600' as const,
+    lineHeight: 22,
+    ...Platform.select({
+      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
+      default: {},
+    }),
+  },
+  v2CornerSuit: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    lineHeight: 16,
+    marginTop: 2,
+    ...Platform.select({
+      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
+      default: {},
+    }),
+  },
+  v2CenterSuit: {
+    fontSize: 36,
+    fontWeight: '700' as const,
+    lineHeight: undefined,
+    ...Platform.select({
+      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
       default: {},
     }),
   },
