@@ -1,24 +1,43 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 
 const DEVICE_ID_KEY = 'caps-device-id';
 
 let _deviceId: string | null = null;
 
-/** Get or create a stable device ID */
+async function secureGet(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') return AsyncStorage.getItem(key);
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    return AsyncStorage.getItem(key);
+  }
+}
+
+async function secureSet(key: string, value: string): Promise<void> {
+  if (Platform.OS === 'web') { await AsyncStorage.setItem(key, value); return; }
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    await AsyncStorage.setItem(key, value);
+  }
+}
+
+/** Get or create a stable device ID, stored in SecureStore (AsyncStorage on web) */
 export async function getDeviceId(): Promise<string> {
   if (_deviceId) return _deviceId;
   try {
-    const stored = await AsyncStorage.getItem(DEVICE_ID_KEY);
+    const stored = await secureGet(DEVICE_ID_KEY);
     if (stored) {
       _deviceId = stored;
       return stored;
     }
-    // Generate a UUID-like ID
     const id = 'xxxx-xxxx-xxxx'.replace(/x/g, () =>
       Math.floor(Math.random() * 16).toString(16)
     );
-    await AsyncStorage.setItem(DEVICE_ID_KEY, id);
+    await secureSet(DEVICE_ID_KEY, id);
     _deviceId = id;
     return id;
   } catch {
