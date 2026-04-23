@@ -52,6 +52,7 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+          packager-command: skip
 
       - name: Sync build number from EAS remote (increment + store)
         id: build_number
