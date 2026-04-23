@@ -33,6 +33,8 @@ import { playSound } from '../utils/sounds';
 import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
+import { shouldPromptLogin } from '../utils/auth';
+import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
 import { earnChips } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
@@ -125,6 +127,7 @@ export default function ResultsScreen() {
   const bestWinStreak = useGameStore((s) => s.bestWinStreak);
   const dailyRewardStreak = useGameStore((s) => s.dailyRewardStreak);
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
   const [xpGained, setXpGained] = useState(0);
   const [pendingAchievements, setPendingAchievements] = useState<Achievement[]>([]);
@@ -334,6 +337,15 @@ export default function ResultsScreen() {
       const played = parseInt(val ?? '0', 10);
       if (played === 1 && revealData.boardCount === 3) setShowUpgradeNudge(true);
     }).catch(() => {});
+
+    // Login prompt — increment game counter, show modal between game 3-20
+    void (async () => {
+      try {
+        const prev = parseInt((await AsyncStorage.getItem('caps_total_games')) ?? '0', 10);
+        await AsyncStorage.setItem('caps_total_games', String(prev + 1));
+        if (await shouldPromptLogin()) setShowLoginPrompt(true);
+      } catch {}
+    })();
 
     // Achievement checks — run after stats are incremented
     const gs = useGameStore.getState();
@@ -760,6 +772,13 @@ export default function ResultsScreen() {
           ))}
         </>
       )}
+
+      {/* Login prompt — shown after game 3-20 for anonymous users */}
+      <LoginPromptModal
+        visible={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        onLoginSuccess={() => setShowLoginPrompt(false)}
+      />
 
       {/* Achievement toasts — shown one at a time */}
       {pendingAchievements.length > 0 && (
