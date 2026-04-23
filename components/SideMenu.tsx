@@ -128,7 +128,7 @@ export default function SideMenu({
               {user?.user_metadata?.full_name ?? playerName}
             </Text>
             <Text style={styles.profileChips}>
-              {'💰 '}{chips.toLocaleString()}{' chips'}
+              {'💰 '}{(chips ?? 0).toLocaleString()}{' chips'}
             </Text>
           </View>
 

@@ -165,7 +165,7 @@ export default function ShopScreen() {
         </Pressable>
         <Text style={styles.headerTitle}>🎰 Chip Shop</Text>
         <View style={styles.balancePill}>
-          <Text style={styles.balanceText}>💰 {chips.toLocaleString()}</Text>
+          <Text style={styles.balanceText}>💰 {(chips ?? 0).toLocaleString()}</Text>
         </View>
       </View>
 
@@ -257,7 +257,7 @@ export default function ShopScreen() {
                 ) : null}
                 <View style={styles.itemCostRow}>
                   <Text style={styles.itemCostLabel}>Cost: </Text>
-                  <Text style={styles.itemCost}>💰 {item.cost.toLocaleString()}</Text>
+                  <Text style={styles.itemCost}>💰 {(item.cost ?? 0).toLocaleString()}</Text>
                 </View>
               </View>
               <Pressable

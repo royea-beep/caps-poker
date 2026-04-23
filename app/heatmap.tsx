@@ -255,7 +255,7 @@ export default function HeatmapScreen() {
           {/* Summary row */}
           <View style={styles.summaryRow}>
             <View style={styles.summaryBox}>
-              <Text style={styles.summaryNum}>{totalTaps.toLocaleString()}</Text>
+              <Text style={styles.summaryNum}>{(totalTaps ?? 0).toLocaleString()}</Text>
               <Text style={styles.summaryLabel}>סה״כ לחיצות</Text>
             </View>
             <View style={[styles.summaryBox, styles.summaryBorder]}>

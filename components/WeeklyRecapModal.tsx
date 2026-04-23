@@ -183,7 +183,7 @@ export function WeeklyRecapModal({ visible, onDismiss }: WeeklyRecapModalProps) 
     if (!recap) return;
     const sign = recap.chips_net >= 0 ? '+' : '';
     Share.share({
-      message: `This week at the poker table: ${recap.hands} hands, ${recap.wins} wins, ${sign}${recap.chips_net.toLocaleString()} chips 🃏`,
+      message: `This week at the poker table: ${recap.hands} hands, ${recap.wins} wins, ${sign}${(recap.chips_net ?? 0).toLocaleString()} chips 🃏`,
     }).catch(() => {});
   };
 
@@ -227,7 +227,7 @@ export function WeeklyRecapModal({ visible, onDismiss }: WeeklyRecapModalProps) 
                 {/* Big net number */}
                 <View style={styles.netBox}>
                   <Text style={[styles.netNumber, { color: netColor }]}>
-                    {netSign}{recap.chips_net.toLocaleString()}
+                    {netSign}{(recap.chips_net ?? 0).toLocaleString()}
                   </Text>
                   <Text style={styles.netLabel}>chips this week</Text>
                 </View>
@@ -237,11 +237,11 @@ export function WeeklyRecapModal({ visible, onDismiss }: WeeklyRecapModalProps) 
 
                 {/* Stats grid 2x3 */}
                 <View style={styles.statsGrid}>
-                  <StatCell label="Hands Played"  value={recap.hands.toLocaleString()} />
-                  <StatCell label="Wins"           value={recap.wins.toLocaleString()} />
-                  <StatCell label="Win Rate"       value={`${recap.win_rate.toFixed(1)}%`} />
-                  <StatCell label="Sessions"       value={recap.sessions.toLocaleString()} />
-                  <StatCell label="Biggest Pot"    value={recap.biggest_pot.toLocaleString()} />
+                  <StatCell label="Hands Played"  value={(recap.hands ?? 0).toLocaleString()} />
+                  <StatCell label="Wins"           value={(recap.wins ?? 0).toLocaleString()} />
+                  <StatCell label="Win Rate"       value={`${(recap.win_rate ?? 0).toFixed(1)}%`} />
+                  <StatCell label="Sessions"       value={(recap.sessions ?? 0).toLocaleString()} />
+                  <StatCell label="Biggest Pot"    value={(recap.biggest_pot ?? 0).toLocaleString()} />
                   <StatCell label="Level"          value={`${recap.level}`} />
                 </View>
 

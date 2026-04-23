@@ -464,7 +464,7 @@ function DailyRewardModal({
           {isHE ? 'פרס יומי!' : 'Daily Reward!'}
         </Text>
         <Text style={dailyRewardModalStyles.chips}>
-          {`+${reward.toLocaleString()} chips`}
+          {`+${(reward ?? 0).toLocaleString()} chips`}
         </Text>
         {streak > 1 && (
           <Text style={dailyRewardModalStyles.streak}>
@@ -1337,8 +1337,8 @@ export default function HomeScreen() {
               <Pressable onPress={() => router.push('/shop' as any)} hitSlop={8} style={styles.topChipBtn}>
                 <Text style={[
                   styles.topChipText,
-                  chips < 100 ? { color: '#F59E0B' } : { color: '#FFFFFF' },
-                ]}>🪙 {chips.toLocaleString()}</Text>
+                  (chips ?? 0) < 100 ? { color: '#F59E0B' } : { color: '#FFFFFF' },
+                ]}>🪙 {(chips ?? 0).toLocaleString()}</Text>
               </Pressable>
             )}
             <AnimatedRN.Text style={[

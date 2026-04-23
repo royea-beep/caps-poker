@@ -267,7 +267,7 @@ function DetailModal({
             {item.chips_reward > 0 && (
               <View style={styles.modalRewardPill}>
                 <Text style={styles.modalRewardText}>
-                  {'🟡 ' + item.chips_reward.toLocaleString() + " ז'טונים"}
+                  {'🟡 ' + (item.chips_reward ?? 0).toLocaleString() + " ז'טונים"}
                 </Text>
               </View>
             )}

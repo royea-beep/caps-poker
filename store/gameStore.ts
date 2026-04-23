@@ -179,7 +179,7 @@ export const useGameStore = create<GameStore>()(
       setChips: (chips: number) => set({ chips }),
       addChips: (amount: number) => {
         debugLog(`S1 addChips: ${amount}`);
-        set((state) => ({ chips: state.chips + amount }));
+        set((state) => ({ chips: (state.chips ?? 1000) + (amount ?? 0) }));
         debugLog('S2 addChips DONE');
       },
       incrementHandsPlayed: () => set((state) => ({ handsPlayed: state.handsPlayed + 1 })),

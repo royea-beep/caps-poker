@@ -27,7 +27,7 @@ export default function ProfileScreen() {
           <View style={styles.statCard}><Text style={styles.statValue}>{handsPlayed}</Text><Text style={styles.statLabel}>HANDS</Text></View>
           <View style={styles.statCard}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
           <View style={styles.statCard}><Text style={styles.statValue}>{currentWinStreak}</Text><Text style={styles.statLabel}>STREAK</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{chips.toLocaleString()}</Text><Text style={styles.statLabel}>CHIPS 💰</Text></View>
+          <View style={styles.statCard}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel}>CHIPS 💰</Text></View>
         </View>
 
         <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)}>

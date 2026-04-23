@@ -83,7 +83,7 @@ export function StreakPopup({
       <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
         <Text style={[styles.fire, { fontSize: fireSize }]}>🔥</Text>
         <Text style={styles.title}>DAY {streak} STREAK!</Text>
-        <Text style={styles.chips}>+{displayChips.toLocaleString()} CHIPS</Text>
+        <Text style={styles.chips}>+{(displayChips ?? 0).toLocaleString()} CHIPS</Text>
 
         {/* 7-day milestone dots */}
         <View style={styles.dotsRow}>
