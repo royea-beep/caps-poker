@@ -1709,6 +1709,16 @@ export default function HomeScreen() {
           )}
         </View>
 
+        <Text style={{
+          color: '#444',
+          fontSize: 10,
+          textAlign: 'center',
+          marginTop: 24,
+          marginBottom: 8,
+        }}>
+          {"משחק חינמי | צ'יפים וירטואליים בלבד | גילאי 12+"}
+        </Text>
+
       </View>
 
       {/* Referral toast (D6) */}
