@@ -34,6 +34,10 @@ import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId, ButtonStyle } from '../constants/homeThemes';
 import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
 import { CapsHooks } from '../utils/learning';
+import { getSupabase } from '../utils/supabase';
+import { getDeviceId } from '../utils/leaderboard';
+import { getAuthState, logout } from '../utils/auth';
+import { track } from '../utils/analytics';
 import { OrientationType, VisualTheme } from '../store/gameStore';
 import { getTheme, VISUAL_THEMES } from '../constants/visualThemes';
 import { VersionBadge } from '../components/VersionBadge';
@@ -881,6 +885,64 @@ export default function SettingsScreen() {
   const config = useGameStore((s) => s.config);
   const resetConfig = useGameStore((s) => s.resetConfig);
   const navigateToSimulation = () => router.push('/simulate');
+
+  const handleDeleteAccount = async () => {
+    track('account_deletion_pressed', {}, 'settings');
+    const firstConfirm = Platform.OS === 'web'
+      ? window.confirm('האם אתה בטוח שברצונך למחוק את החשבון? כל הנתונים יימחקו לצמיתות.')
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'מחיקת חשבון',
+            'האם אתה בטוח? כל הנתונים שלך יימחקו לצמיתות:\n\n• צ׳יפים ורצף יומי\n• היסטוריית ידות\n• הישגים וכוסות\n• פרופיל ודירוג',
+            [
+              { text: 'ביטול', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'כן, מחק הכל', style: 'destructive', onPress: () => resolve(true) },
+            ],
+          );
+        });
+    if (!firstConfirm) { track('account_deletion_cancelled', {}, 'settings'); return; }
+
+    const secondConfirm = Platform.OS === 'web'
+      ? window.confirm('פעולה זו בלתי הפיכה. למחוק?')
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'אישור סופי',
+            'פעולה זו בלתי הפיכה. כל הנתונים יימחקו ולא ניתן לשחזר אותם.',
+            [
+              { text: 'ביטול', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'מחק לצמיתות', style: 'destructive', onPress: () => resolve(true) },
+            ],
+          );
+        });
+    if (!secondConfirm) { track('account_deletion_cancelled', {}, 'settings'); return; }
+
+    track('account_deletion_confirmed', {}, 'settings');
+    try {
+      const sb = getSupabase();
+      const deviceId = await getDeviceId();
+      const authState = await getAuthState();
+      const { data, error } = await sb!.rpc('delete_user_account', {
+        p_device_id: deviceId,
+        p_user_id: authState.userId,
+      });
+      if (error) {
+        Alert.alert('שגיאה', 'לא הצלחנו למחוק את החשבון. נסה שוב מאוחר יותר.');
+        track('account_deletion_failed', { error: error.message }, 'settings');
+        return;
+      }
+      await AsyncStorage.clear();
+      await logout();
+      track('account_deleted', { tables: (data as any)?.tables_affected }, 'settings');
+      if (Platform.OS === 'web') {
+        window.location.href = '/';
+      } else {
+        router.replace('/');
+      }
+    } catch (e: any) {
+      Alert.alert('שגיאה', 'משהו השתבש. נסה שוב.');
+      track('account_deletion_error', { error: e?.message }, 'settings');
+    }
+  };
   const [debugEnabled, setDebugEnabled] = useState(false);
 
   useEffect(() => {
@@ -1047,6 +1109,16 @@ export default function SettingsScreen() {
         >
           <Text style={styles.privacyLinkText}>Privacy Policy</Text>
         </Pressable>
+
+        {/* Danger zone — account deletion (Apple/Google requirement) */}
+        <View style={{ marginTop: 40, paddingTop: 20, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.1)' }}>
+          <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }}>
+            <Text style={{ color: '#ef4444', fontSize: rf(14) }}>מחק חשבון</Text>
+          </Pressable>
+          <Text style={{ color: '#555', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>
+            פעולה זו תמחק את כל הנתונים שלך לצמיתות
+          </Text>
+        </View>
 
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <VersionBadge />
