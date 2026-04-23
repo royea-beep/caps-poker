@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Hardcoded fallback — safe to embed (anon key is public, RLS enforces security)
 const FALLBACK_URL = 'https://gxrpunvhjcrzqnitbqah.supabase.co';
@@ -25,7 +26,14 @@ let _client: SupabaseClient | null = null;
 export function getSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured) return null;
   if (!_client) {
-    _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
   }
   return _client;
 }

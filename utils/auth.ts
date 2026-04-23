@@ -3,7 +3,94 @@ import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { getDeviceId } from './leaderboard';
+
+export type AuthState = {
+  isAnonymous: boolean;
+  userId: string | null;
+  displayName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+};
+
+export async function getAuthState(): Promise<AuthState> {
+  const sb = getSupabase();
+  if (!sb) return { isAnonymous: true, userId: null, displayName: null, email: null, avatarUrl: null };
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return { isAnonymous: true, userId: null, displayName: null, email: null, avatarUrl: null };
+    const isAnon = user.is_anonymous === true;
+    return {
+      isAnonymous: isAnon,
+      userId: user.id,
+      displayName: isAnon ? null : (user.user_metadata?.full_name ?? user.user_metadata?.name ?? null),
+      email: isAnon ? null : (user.email ?? null),
+      avatarUrl: isAnon ? null : (user.user_metadata?.avatar_url ?? null),
+    };
+  } catch {
+    return { isAnonymous: true, userId: null, displayName: null, email: null, avatarUrl: null };
+  }
+}
+
+export async function ensureAnonymousAuth(): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) return session.user.id;
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) return null;
+    return data.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function loginWithGoogle(): Promise<{ success: boolean; error?: string }> {
+  const deviceId = await getDeviceId();
+  const { error } = await signInWithGoogle();
+  if (error) return { success: false, error: error.message };
+
+  // Merge guest device data into the authenticated user
+  const sb = getSupabase();
+  if (sb && deviceId) {
+    try {
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        await sb.rpc('merge_guest_to_user', { p_device_id: deviceId, p_user_id: user.id });
+      }
+    } catch {}
+  }
+  return { success: true };
+}
+
+export async function shouldPromptLogin(): Promise<boolean> {
+  try {
+    const authState = await getAuthState();
+    if (!authState.isAnonymous) return false;
+
+    const dismissed = await AsyncStorage.getItem('caps_login_dismissed');
+    if (dismissed) {
+      if (Date.now() - parseInt(dismissed, 10) < 3 * 24 * 60 * 60 * 1000) return false;
+    }
+
+    const gamesPlayed = await AsyncStorage.getItem('caps_total_games');
+    const count = parseInt(gamesPlayed ?? '0', 10);
+    return count >= 3 && count <= 20;
+  } catch {
+    return false;
+  }
+}
+
+export async function dismissLoginPrompt(): Promise<void> {
+  await AsyncStorage.setItem('caps_login_dismissed', Date.now().toString());
+}
+
+export async function logout(): Promise<void> {
+  await signOut();
+}
 
 WebBrowser.maybeCompleteAuthSession();
 

@@ -219,6 +219,8 @@ export default function RootLayout() {
     }).catch(() => {});
     // Initialize analytics (fire-and-forget — caches deviceId + supabase ref)
     import('../utils/analytics').then(({ initAnalytics }) => { void initAnalytics(); }).catch(() => {});
+    // Anonymous auth on first open — silent, never blocks UX
+    import('../utils/auth').then(({ ensureAnonymousAuth }) => { void ensureAnonymousAuth(); }).catch(() => {});
   }, []);
 
   // Global JS error handler — catches unhandled errors on native
