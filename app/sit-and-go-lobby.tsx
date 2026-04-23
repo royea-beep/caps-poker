@@ -156,7 +156,7 @@ export default function SitAndGoLobby() {
             </Text>
           </Text>
           <Text style={s.roomPrize}>
-            {'💰 פרס: '}{(startChips * room.current_players).toLocaleString()}{" ז'טונים"}
+            {'💰 פרס: '}{((startChips ?? 0) * (room.current_players ?? 0)).toLocaleString()}{" ז'טונים"}
           </Text>
         </View>
         <Pressable
@@ -250,7 +250,7 @@ export default function SitAndGoLobby() {
           {/* Balance */}
           <View style={s.balanceRow}>
             <Text style={s.balanceLabel}>היתרה שלך</Text>
-            <Text style={s.balanceValue}>{'💰 '}{chips.toLocaleString()}{" ז'טונים"}</Text>
+            <Text style={s.balanceValue}>{'💰 '}{(chips ?? 0).toLocaleString()}{" ז'טונים"}</Text>
           </View>
 
         </ScrollView>

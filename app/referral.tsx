@@ -207,7 +207,7 @@ export default function ReferralScreen() {
             <Text style={styles.statLabel}>חברים הצטרפו</Text>
           </View>
           <View style={[styles.statBox, styles.statBoxBorder]}>
-            <Text style={styles.statNumber}>{chipsEarned.toLocaleString()}</Text>
+            <Text style={styles.statNumber}>{(chipsEarned ?? 0).toLocaleString()}</Text>
             <Text style={styles.statLabel}>מטבעות הרווחתם</Text>
           </View>
         </View>

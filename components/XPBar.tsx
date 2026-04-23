@@ -79,7 +79,7 @@ export default function XPBar({
           <Text style={styles.tierLabel}>Tier {currentTier}</Text>
         </View>
         <Text style={styles.xpCount}>
-          {xpInTier.toLocaleString()} / {(xpInTier + xpNeeded).toLocaleString()} XP
+          {(xpInTier ?? 0).toLocaleString()} / {((xpInTier ?? 0) + (xpNeeded ?? 0)).toLocaleString()} XP
         </Text>
       </View>
 
@@ -111,7 +111,7 @@ export default function XPBar({
       </View>
 
       {/* Total XP hint */}
-      <Text style={styles.totalXP}>Total XP: {currentXP.toLocaleString()}</Text>
+      <Text style={styles.totalXP}>Total XP: {(currentXP ?? 0).toLocaleString()}</Text>
     </View>
   );
 }

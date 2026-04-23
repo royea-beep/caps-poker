@@ -103,7 +103,7 @@ export default function LeaderboardScreen() {
           <Text style={[styles.chips, isMe && styles.textHighlight]}>
             {sortBy === 'winRate'
               ? `${winRate}%`
-              : item.total_chips.toLocaleString() + '🪙'}
+              : (item.total_chips ?? 0).toLocaleString() + '🪙'}
           </Text>
           {sortBy === 'chips' && winRate > 0 && (
             <Text style={styles.winRateSub}>{winRate}% win</Text>
@@ -185,7 +185,7 @@ export default function LeaderboardScreen() {
                 <Text style={[styles.chips, styles.textHighlight]}>
                   {sortBy === 'winRate'
                     ? `${myEntry.hands_played > 0 ? Math.round(myEntry.hands_won / myEntry.hands_played * 100) : 0}%`
-                    : myEntry.total_chips.toLocaleString() + '🪙'}
+                    : (myEntry.total_chips ?? 0).toLocaleString() + '🪙'}
                 </Text>
               </View>
             ) : null

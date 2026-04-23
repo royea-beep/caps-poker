@@ -974,7 +974,7 @@ function GameScreenInner() {
             </View>
             <View style={styles.headerChips}>
               <Text style={styles.headerChipsEmoji}>💰</Text>
-              <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
+              <Text style={styles.headerChipsAmount}>{(chips ?? 0).toLocaleString()}</Text>
             </View>
           </View>
 

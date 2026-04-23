@@ -157,7 +157,7 @@ function MissionCard({ mission, onClaim, claiming }: MissionCardProps) {
       <View style={styles.rewardsRow}>
         <View style={styles.rewardBadge}>
           <Text style={styles.rewardIcon}>💰</Text>
-          <Text style={styles.rewardValue}>{mission.chips_reward.toLocaleString()}</Text>
+          <Text style={styles.rewardValue}>{(mission.chips_reward ?? 0).toLocaleString()}</Text>
           <Text style={styles.rewardUnit}> ז'טונים</Text>
         </View>
         <View style={styles.rewardBadge}>
@@ -257,7 +257,7 @@ export default function MissionsScreen() {
         setMissions((prev) =>
           prev.map((m) => (m.id === missionId ? { ...m, is_complete: true } : m)),
         );
-        setToastMsg('+' + chips.toLocaleString() + ' chips!');
+        setToastMsg('+' + (chips ?? 0).toLocaleString() + ' chips!');
         setToastVis(true);
         setTimeout(() => setToastVis(false), 2200);
       }

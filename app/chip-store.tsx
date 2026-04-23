@@ -83,7 +83,7 @@ export default function ChipStoreScreen() {
   const handleBuy = (pkg: ChipPackage) => {
     Alert.alert(
       'Coming Soon',
-      `In-app purchase will be available in a future update.\n\n${pkg.label}: ${pkg.chips.toLocaleString()} chips for ${pkg.price}`,
+      `In-app purchase will be available in a future update.\n\n${pkg.label}: ${(pkg.chips ?? 0).toLocaleString()} chips for ${pkg.price}`,
       [{ text: 'OK' }],
     );
   };
@@ -113,7 +113,7 @@ export default function ChipStoreScreen() {
       {/* Balance */}
       <View style={styles.balanceContainer}>
         <Text style={styles.balanceLabel}>YOUR BALANCE</Text>
-        <Text style={styles.balanceAmount}>💰 {chips.toLocaleString()}</Text>
+        <Text style={styles.balanceAmount}>💰 {(chips ?? 0).toLocaleString()}</Text>
       </View>
 
       <ScrollView
@@ -189,7 +189,7 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
       </View>
 
       {/* Chip amount */}
-      <Text style={styles.cardChips}>💰 {pkg.chips.toLocaleString()} chips</Text>
+      <Text style={styles.cardChips}>💰 {(pkg.chips ?? 0).toLocaleString()} chips</Text>
 
       {/* Social proof */}
       <Text style={styles.socialProof}>{buyersToday} players bought today</Text>
@@ -202,7 +202,7 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
           style={({ pressed }) => [styles.buyButton, pressed && styles.buyButtonPressed]}
         >
           <Text style={styles.buyButtonText}>
-            Buy {pkg.chips.toLocaleString()}💰 for {pkg.price}
+            Buy {(pkg.chips ?? 0).toLocaleString()}💰 for {pkg.price}
           </Text>
         </Pressable>
       </View>

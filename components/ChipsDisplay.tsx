@@ -45,7 +45,7 @@ export default function ChipsDisplay({ amount, label, size = 'small' }: ChipsDis
       <View style={styles.chipRow}>
         <PokerChip size={size} amount={amount} />
         <Text style={[styles.amount, isLarge && styles.amountLarge]}>
-          {amount.toLocaleString()}
+          {(amount ?? 0).toLocaleString()}
         </Text>
       </View>
     </View>
