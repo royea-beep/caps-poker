@@ -33,7 +33,7 @@ const SUIT_SYMBOLS: Record<string, string> = {
 };
 
 const RED_COLOR = '#CC0000';
-const BLACK_COLOR = '#1A1A1A';
+const BLACK_COLOR = '#111111';
 const CARD_BACK_BG = '#1A1A2E';
 const CARD_BACK_BORDER = '#C5A028';
 
@@ -74,10 +74,10 @@ export default function CardComponent({
   const cardConfig = useGameStore((s) => s.cardConfig);
 
   // Card sizing — width-based (S80/S81 Card Bible)
-  const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.38;
-  const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.28;
-  const centerRankSize = Math.max(16, Math.floor(width * mainRankRatio));
-  const centerSuitSize = Math.max(12, Math.floor(width * mainSuitRatio));
+  const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.46;
+  const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.34;
+  const centerRankSize = Math.max(20, Math.floor(width * mainRankRatio));
+  const centerSuitSize = Math.max(14, Math.floor(width * mainSuitRatio));
 
   // 3D flip — RN Animated only, ZERO Reanimated (S81)
   // flipAnim: 0 = face-down (back visible), 1 = face-up (front visible)
@@ -415,14 +415,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cornerRank: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '800',
-    lineHeight: 13,
+    lineHeight: 16,
   },
   cornerSuit: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
-    lineHeight: 10,
+    lineHeight: 12,
     marginTop: -1,
   },
   centerDisplay: {
