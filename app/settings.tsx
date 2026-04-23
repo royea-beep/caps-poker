@@ -1110,6 +1110,19 @@ export default function SettingsScreen() {
           <Text style={styles.privacyLinkText}>Privacy Policy</Text>
         </Pressable>
 
+        {/* Gambling disclaimer + legal links (Apple requirement) */}
+        <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
+          <Text style={{ color: '#666', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
+            {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 12+."}
+          </Text>
+          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }}>
+            <Text style={{ color: '#888', fontSize: rf(11), textDecorationLine: 'underline' }}>מדיניות פרטיות</Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }}>
+            <Text style={{ color: '#888', fontSize: rf(11), textDecorationLine: 'underline' }}>תנאי שימוש</Text>
+          </Pressable>
+        </View>
+
         {/* Danger zone — account deletion (Apple/Google requirement) */}
         <View style={{ marginTop: 40, paddingTop: 20, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.1)' }}>
           <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }}>

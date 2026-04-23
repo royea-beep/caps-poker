@@ -74,6 +74,14 @@ if (fs.existsSync(privacySrc)) {
   console.log('✓ privacy.html copied');
 }
 
+// 5b. Copy terms.html from project root if it exists
+const termsSrc = path.join(__dirname, '..', 'terms.html');
+const termsDst = path.join(distDir, 'terms.html');
+if (fs.existsSync(termsSrc)) {
+  fs.copyFileSync(termsSrc, termsDst);
+  console.log('✓ terms.html copied');
+}
+
 // 6. Copy bug dashboard → dist/bugs/index.html
 const bugsDashSrc = path.join(__dirname, '..', 'web-dashboard', 'index.html');
 const bugsDashDst = path.join(distDir, 'bugs', 'index.html');
