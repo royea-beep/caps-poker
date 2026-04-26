@@ -46,15 +46,6 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline=false
 
-      - name: Verify expo-apple-authentication installed
-        run: |
-          if [ ! -d "node_modules/expo-apple-authentication" ]; then
-            echo "ERROR: expo-apple-authentication not in node_modules after npm ci"
-            ls node_modules/ | grep expo || true
-            exit 1
-          fi
-          echo "expo-apple-authentication found ✓"
-
       - name: Setup EAS (build number sync + prebuild credentials)
         uses: expo/expo-github-action@v8
         with:
