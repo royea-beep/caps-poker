@@ -206,9 +206,8 @@ jobs:
 
       - name: Build & archive
         env:
-          API_KEY_ID:               ${{ secrets.APPLE_API_KEY_ID }}
-          API_ISSUER_ID:            ${{ secrets.APPLE_API_ISSUER_ID }}
-          SENTRY_COPY_OPTIONS_FILE: false
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           xcodebuild archive \
             -workspace ios/CapsPoker.xcworkspace \
