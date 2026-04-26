@@ -92,7 +92,7 @@
       "expo-asset",
       "expo-secure-store",
       [
-        "sentry-expo",
+        "@sentry/react-native",
         {
           "organization": "royea",
           "project": "caps-poker"
