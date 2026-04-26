@@ -4,10 +4,9 @@ console.warn = (...args: any[]) => {
   if (typeof args[0] === 'string' && args[0].includes('imported from "expo-file-system" is deprecated')) return;
   _origWarn(...args);
 };
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
-  enableInExpoDevelopment: false,
   debug: false,
 });
 import 'react-native-reanimated';
