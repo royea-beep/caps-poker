@@ -34,23 +34,16 @@ function AnimatedCardSlot({
   cardH: number;
 }) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(-200);
 
   useEffect(() => {
-    const delay = index * 60;
-    opacity.value = withDelay(delay, withTiming(1, { duration: 280 }));
-    translateY.value = withDelay(
-      delay,
-      withTiming(0, { duration: 280 }, (finished) => {
-        // Play cardPlace sound every 4 cards (enough to feel like a deal, not spammy)
-        if (finished && index % 4 === 0) runOnJS(playSound)('cardPlace');
-      }),
-    );
+    const delay = index * 40;
+    opacity.value = withDelay(delay, withTiming(1, { duration: 220 }, (finished) => {
+      if (finished && index % 4 === 0) runOnJS(playSound)('cardPlace');
+    }));
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
   }));
 
   const isSelected = selIndex >= 0;
