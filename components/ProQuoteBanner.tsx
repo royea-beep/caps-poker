@@ -88,7 +88,7 @@ interface ProQuoteBannerProps {
 }
 
 export default function ProQuoteBanner({ context, rotating = false, rotateInterval = 8000 }: ProQuoteBannerProps) {
-  const [quote, setQuote] = useState<ProQuote>(() => getRandomQuote(context));
+  const [quote, setQuote] = useState<ProQuote | null>(() => getRandomQuote(context));
   const [enabled, setEnabled] = useState(true);
   const [voicesEnabled, setVoicesEnabled] = useState(false); // conservative default
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
@@ -144,7 +144,7 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
 
   // Play voice on quote change
   useEffect(() => {
-    if (!voicesEnabled || !quote.audioFile || Platform.OS === 'web') return;
+    if (!voicesEnabled || !quote?.audioFile || Platform.OS === 'web') return;
 
     let cancelled = false;
     (async () => {
@@ -160,7 +160,7 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
 
       if (!cancelled) {
         setIsPlayingVoice(true);
-        await playVoiceClip(quote.audioFile);
+        await playVoiceClip(quote?.audioFile);
         // Track playing state via a brief timeout (clip is short)
         setTimeout(() => { if (!cancelled) setIsPlayingVoice(false); }, 8000);
       }
@@ -195,7 +195,7 @@ export default function ProQuoteBanner({ context, rotating = false, rotateInterv
     };
   }, []);
 
-  if (!enabled) return null;
+  if (!enabled || !quote) return null;
 
   return (
     <View>

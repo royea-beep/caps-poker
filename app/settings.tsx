@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { debugLog } from '../components/DebugOverlay';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, Switch } from 'react-native';
+import Constants from 'expo-constants';
 import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
 import { t } from '../utils/i18n';
@@ -944,11 +945,16 @@ export default function SettingsScreen() {
     }
   };
   const [debugEnabled, setDebugEnabled] = useState(false);
+  const [muteQuotes, setMuteQuotes] = useState(false);
+  const [muteSounds, setMuteSounds] = useState(false);
+  const isBeta = Constants.expoConfig?.extra?.isBeta === true;
 
   useEffect(() => {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
       setDebugEnabled(v === 'true');
     }).catch(() => {});
+    AsyncStorage.getItem('caps_beta_mute_quotes').then(v => setMuteQuotes(v === 'true')).catch(() => {});
+    AsyncStorage.getItem('caps_beta_mute_sounds').then(v => setMuteSounds(v === 'true')).catch(() => {});
   }, []);
 
   const boardCount = getBoardCount(config.numberOfPlayers);
@@ -1086,6 +1092,52 @@ export default function SettingsScreen() {
           onPress={resetConfig}
           style={{ marginBottom: 24 }}
         />
+
+        {isBeta && (
+          <View>
+            <Text style={styles.sectionTitle}>מצב טסט</Text>
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>גרסה</Text>
+              <Text style={styles.rowHint}>{Constants.expoConfig?.version ?? '—'} (EAS {Constants.expoConfig?.extra?.buildNumber ?? '—'})</Text>
+            </View>
+            <Button
+              title="🔄 אפס התקדמות (טסט)"
+              variant="secondary"
+              onPress={() => {
+                Alert.alert('אפס התקדמות', 'לאפס את כל ההתקדמות?', [
+                  { text: 'ביטול', style: 'cancel' },
+                  { text: 'אפס', style: 'destructive', onPress: async () => {
+                    await AsyncStorage.clear().catch(() => {});
+                    useGameStore.getState().addChips(1000 - useGameStore.getState().chips);
+                    router.replace('/');
+                  }},
+                ]);
+              }}
+              style={{ marginBottom: 12 }}
+            />
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>השתק ציטוטים</Text>
+              <Switch
+                value={muteQuotes}
+                onValueChange={(v) => {
+                  setMuteQuotes(v);
+                  AsyncStorage.setItem('caps_show_pro_quotes', v ? 'false' : 'true').catch(() => {});
+                }}
+              />
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>השתק צלילים</Text>
+              <Switch
+                value={muteSounds}
+                onValueChange={(v) => {
+                  setMuteSounds(v);
+                  AsyncStorage.setItem('caps_beta_mute_sounds', v ? 'true' : 'false').catch(() => {});
+                  useGameStore.getState().updateConfig({ soundEnabled: !v });
+                }}
+              />
+            </View>
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>DANGER ZONE</Text>
         <ResetProgressButton />

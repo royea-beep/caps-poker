@@ -146,7 +146,7 @@ export default function RevealSequence({ boards, visible, onDone }: RevealSequen
                   styles.sectionLabel,
                   board.winner === 'bot' ? styles.winnerLabel : null,
                 ]}>
-                  {multiBot ? 'BOTS' : 'BOT'}
+                  {multiBot ? 'בוטים' : 'בוט'}
                 </Text>
                 {allBotCards.map((botCards, botIdx) =>
                   botCards && botCards.length > 0 ? (

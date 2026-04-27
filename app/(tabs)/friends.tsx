@@ -14,7 +14,7 @@ export default function FriendsScreen() {
 
       <Pressable style={[styles.card, { borderColor: '#FFD700' }]} onPress={() => router.push('/referral' as any)}>
         <Text style={styles.cardEmoji}>🎁</Text>
-        <View><Text style={styles.cardTitle}>Invite Friends</Text><Text style={styles.cardSub}>Share your referral code · +100 💰 each</Text></View>
+        <View><Text style={styles.cardTitle}>הזמן חברים</Text><Text style={styles.cardSub}>שתף את הקוד שלך · +100 💰 לכל חבר</Text></View>
       </Pressable>
 
       <Pressable style={[styles.card, { borderColor: '#4ade80' }]} onPress={() => router.push('/leaderboard' as any)}>

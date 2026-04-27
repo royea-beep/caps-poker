@@ -560,7 +560,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {/* Bot cards — show all bots if allBotCards available, else fall back to single botCards */}
           {(board.allBotCards && board.allBotCards.length > 1 ? board.allBotCards : [board.botCards]).map((botHand, botIdx) => {
             const isFirstBot = botIdx === 0;
-            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `🤖 BOT ${botIdx + 1}` : '🤖 BOT';
+            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `🤖 בוט ${botIdx + 1}` : '🤖 בוט';
             const rawBotHandName = board.allBotHandNames?.[botIdx] ?? (isFirstBot ? board.botHandName : '');
             const botHandName = getHandName(rawBotHandName, lang);
             return (
@@ -675,7 +675,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 </Text>
               )}
               {isNarrowLoss && (
-                <Text style={styles.soClose}>So close! 😬</Text>
+                <Text style={styles.soClose}>כמעט! 😬</Text>
               )}
               {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
                 <View style={styles.completeBanner}>

@@ -83,8 +83,8 @@ export function SingleBoardShareCard({ board, boardIndex, potAmount }: SingleBoa
 
       {/* Pro quote */}
       <Text style={styles.quoteLabel}>🤖 AI Pro Quote:</Text>
-      <Text style={styles.quoteText}>"{quote.quote}"</Text>
-      <Text style={styles.quoteAuthor}>— {quote.player}</Text>
+      <Text style={styles.quoteText}>"{quote?.quote ?? ''}"</Text>
+      <Text style={styles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
       {/* Watermark */}
       <Text style={styles.watermark}>caps.ftable.co.il</Text>
@@ -158,8 +158,8 @@ export function FullGameShareCard({
       <View style={styles.doubleDivider} />
 
       {/* Pro quote */}
-      <Text style={styles.quoteText}>"{quote.quote}"</Text>
-      <Text style={styles.quoteAuthor}>— {quote.player}</Text>
+      <Text style={styles.quoteText}>"{quote?.quote ?? ''}"</Text>
+      <Text style={styles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
       {/* Watermark */}
       <Text style={styles.watermark}>caps.ftable.co.il</Text>
@@ -401,8 +401,8 @@ export function StoryShareCard({
           <Text style={storyStyles.completeLabel}>🏆 COMPLETE! +50% BONUS (+{completeBonusAmount})</Text>
         )}
 
-        <Text style={storyStyles.quoteText}>"{quote.quote}"</Text>
-        <Text style={storyStyles.quoteAuthor}>— {quote.player}</Text>
+        <Text style={storyStyles.quoteText}>"{quote?.quote ?? ''}"</Text>
+        <Text style={storyStyles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
         <View style={storyStyles.ctaPill}>
           <Text style={storyStyles.ctaText}>Play CAPS Poker</Text>
@@ -448,8 +448,8 @@ export function StoryShareCard({
       </Text>
       <View style={storyStyles.doubleDivider} />
 
-      <Text style={storyStyles.quoteText}>"{quote.quote}"</Text>
-      <Text style={storyStyles.quoteAuthor}>— {quote.player}</Text>
+      <Text style={storyStyles.quoteText}>"{quote?.quote ?? ''}"</Text>
+      <Text style={storyStyles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
       <View style={storyStyles.ctaPill}>
         <Text style={storyStyles.ctaText}>Play CAPS Poker</Text>
