@@ -77,7 +77,8 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / 2)) : Math.max(1, safeCards.length);
+  const useQuadRows = useTwoRows && safeCards.length > 12;
+  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
@@ -89,9 +90,11 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   })();
   const cardH = Math.round(cardW / 0.72);
 
-  const midpoint = Math.ceil(safeCards.length / 2);
-  const topRow = safeCards.slice(0, midpoint);
-  const bottomRow = safeCards.slice(midpoint);
+  const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
+  const topRow = safeCards.slice(0, rowSize);
+  const row2 = useQuadRows ? safeCards.slice(rowSize, rowSize * 2) : [];
+  const row3 = useQuadRows ? safeCards.slice(rowSize * 2, rowSize * 3) : [];
+  const bottomRow = safeCards.slice(useQuadRows ? rowSize * 3 : rowSize);
 
   const renderCard = (card: Card, globalIndex: number) => (
     <AnimatedCardSlot
@@ -120,9 +123,19 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
               <View style={styles.row}>
                 {topRow.map((card, i) => renderCard(card, i))}
               </View>
+              {row2.length > 0 && (
+                <View style={styles.row}>
+                  {row2.map((card, i) => renderCard(card, rowSize + i))}
+                </View>
+              )}
+              {row3.length > 0 && (
+                <View style={styles.row}>
+                  {row3.map((card, i) => renderCard(card, rowSize * 2 + i))}
+                </View>
+              )}
               {bottomRow.length > 0 && (
                 <View style={styles.row}>
-                  {bottomRow.map((card, i) => renderCard(card, midpoint + i))}
+                  {bottomRow.map((card, i) => renderCard(card, (useQuadRows ? rowSize * 3 : rowSize) + i))}
                 </View>
               )}
             </>

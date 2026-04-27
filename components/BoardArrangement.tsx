@@ -188,7 +188,7 @@ export function BoardArrangement({
             disabled={!allBoardsFull}
           >
             <Text style={[baStyles.floatingBtnText, baStyles.placeBtnText]}>
-              {allBoardsFull ? '✓ מוכן' : `שים ${cardsRemaining}`}
+              {allBoardsFull ? '✓ מוכן' : 'אישור'}
             </Text>
           </Pressable>
         </View>
