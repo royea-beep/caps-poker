@@ -315,7 +315,7 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>B{index + 1}</Text>
+            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{`לוח ${index + 1}`}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
@@ -341,7 +341,7 @@ export default function Board({
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              <Text style={styles.rowLabel}>{multiBot ? `${t().bot}${botIdx + 1}` : t().bot}</Text>
+              <Text style={styles.rowLabel}>{`${t().bot} ${botIdx + 1}`}</Text>
               {(botCardSet ?? []).map((c) => (
                 <Pressable
                   key={c.id}
@@ -660,6 +660,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#c9a84c',
     marginBottom: rs(1),
+    zIndex: 10,
   },
   communityLabelText: {
     fontSize: rf(8),
@@ -795,32 +796,21 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    paddingHorizontal: rs(10),
-    paddingVertical: rs(3),
-    height: 28,
+    paddingHorizontal: rs(6),
+    paddingVertical: rs(2),
+    height: 22,
     justifyContent: 'center' as const,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: '#1A1A2E',
     borderWidth: 1,
-    borderColor: '#C5A028',
+    borderColor: 'rgba(197,160,40,0.5)',
     marginRight: rs(4),
-    ...Platform.select({
-      ios: {
-        shadowColor: '#c8a84b',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.4,
-        shadowRadius: 4,
-      },
-      android: { elevation: 4 },
-      default: {
-        boxShadow: '0 2px 8px rgba(201,168,76,0.35)',
-      } as any,
-    }),
+    opacity: 0.75,
   },
   autoBtnText: {
     color: '#e8c96a',
-    fontSize: rf(9),
-    fontWeight: '900',
-    letterSpacing: 1.5,
+    fontSize: rf(8),
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

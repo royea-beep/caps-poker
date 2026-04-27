@@ -910,11 +910,7 @@ function GameScreenInner() {
     return (
       <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
         <FriendsBg />
-        {visualTheme === 'fiveo' && (
-          <View pointerEvents="none" style={styles.fiveoWatermark}>
-            <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
-          </View>
-        )}
+        {/* watermark removed from game screen */}
         {/* LEFT — Your hand */}
         <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <View style={landscapeStyles.panelTitleRow}>
@@ -1099,7 +1095,7 @@ function GameScreenInner() {
         <View style={styles.botStatusRow}>
           <Text style={styles.botEmoji}>🤖</Text>
           <Text style={styles.botNameLabel}>
-            {numberOfBots === 1 ? 'בוט' : `בוטים ${readyBotCount}/${numberOfBots}`}
+            {numberOfBots === 1 ? 'בוט 1' : `בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
