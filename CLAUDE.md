@@ -71,3 +71,20 @@
 3. Progressive disclosure: screens not overloaded for new players
 4. No half-done features visible
 5. No encoding bugs (check for broken emoji/unicode)
+
+## Visual QA (added Apr 27)
+
+Before any UI change, run:
+```bash
+npm run visual-qa
+```
+
+If the test fails, the diff is in `test-results/` showing exact pixel differences.
+After intentional UI changes, update baselines:
+```bash
+npm run visual-qa:update
+git add tests/visual/baselines/
+git commit -m "chore: update visual QA baselines after [reason]"
+```
+
+This prevents accidentally breaking the UI without noticing.

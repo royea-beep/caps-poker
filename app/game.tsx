@@ -1039,11 +1039,7 @@ function GameScreenInner() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
       <FriendsBg />
-      {visualTheme === 'fiveo' && (
-        <View pointerEvents="none" style={styles.fiveoWatermark}>
-          <Text style={styles.fiveoWatermarkText}>CAPS POKER</Text>
-        </View>
-      )}
+      {/* watermark removed from game screen */}
       {/* D1: auto-place trail flash overlay */}
       <AnimatedRN.View
         pointerEvents="none"
