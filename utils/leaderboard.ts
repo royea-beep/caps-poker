@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
+const SecureStore = {
+  getItemAsync: (key: string) => AsyncStorage.getItem(key),
+  setItemAsync: (key: string, value: string) => AsyncStorage.setItem(key, value),
+};
 import { Platform } from 'react-native';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 
