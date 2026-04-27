@@ -2,19 +2,17 @@ import { PRO_QUOTES, getRandomQuote } from '../../constants/proQuotes';
 import { CARD_SCALE, BOARD_COLORS } from '../../constants/gameConfig';
 
 describe('proQuotes', () => {
-  it('getRandomQuote returns a quote with matching context', () => {
+  it('getRandomQuote returns null when no Hebrew quotes exist for context', () => {
     const q = getRandomQuote('home');
-    expect(q.context).toBe('home');
-    expect(q.quote.length).toBeGreaterThan(0);
-    expect(q.player.length).toBeGreaterThan(0);
-    expect(q.emoji.length).toBeGreaterThan(0);
+    // All current quotes are language: 'en'; Hebrew-only filter returns null until he quotes are added
+    expect(q).toBeNull();
   });
 
-  it('getRandomQuote works for all contexts', () => {
+  it('getRandomQuote returns null for all contexts (no Hebrew quotes yet)', () => {
     const contexts = ['home', 'complete', 'summary', 'waiting', 'tutorial'] as const;
     for (const ctx of contexts) {
       const q = getRandomQuote(ctx);
-      expect(q.context).toBe(ctx);
+      expect(q).toBeNull();
     }
   });
 

@@ -732,6 +732,8 @@ const welcomeStyles = StyleSheet.create({
   },
 });
 
+const isBeta = Constants.expoConfig?.extra?.isBeta === true;
+
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
@@ -955,8 +957,8 @@ export default function HomeScreen() {
       if (!user && NUDGE_AT_GAMES.includes(played) && played > dismissedAt) {
         setShowNudge(true);
       }
-      // Show daily reward popup if claimable and not yet shown this session
-      if (ECONOMY_FLAGS.dailyRewardEnabled && !popupShownVal) {
+      // Show daily reward popup if claimable, not yet shown this session, and past first game
+      if (ECONOMY_FLAGS.dailyRewardEnabled && !popupShownVal && played > 0) {
         const store = useGameStore.getState();
         const now = new Date();
         if (canClaimDailyReward(store.lastDailyRewardClaim, now)) {
@@ -1437,10 +1439,12 @@ export default function HomeScreen() {
             : '2 boards · Omaha · Best hand wins each'}
         </Text>
 
-        {/* Online player count — static for now, wire to Supabase Realtime later (Task 5) */}
-        <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
-          32 שחקנים אונליין
-        </Text>
+        {/* Online player count — hidden in beta until real data available */}
+        {!isBeta && (
+          <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
+            32 שחקנים אונליין
+          </Text>
+        )}
 
         {/* PLAY button — always green, center stage */}
         <View style={styles.playSection}>
@@ -1653,7 +1657,7 @@ export default function HomeScreen() {
         {/* Recent Hands — veteran only */}
         {show_veteran && recentHands.length > 0 && (
           <View style={{ width: '100%', marginTop: 4 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Recent Hands</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>ידיים אחרונות</Text>
             {recentHands.map((hand, i) => {
               const boardsWon = hand.boards.filter(b => b.winner === 'player').length;
               const effPct = Math.round(boardsWon / hand.boardCount * 100);
@@ -1666,7 +1670,7 @@ export default function HomeScreen() {
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
                 >
                   <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
-                    {boardsWon}/{hand.boardCount} boards
+                    {boardsWon}/{hand.boardCount} לוחות
                   </Text>
                   <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: rs(12) }}>{effPct}% eff</Text>
                   <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: rs(11) }}>{timeStr}</Text>
@@ -1693,7 +1697,7 @@ export default function HomeScreen() {
             </View>
           ) : (
             <Pressable onPress={handleInviteFriends} style={styles.inviteBtn}>
-              <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
+              <Text style={styles.inviteBtnText}>הזמן חברים 🎁</Text>
             </Pressable>
           )}
           {gamesPlayed < 3 && (

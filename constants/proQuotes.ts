@@ -4,6 +4,7 @@ export interface ProQuote {
   emoji: string;
   quote: string;
   context: 'home' | 'loading' | 'complete' | 'summary' | 'waiting' | 'tutorial';
+  language: 'he' | 'en';
   audioFile?: any; // require() asset — AI-generated voice (NOT the real player)
 }
 
@@ -32,38 +33,39 @@ try { VOICE_CLIPS.ey2 = require('../assets/sounds/pro-voices/ey2.mp3'); } catch 
 
 export const PRO_QUOTES: ProQuote[] = [
   // HOME SCREEN
-  { id: 'dn1', player: 'Daniel Negreanu', emoji: '🇨🇦', quote: 'The most original poker mechanic since PLO', context: 'home', audioFile: VOICE_CLIPS.dn1 },
-  { id: 'ph1', player: 'Phil Hellmuth', emoji: '👑', quote: 'I hate admitting it, but this is smart', context: 'home', audioFile: VOICE_CLIPS.ph1 },
-  { id: 'pi1', player: 'Phil Ivey', emoji: '🃏', quote: 'Ship it.', context: 'home', audioFile: VOICE_CLIPS.pi1 },
-  { id: 'ey2', player: 'Rampage', emoji: '📺', quote: 'Chess meets Omaha meets fantasy draft', context: 'home', audioFile: VOICE_CLIPS.ey2 },
+  { id: 'dn1', player: 'Daniel Negreanu', emoji: '🇨🇦', quote: 'The most original poker mechanic since PLO', context: 'home', language: 'en', audioFile: VOICE_CLIPS.dn1 },
+  { id: 'ph1', player: 'Phil Hellmuth', emoji: '👑', quote: 'I hate admitting it, but this is smart', context: 'home', language: 'en', audioFile: VOICE_CLIPS.ph1 },
+  { id: 'pi1', player: 'Phil Ivey', emoji: '🃏', quote: 'Ship it.', context: 'home', language: 'en', audioFile: VOICE_CLIPS.pi1 },
+  { id: 'ey2', player: 'Rampage', emoji: '📺', quote: 'Chess meets Omaha meets fantasy draft', context: 'home', language: 'en', audioFile: VOICE_CLIPS.ey2 },
 
   // WAITING FOR OPPONENT
-  { id: 'mm1', player: 'Michael Mizrachi', emoji: '💪', quote: 'Deal again. NOW.', context: 'waiting', audioFile: VOICE_CLIPS.mm1 },
-  { id: 'es1', player: 'Erik Seidel', emoji: '🎩', quote: 'First poker game in 10 years that surprised me', context: 'waiting', audioFile: VOICE_CLIPS.es1 },
-  { id: 'jb1', player: 'Justin Bonomo', emoji: '🧮', quote: 'GTO implications are massive', context: 'waiting', audioFile: VOICE_CLIPS.jb1 },
-  { id: 'bk2', player: 'Bryn Kenney', emoji: '💰', quote: '90 seconds. Perfect for quick games anywhere.', context: 'waiting', audioFile: VOICE_CLIPS.bk2 },
+  { id: 'mm1', player: 'Michael Mizrachi', emoji: '💪', quote: 'Deal again. NOW.', context: 'waiting', language: 'en', audioFile: VOICE_CLIPS.mm1 },
+  { id: 'es1', player: 'Erik Seidel', emoji: '🎩', quote: 'First poker game in 10 years that surprised me', context: 'waiting', language: 'en', audioFile: VOICE_CLIPS.es1 },
+  { id: 'jb1', player: 'Justin Bonomo', emoji: '🧮', quote: 'GTO implications are massive', context: 'waiting', language: 'en', audioFile: VOICE_CLIPS.jb1 },
+  { id: 'bk2', player: 'Bryn Kenney', emoji: '💰', quote: '90 seconds. Perfect for quick games anywhere.', context: 'waiting', language: 'en', audioFile: VOICE_CLIPS.bk2 },
 
   // COMPLETE BONUS
-  { id: 'ph2', player: 'Phil Hellmuth', emoji: '👑', quote: 'When I got COMPLETE I felt like I won a bracelet', context: 'complete', audioFile: VOICE_CLIPS.ph2 },
-  { id: 'bk1', player: 'Bryn Kenney', emoji: '💰', quote: 'This is your Victory Royale moment', context: 'complete', audioFile: VOICE_CLIPS.bk1 },
-  { id: 'ey1', player: 'Rampage', emoji: '📺', quote: 'COMPLETE = clips. Clips = views. Views = downloads.', context: 'complete', audioFile: VOICE_CLIPS.ey1 },
-  { id: 'ck1', player: 'Chance Kornuth', emoji: '🎓', quote: 'COMPLETE mechanic = pure product genius', context: 'complete', audioFile: VOICE_CLIPS.ck1 },
+  { id: 'ph2', player: 'Phil Hellmuth', emoji: '👑', quote: 'When I got COMPLETE I felt like I won a bracelet', context: 'complete', language: 'en', audioFile: VOICE_CLIPS.ph2 },
+  { id: 'bk1', player: 'Bryn Kenney', emoji: '💰', quote: 'This is your Victory Royale moment', context: 'complete', language: 'en', audioFile: VOICE_CLIPS.bk1 },
+  { id: 'ey1', player: 'Rampage', emoji: '📺', quote: 'COMPLETE = clips. Clips = views. Views = downloads.', context: 'complete', language: 'en', audioFile: VOICE_CLIPS.ey1 },
+  { id: 'ck1', player: 'Chance Kornuth', emoji: '🎓', quote: 'COMPLETE mechanic = pure product genius', context: 'complete', language: 'en', audioFile: VOICE_CLIPS.ck1 },
 
   // SUMMARY SCREEN
-  { id: 'dn2', player: 'Daniel Negreanu', emoji: '🇨🇦', quote: 'I forgot I was testing. I was just playing.', context: 'summary', audioFile: VOICE_CLIPS.dn2 },
-  { id: 'mm2', player: 'Michael Mizrachi', emoji: '💪', quote: 'I want to play this for money. Right now.', context: 'summary', audioFile: VOICE_CLIPS.mm2 },
-  { id: 'ph3', player: 'Phil Hellmuth', emoji: '👑', quote: 'I got angry when I lost. THAT is a good sign.', context: 'summary', audioFile: VOICE_CLIPS.ph3 },
-  { id: 'ai1', player: 'Ali Imsirovic', emoji: '🌊', quote: 'Played 10 hands, wanted 10 more', context: 'summary', audioFile: VOICE_CLIPS.ai1 },
+  { id: 'dn2', player: 'Daniel Negreanu', emoji: '🇨🇦', quote: 'I forgot I was testing. I was just playing.', context: 'summary', language: 'en', audioFile: VOICE_CLIPS.dn2 },
+  { id: 'mm2', player: 'Michael Mizrachi', emoji: '💪', quote: 'I want to play this for money. Right now.', context: 'summary', language: 'en', audioFile: VOICE_CLIPS.mm2 },
+  { id: 'ph3', player: 'Phil Hellmuth', emoji: '👑', quote: 'I got angry when I lost. THAT is a good sign.', context: 'summary', language: 'en', audioFile: VOICE_CLIPS.ph3 },
+  { id: 'ai1', player: 'Ali Imsirovic', emoji: '🌊', quote: 'Played 10 hands, wanted 10 more', context: 'summary', language: 'en', audioFile: VOICE_CLIPS.ai1 },
 
   // GAME SCREEN — tips during arrangement
-  { id: 'dn3', player: 'Daniel Negreanu', emoji: '🇨🇦', quote: 'Stack one board or spread evenly? THAT is the question.', context: 'tutorial', audioFile: VOICE_CLIPS.dn3 },
-  { id: 'pi2', player: 'Phil Ivey', emoji: '🃏', quote: 'You can read opponents through allocation patterns', context: 'tutorial', audioFile: VOICE_CLIPS.pi2 },
-  { id: 'jb2', player: 'Justin Bonomo', emoji: '🧮', quote: 'Three strategies: stack-one, spread-even, read-and-counter', context: 'tutorial', audioFile: VOICE_CLIPS.jb2 },
-  { id: 'ck2', player: 'Chance Kornuth', emoji: '🎓', quote: 'Build your ENTIRE strategy around chasing COMPLETE', context: 'tutorial', audioFile: VOICE_CLIPS.ck2 },
+  { id: 'dn3', player: 'Daniel Negreanu', emoji: '🇨🇦', quote: 'Stack one board or spread evenly? THAT is the question.', context: 'tutorial', language: 'en', audioFile: VOICE_CLIPS.dn3 },
+  { id: 'pi2', player: 'Phil Ivey', emoji: '🃏', quote: 'You can read opponents through allocation patterns', context: 'tutorial', language: 'en', audioFile: VOICE_CLIPS.pi2 },
+  { id: 'jb2', player: 'Justin Bonomo', emoji: '🧮', quote: 'Three strategies: stack-one, spread-even, read-and-counter', context: 'tutorial', language: 'en', audioFile: VOICE_CLIPS.jb2 },
+  { id: 'ck2', player: 'Chance Kornuth', emoji: '🎓', quote: 'Build your ENTIRE strategy around chasing COMPLETE', context: 'tutorial', language: 'en', audioFile: VOICE_CLIPS.ck2 },
 ];
 
-export function getRandomQuote(context: ProQuote['context']): ProQuote {
-  const filtered = PRO_QUOTES.filter(q => q.context === context);
+export function getRandomQuote(context: ProQuote['context']): ProQuote | null {
+  const filtered = PRO_QUOTES.filter(q => q.context === context && q.language === 'he');
+  if (filtered.length === 0) return null;
   return filtered[Math.floor(Math.random() * filtered.length)];
 }
 

@@ -237,7 +237,7 @@ const en: Translations = {
   allPlaced: 'All cards placed!',
   timeBank: '+15s',
   winAll: (n) => `WIN ALL → +${n} 🟡`,
-  bot: 'BOT',
+  bot: 'בוט',
   yourCards: 'YOUR CARDS',
   boardN: (n, total) => `BOARD ${n} OF ${total}`,
   tapForNextBoard: '▶ TAP FOR NEXT BOARD',

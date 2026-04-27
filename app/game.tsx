@@ -1012,7 +1012,7 @@ function GameScreenInner() {
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
-              {allBotsReady ? `Ã¢ÂÂ ${t().ready}` : 'Ã¢ÂÂ¦'}
+              {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
           </View>
           {isArranging && (
@@ -1028,7 +1028,7 @@ function GameScreenInner() {
           )}
           {playerReady && allBotsReady && showContinueButton && (
             <Pressable style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
-              <Text style={styles.continueBtnText}>CONTINUE Ã¢ÂÂ</Text>
+              <Text style={styles.continueBtnText}>המשך →</Text>
             </Pressable>
           )}
         </View>
@@ -1103,7 +1103,7 @@ function GameScreenInner() {
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
-              {allBotsReady ? `Ã¢ÂÂ ${t().ready}` : 'Ã¢ÂÂ¦'}
+              {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
           </View>
         </View>
