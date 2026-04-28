@@ -300,7 +300,7 @@ export default function Board({
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: theme.boardBg, borderColor: boardAccent, height: BOARD_HEIGHT },
+        { backgroundColor: theme.boardBg, height: BOARD_HEIGHT },
         Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
         active && styles.active,
         selected && styles.selected,
@@ -507,8 +507,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.boardBg,
     borderRadius: rs(18),
-    borderWidth: rs(3),
-    borderColor: COLORS.boardBorder,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.4)',
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -536,8 +536,8 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: COLORS.gold,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 12,
+        shadowOpacity: 0.9,
+        shadowRadius: 16,
       },
       android: { elevation: 10 },
       default: {},
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     width: 1,
     height: '80%',
     backgroundColor: COLORS.gold,
-    opacity: 0.3,
+    opacity: 0.7,
     marginHorizontal: rs(3),
     alignSelf: 'center',
   },
