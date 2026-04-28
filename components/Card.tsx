@@ -170,7 +170,7 @@ export default function CardComponent({
         android: { elevation: 5 },
         default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
       }),
-    Platform.OS === 'web' && { background: 'linear-gradient(180deg, #3D0E10 0%, #1F0408 100%)' } as any,
+      Platform.OS === 'web' && { background: 'linear-gradient(180deg, #3D0E10 0%, #1F0408 100%)' } as any,
     ];
 
     if (Platform.OS === 'web') {
