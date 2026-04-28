@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: rs(2),
+    marginBottom: 0,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   },
   floatingChips: {
     fontSize: rf(11),
-    fontWeight: '800',
+    paddingVertical: 0,
     position: 'absolute',
     right: -4,
     top: -2,
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.35)',
-    marginBottom: rs(2),
+    marginBottom: 0,
     zIndex: 10,
     ...Platform.select({
       ios: {
