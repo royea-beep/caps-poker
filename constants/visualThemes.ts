@@ -42,7 +42,7 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
   },
   fiveo: {
     background: '#1C0508',      // very dark red-black — pure red hue, dimly lit casino
-    surface: '#1A1A2E',         // dark navy — panels, modals, overlays
+    surface: '#2D0810',         // deep burgundy — unified with maroon felt
     boardBg: '#6B1520',         // brighter than background — boards must POP
     boardBorder: '#8B6914',     // warm golden-brown — visible table rail
     textPrimary: '#ffffff',
@@ -54,7 +54,7 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     cardBorder: 'rgba(0,0,0,0.25)',
     cardShadow: 'rgba(0,0,0,0.6)',
     primaryBtn: '#FFD700',
-    primaryBtnText: '#1A1A2E',
+    primaryBtnText: '#1A0508',
     primaryBtnRadius: 8,
     winColor: '#28A745',        // green badge — Match Five-O WIN style
     loseColor: '#CC0000',
