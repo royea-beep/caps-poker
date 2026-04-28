@@ -174,7 +174,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.3,
   },
-  },
   countBadge: {
     width: rv(20),
     height: rv(20),
