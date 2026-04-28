@@ -6,17 +6,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
 
 // HARDCODED MARKER — bumped manually each time we want to verify a new OTA arrived.
 // If you see this number on the phone, that OTA bundle is active.
-const BUNDLE_MARKER = 'V8';
+const BUNDLE_MARKER = 'V9';
 
 export default function UpdateBanner() {
   const [expanded, setExpanded] = useState(false);
 
   const appVersion = Constants.expoConfig?.version || '?';
-  const buildNumber = (Constants as any).nativeBuildVersion
+  const buildNumber = Application.nativeBuildVersion
     || Constants.expoConfig?.ios?.buildNumber
     || Constants.expoConfig?.android?.versionCode?.toString()
     || '?';
