@@ -315,7 +315,7 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{`לוח ‎ÃÂÃÂÃÂ ${index + 1}`}</Text>{/* board label fixed */}
+            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{`לוח ‎ÃÂÃÂÃÂ ${index + 1}`}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>Ã¢ÂÂ</Text>
