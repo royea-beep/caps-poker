@@ -34,6 +34,7 @@ import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
 import { getSupabase } from '../utils/supabase';
 import DebugOverlay, { debugLog } from '../components/DebugOverlay';
+import UpdateBanner from '../components/UpdateBanner';
 import { onCrashDetected } from '../utils/crashDetector';
 import { checkPreviousCrash } from '../utils/dirtyShutdown';
 import { sendCrashAlert } from '../utils/crashAlert';
@@ -523,6 +524,7 @@ export default function RootLayout() {
         </WebContainer>
       </BugReporter>
       </CrashBoundary>
+      <UpdateBanner />
       {debugEnabled && <DebugOverlay />}
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
