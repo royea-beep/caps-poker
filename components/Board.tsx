@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   },
   floatingChips: {
     fontSize: rf(11),
-    paddingVertical: 0,
+    fontWeight: '800',
     position: 'absolute',
     right: -4,
     top: -2,
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: rs(6),
-    paddingVertical: 1,
+    paddingVertical: 0,
   },
   communitySeparator: {
     width: 1,
