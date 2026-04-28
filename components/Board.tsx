@@ -315,10 +315,10 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{`לוח ‎ÃÂÃÂÃÂ ${index + 1}`}</Text>
+            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{`לוח ${index + 1}`}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
-                <Text style={styles.boardFullText}>Ã¢ÂÂ</Text>
+                <Text style={styles.boardFullText}>✓</Text>
               </View>
             )}
             {winner && (
@@ -377,9 +377,9 @@ export default function Board({
         )}
 
         {/* Community cards: flop + turn/river (slightly larger for readability) */}
-        {/* A3: COMMUNITY label Ã¢ÂÂ gold pill for visual hierarchy */}
+        {/* A3: COMMUNITY label - gold pill for visual hierarchy */}
         <View style={styles.communityLabelWrap}>
-          <Text style={styles.communityLabelText}>ÃÂ§ÃÂÃÂÃÂÃÂ</Text>
+          <Text style={styles.communityLabelText}>קהילה</Text>
         </View>
         <View style={styles.cardRow}>
           {(openCards ?? []).map((c) => (
@@ -418,7 +418,7 @@ export default function Board({
         <View style={styles.cardRow}>
           {isArrangement && playerCards.length === 0 && onAutoFill && (
             <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText}>Ã¢ÂÂ¡ ÃÂÃÂÃÂ§ÃÂÃÂ ÃÂÃÂÃÂÃÂÃÂÃÂÃÂ</Text>
+              <Text style={styles.autoBtnText}>⚡ מיקום אוטומטי</Text>
             </Pressable>
           )}
           {playerCards.length > 0 ? (
