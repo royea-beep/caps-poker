@@ -54,13 +54,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Push OTA to testflight channel
-        run: eas update --branch testflight --message "${{ steps.msg.outputs.msg }}" --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
       - name: Summary
         run: |
-          echo "OTA pushed to production and testflight channels"
+          echo "OTA pushed to production channel"
           echo "Message: ${{ steps.msg.outputs.msg }}"
           echo "Commit: ${{ github.sha }}"
