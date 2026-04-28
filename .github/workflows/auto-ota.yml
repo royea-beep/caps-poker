@@ -1,0 +1,66 @@
+name: Auto OTA Push
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/ios-testflight.yml'
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Update message'
+        required: false
+        default: 'Manual OTA push'
+
+jobs:
+  ota:
+    name: Push OTA to production + testflight
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compute message
+        id: msg
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "msg=${{ github.event.inputs.message }}" >> $GITHUB_OUTPUT
+          else
+            COMMIT_MSG=$(git log -1 --pretty=%s)
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            echo "msg=$COMMIT_MSG ($SHORT_SHA)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push OTA to production channel
+        run: eas update --branch production --message "${{ steps.msg.outputs.msg }}" --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Push OTA to testflight channel
+        run: eas update --branch testflight --message "${{ steps.msg.outputs.msg }}" --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "OTA pushed to production and testflight channels"
+          echo "Message: ${{ steps.msg.outputs.msg }}"
+          echo "Commit: ${{ github.sha }}"
