@@ -56,10 +56,10 @@ export function getCardsPerPlayer(numberOfPlayers: number): number {
 
 /** Unique board accent colors — gives each board visual identity */
 export const BOARD_COLORS = [
-  '#FFD700', // Board 1 — gold
-  '#4FC3F7', // Board 2 — blue
-  '#81C784', // Board 3 — green
-  '#FF8A65', // Board 4 — orange
+  '#D4A547', // Board 1 — light gold
+  '#B8902C', // Board 2 — amber gold
+  '#A07830', // Board 3 — bronze
+  '#8B6314', // Board 4 — dark bronze
 ] as const;
 
 /** Card sizing based on player count (more players = fewer boards = bigger cards) */
