@@ -155,7 +155,7 @@ export default function Board({
   communityScale = 1.2,
 }: BoardProps) {
   const { width: screenW, height: screenH } = useWindowDimensions();
-  const BOARD_HEIGHT = Math.floor(screenH * 0.205); // S82+Apr28: fixed board height, gives header room
+  const BOARD_HEIGHT = Math.floor(screenH * 0.22); // S100 Apr28: bigger boards, smaller player hand for room balance
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const gameColors = useGameColors();
