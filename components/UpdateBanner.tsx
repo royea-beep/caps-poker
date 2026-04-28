@@ -10,18 +10,22 @@ import * as Updates from 'expo-updates';
 
 // HARDCODED MARKER — bumped manually each time we want to verify a new OTA arrived.
 // If you see this number on the phone, that OTA bundle is active.
-const BUNDLE_MARKER = 'V7';
+const BUNDLE_MARKER = 'V8';
 
 export default function UpdateBanner() {
   const [expanded, setExpanded] = useState(false);
 
   const appVersion = Constants.expoConfig?.version || '?';
+  const buildNumber = (Constants as any).nativeBuildVersion
+    || Constants.expoConfig?.ios?.buildNumber
+    || Constants.expoConfig?.android?.versionCode?.toString()
+    || '?';
   const updateId = Updates.updateId ? Updates.updateId.slice(0, 8) : 'embedded';
   const channel = Updates.channel || '-';
   const isEmbedded = Updates.isEmbeddedLaunch;
   const runtimeVersion = Updates.runtimeVersion || '?';
 
-  const compact = `v${appVersion} • ${BUNDLE_MARKER} • ${isEmbedded ? 'EMBED' : updateId}`;
+  const compact = `v${appVersion} b${buildNumber} • ${BUNDLE_MARKER} • ${isEmbedded ? 'EMBED' : updateId}`;
 
   return (
     <Pressable onPress={() => setExpanded(!expanded)} style={styles.banner}>
@@ -29,6 +33,7 @@ export default function UpdateBanner() {
       {expanded && (
         <View style={styles.details}>
           <Text style={styles.detailText}>App Version: {appVersion}</Text>
+          <Text style={styles.detailText}>Build Number: {buildNumber}</Text>
           <Text style={styles.detailText}>Runtime: {runtimeVersion}</Text>
           <Text style={styles.detailText}>Channel: {channel}</Text>
           <Text style={styles.detailText}>Update ID: {updateId}</Text>
