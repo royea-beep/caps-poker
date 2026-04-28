@@ -84,9 +84,9 @@ export default function CardComponent({
   const flipAnim = useRef(new Animated.Value(faceDown ? 0 : 1)).current;
   // Glow lift — native driver (transform only)
   const glowAnim = useRef(new Animated.Value(highlighted ? 1 : 0)).current;
-  // Float idle animation (S96) — community: -10px/3s, player: -5px/2s
+  // Float idle animation — DISABLED per Roye Apr28 (cards were dancing up/down distractingly)
   const floatAnim = useRef(new Animated.Value(0)).current;
-  const floatDistance = isCommunityCard ? -10 : -5;
+  const floatDistance = 0;
   const floatDuration = isCommunityCard ? 3000 : 2000;
 
   const prevFaceDownRef = useRef(faceDown);
