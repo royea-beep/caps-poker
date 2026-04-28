@@ -169,11 +169,11 @@ const styles = StyleSheet.create({
     gap: rs(6),
   },
   label: {
-    color: COLORS.neonBlue,
+    color: '#c9a84c',
     fontSize: rf(10),
     fontWeight: '800',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
   },
   countBadge: {
     width: rv(20),
