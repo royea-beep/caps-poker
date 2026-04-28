@@ -15,6 +15,16 @@ name: iOS TestFlight
 on:
   push:
     branches: [main, master]
+    paths:
+      - 'ios/**'
+      - 'android/**'
+      - 'app.json'
+      - 'eas.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'plugins/**'
+      - '.github/workflows/ios-testflight.yml'
+      - 'assets/**'
   workflow_dispatch:
 
 concurrency:
