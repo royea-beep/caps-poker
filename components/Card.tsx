@@ -34,7 +34,7 @@ const SUIT_SYMBOLS: Record<string, string> = {
 
 const RED_COLOR = '#CC0000';
 const BLACK_COLOR = '#111111';
-const CARD_BACK_BG = '#1A1A2E';
+const CARD_BACK_BG = '#2D0810'; // deep burgundy — matches maroon felt
 const CARD_BACK_BORDER = '#C5A028';
 
 // V2 Minimalist palette
@@ -170,18 +170,18 @@ export default function CardComponent({
         android: { elevation: 5 },
         default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
       }),
-      Platform.OS === 'web' && { background: 'linear-gradient(180deg, #142244 0%, #0a1230 100%)' } as any,
+    Platform.OS === 'web' && { background: 'linear-gradient(180deg, #3D0E10 0%, #1F0408 100%)' } as any,
     ];
 
     if (Platform.OS === 'web') {
-      const svgStr = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.22' transform='rotate(45 6 1.5)'/></svg>";
+      const svgStr = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.45' transform='rotate(45 6 1.5)'/></svg>";
       return (
         <View style={cardStyle}>
           <View style={[StyleSheet.absoluteFillObject, {
             backgroundImage: `url("data:image/svg+xml,${svgStr}")`,
             backgroundRepeat: 'repeat',
           } as any]} />
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.3, bottom: 0, top: '55%' }]} />
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0008', opacity: 0.15, bottom: 0, top: '60%' }]} />
           <View style={styles.backCenter}>
             <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.3) }]}>{'\u2666'}</Text>
           </View>
@@ -202,7 +202,7 @@ export default function CardComponent({
               width: 4,
               height: 4,
               backgroundColor: '#c9a84c',
-              opacity: 0.18,
+              opacity: 0.42,
               left: c * 12 + (r % 2 === 0 ? 0 : 6) - 2,
               top: r * 10 - 2,
               transform: [{ rotate: '45deg' }],
@@ -214,7 +214,7 @@ export default function CardComponent({
     return (
       <View style={cardStyle}>
         <View style={StyleSheet.absoluteFillObject}>{dots}</View>
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.25, bottom: 0, top: '55%' }]} />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0008', opacity: 0.12, bottom: 0, top: '60%' }]} />
         <View style={styles.backCenter}>
           <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.3) }]}>{'\u2666'}</Text>
         </View>
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   },
   backDiamond: {
     color: '#c9a84c',
-    opacity: 0.3,
+    opacity: 0.55,
   },
   dimmed: {
     opacity: 0.35,
