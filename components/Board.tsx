@@ -155,7 +155,7 @@ export default function Board({
   communityScale = 1.2,
 }: BoardProps) {
   const { width: screenW, height: screenH } = useWindowDimensions();
-  const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height Ã¢ÂÂ never jumps when bot places cards
+  const BOARD_HEIGHT = Math.floor(screenH * 0.205); // S82+Apr28: fixed board height, gives header room
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const gameColors = useGameColors();
@@ -526,9 +526,9 @@ const styles = StyleSheet.create({
   pressableInner: {
     flex: 1,
     paddingHorizontal: rs(4),
-    paddingVertical: rs(3),
-    justifyContent: 'center',
-    overflow: 'hidden',
+    paddingTop: rs(4),
+    paddingBottom: rs(2),
+    justifyContent: 'flex-start',
   },
   active: {
     borderColor: COLORS.gold,
