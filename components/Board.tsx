@@ -432,7 +432,7 @@ export default function Board({
               // Previously alternated between <Pressable> and <CardComponent> at the same key,
               // which caused React 19 to call CardComponent's render against Pressable's hook
               // state Ã¢ÂÂ "Rendered fewer hooks than expected" crash (CR-T6CB / CR-6PSY).
-              <Pressable key={c.id} onPress={isArrangement && onRemoveCard ? () => onRemoveCard(c) : undefined}>
+              <Pressable key={c.id} onPress={isArrangement && onRemoveCard ? () => { tapCard(); onRemoveCard(c); } : undefined}>
                 <CardComponent
                   card={c}
                   faceDown={false}
