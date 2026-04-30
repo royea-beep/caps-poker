@@ -351,7 +351,7 @@ export default function CardComponent({
             {/* V2 Minimalist: top-left corner only */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
               <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+
             </View>
             {/* V2 Minimalist: large center suit only */}
             <View style={styles.centerDisplay}>
