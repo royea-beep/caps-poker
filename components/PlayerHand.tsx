@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: rs(3),
     backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: COLORS.boardBorder,
   },
   labelRow: {
