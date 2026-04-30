@@ -42,7 +42,7 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
   },
   fiveo: {
     background: '#1C0508',      // very dark red-black — pure red hue, dimly lit casino
-    surface: '#2D0810',         // deep burgundy — unified with maroon felt
+    surface: '#6B1520',         // exact match with boardBg — true unified felt across screen
     boardBg: '#6B1520',         // brighter than background — boards must POP
     boardBorder: '#8B6914',     // warm golden-brown — visible table rail
     textPrimary: '#ffffff',
