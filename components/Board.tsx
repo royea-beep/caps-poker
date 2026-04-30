@@ -13,6 +13,7 @@ import Animated, {
 import CardComponent from './Card';
 import { Badge } from './Badge';
 import HandNameOverlay from './HandNameOverlay';
+import { placeCard, tapCard } from '../lib/haptics';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs } from '../utils/responsive';
