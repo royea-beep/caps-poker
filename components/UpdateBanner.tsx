@@ -11,7 +11,7 @@ import * as Updates from 'expo-updates';
 
 // HARDCODED MARKER — bumped manually each time we want to verify a new OTA arrived.
 // If you see this number on the phone, that OTA bundle is active.
-const BUNDLE_MARKER = 'V12';
+const BUNDLE_MARKER = 'V13';
 
 export default function UpdateBanner() {
   const [expanded, setExpanded] = useState(false);
