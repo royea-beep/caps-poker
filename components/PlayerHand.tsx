@@ -10,6 +10,7 @@ import { WEB_MAX_WIDTH } from './WebContainer';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { playSound } from '../utils/sounds';
+import { tapCard } from '../lib/haptics';
 
 interface PlayerHandProps {
   cards: Card[];
