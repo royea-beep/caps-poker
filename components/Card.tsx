@@ -387,7 +387,7 @@ export default function CardComponent({
             {/* Bottom-right corner pip — rotated 180° */}
             <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
               <Text allowFontScaling={false} style={[styles.cornerRank, { color: suitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.cornerSuit, { color: suitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+
             </View>
           </>
         )}
