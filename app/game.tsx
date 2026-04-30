@@ -617,6 +617,18 @@ function GameScreenInner() {
       }));
       setPendingRevealBoards(revealSummary);
       setShowSafeReveal(true);
+      // Calculate boards won and trigger celebration after reveal animation finishes
+      const wonCount = revealSummary.filter((b) => b.winner === 'player').length;
+      setBoardsWonCount(wonCount);
+      drumRoll();
+      // Activate confetti after reveal sequence (timed with revealSpeed)
+      const celebrationDelay = (revealSummary.length * 600) + 800;
+      setTimeout(() => {
+        if (wonCount > 0) {
+          setCelebrateActive(true);
+          if (wonCount === 4) winSweep(); else winBoard();
+        }
+      }, celebrationDelay);
       return; // navigation happens from onRevealDone
     }
 
