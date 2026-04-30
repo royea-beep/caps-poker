@@ -312,7 +312,7 @@ export default function Board({
         isWinner && winnerPulseStyle,
       ]}
     >
-      <Pressable onPress={onPress} style={styles.pressableInner}>
+      <Pressable onPress={() => { if (onPress) { placeCard(); onPress(); } }} style={styles.pressableInner}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
