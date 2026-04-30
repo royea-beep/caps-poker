@@ -340,7 +340,7 @@ export default function Board({
         {/* Bot card rows Ã¢ÂÂ hidden during arrangement (board stays clean for player placement) */}
         {isArrangement && (allBotCards ?? []).map((botCardsForThisBot, botIdx) => ((botCardsForThisBot ?? []).length === 0 ? (<View key={`bot-placeholder-${botIdx}`} style={styles.cardRow}><Text style={[styles.rowLabel, { width: undefined, paddingHorizontal: 4 }]}>{`${t().bot} ${botIdx + 1}`}</Text>{[0,1,2,3].map((slotIdx) => (<CardComponent key={`bot-${botIdx}-slot-${slotIdx}`} card={{ id: `bot-${botIdx}-slot-${slotIdx}`, suit: 'spades', rank: 'A' }} faceDown={true} cardWidth={cw} cardHeight={ch} />))}</View>) : null))}
         {isArrangement && (allBotCards ?? []).map((botCardsForThisBot, botIdx) => ((botCardsForThisBot ?? []).length > 0 ? (<View key={`bot-placed-${botIdx}`} style={styles.cardRow}><Text style={[styles.rowLabel, { width: undefined, paddingHorizontal: 4 }]}>{`${t().bot} ${botIdx + 1}`}</Text>{(botCardsForThisBot ?? []).map((c) => (<CardComponent key={c.id} card={c} faceDown={true} cardWidth={cw} cardHeight={ch} />))}</View>) : null))}
-        {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
+
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
