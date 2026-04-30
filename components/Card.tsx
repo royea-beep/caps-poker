@@ -365,7 +365,7 @@ export default function CardComponent({
             {/* Top-left corner pip */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
               <Text allowFontScaling={false} style={[styles.cornerRank, { color: suitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.cornerSuit, { color: suitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+
             </View>
 
             {/* Center rank + suit */}
