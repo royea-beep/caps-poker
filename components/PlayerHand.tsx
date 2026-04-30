@@ -51,7 +51,7 @@ function AnimatedCardSlot({
   return (
     <Animated.View style={animStyle}>
       <Pressable
-        onPress={() => onSelectCard(card)}
+        onPress={() => { tapCard(); onSelectCard(card); }}
         style={[styles.cardWrapper, isSelected && styles.selected]}
       >
         <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
