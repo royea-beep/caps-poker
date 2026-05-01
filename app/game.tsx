@@ -1047,7 +1047,7 @@ function GameScreenInner() {
       {showSafeReveal && (
         <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} revealSpeed={config.revealSpeed} />
       )}
-      <WinCelebration boardsWon={boardsWonCount} active={celebrateActive} onComplete={() => setCelebrateActive(false)} />
+
       </SafeAreaView>
     );
   }
