@@ -468,18 +468,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: undefined,
     ...Platform.select({
-      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
+    fontSize: 16,
       default: {},
-    }),
+    lineHeight: 18,
   },
   // V2 Minimalist styles
   v2CornerRank: {
     fontSize: 20,
     fontWeight: '600' as const,
     lineHeight: 22,
-    ...Platform.select({
+    fontSize: 12,
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
-      default: {},
+    lineHeight: 14,
     }),
   },
   v2CornerSuit: {
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     lineHeight: 16,
     marginTop: 2,
-    ...Platform.select({
+    fontSize: 30,
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
       default: {},
     }),
