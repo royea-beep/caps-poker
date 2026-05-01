@@ -1316,7 +1316,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   botSection: {
-    paddingVertical: rs(4),
+    paddingVertical: rs(2),
     paddingHorizontal: rs(12),
     zIndex: 10,
   },
