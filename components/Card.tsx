@@ -348,16 +348,22 @@ export default function CardComponent({
           </View>
         ) : isV2 ? (
           <>
-            {/* V2 Minimalist: top-left corner only */}
+            {/* V2 Pro: top-left corner with rank + small suit */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
               <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
+              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
 
             </View>
-            {/* V2 Minimalist: large center suit only */}
+            {/* V2 Pro: center suit (balanced size) */}
             <View style={styles.centerDisplay}>
               <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor }]}>
                 {SUIT_SYMBOLS[card.suit]}
               </Text>
+            </View>
+            {/* V2 Pro: bottom-right corner with rank + small suit (rotated 180°) */}
+            <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
+              <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
+              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
             </View>
           </>
         ) : (
