@@ -1180,6 +1180,7 @@ function GameScreenInner() {
           isFirstGame={isFirstGame}
         />
       )}
+      <WinCelebration boardsWon={boardsWonCount} active={celebrateActive} onComplete={() => setCelebrateActive(false)} />
 
 
       {/* Guided first-game tooltips (tips 1Ã¢ÂÂ6) — non-blocking */}
