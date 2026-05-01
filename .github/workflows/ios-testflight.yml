@@ -54,7 +54,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: npm ci --prefer-offline=false
+        run: npm install --no-audit --no-fund
 
       - name: Setup EAS (build number sync + prebuild credentials)
         uses: expo/expo-github-action@v8
