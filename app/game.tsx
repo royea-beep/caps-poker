@@ -927,7 +927,7 @@ function GameScreenInner() {
     return (
       <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
         <FriendsBg />
-        <TableSurface baseColor="#3D0810" centerColor="#7B1828" vignetteIntensity={0.7} />
+        <TableSurface baseColor="#1A0506" centerColor="#9F2233" vignetteIntensity={0.85} />
         {/* watermark removed from game screen */}
         {/* LEFT — Your hand */}
         <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
