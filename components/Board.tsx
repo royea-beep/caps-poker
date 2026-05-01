@@ -420,7 +420,7 @@ export default function Board({
 
         {/* Player cards */}
         <View style={styles.cardRow}>
-          {isArrangement && playerCards.length === 0 && onAutoFill && (
+          {isArrangement && active && playerCards.length === 0 && onAutoFill && (
             <Pressable style={styles.autoBtn} onPress={onAutoFill}>
               <Text style={styles.autoBtnText}>⚡ מיקום אוטומטי</Text>
             </Pressable>
