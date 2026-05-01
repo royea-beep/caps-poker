@@ -165,7 +165,7 @@ export default function Board({
   const [botTooltipVisible, setBotTooltipVisible] = useState(false);
   const botTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // S81 Card Bible: community and player cards SAME formula (tester: flop was smaller)
-  const ch = cardHeightProp ?? rv(screenW, 46, 59, 74, 53);
+  const ch = cardHeightProp ?? rv(screenW, 70, 85, 100, 80);
   const cw = Math.round(ch * 0.72);
   const commH = ch; // SAME as player cards (S81 fix)
   const commW = cw;
