@@ -501,4 +501,5 @@ const styles = StyleSheet.create({
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
       default: {},
     }),
+  },
 });
