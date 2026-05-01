@@ -671,9 +671,20 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 </AnimatedRN.View>
               )}
               {board.winner === 'player' && board.playerHandName && board.botHandName && (
-                <Text style={styles.handComparison}>
-                  {getHandName(board.playerHandName, lang)} beats {getHandName(board.botHandName, lang)}
-                </Text>
+                <>
+                  <Text style={styles.handComparison}>
+                    {getHandName(board.playerHandName, lang)} beats {getHandName(board.botHandName, lang)}
+                  </Text>
+                  {(() => {
+                    try {
+                      const playerEval = evaluateBoard(board.playerCards, board.openCards);
+                      if (playerEval?.description && playerEval.description !== playerEval.name) {
+                        return <Text style={[styles.handComparison, { fontSize: 12, opacity: 0.75, marginTop: 2 }]}>{playerEval.description}</Text>;
+                      }
+                    } catch {}
+                    return null;
+                  })()}
+                </>
               )}
               {isNarrowLoss && (
                 <Text style={styles.soClose}>כמעט! 😬</Text>
