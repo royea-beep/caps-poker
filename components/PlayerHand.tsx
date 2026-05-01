@@ -78,7 +78,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  const useQuadRows = useTwoRows && safeCards.length > 12;
+  const useQuadRows = false; // 4-row mode disabled - 2 rows give boards more vertical space
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
