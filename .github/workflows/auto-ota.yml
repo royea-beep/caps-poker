@@ -50,7 +50,7 @@ jobs:
           fi
 
       - name: Push OTA to production channel
-        run: eas update --branch production --message "${{ steps.msg.outputs.msg }}" --non-interactive
+        run: eas update --branch production --environment production --message "${{ steps.msg.outputs.msg }}" --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
