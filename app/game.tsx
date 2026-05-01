@@ -39,6 +39,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 import WinCelebration from '../components/WinCelebration';
+import TableSurface from '../components/TableSurface';
 import { drumRoll, winSweep, winBoard } from '../lib/haptics';
 
 import { rv as rvOld } from '../constants/deviceBreakpoints';
