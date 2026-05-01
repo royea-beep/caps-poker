@@ -1045,10 +1045,10 @@ function GameScreenInner() {
             </Pressable>
           )}
         </View>
-      {showSafeReveal && (
+      {showSafeReveal && (<>
         <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} revealSpeed={config.revealSpeed} />
       <WinCelebration boardsWon={boardsWonCount} active={celebrateActive} onComplete={() => setCelebrateActive(false)} />
-      )}
+      </>)}
 
       </SafeAreaView>
     );
