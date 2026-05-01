@@ -30,6 +30,7 @@ import GuidedTooltip from './GuidedTooltip';
 import { FloatingChips } from './FloatingChips';
 import { HandBadge } from './HandBadge';
 import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
+import { evaluateBoard } from '../lib/pokerEngine';
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
