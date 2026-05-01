@@ -25,6 +25,12 @@ on:
       - 'plugins/**'
       - '.github/workflows/ios-testflight.yml'
       - 'assets/**'
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'utils/**'
+      - 'store/**'
+      - 'hooks/**'
   workflow_dispatch:
 
 concurrency:
