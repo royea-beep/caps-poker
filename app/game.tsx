@@ -39,7 +39,6 @@ import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 
-import { drumRoll, commitArrangement, winSweep, winBoard } from '../lib/haptics';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
