@@ -619,9 +619,17 @@ function GameScreenInner() {
       }));
       setPendingRevealBoards(revealSummary);
       setShowSafeReveal(true);
-      // Celebration logic deferred until after b343 install (native deps not in bundler yet)
+      // Celebration: drum roll on reveal start, confetti+haptic after reveal sequence
       const wonCount = revealSummary.filter((b) => b.winner === 'player').length;
       setBoardsWonCount(wonCount);
+      drumRoll();
+      const celebrationDelay = (revealSummary.length * 600) + 800;
+      setTimeout(() => {
+        if (wonCount > 0) {
+          setCelebrateActive(true);
+          if (wonCount === revealSummary.length) winSweep(); else winBoard();
+        }
+      }, celebrationDelay);
       return; // navigation happens from onRevealDone
     }
 
