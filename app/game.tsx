@@ -208,6 +208,7 @@ function GameScreenInner() {
   const [showSafeReveal, setShowSafeReveal] = useState(false);
   const [boardsWonCount, setBoardsWonCount] = useState(0);
   const [celebrateActive, setCelebrateActive] = useState(false);
+  const [celebrateActive, setCelebrateActive] = useState(false);
   const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
     winner: 'player'|'bot'|'tie';
     playerHandName: string;
