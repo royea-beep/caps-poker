@@ -695,13 +695,13 @@ const styles = StyleSheet.create({
   },
   emptySlot: {
     borderRadius: rs(8),
-    borderWidth: 1.5,
-    borderColor: '#8B4513',
+    borderWidth: 1,
+    borderColor: 'rgba(139,69,19,0.45)',
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.12)',
   },
   dropTarget: {
     borderColor: '#c8a84b',
