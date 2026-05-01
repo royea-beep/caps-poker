@@ -360,11 +360,6 @@ export default function CardComponent({
                 {SUIT_SYMBOLS[card.suit]}
               </Text>
             </View>
-            {/* V2 Pro: bottom-right corner with rank + small suit (rotated 180°) */}
-            <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
-              <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
-            </View>
           </>
         ) : (
           <>
