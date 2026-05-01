@@ -469,18 +469,18 @@ const styles = StyleSheet.create({
   },
   // V2 Pro styles - balanced sizes for clarity
   v2CornerRank: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700' as const,
-    lineHeight: 18,
+    lineHeight: 20,
     ...Platform.select({
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
       default: {},
     }),
   },
   v2CornerSuit: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700' as const,
-    lineHeight: 14,
+    lineHeight: 13,
     marginTop: 0,
     ...Platform.select({
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
@@ -488,10 +488,10 @@ const styles = StyleSheet.create({
     }),
   },
   v2CenterSuit: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700' as const,
     lineHeight: undefined,
-    opacity: 0.85,
+    opacity: 0.7,
     ...Platform.select({
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
       default: {},
