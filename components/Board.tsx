@@ -25,20 +25,20 @@ import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { KILL_Board } from '../utils/animationKill';
 
-// Hand hint explanations Ã¢ÂÂ always available (not just first game)
+// Hand hint explanations - always available (not just first game)
 const HINT_EXPLANATIONS: Record<string, { en: string; he: string }> = {
-  'High Card':       { en: 'No special combination yet',          he: 'ÃÂÃÂÃÂ ÃÂ¦ÃÂÃÂ¨ÃÂÃÂ£ ÃÂÃÂÃÂÃÂÃÂ' },
-  'Pair':            { en: 'Two cards of the same rank',          he: 'ÃÂ©ÃÂ ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂ' },
-  'Two Pair':        { en: 'Two different pairs',                 he: 'ÃÂ©ÃÂ ÃÂ ÃÂÃÂÃÂÃÂÃÂª ÃÂ©ÃÂÃÂ ÃÂÃÂ' },
-  'Trips':           { en: 'Three cards of the same rank',        he: 'ÃÂ©ÃÂÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂ' },
-  'Straight':        { en: 'Five cards in a row',                 he: 'ÃÂÃÂÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂ¨ÃÂ¦ÃÂ£' },
-  'Flush':           { en: 'Five cards of the same suit',         he: 'ÃÂÃÂÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂªÃÂ ÃÂ¡ÃÂÃÂ' },
-  'Full House':      { en: 'Three of a kind + a pair',            he: 'ÃÂ©ÃÂÃÂÃÂ©ÃÂÃÂ + ÃÂÃÂÃÂ' },
-  'Four of a Kind':  { en: 'Four cards of the same rank',         he: 'ÃÂÃÂ¨ÃÂÃÂ¢ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂ' },
-  'Straight Flush':  { en: 'Straight + Flush combined',           he: 'ÃÂ¨ÃÂ¦ÃÂ£ ÃÂÃÂÃÂÃÂªÃÂ ÃÂ¡ÃÂÃÂ' },
-  'Flush Draw':      { en: 'One card away from a Flush',          he: 'ÃÂ§ÃÂÃÂ£ ÃÂÃÂÃÂ ÃÂÃÂ¦ÃÂÃÂ¢ ÃÂ©ÃÂÃÂ' },
-  'Straight Draw':   { en: 'One card away from a Straight',       he: 'ÃÂ§ÃÂÃÂ£ ÃÂÃÂÃÂ ÃÂÃÂ¨ÃÂ¦ÃÂ£' },
-  'Str+Flush Draw':  { en: 'Drawing to both Straight and Flush',  he: 'ÃÂ§ÃÂ¨ÃÂÃÂ ÃÂÃÂ ÃÂÃÂ¨ÃÂ¦ÃÂ£ ÃÂÃÂÃÂ ÃÂÃÂ¦ÃÂÃÂ¢' },
+  'High Card':       { en: 'No special combination yet',          he: 'אין צירוף מיוחד' },
+  'Pair':            { en: 'Two cards of the same rank',          he: 'שני קלפים זהים' },
+  'Two Pair':        { en: 'Two different pairs',                 he: 'שני זוגות שונים' },
+  'Trips':           { en: 'Three cards of the same rank',        he: 'שלושה קלפים זהים' },
+  'Straight':        { en: 'Five cards in a row',                 he: 'חמישה קלפים ברצף' },
+  'Flush':           { en: 'Five cards of the same suit',         he: 'חמישה קלפים מאותה סדרה' },
+  'Full House':      { en: 'Three of a kind + a pair',            he: 'שלישייה + זוג' },
+  'Four of a Kind':  { en: 'Four cards of the same rank',         he: 'ארבעה קלפים זהים' },
+  'Straight Flush':  { en: 'Straight + Flush combined',           he: 'רצף מאותה סדרה' },
+  'Flush Draw':      { en: 'One card away from a Flush',          he: 'קלף אחד מצבע שלם' },
+  'Straight Draw':   { en: 'One card away from a Straight',       he: 'קלף אחד מרצף' },
+  'Str+Flush Draw':  { en: 'Drawing to both Straight and Flush',  he: 'קרוב גם לרצף וגם לצבע' },
 };
 
 interface BoardProps {
