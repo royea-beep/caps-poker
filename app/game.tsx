@@ -38,6 +38,8 @@ import { getSupabase } from '../utils/supabase';
 import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
+import WinCelebration from '../components/WinCelebration';
+import { drumRoll, winSweep, winBoard } from '../lib/haptics';
 
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rv } from '../utils/responsive';
