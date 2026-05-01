@@ -35,6 +35,7 @@ function AnimatedCardSlot({
   cardH: number;
 }) {
   const opacity = useSharedValue(0);
+  const pressScale = useSharedValue(1);
 
   useEffect(() => {
     const delay = index * 40;
@@ -45,6 +46,7 @@ function AnimatedCardSlot({
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
+    transform: [{ scale: pressScale.value }],
   }));
 
   const isSelected = selIndex >= 0;
@@ -52,6 +54,8 @@ function AnimatedCardSlot({
     <Animated.View style={animStyle}>
       <Pressable
         onPress={() => { tapCard(); onSelectCard(card); }}
+        onPressIn={() => { pressScale.value = withTiming(0.92, { duration: 80 }); }}
+        onPressOut={() => { pressScale.value = withTiming(1, { duration: 120 }); }}
         style={[styles.cardWrapper, isSelected && styles.selected]}
       >
         <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
