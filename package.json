@@ -16,10 +16,6 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "pokersolver": "^2.1.4",
-    "poker-evaluator-ts": "^1.0.5",
-    "poker-odds-calculator": "^2.1.5",
-    "poker-odds-machine": "^1.4.0",
     "@supabase/supabase-js": "^2.99.1",
     "expo": "~55.0.15",
     "expo-application": "~55.0.14",
