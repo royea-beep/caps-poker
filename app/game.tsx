@@ -1347,9 +1347,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(40,167,69,0.5)',
   },
   botThinkingPill: {
-    backgroundColor: 'rgba(255,193,7,0.15)',
+    backgroundColor: 'rgba(255,193,7,0.22)',
     borderWidth: 1,
-    borderColor: 'rgba(255,193,7,0.4)',
+    borderColor: 'rgba(255,193,7,0.7)',
   },
   botStatusText: {
     fontSize: rf(10),
