@@ -468,37 +468,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: undefined,
     ...Platform.select({
-    fontSize: 16,
+      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
       default: {},
-    lineHeight: 18,
+    }),
   },
-  // V2 Minimalist styles
+  // V2 Pro styles - balanced sizes for clarity
   v2CornerRank: {
-    fontSize: 20,
-    fontWeight: '600' as const,
-    lineHeight: 22,
-    fontSize: 12,
-      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
-    lineHeight: 14,
-    }),
-  },
-  v2CornerSuit: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    lineHeight: 16,
-    marginTop: 2,
-    fontSize: 30,
-      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
-      default: {},
-    }),
-  },
-  v2CenterSuit: {
-    fontSize: 36,
+    fontSize: 16,
     fontWeight: '700' as const,
-    lineHeight: undefined,
+    lineHeight: 18,
     ...Platform.select({
       web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
       default: {},
     }),
   },
+  v2CornerSuit: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+    lineHeight: 14,
+    marginTop: 0,
+    ...Platform.select({
+      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
+      default: {},
+    }),
+  },
+  v2CenterSuit: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    lineHeight: undefined,
+    opacity: 0.85,
+    ...Platform.select({
+      web: { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any,
+      default: {},
+    }),
 });
