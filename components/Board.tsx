@@ -460,7 +460,7 @@ export default function Board({
             const explText = expl ? (isHE ? expl.he : expl.en) : '';
             return (
               <View style={styles.hintRow}>
-                <Text style={styles.hintText}>Ã°ÂÂÂ¡ {hint}</Text>
+                <Text style={styles.hintText}>💡 {hint}</Text>
                 {expl && (
                   <Pressable
                     onPress={() => {
@@ -475,7 +475,7 @@ export default function Board({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
-                    <Text style={styles.hintInfoIcon}>Ã¢ÂÂ</Text>
+                    <Text style={styles.hintInfoIcon}>ℹ</Text>
                   </Pressable>
                 )}
                 {hintInfoVisible && explText ? (
