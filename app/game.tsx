@@ -1342,14 +1342,14 @@ const styles = StyleSheet.create({
     borderRadius: rv(10),
   },
   botReadyPill: {
-    backgroundColor: 'rgba(40,167,69,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(40,167,69,0.5)',
+    backgroundColor: 'rgba(74,222,128,0.12)',
+    borderWidth: 0,
+    paddingHorizontal: rs(10),
   },
   botThinkingPill: {
-    backgroundColor: 'rgba(255,193,7,0.22)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,193,7,0.7)',
+    backgroundColor: 'rgba(251,191,36,0.12)',
+    borderWidth: 0,
+    paddingHorizontal: rs(10),
   },
   botStatusText: {
     fontSize: rf(10),
@@ -1357,10 +1357,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   botReadyText: {
-    color: '#28A745',
+    color: '#4ADE80',
   },
   botThinkingText: {
-    color: '#FFC107',
+    color: '#FBBF24',
   },
   botLabel: {
     color: COLORS.textSecondary,
