@@ -454,7 +454,7 @@ export default function Board({
             ))
           }
           {isArrangement && playerCards.length >= 2 && (() => {
-            const hint = getHandHint(playerCards);
+            const hint = getHandHint(playerCards, openCards);
             const expl = HINT_EXPLANATIONS[hint];
             const isHE = getLanguage() === 'he';
             const explText = expl ? (isHE ? expl.he : expl.en) : '';
