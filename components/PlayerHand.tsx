@@ -80,16 +80,17 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Council P3: prefer 1x10 layout for clarity over 2x5
   const useTwoRows = Platform.OS === 'web' && device.isMobileWeb;
 
-  // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
+  // Dynamic card sizing: always size as if full 10-card hand — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  const useQuadRows = false; // 4-row mode disabled - 2 rows give boards more vertical space
-  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
+  const useQuadRows = false; // 4-row mode disabled
+  // P3 Council: always size for max 10 cards single row, never re-flow on iOS
+  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / 2)) : 10;
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   const cardW = (() => {
-    if (Platform.OS !== 'web') return Math.min(64, Math.max(40, maxCardW));
+    if (Platform.OS !== 'web') return Math.min(64, Math.max(28, maxCardW));
     if (device.isMobileWeb)  return Math.min(60, Math.max(26, maxCardW));
     if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
     return Math.min(88, Math.max(70, maxCardW));
