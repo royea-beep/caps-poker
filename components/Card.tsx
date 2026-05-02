@@ -202,7 +202,7 @@ export default function CardComponent({
               width: 3,
               height: 3,
               backgroundColor: '#c9a84c',
-              opacity: 0.25,
+              opacity: 0,
               left: c * 12 + (r % 2 === 0 ? 0 : 6) - 2,
               top: r * 10 - 2,
               transform: [{ rotate: '45deg' }],
