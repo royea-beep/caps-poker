@@ -199,10 +199,10 @@ export default function CardComponent({
             key={`${r}-${c}`}
             style={{
               position: 'absolute',
-              width: 4,
-              height: 4,
+              width: 3,
+              height: 3,
               backgroundColor: '#c9a84c',
-              opacity: 0.42,
+              opacity: 0.25,
               left: c * 12 + (r % 2 === 0 ? 0 : 6) - 2,
               top: r * 10 - 2,
               transform: [{ rotate: '45deg' }],
