@@ -10,16 +10,42 @@ export type HandHintLabel =
   | 'Pair'
   | 'Two Pair'
   | 'Trips'
+  | 'Straight'
+  | 'Flush'
+  | 'Full House'
+  | 'Quads'
+  | 'Straight Flush'
   | 'Flush Draw'
   | 'Straight Draw'
   | 'Str+Flush Draw'
   ;
 
+const HINT_PRIORITY: Record<HandHintLabel, number> = {
+  'High Card': 0,
+  'Straight Draw': 1,
+  'Flush Draw': 2,
+  'Str+Flush Draw': 3,
+  'Pair': 4,
+  'Two Pair': 5,
+  'Trips': 6,
+  'Straight': 7,
+  'Flush': 8,
+  'Full House': 9,
+  'Quads': 10,
+  'Straight Flush': 11,
+};
+
 /**
- * Analyze 4 player cards to produce a hint label.
- * Priority: Trips > Two Pair > Pair > Str+Flush Draw > Flush Draw > Straight Draw > High Card
+ * Omaha-style: best 5-card hand from EXACTLY 2 player + 3 community.
+ * If communityCards.length >= 3, enumerate combinations and return best.
+ * Else fallback to player-cards-only hint (early arrange phase).
  */
-export function getHandHint(cards: Card[]): HandHintLabel {
+export function getHandHint(playerCards: Card[], communityCards: Card[] = []): HandHintLabel {
+  if (communityCards.length >= 3 && playerCards.length >= 2) {
+    return getBestOmahaHint(playerCards, communityCards);
+  }
+  // Fallback: player-only hint (early arrange phase)
+  const cards = playerCards;
   if (cards.length !== 4) return 'High Card';
 
   // Count ranks
