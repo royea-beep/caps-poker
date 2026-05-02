@@ -585,6 +585,13 @@ const styles = StyleSheet.create({
     fontSize: rf(9),
     fontWeight: '900',
   },
+  activeLabel: {
+    color: '#28A745',
+    fontSize: rf(9),
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginLeft: rs(4),
+  },
   boardLabel: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: rf(10),
