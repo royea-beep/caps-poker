@@ -1310,9 +1310,9 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
   },
   headerChipsAmount: {
-    color: COLORS.gold,
+    color: 'rgba(255,215,0,0.75)',
     fontSize: rf(14),
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   botSection: {
