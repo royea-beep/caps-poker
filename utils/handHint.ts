@@ -31,7 +31,7 @@ const HINT_PRIORITY: Record<HandHintLabel, number> = {
   'Straight': 7,
   'Flush': 8,
   'Full House': 9,
-  'Quads': 10,
+  'Four of a Kind': 10,
   'Straight Flush': 11,
 };
 
