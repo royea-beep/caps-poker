@@ -317,6 +317,9 @@ export default function Board({
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.boardLabel}>{`לוח ${index + 1}`}</Text>
+            {isArrangement && active && !boardFull && (
+              <Text style={styles.activeLabel}>← מסדר</Text>
+            )}
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
