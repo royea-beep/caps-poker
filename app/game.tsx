@@ -1089,7 +1089,7 @@ function GameScreenInner() {
           )}
           {!countdownActive && isArranging && (
             <Text style={styles.freePlayLabel}>
-              {cardsRemaining === 0 ? t().allPlaced : `סדר ${cardsRemaining} קלפים`}
+              {cardsRemaining === 0 ? t().allPlaced : `נותרו ${cardsRemaining} קלפים לסדור`}
             </Text>
           )}
           {playerReady && !allBotsReady && (
