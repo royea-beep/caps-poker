@@ -548,18 +548,8 @@ const styles = StyleSheet.create({
     }),
   },
   selected: {
-    borderColor: COLORS.gold,
-    borderWidth: 2,
-    ...Platform.select({
-      ios: {
-        shadowColor: COLORS.gold,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 6,
-      },
-      android: { elevation: 6 },
-      default: {},
-    }),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   playerWon: {
     borderColor: COLORS.neonGreen,
