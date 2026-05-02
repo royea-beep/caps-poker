@@ -155,7 +155,7 @@ function evaluateFiveCardHand(cards: Card[]): HandHintLabel {
   const isStraight = checkConsecutive(values);
 
   if (isFlush && isStraight) return 'Straight Flush';
-  if (counts[0] === 4) return 'Quads';
+  if (counts[0] === 4) return 'Four of a Kind';
   if (counts[0] === 3 && counts[1] === 2) return 'Full House';
   if (isFlush) return 'Flush';
   if (isStraight) return 'Straight';
