@@ -475,7 +475,7 @@ export default function Board({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
-                    <Text style={styles.hintInfoIcon}>ℹ</Text>
+                    <Text style={styles.hintInfoIcon}>ⓘ</Text>
                   </Pressable>
                 )}
                 {hintInfoVisible && explText ? (
