@@ -13,7 +13,7 @@ export type HandHintLabel =
   | 'Straight'
   | 'Flush'
   | 'Full House'
-  | 'Quads'
+  | 'Four of a Kind'
   | 'Straight Flush'
   | 'Flush Draw'
   | 'Straight Draw'
