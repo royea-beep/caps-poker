@@ -1465,7 +1465,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   placeBtnText: {
-    color: '#0A0A12',
+    color: '#FFFEF8',
   },
   continueBtn: {
     position: 'absolute',
