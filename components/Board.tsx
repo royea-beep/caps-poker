@@ -509,21 +509,20 @@ export default function Board({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.boardBg,
-    borderRadius: rs(18),
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(91,18,32,0.55)',
+    borderRadius: rs(20),
+    borderWidth: 0,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.55,
+        shadowRadius: 14,
       },
-      android: { elevation: 10 },
+      android: { elevation: 12 },
       default: {
-        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+        boxShadow: '0 6px 22px rgba(0,0,0,0.6)',
       } as any,
     }),
   },
