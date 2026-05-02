@@ -241,9 +241,9 @@ export default function CardComponent({
       });
 
   const v2Shadow = Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8 } as any,
-    android: { elevation: 4 } as any,
-    default: { boxShadow: '0 2px 8px rgba(0,0,0,0.12)' } as any,
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.45, shadowRadius: 12 } as any,
+    android: { elevation: 10 } as any,
+    default: { boxShadow: '0 6px 16px rgba(0,0,0,0.45)' } as any,
   });
   const v2Border = highlighted
     ? { borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' as const }
