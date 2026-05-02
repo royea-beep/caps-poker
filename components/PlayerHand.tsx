@@ -76,8 +76,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const device = getDevice(SCREEN_W, 0);
 
-  // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
-  const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
+  // Single row when cards fit; 2 rows only as fallback if width too narrow
+  // Council P3: prefer 1x10 layout for clarity over 2x5
+  const useTwoRows = Platform.OS === 'web' && device.isMobileWeb;
 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
