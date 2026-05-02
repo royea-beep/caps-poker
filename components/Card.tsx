@@ -34,7 +34,7 @@ const SUIT_SYMBOLS: Record<string, string> = {
 
 const RED_COLOR = '#CC0000';
 const BLACK_COLOR = '#111111';
-const CARD_BACK_BG = '#2D0810'; // deep burgundy — matches maroon felt
+const CARD_BACK_BG = '#1F0610'; // deeper burgundy — modern premium feel
 const CARD_BACK_BORDER = '#C5A028';
 
 // V2 Minimalist palette
