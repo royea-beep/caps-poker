@@ -117,3 +117,75 @@ function checkStraightDraw(cards: Card[]): boolean {
 
   return false;
 }
+
+// ============================================================
+// Omaha 2+3 best-hand evaluator
+// ============================================================
+
+function getBestOmahaHint(playerCards: Card[], communityCards: Card[]): HandHintLabel {
+  let best: HandHintLabel = 'High Card';
+  // 2 from player
+  for (let i = 0; i < playerCards.length; i++) {
+    for (let j = i + 1; j < playerCards.length; j++) {
+      // 3 from community
+      for (let a = 0; a < communityCards.length; a++) {
+        for (let b = a + 1; b < communityCards.length; b++) {
+          for (let c = b + 1; c < communityCards.length; c++) {
+            const five = [
+              playerCards[i], playerCards[j],
+              communityCards[a], communityCards[b], communityCards[c],
+            ];
+            const hint = evaluateFiveCardHand(five);
+            if (HINT_PRIORITY[hint] > HINT_PRIORITY[best]) best = hint;
+          }
+        }
+      }
+    }
+  }
+  return best;
+}
+
+function evaluateFiveCardHand(cards: Card[]): HandHintLabel {
+  const rankCounts = new Map<Rank, number>();
+  for (const c of cards) rankCounts.set(c.rank, (rankCounts.get(c.rank) || 0) + 1);
+  const counts = [...rankCounts.values()].sort((a, b) => b - a);
+
+  const isFlush = cards.every((c) => c.suit === cards[0].suit);
+  const values = cards.map((c) => RANK_VALUES[c.rank]).sort((a, b) => a - b);
+  const isStraight = checkConsecutive(values);
+
+  if (isFlush && isStraight) return 'Straight Flush';
+  if (counts[0] === 4) return 'Quads';
+  if (counts[0] === 3 && counts[1] === 2) return 'Full House';
+  if (isFlush) return 'Flush';
+  if (isStraight) return 'Straight';
+  if (counts[0] === 3) return 'Trips';
+  if (counts[0] === 2 && counts[1] === 2) return 'Two Pair';
+  if (counts[0] === 2) return 'Pair';
+  return 'High Card';
+}
+
+function checkConsecutive(sortedValues: number[]): boolean {
+  // Standard straight
+  let consecutive = true;
+  for (let i = 1; i < sortedValues.length; i++) {
+    if (sortedValues[i] - sortedValues[i - 1] !== 1) {
+      consecutive = false;
+      break;
+    }
+  }
+  if (consecutive) return true;
+  // Ace-low (A-2-3-4-5)
+  if (sortedValues.includes(14)) {
+    const aceLow = sortedValues.map((v) => (v === 14 ? 1 : v)).sort((a, b) => a - b);
+    let consec = true;
+    for (let i = 1; i < aceLow.length; i++) {
+      if (aceLow[i] - aceLow[i - 1] !== 1) {
+        consec = false;
+        break;
+      }
+    }
+    if (consec) return true;
+  }
+  return false;
+}
