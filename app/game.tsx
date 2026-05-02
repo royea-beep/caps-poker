@@ -1342,14 +1342,14 @@ const styles = StyleSheet.create({
     borderRadius: rv(10),
   },
   botReadyPill: {
-    backgroundColor: 'rgba(74,222,128,0.12)',
+    backgroundColor: 'transparent',
+    paddingHorizontal: rs(6),
     borderWidth: 0,
-    paddingHorizontal: rs(10),
   },
   botThinkingPill: {
-    backgroundColor: 'rgba(251,191,36,0.12)',
+    backgroundColor: 'transparent',
+    paddingHorizontal: rs(6),
     borderWidth: 0,
-    paddingHorizontal: rs(10),
   },
   botStatusText: {
     fontSize: rf(10),
