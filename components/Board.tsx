@@ -696,9 +696,9 @@ const styles = StyleSheet.create({
     }),
   },
   dropTarget: {
-    borderColor: '#c8a84b',
-    borderWidth: 2,
-    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderColor: 'rgba(201,168,76,0.25)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   plusText: {
     color: '#c8a84b55',
