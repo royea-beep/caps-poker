@@ -35,7 +35,7 @@ const SUIT_SYMBOLS: Record<string, string> = {
 const RED_COLOR = '#CC0000';
 const BLACK_COLOR = '#111111';
 const CARD_BACK_BG = '#1F0610'; // deeper burgundy — modern premium feel
-const CARD_BACK_BORDER = '#C5A028';
+const CARD_BACK_BORDER = 'rgba(255,193,7,0.35)';
 
 // V2 Minimalist palette
 const V2_RED = '#c41e3a';
