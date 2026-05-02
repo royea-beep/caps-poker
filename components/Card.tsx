@@ -275,16 +275,16 @@ export default function CardComponent({
   // Face cards (J/Q/K/A) get subtle gold border for prestige
   // Community cards get gold frame for visual hierarchy (S105)
   const highlightBorder = highlighted
-    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
+    ? { borderWidth: 2, borderColor: 'rgba(201,168,76,0.85)' as const }
     : isCommunityCard
-    ? { borderWidth: rs(2.5), borderColor: '#c9a84c' as const }
+    ? { borderWidth: 0, borderColor: 'transparent' as const }
     : isFaceCard
-    ? { borderWidth: 1.5, borderColor: 'rgba(201,168,76,0.45)' as const }
-    : { borderWidth: 1, borderColor: suitBorderColor };
+    ? { borderWidth: 0, borderColor: 'transparent' as const }
+    : { borderWidth: 0, borderColor: 'transparent' as const };
   const highlightShadow = highlighted && Platform.OS === 'ios'
-    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 14 }
+    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 10 }
     : isCommunityCard && Platform.OS === 'ios'
-    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 }
+    ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 }
     : {};
 
   return (
