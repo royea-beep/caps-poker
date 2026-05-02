@@ -534,13 +534,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   active: {
-    borderColor: COLORS.gold,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,193,7,0.55)',
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.9,
-        shadowRadius: 16,
+        shadowOpacity: 0.5,
+        shadowRadius: 14,
       },
       android: { elevation: 10 },
       default: {},
