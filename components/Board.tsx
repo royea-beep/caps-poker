@@ -583,16 +583,16 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   boardLabel: {
-    color: '#0a0a0a',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: rf(10),
-    fontWeight: '900',
-    letterSpacing: 0.3,
+    fontWeight: '700',
+    letterSpacing: 0.5,
     paddingHorizontal: rs(8),
     paddingVertical: rs(2),
     borderRadius: rs(10),
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
