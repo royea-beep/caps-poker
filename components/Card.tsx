@@ -311,7 +311,7 @@ export default function CardComponent({
             width,
             height,
             backgroundColor: isV2 ? '#FFFFFF' : '#FFFEF8',
-            borderRadius: isV2 ? 10 : 8,
+            borderRadius: isV2 ? 12 : 10,
           },
           !isV2 && Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
           isV2 ? v2Shadow : faceUpShadow,
