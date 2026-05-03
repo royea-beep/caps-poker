@@ -544,10 +544,10 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: COLORS.gold,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 14,
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
       },
-      android: { elevation: 10 },
+      android: { elevation: 8 },
       default: {},
     }),
   },
