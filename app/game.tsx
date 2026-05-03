@@ -1119,7 +1119,7 @@ function GameScreenInner() {
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
-              {allBotsReady ? `✓ ${t().ready}` : '…'}
+              {allBotsReady ? `✓ ${t().ready}` : 'חושב…'}
             </Text>
           </View>
         </View>
