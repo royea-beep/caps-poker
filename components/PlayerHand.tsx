@@ -90,9 +90,12 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  // Smaller cap when 3 rows - gives boards more vertical space (Council web-app-testing)
+  const nativeCap = numRows === 3 ? 48 : 64;
+  const mobileWebCap = numRows === 3 ? 46 : 60;
   const cardW = (() => {
-    if (Platform.OS !== 'web') return Math.min(64, Math.max(28, maxCardW));
-    if (device.isMobileWeb)  return Math.min(60, Math.max(26, maxCardW));
+    if (Platform.OS !== 'web') return Math.min(nativeCap, Math.max(28, maxCardW));
+    if (device.isMobileWeb)  return Math.min(mobileWebCap, Math.max(26, maxCardW));
     if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
     return Math.min(88, Math.max(70, maxCardW));
   })();
