@@ -44,6 +44,10 @@ export function getHandHint(playerCards: Card[], communityCards: Card[] = []): H
   if (communityCards.length >= 3 && playerCards.length >= 2) {
     return getBestOmahaHint(playerCards, communityCards);
   }
+  // Council P0: show community-only hint when no player cards placed yet (helps decision making)
+  if (playerCards.length === 0 && communityCards.length >= 3) {
+    return getCommunityOnlyHint(communityCards);
+  }
   // Fallback: player-only hint (early arrange phase)
   const cards = playerCards;
   if (cards.length !== 4) return 'High Card';
