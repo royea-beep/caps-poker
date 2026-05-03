@@ -97,11 +97,13 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   })();
   const cardH = Math.round(cardW / 0.72);
 
+  // 3-row mode when too many cards for 2 rows of cardsPerRow
+  const useThreeRows = !useQuadRows && safeCards.length > cardsPerRow * 2;
   const rowSize = useQuadRows ? 4 : cardsPerRow;
   const topRow = safeCards.slice(0, rowSize);
-  const row2 = useQuadRows ? safeCards.slice(rowSize, rowSize * 2) : [];
+  const row2 = useQuadRows ? safeCards.slice(rowSize, rowSize * 2) : useThreeRows ? safeCards.slice(rowSize, rowSize * 2) : [];
   const row3 = useQuadRows ? safeCards.slice(rowSize * 2, rowSize * 3) : [];
-  const bottomRow = safeCards.slice(useQuadRows ? rowSize * 3 : rowSize);
+  const bottomRow = useQuadRows ? safeCards.slice(rowSize * 3) : useThreeRows ? safeCards.slice(rowSize * 2) : safeCards.slice(rowSize);
 
   const renderCard = (card: Card, globalIndex: number) => (
     <AnimatedCardSlot
