@@ -140,8 +140,18 @@ function GameScreenInner() {
   const PLAYER_HAND_H = 22 + 3 + (Platform.OS === 'ios' ? 20 : 8) + (handCardHeightPt * playerHandRows) + (4 * Math.max(0, playerHandRows - 1));
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
-  const BOARD_GAPS = (boardCount - 1) * 4;
-  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
+  // Visual rows: how boards arrange in 2D layout
+  // - iOS 1-2 boards: column (visualRows=boardCount)
+  // - iOS 3-4 boards: 2-col grid (visualRows=ceil(n/2))
+  // - Web 3 boards: 1-row of 3 (visualRows=1)
+  // - Web 4 boards: 2-col grid (visualRows=2)
+  // - Web 2 boards: 1-row of 2 (visualRows=1)
+  const _isWeb = Platform.OS === 'web';
+  const _visualRows = _isWeb
+    ? (boardCount === 3 ? 1 : Math.ceil(boardCount / 2))
+    : (boardCount >= 3 ? Math.ceil(boardCount / 2) : boardCount);
+  const BOARD_GAPS = Math.max(0, _visualRows - 1) * 4;
+  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / _visualRows - BOARD_CHROME;
   // Mobile web card height scales with board count — more boards = tighter = needs clarity boost
   // Mobile web card height: width-aware so 5 community cards fit in 2-column board grid.
   // Board column overhead (reduced padding in BoardArrangement + Board) approx 26px.
