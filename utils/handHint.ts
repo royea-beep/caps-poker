@@ -123,6 +123,31 @@ function checkStraightDraw(cards: Card[]): boolean {
 }
 
 // ============================================================
+// Community-only hint (when 0 player cards placed)
+// Shows what the BOARD offers — helps player decide where to place cards
+// ============================================================
+
+function getCommunityOnlyHint(communityCards: Card[]): HandHintLabel {
+  const rankCounts = new Map<Rank, number>();
+  for (const c of communityCards) rankCounts.set(c.rank, (rankCounts.get(c.rank) || 0) + 1);
+  const counts = [...rankCounts.values()].sort((a, b) => b - a);
+
+  // Check community-only patterns
+  if (counts[0] === 3) return 'Trips'; // 3 of same rank on board = strong hint
+  if (counts[0] === 2) return 'Pair'; // pair on board
+
+  // Check flush draw / straight draw potential on community alone
+  const suits = new Set(communityCards.map(c => c.suit));
+  if (suits.size === 1 && communityCards.length >= 3) return 'Flush Draw'; // 3 same suit
+
+  const values = communityCards.map(c => RANK_VALUES[c.rank]).sort((a, b) => a - b);
+  const range = values[values.length - 1] - values[0];
+  if (range <= 4 && communityCards.length >= 3) return 'Straight Draw'; // 3 within 5 ranks
+
+  return 'High Card';
+}
+
+// ============================================================
 // Omaha 2+3 best-hand evaluator
 // ============================================================
 
