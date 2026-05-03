@@ -76,16 +76,15 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const device = getDevice(SCREEN_W, 0);
 
-  // Single row when cards fit; 2 rows only as fallback if width too narrow
-  // Council P3: prefer 1x10 layout for clarity over 2x5
-  const useTwoRows = Platform.OS === 'web' && device.isMobileWeb;
-
-  // Dynamic card sizing: always size as if full 10-card hand — prevents giant cards when few remain
-  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
+  // Smart wrapping: single row up to 10 cards, 2 rows when 11+
+  // Council P3: prefer 1xN clarity, fall back to 2 rows when too many
   const safeCards = cards ?? [];
+  const useTwoRows = (Platform.OS === 'web' && device.isMobileWeb) || safeCards.length > 10;
+
+  // Dynamic card sizing — sized for max 10 in single row, max 8/row when wrapping
+  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const useQuadRows = false; // 4-row mode disabled
-  // P3 Council: always size for max 10 cards single row, never re-flow on iOS
-  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / 2)) : 10;
+  const cardsPerRow = useTwoRows ? 8 : 10;
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
