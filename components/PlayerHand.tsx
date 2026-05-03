@@ -84,8 +84,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing — sized for max row width
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const useQuadRows = false; // 4-row mode disabled
-  // Single row: size for 7. Two rows: size for half but cap at 7 per row (prevents iPhone cramping)
-  const cardsPerRow = useTwoRows ? Math.min(7, Math.ceil(safeCards.length / 2)) : 7;
+  // Single row up to 7. Two rows for 8-14. Three rows for 15+. Cap at 7 per row always.
+  const numRows = !useTwoRows ? 1 : (safeCards.length > 14 ? 3 : 2);
+  const cardsPerRow = useTwoRows ? Math.min(7, Math.ceil(safeCards.length / numRows)) : 7;
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
