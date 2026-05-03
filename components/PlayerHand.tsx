@@ -76,15 +76,16 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const device = getDevice(SCREEN_W, 0);
 
-  // Smart wrapping: single row up to 10 cards, 2 rows when 11+
-  // Council P3: prefer 1xN clarity, fall back to 2 rows when too many
+  // Smart wrapping: single row up to 7 cards, 2 rows when 8+
+  // Threshold 7 prevents iPhone SE width-fitting issues that caused 7+1 spillover with 8 cards
   const safeCards = cards ?? [];
-  const useTwoRows = (Platform.OS === 'web' && device.isMobileWeb) || safeCards.length > 10;
+  const useTwoRows = (Platform.OS === 'web' && device.isMobileWeb) || safeCards.length > 7;
 
-  // Dynamic card sizing — sized for max 10 in single row, max 8/row when wrapping
+  // Dynamic card sizing — sized for max row width
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const useQuadRows = false; // 4-row mode disabled
-  const cardsPerRow = useTwoRows ? 8 : 10;
+  // Single row: size for 7. Two rows: size for half (round up so even split)
+  const cardsPerRow = useTwoRows ? Math.ceil(safeCards.length / 2) : 7;
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
