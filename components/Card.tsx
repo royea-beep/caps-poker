@@ -346,22 +346,31 @@ export default function CardComponent({
               {SUIT_SYMBOLS[card.suit]}
             </Text>
           </View>
-        ) : isV2 ? (
-          <>
-            {/* V2 Pro: top-left corner with rank + small suit */}
-            <View style={styles.cornerTopLeft} pointerEvents="none">
-              <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
-
-            </View>
-            {/* V2 Pro: center suit (balanced size) */}
-            <View style={styles.centerDisplay}>
-              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor }]}>
-                {SUIT_SYMBOLS[card.suit]}
-              </Text>
-            </View>
-          </>
-        ) : (
+        ) : isV2 ? (() => {
+          // V2 width-scaled fonts (S101 architectural fix). Compact mode for cards <55pt.
+          const isCompact = width < 55;
+          const cornerRankPx = Math.max(11, Math.floor(width * 0.32));
+          const cornerSuitPx = Math.max(9, Math.floor(width * 0.22));
+          const centerSuitPx = isCompact
+            ? Math.max(16, Math.floor(width * 0.48))
+            : Math.max(14, Math.floor(width * 0.38));
+          const webFont = Platform.OS === 'web' ? { fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' } as any : null;
+          return (
+            <>
+              <View style={styles.cornerTopLeft} pointerEvents="none">
+                <Text allowFontScaling={false} style={[{ color: v2SuitColor, fontSize: cornerRankPx, fontWeight: '700', lineHeight: cornerRankPx + 2 }, webFont]}>{card.rank}</Text>
+                {!isCompact && (
+                  <Text allowFontScaling={false} style={[{ color: v2SuitColor, fontSize: cornerSuitPx, fontWeight: '700', lineHeight: cornerSuitPx + 2 }, webFont]}>{SUIT_SYMBOLS[card.suit]}</Text>
+                )}
+              </View>
+              <View style={styles.centerDisplay}>
+                <Text allowFontScaling={false} style={[{ color: v2SuitColor, fontSize: centerSuitPx, fontWeight: '700', opacity: 0.7 }, webFont]}>
+                  {SUIT_SYMBOLS[card.suit]}
+                </Text>
+              </View>
+            </>
+          );
+        })() : (
           <>
             {/* Top-left corner pip */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
