@@ -169,7 +169,8 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: rs(3),
+    paddingTop: rs(3),
+    paddingBottom: Platform.OS === 'ios' ? rs(20) : rs(8),
     backgroundColor: COLORS.surface,
     borderTopWidth: 2,
     borderTopColor: COLORS.boardBorder,
