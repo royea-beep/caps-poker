@@ -168,9 +168,22 @@ function GameScreenInner() {
   // Landscape uses a 2-column grid with more height per row — no cap needed there.
   const CARD_ROW_PAD = 4;
   const maxNativeCardH = Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
+  // Width constraint: in grid mode, 5 community cards must fit in narrower board column.
+  // Board column width:
+  //   - Web Third (3 boards on web): ~33% of screenW
+  //   - Grid Half (4+ boards web, 3+ boards iOS): ~50% of screenW
+  //   - Column full-width (1-2 boards iOS): screenW
+  const _boardColWNative = _isWeb && boardCount === 3
+    ? Math.max(80, Math.floor(screenW / 3) - 16)
+    : (_isWeb || boardCount >= 3)
+      ? Math.max(80, Math.floor(screenW / 2) - 16)
+      : screenW - 32;
+  // Inside board: 5 community cards + 4 gaps(6) + label(20) + separator(7) + pad = ~31 overhead
+  const _maxCommWNative = Math.max(18, Math.floor((_boardColWNative - 31) / 5));
+  const _maxNativeCardHFromWidth = Math.round(_maxCommWNative / 0.7 / communityScale);
   const nativeCardH = isLandscape
     ? nativeCardDims.cardHeight
-    : Math.min(nativeCardDims.cardHeight, maxNativeCardH);
+    : Math.min(nativeCardDims.cardHeight, maxNativeCardH, _maxNativeCardHFromWidth);
   const BOARD_CARD_H = rvOld(
     screenW,
     mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
