@@ -4,6 +4,7 @@ import { rs } from '../utils/responsive';
 import { useGameStore } from '../store/gameStore';
 import { Card as CardType } from '../constants/gameConfig';
 
+// b451 retry: 2026-05-03 16:35 IL - b450 (commit 447765c) uploaded but stuck in Apple ASC processing
 // Card Display Bible (S81 — PERMANENT — never change without "UNLOCK CARD BIBLE"):
 // - Every card shows ONLY: large centered rank + large centered suit
 // - NO corner indicators anywhere
