@@ -133,7 +133,11 @@ function GameScreenInner() {
 
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Ã¢ÂÂ smaller cards Ã¢ÂÂ shorter hand section
-  const PLAYER_HAND_H = SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124;
+  const playerHandCardCount = numberOfPlayers === 2 ? 16 : numberOfPlayers === 3 ? 12 : 8;
+  const playerHandRows = playerHandCardCount > 14 ? 3 : playerHandCardCount > 7 ? 2 : 1;
+  const handCardCapPt = playerHandRows === 3 ? 48 : 64;
+  const handCardHeightPt = Math.round(handCardCapPt / 0.72);
+  const PLAYER_HAND_H = 22 + 3 + (Platform.OS === 'ios' ? 20 : 8) + (handCardHeightPt * playerHandRows) + (4 * Math.max(0, playerHandRows - 1));
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
