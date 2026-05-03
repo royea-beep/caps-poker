@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   },
   backDiamond: {
     color: '#c9a84c',
-    opacity: 0.4,
+    opacity: 0.18,
   },
   dimmed: {
     opacity: 0.35,
