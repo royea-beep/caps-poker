@@ -101,7 +101,7 @@ export function BoardArrangement({
               botCards={board.allBotCards[0] || board.botCards}
               allBotCards={board.allBotCards}
               revealed={false}
-              active={false}
+              active={isArranging && cardsRemaining > 0 && i === boards.findIndex((b) => b.playerCards.length < CARDS_PER_BOARD)}
               potAmount={potPerBoard * numberOfPlayers}
               onPress={() => onBoardPress(i)}
               onRemoveCard={(card) => onRemoveCard(i, card)}
