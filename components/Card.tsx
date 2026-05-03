@@ -174,7 +174,7 @@ export default function CardComponent({
     ];
 
     if (Platform.OS === 'web') {
-      const svgStr = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.45' transform='rotate(45 6 1.5)'/></svg>";
+      const svgStr = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.18' transform='rotate(45 6 1.5)'/></svg>";
       return (
         <View style={cardStyle}>
           <View style={[StyleSheet.absoluteFillObject, {
