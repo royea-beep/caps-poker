@@ -456,7 +456,7 @@ export default function Board({
               <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           }
-          {isArrangement && playerCards.length >= 2 && (() => {
+          {isArrangement && (playerCards.length >= 2 || (playerCards.length === 0 && openCards.length >= 3)) && (() => {
             // Hint uses only VISIBLE community (3 open) — never closed cards (would spoil unrevealed cards)
             const hint = getHandHint(playerCards, openCards);
             const expl = HINT_EXPLANATIONS[hint];
