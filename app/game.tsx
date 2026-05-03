@@ -1026,7 +1026,7 @@ function GameScreenInner() {
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
-              {allBotsReady ? `✓ ${t().ready}` : '…'}
+              {allBotsReady ? `✓ ${t().ready}` : 'חושב…'}
             </Text>
           </View>
           {isArranging && (
