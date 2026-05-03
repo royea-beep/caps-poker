@@ -172,8 +172,12 @@ export function BoardArrangement({
         </Text>
       )}
 
+      {/* Helper text when nothing placed yet */}
+      {isArranging && boards.every((b) => b.playerCards.length === 0) && (
+        <Text style={baStyles.helperText}>הקש על קלף כדי להתחיל</Text>
+      )}
       {/* Floating action buttons */}
-      {isArranging && (
+      {isArranging && boards.some((b) => b.playerCards.length > 0) && (
         <View style={baStyles.floatingActions}>
           <Pressable
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
