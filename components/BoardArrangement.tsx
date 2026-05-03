@@ -295,6 +295,15 @@ const baStyles = StyleSheet.create({
     paddingVertical: rs(10),
     zIndex: 10,
   },
+  helperText: {
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: rf(13),
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    paddingVertical: rs(18),
+    paddingHorizontal: rs(20),
+  },
   floatingBtn: {
     paddingVertical: rs(14),
     paddingHorizontal: rs(28),
