@@ -1333,7 +1333,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
   },
   botNameLabel: {
-    color: COLORS.textSecondary,
+    color: 'rgba(255,255,255,0.85)',
     fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1.5,
