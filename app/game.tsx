@@ -920,6 +920,8 @@ function GameScreenInner() {
 
   const readyBotCount = botsReady.filter(Boolean).length;
   const cardsRemaining = playerHand.length;
+  const totalCards = boardCount * CARDS_PER_BOARD;
+  const cardsPlaced = totalCards - cardsRemaining;
   const TIMER_SIZE = timerPulsing ? rv(64) : rv(52);
 
   // Ã¢ÂÂÃ¢ÂÂ Landscape / widescreen layout Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
