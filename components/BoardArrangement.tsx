@@ -83,7 +83,7 @@ export function BoardArrangement({
   return (
     <>
       {/* Boards */}
-      <View style={isWeb ? baStyles.boardsGrid : baStyles.boardsColumn}>
+      <View style={(isWeb || boardCount >= 3) ? baStyles.boardsGrid : baStyles.boardsColumn}>
         {boards.map((board, i) => (
           <Animated.View
             key={i}
