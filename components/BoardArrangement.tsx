@@ -310,27 +310,29 @@ const baStyles = StyleSheet.create({
     }),
   },
   undoBtn: {
-    backgroundColor: '#2A1A06',
-    borderWidth: 1.5,
-    borderColor: '#F5C842',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 0,
   },
   placeBtn: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: 'rgba(201,168,76,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.4)',
     flex: 1,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.3,
         shadowRadius: 8,
       },
-      android: { elevation: 8 },
+      android: { elevation: 6 },
       default: {},
     }),
   },
   placeBtnDisabled: {
-    backgroundColor: COLORS.goldDim,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255,255,255,0.08)',
     opacity: 0.6,
   },
   placeBtnReady: {
