@@ -361,10 +361,10 @@ const baStyles = StyleSheet.create({
     opacity: 0.4,
   },
   undoBtnText: {
-    color: '#F5C842',
+    color: 'rgba(255,255,255,0.7)',
   },
   placeBtnText: {
-    color: COLORS.background,
+    color: '#FFFEF8',
   },
   continueBtn: {
     position: 'absolute',
