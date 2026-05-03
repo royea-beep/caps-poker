@@ -457,7 +457,10 @@ export default function Board({
             ))
           }
           {isArrangement && playerCards.length >= 2 && (() => {
-            const hint = getHandHint(playerCards, openCards);
+            // Pass ALL 5 community (open + closed) — even though closed are face-down to player,
+            // they are dealt and the hint can show what hand the player IS making with them
+            const allCommunity = [...openCards, ...closedCards];
+            const hint = getHandHint(playerCards, allCommunity);
             const expl = HINT_EXPLANATIONS[hint];
             const isHE = getLanguage() === 'he';
             const explText = expl ? (isHE ? expl.he : expl.en) : '';
