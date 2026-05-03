@@ -97,7 +97,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   })();
   const cardH = Math.round(cardW / 0.72);
 
-  const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
+  const rowSize = useQuadRows ? 4 : cardsPerRow;
   const topRow = safeCards.slice(0, rowSize);
   const row2 = useQuadRows ? safeCards.slice(rowSize, rowSize * 2) : [];
   const row3 = useQuadRows ? safeCards.slice(rowSize * 2, rowSize * 3) : [];
