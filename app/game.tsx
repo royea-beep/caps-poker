@@ -1101,10 +1101,11 @@ function GameScreenInner() {
             <Text style={styles.calculatingText}>Calculating results...</Text>
           )}
         </View>
-        <View style={styles.headerChips}>
-          <Text style={styles.headerChipsEmoji}>💰</Text>
-          <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
-        </View>
+        {!isArranging && (
+          <View style={styles.headerChips}>
+            <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
+          </View>
+        )}
       </View>
 
       {/* Bot status bar */}
