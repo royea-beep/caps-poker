@@ -88,7 +88,7 @@ export function BoardArrangement({
           <Animated.View
             key={i}
             style={[
-              isWeb ? (boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf) : (boardCount >= 3 ? baStyles.boardCellHalf : baStyles.boardCellFull),
+              isWeb ? (boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf) : (boardCount >= 3 ? (!isWeb && boardCount === 3 && i === 2 ? baStyles.boardCellFullBottom : baStyles.boardCellHalf) : baStyles.boardCellFull),
               isWeb && screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
               boardShakeStyles[i],
             ]}
@@ -220,6 +220,11 @@ const baStyles = StyleSheet.create({
   },
   boardCellFull: {
     flex: 1,
+  },
+  boardCellFullBottom: {
+    width: '100%',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   boardCellHalf: {
     width: '50%',
