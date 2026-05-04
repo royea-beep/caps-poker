@@ -176,11 +176,11 @@ function GameScreenInner() {
   const _boardColWNative = _isWeb && boardCount === 3
     ? Math.max(80, Math.floor(screenW / 3) - 16)
     : (_isWeb || boardCount >= 3)
-      ? Math.max(80, Math.floor(screenW / 2) - 16)
+      ? Math.max(80, Math.floor((screenW - 16) / 2) - 16)
       : screenW - 32;
   // Inside board: 5 community cards + 4 gaps(6) + label(20) + separator(7) + pad = ~31 overhead
-  const _maxCommWNative = Math.max(18, Math.floor((_boardColWNative - 31) / 5));
-  const _maxNativeCardHFromWidth = Math.round(_maxCommWNative / 0.7 / communityScale);
+  const _maxCommWNative = Math.max(18, Math.floor((_boardColWNative - 45) / 5));
+  const _maxNativeCardHFromWidth = Math.round(_maxCommWNative / 0.72);
   const nativeCardH = isLandscape
     ? nativeCardDims.cardHeight
     : Math.min(nativeCardDims.cardHeight, maxNativeCardH, _maxNativeCardHFromWidth);
