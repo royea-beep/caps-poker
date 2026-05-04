@@ -67,6 +67,7 @@ interface BoardProps {
   cardHeight?: number;
   isWinner?: boolean;
   communityScale?: number;
+  cardScale?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -96,7 +97,7 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
 
   return (
     <Pressable onPress={onPress}>
-      <Animated.View style={[styles.emptySlot, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, animStyle]}>
+      <Animated.View style={[styles.emptySlot, styles.slotPlaceholder, { width: slotWidth, height: slotHeight }, animStyle]}>
         {false && <Text style={styles.plusText}>tap</Text>}
       </Animated.View>
     </Pressable>
@@ -154,6 +155,7 @@ export default function Board({
   cardHeight: cardHeightProp,
   isWinner,
   communityScale = 1.2,
+  cardScale = 1.0,
 }: BoardProps) {
   const { width: screenW, height: screenH } = useWindowDimensions();
   const BOARD_HEIGHT = Math.floor(screenH * 0.22); // S100 Apr28: bigger boards, smaller player hand for room balance
@@ -164,13 +166,16 @@ export default function Board({
   const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [botTooltipVisible, setBotTooltipVisible] = useState(false);
   const botTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // S81 Card Bible: community and player cards SAME formula (tester: flop was smaller)
-  const ch = cardHeightProp ?? rv(screenW, 70, 85, 100, 80);
+  const COMMUNITY_BASE_H = 75;
+  const SLOT_BASE_H = 60;
+  const FLOOR_COMMUNITY_H = 50;
+  const FLOOR_SLOT_H = 36;
+  const ch = Math.max(FLOOR_COMMUNITY_H, COMMUNITY_BASE_H * cardScale);
   const cw = Math.round(ch * 0.72);
-  const commH = ch; // SAME as player cards (S81 fix)
+  const commH = ch;
   const commW = cw;
-  const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
-  const slotW = Math.round(slotH * 0.7);
+  const slotH = Math.max(FLOOR_SLOT_H, SLOT_BASE_H * cardScale);
+  const slotW = Math.round(slotH * 0.72);
 
   const pulseValue = useSharedValue(0.4);
 
@@ -682,6 +687,19 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.3,
     color: 'rgba(255,255,255,0.85)',
+  },
+  slotPlaceholder: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255, 215, 0, 0.25)',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  slotsRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    gap: 6,
+    marginTop: 6,
   },
   emptySlot: {
     borderRadius: rs(8),

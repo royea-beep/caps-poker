@@ -26,10 +26,9 @@ export interface BoardArrangementProps {
   boardError: string | null;
   boardCount: number;
   numberOfPlayers: number;
+  cardScale: number;
   communityScale: number;
   BOARD_CARD_H: number;
-  screenW: number;
-  isWeb: boolean;
   countdownActive: boolean;
   countdown: number;
   timeBankUsed: boolean;
@@ -59,10 +58,9 @@ export function BoardArrangement({
   boardError,
   boardCount,
   numberOfPlayers,
+  cardScale,
   communityScale,
   BOARD_CARD_H,
-  screenW,
-  isWeb,
   countdownActive,
   countdown,
   timeBankUsed,
@@ -83,15 +81,11 @@ export function BoardArrangement({
   return (
     <>
       {/* Boards */}
-      <View style={(isWeb || boardCount >= 3) ? baStyles.boardsGrid : baStyles.boardsColumn}>
+      <View style={baStyles.boardsColumn}>
         {boards.map((board, i) => (
           <Animated.View
             key={i}
-            style={[
-              isWeb ? (boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf) : (boardCount >= 3 ? (!isWeb && boardCount === 3 && i === 2 ? baStyles.boardCellFullBottom : baStyles.boardCellHalf) : baStyles.boardCellFull),
-              isWeb && screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
-              boardShakeStyles[i],
-            ]}
+            style={[baStyles.boardCellFull, boardShakeStyles[i]]}
           >
             <Board
               index={i}
@@ -110,6 +104,7 @@ export function BoardArrangement({
               selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
               cardHeight={BOARD_CARD_H}
               communityScale={communityScale}
+              cardScale={cardScale}
             />
           </Animated.View>
         ))}
@@ -208,34 +203,8 @@ const baStyles = StyleSheet.create({
     paddingHorizontal: rs(16),
     gap: rs(4),
   },
-  boardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'stretch',
-    alignContent: 'stretch',
-    paddingHorizontal: Platform.OS === 'web' ? 6 : 8,
-    paddingVertical: Platform.OS === 'web' ? 4 : 0,
-    width: '100%',
-    flex: 1,
-  },
   boardCellFull: {
     flex: 1,
-  },
-  boardCellFullBottom: {
-    width: '100%',
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  boardCellHalf: {
-    width: '50%',
-    minHeight: Platform.OS === 'web' ? 180 : undefined,
-    paddingHorizontal: Platform.OS === 'web' ? 3 : 4,
-    paddingVertical: Platform.OS === 'web' ? 3 : 4,
-  },
-  boardCellThird: {
-    width: '33.33%',
-    paddingHorizontal: rs(4),
-    paddingVertical: 2,
   },
   selectionHint: {
     textAlign: 'center',

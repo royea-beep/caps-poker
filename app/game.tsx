@@ -16,7 +16,7 @@ import PlayerHand from '../components/PlayerHand';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
-import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE, getCardDimensions } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import {
@@ -42,7 +42,6 @@ import WinCelebration from '../components/WinCelebration';
 import TableSurface from '../components/TableSurface';
 import { drumRoll, winSweep, winBoard } from '../lib/haptics';
 
-import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
@@ -102,11 +101,9 @@ const hapticNotify = (type: any) => {
 const COUNTDOWN_SECONDS = 30;
 
 // Layout constants
-const TOP_BAR_H = 44;
-const BOT_STATUS_H = 24;       // label + paddingVertical ≈ 24px
-const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical:12×2 + text ≈ 68px
-const HINT_H = 26;             // selectionHint / boardError bar
-const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + header(18) + cardRow gaps(6) + margins
+const TOP_FIXED_HEIGHT = 130;   // top bar + bot status + timer
+const HAND_HEIGHT = 180;        // player hand: 2 rows x 8 cards, locked
+const BOTTOM_FIXED_HEIGHT = 30; // safe area buffer
 
 function GameScreenInner() {
   const router = useRouter();
@@ -131,68 +128,11 @@ function GameScreenInner() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
-  // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
-  // Approximate by screen height bracket: smaller phones Ã¢ÂÂ smaller cards Ã¢ÂÂ shorter hand section
-  const playerHandCardCount = numberOfPlayers === 2 ? 16 : numberOfPlayers === 3 ? 12 : 8;
-  const playerHandRows = playerHandCardCount > 14 ? 3 : playerHandCardCount > 7 ? 2 : 1;
-  const handCardCapPt = playerHandRows === 3 ? 48 : 64;
-  const handCardHeightPt = Math.round(handCardCapPt / 0.72);
-  const PLAYER_HAND_H = 22 + 3 + (Platform.OS === 'ios' ? 20 : 8) + (handCardHeightPt * playerHandRows) + (4 * Math.max(0, playerHandRows - 1));
-
-  const safeH = SCREEN_H - insets.top - insets.bottom;
-  // Visual rows: how boards arrange in 2D layout
-  // - iOS 1-2 boards: column (visualRows=boardCount)
-  // - iOS 3-4 boards: 2-col grid (visualRows=ceil(n/2))
-  // - Web 3 boards: 1-row of 3 (visualRows=1)
-  // - Web 4 boards: 2-col grid (visualRows=2)
-  // - Web 2 boards: 1-row of 2 (visualRows=1)
-  const _isWeb = Platform.OS === 'web';
-  const _visualRows = _isWeb
-    ? (boardCount === 3 ? 1 : Math.ceil(boardCount / 2))
-    : (boardCount >= 3 ? Math.ceil(boardCount / 2) : boardCount);
-  const BOARD_GAPS = Math.max(0, _visualRows - 1) * 4;
-  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / _visualRows - BOARD_CHROME;
-  // Mobile web card height scales with board count — more boards = tighter = needs clarity boost
-  // Mobile web card height: width-aware so 5 community cards fit in 2-column board grid.
-  // Board column overhead (reduced padding in BoardArrangement + Board) approx 26px.
-  // cardRow: 5 cards + 4 gaps(6) + separator(7) = 31px overhead inside card row.
-  const _boardColW = Math.max(80, Math.floor(screenW / 2) - 26);
-  const _maxMobileWebCw = Math.max(18, Math.floor((_boardColW - 31) / 5));
-  const _maxMobileWebCh = Math.round(_maxMobileWebCw / 0.72);
-  const mobileWebCardH = Math.min(CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60, _maxMobileWebCh);
-  const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
-  const communityScale = nativeCardDims.communityScale;
-  // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
-  // During arrangement: commH = ch*communityScale, slotH = ch*0.7, plus 4pt cardRow padding.
-  // ch*(communityScale + 0.7) + 4 <= boardSpace Ã¢ÂÂ maxCh = floor((boardSpace-4)/(communityScale+0.7))
-  // Landscape uses a 2-column grid with more height per row — no cap needed there.
-  const CARD_ROW_PAD = 4;
-  const maxNativeCardH = Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
-  // Width constraint: in grid mode, 5 community cards must fit in narrower board column.
-  // Board column width:
-  //   - Web Third (3 boards on web): ~33% of screenW
-  //   - Grid Half (4+ boards web, 3+ boards iOS): ~50% of screenW
-  //   - Column full-width (1-2 boards iOS): screenW
-  const _boardColWNative = _isWeb && boardCount === 3
-    ? Math.max(80, Math.floor(screenW / 3) - 16)
-    : (_isWeb || boardCount >= 3)
-      ? Math.max(80, Math.floor((screenW - 16) / 2) - 16)
-      : screenW - 32;
-  // Inside board: 5 community cards + 4 gaps(6) + label(20) + separator(7) + pad = ~31 overhead
-  const _maxCommWNative = Math.max(18, Math.floor((_boardColWNative - 45) / 5));
-  const _maxNativeCardHFromWidth = Math.round(_maxCommWNative / 0.72);
-  const nativeCardH = isLandscape
-    ? nativeCardDims.cardHeight
-    : Math.min(nativeCardDims.cardHeight, maxNativeCardH, _maxNativeCardHFromWidth);
-  const BOARD_CARD_H = rvOld(
-    screenW,
-    mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
-    72,                          // tablet web
-    100,                         // desktop web
-    nativeCardH,                 // native — height-capped so AUTO button is always visible
-  );
+  const BOARD_SCALES: Record<number, number> = { 2: 1.0, 3: 0.85, 4: 0.69 };
+  const cardScale = BOARD_SCALES[boardCount] ?? 1.0;
+  const BOARD_CARD_H = Math.max(50, Math.round(75 * cardScale));
+  const communityScale = 1.0;
   const isWeb = Platform.OS === 'web';
-
   const [gamesPlayed, setGamesPlayed] = useState(99); // default high so hint is hidden until loaded
   const [isFirstGame, setIsFirstGame] = useState(false);
   const [tooltipStep, setTooltipStep] = useState(0); // 0 = none shown yet, 1-5 = current tip index
@@ -1042,6 +982,7 @@ function GameScreenInner() {
                   selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
+                  cardScale={cardScale}
                 />
               </Animated.View>
             ))}
@@ -1170,8 +1111,7 @@ function GameScreenInner() {
         numberOfPlayers={numberOfPlayers}
         communityScale={communityScale}
         BOARD_CARD_H={BOARD_CARD_H}
-        screenW={screenW}
-        isWeb={isWeb}
+        cardScale={cardScale}
         countdownActive={countdownActive}
         countdown={countdown}
         timeBankUsed={timeBankUsed}

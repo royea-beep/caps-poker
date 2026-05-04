@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
-import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { rf, rs, rv } from '../utils/responsive';
 import { t } from '../utils/i18n';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
-import { getDevice } from '../constants/deviceBreakpoints';
 import CardComponent from './Card';
 import { Card, COLORS } from '../constants/gameConfig';
-import { WEB_MAX_WIDTH } from './WebContainer';
 import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { playSound } from '../utils/sounds';
@@ -70,44 +68,15 @@ function AnimatedCardSlot({
 }
 
 export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
-  const { width: rawW } = useWindowDimensions();
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
-  const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
-  const device = getDevice(SCREEN_W, 0);
 
-  // Smart wrapping: single row up to 7 cards, 2 rows when 8+
-  // Threshold 7 prevents iPhone SE width-fitting issues that caused 7+1 spillover with 8 cards
+  const HAND_CARD_H = 80;
+  const HAND_CARD_W = 56;
+
   const safeCards = cards ?? [];
-  const useTwoRows = (Platform.OS === 'web' && device.isMobileWeb) || safeCards.length > 7;
-
-  // Dynamic card sizing — sized for max row width
-  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
-  const useQuadRows = false; // 4-row mode disabled
-  // Single row up to 7. Two rows for 8-14. Three rows for 15+. Cap at 7 per row always.
-  const numRows = !useTwoRows ? 1 : (safeCards.length > 14 ? 3 : 2);
-  const cardsPerRow = useTwoRows ? Math.min(7, Math.ceil(safeCards.length / numRows)) : 7;
-  // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
-  const CARD_WRAPPER_OVERHEAD = 12;
-  const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
-  // Smaller cap when 3 rows - gives boards more vertical space (Council web-app-testing)
-  const nativeCap = numRows === 3 ? 48 : 64;
-  const mobileWebCap = numRows === 3 ? 46 : 60;
-  const cardW = (() => {
-    if (Platform.OS !== 'web') return Math.min(nativeCap, Math.max(28, maxCardW));
-    if (device.isMobileWeb)  return Math.min(mobileWebCap, Math.max(26, maxCardW));
-    if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
-    return Math.min(88, Math.max(70, maxCardW));
-  })();
-  const cardH = Math.round(cardW / 0.72);
-
-  // 3-row mode when too many cards for 2 rows of cardsPerRow
-  const useThreeRows = !useQuadRows && safeCards.length > cardsPerRow * 2;
-  const rowSize = useQuadRows ? 4 : cardsPerRow;
-  const topRow = safeCards.slice(0, rowSize);
-  const row2 = useQuadRows ? safeCards.slice(rowSize, rowSize * 2) : useThreeRows ? safeCards.slice(rowSize, rowSize * 2) : [];
-  const row3 = useQuadRows ? safeCards.slice(rowSize * 2, rowSize * 3) : [];
-  const bottomRow = useQuadRows ? safeCards.slice(rowSize * 3) : useThreeRows ? safeCards.slice(rowSize * 2) : safeCards.slice(rowSize);
+  const row1 = safeCards.slice(0, 8);
+  const row2 = safeCards.slice(8, 16);
 
   const renderCard = (card: Card, globalIndex: number) => (
     <AnimatedCardSlot
@@ -116,8 +85,8 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
       index={globalIndex}
       selIndex={selectedCardIds.indexOf(card.id)}
       onSelectCard={onSelectCard}
-      cardW={cardW}
-      cardH={cardH}
+      cardW={HAND_CARD_W}
+      cardH={HAND_CARD_H}
     />
   );
 
@@ -131,32 +100,12 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
       </View>
       {safeCards.length > 0 ? (
         <View style={styles.grid}>
-          {useTwoRows ? (
-            <>
-              <View style={styles.row}>
-                {topRow.map((card, i) => renderCard(card, i))}
-              </View>
-              {row2.length > 0 && (
-                <View style={styles.row}>
-                  {row2.map((card, i) => renderCard(card, rowSize + i))}
-                </View>
-              )}
-              {row3.length > 0 && (
-                <View style={styles.row}>
-                  {row3.map((card, i) => renderCard(card, rowSize * 2 + i))}
-                </View>
-              )}
-              {bottomRow.length > 0 && (
-                <View style={styles.row}>
-                  {bottomRow.map((card, i) => renderCard(card, (useQuadRows ? rowSize * 3 : rowSize) + i))}
-                </View>
-              )}
-            </>
-          ) : (
-            <View style={styles.webRow}>
-              {safeCards.map((card, i) => renderCard(card, i))}
-            </View>
-          )}
+          <View style={styles.row}>
+            {row1.map((card, i) => renderCard(card, i))}
+          </View>
+          <View style={styles.row}>
+            {row2.map((card, i) => renderCard(card, 8 + i))}
+          </View>
         </View>
       ) : (
         <View style={styles.emptyRow}>
@@ -169,8 +118,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
 
 const styles = StyleSheet.create({
   container: {
+    height: 180,
     paddingTop: rs(3),
-    paddingBottom: Platform.OS === 'ios' ? rs(20) : rs(8),
+    paddingBottom: Platform.OS === 'ios' ? rs(12) : rs(6),
     backgroundColor: COLORS.surface,
     borderTopWidth: 2,
     borderTopColor: COLORS.boardBorder,
