@@ -112,9 +112,15 @@ jobs:
             var dist = all.filter(function(c) { return DIST_TYPES.indexOf(c.attributes.certificateType) !== -1 })
             console.log('Distribution certs: ' + dist.length)
             var dev = all.filter(function(c) { return ['DEVELOPMENT','IOS_DEVELOPMENT'].indexOf(c.attributes.certificateType) !== -1 })
-            console.log('Dev certs to revoke: ' + dev.length + ' (keep 2 newest, revoke rest)')
+            console.log('Dev certs: ' + dev.length + ' (keep 2 newest, revoke rest)')
             dev.sort(function(a, b) { return new Date(b.attributes.expirationDate) - new Date(a.attributes.expirationDate) })
-            var toRevoke = dist.concat(dev.slice(2))
+            // Only revoke dist certs when AT Apple's quota (3 per team) — keep the 2 newest
+            // Previously this revoked ALL dist certs every build, causing daily revocation emails
+            var DIST_QUOTA = 3
+            dist.sort(function(a, b) { return new Date(a.attributes.expirationDate) - new Date(b.attributes.expirationDate) })
+            var distToRevoke = dist.length >= DIST_QUOTA ? dist.slice(0, dist.length - (DIST_QUOTA - 1)) : []
+            console.log('Dist certs: ' + dist.length + ' — revoking: ' + distToRevoke.length + ' (only when >= ' + DIST_QUOTA + ')')
+            var toRevoke = distToRevoke.concat(dev.slice(2))
             console.log('Total to revoke: ' + toRevoke.length)
             if (toRevoke.length === 0) { console.log('Nothing to revoke -- OK'); return }
             var revoked = 0
