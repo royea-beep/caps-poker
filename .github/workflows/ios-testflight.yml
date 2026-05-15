@@ -112,15 +112,19 @@ jobs:
             var dist = all.filter(function(c) { return DIST_TYPES.indexOf(c.attributes.certificateType) !== -1 })
             console.log('Distribution certs: ' + dist.length)
             var dev = all.filter(function(c) { return ['DEVELOPMENT','IOS_DEVELOPMENT'].indexOf(c.attributes.certificateType) !== -1 })
-            console.log('Dev certs: ' + dev.length + ' (keep 2 newest, revoke rest)')
-            dev.sort(function(a, b) { return new Date(b.attributes.expirationDate) - new Date(a.attributes.expirationDate) })
-            // Only revoke dist certs when AT Apple's quota (3 per team) — keep the 2 newest
-            // Previously this revoked ALL dist certs every build, causing daily revocation emails
+            // Apply quota logic to BOTH dist and dev certs. Apple sends a "Certificate Has Been
+            // Revoked" email for every revocation, so we only revoke when actually at quota.
+            // xcodebuild auto-signing creates a new dev cert each build, so without a quota
+            // check, dev.slice(2) revokes one cert per build = daily email storm.
             var DIST_QUOTA = 3
+            var DEV_QUOTA = 2
             dist.sort(function(a, b) { return new Date(a.attributes.expirationDate) - new Date(b.attributes.expirationDate) })
+            dev.sort(function(a, b) { return new Date(a.attributes.expirationDate) - new Date(b.attributes.expirationDate) })
             var distToRevoke = dist.length >= DIST_QUOTA ? dist.slice(0, dist.length - (DIST_QUOTA - 1)) : []
+            var devToRevoke = dev.length > DEV_QUOTA ? dev.slice(0, dev.length - DEV_QUOTA) : []
             console.log('Dist certs: ' + dist.length + ' — revoking: ' + distToRevoke.length + ' (only when >= ' + DIST_QUOTA + ')')
-            var toRevoke = distToRevoke.concat(dev.slice(2))
+            console.log('Dev certs: ' + dev.length + ' — revoking: ' + devToRevoke.length + ' (only when > ' + DEV_QUOTA + ')')
+            var toRevoke = distToRevoke.concat(devToRevoke)
             console.log('Total to revoke: ' + toRevoke.length)
             if (toRevoke.length === 0) { console.log('Nothing to revoke -- OK'); return }
             var revoked = 0
