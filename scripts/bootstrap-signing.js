@@ -205,8 +205,17 @@ function readCertCN(certPemFile) {
   );
   console.error(`Existing dist certs: ${distExisting.length}`);
 
-  // We always create a fresh cert because we don't have the private key for
-  // any existing ones (those were ephemeral, made by xcodebuild auto-signing).
+  // Revoke any existing dist certs first — we don't have their private keys
+  // (this script is the only path that retains the private key), and Apple
+  // rejects new-cert creation when one is already current.
+  for (const c of distExisting) {
+    console.error(`  revoking existing dist cert id=${c.id} expires=${c.attributes.expirationDate}`);
+    const del = await appleRequest('DELETE', `/v1/certificates/${c.id}`);
+    if (del.status !== 204) {
+      console.error(`    FAILED to revoke ${c.id}: ${del.status} ${del.body.slice(0, 200)}`);
+    }
+  }
+
   console.error('Generating CSR + key pair locally…');
   const { csrPem, keyFile } = generateCSR();
 
