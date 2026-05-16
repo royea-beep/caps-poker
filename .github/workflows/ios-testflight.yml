@@ -75,74 +75,41 @@ jobs:
           mkdir -p ~/private_keys
           echo "$API_KEY_BASE64" | base64 --decode > ~/private_keys/AuthKey_${API_KEY_ID}.p8
 
-      - name: Revoke oldest Distribution cert if at quota
+      - name: Setup signing (manual cert + provisioning profile)
         env:
-          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          P12_BASE64:     ${{ secrets.BUILD_CERT_P12_BASE64 }}
+          P12_PASSWORD:   ${{ secrets.BUILD_P12_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.BUILD_PROVISIONING_PROFILE_BASE64 }}
         run: |
-          node - << 'SCRIPT'
-          const fs = require('fs')
-          const https = require('https')
-          const { createSign } = require('crypto')
-          const keyId = process.env.API_KEY_ID
-          const issuerId = process.env.API_ISSUER_ID
-          const keyPath = process.env.HOME + '/private_keys/AuthKey_' + keyId + '.p8'
-          const privateKey = fs.readFileSync(keyPath, 'utf8')
-          function makeToken() {
-            const header  = Buffer.from(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' })).toString('base64url')
-            const now = Math.floor(Date.now() / 1000)
-            const payload = Buffer.from(JSON.stringify({ iss: issuerId, iat: now, exp: now + 300, aud: 'appstoreconnect-v1' })).toString('base64url')
-            const signer = createSign('SHA256')
-            signer.update(header + '.' + payload)
-            const sig = signer.sign({ key: privateKey, dsaEncoding: 'ieee-p1363' }, 'base64url')
-            return header + '.' + payload + '.' + sig
-          }
-          function apiReq(method, p, cb) {
-            const req = https.request({ hostname: 'api.appstoreconnect.apple.com', path: p, method: method, headers: { Authorization: 'Bearer ' + makeToken() } }, function(res) {
-              var body = ''; res.on('data', function(d) { body += d })
-              res.on('end', function() { cb(res.statusCode, body) })
-            })
-            req.on('error', function(e) { console.log('API error:', e.message) }); req.end()
-          }
-          apiReq('GET', '/v1/certificates?limit=50', function(status, body) {
-            if (status !== 200) { console.log('List status:', status, '-- skipping'); return }
-            var all = JSON.parse(body).data || []
-            all.forEach(function(c) { console.log('  cert:', c.attributes.certificateType, c.id, c.attributes.expirationDate) })
-            var DIST_TYPES = ['IOS_DISTRIBUTION','DISTRIBUTION','APPLE_DISTRIBUTION','MAC_APP_DISTRIBUTION','DEVELOPER_ID_APPLICATION']
-            var dist = all.filter(function(c) { return DIST_TYPES.indexOf(c.attributes.certificateType) !== -1 })
-            console.log('Distribution certs: ' + dist.length)
-            var dev = all.filter(function(c) { return ['DEVELOPMENT','IOS_DEVELOPMENT'].indexOf(c.attributes.certificateType) !== -1 })
-            // Apply quota logic to BOTH dist and dev certs. Apple sends a "Certificate Has Been
-            // Revoked" email for every revocation, so we only revoke when actually at quota.
-            // xcodebuild auto-signing creates a new dev cert each build, so without a quota
-            // check, dev.slice(2) revokes one cert per build = daily email storm.
-            var DIST_QUOTA = 3
-            var DEV_QUOTA = 2
-            dist.sort(function(a, b) { return new Date(a.attributes.expirationDate) - new Date(b.attributes.expirationDate) })
-            dev.sort(function(a, b) { return new Date(a.attributes.expirationDate) - new Date(b.attributes.expirationDate) })
-            var distToRevoke = dist.length >= DIST_QUOTA ? dist.slice(0, dist.length - (DIST_QUOTA - 1)) : []
-            var devToRevoke = dev.length > DEV_QUOTA ? dev.slice(0, dev.length - DEV_QUOTA) : []
-            console.log('Dist certs: ' + dist.length + ' — revoking: ' + distToRevoke.length + ' (only when >= ' + DIST_QUOTA + ')')
-            console.log('Dev certs: ' + dev.length + ' — revoking: ' + devToRevoke.length + ' (only when > ' + DEV_QUOTA + ')')
-            var toRevoke = distToRevoke.concat(devToRevoke)
-            console.log('Total to revoke: ' + toRevoke.length)
-            if (toRevoke.length === 0) { console.log('Nothing to revoke -- OK'); return }
-            var revoked = 0
-            function revokeNext() {
-              if (revoked >= toRevoke.length) { console.log('Done: revoked ' + revoked + ' cert(s)'); return }
-              var cert = toRevoke[revoked]
-              console.log('Revoking ' + cert.attributes.certificateType + ' ' + cert.id)
-              apiReq('DELETE', '/v1/certificates/' + cert.id, function(s2) {
-                console.log('  -> ' + (s2 === 204 ? 'OK' : 'FAILED ' + s2))
-                revoked++; revokeNext()
-              })
-            }
-            revokeNext()
-          })
-          SCRIPT
+          set -e
+          # 1. Create a temp keychain dedicated to this run.
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          KEYCHAIN_PW=$(openssl rand -base64 24 | tr -d '/=+' | head -c 32)
+          echo "KEYCHAIN_PATH=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "::add-mask::$KEYCHAIN_PW"
+          security create-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
 
-      - name: Wait for cert revocation to propagate
-        run: sleep 5
+          # 2. Import the Distribution .p12 from secrets.
+          P12="$RUNNER_TEMP/build.p12"
+          printf %s "$P12_BASE64" | base64 --decode > "$P12"
+          security import "$P12" -k "$KEYCHAIN" -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          rm -f "$P12"
+
+          # 3. Make the new keychain the default search list (existing
+          # login keychain stays available so cocoapods etc. still work).
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          # Grant codesign access without UI prompts.
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PW" "$KEYCHAIN"
+
+          # 4. Install the provisioning profile.
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          printf %s "$PROFILE_BASE64" | base64 --decode > "$PROFILES_DIR/caps-build.mobileprovision"
+
+          # 5. Sanity check — verify codesign identity is visible.
+          security find-identity -v -p codesigning "$KEYCHAIN"
 
       - name: Register App ID via ASC API
         env:
@@ -206,6 +173,15 @@ jobs:
             <string>app-store</string>
             <key>teamID</key>
             <string>3K9KJNGL9U</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.capspoker.app</key>
+              <string>Caps Poker App Store (Manual)</string>
+            </dict>
             <key>uploadBitcode</key>
             <false/>
             <key>compileBitcode</key>
@@ -216,8 +192,8 @@ jobs:
 
       - name: Build & archive
         env:
-          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          SIGN_IDENTITY:  ${{ secrets.BUILD_CERT_CN }}
+          PROFILE_NAME:   ${{ secrets.BUILD_PROVISIONING_PROFILE_NAME }}
         run: |
           xcodebuild archive \
             -workspace ios/CapsPoker.xcworkspace \
@@ -225,28 +201,20 @@ jobs:
             -configuration Release \
             -archivePath $RUNNER_TEMP/CapsPoker.xcarchive \
             -destination 'generic/platform=iOS' \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$API_KEY_ID" \
-            -authenticationKeyIssuerID "$API_ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${API_KEY_ID}.p8 \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=3K9KJNGL9U \
+            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }} \
             MARKETING_VERSION=2.0.1
 
       - name: Export IPA
-        env:
-          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/CapsPoker.xcarchive \
             -exportOptionsPlist ios/ExportOptions.plist \
-            -exportPath $RUNNER_TEMP/ipa \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$API_KEY_ID" \
-            -authenticationKeyIssuerID "$API_ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${API_KEY_ID}.p8
+            -exportPath $RUNNER_TEMP/ipa
 
       - name: Upload to TestFlight
         env:
@@ -417,4 +385,9 @@ jobs:
 
       - name: Cleanup key file
         if: always()
-        run: rm -f ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+        run: |
+          rm -f ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+          # Tear down the temp keychain so it doesn't linger on cached runners.
+          if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          fi
