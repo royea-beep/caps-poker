@@ -2,9 +2,9 @@
 
 ## Pipeline
 
-All events go through `track(event, properties?, screen?)` in `utils/analytics.ts` → Supabase RPC `track_event` → `events` table. Fire-and-forget; never blocks UX; silently drops if Supabase is unconfigured.
+All events go through `track(event, properties?, screen?)` in `utils/analytics.ts` → Supabase RPC `track_event` → `analytics_events` table. Fire-and-forget; never blocks UX; silently drops if Supabase is unconfigured.
 
-Each row in `events` carries: `event` (string), `user_id` (nullable — anon-eligible), `device_id` (uuid from `getDeviceId()`), `data` (jsonb properties), `screen` (string).
+Each row in `analytics_events` carries: `event_name` (text), `user_id` (uuid, nullable — anon-eligible), `device_id` (text, from `getDeviceId()`), `properties` (jsonb), `screen` (text), `session_id` (text), `created_at` (timestamptz). The RPC param `p_event` maps to the `event_name` column.
 
 ## The 8 funnel events
 
@@ -43,14 +43,14 @@ Each row in `events` carries: `event` (string), `user_id` (nullable — anon-eli
 WITH base AS (
   SELECT
     device_id,
-    bool_or(event = 'app_opened')         AS opened,
-    bool_or(event = 'home_screen_loaded') AS home,
-    bool_or(event = 'game_started')       AS started,
-    bool_or(event = 'hand_completed')     AS first_hand,
-    bool_or(event = 'google_prompt_shown')      AS prompted,
-    bool_or(event = 'login_google_success')     AS signed_in,
-    bool_or(event = 'arrangement_timeout')      AS timed_out
-  FROM events
+    bool_or(event_name = 'app_opened')         AS opened,
+    bool_or(event_name = 'home_screen_loaded') AS home,
+    bool_or(event_name = 'game_started')       AS started,
+    bool_or(event_name = 'hand_completed')     AS first_hand,
+    bool_or(event_name = 'google_prompt_shown')      AS prompted,
+    bool_or(event_name = 'login_google_success')     AS signed_in,
+    bool_or(event_name = 'arrangement_timeout')      AS timed_out
+  FROM analytics_events
   WHERE created_at > now() - interval '24 hours'
   GROUP BY device_id
 )
@@ -68,10 +68,10 @@ FROM base;
 ## Verification
 
 ```sql
-SELECT event, count(*)
-FROM events
+SELECT event_name, count(*)
+FROM analytics_events
 WHERE created_at > now() - interval '2 minutes'
-GROUP BY event
+GROUP BY event_name
 ORDER BY count(*) DESC;
 ```
 
