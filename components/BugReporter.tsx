@@ -28,6 +28,7 @@ import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils
 import { getSupabase } from '../utils/supabase';
 import { getConsoleLogs, getGameLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
+import { track } from '../utils/analytics';
 import { readFileAsBytes } from '../utils/fileReader';
 import { withTimeout } from '../utils/withTimeout';
 import { sendBugReportToWhatsApp, buildBugFixPrompt } from '../utils/bugWhatsApp';
@@ -447,6 +448,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
   const openReporter = useCallback(async () => {
     if (phase !== 'idle') return;
+    track('bug_reporter_opened', {}, 'bug_reporter');
     console.log('[BUG-PIPE] Step 1: User triggered bug report — showing pill...');
     Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium)?.catch?.(() => {});
     setNote('');

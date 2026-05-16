@@ -364,6 +364,11 @@ function GameScreenInner() {
   // no cleanup needed — one-time state transition, no subscriptions or timers
   useEffect(() => {
     if (countdownActive && countdown === 0 && !playerReady) {
+      track('arrangement_timeout', {
+        player_count: numberOfPlayers,
+        board_count: boardCount,
+        cards_remaining: playerHandRef.current.length,
+      }, 'game');
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
       const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, boardsRef.current);
       setBoards(filledBoards);

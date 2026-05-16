@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
 import { loginWithGoogle, dismissLoginPrompt } from '../utils/auth';
 import { track } from '../utils/analytics';
@@ -10,6 +10,10 @@ interface Props {
 }
 
 export default function LoginPromptModal({ visible, onClose, onLoginSuccess }: Props) {
+  useEffect(() => {
+    if (visible) track('google_prompt_shown', {}, 'login_prompt');
+  }, [visible]);
+
   const handleGoogle = async () => {
     track('login_google_pressed', {}, 'login_prompt');
     const result = await loginWithGoogle();
