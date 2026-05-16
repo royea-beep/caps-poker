@@ -1,20 +1,10 @@
 name: Web Deploy (Vercel)
 
-# Builds Expo web bundle. Vercel deploy currently DISABLED — the
-# VERCEL_TOKEN secret is invalid (expired/rotated) and caps.ftable.co.il
-# is not aliased to any project under team royearguan-9980 (dist,
-# caps-poker, and web-dist all only have *.vercel.app domains as of
-# 2026-05-16). To restore real production deploys:
+# Builds Expo web bundle and deploys to caps.ftable.co.il via Vercel.
+# Custom domain caps.ftable.co.il is aliased to the "dist" Vercel project
+# (prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP) under team team_ayrePMw5z8jSPhRe67RiBD0k.
 #
-#   1. Determine where caps.ftable.co.il actually serves from.
-#   2. If it should be Vercel: regenerate a token at
-#      https://vercel.com/account/tokens and `gh secret set VERCEL_TOKEN
-#      --repo royea-beep/caps-poker`. Alias the domain to whichever
-#      project this workflow targets (currently prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP
-#      = "dist" via scripts/fix-web-html.js).
-#   3. Re-enable the "Deploy to Vercel" step below.
-#
-# Required secrets when re-enabled: EXPO_TOKEN, VERCEL_TOKEN
+# Required secrets: EXPO_TOKEN, VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 # Triggers on push to main or manually
 
 on:
@@ -54,17 +44,9 @@ jobs:
         run: node scripts/fix-web-html.js
 
       - name: Deploy to Vercel (production)
-        # DISABLED 2026-05-16 — see header comment for why and how to restore.
-        if: false
         working-directory: dist
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
-
-      - name: Deploy skipped — see workflow header
-        run: |
-          echo "::notice::Vercel deploy step is currently disabled."
-          echo "::notice::Reason: invalid VERCEL_TOKEN + caps.ftable.co.il is not aliased"
-          echo "::notice::to any Vercel project in the team. See web-deploy.yml header"
-          echo "::notice::for the steps required to restore real deployment."
-          echo "Build verified: $(du -sh dist | cut -f1) bundle in dist/"
