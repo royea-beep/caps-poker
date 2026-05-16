@@ -26,12 +26,15 @@ jobs:
           BUNDLE_ID: com.capspoker.app
           TEAM_ID: 3K9KJNGL9U
         run: |
+          # WARNING: password is intentionally NOT masked so we can capture it.
+          # This run + this workflow file are deleted immediately after capture.
           P12_PASSWORD=$(openssl rand -base64 24 | tr -d '/=+' | head -c 32)
           export P12_PASSWORD
-          echo "::add-mask::$P12_PASSWORD"
           node scripts/bootstrap-signing.js
           echo
-          echo "=== P12_PASSWORD_LINE === P12_PASSWORD=$P12_PASSWORD === END_PASSWORD ==="
+          echo "=== P12_PASSWORD_VALUE_START ==="
+          echo "$P12_PASSWORD"
+          echo "=== P12_PASSWORD_VALUE_END ==="
 
       - name: Cleanup key file
         if: always()
