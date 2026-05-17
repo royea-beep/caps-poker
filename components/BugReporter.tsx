@@ -129,10 +129,11 @@ async function uploadAudio(uri: string): Promise<string | null> {
     if (error) { console.error('[BUG-PIPE] Step 4a: ❌ Upload FAILED:', error.message); return null; }
     console.log('[BUG-PIPE] Step 4a: ✅ Upload success, path:', data?.path);
 
-    const { data: urlData } = sb.storage.from('bug-recordings').getPublicUrl(filename);
-    const publicUrl = urlData?.publicUrl ?? null;
-    console.log('[BUG-PIPE] Step 4a: ✅ Public URL:', publicUrl);
-    return publicUrl;
+    const { data: urlData, error: urlErr } = await sb.storage.from('bug-recordings').createSignedUrl(filename, 60 * 60 * 24 * 7);
+    if (urlErr) { console.error('[BUG-PIPE] Step 4a: ❌ Signed URL failed:', urlErr.message); return null; }
+    const signedUrl = urlData?.signedUrl ?? null;
+    console.log('[BUG-PIPE] Step 4a: ✅ Signed URL (7d TTL):', signedUrl);
+    return signedUrl;
   } catch (err) {
     console.error('[BUG-PIPE] Step 4a: ❌ Exception:', err);
     return null;
@@ -155,10 +156,11 @@ async function uploadFrame(frameUri: string): Promise<string | null> {
       .upload(filename, bytes.buffer as ArrayBuffer, { contentType: 'image/jpeg', upsert: false });
     if (error) { console.error('[BUG-PIPE] Step 4b: ❌ Frame upload FAILED:', error.message); return null; }
 
-    const { data: urlData } = sb.storage.from('bug-recordings').getPublicUrl(filename);
-    const publicUrl = urlData?.publicUrl ?? null;
-    console.log('[BUG-PIPE] Step 4b: ✅ Frame uploaded:', publicUrl);
-    return publicUrl;
+    const { data: urlData, error: urlErr } = await sb.storage.from('bug-recordings').createSignedUrl(filename, 60 * 60 * 24 * 7);
+    if (urlErr) { console.error('[BUG-PIPE] Step 4b: ❌ Signed URL failed:', urlErr.message); return null; }
+    const signedUrl = urlData?.signedUrl ?? null;
+    console.log('[BUG-PIPE] Step 4b: ✅ Frame signed URL (7d TTL):', signedUrl);
+    return signedUrl;
   } catch (err) {
     console.error('[BUG-PIPE] Step 4b: ❌ Exception:', err);
     return null;

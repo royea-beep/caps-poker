@@ -17,6 +17,13 @@ Deno.serve(async (req: Request) => {
     return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
   }
 
+  // Require Supabase apikey OR Authorization header. Mobile client sends both.
+  const apiKey = req.headers.get('apikey') ?? '';
+  const auth = req.headers.get('Authorization') ?? '';
+  if (!apiKey && !auth.startsWith('Bearer ')) {
+    return new Response('unauthorized', { status: 401, headers: CORS_HEADERS });
+  }
+
   try {
     const body = await req.json();
     // Log to console (visible in Supabase function logs)
