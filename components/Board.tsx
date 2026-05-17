@@ -39,6 +39,8 @@ const HINT_EXPLANATIONS: Record<string, { en: string; he: string }> = {
   'Straight Draw':   { en: 'One card away from a Straight',       he: 'קלף אחד לרצף' },
   'Str+Flush Draw':  { en: 'Drawing to both Straight and Flush',  he: 'קרוב גם לרצף וגם לצבע' },
 };
+
+interface BoardProps {
   index: number;
   openCards: Card[];
   closedCards: Card[];
