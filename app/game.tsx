@@ -53,16 +53,16 @@ const GUIDED_FORCED_KEY = 'guidedModeForced';
 // Tooltip text — inline EN/HE
 const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
 const TIPS = [
-  () => TIP('These are your cards. Place 4 on each board.', 'ÃÂÃÂÃÂ ÃÂÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂ©ÃÂÃÂ. ÃÂªÃÂ©ÃÂÃÂ 4 ÃÂ¢ÃÂ ÃÂÃÂ ÃÂÃÂÃÂ¨ÃÂ.'),
-  () => TIP('Tap a card, then tap an empty slot.', 'ÃÂÃÂÃÂ¥ ÃÂ¢ÃÂ ÃÂ§ÃÂÃÂ£, ÃÂÃÂÃÂ ÃÂ¢ÃÂ ÃÂÃÂ§ÃÂÃÂ ÃÂ¨ÃÂÃÂ§.'),
-  () => TIP('Nice! 3 more cards on this board.', 'ÃÂÃÂ¢ÃÂÃÂÃÂ! ÃÂ¢ÃÂÃÂ 3 ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂ¢ÃÂ ÃÂÃÂÃÂÃÂ¨ÃÂ ÃÂÃÂÃÂ.'),
-  () => TIP('Hand strength shown here. Better hands win more!', 'ÃÂÃÂ ÃÂÃÂ¨ÃÂÃÂ ÃÂÃÂÃÂ ÃÂÃÂÃÂ§ÃÂ ÃÂÃÂÃÂ ÃÂ©ÃÂÃÂ.'),
+  () => TIP('These are your cards. Place 4 on each board.', 'אלה הקלפים שלך. תשים 4 על כל לוח.'),
+  () => TIP('Tap a card, then tap an empty slot.', 'לחץ על קלף, ואז על מקום ריק.'),
+  () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הלוח הזה.'),
+  () => TIP('Hand strength shown here. Better hands win more!', 'עוצמת היד מוצגת כאן. ידיים טובות יותר מנצחות יותר!'),
   // Tip 5 (index 4) — 2-of-4 rule explainer. autoDismissMs=6000 in JSX.
   () => TIP(
     'The game picks your BEST 2 cards + 3 from the board automatically. You don\'t choose — the strongest combination wins!',
-    'ÃÂÃÂÃÂ©ÃÂÃÂ§ ÃÂÃÂÃÂÃÂ¨ ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂª 2 ÃÂÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂÃÂÃÂ ÃÂ©ÃÂÃÂ + 3 ÃÂÃÂÃÂ©ÃÂÃÂÃÂÃÂ. ÃÂÃÂ ÃÂ¦ÃÂ¨ÃÂÃÂ ÃÂÃÂÃÂÃÂÃÂ¨ — ÃÂÃÂ©ÃÂÃÂÃÂÃÂ ÃÂÃÂÃÂÃÂ§ ÃÂÃÂÃÂÃÂªÃÂ¨ ÃÂÃÂ ÃÂ¦ÃÂ!'
+    'המשחק בוחר אוטומטית 2 קלפים הכי טובים שלך + 3 מהלוח. אתה לא צריך לבחור — השילוב הכי חזק מנצח!'
   ),
-  () => TIP('All set! Tap READY to reveal.', 'ÃÂÃÂÃÂÃÂ! ÃÂÃÂÃÂ¥ READY ÃÂÃÂÃÂ©ÃÂÃÂ¤ÃÂ.'),
+  () => TIP('All set! Tap READY to reveal.', 'הכל מוכן! לחץ READY כדי להציג.'),
 ];
 
 // Log crash steps to Supabase so we know which step ran last before native kill
@@ -128,7 +128,7 @@ function GameScreenInner() {
   const boardCount = getBoardCount(numberOfPlayers);
 
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
-  // Approximate by screen height bracket: smaller phones Ã¢ÂÂ smaller cards Ã¢ÂÂ shorter hand section
+  // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
   const PLAYER_HAND_H = SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
@@ -146,7 +146,7 @@ function GameScreenInner() {
   const communityScale = nativeCardDims.communityScale;
   // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
   // During arrangement: commH = ch*communityScale, slotH = ch*0.7, plus 4pt cardRow padding.
-  // ch*(communityScale + 0.7) + 4 <= boardSpace Ã¢ÂÂ maxCh = floor((boardSpace-4)/(communityScale+0.7))
+  // ch*(communityScale + 0.7) + 4 <= boardSpace Â maxCh = floor((boardSpace-4)/(communityScale+0.7))
   // Landscape uses a 2-column grid with more height per row — no cap needed there.
   const CARD_ROW_PAD = 4;
   const maxNativeCardH = Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
@@ -231,27 +231,27 @@ function GameScreenInner() {
 
   const isArranging = phase.type === 'arranging' && !playerReady;
 
-  // Ã¢ÂÂÃ¢ÂÂ Guided first game tooltips Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+  // ÂÂ Guided first game tooltips ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
   const advanceTooltip = useCallback(() => {
     setTooltipVisible(false);
     // Tip 2 auto-shows 300ms after tip 1 dismissed — handled by step watcher below
   }, []);
 
-  // Tip 1 — cards dealt (step 0 Ã¢ÂÂ 1)
+  // Tip 1 — cards dealt (step 0 Â 1)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 0 || playerHand.length === 0) return;
     const id = setTimeout(() => { setTooltipStep(1); setTooltipVisible(true); }, 500);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, playerHand.length]);
 
-  // Tip 2 — auto after tip 1 dismissed (step 1 Ã¢ÂÂ 2, tooltipVisible just became false)
+  // Tip 2 — auto after tip 1 dismissed (step 1 Â 2, tooltipVisible just became false)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 1 || tooltipVisible) return;
     const id = setTimeout(() => { setTooltipStep(2); setTooltipVisible(true); }, 300);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, tooltipVisible]);
 
-  // Tip 3 — first card placed (step 2 Ã¢ÂÂ 3)
+  // Tip 3 — first card placed (step 2 Â 3)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 2) return;
     const anyCardPlaced = boards.some((b) => b.playerCards.length >= 1);
@@ -260,7 +260,7 @@ function GameScreenInner() {
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
 
-  // Tip 4 — first board full (step 3 Ã¢ÂÂ 4)
+  // Tip 4 — first board full (step 3 Â 4)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 3) return;
     const hasFullBoard = boards.some((b) => b.playerCards.length === CARDS_PER_BOARD);
@@ -269,14 +269,14 @@ function GameScreenInner() {
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
 
-  // Tip 5 — auto after tip 4 dismissed (step 4 Ã¢ÂÂ 5): 2-of-4 rule explainer
+  // Tip 5 — auto after tip 4 dismissed (step 4 Â 5): 2-of-4 rule explainer
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 4 || tooltipVisible) return;
     const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 400);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, tooltipVisible]);
 
-  // Tip 6 — all boards full (step 5 Ã¢ÂÂ 6): ready to submit
+  // Tip 6 — all boards full (step 5 Â 6): ready to submit
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 5) return;
     const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
@@ -284,7 +284,7 @@ function GameScreenInner() {
     const id = setTimeout(() => { setTooltipStep(6); setTooltipVisible(true); }, 500);
     return () => clearTimeout(id);
   }, [isFirstGame, tooltipStep, boards]);
-  // Ã¢ÂÂÃ¢ÂÂ End guided tooltips Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+  // ÂÂ End guided tooltips ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   // Start 30s countdown
   const startCountdown = useCallback((finisherName: string) => {
@@ -318,9 +318,9 @@ function GameScreenInner() {
   }, []);
 
   // Pre-calculate results in background as soon as countdown starts (first finisher done)
-  // By the time both are ready, results are already computed Ã¢ÂÂ zero-wait navigation
+  // By the time both are ready, results are already computed Â zero-wait navigation
   // IMPORTANT: must guard BOTH bot cards AND player cards — pre-calc fires when the first
-  // finisher triggers the countdown. If bot finishes first, playerCards is still empty Ã¢ÂÂ
+  // finisher triggers the countdown. If bot finishes first, playerCards is still empty Â
   // evaluator returns "High Card" for every player hand (the S48 stale result bug).
   useEffect(() => {
     if (!countdownActive) return;
@@ -347,7 +347,7 @@ function GameScreenInner() {
     return () => clearTimeout(t);
   }, [countdownActive]);
 
-  // Countdown sound escalation: timerLow at 10s (from startCountdown), per-second at 5Ã¢ÂÂ1, timerLow at 0
+  // Countdown sound escalation: timerLow at 10s (from startCountdown), per-second at 5Â1, timerLow at 0
   // no cleanup needed — fire-and-forget sound/haptic calls, no subscriptions
   useEffect(() => {
     if (!countdownActive) return;
@@ -654,7 +654,7 @@ function GameScreenInner() {
 
   const allBotsReady = botsReady.length > 0 && botsReady.every(Boolean);
 
-  // Tap card in hand Ã¢ÂÂ toggle in selectedCardIds (up to 4)
+  // Tap card in hand Â toggle in selectedCardIds (up to 4)
   const handleSelectCard = useCallback(
     (card: Card) => {
       if (!isArranging) return;
@@ -682,7 +682,7 @@ function GameScreenInner() {
     []
   );
 
-  // Tap board Ã¢ÂÂ place all selectedCardIds (or first hand card if none selected)
+  // Tap board Â place all selectedCardIds (or first hand card if none selected)
   // FIX: compute cardsToPlace outside setBoards updater; call setPlayerHand separately
   // in same event handler so React batches all three setState calls together, eliminating
   // the intermediate render where a card appears in both the board and the hand.
@@ -755,7 +755,7 @@ function GameScreenInner() {
     [isArranging, selectedCardIds, boards, isCardOnAnyBoard]
   );
 
-  // Tap placed card Ã¢ÂÂ remove from board
+  // Tap placed card Â remove from board
   const handleRemoveCardFromBoard = useCallback(
     (boardIndex: number, card: Card) => {
       if (!isArranging) return;
@@ -910,7 +910,7 @@ function GameScreenInner() {
   const cardsRemaining = playerHand.length;
   const TIMER_SIZE = timerPulsing ? rv(64) : rv(52);
 
-  // Ã¢ÂÂÃ¢ÂÂ Landscape / widescreen layout Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+  // ÂÂ Landscape / widescreen layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
   if (isLandscape) {
     return (
       <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
@@ -1039,7 +1039,7 @@ function GameScreenInner() {
       </SafeAreaView>
     );
   }
-  // Ã¢ÂÂÃ¢ÂÂ End landscape layout Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+  // ÂÂ End landscape layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
@@ -1167,7 +1167,7 @@ function GameScreenInner() {
         />
       )}
 
-      {/* Guided first-game tooltips (tips 1Ã¢ÂÂ6) — non-blocking */}
+      {/* Guided first-game tooltips (tips 1Â6) — non-blocking */}
       {/* Tutorial dim overlay — steps 1-2 only, focuses attention, non-blocking */}
       {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
         <View

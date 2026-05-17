@@ -24,23 +24,21 @@ import { getTheme } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { KILL_Board } from '../utils/animationKill';
 
-// Hand hint explanations Ã¢ÂÂ always available (not just first game)
+// Hand hint explanations — always available (not just first game)
 const HINT_EXPLANATIONS: Record<string, { en: string; he: string }> = {
-  'High Card':       { en: 'No special combination yet',          he: 'ÃÂÃÂÃÂ ÃÂ¦ÃÂÃÂ¨ÃÂÃÂ£ ÃÂÃÂÃÂÃÂÃÂ' },
-  'Pair':            { en: 'Two cards of the same rank',          he: 'ÃÂ©ÃÂ ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂ' },
-  'Two Pair':        { en: 'Two different pairs',                 he: 'ÃÂ©ÃÂ ÃÂ ÃÂÃÂÃÂÃÂÃÂª ÃÂ©ÃÂÃÂ ÃÂÃÂ' },
-  'Trips':           { en: 'Three cards of the same rank',        he: 'ÃÂ©ÃÂÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂ' },
-  'Straight':        { en: 'Five cards in a row',                 he: 'ÃÂÃÂÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂ¨ÃÂ¦ÃÂ£' },
-  'Flush':           { en: 'Five cards of the same suit',         he: 'ÃÂÃÂÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂªÃÂ ÃÂ¡ÃÂÃÂ' },
-  'Full House':      { en: 'Three of a kind + a pair',            he: 'ÃÂ©ÃÂÃÂÃÂ©ÃÂÃÂ + ÃÂÃÂÃÂ' },
-  'Four of a Kind':  { en: 'Four cards of the same rank',         he: 'ÃÂÃÂ¨ÃÂÃÂ¢ÃÂ ÃÂ§ÃÂÃÂ¤ÃÂÃÂ ÃÂÃÂÃÂÃÂ' },
-  'Straight Flush':  { en: 'Straight + Flush combined',           he: 'ÃÂ¨ÃÂ¦ÃÂ£ ÃÂÃÂÃÂÃÂªÃÂ ÃÂ¡ÃÂÃÂ' },
-  'Flush Draw':      { en: 'One card away from a Flush',          he: 'ÃÂ§ÃÂÃÂ£ ÃÂÃÂÃÂ ÃÂÃÂ¦ÃÂÃÂ¢ ÃÂ©ÃÂÃÂ' },
-  'Straight Draw':   { en: 'One card away from a Straight',       he: 'ÃÂ§ÃÂÃÂ£ ÃÂÃÂÃÂ ÃÂÃÂ¨ÃÂ¦ÃÂ£' },
-  'Str+Flush Draw':  { en: 'Drawing to both Straight and Flush',  he: 'ÃÂ§ÃÂ¨ÃÂÃÂ ÃÂÃÂ ÃÂÃÂ¨ÃÂ¦ÃÂ£ ÃÂÃÂÃÂ ÃÂÃÂ¦ÃÂÃÂ¢' },
+  'High Card':       { en: 'No special combination yet',          he: 'אין צירוף עדיין' },
+  'Pair':            { en: 'Two cards of the same rank',          he: 'שני קלפים זהים' },
+  'Two Pair':        { en: 'Two different pairs',                 he: 'שני זוגות שונים' },
+  'Trips':           { en: 'Three cards of the same rank',        he: 'שלושה קלפים זהים' },
+  'Straight':        { en: 'Five cards in a row',                 he: 'חמישה קלפים ברצף' },
+  'Flush':           { en: 'Five cards of the same suit',         he: 'חמישה קלפים מאותו צבע' },
+  'Full House':      { en: 'Three of a kind + a pair',            he: 'שלישייה + זוג' },
+  'Four of a Kind':  { en: 'Four cards of the same rank',         he: 'ארבעה קלפים זהים' },
+  'Straight Flush':  { en: 'Straight + Flush combined',           he: 'רצף + צבע' },
+  'Flush Draw':      { en: 'One card away from a Flush',          he: 'קלף אחד לצבע' },
+  'Straight Draw':   { en: 'One card away from a Straight',       he: 'קלף אחד לרצף' },
+  'Str+Flush Draw':  { en: 'Drawing to both Straight and Flush',  he: 'קרוב גם לרצף וגם לצבע' },
 };
-
-interface BoardProps {
   index: number;
   openCards: Card[];
   closedCards: Card[];
@@ -155,7 +153,7 @@ export default function Board({
   communityScale = 1.2,
 }: BoardProps) {
   const { width: screenW, height: screenH } = useWindowDimensions();
-  const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height Ã¢ÂÂ never jumps when bot places cards
+  const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height Â never jumps when bot places cards
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const gameColors = useGameColors();
@@ -232,7 +230,7 @@ export default function Board({
     };
   });
 
-  // WIN banner Ã¢ÂÂ animate in when winner is set
+  // WIN banner Â animate in when winner is set
   const bannerProgress = useSharedValue(0);
   useEffect(() => {
     if (winner) {
@@ -247,7 +245,7 @@ export default function Board({
     transform: [{ scale: 0.7 + bannerProgress.value * 0.3 }],
   }));
 
-  // Winner gold pulse Ã¢ÂÂ 2s repeating glow when isWinner is true
+  // Winner gold pulse Â 2s repeating glow when isWinner is true
   const winnerPulse = useSharedValue(0);
   useEffect(() => {
     if (isWinner) {
@@ -280,7 +278,7 @@ export default function Board({
     };
   });
 
-  // Track layout dimensions for crash diagnostics Ã¢ÂÂ fires once per board mount
+  // Track layout dimensions for crash diagnostics Â fires once per board mount
   useEffect(() => {
     if (index === 0) {
       // Only log for board 0 to avoid 4ÃÂ noise; board sizes are all identical
@@ -337,7 +335,7 @@ export default function Board({
           </View>
         </View>
 
-        {/* Bot card rows Ã¢ÂÂ hidden during arrangement (board stays clean for player placement) */}
+        {/* Bot card rows Â hidden during arrangement (board stays clean for player placement) */}
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
@@ -427,7 +425,7 @@ export default function Board({
               // When isArrangement is false, onPress is undefined = non-interactive.
               // Previously alternated between <Pressable> and <CardComponent> at the same key,
               // which caused React 19 to call CardComponent's render against Pressable's hook
-              // state Ã¢ÂÂ "Rendered fewer hooks than expected" crash (CR-T6CB / CR-6PSY).
+              // state Â "Rendered fewer hooks than expected" crash (CR-T6CB / CR-6PSY).
               <Pressable key={c.id} onPress={isArrangement && onRemoveCard ? () => onRemoveCard(c) : undefined}>
                 <CardComponent
                   card={c}
@@ -471,7 +469,7 @@ export default function Board({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
-                    <Text style={styles.hintInfoIcon}>Ã¢ÂÂ</Text>
+                    <Text style={styles.hintInfoIcon}>Â</Text>
                   </Pressable>
                 )}
                 {hintInfoVisible && explText ? (
@@ -488,7 +486,7 @@ export default function Board({
         {winner && (
           <Animated.View style={[styles.winnerBadge, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : styles.tieBadge, bannerAnimStyle]}>
             <Text style={styles.winnerText}>
-              {winner === 'player' ? 'Ã¢ÂÂ WIN' : winner === 'bot' ? 'Ã¢ÂÂ LOSE' : 'ÃÂ± TIE'}
+              {winner === 'player' ? 'Â WIN' : winner === 'bot' ? 'Â LOSE' : 'ÃÂ± TIE'}
             </Text>
             {winner === 'player' && playerHandName ? (
               <Text style={styles.bannerHandName}>{playerHandName}</Text>
