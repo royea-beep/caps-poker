@@ -19,6 +19,16 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
+
+async function requireServiceRole(req) {
+  const auth = req.headers.get('Authorization') ?? '';
+  if (!auth.startsWith('Bearer ')) return new Response('unauthorized', { status: 401 });
+  const token = auth.slice('Bearer '.length).trim();
+  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (!expected || token !== expected) return new Response('forbidden', { status: 403 });
+  return null;
+}
+
 const PROJECT_CONFIG: Record<string, {
   supabaseUrl: string;
   supabaseKey: string;
@@ -367,7 +377,9 @@ async function processProject(projectKey: string, startTime: number) {
   return { project: projectKey, results };
 }
 
-serve(async (_req) => {
+serve(async (req) => {
+  const denied = await requireServiceRole(req);
+  if (denied) return denied;
   const startTime = Date.now();
   try {
     // Guard — run projects sequentially, not in parallel, so Claude calls

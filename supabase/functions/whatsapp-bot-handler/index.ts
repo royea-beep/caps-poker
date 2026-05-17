@@ -1552,10 +1552,12 @@ Respond with ONLY valid JSON, no markdown backticks:
   if (twilioSignature) {
     const valid = await verifyTwilioSignature(req.url, params, twilioSignature);
     if (!valid) {
-      console.warn('[whatsapp-bot] Signature mismatch — proceeding in sandbox mode');
+      console.warn('[whatsapp-bot] Signature mismatch — rejecting request');
+      return new Response('forbidden', { status: 403 });
     }
   } else {
-    console.log('[whatsapp-bot] No signature header — sandbox mode');
+    console.warn('[whatsapp-bot] No signature header — rejecting request');
+    return new Response('forbidden', { status: 403 });
   }
 
   const from       = params['From'] ?? '';

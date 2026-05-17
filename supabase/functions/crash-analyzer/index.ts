@@ -21,6 +21,16 @@ const TWILIO_WHATSAPP_FROM = Deno.env.get('TWILIO_WHATSAPP_FROM')!;
 
 const CAPS_REPO = 'royea-beep/caps-poker';
 
+async function requireServiceRole(req) {
+  const auth = req.headers.get('Authorization') ?? '';
+  if (!auth.startsWith('Bearer ')) return new Response('unauthorized', { status: 401 });
+  const token = auth.slice('Bearer '.length).trim();
+  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (!expected || token !== expected) return new Response('forbidden', { status: 403 });
+  return null;
+}
+
+
 // ── WhatsApp helper ─────────────────────────────────────────────────────────
 
 async function sendWhatsApp(to: string, body: string): Promise<void> {
@@ -193,6 +203,9 @@ Analyze this crash and provide the fix plan.`;
 // ── Main handler ────────────────────────────────────────────────────────────
 
 serve(async (req: Request) => {
+  const denied = await requireServiceRole(req);
+  if (denied) return denied;
+
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
