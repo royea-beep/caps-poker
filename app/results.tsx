@@ -257,11 +257,10 @@ export default function ResultsScreen() {
       setTimeout(() => { void playSound('complete'); }, 800);
     }
 
-    // [BANKROLL] Verify bankroll sync — logs in-memory vs persisted value
-    console.log('[BANKROLL] chips in store:', chips, 'netChips:', revealData.netChips);
+    // [BANKROLL] sync verification — logs gated to __DEV__ to keep financial state out of production logs.
     AsyncStorage.getItem('caps-poker-storage').then(stored => {
       if (stored) {
-        try { const p = JSON.parse(stored); console.log('[BANKROLL] persisted chips:', p?.state?.chips); } catch {}
+        // (verbose persistence check removed — was logging chip state to production console)
       }
     }).catch(() => {});
 

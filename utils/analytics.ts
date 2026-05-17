@@ -6,11 +6,21 @@ import { getDeviceId } from './leaderboard';
 
 let cachedDeviceId: string | null = null;
 let cachedUserId: string | null = null;
+let cachedSessionId: string | null = null;
 let supabaseRef: any = null;
+
+function generateSessionId(): string {
+  // RFC 4122 v4 — adequate for in-memory analytics session IDs (not used for security).
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 
 export async function initAnalytics(): Promise<void> {
   try {
     cachedDeviceId = await getDeviceId();
+    cachedSessionId = generateSessionId();
     const { getSupabase } = require('./supabase');
     supabaseRef = getSupabase();
     const { data } = await supabaseRef.auth.getUser();
@@ -24,6 +34,7 @@ export function track(event: string, properties?: Record<string, unknown>, scree
     p_event: event,
     p_user_id: cachedUserId,
     p_device_id: cachedDeviceId,
+    p_session_id: cachedSessionId,
     p_data: properties ?? {},
     p_screen: screen ?? null,
   }).then(() => {}).catch(() => {});

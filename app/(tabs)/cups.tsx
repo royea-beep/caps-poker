@@ -15,7 +15,7 @@ export default function CupsScreen() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-  useEffect(() => { import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'cups')).catch(() => {}); }, []);
+    import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'cups')).catch(() => {});
     getDeviceId().then(async (deviceId) => {
       const data = await CapsSystem.getCupCollection(deviceId);
       if (data) { setCups(data.cups); setEarned(data.earned); setTotal(data.total); }

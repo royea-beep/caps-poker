@@ -32,7 +32,7 @@ export default function LoginPromptModal({ visible, onClose, onLoginSuccess }: P
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
       <View style={styles.overlay}>
         <View style={styles.card}>
           <Text style={styles.title}>שמור את ההתקדמות שלך</Text>

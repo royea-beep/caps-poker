@@ -70,7 +70,7 @@ try {
     supabaseUrl: extra.supabaseUrl ?? '',
     supabaseAnonKey: extra.supabaseAnonKey ?? '',
     whatsappEdgeFunctionUrl: `${extra.supabaseUrl ?? ''}/functions/v1/telegram-bot-handler`,
-    alertPhone: '+972526173700',
+    alertPhone: process.env.EXPO_PUBLIC_ALERT_PHONE ?? '',
     enabled: typeof __DEV__ !== 'undefined' && __DEV__,
     screenshotFps: 2,
     maxScreenshots: 10,
