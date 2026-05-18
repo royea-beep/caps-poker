@@ -272,28 +272,28 @@ async function triggerAITriage(
     return null;
   }
 
-  const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
+  const sb = getSupabase();
+  if (!sb) return null;
 
   const logText = consoleLogs.slice(-20).join('\n');
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', max_tokens: 300,
-        messages: [{ role: 'user', content: `CAPS QA. Classify this bug report.
+  const Application = require('expo-application');
+  const deviceId = (Application?.nativeBuildVersion ?? 'unknown') as string;
+  const prompt = `CAPS QA. Classify this bug report.
 Console logs (last 20):
 ${logText}
 User description: "${description}"
-Reply JSON (no markdown): {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence about the bug","severity":"low"|"medium"|"high"}` }],
-      }),
+Reply JSON (no markdown): {"classification":"RELEVANT"|"UNRELATED","summary":"one sentence about the bug","severity":"low"|"medium"|"high"}`;
+
+  try {
+    // Route via Supabase Edge Function anthropic-proxy. The Anthropic key
+    // never ships in the client. Rate-limited 10 req/min per X-Device-ID.
+    const { data: d, error: invokeErr } = await sb.functions.invoke('anthropic-proxy', {
+      body: { prompt, model: 'claude-haiku-4-5-20251001', max_tokens: 300 },
+      headers: { 'X-Device-ID': deviceId },
     });
-    if (res.ok) {
-      const d = await res.json();
-      const raw = (d.content?.[0]?.text ?? '{}').trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-      const result = JSON.parse(raw);
+    if (!invokeErr && d) {
+      const rawText = (d?.content?.[0]?.text ?? '{}').trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      const result = JSON.parse(rawText);
       const summary = typeof result.summary === 'string' ? result.summary : '';
       // Reject if summary looks like metadata garbage
       if (summary && !summary.toLowerCase().includes('undefined') && !summary.toLowerCase().includes('tester')) {
