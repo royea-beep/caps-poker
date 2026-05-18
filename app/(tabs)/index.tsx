@@ -416,7 +416,6 @@ function WelcomeToast({ name }: { name: string }) {
       style={[toastStyles.toast, { opacity }]}
       pointerEvents="none"
       accessibilityLiveRegion="polite"
-      accessibilityRole="alert"
     >
       <Text style={toastStyles.text}>
         {isHE ? `ברוך הבא, ${name}! הנתונים שלך נשמרים.` : `Welcome, ${name}! Your data is now saved.`}
@@ -1491,6 +1490,7 @@ export default function HomeScreen() {
               key={n}
               onPress={() => updateConfig({ numberOfPlayers: n })}
               accessibilityRole="radio"
+              accessibilityState={{ selected: config.numberOfPlayers === n }}
               accessibilityLabel={`${n} players`}
               style={{
                 paddingHorizontal: 16, paddingVertical: 8,
@@ -1851,7 +1851,6 @@ export default function HomeScreen() {
           style={styles.referralToast}
           pointerEvents="none"
           accessibilityLiveRegion="polite"
-          accessibilityRole="alert"
         >
           <Text style={styles.referralToastText}>{referralToast}</Text>
         </AnimatedRN.View>
@@ -1898,6 +1897,7 @@ export default function HomeScreen() {
               onPress={handleRedeemCode}
               accessibilityRole="button"
               accessibilityLabel="Redeem invite code for 100 chips"
+              accessibilityState={{ disabled: referralSubmitting, busy: referralSubmitting }}
               disabled={referralSubmitting}
             >
               <Text style={styles.redeemBtnText}>{referralSubmitting ? 'Checking...' : 'Redeem +100 💰'}</Text>

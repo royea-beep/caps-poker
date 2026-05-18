@@ -147,7 +147,7 @@ export default function HostLobbyScreen() {
         <Text style={styles.title} accessibilityRole="header">HOST GAME</Text>
 
         {error && (
-          <View style={styles.errorBox} accessibilityLiveRegion="assertive" accessibilityRole="alert">
+          <View style={styles.errorBox} accessibilityLiveRegion="assertive">
             <Text style={styles.errorText}>{error}</Text>
             <Text style={styles.errorHint}>{MP_ERRORS.NO_WIFI}</Text>
           </View>

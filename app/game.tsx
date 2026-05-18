@@ -930,7 +930,7 @@ function GameScreenInner() {
             />
           )}
           {isArranging && (boardError || selectedCardIds.length > 0) && (
-            <Text style={boardError ? styles.boardErrorText : styles.selectionHint} accessibilityLiveRegion={boardError ? 'assertive' : 'polite'} accessibilityRole={boardError ? 'alert' : undefined}>
+            <Text style={boardError ? styles.boardErrorText : styles.selectionHint} accessibilityLiveRegion={boardError ? 'assertive' : 'polite'}>
               {boardError
                 ? boardError
                 : `${selectedCardIds.length} selected`}
@@ -940,6 +940,7 @@ function GameScreenInner() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Undo last card placement"
+              accessibilityState={{ disabled: boards.every((b) => b.playerCards.length === 0) }}
               style={[styles.floatingBtn, styles.undoBtn, { marginTop: 8 }]}
               onPress={() => {
                 for (let i = boards.length - 1; i >= 0; i--) {
@@ -1022,6 +1023,7 @@ function GameScreenInner() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={allBoardsFull ? 'Ready, reveal hands' : 'Place remaining cards on boards'}
+              accessibilityState={{ disabled: !allBoardsFull }}
               style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady, landscapeStyles.readyBtn]}
               onPress={handleReady}
               disabled={!allBoardsFull}
@@ -1197,7 +1199,7 @@ function GameScreenInner() {
 
       {/* S113: Auto-place toast */}
       {autoPlaceToastVisible && (
-        <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite" accessibilityRole="alert">
+        <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite">
           <Text style={styles.autoPlaceToastText}>⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
         </View>
       )}

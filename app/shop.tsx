@@ -171,7 +171,7 @@ export default function ShopScreen() {
 
       {/* Toast */}
       {toast && (
-        <View style={styles.toastContainer} accessibilityLiveRegion="polite" accessibilityRole="alert">
+        <View style={styles.toastContainer} accessibilityLiveRegion="polite">
           <Text style={styles.toastText}>{toast}</Text>
         </View>
       )}
@@ -213,6 +213,7 @@ export default function ShopScreen() {
                   disabled={iapLoading || !starterPack}
                   accessibilityRole="button"
                   accessibilityLabel={starterPack ? `Buy Starter Pack for ${starterPack.product.priceString}` : 'Starter Pack coming soon'}
+                  accessibilityState={{ disabled: iapLoading || !starterPack, busy: iapLoading }}
                 >
                   {iapLoading ? (
                     <ActivityIndicator color="#000" size="small" />
@@ -238,6 +239,7 @@ export default function ShopScreen() {
                   disabled={iapLoading || !monthlyPack}
                   accessibilityRole="button"
                   accessibilityLabel={monthlyPack ? `Subscribe to VIP Monthly for ${monthlyPack.product.priceString} per month` : 'VIP Monthly coming soon'}
+                  accessibilityState={{ disabled: iapLoading || !monthlyPack, busy: iapLoading }}
                 >
                   {iapLoading ? (
                     <ActivityIndicator color="#000" size="small" />
@@ -274,6 +276,7 @@ export default function ShopScreen() {
                 onPress={() => handleBuy(item)}
                 accessibilityRole="button"
                 accessibilityLabel={`Buy ${item.description} for ${(item.cost ?? 0).toLocaleString()} chips`}
+                accessibilityState={{ disabled: !item.can_afford || buying !== null, busy: buying === item.event_type }}
               >
                 {buying === item.event_type ? (
                   <ActivityIndicator color="#000" size="small" />

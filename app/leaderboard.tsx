@@ -140,10 +140,10 @@ export default function LeaderboardScreen() {
 
       {/* Sort toggle */}
       <View style={styles.sortRow}>
-        <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by chips" onPress={() => setSortBy('chips')} style={[styles.sortBtn, sortBy === 'chips' && styles.sortBtnActive]}>
+        <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by chips" accessibilityState={{ selected: sortBy === 'chips' }} onPress={() => setSortBy('chips')} style={[styles.sortBtn, sortBy === 'chips' && styles.sortBtnActive]}>
           <Text style={[styles.sortBtnText, sortBy === 'chips' && styles.sortBtnTextActive]}>🪙 Chips</Text>
         </TouchableOpacity>
-        <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by win rate" onPress={() => setSortBy('winRate')} style={[styles.sortBtn, sortBy === 'winRate' && styles.sortBtnActive]}>
+        <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by win rate" accessibilityState={{ selected: sortBy === 'winRate' }} onPress={() => setSortBy('winRate')} style={[styles.sortBtn, sortBy === 'winRate' && styles.sortBtnActive]}>
           <Text style={[styles.sortBtnText, sortBy === 'winRate' && styles.sortBtnTextActive]}>% Win Rate</Text>
         </TouchableOpacity>
       </View>

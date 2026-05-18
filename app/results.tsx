@@ -792,7 +792,6 @@ export default function ResultsScreen() {
         <Animated.View
           pointerEvents="none"
           accessibilityLiveRegion="polite"
-          accessibilityRole="alert"
           style={{
             position: 'absolute',
             bottom: 140,
@@ -814,7 +813,6 @@ export default function ResultsScreen() {
         <Animated.View
           pointerEvents="none"
           accessibilityLiveRegion="assertive"
-          accessibilityRole="alert"
           style={[
             styles.winOverlay,
             { opacity: winOverlayOpacity, transform: [{ scale: winOverlayScale }] },
@@ -866,7 +864,7 @@ export default function ResultsScreen() {
 
           {/* Win streak badge */}
           {currentWinStreak >= 2 && (
-            <View style={styles.streakBadge} accessibilityLiveRegion="assertive" accessibilityRole="alert">
+            <View style={styles.streakBadge} accessibilityLiveRegion="assertive">
               <Text style={styles.streakBadgeText}>🔥 {currentWinStreak} WIN STREAK!</Text>
               {bestWinStreak >= 2 && currentWinStreak < bestWinStreak && (
                 <Text style={styles.streakBestText}>Best: {bestWinStreak}</Text>
@@ -1006,7 +1004,6 @@ export default function ResultsScreen() {
           {isComplete && (
             <Animated.Text
               accessibilityLiveRegion="assertive"
-              accessibilityRole="alert"
               style={[styles.completeCelebTitle, { transform: [{ scale: completeTitleScale }] }]}
             >
               COMPLETE! ALL BOARDS!
@@ -1177,7 +1174,7 @@ export default function ResultsScreen() {
           {/* Action buttons (without DealMeIn — moved to sticky bottom) */}
           <View style={styles.buttons}>
             {waitingForNextHand ? (
-              <View style={styles.waitingNextHand} accessibilityLiveRegion={disconnectMessage ? 'assertive' : 'polite'} accessibilityRole={disconnectMessage ? 'alert' : undefined}>
+              <View style={styles.waitingNextHand} accessibilityLiveRegion={disconnectMessage ? 'assertive' : 'polite'}>
                 <Text style={styles.waitingNextHandText}>{disconnectMessage || 'Waiting for other players...'}</Text>
                 {disconnectMessage && (
                   <Button title="LEAVE" variant="secondary" onPress={() => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); }} style={{ marginTop: 8, width: '100%' }} />

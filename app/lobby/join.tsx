@@ -200,6 +200,7 @@ export default function JoinLobbyScreen() {
                 returnKeyType="go"
                 onSubmitEditing={handleFindAndJoin}
                 accessibilityLabel="Room code"
+                accessibilityState={{ disabled: isBusy }}
               />
             </View>
 
@@ -242,6 +243,7 @@ export default function JoinLobbyScreen() {
                     autoCorrect={false}
                     editable={!isBusy}
                     accessibilityLabel="Host IP address"
+                    accessibilityState={{ disabled: isBusy }}
                   />
                 </View>
                 <Button
@@ -257,7 +259,7 @@ export default function JoinLobbyScreen() {
         )}
 
         {errorMsg && (
-          <View style={styles.errorBox} accessibilityLiveRegion="assertive" accessibilityRole="alert">
+          <View style={styles.errorBox} accessibilityLiveRegion="assertive">
             <Text style={styles.errorText}>{errorMsg}</Text>
             {(errorMsg.includes('not find') || errorMsg.includes('timeout')) && (
               <Text style={styles.errorHint}>{MP_ERRORS.NO_WIFI}</Text>
@@ -276,7 +278,7 @@ export default function JoinLobbyScreen() {
         {/* Connected state */}
         {isConnected && roomState && (
           <View style={styles.connectedSection}>
-            <View style={styles.connectedBadge} accessibilityLiveRegion="assertive" accessibilityRole="alert">
+            <View style={styles.connectedBadge} accessibilityLiveRegion="assertive">
               <Text style={styles.connectedText}>✓ CONNECTED</Text>
             </View>
 

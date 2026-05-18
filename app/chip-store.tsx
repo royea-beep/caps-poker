@@ -129,7 +129,6 @@ export default function ChipStoreScreen() {
           <View
             style={styles.flashBanner}
             accessibilityLiveRegion="polite"
-            accessibilityRole="alert"
           >
             <Text style={styles.flashText}>⚡ Flash Deal — 2× chips for 24h!</Text>
             <Pressable
