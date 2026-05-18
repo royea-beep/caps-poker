@@ -193,7 +193,7 @@ export default function JoinLobbyScreen() {
                 value={roomCodeInput}
                 onChangeText={(v) => setRoomCodeInput(v.replace(/\D/g, '').slice(0, 4))}
                 placeholder="1234"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={COLORS.textPrimary}
                 keyboardType="numeric"
                 maxLength={4}
                 editable={!isBusy}
@@ -238,7 +238,7 @@ export default function JoinLobbyScreen() {
                     value={hostIPInput}
                     onChangeText={setHostIPInput}
                     placeholder="192.168.1.x"
-                    placeholderTextColor={COLORS.textSecondary}
+                    placeholderTextColor={COLORS.textPrimary}
                     keyboardType="numeric"
                     autoCorrect={false}
                     editable={!isBusy}
@@ -367,11 +367,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.boardBorder,
   },
   manualToggle: {
-    color: COLORS.textSecondary,
+    color: COLORS.textPrimary,
     fontSize: rf(12),
     textAlign: 'center',
     textDecorationLine: 'underline',
-    opacity: 0.7,
   },
   errorBox: {
     backgroundColor: 'rgba(231, 76, 60, 0.12)',
@@ -388,10 +387,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorHint: {
-    color: COLORS.textSecondary,
+    color: COLORS.textPrimary,
     fontSize: rf(11),
     textAlign: 'center',
-    opacity: 0.8,
   },
   scanStatus: {
     flexDirection: 'row',

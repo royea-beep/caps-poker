@@ -899,7 +899,7 @@ function ProQuotesToggle() {
             {t().proVoice}
           </Text>
           <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
-          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: rf(9) }]}>
+          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.7)', fontSize: rf(9) }]}>
             <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚠️ </Text>
             Not real player voices
           </Text>
@@ -1260,14 +1260,14 @@ export default function SettingsScreen() {
 
         {/* Gambling disclaimer + legal links (Apple requirement) */}
         <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
-          <Text style={{ color: '#666', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
             {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 12+."}
           </Text>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
-            <Text style={{ color: '#888', fontSize: rf(11), textDecorationLine: 'underline' }}>מדיניות פרטיות</Text>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>מדיניות פרטיות</Text>
           </Pressable>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }} accessibilityRole="link" accessibilityLabel="Terms of use">
-            <Text style={{ color: '#888', fontSize: rf(11), textDecorationLine: 'underline' }}>תנאי שימוש</Text>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>תנאי שימוש</Text>
           </Pressable>
         </View>
 
@@ -1276,17 +1276,17 @@ export default function SettingsScreen() {
           <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Delete account">
             <Text style={{ color: '#ef4444', fontSize: rf(14) }}>מחק חשבון</Text>
           </Pressable>
-          <Text style={{ color: '#555', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>
             פעולה זו תמחק את כל הנתונים שלך לצמיתות
           </Text>
         </View>
 
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <VersionBadge />
-          <Text style={{ color: '#555', fontSize: rf(11), marginTop: 4 }}>
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), marginTop: 4 }}>
             OTA: {Updates.updateId?.slice(0, 8) ?? 'none'} | Ch: {Updates.channel ?? '?'} | RT: {Updates.runtimeVersion ?? '?'}
           </Text>
-          <Text style={{ color: '#555', fontSize: rf(11), marginTop: 2 }}>
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), marginTop: 2 }}>
             Embedded: {Updates.isEmbeddedLaunch ? 'YES' : 'NO'} | {Updates.createdAt?.toISOString().slice(0, 10) ?? 'unknown'}
           </Text>
         </View>
@@ -1512,7 +1512,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#c9a84c',
   },
   volPct: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(10),
     fontWeight: '600',
     marginLeft: rs(4),
@@ -1527,7 +1527,7 @@ const styles = StyleSheet.create({
   },
   privacyLinkText: {
     fontSize: rf(12),
-    color: 'rgba(201,168,76,0.5)',
+    color: 'rgba(201,168,76,1)',
     textDecorationLine: 'underline',
   },
 });

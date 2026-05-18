@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: rf(11),
     textAlign: 'center',
-    opacity: 0.8,
+    opacity: 0.95,
   },
   codeSection: {
     alignItems: 'center',
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: rf(12),
     fontFamily: 'monospace',
-    opacity: 0.7,
+    opacity: 0.9,
     marginTop: rs(2),
   },
   playerCountSection: {

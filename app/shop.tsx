@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionTitle: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(12),
     fontWeight: '600',
     letterSpacing: 1.5,
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   iapDesc: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.8)',
     fontSize: rf(12),
   },
   iapPrice: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   itemDescHe: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.8)',
     fontSize: rf(13),
     textAlign: Platform.OS === 'web' ? 'right' : 'left',
   },
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     marginTop: rs(2),
   },
   itemCostLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(12),
   },
   itemCost: {
@@ -503,6 +503,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   buyBtnTextDisabled: {
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.7)',
   },
 });

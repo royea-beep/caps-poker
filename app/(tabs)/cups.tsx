@@ -37,7 +37,7 @@ export default function CupsScreen() {
                 <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }}>🏆</Text>
               </View>
               <View style={styles.cupInfo}>
-                <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.35)' }]}>
+                <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]}>
                   {cup.name_he || TIER_LABELS[cup.tier] || cup.tier}
                 </Text>
                 <Text style={styles.cupTier}>{cup.tier.toUpperCase()}</Text>
@@ -59,13 +59,13 @@ export default function CupsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1C0508', paddingHorizontal: rs(20), paddingTop: rs(16) },
   title: { color: '#FFD700', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
-  sub: { color: 'rgba(255,255,255,0.4)', fontSize: rf(11), textAlign: 'center', marginBottom: rs(24) },
+  sub: { color: 'rgba(255,255,255,0.75)', fontSize: rf(11), textAlign: 'center', marginBottom: rs(24) },
   cupRow: { flexDirection: 'row', alignItems: 'center', gap: rs(14), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: rv(14), padding: rs(16), marginBottom: rs(10) },
   cupRowLocked: { opacity: 0.7 },
   cupIcon: { width: rs(52), height: rs(52), borderRadius: rv(12), alignItems: 'center', justifyContent: 'center' },
   cupInfo: { flex: 1 },
   cupName: { color: '#ffffff', fontSize: rf(15), fontWeight: '700' },
-  cupTier: { color: 'rgba(255,255,255,0.35)', fontSize: rf(10), fontWeight: '600', letterSpacing: 1, marginTop: rs(2) },
+  cupTier: { color: 'rgba(255,255,255,0.75)', fontSize: rf(10), fontWeight: '600', letterSpacing: 1, marginTop: rs(2) },
   progressBar: { height: rs(4), backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: rs(2), marginTop: rs(6), overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: rs(2) },
   earned: { fontSize: rf(20) },

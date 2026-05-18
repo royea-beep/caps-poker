@@ -1569,7 +1569,7 @@ const landscapeStyles = StyleSheet.create({
     fontSize: rf(14),
   },
   panelLvl: {
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(9),
     fontWeight: '500',
   },

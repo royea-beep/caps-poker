@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontSize: rf(11),
-    color: TEXT_SEC,
+    color: '#c9a884',
     letterSpacing: 1.2,
     fontWeight: '600',
     marginBottom: rs(4),
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
   flashText: {
     fontSize: rf(13),
-    color: GOLD_ACC,
+    color: '#f0a050',
     fontWeight: '600',
     flex: 1,
   },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   socialProof: {
     fontSize: rf(12),
-    color: TEXT_SEC,
+    color: '#c9a884',
     marginBottom: rs(12),
   },
 
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     fontSize: rf(13),
-    color: TEXT_SEC,
+    color: '#c9a884',
     textDecorationLine: 'underline',
   },
 

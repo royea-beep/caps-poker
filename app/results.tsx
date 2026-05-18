@@ -1261,10 +1261,10 @@ const styles = StyleSheet.create({
   bestHandRow: { width: '100%', paddingHorizontal: rs(4), paddingVertical: rs(6) },
   bestHandText: { color: '#FFD700', fontSize: rf(13), fontStyle: 'italic', textAlign: 'center' },
   hintRow: { width: '100%', paddingHorizontal: rs(4), paddingVertical: rs(4) },
-  hintText: { color: 'rgba(255,255,255,0.45)', fontSize: rf(12), textAlign: 'center', lineHeight: rf(17) },
+  hintText: { color: 'rgba(255,255,255,0.85)', fontSize: rf(12), textAlign: 'center', lineHeight: rf(17) },
   statsRow: { width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(8), paddingVertical: rs(6) },
-  statItem: { color: 'rgba(255,255,255,0.5)', fontSize: rf(12) },
-  statSep: { color: 'rgba(255,255,255,0.2)', fontSize: rf(12) },
+  statItem: { color: 'rgba(255,255,255,0.85)', fontSize: rf(12) },
+  statSep: { color: 'rgba(255,255,255,0.6)', fontSize: rf(12) },
   upgradeNudge: { width: '100%', backgroundColor: 'rgba(201,168,76,0.12)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)', borderRadius: rv(10), padding: rs(14), gap: rs(10) },
   upgradeNudgeText: { color: COLORS.gold, fontSize: rf(14), fontWeight: '700', textAlign: 'center' },
   upgradeNudgeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(16) },
@@ -1273,7 +1273,7 @@ const styles = StyleSheet.create({
   upgradeNudgeDismiss: { color: COLORS.textMuted, fontSize: rf(12) },
   xpBanner: { width: '100%', backgroundColor: 'rgba(201,168,76,0.10)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: rv(10), padding: rs(14), gap: rs(6) },
   xpBannerTitle: { color: '#FFD700', fontSize: rf(16), fontWeight: '800', letterSpacing: 1 },
-  xpBannerBreakdown: { color: 'rgba(255,255,255,0.55)', fontSize: rf(12), fontWeight: '500' },
+  xpBannerBreakdown: { color: 'rgba(255,255,255,0.85)', fontSize: rf(12), fontWeight: '500' },
   // COMPLETE celebration
   completeFlash: {
     position: 'absolute',
@@ -1349,7 +1349,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(14),
   },
   shopCtaText: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: rf(12),
     textAlign: 'center',
   },
@@ -1376,7 +1376,7 @@ const styles = StyleSheet.create({
   },
   streakBestText: {
     fontSize: rf(11),
-    color: 'rgba(255,149,0,0.7)',
+    color: 'rgba(255,179,71,1)',
     fontWeight: '600',
   },
   streakBonusRow: {
@@ -1459,7 +1459,7 @@ const styles = StyleSheet.create({
     borderRadius: rv(8),
   },
   sessionLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: rf(11),
     fontWeight: '600',
     letterSpacing: 1,
@@ -1478,7 +1478,7 @@ const styles = StyleSheet.create({
   },
   breakdownTitle: {
     fontSize: rf(11),
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.85)',
     letterSpacing: 1.5,
     marginBottom: rs(8),
     textTransform: 'uppercase',
@@ -1498,7 +1498,7 @@ const styles = StyleSheet.create({
   },
   breakdownNum: {
     fontSize: rf(12),
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.85)',
   },
   breakdownIcon: {
     fontSize: rf(14),
@@ -1514,7 +1514,7 @@ const styles = StyleSheet.create({
   },
   breakdownVs: {
     fontSize: rf(10),
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.8)',
     marginTop: rs(1),
   },
   breakdownChips: {
@@ -1532,7 +1532,7 @@ const styles = StyleSheet.create({
   },
   historyLinkText: {
     fontSize: rf(12),
-    color: 'rgba(201,168,76,0.55)',
+    color: 'rgba(201,168,76,1)',
     fontWeight: '600',
   },
 });

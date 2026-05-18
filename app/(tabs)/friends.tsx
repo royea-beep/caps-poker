@@ -38,9 +38,9 @@ export default function FriendsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1C0508', paddingHorizontal: rs(20), paddingTop: rs(16) },
   title: { color: '#FFD700', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
-  sub: { color: 'rgba(255,255,255,0.4)', fontSize: rf(12), textAlign: 'center', marginBottom: rs(24) },
+  sub: { color: 'rgba(255,255,255,0.75)', fontSize: rf(12), textAlign: 'center', marginBottom: rs(24) },
   card: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderRadius: rv(14), padding: rs(16), marginBottom: rs(12), flexDirection: 'row', alignItems: 'center', gap: rs(14) },
   cardEmoji: { fontSize: rf(26) },
   cardTitle: { color: '#ffffff', fontSize: rf(15), fontWeight: '700' },
-  cardSub: { color: 'rgba(255,255,255,0.45)', fontSize: rf(12), marginTop: rs(2) },
+  cardSub: { color: 'rgba(255,255,255,0.75)', fontSize: rf(12), marginTop: rs(2) },
 });

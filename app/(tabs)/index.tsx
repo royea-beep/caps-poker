@@ -168,7 +168,7 @@ const webLandingStyles = StyleSheet.create({
   },
   step: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.75)',
     textAlign: 'center' as const,
     lineHeight: 22,
   },
@@ -189,7 +189,7 @@ const webLandingStyles = StyleSheet.create({
   },
   mobileNote: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.7)',
     textAlign: 'center' as const,
   },
 });
@@ -366,7 +366,7 @@ const nudgeStyles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   sub: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(13),
     fontWeight: '400',
     lineHeight: rf(19),
@@ -396,7 +396,7 @@ const nudgeStyles = StyleSheet.create({
     paddingHorizontal: rs(12),
   },
   laterBtnText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(13),
     fontWeight: '500',
   },
@@ -595,7 +595,7 @@ const dailyRewardModalStyles = StyleSheet.create({
     paddingHorizontal: rs(16),
   },
   laterText: {
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(13),
     fontWeight: '400',
     textDecorationLine: 'underline',
@@ -727,7 +727,7 @@ const welcomeStyles = StyleSheet.create({
     lineHeight: rf(22),
   },
   sub: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(13),
     fontWeight: '400',
     textAlign: 'center',
@@ -751,7 +751,7 @@ const welcomeStyles = StyleSheet.create({
     letterSpacing: 3,
   },
   skipText: {
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(12),
     fontWeight: '400',
     marginTop: rs(10),
@@ -776,7 +776,7 @@ const welcomeStyles = StyleSheet.create({
     marginBottom: rs(4),
   },
   slideText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: rf(14),
     fontWeight: '400',
     textAlign: 'center',
@@ -1475,8 +1475,8 @@ export default function HomeScreen() {
             {tagline}
           </Animated.Text>
           <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(10.5), opacity: 0.6, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(14) }} numberOfLines={3} ellipsizeMode="tail">"{todaysQuote.text}"</Text>
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.4, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
+          <Text style={{ color: theme.subtitleColor, fontSize: rf(10.5), opacity: 0.9, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(14) }} numberOfLines={3} ellipsizeMode="tail">"{todaysQuote.text}"</Text>
+          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.85, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
         </View>
 
         {/* CAPS brand wordmark — above player selector (Task 1) */}
@@ -1502,14 +1502,14 @@ export default function HomeScreen() {
                 borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
               }}
             >
-              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: rs(14), fontWeight: '700' }}>
+              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: rs(14), fontWeight: '700' }}>
                 {n}P
               </Text>
             </Pressable>
           ))}
         </View>
         {/* A1: Omaha hint under selector */}
-        <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.7)', textAlign: 'center', marginBottom: 4 }}>
+        <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.9)', textAlign: 'center', marginBottom: 4 }}>
           {config.numberOfPlayers === 2
             ? '4 boards · Omaha · Best hand wins each'
             : config.numberOfPlayers === 3
@@ -1555,7 +1555,7 @@ export default function HomeScreen() {
         {stage === 'new' && (
           <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
             <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }} accessibilityLabel="ברוך הבא ל-CAPS Poker!">ברוך הבא ל-CAPS Poker! 🃏</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>לחץ שחק כדי להתחיל את המשחק הראשון שלך</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>לחץ שחק כדי להתחיל את המשחק הראשון שלך</Text>
           </View>
         )}
 
@@ -1763,7 +1763,7 @@ export default function HomeScreen() {
         {/* Recent Hands — veteran only */}
         {show_veteran && recentHands.length > 0 && (
           <View style={{ width: '100%', marginTop: 4 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>ידיים אחרונות</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>ידיים אחרונות</Text>
             {recentHands.map((hand, i) => {
               const boardsWon = hand.boards.filter(b => b.winner === 'player').length;
               const effPct = Math.round(boardsWon / hand.boardCount * 100);
@@ -1780,8 +1780,8 @@ export default function HomeScreen() {
                   <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
                     {boardsWon}/{hand.boardCount} לוחות
                   </Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: rs(12) }}>{effPct}% eff</Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: rs(11) }}>{timeStr}</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rs(12) }}>{effPct}% eff</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11) }}>{timeStr}</Text>
                 </Pressable>
               );
             })}
@@ -1836,7 +1836,7 @@ export default function HomeScreen() {
         </View>
 
         <Text style={{
-          color: '#444',
+          color: '#aaa',
           fontSize: 10,
           textAlign: 'center',
           marginTop: 24,
@@ -1891,7 +1891,7 @@ export default function HomeScreen() {
               onSubmitEditing={handleRedeemCode}
             />
             {/* S89: 6-char counter clarifies what the 6 means */}
-            <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, alignSelf: 'flex-end', marginTop: -4 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: -4 }}>
               {referralCodeInput.length}/6 תווים
             </Text>
             <Pressable
@@ -1960,7 +1960,7 @@ const homeDataCardStyles = StyleSheet.create({
     gap: rs(3),
   },
   label: {
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rs(10),
     fontWeight: '700',
     letterSpacing: 0.8,
@@ -1972,7 +1972,7 @@ const homeDataCardStyles = StyleSheet.create({
     fontWeight: '900',
   },
   sub: {
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rs(11),
     fontWeight: '500',
   },
@@ -2082,7 +2082,7 @@ const styles = StyleSheet.create({
   },
   homeStreakBest: {
     fontSize: rf(12),
-    color: 'rgba(255,149,0,0.65)',
+    color: 'rgba(255,149,0,0.9)',
     fontWeight: '500',
   },
   chipFloatText: {
@@ -2187,13 +2187,13 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: '500',
     letterSpacing: 0.5,
-    opacity: 0.55,
+    opacity: 0.9,
     textAlign: 'center',
   },
   stakesLabel: {
     fontSize: rf(11),
     fontWeight: '500',
-    color: '#78716C',
+    color: '#bbb',
     letterSpacing: 0.3,
     textAlign: 'center',
     marginTop: -rs(4),
@@ -2220,7 +2220,7 @@ const styles = StyleSheet.create({
     gap: rs(2),
   },
   dailyPillStreak: {
-    color: 'rgba(232,201,106,0.7)',
+    color: 'rgba(232,201,106,0.9)',
     fontSize: rf(11),
     fontWeight: '600',
   },
@@ -2229,7 +2229,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(14),
   },
   dailyStreakInfoText: {
-    color: 'rgba(255,149,0,0.75)',
+    color: 'rgba(255,149,0,0.9)',
     fontSize: rf(12),
     fontWeight: '600',
     textAlign: 'center',
@@ -2334,7 +2334,7 @@ const styles = StyleSheet.create({
   },
   onlineBtnSub: {
     fontSize: rf(10),
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.7)',
     marginTop: rs(2),
   },
   statsBtn: {
@@ -2344,12 +2344,12 @@ const styles = StyleSheet.create({
   },
   statsBtnText: {
     fontSize: rf(11),
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   sectionLabel: {
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 1,
@@ -2384,14 +2384,14 @@ const styles = StyleSheet.create({
   mpTabText: {
     fontSize: rf(13),
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.75)',
   },
   mpTabTextActive: {
     color: '#c9a84c',
     fontWeight: '700',
   },
   comingSoonLabel: {
-    color: 'rgba(201,168,76,0.7)',
+    color: 'rgba(201,168,76,0.9)',
     fontSize: rf(9),
     fontWeight: '600',
     letterSpacing: 0.5,
@@ -2418,7 +2418,7 @@ const styles = StyleSheet.create({
     marginBottom: rs(2),
   },
   feedEmpty: {
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(12),
     textAlign: 'center',
     paddingVertical: rs(4),
@@ -2434,7 +2434,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   feedItemTime: {
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(10),
     marginLeft: rs(6),
   },
@@ -2464,7 +2464,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   potdPot: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(11),
     fontWeight: '400',
   },
@@ -2485,7 +2485,7 @@ const styles = StyleSheet.create({
     gap: rs(3),
   },
   referralCardLabel: {
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(9),
     fontWeight: '600' as const,
     letterSpacing: 1.2,
@@ -2529,7 +2529,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   gotCodeLink: {
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(11),
     fontWeight: '400',
     textDecorationLine: 'underline',
@@ -2586,7 +2586,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalSub: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.75)',
     fontSize: rf(13),
     fontWeight: '400',
     textAlign: 'center',
@@ -2626,7 +2626,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   modalCancelText: {
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: rf(13),
     fontWeight: '400',
     textDecorationLine: 'underline',
