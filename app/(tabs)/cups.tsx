@@ -25,10 +25,10 @@ export default function CupsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">CUPS / כוסות</Text>
-      <Text style={styles.sub}>{earned}/{total} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.</Text>
+      <Text style={styles.sub} accessibilityLiveRegion="polite">{earned}/{total} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.</Text>
 
       {cups === null ? (
-        <ActivityIndicator color="#FFD700" style={{ marginTop: rs(40) }} />
+        <ActivityIndicator color="#FFD700" style={{ marginTop: rs(40) }} accessibilityLiveRegion="polite" />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: rs(40) }} showsVerticalScrollIndicator={false}>
           {cups.map(cup => (

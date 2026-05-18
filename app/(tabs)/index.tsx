@@ -412,7 +412,12 @@ function WelcomeToast({ name }: { name: string }) {
     ]).start();
   }, []);
   return (
-    <AnimatedRN.View style={[toastStyles.toast, { opacity }]} pointerEvents="none">
+    <AnimatedRN.View
+      style={[toastStyles.toast, { opacity }]}
+      pointerEvents="none"
+      accessibilityLiveRegion="polite"
+      accessibilityRole="alert"
+    >
       <Text style={toastStyles.text}>
         {isHE ? `ברוך הבא, ${name}! הנתונים שלך נשמרים.` : `Welcome, ${name}! Your data is now saved.`}
       </Text>
@@ -1842,7 +1847,12 @@ export default function HomeScreen() {
 
       {/* Referral toast (D6) */}
       {referralToast && (
-        <AnimatedRN.View style={styles.referralToast} pointerEvents="none">
+        <AnimatedRN.View
+          style={styles.referralToast}
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+        >
           <Text style={styles.referralToastText}>{referralToast}</Text>
         </AnimatedRN.View>
       )}

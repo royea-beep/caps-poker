@@ -149,7 +149,7 @@ export default function LeaderboardScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.emptyContainer}>
+        <View style={styles.emptyContainer} accessibilityLiveRegion="polite">
           <ActivityIndicator size="large" color={COLORS.gold} />
         </View>
       ) : (

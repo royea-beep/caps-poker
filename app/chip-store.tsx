@@ -126,7 +126,11 @@ export default function ChipStoreScreen() {
 
         {/* Flash deal banner */}
         {!flashDismissed && (
-          <View style={styles.flashBanner}>
+          <View
+            style={styles.flashBanner}
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+          >
             <Text style={styles.flashText}>⚡ Flash Deal — 2× chips for 24h!</Text>
             <Pressable
               onPress={() => setFlashDismissed(true)}

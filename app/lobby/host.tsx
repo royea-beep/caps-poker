@@ -147,7 +147,7 @@ export default function HostLobbyScreen() {
         <Text style={styles.title} accessibilityRole="header">HOST GAME</Text>
 
         {error && (
-          <View style={styles.errorBox}>
+          <View style={styles.errorBox} accessibilityLiveRegion="assertive" accessibilityRole="alert">
             <Text style={styles.errorText}>{error}</Text>
             <Text style={styles.errorHint}>{MP_ERRORS.NO_WIFI}</Text>
           </View>
@@ -184,9 +184,11 @@ export default function HostLobbyScreen() {
 
         {/* Players + waiting indicator */}
         <View style={styles.playersSection}>
-          <Text style={styles.sectionLabel}>
-            PLAYERS ({connectedCount}/{maxPlayers})
-          </Text>
+          <View accessibilityLiveRegion="polite">
+            <Text style={styles.sectionLabel}>
+              PLAYERS ({connectedCount}/{maxPlayers})
+            </Text>
+          </View>
           {players
             .filter((p) => p.connected)
             .map((player) => (
@@ -200,7 +202,7 @@ export default function HostLobbyScreen() {
               </View>
             ))}
           {connectedCount < maxPlayers && serverStarted && (
-            <View style={styles.waitingRow}>
+            <View style={styles.waitingRow} accessibilityLiveRegion="polite">
               <ActivityIndicator size="small" color={COLORS.gold} />
               <Text style={styles.waitingText}>
                 Waiting for {maxPlayers - connectedCount} more player

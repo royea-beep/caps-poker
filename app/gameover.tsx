@@ -67,7 +67,7 @@ export default function GameOverScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Animated.View entering={FadeIn.duration(600)} style={styles.header}>
-          <Animated.Text accessibilityRole="header" style={[styles.title, shakeStyle]}>GAME OVER</Animated.Text>
+          <Animated.Text accessibilityRole="header" accessibilityLiveRegion="assertive" style={[styles.title, shakeStyle]}>GAME OVER</Animated.Text>
           <Text style={styles.subtitle}>Not enough chips to continue</Text>
         </Animated.View>
 

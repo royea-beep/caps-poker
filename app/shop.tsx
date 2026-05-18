@@ -171,13 +171,13 @@ export default function ShopScreen() {
 
       {/* Toast */}
       {toast && (
-        <View style={styles.toastContainer}>
+        <View style={styles.toastContainer} accessibilityLiveRegion="polite" accessibilityRole="alert">
           <Text style={styles.toastText}>{toast}</Text>
         </View>
       )}
 
       {loading ? (
-        <View style={styles.centerState}>
+        <View style={styles.centerState} accessibilityLiveRegion="polite">
           <ActivityIndicator color={COLORS.gold} size="large" />
           <Text style={styles.loadingText}>Loading shop...</Text>
         </View>

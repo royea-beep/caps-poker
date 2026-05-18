@@ -183,6 +183,7 @@ function NotificationsToggle() {
           disabled={retrying}
           accessibilityRole="button"
           accessibilityLabel="Enable notifications"
+          accessibilityLiveRegion="polite"
         >
           <Text style={styles.retryPushText}>
             {retrying ? 'Registering…' : 'Enable Notifications'}

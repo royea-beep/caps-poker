@@ -930,7 +930,7 @@ function GameScreenInner() {
             />
           )}
           {isArranging && (boardError || selectedCardIds.length > 0) && (
-            <Text style={boardError ? styles.boardErrorText : styles.selectionHint}>
+            <Text style={boardError ? styles.boardErrorText : styles.selectionHint} accessibilityLiveRegion={boardError ? 'assertive' : 'polite'} accessibilityRole={boardError ? 'alert' : undefined}>
               {boardError
                 ? boardError
                 : `${selectedCardIds.length} selected`}
@@ -972,7 +972,7 @@ function GameScreenInner() {
                 <Text style={styles.freePlayLabel}>Arrange freely</Text>
               )}
               {playerReady && !allBotsReady && (
-                <Text style={styles.waitingText}>Waiting for bots...</Text>
+                <Text style={styles.waitingText} accessibilityLiveRegion="polite">Waiting for bots...</Text>
               )}
             </View>
             <View style={styles.headerChips}>
@@ -1013,7 +1013,7 @@ function GameScreenInner() {
           <Text style={landscapeStyles.panelTitle}>
             {numberOfBots === 1 ? '🤖 בוט' : `🤖 בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
-          <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]}>
+          <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]} accessibilityLiveRegion="polite">
             <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
               {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
@@ -1062,7 +1062,7 @@ function GameScreenInner() {
         </Pressable>
         <View style={styles.topCenter}>
           {countdownActive && isArranging && (
-            <View style={styles.countdownSection}>
+            <View style={styles.countdownSection} accessibilityLiveRegion="polite">
               <TimerController
                 countdown={countdown}
                 total={COUNTDOWN_SECONDS}
@@ -1081,12 +1081,12 @@ function GameScreenInner() {
             </Text>
           )}
           {playerReady && !allBotsReady && (
-            <Text style={styles.waitingText}>
+            <Text style={styles.waitingText} accessibilityLiveRegion="polite">
               Waiting for bot{numberOfBots > 1 ? 's' : ''}...
             </Text>
           )}
           {playerReady && allBotsReady && !showContinueButton && !showSafeReveal && (
-            <Text style={styles.calculatingText}>Calculating results...</Text>
+            <Text style={styles.calculatingText} accessibilityLiveRegion="polite">Calculating results...</Text>
           )}
         </View>
         <View style={styles.headerChips}>
@@ -1096,7 +1096,7 @@ function GameScreenInner() {
       </View>
 
       {/* Bot status bar */}
-      <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]}>
+      <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]} accessibilityLiveRegion="polite">
         <View style={styles.botStatusRow}>
           <Text style={styles.botEmoji}>🤖</Text>
           <Text style={styles.botNameLabel}>
@@ -1197,7 +1197,7 @@ function GameScreenInner() {
 
       {/* S113: Auto-place toast */}
       {autoPlaceToastVisible && (
-        <View style={styles.autoPlaceToast} pointerEvents="none">
+        <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite" accessibilityRole="alert">
           <Text style={styles.autoPlaceToastText}>⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
         </View>
       )}

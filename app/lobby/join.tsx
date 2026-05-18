@@ -257,7 +257,7 @@ export default function JoinLobbyScreen() {
         )}
 
         {errorMsg && (
-          <View style={styles.errorBox}>
+          <View style={styles.errorBox} accessibilityLiveRegion="assertive" accessibilityRole="alert">
             <Text style={styles.errorText}>{errorMsg}</Text>
             {(errorMsg.includes('not find') || errorMsg.includes('timeout')) && (
               <Text style={styles.errorHint}>{MP_ERRORS.NO_WIFI}</Text>
@@ -267,7 +267,7 @@ export default function JoinLobbyScreen() {
 
         {/* Scanning progress */}
         {isScanning && (
-          <View style={styles.scanStatus}>
+          <View style={styles.scanStatus} accessibilityLiveRegion="polite">
             <ActivityIndicator size="small" color={COLORS.gold} />
             <Text style={styles.scanText}>Scanning network for host...</Text>
           </View>
@@ -276,7 +276,7 @@ export default function JoinLobbyScreen() {
         {/* Connected state */}
         {isConnected && roomState && (
           <View style={styles.connectedSection}>
-            <View style={styles.connectedBadge}>
+            <View style={styles.connectedBadge} accessibilityLiveRegion="assertive" accessibilityRole="alert">
               <Text style={styles.connectedText}>✓ CONNECTED</Text>
             </View>
 
@@ -301,7 +301,7 @@ export default function JoinLobbyScreen() {
                 ))}
             </View>
 
-            <View style={styles.waitingRow}>
+            <View style={styles.waitingRow} accessibilityLiveRegion="polite">
               <ActivityIndicator size="small" color={COLORS.gold} />
               <Text style={styles.waitingText}>
                 {waitingForGame ? 'Game starting...' : 'Waiting for host to start...'}
