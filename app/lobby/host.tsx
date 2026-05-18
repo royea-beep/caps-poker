@@ -197,8 +197,8 @@ export default function HostLobbyScreen() {
                   <Text style={styles.seatText}>{player.seat + 1}</Text>
                 </View>
                 <Text style={styles.playerName}>{player.name}</Text>
-                {player.isHost && <Text style={styles.hostBadge}>HOST</Text>}
-                {player.isReady && <Text style={styles.readyBadge}>READY</Text>}
+                {player.isHost && <Text style={styles.hostBadge} accessibilityLabel="Host">HOST</Text>}
+                {player.isReady && <Text style={styles.readyBadge} accessibilityLabel="Ready">READY</Text>}
               </View>
             ))}
           {connectedCount < maxPlayers && serverStarted && (

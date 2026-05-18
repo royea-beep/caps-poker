@@ -50,14 +50,14 @@ function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; s
           { background: `conic-gradient(${color} ${deg}deg, rgba(40,40,40,0.85) ${deg}deg)` } as any]} />
         {/* Inner dark mask to create ring */}
         <View style={{ position: 'absolute', width: size - 8, height: size - 8, borderRadius: (size - 8) / 2, backgroundColor: 'rgba(8,8,8,0.9)' }} />
-        <Text style={[timerStyles.text, { color, fontSize: size * 0.30, zIndex: 1 }]}>{timeStr}</Text>
+        <Text style={[timerStyles.text, { color, fontSize: size * 0.30, zIndex: 1 }]} accessibilityLabel={pulsing ? `Time critical, ${timeLeft} seconds` : undefined}>{timeStr}</Text>
       </Animated.View>
     );
   }
 
   return (
     <Animated.View style={[timerStyles.container, { width: size, height: size, borderRadius: size / 2, borderColor: color }, animStyle]}>
-      <Text style={[timerStyles.text, { color, fontSize: size * 0.32 }]}>{timeStr}</Text>
+      <Text style={[timerStyles.text, { color, fontSize: size * 0.32 }]} accessibilityLabel={pulsing ? `Time critical, ${timeLeft} seconds` : undefined}>{timeStr}</Text>
     </Animated.View>
   );
 }

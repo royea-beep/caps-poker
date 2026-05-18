@@ -1022,9 +1022,9 @@ function GameScreenInner() {
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]} accessibilityLiveRegion="polite">
             <Text
               style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}
-              accessibilityLabel={allBotsReady ? t().ready : undefined}
-              accessibilityElementsHidden={!allBotsReady}
-              importantForAccessibility={!allBotsReady ? 'no-hide-descendants' : 'auto'}
+              accessibilityLabel={allBotsReady ? t().ready : `Bots thinking, ${readyBotCount} of ${numberOfBots} ready`}
+              accessibilityElementsHidden={false}
+              importantForAccessibility="auto"
             >
               {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
@@ -1117,9 +1117,9 @@ function GameScreenInner() {
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
             <Text
               style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}
-              accessibilityLabel={allBotsReady ? t().ready : undefined}
-              accessibilityElementsHidden={!allBotsReady}
-              importantForAccessibility={!allBotsReady ? 'no-hide-descendants' : 'auto'}
+              accessibilityLabel={allBotsReady ? t().ready : `Bots thinking, ${readyBotCount} of ${numberOfBots} ready`}
+              accessibilityElementsHidden={false}
+              importantForAccessibility="auto"
             >
               {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>

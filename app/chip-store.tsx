@@ -212,6 +212,7 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={`Buy ${(pkg.chips ?? 0).toLocaleString()} chips for ${pkg.price}`}
+          accessibilityHint={pkg.badge === 'POPULAR' ? 'Most popular package' : undefined}
         >
           <Text style={styles.buyButtonText}>
             Buy {(pkg.chips ?? 0).toLocaleString()}💰 for {pkg.price}

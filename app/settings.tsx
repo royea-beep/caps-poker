@@ -904,7 +904,7 @@ function ProQuotesToggle() {
             Not real player voices
           </Text>
         </View>
-        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices" accessibilityState={{ checked: voicesEnabled && enabled }}>
+        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices" accessibilityState={{ checked: voicesEnabled && enabled, disabled: !enabled }}>
           <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
         </Pressable>
       </View>

@@ -1506,7 +1506,7 @@ export default function HomeScreen() {
               }}
             >
               <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: rs(14), fontWeight: '700' }}>
-                {n}P
+                {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
               </Text>
             </Pressable>
           ))}
