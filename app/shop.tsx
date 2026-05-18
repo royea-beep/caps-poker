@@ -197,7 +197,7 @@ export default function ShopScreen() {
           {/* ─── IAP Section ─────────────────────────────────────── */}
           {Platform.OS !== 'web' && (
             <View style={styles.iapSection}>
-              <Text style={styles.sectionTitle}>Premium</Text>
+              <Text style={styles.sectionTitle} accessibilityRole="header">Premium</Text>
               {/* Starter Pack */}
               <View style={styles.iapCard}>
                 <View style={styles.iapInfo}>
@@ -253,13 +253,13 @@ export default function ShopScreen() {
             </View>
           )}
 
-          <Text style={styles.sectionTitle}>Available Items</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">Available Items</Text>
           {shopData.items.map((item) => (
             <View key={item.event_type} style={styles.itemCard}>
               <View style={styles.itemInfo}>
                 <Text style={styles.itemDesc}>{item.description}</Text>
                 {item.description_he ? (
-                  <Text style={styles.itemDescHe}>{item.description_he}</Text>
+                  <Text style={styles.itemDescHe} accessibilityLanguage="he">{item.description_he}</Text>
                 ) : null}
                 <View style={styles.itemCostRow} accessibilityLabel={`Cost: ${(item.cost ?? 0).toLocaleString()} chips`}>
                   <Text style={styles.itemCostLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">Cost: </Text>

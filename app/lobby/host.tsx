@@ -167,7 +167,7 @@ export default function HostLobbyScreen() {
 
         {/* Max players selector */}
         <View style={styles.playerCountSection}>
-          <Text style={styles.sectionLabel}>MAX PLAYERS</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">MAX PLAYERS</Text>
           <View style={styles.playerCountRow}>
             {([2, 3, 4] as const).map((n) => (
               <Button
@@ -185,7 +185,7 @@ export default function HostLobbyScreen() {
         {/* Players + waiting indicator */}
         <View style={styles.playersSection}>
           <View accessibilityLiveRegion="polite">
-            <Text style={styles.sectionLabel}>
+            <Text style={styles.sectionLabel} accessibilityRole="header">
               PLAYERS ({connectedCount}/{maxPlayers})
             </Text>
           </View>

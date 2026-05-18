@@ -920,7 +920,7 @@ function GameScreenInner() {
         <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <View style={landscapeStyles.panelTitleRow}>
             <Text style={landscapeStyles.panelAvatarText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{playerAvatar}</Text>
-            <Text style={landscapeStyles.panelTitle}>{playerDisplayName.toUpperCase()}</Text>
+            <Text style={landscapeStyles.panelTitle} accessibilityRole="header">{playerDisplayName.toUpperCase()}</Text>
           </View>
           {isArranging && (
             <PlayerHand
@@ -1013,6 +1013,8 @@ function GameScreenInner() {
         <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <Text
             style={landscapeStyles.panelTitle}
+            accessibilityRole="header"
+            accessibilityLanguage="he"
             accessibilityLabel={numberOfBots === 1 ? 'בוט' : `בוטים ${readyBotCount}/${numberOfBots}`}
           >
             {numberOfBots === 1 ? '🤖 בוט' : `🤖 בוטים ${readyBotCount}/${numberOfBots}`}
@@ -1043,7 +1045,7 @@ function GameScreenInner() {
           )}
           {playerReady && allBotsReady && showContinueButton && (
             <Pressable accessibilityRole="button" accessibilityLabel="Continue to results" style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
-              <Text style={styles.continueBtnText} accessibilityLabel="המשך">המשך →</Text>
+              <Text style={styles.continueBtnText} accessibilityLanguage="he" accessibilityLabel="המשך">המשך →</Text>
             </Pressable>
           )}
         </View>
@@ -1109,7 +1111,7 @@ function GameScreenInner() {
       <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]} accessibilityLiveRegion="polite">
         <View style={styles.botStatusRow}>
           <Text style={styles.botEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🤖</Text>
-          <Text style={styles.botNameLabel}>
+          <Text style={styles.botNameLabel} accessibilityLanguage="he">
             {numberOfBots === 1 ? 'בוט 1' : `בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
@@ -1217,7 +1219,7 @@ function GameScreenInner() {
       {/* S113: Auto-place toast */}
       {autoPlaceToastVisible && (
         <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite">
-          <Text style={styles.autoPlaceToastText} accessibilityLabel="הזמן נגמר — קלפים הונחו אוטומטית">⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
+          <Text style={styles.autoPlaceToastText} accessibilityLanguage="he" accessibilityLabel="הזמן נגמר — קלפים הונחו אוטומטית">⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
         </View>
       )}
     </SafeAreaView>

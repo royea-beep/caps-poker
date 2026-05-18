@@ -858,7 +858,7 @@ export default function ResultsScreen() {
               <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
             </Text>
             {playerWins === botWins && netChips > 0 && (
-              <Text style={styles.tieBonusText}>
+              <Text style={styles.tieBonusText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
                 {getLanguage() === 'he' ? `בונוס תיקו: +${netChips} ג'טונים` : `Tie bonus: +${netChips} chips`}
               </Text>
             )}
@@ -1018,7 +1018,7 @@ export default function ResultsScreen() {
           {/* Net result */}
           <View style={styles.netSection}>
             <View style={styles.netRow}>
-              <Text style={styles.netLabel}>Net Result</Text>
+              <Text style={styles.netLabel} accessibilityRole="header">Net Result</Text>
               {netChips > 0 ? (
                 <Animated.Text style={[styles.netAmount, { color: chipsFlashAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: ['#FFD700', '#FFD700', '#4CAF50'] }) }]}>
                   +{netChips}
@@ -1065,7 +1065,7 @@ export default function ResultsScreen() {
           {/* First game: upgrade nudge — "Try 4 boards next!" */}
           {showUpgradeNudge && (
             <View style={styles.upgradeNudge}>
-              <Text style={styles.upgradeNudgeText}>
+              <Text style={styles.upgradeNudgeText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
                 {getLanguage() === 'he'
                   ? 'מוכן לאתגר המלא? נסה 4 בורדים!'
                   : 'Ready for the full challenge? Try 4 boards next!'}
@@ -1118,7 +1118,7 @@ export default function ResultsScreen() {
           {/* S115: Board breakdown — compact one-row-per-board summary */}
           {boards.length > 0 && (
             <View style={styles.breakdownSection}>
-              <Text style={styles.breakdownTitle}>Board by board</Text>
+              <Text style={styles.breakdownTitle} accessibilityRole="header">Board by board</Text>
               {boards.map((board, i) => {
                 const playerWon = board.winner === 'player';
                 const chipChange = playerWon ? potPerBoardTotal : -potPerBoardTotal;

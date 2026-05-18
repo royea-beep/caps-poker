@@ -168,9 +168,9 @@ export default function LeaderboardScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.gold} />}
           ListHeaderComponent={
             <View style={styles.listHeader}>
-              <Text style={styles.colHeader}>#</Text>
-              <Text style={[styles.colHeader, { flex: 1 }]}>Player</Text>
-              <Text style={styles.colHeader}>{sortBy === 'winRate' ? 'Win%' : 'Chips'}</Text>
+              <Text accessibilityRole="header" style={styles.colHeader}>#</Text>
+              <Text accessibilityRole="header" style={[styles.colHeader, { flex: 1 }]}>Player</Text>
+              <Text accessibilityRole="header" style={styles.colHeader}>{sortBy === 'winRate' ? 'Win%' : 'Chips'}</Text>
             </View>
           }
           ListEmptyComponent={

@@ -287,7 +287,7 @@ export default function JoinLobbyScreen() {
             </Text>
 
             <View style={styles.playersSection}>
-              <Text style={styles.sectionLabel}>
+              <Text style={styles.sectionLabel} accessibilityRole="header">
                 PLAYERS ({roomState.playerCount}/{roomState.maxPlayers})
               </Text>
               {roomState.players

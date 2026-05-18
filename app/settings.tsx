@@ -765,7 +765,7 @@ function VisualThemePicker() {
 
   return (
     <View style={vtStyles.container}>
-      <Text style={vtStyles.sectionLabel}>
+      <Text style={vtStyles.sectionLabel} accessibilityRole="header">
         <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
         VISUAL STYLE
       </Text>
@@ -1050,19 +1050,19 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <VisualThemePicker />
-        <Text style={styles.sectionTitle}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
           <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📱 </Text>
           ORIENTATION
         </Text>
         <OrientationPicker />
 
-        <Text style={styles.sectionTitle}>🖼️ BACKGROUND THEME</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">🖼️ BACKGROUND THEME</Text>
         <FriendsBgPicker />
 
-        <Text style={styles.sectionTitle}>PROFILE</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">PROFILE</Text>
         <ProfileSection />
 
-        <Text style={styles.sectionTitle}>GAMEPLAY</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">GAMEPLAY</Text>
         <PlayerCountSelector />
         <BotDifficultySelector />
         <RevealSpeedSelector />
@@ -1070,37 +1070,37 @@ export default function SettingsScreen() {
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
 
-        <Text style={styles.sectionTitle}>🏠 HOME THEME</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">🏠 HOME THEME</Text>
         <HomeThemePicker />
 
-        <Text style={styles.sectionTitle}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
           <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
           BUTTON STYLE
         </Text>
         <ButtonStylePicker />
 
-        <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage="he">🃏 עיצוב קלפים</Text>
         <CardThemePicker />
         <FourColorSuitsToggle />
         <ColorblindToggle />
         <HandSortToggle />
 
-        <Text style={styles.sectionTitle}>TIMING</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">TIMING</Text>
         <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />
         <SettingRow label="Board Reveal Duration" configKey="boardRevealDuration" suffix="sec" min={1} />
         <SettingRow label="Card Flip Speed" configKey="turnRevealDelay" suffix="ms" min={100} />
         <SettingRow label="Complete Bonus Display" configKey="completeBonusDisplay" suffix="sec" min={1} />
 
-        <Text style={styles.sectionTitle}>BOT</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">BOT</Text>
         <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
         <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
 
-        <Text style={styles.sectionTitle}>AUDIO & NOTIFICATIONS</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">AUDIO & NOTIFICATIONS</Text>
         <SoundToggle />
         <AmbientToggle />
         <NotificationsToggle />
 
-        <Text style={styles.sectionTitle}>TOOLS</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">TOOLS</Text>
         <ProQuotesToggle />
         <Button
           title={`📖 ${t().showTutorial}`}
@@ -1150,7 +1150,7 @@ export default function SettingsScreen() {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>DEVELOPER</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">DEVELOPER</Text>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <Text style={styles.rowLabel}>{t().debugOverlay}</Text>
@@ -1182,9 +1182,9 @@ export default function SettingsScreen() {
 
         {isBeta && (
           <View>
-            <Text style={styles.sectionTitle}>מצב טסט</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage="he">מצב טסט</Text>
             <View style={styles.row}>
-              <Text style={styles.rowLabel}>גרסה</Text>
+              <Text style={styles.rowLabel} accessibilityLanguage="he">גרסה</Text>
               <Text style={styles.rowHint}>{Constants.expoConfig?.version ?? '—'} (EAS {Constants.expoConfig?.extra?.buildNumber ?? '—'})</Text>
             </View>
             <Button
@@ -1203,7 +1203,7 @@ export default function SettingsScreen() {
               style={{ marginBottom: 12 }}
             />
             <View style={styles.row}>
-              <Text style={styles.rowLabel}>השתק ציטוטים</Text>
+              <Text style={styles.rowLabel} accessibilityLanguage="he">השתק ציטוטים</Text>
               <Switch
                 value={muteQuotes}
                 onValueChange={(v) => {
@@ -1214,7 +1214,7 @@ export default function SettingsScreen() {
               />
             </View>
             <View style={styles.row}>
-              <Text style={styles.rowLabel}>השתק צלילים</Text>
+              <Text style={styles.rowLabel} accessibilityLanguage="he">השתק צלילים</Text>
               <Switch
                 value={muteSounds}
                 onValueChange={(v) => {
@@ -1228,10 +1228,10 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>DANGER ZONE</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">DANGER ZONE</Text>
         <ResetProgressButton />
 
-        <Text style={styles.sectionTitle}>CREDITS</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">CREDITS</Text>
         <View style={styles.creditsBox}>
           <Text style={styles.creditsText}>🤖 Pro Quotes: AI digital simulation — fictional quotes</Text>
           <Text style={styles.creditsText}>🔊 Voice Clips: AI-generated voices via ElevenLabs</Text>
@@ -1260,23 +1260,23 @@ export default function SettingsScreen() {
 
         {/* Gambling disclaimer + legal links (Apple requirement) */}
         <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
-          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }} accessibilityLanguage="he">
             {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 12+."}
           </Text>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
-            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>מדיניות פרטיות</Text>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage="he">מדיניות פרטיות</Text>
           </Pressable>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }} accessibilityRole="link" accessibilityLabel="Terms of use">
-            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>תנאי שימוש</Text>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage="he">תנאי שימוש</Text>
           </Pressable>
         </View>
 
         {/* Danger zone — account deletion (Apple/Google requirement) */}
         <View style={{ marginTop: 40, paddingTop: 20, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.1)' }}>
           <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Delete account">
-            <Text style={{ color: '#ef4444', fontSize: rf(14) }}>מחק חשבון</Text>
+            <Text style={{ color: '#ef4444', fontSize: rf(14) }} accessibilityLanguage="he">מחק חשבון</Text>
           </Pressable>
-          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', marginTop: 4 }} accessibilityLanguage="he">
             פעולה זו תמחק את כל הנתונים שלך לצמיתות
           </Text>
         </View>
