@@ -9,28 +9,28 @@ export default function PlayScreen() {
   useEffect(() => { import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'play')).catch(() => {}); }, []);
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>PLAY</Text>
+      <Text style={styles.title} accessibilityRole="header">PLAY</Text>
       <Text style={styles.sub}>Choose your game mode</Text>
 
-      <Pressable style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Quick Poker" style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
         <Text style={styles.cardEmoji}>⚡</Text>
         <Text style={styles.cardTitle}>Quick Poker</Text>
         <Text style={styles.cardSub}>200 💰 · Fast-paced Omaha</Text>
       </Pressable>
 
-      <Pressable style={[styles.card, { borderColor: '#3b82f6' }]} onPress={() => router.push('/sit-and-go' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Sit and Go" style={[styles.card, { borderColor: '#3b82f6' }]} onPress={() => router.push('/sit-and-go' as any)}>
         <Text style={styles.cardEmoji}>🎯</Text>
         <Text style={styles.cardTitle}>Sit &amp; Go</Text>
         <Text style={styles.cardSub}>100 💰 · Tournament format</Text>
       </Pressable>
 
-      <Pressable style={[styles.card, { borderColor: '#8b5cf6' }]} onPress={() => router.push('/tournament' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Tournament" style={[styles.card, { borderColor: '#8b5cf6' }]} onPress={() => router.push('/tournament' as any)}>
         <Text style={styles.cardEmoji}>🏆</Text>
         <Text style={styles.cardTitle}>Tournament</Text>
         <Text style={styles.cardSub}>Multi-round competition</Text>
       </Pressable>
 
-      <Pressable style={[styles.card, { borderColor: '#6b7280' }]} onPress={() => router.push('/settings' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Online or Local WiFi" style={[styles.card, { borderColor: '#6b7280' }]} onPress={() => router.push('/settings' as any)}>
         <Text style={styles.cardEmoji}>🌐</Text>
         <Text style={styles.cardTitle}>Online / Local WiFi</Text>
         <Text style={styles.cardSub}>Host or join a game</Text>

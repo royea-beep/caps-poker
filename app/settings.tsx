@@ -120,6 +120,8 @@ function ProfileSection() {
       <Pressable
         style={styles.profileRow}
         onPress={() => setPickerVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Profile: ${displayName}`}
       >
         <Text style={styles.profileAvatar}>{displayAvatar}</Text>
         <View style={styles.profileInfo}>
@@ -166,6 +168,8 @@ function NotificationsToggle() {
         <Pressable
           onPress={() => { setEnabled(!enabled); CapsHooks.settingsChanged('notifications', !enabled); }}
           style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
+          accessibilityRole="switch"
+          accessibilityLabel="Push notifications"
         >
           <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
             {enabled ? 'ON' : 'OFF'}
@@ -177,6 +181,8 @@ function NotificationsToggle() {
           style={styles.retryPushBtn}
           onPress={handleRetry}
           disabled={retrying}
+          accessibilityRole="button"
+          accessibilityLabel="Enable notifications"
         >
           <Text style={styles.retryPushText}>
             {retrying ? 'Registering…' : 'Enable Notifications'}
@@ -206,6 +212,8 @@ function RevealSpeedSelector() {
             key={o.key}
             onPress={() => { updateConfig({ revealSpeed: o.key }); CapsHooks.settingsChanged('revealSpeed', o.key); }}
             style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
+            accessibilityRole="radio"
+            accessibilityLabel={`Reveal speed ${o.label}`}
           >
             <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
           </Pressable>
@@ -231,6 +239,8 @@ function SoundToggle() {
         <Pressable
           onPress={() => { updateConfig({ soundEnabled: !soundEnabled }); CapsHooks.settingsChanged('soundEnabled', !soundEnabled); }}
           style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
+          accessibilityRole="switch"
+          accessibilityLabel="Sound enabled"
         >
           <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
             {soundEnabled ? 'ON' : 'OFF'}
@@ -243,6 +253,8 @@ function SoundToggle() {
                 key={i}
                 onPress={() => updateConfig({ soundVolume: (i + 1) / STEPS })}
                 hitSlop={4}
+                accessibilityRole="button"
+                accessibilityLabel={`Volume ${(i + 1) * 10} percent`}
               >
                 <View style={[styles.volSegment, i < filled && styles.volSegmentFilled]} />
               </Pressable>
@@ -273,7 +285,7 @@ function AmbientToggle() {
         <Text style={styles.rowLabel}>Ambient Sound</Text>
         <Text style={styles.rowHint}>Casino background music</Text>
       </View>
-      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]}>
+      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Ambient sound">
         <Text style={[styles.toggleText, ambientEnabled && styles.toggleTextActive]}>
           {ambientEnabled ? 'ON' : 'OFF'}
         </Text>
@@ -312,6 +324,8 @@ function PlayerCountSelector() {
               key={n}
               onPress={() => { updateConfig({ numberOfPlayers: n }); CapsHooks.settingsChanged('numberOfPlayers', n); }}
               style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
+              accessibilityRole="radio"
+              accessibilityLabel={`${n} players`}
             >
               <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>
                 {n}
@@ -347,6 +361,8 @@ function BotDifficultySelector() {
             key={o.key}
             onPress={() => { updateConfig({ botDifficulty: o.key }); CapsHooks.settingsChanged('botDifficulty', o.key); }}
             style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
+            accessibilityRole="radio"
+            accessibilityLabel={`Bot difficulty ${o.label}`}
           >
             <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
           </Pressable>
@@ -387,6 +403,8 @@ function OrientationPicker() {
             key={id}
             onPress={() => pick(id)}
             style={[orientationStyles.tile, active && orientationStyles.tileActive]}
+            accessibilityRole="radio"
+            accessibilityLabel={`Orientation ${label}`}
           >
             <Text style={orientationStyles.tileIcon}>{icon}</Text>
             <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
@@ -412,12 +430,16 @@ function FourColorSuitsToggle() {
         <Pressable
           onPress={() => { hapticLight(); setFourColorSuits(false); }}
           style={[styles.selectorBtn, !fourColorSuits && styles.selectorBtnActive]}
+          accessibilityRole="radio"
+          accessibilityLabel="2-color suits"
         >
           <Text style={[styles.selectorText, !fourColorSuits && styles.selectorTextActive]}>2</Text>
         </Pressable>
         <Pressable
           onPress={() => { hapticLight(); setFourColorSuits(true); }}
           style={[styles.selectorBtn, fourColorSuits && styles.selectorBtnActive]}
+          accessibilityRole="radio"
+          accessibilityLabel="4-color suits"
         >
           <Text style={[styles.selectorText, fourColorSuits && styles.selectorTextActive]}>4</Text>
         </Pressable>
@@ -440,12 +462,16 @@ function ColorblindToggle() {
         <Pressable
           onPress={() => { hapticLight(); setColorblindMode(false); }}
           style={[styles.selectorBtn, !colorblindMode && styles.selectorBtnActive]}
+          accessibilityRole="radio"
+          accessibilityLabel="Colorblind mode off"
         >
           <Text style={[styles.selectorText, !colorblindMode && styles.selectorTextActive]}>Off</Text>
         </Pressable>
         <Pressable
           onPress={() => { hapticLight(); setColorblindMode(true); }}
           style={[styles.selectorBtn, colorblindMode && styles.selectorBtnActive]}
+          accessibilityRole="radio"
+          accessibilityLabel="Colorblind mode on"
         >
           <Text style={[styles.selectorText, colorblindMode && styles.selectorTextActive]}>On</Text>
         </Pressable>
@@ -486,12 +512,16 @@ function HandSortToggle() {
           <Pressable
             onPress={() => { hapticLight(); setHandSortMethod('caps'); }}
             style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
+            accessibilityRole="radio"
+            accessibilityLabel="Card sort auto"
           >
             <Text style={[styles.selectorText, handSortMethod === 'caps' && styles.selectorTextActive]}>Auto</Text>
           </Pressable>
           <Pressable
             onPress={() => { hapticLight(); setHandSortMethod('user'); }}
             style={[styles.selectorBtn, handSortMethod === 'user' && styles.selectorBtnActive]}
+            accessibilityRole="radio"
+            accessibilityLabel="Card sort pairs"
           >
             <Text style={[styles.selectorText, handSortMethod === 'user' && styles.selectorTextActive]}>Pairs</Text>
           </Pressable>
@@ -528,6 +558,8 @@ function CardThemePicker() {
             key={id}
             onPress={() => { hapticLight(); setCardTheme(id); }}
             style={[themeStyles.themeBtn, active && themeStyles.themeBtnActive]}
+            accessibilityRole="radio"
+            accessibilityLabel={`Card theme ${t.name}`}
           >
             <Text style={[themeStyles.themeBtnLabel, active && themeStyles.themeBtnLabelActive]}>
               {t.name}
@@ -584,6 +616,8 @@ function HomeThemePicker() {
                 key={id}
                 onPress={() => { hapticLight(); setHomeTheme(id); }}
                 style={homeThemeStyles.swatchItem}
+                accessibilityRole="radio"
+                accessibilityLabel={`Home theme ${HOME_THEME_NAMES[id]}`}
               >
                 <View
                   style={[
@@ -633,6 +667,8 @@ function ButtonStylePicker() {
             key={id}
             onPress={() => { hapticLight(); setButtonStyle(id); }}
             style={[btnStyleStyles.option, active && { borderColor: t.accent, borderWidth: 2 }]}
+            accessibilityRole="radio"
+            accessibilityLabel={`Button style ${label}`}
           >
             <View style={[
               btnStyleStyles.preview,
@@ -673,6 +709,8 @@ function FriendsBgPicker() {
             key={id}
             onPress={() => { hapticLight(); setFriendsBg(id); }}
             style={[bgPickerStyles.tile, active && bgPickerStyles.tileActive]}
+            accessibilityRole="radio"
+            accessibilityLabel={`Background ${label}`}
           >
             {Platform.OS === 'web' && entry ? (
               <img
@@ -714,6 +752,8 @@ function VisualThemePicker() {
             key={opt.id}
             style={[vtStyles.tile, current === opt.id && { borderColor: opt.accent, borderWidth: 2 }]}
             onPress={() => { hapticLight(); setVisualTheme(opt.id); }}
+            accessibilityRole="radio"
+            accessibilityLabel={`Visual style ${opt.label}`}
           >
             <View style={[vtStyles.preview, { backgroundColor: opt.bg, borderColor: opt.accent }]}>
               <Text style={[vtStyles.previewSymbol, { color: opt.accent }]}>♠</Text>
@@ -821,7 +861,7 @@ function ProQuotesToggle() {
           <Text style={styles.rowLabel}>🎭 {t().proQuotes}</Text>
           <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
         </View>
-        <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}>
+        <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro quotes">
           <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>{enabled ? 'ON' : 'OFF'}</Text>
         </Pressable>
       </View>
@@ -831,7 +871,7 @@ function ProQuotesToggle() {
           <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
           <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: rf(9) }]}>⚠️ Not real player voices</Text>
         </View>
-        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]}>
+        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices">
           <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
         </Pressable>
       </View>
@@ -875,6 +915,8 @@ function ResetProgressButton() {
     <Pressable
       onPress={handleReset}
       style={{ marginBottom: rs(12), paddingVertical: rs(12), borderRadius: rv(10), borderWidth: 1, borderColor: '#C62828', alignItems: 'center' }}
+      accessibilityRole="button"
+      accessibilityLabel="Reset all progress"
     >
       <Text style={{ color: '#C62828', fontSize: rf(13), fontWeight: '700' }}>Reset All Progress</Text>
     </Pressable>
@@ -963,10 +1005,10 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
-        <Text style={styles.title}>{t().settingsTitle}</Text>
+        <Text style={styles.title} accessibilityRole="header">{t().settingsTitle}</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -1079,6 +1121,8 @@ export default function SettingsScreen() {
               AsyncStorage.setItem('debug_overlay_enabled', next ? 'true' : 'false').catch(() => {});
             }}
             style={[styles.toggleBtn, debugEnabled && styles.toggleBtnActive]}
+            accessibilityRole="switch"
+            accessibilityLabel="Debug overlay"
           >
             <Text style={[styles.toggleText, debugEnabled && styles.toggleTextActive]}>
               {debugEnabled ? 'ON' : 'OFF'}
@@ -1123,6 +1167,7 @@ export default function SettingsScreen() {
                   setMuteQuotes(v);
                   AsyncStorage.setItem('caps_show_pro_quotes', v ? 'false' : 'true').catch(() => {});
                 }}
+                accessibilityLabel="Mute quotes"
               />
             </View>
             <View style={styles.row}>
@@ -1134,6 +1179,7 @@ export default function SettingsScreen() {
                   AsyncStorage.setItem('caps_beta_mute_sounds', v ? 'true' : 'false').catch(() => {});
                   useGameStore.getState().updateConfig({ soundEnabled: !v });
                 }}
+                accessibilityLabel="Mute sounds"
               />
             </View>
           </View>
@@ -1152,12 +1198,16 @@ export default function SettingsScreen() {
         <Pressable
           onPress={() => router.push('/rank' as any)}
           style={styles.privacyLink}
+          accessibilityRole="button"
+          accessibilityLabel="Your rank"
         >
           <Text style={styles.privacyLinkText}>🏆 Your Rank</Text>
         </Pressable>
         <Pressable
           onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy')}
           style={styles.privacyLink}
+          accessibilityRole="link"
+          accessibilityLabel="Privacy policy"
         >
           <Text style={styles.privacyLinkText}>Privacy Policy</Text>
         </Pressable>
@@ -1167,17 +1217,17 @@ export default function SettingsScreen() {
           <Text style={{ color: '#666', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
             {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 12+."}
           </Text>
-          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }}>
+          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
             <Text style={{ color: '#888', fontSize: rf(11), textDecorationLine: 'underline' }}>מדיניות פרטיות</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }}>
+          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }} accessibilityRole="link" accessibilityLabel="Terms of use">
             <Text style={{ color: '#888', fontSize: rf(11), textDecorationLine: 'underline' }}>תנאי שימוש</Text>
           </Pressable>
         </View>
 
         {/* Danger zone — account deletion (Apple/Google requirement) */}
         <View style={{ marginTop: 40, paddingTop: 20, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.1)' }}>
-          <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }}>
+          <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Delete account">
             <Text style={{ color: '#ef4444', fontSize: rf(14) }}>מחק חשבון</Text>
           </Pressable>
           <Text style={{ color: '#555', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>

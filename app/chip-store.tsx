@@ -101,11 +101,13 @@ export default function ChipStoreScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Text style={styles.backArrow}>{'←'}</Text>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>💰 Chip Store</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">💰 Chip Store</Text>
         {/* Spacer mirrors back-button width so title stays visually centred */}
         <View style={styles.headerSpacer} />
       </View>
@@ -130,6 +132,8 @@ export default function ChipStoreScreen() {
               onPress={() => setFlashDismissed(true)}
               hitSlop={8}
               style={({ pressed }) => pressed && { opacity: 0.6 }}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss flash deal"
             >
               <Text style={styles.flashDismiss}>✕</Text>
             </Pressable>
@@ -150,6 +154,8 @@ export default function ChipStoreScreen() {
         <Pressable
           onPress={handleRestorePurchases}
           style={({ pressed }) => [styles.restoreButton, pressed && { opacity: 0.6 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Restore previous purchases"
         >
           <Text style={styles.restoreText}>Restore Purchases</Text>
         </Pressable>
@@ -200,6 +206,8 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
         <Pressable
           onPress={() => onBuy(pkg)}
           style={({ pressed }) => [styles.buyButton, pressed && styles.buyButtonPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Buy ${(pkg.chips ?? 0).toLocaleString()} chips for ${pkg.price}`}
         >
           <Text style={styles.buyButtonText}>
             Buy {(pkg.chips ?? 0).toLocaleString()}💰 for {pkg.price}

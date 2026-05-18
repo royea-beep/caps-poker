@@ -180,7 +180,7 @@ export default function JoinLobbyScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>JOIN GAME</Text>
+        <Text style={styles.title} accessibilityRole="header">JOIN GAME</Text>
 
         {!isConnected && (
           <>
@@ -199,6 +199,7 @@ export default function JoinLobbyScreen() {
                 editable={!isBusy}
                 returnKeyType="go"
                 onSubmitEditing={handleFindAndJoin}
+                accessibilityLabel="Room code"
               />
             </View>
 
@@ -219,7 +220,7 @@ export default function JoinLobbyScreen() {
 
             {/* Toggle manual IP entry */}
             {!showManual && (
-              <Pressable onPress={() => setShowManual(true)} hitSlop={8}>
+              <Pressable onPress={() => setShowManual(true)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Enter IP manually">
                 <Text style={styles.manualToggle}>
                   {Platform.OS === 'web' ? 'Enter host IP' : 'Enter IP manually instead'}
                 </Text>
@@ -240,6 +241,7 @@ export default function JoinLobbyScreen() {
                     keyboardType="numeric"
                     autoCorrect={false}
                     editable={!isBusy}
+                    accessibilityLabel="Host IP address"
                   />
                 </View>
                 <Button

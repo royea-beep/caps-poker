@@ -109,7 +109,12 @@ function WebLandingHero({ onPlay }: { onPlay: () => void }) {
           <Text style={webLandingStyles.step}>♦ Win the majority of boards to earn chips</Text>
         </View>
 
-        <Pressable style={webLandingStyles.playButton} onPress={onPlay}>
+        <Pressable
+          style={webLandingStyles.playButton}
+          onPress={onPlay}
+          accessibilityRole="button"
+          accessibilityLabel="Play now"
+        >
           <Text style={webLandingStyles.playButtonText}>PLAY NOW</Text>
         </Pressable>
 
@@ -312,13 +317,21 @@ function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () 
         <View style={nudgeStyles.btnRow}>
           <Pressable
             onPress={() => dismiss(onSignIn)}
+            accessibilityRole="button"
+            accessibilityLabel={isHE ? 'כניסה עם Google' : 'Sign in with Google'}
             style={nudgeStyles.signInBtn}
           >
             <Text style={nudgeStyles.signInBtnText}>
               {isHE ? '🔵 כניסה עם Google' : '🔵 Sign in with Google'}
             </Text>
           </Pressable>
-          <Pressable onPress={() => dismiss(onLater)} hitSlop={8} style={nudgeStyles.laterBtn}>
+          <Pressable
+            onPress={() => dismiss(onLater)}
+            accessibilityRole="button"
+            accessibilityLabel={isHE ? 'אחר כך' : 'Later'}
+            hitSlop={8}
+            style={nudgeStyles.laterBtn}
+          >
             <Text style={nudgeStyles.laterBtnText}>{isHE ? 'אחר כך' : 'Later'}</Text>
           </Pressable>
         </View>
@@ -456,7 +469,12 @@ function DailyRewardModal({
   };
   return (
     <AnimatedRN.View style={[dailyRewardModalStyles.overlay, { opacity }]}>
-      <Pressable style={StyleSheet.absoluteFillObject} onPress={() => dismiss(onDismiss)} />
+      <Pressable
+        style={StyleSheet.absoluteFillObject}
+        onPress={() => dismiss(onDismiss)}
+        accessibilityRole="button"
+        accessibilityLabel="Close dialog"
+      />
       <AnimatedRN.View style={[dailyRewardModalStyles.card, { transform: [{ scale }] }]}>
         <Text style={dailyRewardModalStyles.emoji}>🎁</Text>
         <Text style={dailyRewardModalStyles.title}>
@@ -473,12 +491,20 @@ function DailyRewardModal({
         <Pressable
           style={dailyRewardModalStyles.claimBtn}
           onPress={() => dismiss(onClaim)}
+          accessibilityRole="button"
+          accessibilityLabel={isHE ? 'קחו את הפרס' : 'Claim Reward'}
         >
           <Text style={dailyRewardModalStyles.claimBtnText}>
             {isHE ? '✅ קחו את הפרס' : '✅ Claim Reward'}
           </Text>
         </Pressable>
-        <Pressable onPress={() => dismiss(onDismiss)} hitSlop={8} style={dailyRewardModalStyles.laterBtn}>
+        <Pressable
+          onPress={() => dismiss(onDismiss)}
+          accessibilityRole="button"
+          accessibilityLabel={isHE ? 'אחר כך' : 'Later'}
+          hitSlop={8}
+          style={dailyRewardModalStyles.laterBtn}
+        >
           <Text style={dailyRewardModalStyles.laterText}>
             {isHE ? 'אחר כך' : 'Later'}
           </Text>
@@ -606,7 +632,12 @@ function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => 
 
   return (
     <AnimatedRN.View style={[welcomeStyles.overlay, { opacity }]}>
-      <Pressable style={StyleSheet.absoluteFillObject} onPress={onSkip} />
+      <Pressable
+        style={StyleSheet.absoluteFillObject}
+        onPress={onSkip}
+        accessibilityRole="button"
+        accessibilityLabel="Close dialog"
+      />
       <View style={welcomeStyles.card}>
         {/* Dots */}
         <View style={welcomeStyles.dots}>
@@ -622,16 +653,31 @@ function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => 
         </AnimatedRN.View>
 
         {isLast ? (
-          <Pressable onPress={() => { track('tutorial_completed', {}, 'home'); onStart(); }} style={welcomeStyles.startBtn}>
+          <Pressable
+            onPress={() => { track('tutorial_completed', {}, 'home'); onStart(); }}
+            accessibilityRole="button"
+            accessibilityLabel={isHE ? 'יאללה!' : "Let's play"}
+            style={welcomeStyles.startBtn}
+          >
             <Text style={welcomeStyles.startBtnText}>{isHE ? 'יאללה!' : "LET'S PLAY!"}</Text>
           </Pressable>
         ) : (
-          <Pressable onPress={() => goToSlide(slide + 1)} style={welcomeStyles.startBtn}>
+          <Pressable
+            onPress={() => goToSlide(slide + 1)}
+            accessibilityRole="button"
+            accessibilityLabel={isHE ? 'הבא' : 'Next'}
+            style={welcomeStyles.startBtn}
+          >
             <Text style={welcomeStyles.startBtnText}>{isHE ? 'הבא ›' : 'Next ›'}</Text>
           </Pressable>
         )}
 
-        <Pressable onPress={() => { track('tutorial_skipped', { slide_index: slide }, 'home'); onSkip(); }} hitSlop={8}>
+        <Pressable
+          onPress={() => { track('tutorial_skipped', { slide_index: slide }, 'home'); onSkip(); }}
+          accessibilityRole="button"
+          accessibilityLabel={isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}
+          hitSlop={8}
+        >
           <Text style={welcomeStyles.skipText}>{isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}</Text>
         </Pressable>
       </View>
@@ -1334,11 +1380,23 @@ export default function HomeScreen() {
           {/* Chip balance — tap to shop */}
           <View style={styles.topChipWrap}>
             {chips === 0 ? (
-              <Pressable onPress={() => router.push('/shop' as any)} hitSlop={8} style={styles.topChipGetBtn}>
+              <Pressable
+                onPress={() => router.push('/shop' as any)}
+                accessibilityRole="button"
+                accessibilityLabel="Get chips"
+                hitSlop={8}
+                style={styles.topChipGetBtn}
+              >
                 <Text style={styles.topChipGetText}>GET CHIPS</Text>
               </Pressable>
             ) : (
-              <Pressable onPress={() => router.push('/shop' as any)} hitSlop={8} style={styles.topChipBtn}>
+              <Pressable
+                onPress={() => router.push('/shop' as any)}
+                accessibilityRole="button"
+                accessibilityLabel="Open chip shop"
+                hitSlop={8}
+                style={styles.topChipBtn}
+              >
                 <Text style={[
                   styles.topChipText,
                   (chips ?? 0) < 100 ? { color: '#F59E0B' } : { color: '#FFFFFF' },
@@ -1356,14 +1414,24 @@ export default function HomeScreen() {
             </View>
           )}
           {user?.user_metadata?.avatar_url ? (
-            <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open menu"
+              hitSlop={8}
+            >
               <Image
                 source={{ uri: String(user.user_metadata.avatar_url) }}
                 style={styles.topAvatar}
               />
             </Pressable>
           ) : (
-            <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open menu"
+              hitSlop={8}
+            >
               <Text style={[styles.topAvatarEmoji, { color: theme.accent }]}>{playerAvatar}</Text>
             </Pressable>
           )}
@@ -1387,6 +1455,7 @@ export default function HomeScreen() {
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
+            accessibilityRole="header"
           >
             CAPS
           </Text>
@@ -1416,6 +1485,8 @@ export default function HomeScreen() {
             <Pressable
               key={n}
               onPress={() => updateConfig({ numberOfPlayers: n })}
+              accessibilityRole="radio"
+              accessibilityLabel={`${n} players`}
               style={{
                 paddingHorizontal: 16, paddingVertical: 8,
                 borderRadius: 20,
@@ -1490,6 +1561,8 @@ export default function HomeScreen() {
               alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
             }}
             onPress={handleFriendChallenge}
+            accessibilityRole="button"
+            accessibilityLabel="אתגר חבר"
           >
             <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>אתגר חבר</Text>
             <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>שלח אתגר פוקר לחבר</Text>
@@ -1526,6 +1599,8 @@ export default function HomeScreen() {
               } catch {}
               setShowCompleteBanner(false);
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Share your COMPLETE win"
             style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1.5, borderColor: '#c9a84c', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}
           >
             <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }}>🏆 You got COMPLETE! Share it?</Text>
@@ -1535,7 +1610,12 @@ export default function HomeScreen() {
         {/* Daily reward — prominent pill when claimable, streak info otherwise */}
         {canClaim ? (
           <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
-            <Pressable onPress={handleClaimDailyReward} style={[styles.dailyPill, styles.dailyPillClaim]}>
+            <Pressable
+              onPress={handleClaimDailyReward}
+              accessibilityRole="button"
+              accessibilityLabel="תבע בונוס יומי"
+              style={[styles.dailyPill, styles.dailyPillClaim]}
+            >
               {dailyRewardStreak >= 6 ? (
                 <Text style={styles.dailyPillText}>🔥 יום {dailyRewardStreak + 1} ברצף! +500 צ׳יפים!</Text>
               ) : (
@@ -1589,6 +1669,8 @@ export default function HomeScreen() {
                 getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
                 router.push('/sit-and-go' as any);
               }}
+              accessibilityRole="button"
+              accessibilityLabel="סיט אנד גו, 100 צ׳יפים"
             >
               <Text style={[styles.modeBtnIcon]}>🎯</Text>
               <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>סיט אנד גו (100 💰)</Text>
@@ -1596,6 +1678,8 @@ export default function HomeScreen() {
             <Pressable
               style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
               onPress={() => router.push('/quick-poker' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="פוקר מהיר, 200 צ׳יפים"
             >
               <Text style={styles.modeBtnIcon}>⚡</Text>
               <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>פוקר מהיר (200 💰)</Text>
@@ -1605,7 +1689,12 @@ export default function HomeScreen() {
 
         {/* 📊 Stats — active+ only */}
         {show_stats && totalHandCount > 0 && (
-          <Pressable onPress={() => router.push('/hand-history' as any)} style={styles.statsBtn}>
+          <Pressable
+            onPress={() => router.push('/hand-history' as any)}
+            accessibilityRole="button"
+            accessibilityLabel={`היסטוריית ידיים, ${totalHandCount} ידות שוחקו`}
+            style={styles.statsBtn}
+          >
             <Text style={styles.statsBtnText}>📊 {totalHandCount} ידות שוחקו</Text>
           </Pressable>
         )}
@@ -1615,12 +1704,22 @@ export default function HomeScreen() {
         {/* Data cards — active+ only */}
         {show_stats && (
           <View style={{ flexDirection: 'row', gap: 8, width: '100%', marginTop: 4 }}>
-            <Pressable onPress={() => router.push('/achievements' as any)} style={homeDataCardStyles.card}>
+            <Pressable
+              onPress={() => router.push('/achievements' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="ההתקדמות שלי"
+              style={homeDataCardStyles.card}
+            >
               <Text style={homeDataCardStyles.label}>ההתקדמות שלי</Text>
               <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
               <Text style={homeDataCardStyles.sub}>הישגים · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} ניצחונות</Text>
             </Pressable>
-            <Pressable onPress={() => router.push('/missions' as any)} style={homeDataCardStyles.card}>
+            <Pressable
+              onPress={() => router.push('/missions' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="תחרות"
+              style={homeDataCardStyles.card}
+            >
               <Text style={homeDataCardStyles.label}>תחרות</Text>
               <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
               <Text style={homeDataCardStyles.sub}>משימות · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} דירוג` : 'שחק כדי לדרג'}</Text>
@@ -1667,6 +1766,8 @@ export default function HomeScreen() {
                 <Pressable
                   key={hand.id}
                   onPress={() => router.push(`/hand-history?handId=${hand.id}` as any)}
+                  accessibilityRole="button"
+                  accessibilityLabel="צפה בהיסטוריית היד"
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
                 >
                   <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
@@ -1687,21 +1788,41 @@ export default function HomeScreen() {
               <Text style={styles.referralCardLabel}>YOUR CODE</Text>
               <Text style={styles.referralCardCode}>{myReferralCode}</Text>
               <View style={styles.referralCardButtons}>
-                <Pressable onPress={handleCopyCode} style={styles.referralActionBtn}>
+                <Pressable
+                  onPress={handleCopyCode}
+                  accessibilityRole="button"
+                  accessibilityLabel="Copy referral code"
+                  style={styles.referralActionBtn}
+                >
                   <Text style={styles.referralActionBtnText}>📋 Copy</Text>
                 </Pressable>
-                <Pressable onPress={handleInviteFriends} style={styles.referralActionBtn}>
+                <Pressable
+                  onPress={handleInviteFriends}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share referral code"
+                  style={styles.referralActionBtn}
+                >
                   <Text style={styles.referralActionBtnText}>📤 Share</Text>
                 </Pressable>
               </View>
             </View>
           ) : (
-            <Pressable onPress={handleInviteFriends} style={styles.inviteBtn}>
+            <Pressable
+              onPress={handleInviteFriends}
+              accessibilityRole="button"
+              accessibilityLabel="הזמן חברים"
+              style={styles.inviteBtn}
+            >
               <Text style={styles.inviteBtnText}>הזמן חברים 🎁</Text>
             </Pressable>
           )}
           {gamesPlayed < 3 && (
-            <Pressable onPress={() => setShowReferralModal(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setShowReferralModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Got an invite code?"
+              hitSlop={8}
+            >
               <Text style={styles.gotCodeLink}>Got an invite code?</Text>
             </Pressable>
           )}
@@ -1733,8 +1854,18 @@ export default function HomeScreen() {
         animationType="fade"
         onRequestClose={() => setShowReferralModal(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowReferralModal(false)}>
-          <Pressable style={styles.modalCard} onPress={() => {}}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowReferralModal(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close dialog"
+        >
+          <Pressable
+            style={styles.modalCard}
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Invite code dialog"
+          >
             <Text style={styles.modalTitle}>🎁 Enter Invite Code</Text>
             <Text style={styles.modalSub}>6-character code from a friend</Text>
             <TextInput
@@ -1755,11 +1886,19 @@ export default function HomeScreen() {
             <Pressable
               style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}
               onPress={handleRedeemCode}
+              accessibilityRole="button"
+              accessibilityLabel="Redeem invite code for 100 chips"
               disabled={referralSubmitting}
             >
               <Text style={styles.redeemBtnText}>{referralSubmitting ? 'Checking...' : 'Redeem +100 💰'}</Text>
             </Pressable>
-            <Pressable onPress={() => setShowReferralModal(false)} hitSlop={8} style={{ marginTop: rs(8) }}>
+            <Pressable
+              onPress={() => setShowReferralModal(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              hitSlop={8}
+              style={{ marginTop: rs(8) }}
+            >
               <Text style={styles.modalCancelText}>Cancel</Text>
             </Pressable>
           </Pressable>

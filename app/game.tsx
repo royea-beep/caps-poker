@@ -938,6 +938,8 @@ function GameScreenInner() {
           )}
           {isArranging && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Undo last card placement"
               style={[styles.floatingBtn, styles.undoBtn, { marginTop: 8 }]}
               onPress={() => {
                 for (let i = boards.length - 1; i >= 0; i--) {
@@ -959,7 +961,7 @@ function GameScreenInner() {
         <View style={landscapeStyles.centerPanel}>
           {/* Mini top bar */}
           <View style={styles.topBar}>
-            <Pressable onPress={handleBack} style={styles.backButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={styles.backButton}>
               <Text style={styles.backText}>{'\u2715'}</Text>
             </Pressable>
             <View style={styles.topCenter}>
@@ -1018,6 +1020,8 @@ function GameScreenInner() {
           </View>
           {isArranging && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={allBoardsFull ? 'Ready, reveal hands' : 'Place remaining cards on boards'}
               style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady, landscapeStyles.readyBtn]}
               onPress={handleReady}
               disabled={!allBoardsFull}
@@ -1028,7 +1032,7 @@ function GameScreenInner() {
             </Pressable>
           )}
           {playerReady && allBotsReady && showContinueButton && (
-            <Pressable style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Continue to results" style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
               <Text style={styles.continueBtnText}>המשך →</Text>
             </Pressable>
           )}
@@ -1053,7 +1057,7 @@ function GameScreenInner() {
       <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
       {/* Header bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={handleBack} style={styles.backButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topCenter}>

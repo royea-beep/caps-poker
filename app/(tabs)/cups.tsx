@@ -24,7 +24,7 @@ export default function CupsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>CUPS / כוסות</Text>
+      <Text style={styles.title} accessibilityRole="header">CUPS / כוסות</Text>
       <Text style={styles.sub}>{earned}/{total} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.</Text>
 
       {cups === null ? (

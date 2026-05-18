@@ -118,7 +118,7 @@ export default function LeaderboardScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Button title={'\u2190 Back'} variant="ghost" onPress={() => router.back()} style={{ paddingVertical: 6, paddingHorizontal: 0 }} />
-          <Text style={styles.title}>LEADERBOARD</Text>
+          <Text accessibilityRole="header" style={styles.title}>LEADERBOARD</Text>
           <View style={{ width: 60 }} />
         </View>
         <View style={styles.emptyContainer}>
@@ -134,16 +134,16 @@ export default function LeaderboardScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Button title={'\u2190 Back'} variant="ghost" onPress={() => router.back()} style={{ paddingVertical: 6, paddingHorizontal: 0 }} />
-        <Text style={styles.title}>LEADERBOARD</Text>
+        <Text accessibilityRole="header" style={styles.title}>LEADERBOARD</Text>
         <View style={{ width: 60 }} />
       </View>
 
       {/* Sort toggle */}
       <View style={styles.sortRow}>
-        <TouchableOpacity onPress={() => setSortBy('chips')} style={[styles.sortBtn, sortBy === 'chips' && styles.sortBtnActive]}>
+        <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by chips" onPress={() => setSortBy('chips')} style={[styles.sortBtn, sortBy === 'chips' && styles.sortBtnActive]}>
           <Text style={[styles.sortBtnText, sortBy === 'chips' && styles.sortBtnTextActive]}>🪙 Chips</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSortBy('winRate')} style={[styles.sortBtn, sortBy === 'winRate' && styles.sortBtnActive]}>
+        <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by win rate" onPress={() => setSortBy('winRate')} style={[styles.sortBtn, sortBy === 'winRate' && styles.sortBtnActive]}>
           <Text style={[styles.sortBtnText, sortBy === 'winRate' && styles.sortBtnTextActive]}>% Win Rate</Text>
         </TouchableOpacity>
       </View>

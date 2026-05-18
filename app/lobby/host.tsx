@@ -144,7 +144,7 @@ export default function HostLobbyScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>HOST GAME</Text>
+        <Text style={styles.title} accessibilityRole="header">HOST GAME</Text>
 
         {error && (
           <View style={styles.errorBox}>

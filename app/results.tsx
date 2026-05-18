@@ -845,7 +845,7 @@ export default function ResultsScreen() {
 
           {/* Title + score */}
           <View style={styles.titleSection}>
-            <Text style={[styles.title, { color: isPerfectGame ? COLORS.gold : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold }]}>
+            <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.gold : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold }]}>
               {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
             </Text>
             <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
@@ -872,7 +872,7 @@ export default function ResultsScreen() {
 
           {/* Chips earned + shop CTA */}
           {netChips > 0 && (
-            <Pressable onPress={() => router.push('/shop' as any)} style={styles.shopCta}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Visit Shop" onPress={() => router.push('/shop' as any)} style={styles.shopCta}>
               <Text style={styles.shopCtaText}>💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
             </Pressable>
           )}
@@ -1037,6 +1037,8 @@ export default function ResultsScreen() {
           {/* F1: Share COMPLETE button */}
           {isComplete && (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Share COMPLETE"
               style={styles.shareCompleteBtn}
               onPress={async () => {
                 try {
@@ -1065,12 +1067,14 @@ export default function ResultsScreen() {
               </Text>
               <View style={styles.upgradeNudgeRow}>
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Try 4 boards"
                   style={styles.upgradeNudgeBtn}
                   onPress={() => { updateConfig({ numberOfPlayers: 2 }); setShowUpgradeNudge(false); }}
                 >
                   <Text style={styles.upgradeNudgeBtnText}>4 BOARDS →</Text>
                 </Pressable>
-                <Pressable onPress={() => setShowUpgradeNudge(false)}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Later" onPress={() => setShowUpgradeNudge(false)}>
                   <Text style={styles.upgradeNudgeDismiss}>Later</Text>
                 </Pressable>
               </View>
@@ -1139,6 +1143,8 @@ export default function ResultsScreen() {
           {/* S115: Hand history link */}
           {!isMultiplayer && (
             <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="View hand history"
               onPress={() => router.push('/hand-history' as any)}
               style={styles.historyLink}
             >
@@ -1149,6 +1155,8 @@ export default function ResultsScreen() {
           {/* Auto-continue countdown (FIX 2) */}
           {autoContinueActive && !isMultiplayer && (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Cancel auto-continue"
               style={styles.autoContinueBar}
               onPress={cancelAutoContinue}
               activeOpacity={0.7}
@@ -1172,14 +1180,14 @@ export default function ResultsScreen() {
               <>
                 {savedHandId && !isMultiplayer && (
                   <Animated.View style={{ opacity: dealBtnOpacity, alignItems: 'center', marginTop: rs(8) }}>
-                    <Pressable style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Coaching" style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
                       <Text style={styles.coachingBtnText}>💡 COACHING</Text>
                     </Pressable>
                   </Animated.View>
                 )}
                 {!isMultiplayer && (
                   <View style={styles.shareRow}>
-                    <Pressable style={styles.shareBtn} onPress={handleShareHand}>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Share Hand" style={styles.shareBtn} onPress={handleShareHand}>
                       <Text style={styles.shareBtnText}>📤 Share Hand</Text>
                     </Pressable>
                   </View>
