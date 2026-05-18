@@ -30,22 +30,22 @@ export default function ProfileScreen() {
           <View style={styles.statCard}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel="CHIPS">CHIPS 💰</Text></View>
         </View>
 
-        <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)} accessibilityRole="button" accessibilityLabel="הישגים">
+        <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)} accessibilityRole="button" accessibilityLabel="הישגים" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🥇</Text><Text style={styles.menuLabel} accessibilityLanguage="he">הישגים</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => router.push('/missions' as any)} accessibilityRole="button" accessibilityLabel="משימות יומיות">
+        <Pressable style={styles.menuRow} onPress={() => router.push('/missions' as any)} accessibilityRole="button" accessibilityLabel="משימות יומיות" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📋</Text><Text style={styles.menuLabel} accessibilityLanguage="he">משימות יומיות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => router.push('/hand-history' as any)} accessibilityRole="button" accessibilityLabel="היסטוריית ידות">
+        <Pressable style={styles.menuRow} onPress={() => router.push('/hand-history' as any)} accessibilityRole="button" accessibilityLabel="היסטוריית ידות" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📖</Text><Text style={styles.menuLabel} accessibilityLanguage="he">היסטוריית ידות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)} accessibilityRole="button" accessibilityLabel="סטטיסטיקות מפורטות">
+        <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)} accessibilityRole="button" accessibilityLabel="סטטיסטיקות מפורטות" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text><Text style={styles.menuLabel} accessibilityLanguage="he">סטטיסטיקות מפורטות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => router.push('/leaderboard' as any)} accessibilityRole="button" accessibilityLabel="לוח מנצחים">
+        <Pressable style={styles.menuRow} onPress={() => router.push('/leaderboard' as any)} accessibilityRole="button" accessibilityLabel="לוח מנצחים" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text><Text style={styles.menuLabel} accessibilityLanguage="he">לוח מנצחים</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)} accessibilityRole="button" accessibilityLabel="הגדרות">
+        <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)} accessibilityRole="button" accessibilityLabel="הגדרות" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚙️</Text><Text style={styles.menuLabel} accessibilityLanguage="he">הגדרות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
       </ScrollView>

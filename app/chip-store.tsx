@@ -100,7 +100,7 @@ export default function ChipStoreScreen() {
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
-          hitSlop={8}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
@@ -133,7 +133,7 @@ export default function ChipStoreScreen() {
             <Text style={styles.flashText} accessibilityLabel="Flash Deal — 2× chips for 24h!">⚡ Flash Deal — 2× chips for 24h!</Text>
             <Pressable
               onPress={() => setFlashDismissed(true)}
-              hitSlop={8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={({ pressed }) => pressed && { opacity: 0.6 }}
               accessibilityRole="button"
               accessibilityLabel="Dismiss flash deal"
@@ -209,6 +209,7 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
         <Pressable
           onPress={() => onBuy(pkg)}
           style={({ pressed }) => [styles.buyButton, pressed && styles.buyButtonPressed]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={`Buy ${(pkg.chips ?? 0).toLocaleString()} chips for ${pkg.price}`}
         >

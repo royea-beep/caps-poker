@@ -256,7 +256,7 @@ function SoundToggle() {
               <Pressable
                 key={i}
                 onPress={() => updateConfig({ soundVolume: (i + 1) / STEPS })}
-                hitSlop={4}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={`Volume ${(i + 1) * 10} percent`}
               >
@@ -947,7 +947,7 @@ function ResetProgressButton() {
   return (
     <Pressable
       onPress={handleReset}
-      style={{ marginBottom: rs(12), paddingVertical: rs(12), borderRadius: rv(10), borderWidth: 1, borderColor: '#C62828', alignItems: 'center' }}
+      style={{ marginBottom: rs(12), paddingVertical: rs(12), borderRadius: rv(10), borderWidth: 1, borderColor: '#C62828', alignItems: 'center', minHeight: 44 }}
       accessibilityRole="button"
       accessibilityLabel="Reset all progress"
     >
@@ -1038,7 +1038,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>
             <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">← </Text>
             Back
@@ -1452,6 +1452,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
+    minWidth: 44,
+    minHeight: 44,
   },
   selectorBtnActive: {
     backgroundColor: COLORS.gold,
@@ -1594,6 +1596,7 @@ const homeThemeStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: rs(4),
+    minHeight: 44,
   },
   swatchCircle: {
     width: rv(40),

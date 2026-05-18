@@ -331,7 +331,7 @@ function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () 
             onPress={() => dismiss(onLater)}
             accessibilityRole="button"
             accessibilityLabel={isHE ? 'אחר כך' : 'Later'}
-            hitSlop={8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={nudgeStyles.laterBtn}
           >
             <Text style={nudgeStyles.laterBtnText} accessibilityLanguage="he">{isHE ? 'אחר כך' : 'Later'}</Text>
@@ -508,7 +508,7 @@ function DailyRewardModal({
           onPress={() => dismiss(onDismiss)}
           accessibilityRole="button"
           accessibilityLabel={isHE ? 'אחר כך' : 'Later'}
-          hitSlop={8}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={dailyRewardModalStyles.laterBtn}
         >
           <Text style={dailyRewardModalStyles.laterText} accessibilityLanguage="he">
@@ -682,7 +682,7 @@ function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => 
           onPress={() => { track('tutorial_skipped', { slide_index: slide }, 'home'); onSkip(); }}
           accessibilityRole="button"
           accessibilityLabel={isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}
-          hitSlop={8}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={welcomeStyles.skipText} accessibilityLanguage="he">{isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}</Text>
         </Pressable>
@@ -1390,7 +1390,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
                 accessibilityLabel="Get chips"
-                hitSlop={8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipGetBtn}
               >
                 <Text style={styles.topChipGetText}>GET CHIPS</Text>
@@ -1400,7 +1400,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
                 accessibilityLabel="Open chip shop"
-                hitSlop={8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipBtn}
               >
                 <Text style={[
@@ -1424,7 +1424,8 @@ export default function HomeScreen() {
               onPress={() => setMenuOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="Open menu"
-              hitSlop={8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
             >
               <Image
                 source={{ uri: String(user.user_metadata.avatar_url) }}
@@ -1436,7 +1437,8 @@ export default function HomeScreen() {
               onPress={() => setMenuOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="Open menu"
-              hitSlop={8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
             >
               <Text style={[styles.topAvatarEmoji, { color: theme.accent }]}>{playerAvatar}</Text>
             </Pressable>
@@ -1494,6 +1496,7 @@ export default function HomeScreen() {
               accessibilityRole="radio"
               accessibilityState={{ selected: config.numberOfPlayers === n }}
               accessibilityLabel={`${n} players`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{
                 paddingHorizontal: 16, paddingVertical: 8,
                 borderRadius: 20,
@@ -1700,6 +1703,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/hand-history' as any)}
             accessibilityRole="button"
             accessibilityLabel={`היסטוריית ידיים, ${totalHandCount} ידות שוחקו`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.statsBtn}
           >
             <Text style={styles.statsBtnText} accessibilityLanguage="he">📊 {totalHandCount} ידות שוחקו</Text>
@@ -1775,6 +1779,7 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/hand-history?handId=${hand.id}` as any)}
                   accessibilityRole="button"
                   accessibilityLabel="צפה בהיסטוריית היד"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
                 >
                   <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }} accessibilityLanguage="he">
@@ -1799,6 +1804,7 @@ export default function HomeScreen() {
                   onPress={handleCopyCode}
                   accessibilityRole="button"
                   accessibilityLabel="Copy referral code"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.referralActionBtn}
                 >
                   <Text style={styles.referralActionBtnText}>📋 Copy</Text>
@@ -1807,6 +1813,7 @@ export default function HomeScreen() {
                   onPress={handleInviteFriends}
                   accessibilityRole="button"
                   accessibilityLabel="Share referral code"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.referralActionBtn}
                 >
                   <Text style={styles.referralActionBtnText}>📤 Share</Text>
@@ -1828,7 +1835,7 @@ export default function HomeScreen() {
               onPress={() => setShowReferralModal(true)}
               accessibilityRole="button"
               accessibilityLabel="Got an invite code?"
-              hitSlop={8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.gotCodeLink}>Got an invite code?</Text>
             </Pressable>
@@ -1908,7 +1915,7 @@ export default function HomeScreen() {
               onPress={() => setShowReferralModal(false)}
               accessibilityRole="button"
               accessibilityLabel="Cancel"
-              hitSlop={8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginTop: rs(8) }}
             >
               <Text style={styles.modalCancelText}>Cancel</Text>

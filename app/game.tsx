@@ -962,7 +962,7 @@ function GameScreenInner() {
         <View style={landscapeStyles.centerPanel}>
           {/* Mini top bar */}
           <View style={styles.topBar}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={styles.backButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={[styles.backButton, { minHeight: 44, minWidth: 44 }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.backText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{'\u2715'}</Text>
             </Pressable>
             <View style={styles.topCenter}>
@@ -1069,7 +1069,7 @@ function GameScreenInner() {
       <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
       {/* Header bar */}
       <View style={styles.topBar}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={styles.backButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={[styles.backButton, { minHeight: 44, minWidth: 44 }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.backText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topCenter}>

@@ -876,7 +876,7 @@ export default function ResultsScreen() {
 
           {/* Chips earned + shop CTA */}
           {netChips > 0 && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Visit Shop" onPress={() => router.push('/shop' as any)} style={styles.shopCta}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Visit Shop" onPress={() => router.push('/shop' as any)} style={styles.shopCta} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.shopCtaText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
             </Pressable>
           )}
@@ -1076,10 +1076,11 @@ export default function ResultsScreen() {
                   accessibilityLabel="Try 4 boards"
                   style={styles.upgradeNudgeBtn}
                   onPress={() => { updateConfig({ numberOfPlayers: 2 }); setShowUpgradeNudge(false); }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Text style={styles.upgradeNudgeBtnText}>4 BOARDS →</Text>
                 </Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel="Later" onPress={() => setShowUpgradeNudge(false)}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Later" onPress={() => setShowUpgradeNudge(false)} style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Text style={styles.upgradeNudgeDismiss}>Later</Text>
                 </Pressable>
               </View>
@@ -1152,6 +1153,7 @@ export default function ResultsScreen() {
               accessibilityLabel="View hand history"
               onPress={() => router.push('/hand-history' as any)}
               style={styles.historyLink}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.historyLinkText}>View hand history →</Text>
             </TouchableOpacity>
@@ -1166,6 +1168,7 @@ export default function ResultsScreen() {
               style={styles.autoContinueBar}
               onPress={cancelAutoContinue}
               activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.autoContinueText}>
                 Auto-continuing in {autoContinueCountdown}s · tap to stay

@@ -221,7 +221,7 @@ export default function JoinLobbyScreen() {
 
             {/* Toggle manual IP entry */}
             {!showManual && (
-              <Pressable onPress={() => setShowManual(true)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Enter IP manually">
+              <Pressable onPress={() => setShowManual(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Enter IP manually">
                 <Text style={styles.manualToggle}>
                   {Platform.OS === 'web' ? 'Enter host IP' : 'Enter IP manually instead'}
                 </Text>

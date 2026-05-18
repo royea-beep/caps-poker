@@ -160,7 +160,7 @@ export default function ShopScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.headerTitle} accessibilityRole="header" accessibilityLabel="Chip Shop">🎰 Chip Shop</Text>
@@ -185,7 +185,7 @@ export default function ShopScreen() {
         <View style={styles.centerState}>
           <Text style={styles.emptyText} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🃏</Text>
           <Text style={styles.emptySubText}>Shop is empty right now.</Text>
-          <Pressable onPress={loadShop} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading shop">
+          <Pressable onPress={loadShop} style={styles.retryBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Retry loading shop">
             <Text style={styles.retryBtnText}>Retry</Text>
           </Pressable>
         </View>
@@ -211,6 +211,7 @@ export default function ShopScreen() {
                   style={[styles.iapBtn, (iapLoading || !starterPack) && styles.iapBtnDisabled]}
                   onPress={handleBuyStarterPack}
                   disabled={iapLoading || !starterPack}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
                   accessibilityLabel={starterPack ? `Buy Starter Pack for ${starterPack.product.priceString}` : 'Starter Pack coming soon'}
                   accessibilityState={{ disabled: iapLoading || !starterPack, busy: iapLoading }}
@@ -237,6 +238,7 @@ export default function ShopScreen() {
                   style={[styles.iapBtn, (iapLoading || !monthlyPack) && styles.iapBtnDisabled]}
                   onPress={handleBuySubscription}
                   disabled={iapLoading || !monthlyPack}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
                   accessibilityLabel={monthlyPack ? `Subscribe to VIP Monthly for ${monthlyPack.product.priceString} per month` : 'VIP Monthly coming soon'}
                   accessibilityState={{ disabled: iapLoading || !monthlyPack, busy: iapLoading }}
@@ -274,6 +276,7 @@ export default function ShopScreen() {
                 ]}
                 disabled={!item.can_afford || buying !== null}
                 onPress={() => handleBuy(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={`Buy ${item.description} for ${(item.cost ?? 0).toLocaleString()} chips`}
                 accessibilityState={{ disabled: !item.can_afford || buying !== null, busy: buying === item.event_type }}

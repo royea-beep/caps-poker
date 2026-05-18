@@ -321,6 +321,7 @@ const styles = StyleSheet.create({
   countBtn: {
     flex: 1,
     paddingVertical: rs(10),
+    minHeight: 44,
   },
   playersSection: {
     flex: 1,
