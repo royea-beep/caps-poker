@@ -72,7 +72,15 @@ export default function LeaderboardScreen() {
     return (
       <View style={[styles.row, isMe && styles.rowHighlight]}>
         {/* Position */}
-        <Text style={[styles.rank, pos <= 3 && styles.rankMedal, isMe && styles.textHighlight]}>
+        <Text
+          style={[styles.rank, pos <= 3 && styles.rankMedal, isMe && styles.textHighlight]}
+          accessibilityLabel={
+            medal === '🥇' ? 'First place'
+            : medal === '🥈' ? 'Second place'
+            : medal === '🥉' ? 'Third place'
+            : undefined
+          }
+        >
           {medal || `#${pos}`}
         </Text>
 
@@ -91,7 +99,10 @@ export default function LeaderboardScreen() {
           <View style={styles.statsRow}>
             <Text style={styles.stats}>{item.hands_played}h</Text>
             {rc !== 0 && (
-              <Text style={[styles.rankChange, { color: rc > 0 ? '#4CAF50' : '#ef5350' }]}>
+              <Text
+                style={[styles.rankChange, { color: rc > 0 ? '#4CAF50' : '#ef5350' }]}
+                accessibilityLabel={rc > 0 ? 'Rank up' : rc < 0 ? 'Rank down' : undefined}
+              >
                 {rc > 0 ? `▲${rc}` : `▼${Math.abs(rc)}`}
               </Text>
             )}

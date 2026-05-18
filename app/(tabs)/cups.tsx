@@ -34,7 +34,7 @@ export default function CupsScreen() {
           {cups.map(cup => (
             <View key={cup.id} style={[styles.cupRow, !cup.earned && styles.cupRowLocked]}>
               <View style={[styles.cupIcon, { backgroundColor: cup.earned ? cup.color : 'rgba(255,255,255,0.08)' }]}>
-                <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }}>🏆</Text>
+                <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }} accessibilityLabel="Trophy">🏆</Text>
               </View>
               <View style={styles.cupInfo}>
                 <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]} accessibilityLanguage="he">

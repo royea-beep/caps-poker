@@ -279,7 +279,7 @@ export default function JoinLobbyScreen() {
         {isConnected && roomState && (
           <View style={styles.connectedSection}>
             <View style={styles.connectedBadge} accessibilityLiveRegion="assertive">
-              <Text style={styles.connectedText}>✓ CONNECTED</Text>
+              <Text style={styles.connectedText} accessibilityLabel="Connected">✓ CONNECTED</Text>
             </View>
 
             <Text style={styles.roomInfo}>

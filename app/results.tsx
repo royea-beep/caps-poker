@@ -1097,7 +1097,7 @@ export default function ResultsScreen() {
           {/* S117: ELO change badge */}
           {eloChange !== 0 && (
             <View style={styles.eloChangeBadge}>
-              <Text style={[styles.eloChangeText, { color: eloChange > 0 ? '#4CAF50' : '#ef5350' }]}>
+              <Text style={[styles.eloChangeText, { color: eloChange > 0 ? '#4CAF50' : '#ef5350' }]} accessibilityLabel={eloChange > 0 ? 'Rank up' : 'Rank down'}>
                 {eloChange > 0 ? '▲' : '▼'} {Math.abs(eloChange)} ELO
               </Text>
             </View>
@@ -1127,7 +1127,7 @@ export default function ResultsScreen() {
                   <View key={i} style={styles.breakdownRow}>
                     <View style={styles.breakdownLeft}>
                       <Text style={styles.breakdownNum}>Board {i + 1}</Text>
-                      <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]}>
+                      <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
                         {playerWon ? '✓' : board.winner === 'tie' ? '=' : '✗'}
                       </Text>
                     </View>
