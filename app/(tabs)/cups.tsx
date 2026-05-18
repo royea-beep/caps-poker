@@ -25,7 +25,7 @@ export default function CupsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">CUPS / כוסות</Text>
-      <Text style={styles.sub} accessibilityLiveRegion="polite">{earned}/{total} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.</Text>
+      <Text style={styles.sub} accessibilityLiveRegion="polite" accessibilityLanguage="he">{earned}/{total} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.</Text>
 
       {cups === null ? (
         <ActivityIndicator color="#FFD700" style={{ marginTop: rs(40) }} accessibilityLiveRegion="polite" />
@@ -37,7 +37,7 @@ export default function CupsScreen() {
                 <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }}>🏆</Text>
               </View>
               <View style={styles.cupInfo}>
-                <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]}>
+                <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]} accessibilityLanguage="he">
                   {cup.name_he || TIER_LABELS[cup.tier] || cup.tier}
                 </Text>
                 <Text style={styles.cupTier}>{cup.tier.toUpperCase()}</Text>

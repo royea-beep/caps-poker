@@ -10,9 +10,9 @@ export default function FriendsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">FRIENDS</Text>
-      <Text style={styles.sub}>Challenge · Invite · Compete</Text>
+      <Text style={styles.sub} accessibilityRole="header">Challenge · Invite · Compete</Text>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="הזמן חברים · שתף את הקוד שלך · +100 💰 לכל חבר" style={[styles.card, { borderColor: '#FFD700' }]} onPress={() => router.push('/referral' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLanguage="he" accessibilityLabel="הזמן חברים · שתף את הקוד שלך · +100 💰 לכל חבר" style={[styles.card, { borderColor: '#FFD700' }]} onPress={() => router.push('/referral' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎁</Text>
         <View><Text style={styles.cardTitle}>הזמן חברים</Text><Text style={styles.cardSub}>שתף את הקוד שלך · +100 💰 לכל חבר</Text></View>
       </Pressable>
