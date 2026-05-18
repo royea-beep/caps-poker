@@ -415,7 +415,7 @@ function OrientationPicker() {
           >
             <Text style={orientationStyles.tileIcon}>{icon}</Text>
             <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
-            {active && <Text style={[orientationStyles.check, { color: COLORS.gold }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[orientationStyles.check, { color: COLORS.gold }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -602,7 +602,10 @@ function CardThemePicker() {
             </View>
             {active && (
               <View style={themeStyles.activePill}>
-                <Text style={themeStyles.activePillText}>✓ Active</Text>
+                <Text style={themeStyles.activePillText}>
+                  <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">✓ </Text>
+                  Active
+                </Text>
               </View>
             )}
           </Pressable>
@@ -641,7 +644,7 @@ function HomeThemePicker() {
                     active && homeThemeStyles.swatchCircleActive,
                   ]}
                 >
-                  {active && <Text style={homeThemeStyles.swatchCheck}>✓</Text>}
+                  {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={homeThemeStyles.swatchCheck}>✓</Text>}
                 </View>
                 <Text style={[homeThemeStyles.swatchLabel, { color: active ? t.accent : COLORS.textMuted }]}>
                   {HOME_THEME_NAMES[id]}
@@ -696,7 +699,7 @@ function ButtonStylePicker() {
             <Text style={[btnStyleStyles.label, { color: active ? t.accent : COLORS.textSecondary }]}>
               {label}
             </Text>
-            {active && <Text style={[btnStyleStyles.check, { color: t.accent }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[btnStyleStyles.check, { color: t.accent }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -742,7 +745,7 @@ function FriendsBgPicker() {
               {label}
             </Text>
             <Text style={bgPickerStyles.tileHint}>{hint}</Text>
-            {active && <Text style={[bgPickerStyles.check, { color: COLORS.gold }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[bgPickerStyles.check, { color: COLORS.gold }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -762,7 +765,10 @@ function VisualThemePicker() {
 
   return (
     <View style={vtStyles.container}>
-      <Text style={vtStyles.sectionLabel}>🎨 VISUAL STYLE</Text>
+      <Text style={vtStyles.sectionLabel}>
+        <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
+        VISUAL STYLE
+      </Text>
       <View style={vtStyles.row}>
         {options.map((opt) => (
           <Pressable
@@ -778,7 +784,7 @@ function VisualThemePicker() {
             </View>
             <Text style={[vtStyles.tileLabel, current === opt.id && { color: opt.accent }]}>{opt.label}</Text>
             <Text style={vtStyles.tileTag}>{opt.tag}</Text>
-            {current === opt.id && <Text style={[vtStyles.check, { color: opt.accent }]}>✓</Text>}
+            {current === opt.id && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[vtStyles.check, { color: opt.accent }]}>✓</Text>}
           </Pressable>
         ))}
       </View>
@@ -876,7 +882,10 @@ function ProQuotesToggle() {
     <>
       <View style={styles.row}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>🎭 {t().proQuotes}</Text>
+          <Text style={styles.rowLabel}>
+            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎭 </Text>
+            {t().proQuotes}
+          </Text>
           <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
         </View>
         <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro quotes" accessibilityState={{ checked: enabled }}>
@@ -885,9 +894,15 @@ function ProQuotesToggle() {
       </View>
       <View style={[styles.row, !enabled && { opacity: 0.4 }]}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>🔊 {t().proVoice}</Text>
+          <Text style={styles.rowLabel}>
+            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔊 </Text>
+            {t().proVoice}
+          </Text>
           <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
-          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: rf(9) }]}>⚠️ Not real player voices</Text>
+          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.3)', fontSize: rf(9) }]}>
+            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚠️ </Text>
+            Not real player voices
+          </Text>
         </View>
         <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices" accessibilityState={{ checked: voicesEnabled && enabled }}>
           <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
@@ -1024,7 +1039,10 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>
+            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">← </Text>
+            Back
+          </Text>
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">{t().settingsTitle}</Text>
         <View style={{ width: 60 }} />
@@ -1032,7 +1050,10 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <VisualThemePicker />
-        <Text style={styles.sectionTitle}>📱 ORIENTATION</Text>
+        <Text style={styles.sectionTitle}>
+          <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📱 </Text>
+          ORIENTATION
+        </Text>
         <OrientationPicker />
 
         <Text style={styles.sectionTitle}>🖼️ BACKGROUND THEME</Text>
@@ -1052,7 +1073,10 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>🏠 HOME THEME</Text>
         <HomeThemePicker />
 
-        <Text style={styles.sectionTitle}>🎨 BUTTON STYLE</Text>
+        <Text style={styles.sectionTitle}>
+          <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
+          BUTTON STYLE
+        </Text>
         <ButtonStylePicker />
 
         <Text style={styles.sectionTitle}>🃏 עיצוב קלפים</Text>
@@ -1220,7 +1244,10 @@ export default function SettingsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Your rank"
         >
-          <Text style={styles.privacyLinkText}>🏆 Your Rank</Text>
+          <Text style={styles.privacyLinkText}>
+            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆 </Text>
+            Your Rank
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy')}

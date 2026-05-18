@@ -163,9 +163,9 @@ export default function ShopScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle} accessibilityRole="header">🎰 Chip Shop</Text>
-        <View style={styles.balancePill}>
-          <Text style={styles.balanceText}>💰 {(chips ?? 0).toLocaleString()}</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header" accessibilityLabel="Chip Shop">🎰 Chip Shop</Text>
+        <View style={styles.balancePill} accessibilityLabel={`Balance: ${(chips ?? 0).toLocaleString()} chips`}>
+          <Text style={styles.balanceText} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">💰 {(chips ?? 0).toLocaleString()}</Text>
         </View>
       </View>
 
@@ -183,7 +183,7 @@ export default function ShopScreen() {
         </View>
       ) : !shopData || shopData.items.length === 0 ? (
         <View style={styles.centerState}>
-          <Text style={styles.emptyText}>🃏</Text>
+          <Text style={styles.emptyText} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🃏</Text>
           <Text style={styles.emptySubText}>Shop is empty right now.</Text>
           <Pressable onPress={loadShop} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading shop">
             <Text style={styles.retryBtnText}>Retry</Text>
@@ -201,7 +201,7 @@ export default function ShopScreen() {
               {/* Starter Pack */}
               <View style={styles.iapCard}>
                 <View style={styles.iapInfo}>
-                  <Text style={styles.iapTitle}>🎰 Starter Pack</Text>
+                  <Text style={styles.iapTitle} accessibilityLabel="Starter Pack">🎰 Starter Pack</Text>
                   <Text style={styles.iapDesc}>+5,000 chips · One-time purchase</Text>
                   {starterPack && (
                     <Text style={styles.iapPrice}>{starterPack.product.priceString}</Text>
@@ -227,7 +227,7 @@ export default function ShopScreen() {
               {/* Monthly Subscription */}
               <View style={styles.iapCard}>
                 <View style={styles.iapInfo}>
-                  <Text style={styles.iapTitle}>👑 VIP Monthly</Text>
+                  <Text style={styles.iapTitle} accessibilityLabel="VIP Monthly">👑 VIP Monthly</Text>
                   <Text style={styles.iapDesc}>1,000 chips/day · Auto-renews</Text>
                   {monthlyPack && (
                     <Text style={styles.iapPrice}>{monthlyPack.product.priceString}/mo</Text>
@@ -261,9 +261,9 @@ export default function ShopScreen() {
                 {item.description_he ? (
                   <Text style={styles.itemDescHe}>{item.description_he}</Text>
                 ) : null}
-                <View style={styles.itemCostRow}>
-                  <Text style={styles.itemCostLabel}>Cost: </Text>
-                  <Text style={styles.itemCost}>💰 {(item.cost ?? 0).toLocaleString()}</Text>
+                <View style={styles.itemCostRow} accessibilityLabel={`Cost: ${(item.cost ?? 0).toLocaleString()} chips`}>
+                  <Text style={styles.itemCostLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">Cost: </Text>
+                  <Text style={styles.itemCost} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">💰 {(item.cost ?? 0).toLocaleString()}</Text>
                 </View>
               </View>
               <Pressable

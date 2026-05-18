@@ -100,7 +100,14 @@ export default function LeaderboardScreen() {
 
         {/* Chips + win rate */}
         <View style={styles.rightCol}>
-          <Text style={[styles.chips, isMe && styles.textHighlight]}>
+          <Text
+            style={[styles.chips, isMe && styles.textHighlight]}
+            accessibilityLabel={
+              sortBy === 'winRate'
+                ? `${winRate} percent win rate`
+                : `${(item.total_chips ?? 0).toLocaleString()} chips`
+            }
+          >
             {sortBy === 'winRate'
               ? `${winRate}%`
               : (item.total_chips ?? 0).toLocaleString() + '🪙'}
@@ -182,7 +189,14 @@ export default function LeaderboardScreen() {
                     <View style={styles.youBadge}><Text style={styles.youBadgeText}>YOU</Text></View>
                   </View>
                 </View>
-                <Text style={[styles.chips, styles.textHighlight]}>
+                <Text
+                  style={[styles.chips, styles.textHighlight]}
+                  accessibilityLabel={
+                    sortBy === 'winRate'
+                      ? `${myEntry.hands_played > 0 ? Math.round(myEntry.hands_won / myEntry.hands_played * 100) : 0} percent win rate`
+                      : `${(myEntry.total_chips ?? 0).toLocaleString()} chips`
+                  }
+                >
                   {sortBy === 'winRate'
                     ? `${myEntry.hands_played > 0 ? Math.round(myEntry.hands_won / myEntry.hands_played * 100) : 0}%`
                     : (myEntry.total_chips ?? 0).toLocaleString() + '🪙'}

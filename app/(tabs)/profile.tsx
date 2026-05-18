@@ -27,26 +27,26 @@ export default function ProfileScreen() {
           <View style={styles.statCard}><Text style={styles.statValue}>{handsPlayed}</Text><Text style={styles.statLabel}>HANDS</Text></View>
           <View style={styles.statCard}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
           <View style={styles.statCard}><Text style={styles.statValue}>{currentWinStreak}</Text><Text style={styles.statLabel}>STREAK</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel}>CHIPS 💰</Text></View>
+          <View style={styles.statCard}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel="CHIPS">CHIPS 💰</Text></View>
         </View>
 
         <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)} accessibilityRole="button" accessibilityLabel="הישגים">
-          <Text style={styles.menuEmoji}>🥇</Text><Text style={styles.menuLabel}>הישגים</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🥇</Text><Text style={styles.menuLabel}>הישגים</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/missions' as any)} accessibilityRole="button" accessibilityLabel="משימות יומיות">
-          <Text style={styles.menuEmoji}>📋</Text><Text style={styles.menuLabel}>משימות יומיות</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📋</Text><Text style={styles.menuLabel}>משימות יומיות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/hand-history' as any)} accessibilityRole="button" accessibilityLabel="היסטוריית ידות">
-          <Text style={styles.menuEmoji}>📖</Text><Text style={styles.menuLabel}>היסטוריית ידות</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📖</Text><Text style={styles.menuLabel}>היסטוריית ידות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)} accessibilityRole="button" accessibilityLabel="סטטיסטיקות מפורטות">
-          <Text style={styles.menuEmoji}>📊</Text><Text style={styles.menuLabel}>סטטיסטיקות מפורטות</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text><Text style={styles.menuLabel}>סטטיסטיקות מפורטות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/leaderboard' as any)} accessibilityRole="button" accessibilityLabel="לוח מנצחים">
-          <Text style={styles.menuEmoji}>🏆</Text><Text style={styles.menuLabel}>לוח מנצחים</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text><Text style={styles.menuLabel}>לוח מנצחים</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)} accessibilityRole="button" accessibilityLabel="הגדרות">
-          <Text style={styles.menuEmoji}>⚙️</Text><Text style={styles.menuLabel}>הגדרות</Text><Text style={styles.menuArrow}>›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚙️</Text><Text style={styles.menuLabel}>הגדרות</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

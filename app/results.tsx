@@ -761,6 +761,8 @@ export default function ResultsScreen() {
             <Animated.Text
               key={`chip-${idx}`}
               pointerEvents="none"
+              accessibilityElementsHidden={true}
+              importantForAccessibility="no-hide-descendants"
               style={[
                 styles.chipShower,
                 { left: CHIP_X_POSITIONS[idx] as any, transform: [{ translateY: chipY }] },
@@ -832,7 +834,7 @@ export default function ResultsScreen() {
               ]}
             />
           ))}
-          <Text style={styles.winOverlayText}>You won {revealData.netChips} chips! 🎉</Text>
+          <Text style={styles.winOverlayText} accessibilityLabel={`You won ${revealData.netChips} chips!`}>You won {revealData.netChips} chips! 🎉</Text>
         </Animated.View>
       )}
 
@@ -865,7 +867,7 @@ export default function ResultsScreen() {
           {/* Win streak badge */}
           {currentWinStreak >= 2 && (
             <View style={styles.streakBadge} accessibilityLiveRegion="assertive">
-              <Text style={styles.streakBadgeText}>🔥 {currentWinStreak} WIN STREAK!</Text>
+              <Text style={styles.streakBadgeText} accessibilityLabel={`${currentWinStreak} win streak!`}>🔥 {currentWinStreak} WIN STREAK!</Text>
               {bestWinStreak >= 2 && currentWinStreak < bestWinStreak && (
                 <Text style={styles.streakBestText}>Best: {bestWinStreak}</Text>
               )}
@@ -875,7 +877,7 @@ export default function ResultsScreen() {
           {/* Chips earned + shop CTA */}
           {netChips > 0 && (
             <Pressable accessibilityRole="button" accessibilityLabel="Visit Shop" onPress={() => router.push('/shop' as any)} style={styles.shopCta}>
-              <Text style={styles.shopCtaText}>💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
+              <Text style={styles.shopCtaText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
             </Pressable>
           )}
 
@@ -899,7 +901,7 @@ export default function ResultsScreen() {
             const isWinnerForBanner = netChips > 0;
             return (
               <View style={styles.xpBanner}>
-                <Text style={styles.xpBannerTitle}>⭐ +{xpGained} XP</Text>
+                <Text style={styles.xpBannerTitle} accessibilityLabel={`+${xpGained} XP`}>⭐ +{xpGained} XP</Text>
                 <Text style={styles.xpBannerBreakdown}>
                   {'Game: ' + BATTLE_PASS_CONFIG.xpPerGame}
                   {boardsWonForBanner > 0 ? (' | Boards: +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
@@ -978,7 +980,7 @@ export default function ResultsScreen() {
           {/* Efficiency hint — simple 1-liner swap suggestion */}
           {efficiencyHint !== null && (
             <View style={styles.hintRow}>
-              <Text style={styles.hintText}>
+              <Text style={styles.hintText} accessibilityLabel={efficiencyHint ? `Tip: ${efficiencyHint}` : 'Perfect placement! No improvement possible.'}>
                 {efficiencyHint ? `💡 Tip: ${efficiencyHint}` : '⭐ Perfect placement! No improvement possible.'}
               </Text>
             </View>
@@ -987,7 +989,7 @@ export default function ResultsScreen() {
           {/* Best hand highlight */}
           {bestName ? (
             <View style={styles.bestHandRow}>
-              <Text style={styles.bestHandText}>⭐ Best hand: {bestName} on Board {bestBoard}</Text>
+              <Text style={styles.bestHandText} accessibilityLabel={`Best hand: ${bestName} on Board ${bestBoard}`}>⭐ Best hand: {bestName} on Board {bestBoard}</Text>
             </View>
           ) : null}
 
@@ -1032,7 +1034,7 @@ export default function ResultsScreen() {
             const streakBonusAmount = dailyRewardStreak >= 30 ? 500 : dailyRewardStreak >= 7 ? 100 : dailyRewardStreak >= 3 ? 20 : 10;
             return (
               <View style={styles.streakBonusRow}>
-                <Text style={styles.streakBonusText}>🔥 Day {dailyRewardStreak} streak! +{streakBonusAmount} bonus chips tomorrow</Text>
+                <Text style={styles.streakBonusText} accessibilityLabel={`Day ${dailyRewardStreak} streak! +${streakBonusAmount} bonus chips tomorrow`}>🔥 Day {dailyRewardStreak} streak! +{streakBonusAmount} bonus chips tomorrow</Text>
               </View>
             );
           })()}
@@ -1053,7 +1055,7 @@ export default function ResultsScreen() {
                 } catch {}
               }}
             >
-              <Text style={styles.shareCompleteBtnText}>🏆 Share COMPLETE!</Text>
+              <Text style={styles.shareCompleteBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🏆 Share COMPLETE!</Text>
             </TouchableOpacity>
           )}
 
@@ -1086,7 +1088,7 @@ export default function ResultsScreen() {
 
           {/* S118: Multiplayer result header */}
           {isMultiplayer && storeOpponentName ? (
-            <Text style={[styles.mpResultHeader, { color: netChips > 0 ? '#c9a84c' : '#ef5350' }]}>
+            <Text style={[styles.mpResultHeader, { color: netChips > 0 ? '#c9a84c' : '#ef5350' }]} accessibilityLabel={netChips > 0 ? `You beat ${storeOpponentName}!` : `Defeated by ${storeOpponentName}`}>
               {netChips > 0 ? `🏆 You beat ${storeOpponentName}!` : `Defeated by ${storeOpponentName}`}
             </Text>
           ) : null}
@@ -1104,7 +1106,7 @@ export default function ResultsScreen() {
           {sessionHistory.length >= 2 && (
             <View style={styles.sessionRow}>
               <Text style={styles.sessionLabel}>This session</Text>
-              <Text style={styles.sessionStats}>
+              <Text style={styles.sessionStats} accessibilityLabel={`${sessionWins} wins, ${sessionLosses} losses, ${sessionChips >= 0 ? '+' : ''}${sessionChips} chips`}>
                 {sessionWins}W / {sessionLosses}L
                 <Text style={{ color: sessionChips >= 0 ? '#c9a84c' : '#ef5350' }}>
                   {' · '}{sessionChips >= 0 ? '+' : ''}{sessionChips}🪙
@@ -1134,7 +1136,7 @@ export default function ResultsScreen() {
                         <Text style={styles.breakdownVs}>vs {board.botHandName}</Text>
                       ) : null}
                     </View>
-                    <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]}>
+                    <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}>
                       {board.winner === 'tie' ? '±0🪙' : `${playerWon ? '+' : ''}${chipChange}🪙`}
                     </Text>
                   </View>
@@ -1185,14 +1187,14 @@ export default function ResultsScreen() {
                 {savedHandId && !isMultiplayer && (
                   <Animated.View style={{ opacity: dealBtnOpacity, alignItems: 'center', marginTop: rs(8) }}>
                     <Pressable accessibilityRole="button" accessibilityLabel="Coaching" style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
-                      <Text style={styles.coachingBtnText}>💡 COACHING</Text>
+                      <Text style={styles.coachingBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💡 COACHING</Text>
                     </Pressable>
                   </Animated.View>
                 )}
                 {!isMultiplayer && (
                   <View style={styles.shareRow}>
                     <Pressable accessibilityRole="button" accessibilityLabel="Share Hand" style={styles.shareBtn} onPress={handleShareHand}>
-                      <Text style={styles.shareBtnText}>📤 Share Hand</Text>
+                      <Text style={styles.shareBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">📤 Share Hand</Text>
                     </Pressable>
                   </View>
                 )}

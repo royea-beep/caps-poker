@@ -99,14 +99,14 @@ function WebLandingHero({ onPlay }: { onPlay: () => void }) {
   return (
     <View style={webLandingStyles.overlay}>
       <View style={webLandingStyles.hero}>
-        <Text style={webLandingStyles.suitRow}>♠ ♥ ♦ ♣</Text>
+        <Text style={webLandingStyles.suitRow} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">♠ ♥ ♦ ♣</Text>
         <Text style={webLandingStyles.title}>CAPS POKER</Text>
         <Text style={webLandingStyles.tagline}>5 Boards. 4 Cards. Your Strategy.</Text>
 
         <View style={webLandingStyles.howToPlay}>
-          <Text style={webLandingStyles.step}>♠ Place your cards across multiple poker boards</Text>
-          <Text style={webLandingStyles.step}>♥ Each board is a separate hand — yours vs the dealer</Text>
-          <Text style={webLandingStyles.step}>♦ Win the majority of boards to earn chips</Text>
+          <Text style={webLandingStyles.step} accessibilityLabel="Place your cards across multiple poker boards">♠ Place your cards across multiple poker boards</Text>
+          <Text style={webLandingStyles.step} accessibilityLabel="Each board is a separate hand — yours vs the dealer">♥ Each board is a separate hand — yours vs the dealer</Text>
+          <Text style={webLandingStyles.step} accessibilityLabel="Win the majority of boards to earn chips">♦ Win the majority of boards to earn chips</Text>
         </View>
 
         <Pressable
@@ -118,7 +118,7 @@ function WebLandingHero({ onPlay }: { onPlay: () => void }) {
           <Text style={webLandingStyles.playButtonText}>PLAY NOW</Text>
         </Pressable>
 
-        <Text style={webLandingStyles.mobileNote}>
+        <Text style={webLandingStyles.mobileNote} accessibilityLabel="Best experience on mobile — available on TestFlight">
           📱 Best experience on mobile — available on TestFlight
         </Text>
       </View>
@@ -231,6 +231,8 @@ function FloatingParticle({ x, suit, size, opacity, dur, delay, screenW, screenH
     <Animated.Text
       style={[{ position: 'absolute', left: Math.floor(x * screenW), fontSize: size, color: '#c9a84c', opacity }, animStyle]}
       pointerEvents="none"
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
     >
       {suit}
     </Animated.Text>
@@ -306,7 +308,7 @@ function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () 
   return (
     <AnimatedRN.View style={[nudgeStyles.banner, { transform: [{ translateY }] }]}>
       <View style={nudgeStyles.content}>
-        <Text style={nudgeStyles.title}>
+        <Text style={nudgeStyles.title} accessibilityLabel={isHE ? 'התחבר כדי לשמור את הנתונים' : 'Sign in to save your stats'}>
           {isHE ? '🔒 התחבר כדי לשמור את הנתונים' : '🔒 Sign in to save your stats'}
         </Text>
         <Text style={nudgeStyles.sub}>
@@ -480,7 +482,7 @@ function DailyRewardModal({
         accessibilityLabel="Close dialog"
       />
       <AnimatedRN.View style={[dailyRewardModalStyles.card, { transform: [{ scale }] }]}>
-        <Text style={dailyRewardModalStyles.emoji}>🎁</Text>
+        <Text style={dailyRewardModalStyles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🎁</Text>
         <Text style={dailyRewardModalStyles.title}>
           {isHE ? 'פרס יומי!' : 'Daily Reward!'}
         </Text>
@@ -488,7 +490,7 @@ function DailyRewardModal({
           {`+${(reward ?? 0).toLocaleString()} chips`}
         </Text>
         {streak > 1 && (
-          <Text style={dailyRewardModalStyles.streak}>
+          <Text style={dailyRewardModalStyles.streak} accessibilityLabel={isHE ? `${streak} ימים ברצף` : `${streak}-day streak!`}>
             {isHE ? `🔥 ${streak} ימים ברצף` : `🔥 ${streak}-day streak!`}
           </Text>
         )}
@@ -651,7 +653,7 @@ function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => 
         </View>
 
         <AnimatedRN.View style={[{ alignItems: 'center', gap: rs(8), width: '100%' }, { opacity: slideOpacity }]}>
-          <Text style={welcomeStyles.slideIcon}>{current.icon}</Text>
+          <Text style={welcomeStyles.slideIcon} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{current.icon}</Text>
           <Text style={welcomeStyles.title}>{current.title}</Text>
           <Text style={welcomeStyles.slideText}>{current.text}</Text>
         </AnimatedRN.View>
@@ -1414,7 +1416,7 @@ export default function HomeScreen() {
           </View>
           {streakData && streakData.current_streak > 1 && (
             <View style={styles.streakBadgePill}>
-              <Text style={styles.streakBadgePillText}>🔥 {streakData.current_streak}</Text>
+              <Text style={styles.streakBadgePillText} accessibilityLabel={`${streakData.current_streak} day streak`}>🔥 {streakData.current_streak}</Text>
             </View>
           )}
           {user?.user_metadata?.avatar_url ? (
@@ -1447,7 +1449,7 @@ export default function HomeScreen() {
 
         {/* Title section */}
         <View style={styles.titleSection}>
-          <Text style={[styles.suitSymbols, { color: theme.accent }]}>
+          <Text style={[styles.suitSymbols, { color: theme.accent }]} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
             {'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}
           </Text>
           <Text
@@ -1552,7 +1554,7 @@ export default function HomeScreen() {
         {/* New player welcome message */}
         {stage === 'new' && (
           <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
-            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }}>ברוך הבא ל-CAPS Poker! 🃏</Text>
+            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }} accessibilityLabel="ברוך הבא ל-CAPS Poker!">ברוך הבא ל-CAPS Poker! 🃏</Text>
             <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>לחץ שחק כדי להתחיל את המשחק הראשון שלך</Text>
           </View>
         )}
@@ -1585,7 +1587,7 @@ export default function HomeScreen() {
                   alignItems: 'center', justifyContent: 'center',
                   opacity: cup.earned ? 1 : 0.4,
                 }}>
-                  <Text style={{ fontSize: rf(16) }}>🏆</Text>
+                  <Text style={{ fontSize: rf(16) }} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🏆</Text>
                 </View>
               ))}
             </View>
@@ -1636,7 +1638,7 @@ export default function HomeScreen() {
               const isMilestone = nextStreak === 7 || nextStreak === 30;
               const milestoneLabel = nextStreak === 30 ? ' (בונוס חודשי!)' : nextStreak === 7 ? ' (בונוס שבועי!)' : '';
               return (
-                <Text style={styles.dailyStreakInfoText}>
+                <Text style={styles.dailyStreakInfoText} accessibilityLabel={`יום ${dailyRewardStreak} ברצף! מחר: +${nextReward} צ׳יפים${milestoneLabel}`}>
                   {`🔥 יום ${dailyRewardStreak} ברצף! מחר: +${nextReward} צ׳יפים${milestoneLabel}`}
                 </Text>
               );
@@ -1647,7 +1649,7 @@ export default function HomeScreen() {
         {/* Win streak — beginner+ only */}
         {show_streak && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
-            <Text style={styles.homeStreakText}>🔥 {currentWinStreak} ניצחונות ברצף</Text>
+            <Text style={styles.homeStreakText} accessibilityLabel={`${currentWinStreak} ניצחונות ברצף`}>🔥 {currentWinStreak} ניצחונות ברצף</Text>
             {bestWinStreak > currentWinStreak && (
               <Text style={styles.homeStreakBest}> · שיא: {bestWinStreak}</Text>
             )}
@@ -1657,11 +1659,11 @@ export default function HomeScreen() {
         {/* Play of the Day card (D10) — only shown when player name is known */}
         {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
-            <Text style={styles.potdTitle}>🏆 מהלך היום</Text>
+            <Text style={styles.potdTitle} accessibilityLabel="מהלך היום">🏆 מהלך היום</Text>
             <Text style={styles.potdPlayer} numberOfLines={1}>
               {potd.player} · {potd.data.hand_name ?? 'יד מנצחת'}
             </Text>
-            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot}>סיר: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLabel={`סיר: ${(potd.data.pot_won ?? 0).toLocaleString()} chips`}>סיר: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
           </View>
         )}
 
@@ -1735,7 +1737,7 @@ export default function HomeScreen() {
         {/* Activity Feed + Recent Hands — veteran only */}
         {show_veteran && (
           <View style={styles.feedSection}>
-            <Text style={styles.feedTitle}>🏆 ניצחונות אחרונים</Text>
+            <Text style={styles.feedTitle} accessibilityLabel="ניצחונות אחרונים">🏆 ניצחונות אחרונים</Text>
             {activityFeed.length === 0 ? (
               <Text style={styles.feedEmpty}>שחק סיט אנד גו כדי לראות את ההיסטוריה שלך</Text>
             ) : (
@@ -1743,7 +1745,7 @@ export default function HomeScreen() {
                 const won = item.winner_id === item.player_id;
                 return (
                   <View key={i} style={styles.feedItem}>
-                    <Text style={styles.feedItemText}>
+                    <Text style={styles.feedItemText} accessibilityLabel={won ? `ניצחת סיט אנד גו — +${item.chips_won ?? 0} chips` : `סיט אנד גו — בפעם הבאה`}>
                       {won
                         ? `✅ ניצחת סיט אנד גו — +${item.chips_won ?? 0} 💰`
                         : `❌ סיט אנד גו — בפעם הבאה`}
@@ -1875,7 +1877,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="Invite code dialog"
           >
-            <Text style={styles.modalTitle}>🎁 Enter Invite Code</Text>
+            <Text style={styles.modalTitle} accessibilityLabel="Enter Invite Code">🎁 Enter Invite Code</Text>
             <Text style={styles.modalSub}>6-character code from a friend</Text>
             <TextInput
               style={styles.codeInput}

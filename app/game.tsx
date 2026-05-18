@@ -919,7 +919,7 @@ function GameScreenInner() {
         {/* LEFT — Your hand */}
         <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
           <View style={landscapeStyles.panelTitleRow}>
-            <Text style={landscapeStyles.panelAvatarText}>{playerAvatar}</Text>
+            <Text style={landscapeStyles.panelAvatarText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{playerAvatar}</Text>
             <Text style={landscapeStyles.panelTitle}>{playerDisplayName.toUpperCase()}</Text>
           </View>
           {isArranging && (
@@ -963,7 +963,7 @@ function GameScreenInner() {
           {/* Mini top bar */}
           <View style={styles.topBar}>
             <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={styles.backButton}>
-              <Text style={styles.backText}>{'\u2715'}</Text>
+              <Text style={styles.backText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{'\u2715'}</Text>
             </Pressable>
             <View style={styles.topCenter}>
               {countdownActive && isArranging && (
@@ -977,7 +977,7 @@ function GameScreenInner() {
               )}
             </View>
             <View style={styles.headerChips}>
-              <Text style={styles.headerChipsEmoji}>💰</Text>
+              <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
               <Text style={styles.headerChipsAmount}>{(chips ?? 0).toLocaleString()}</Text>
             </View>
           </View>
@@ -1011,11 +1011,19 @@ function GameScreenInner() {
 
         {/* RIGHT — bot + ready */}
         <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
-          <Text style={landscapeStyles.panelTitle}>
+          <Text
+            style={landscapeStyles.panelTitle}
+            accessibilityLabel={numberOfBots === 1 ? 'בוט' : `בוטים ${readyBotCount}/${numberOfBots}`}
+          >
             {numberOfBots === 1 ? '🤖 בוט' : `🤖 בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]} accessibilityLiveRegion="polite">
-            <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}>
+            <Text
+              style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}
+              accessibilityLabel={allBotsReady ? t().ready : undefined}
+              accessibilityElementsHidden={!allBotsReady}
+              importantForAccessibility={!allBotsReady ? 'no-hide-descendants' : 'auto'}
+            >
               {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
           </View>
@@ -1035,7 +1043,7 @@ function GameScreenInner() {
           )}
           {playerReady && allBotsReady && showContinueButton && (
             <Pressable accessibilityRole="button" accessibilityLabel="Continue to results" style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
-              <Text style={styles.continueBtnText}>המשך →</Text>
+              <Text style={styles.continueBtnText} accessibilityLabel="המשך">המשך →</Text>
             </Pressable>
           )}
         </View>
@@ -1060,7 +1068,7 @@ function GameScreenInner() {
       {/* Header bar */}
       <View style={styles.topBar}>
         <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backText}>{'\u2715'}</Text>
+          <Text style={styles.backText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{'\u2715'}</Text>
         </Pressable>
         <View style={styles.topCenter}>
           {countdownActive && isArranging && (
@@ -1092,7 +1100,7 @@ function GameScreenInner() {
           )}
         </View>
         <View style={styles.headerChips}>
-          <Text style={styles.headerChipsEmoji}>💰</Text>
+          <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
           <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
         </View>
       </View>
@@ -1100,12 +1108,17 @@ function GameScreenInner() {
       {/* Bot status bar */}
       <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]} accessibilityLiveRegion="polite">
         <View style={styles.botStatusRow}>
-          <Text style={styles.botEmoji}>🤖</Text>
+          <Text style={styles.botEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🤖</Text>
           <Text style={styles.botNameLabel}>
             {numberOfBots === 1 ? 'בוט 1' : `בוטים ${readyBotCount}/${numberOfBots}`}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
-            <Text style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}>
+            <Text
+              style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}
+              accessibilityLabel={allBotsReady ? t().ready : undefined}
+              accessibilityElementsHidden={!allBotsReady}
+              importantForAccessibility={!allBotsReady ? 'no-hide-descendants' : 'auto'}
+            >
               {allBotsReady ? `✓ ${t().ready}` : '…'}
             </Text>
           </View>
@@ -1180,7 +1193,11 @@ function GameScreenInner() {
           style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', zIndex: 40, alignItems: 'center', justifyContent: tooltipStep === 1 ? 'flex-end' : 'flex-start', paddingBottom: tooltipStep === 1 ? rs(200) : 0, paddingTop: tooltipStep === 2 ? rs(80) : 0 }}
           pointerEvents="none"
         >
-          <Text style={{ color: '#c9a84c', fontSize: rs(32), opacity: 0.9 }}>
+          <Text
+            style={{ color: '#c9a84c', fontSize: rs(32), opacity: 0.9 }}
+            accessibilityElementsHidden={true}
+            importantForAccessibility="no-hide-descendants"
+          >
             {tooltipStep === 1 ? '↓' : '↑'}
           </Text>
         </View>
@@ -1200,7 +1217,7 @@ function GameScreenInner() {
       {/* S113: Auto-place toast */}
       {autoPlaceToastVisible && (
         <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite">
-          <Text style={styles.autoPlaceToastText}>⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
+          <Text style={styles.autoPlaceToastText} accessibilityLabel="הזמן נגמר — קלפים הונחו אוטומטית">⏱ הזמן נגמר — קלפים הונחו אוטומטית</Text>
         </View>
       )}
     </SafeAreaView>

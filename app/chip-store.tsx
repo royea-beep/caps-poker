@@ -104,10 +104,10 @@ export default function ChipStoreScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Text style={styles.backArrow}>{'←'}</Text>
+          <Text style={styles.backArrow} accessibilityElementsHidden importantForAccessibility="no">{'←'}</Text>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle} accessibilityRole="header">💰 Chip Store</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header" accessibilityLabel="Chip Store">💰 Chip Store</Text>
         {/* Spacer mirrors back-button width so title stays visually centred */}
         <View style={styles.headerSpacer} />
       </View>
@@ -130,7 +130,7 @@ export default function ChipStoreScreen() {
             style={styles.flashBanner}
             accessibilityLiveRegion="polite"
           >
-            <Text style={styles.flashText}>⚡ Flash Deal — 2× chips for 24h!</Text>
+            <Text style={styles.flashText} accessibilityLabel="Flash Deal — 2× chips for 24h!">⚡ Flash Deal — 2× chips for 24h!</Text>
             <Pressable
               onPress={() => setFlashDismissed(true)}
               hitSlop={8}
@@ -138,7 +138,7 @@ export default function ChipStoreScreen() {
               accessibilityRole="button"
               accessibilityLabel="Dismiss flash deal"
             >
-              <Text style={styles.flashDismiss}>✕</Text>
+              <Text style={styles.flashDismiss} accessibilityElementsHidden importantForAccessibility="no">✕</Text>
             </Pressable>
           </View>
         )}
@@ -198,7 +198,7 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
       </View>
 
       {/* Chip amount */}
-      <Text style={styles.cardChips}>💰 {(pkg.chips ?? 0).toLocaleString()} chips</Text>
+      <Text style={styles.cardChips} accessibilityLabel={`${(pkg.chips ?? 0).toLocaleString()} chips`}>💰 {(pkg.chips ?? 0).toLocaleString()} chips</Text>
 
       {/* Social proof */}
       <Text style={styles.socialProof}>{buyersToday} players bought today</Text>

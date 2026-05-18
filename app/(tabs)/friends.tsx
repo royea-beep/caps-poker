@@ -13,22 +13,22 @@ export default function FriendsScreen() {
       <Text style={styles.sub}>Challenge · Invite · Compete</Text>
 
       <Pressable accessibilityRole="button" accessibilityLabel="הזמן חברים · שתף את הקוד שלך · +100 💰 לכל חבר" style={[styles.card, { borderColor: '#FFD700' }]} onPress={() => router.push('/referral' as any)}>
-        <Text style={styles.cardEmoji}>🎁</Text>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎁</Text>
         <View><Text style={styles.cardTitle}>הזמן חברים</Text><Text style={styles.cardSub}>שתף את הקוד שלך · +100 💰 לכל חבר</Text></View>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Leaderboard · See where you rank globally" style={[styles.card, { borderColor: '#4ade80' }]} onPress={() => router.push('/leaderboard' as any)}>
-        <Text style={styles.cardEmoji}>📊</Text>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text>
         <View><Text style={styles.cardTitle}>Leaderboard</Text><Text style={styles.cardSub}>See where you rank globally</Text></View>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Host Online Game · Create a room for friends to join" style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/internet-host' as any)}>
-        <Text style={styles.cardEmoji}>🌐</Text>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
         <View><Text style={styles.cardTitle}>Host Online Game</Text><Text style={styles.cardSub}>Create a room for friends to join</Text></View>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Join Game · Enter a room code" style={[styles.card, { borderColor: '#a78bfa' }]} onPress={() => router.push('/lobby/internet-join' as any)}>
-        <Text style={styles.cardEmoji}>🎮</Text>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎮</Text>
         <View><Text style={styles.cardTitle}>Join Game</Text><Text style={styles.cardSub}>Enter a room code</Text></View>
       </Pressable>
     </SafeAreaView>
