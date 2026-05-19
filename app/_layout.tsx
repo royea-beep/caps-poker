@@ -22,7 +22,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { setLanguage, Language } from '../utils/i18n';
-import { LanguagePicker } from '../components/LanguagePicker';
 import * as Updates from 'expo-updates';
 // expo-insights is a passive SDK — auto-collects crashes + app opens via native integration
 // No API call needed; installing the package is sufficient
@@ -163,6 +162,25 @@ const splashStyles = StyleSheet.create({
   divider: { width: 60, height: 2, backgroundColor: '#c9a84c', marginTop: 20, opacity: 0.4 },
 });
 
+// Smart-default language detection — Hebrew if browser/device locale starts with "he",
+// otherwise English. Falls back to English on any failure. Used only on fresh visits when
+// AsyncStorage has no saved caps_language.
+function detectDefaultLanguage(): Language {
+  try {
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+      const langs = [navigator.language, ...((navigator.languages as readonly string[] | undefined) ?? [])]
+        .filter((l): l is string => typeof l === 'string' && l.length > 0);
+      if (langs.some((l) => /^he\b/i.test(l))) return 'he';
+      return 'en';
+    }
+    const Localization = require('expo-localization');
+    const first = Localization.getLocales?.()?.[0];
+    const code = String(first?.languageCode ?? Localization.locale ?? '').toLowerCase();
+    if (code.startsWith('he')) return 'he';
+  } catch { /* fall through */ }
+  return 'en';
+}
+
 export default function RootLayout() {
   const router = useRouter();
   const currentPath = usePathname();
@@ -173,7 +191,9 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [langReady, setLangReady] = useState(false);
-  const [needsPicker, setNeedsPicker] = useState(false);
+  const [hydrated, setHydrated] = useState<boolean>(() => {
+    try { return useGameStore.persist.hasHydrated(); } catch { return true; }
+  });
 
   // FIX 1: absolute failsafe — if SplashOverlay onDone never fires (Reanimated thread dies
   // or iOS kills setTimeout under memory pressure), force splashDone=true after 5s.
@@ -188,24 +208,41 @@ export default function RootLayout() {
     return () => clearTimeout(splashFailsafe);
   }, []);
 
-  // Language detection — runs first, before splash or routing
+  // Smart-default language: auto-detect browser/device locale on first visit so brand-new
+  // visitors land on the home screen without a language gate. They can flip later via the
+  // SideMenu language toggle (components/SideMenu.tsx) which writes the same AsyncStorage key.
   useEffect(() => {
     AsyncStorage.getItem('caps_language').then(saved => {
       if (saved === 'he' || saved === 'en') {
         setLanguage(saved as Language);
-        setLangReady(true);
       } else {
-        setNeedsPicker(true);
-        setLangReady(true);
+        const detected = detectDefaultLanguage();
+        void AsyncStorage.setItem('caps_language', detected).catch(() => {});
+        setLanguage(detected);
       }
+      setLangReady(true);
     }).catch(() => setLangReady(true));
   }, []);
 
-  const handleLanguageSelect = async (lang: Language) => {
-    await AsyncStorage.setItem('caps_language', lang);
-    setLanguage(lang);
-    setNeedsPicker(false);
-  };
+  // Smart-default theme + orientation: once the zustand store has hydrated from AsyncStorage,
+  // if either is still null (fresh visitor) seed sane defaults so the first-launch routing
+  // effect below never sends the user to /theme-pick or /orientation-pick. Both seed BEFORE
+  // hydrated flips true, so the routing effect's first run sees non-null values.
+  useEffect(() => {
+    const seed = () => {
+      try {
+        const s = useGameStore.getState();
+        if (s.visualTheme === null) s.setVisualTheme('classic');
+        if (s.orientation === null) s.setOrientation('portrait');
+      } catch (e) { debugLog('[seed-defaults] failed: ' + String(e), 'warn'); }
+      setHydrated(true);
+    };
+    try {
+      if (useGameStore.persist.hasHydrated()) { seed(); return; }
+      const unsub = useGameStore.persist.onFinishHydration(seed);
+      return unsub;
+    } catch { seed(); }
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
@@ -440,15 +477,17 @@ export default function RootLayout() {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
   }, []);
 
-  // First-launch flow: theme pick → orientation pick → home
+  // First-launch flow: legacy fallback only. Smart-default seed above sets both fields
+  // before hydrated=true flips, so neither branch should fire in normal flow. Kept as a
+  // belt-and-braces guard for the case where the seed effect throws on a broken device.
   useEffect(() => {
-    if (!splashDone) return;
+    if (!splashDone || !hydrated) return;
     if (visualTheme === null) {
       router.replace('/theme-pick');
     } else if (orientation === null) {
       router.replace('/orientation-pick');
     }
-  }, [splashDone, visualTheme, orientation]);
+  }, [splashDone, hydrated, visualTheme, orientation]);
 
   // Handle OAuth deep link callbacks (native)
   useEffect(() => {
@@ -479,7 +518,6 @@ export default function RootLayout() {
   }, []);
 
   if (!langReady) return null;
-  if (needsPicker) return <LanguagePicker onSelect={handleLanguageSelect} />;
 
   return (
     <SafeAreaProvider>
