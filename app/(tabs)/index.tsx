@@ -474,7 +474,11 @@ function DailyRewardModal({
     ]).start(cb);
   };
   return (
-    <AnimatedRN.View style={[dailyRewardModalStyles.overlay, { opacity }]}>
+    <AnimatedRN.View
+      style={[dailyRewardModalStyles.overlay, { opacity }]}
+      accessibilityViewIsModal={true}
+      accessibilityRole="alert"
+    >
       <Pressable
         style={StyleSheet.absoluteFillObject}
         onPress={() => dismiss(onDismiss)}
@@ -637,7 +641,11 @@ function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => 
   const current = slides[slide];
 
   return (
-    <AnimatedRN.View style={[welcomeStyles.overlay, { opacity }]}>
+    <AnimatedRN.View
+      style={[welcomeStyles.overlay, { opacity }]}
+      accessibilityViewIsModal={true}
+      accessibilityRole="alert"
+    >
       <Pressable
         style={StyleSheet.absoluteFillObject}
         onPress={onSkip}
@@ -1881,7 +1889,7 @@ export default function HomeScreen() {
           <Pressable
             style={styles.modalCard}
             onPress={() => {}}
-            accessibilityRole="button"
+            accessibilityRole="none"
             accessibilityLabel="Invite code dialog"
           >
             <Text style={styles.modalTitle} accessibilityRole="header" accessibilityLabel="Enter Invite Code">🎁 Enter Invite Code</Text>
