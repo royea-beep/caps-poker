@@ -172,7 +172,7 @@ function NotificationsToggle() {
           style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
           accessibilityRole="switch"
           accessibilityLabel="Push notifications"
-          accessibilityState={{ checked: enabled }}
+          accessibilityState={{ checked: enabled }} aria-checked={enabled}
         >
           <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
             {enabled ? 'ON' : 'OFF'}
@@ -246,7 +246,7 @@ function SoundToggle() {
           style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
           accessibilityRole="switch"
           accessibilityLabel="Sound enabled"
-          accessibilityState={{ checked: soundEnabled }}
+          accessibilityState={{ checked: soundEnabled }} aria-checked={soundEnabled}
         >
           <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
             {soundEnabled ? 'ON' : 'OFF'}
@@ -291,7 +291,7 @@ function AmbientToggle() {
         <Text style={styles.rowLabel}>Ambient Sound</Text>
         <Text style={styles.rowHint}>Casino background music</Text>
       </View>
-      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Ambient sound" accessibilityState={{ checked: ambientEnabled }}>
+      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Ambient sound" accessibilityState={{ checked: ambientEnabled }} aria-checked={ambientEnabled}>
         <Text style={[styles.toggleText, ambientEnabled && styles.toggleTextActive]}>
           {ambientEnabled ? 'ON' : 'OFF'}
         </Text>
@@ -890,7 +890,7 @@ function ProQuotesToggle() {
           </Text>
           <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
         </View>
-        <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro quotes" accessibilityState={{ checked: enabled }}>
+        <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro quotes" accessibilityState={{ checked: enabled }} aria-checked={enabled}>
           <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>{enabled ? 'ON' : 'OFF'}</Text>
         </Pressable>
       </View>
@@ -906,7 +906,7 @@ function ProQuotesToggle() {
             Not real player voices
           </Text>
         </View>
-        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices" accessibilityState={{ checked: voicesEnabled && enabled, disabled: !enabled }}>
+        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices" accessibilityState={{ checked: voicesEnabled && enabled, disabled: !enabled }} aria-checked={voicesEnabled && enabled} aria-disabled={!enabled}>
           <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
         </Pressable>
       </View>
@@ -1167,7 +1167,7 @@ export default function SettingsScreen() {
             style={[styles.toggleBtn, debugEnabled && styles.toggleBtnActive]}
             accessibilityRole="switch"
             accessibilityLabel="Debug overlay"
-            accessibilityState={{ checked: debugEnabled }}
+            accessibilityState={{ checked: debugEnabled }} aria-checked={debugEnabled}
           >
             <Text style={[styles.toggleText, debugEnabled && styles.toggleTextActive]}>
               {debugEnabled ? 'ON' : 'OFF'}
