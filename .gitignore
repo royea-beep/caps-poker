@@ -54,3 +54,12 @@ CLAUDE.md
 
 # Skills (per-machine, not tracked in git)
 .claude/skills/
+
+# BackstopJS — only bitmaps_reference is committed (the baseline).
+# Test renders, diffs, and HTML reports are CI artifacts, not source.
+backstop_data/bitmaps_test/
+backstop_data/html_report/
+backstop_data/ci_report/
+
+# axe-core / WCAG audit report — regenerated each CI run
+tests/wcag-report.json

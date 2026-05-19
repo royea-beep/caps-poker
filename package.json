@@ -12,7 +12,12 @@
     "postinstall": "echo 'postinstall: no patches needed'",
     "visual-audit": "npx tsx tests/visual-audit.spec.ts",
     "visual-qa": "playwright test",
-    "visual-qa:update": "playwright test --update-snapshots"
+    "visual-qa:update": "playwright test --update-snapshots",
+    "wcag:bootstrap": "node tests/bootstrap-storage-state.js",
+    "wcag:audit": "node tests/wcag-audit.js",
+    "backstop:reference": "backstop reference",
+    "backstop:test": "backstop test",
+    "backstop:approve": "backstop approve"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -55,10 +60,12 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.59.1",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
     "@types/uuid": "^10.0.0",
+    "backstopjs": "^6.3.25",
     "jest": "~29.7.0",
     "playwright": "^1.59.1",
     "ts-jest": "^29.4.6",
