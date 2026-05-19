@@ -1,0 +1,66 @@
+name: Backstop Baseline (Linux)
+
+# Manually invoked job that captures BackstopJS reference bitmaps on the
+# Ubuntu runner — the same OS the visual-regression gate runs on — so the
+# committed baseline matches CI font/anti-aliasing. Invoke after intentional
+# UI changes that shift pixel output.
+#
+# Usage:
+#   1. gh workflow run backstop-baseline.yml
+#   2. Workflow runs `npx backstop reference` against caps.ftable.co.il,
+#      commits the refreshed bitmaps to a branch, opens a PR.
+#   3. Merge the PR to update the gate baseline.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rebaseline:
+    name: Capture Linux baseline + open PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Bootstrap storageState
+        env:
+          CAPS_URL: 'https://caps.ftable.co.il'
+        run: node tests/bootstrap-storage-state.js
+
+      - name: Capture BackstopJS reference bitmaps
+        env:
+          CAPS_URL: 'https://caps.ftable.co.il'
+        run: npx backstop reference
+
+      - name: Open PR with refreshed baselines
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(qa): refresh BackstopJS baselines (Linux capture)"
+          branch: "qa/backstop-baseline-refresh"
+          delete-branch: true
+          title: "chore(qa): refresh BackstopJS baselines (Linux capture)"
+          body: |
+            Automated baseline refresh from `backstop-baseline.yml`.
+
+            Reference bitmaps were captured on the Ubuntu runner so they
+            match the OS the visual-regression gate in `web-deploy.yml`
+            runs against. Merging this PR re-arms that gate against the
+            current production state of caps.ftable.co.il.
+          add-paths: |
+            backstop_data/bitmaps_reference/**
+            tests/caps-onboarded.json
