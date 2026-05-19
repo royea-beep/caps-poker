@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ActivityIndicator, Pressable, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { t } from '../../utils/i18n';
 import { rv, rf, rs } from '../../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
@@ -228,7 +229,7 @@ export default function HostLobbyScreen() {
             disabled={!canStart}
             onPress={handleStartGame}
           />
-          <Button title="ביטול" variant="secondary" onPress={handleCancel} />
+          <Button title={t().cancel} variant="secondary" onPress={handleCancel} />
         </View>
       </View>
     </SafeAreaView>

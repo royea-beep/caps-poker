@@ -188,7 +188,7 @@ export function BoardArrangement({
             disabled={!allBoardsFull}
           >
             <Text style={[baStyles.floatingBtnText, baStyles.placeBtnText]}>
-              {allBoardsFull ? '✓ מוכן' : 'אישור'}
+              {allBoardsFull ? t().readyCheck : t().confirm}
             </Text>
           </Pressable>
         </View>

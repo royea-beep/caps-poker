@@ -315,7 +315,7 @@ export default function Board({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{`לוח ${index + 1}`}</Text>
+            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
@@ -418,7 +418,7 @@ export default function Board({
         <View style={styles.cardRow}>
           {isArrangement && playerCards.length === 0 && onAutoFill && (
             <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText}>⚡ מיקום אוטומטי</Text>
+              <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
             </Pressable>
           )}
           {playerCards.length > 0 ? (

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { t, getLanguage } from '../../utils/i18n';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rs, rv } from '../../utils/responsive';
 
@@ -12,9 +13,9 @@ export default function FriendsScreen() {
       <Text style={styles.title} accessibilityRole="header">FRIENDS</Text>
       <Text style={styles.sub} accessibilityRole="header">Challenge · Invite · Compete</Text>
 
-      <Pressable accessibilityRole="button" accessibilityLanguage="he" accessibilityLabel="הזמן חברים · שתף את הקוד שלך · +100 💰 לכל חבר" style={[styles.card, { borderColor: '#FFD700' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/referral' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={`${t().inviteFriends} · ${t().inviteFriendsSub(100)}`} style={[styles.card, { borderColor: '#FFD700' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/referral' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎁</Text>
-        <View><Text style={styles.cardTitle}>הזמן חברים</Text><Text style={styles.cardSub} accessibilityLabel="שתף את הקוד שלך · +100 לכל חבר">שתף את הקוד שלך · +100 💰 לכל חבר</Text></View>
+        <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().inviteFriends}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={t().inviteFriendsSub(100).replace("💰 ", "")}>{t().inviteFriendsSub(100)}</Text></View>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Leaderboard · See where you rank globally" style={[styles.card, { borderColor: '#4ade80' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/leaderboard' as any)}>

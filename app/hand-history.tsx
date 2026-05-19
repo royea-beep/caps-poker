@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { t } from '../utils/i18n';
 import { rv, rf, rs } from '../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // no Reanimated — iron rule: history screen = zero Reanimated
@@ -318,7 +319,7 @@ export default function HandHistoryScreen() {
             style={[styles.filterTab, filter === f && styles.filterTabActive]}
           >
             <Text style={[styles.filterTabText, filter === f && styles.filterTabTextActive]}>
-              {f === 'all' ? `הכל (${history.length})` : f === 'wins' ? `ניצחונות (${wins.length})` : `הפסדים (${losses.length})`}
+              {f === 'all' ? t().historyAll(history.length) : f === 'wins' ? t().historyWins(wins.length) : t().historyLosses(losses.length)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -330,10 +331,10 @@ export default function HandHistoryScreen() {
         ) : history.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>🃏</Text>
-            <Text style={styles.emptyText}>אין ידות שוחקו עדיין</Text>
-            <Text style={styles.emptySubtext}>שחק את המשחק הראשון שלך כדי לראות היסטוריה!</Text>
+            <Text style={styles.emptyText}>{t().historyEmptyTitle}</Text>
+            <Text style={styles.emptySubtext}>{t().historyEmptySub}</Text>
             <TouchableOpacity style={styles.emptyPlayBtn} onPress={() => router.replace('/' as any)}>
-              <Text style={styles.emptyPlayBtnText}>▶ שחק עכשיו</Text>
+              <Text style={styles.emptyPlayBtnText}>{t().playNow}</Text>
             </TouchableOpacity>
           </View>
         ) : filtered.length === 0 ? (

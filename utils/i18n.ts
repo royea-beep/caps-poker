@@ -121,6 +121,42 @@ interface Translations {
     letsPlay: string;
   };
 
+
+  // Profile menu (S-LOCALE-FIX)
+  profileMenuAchievements: string;
+  profileMenuDailyMissions: string;
+  profileMenuHandHistory: string;
+  profileMenuDetailedStats: string;
+  profileMenuLeaderboard: string;
+  profileMenuSettings: string;
+
+  // Friends referral (S-LOCALE-FIX)
+  inviteFriends: string;
+  inviteFriendsSub: (chipsPerFriend: number) => string;
+
+  // Common buttons (S-LOCALE-FIX)
+  cancel: string;
+  confirm: string;
+  readyCheck: string;
+  continueArrow: string;
+  autoPlace: string;
+  playNow: string;
+
+  // Game screen (S-LOCALE-FIX)
+  boardLabel: (n: number) => string;
+  arrangeCards: (n: number) => string;
+  timeUpAutoplaced: string;
+  botSingular: string;
+  botPlural: (ready: number, total: number) => string;
+  botEmojiPlural: (ready: number, total: number) => string;
+
+  // Hand history (S-LOCALE-FIX)
+  historyAll: (n: number) => string;
+  historyWins: (n: number) => string;
+  historyLosses: (n: number) => string;
+  historyEmptyTitle: string;
+  historyEmptySub: string;
+
   // Settings
   settingsTitle: string;
   proQuotes: string;
@@ -197,6 +233,36 @@ const he: Translations = {
     skip: 'דלג',
     letsPlay: 'בואו נשחק!',
   },
+  // Profile menu (S-LOCALE-FIX)
+  profileMenuAchievements: 'הישגים',
+  profileMenuDailyMissions: 'משימות יומיות',
+  profileMenuHandHistory: 'היסטוריית ידות',
+  profileMenuDetailedStats: 'סטטיסטיקות מפורטות',
+  profileMenuLeaderboard: 'לוח מנצחים',
+  profileMenuSettings: 'הגדרות',
+  // Friends referral
+  inviteFriends: 'הזמן חברים',
+  inviteFriendsSub: (n) => `שתף את הקוד שלך · +${n} 💰 לכל חבר`,
+  // Common buttons
+  cancel: 'ביטול',
+  confirm: 'אישור',
+  readyCheck: '✓ מוכן',
+  continueArrow: 'המשך →',
+  autoPlace: '⚡ מיקום אוטומטי',
+  playNow: '▶ שחק עכשיו',
+  // Game screen
+  boardLabel: (n) => `לוח ${n}`,
+  arrangeCards: (n) => `סדר ${n} קלפים`,
+  timeUpAutoplaced: '⏱ הזמן נגמר — קלפים הונחו אוטומטית',
+  botSingular: 'בוט',
+  botPlural: (r, t) => `בוטים ${r}/${t}`,
+  botEmojiPlural: (r, t) => `🤖 בוטים ${r}/${t}`,
+  // Hand history
+  historyAll: (n) => `הכל (${n})`,
+  historyWins: (n) => `ניצחונות (${n})`,
+  historyLosses: (n) => `הפסדים (${n})`,
+  historyEmptyTitle: 'אין ידות שוחקו עדיין',
+  historyEmptySub: 'שחק את המשחק הראשון שלך כדי לראות היסטוריה!',
   settingsTitle: 'הגדרות',
   proQuotes: 'ציטוטי מקצוענים (הדמיה)',
   proVoice: 'קולות מקצוענים (AI)',
@@ -270,6 +336,36 @@ const en: Translations = {
     skip: 'SKIP',
     letsPlay: "LET'S PLAY!",
   },
+  // Profile menu (S-LOCALE-FIX)
+  profileMenuAchievements: 'Achievements',
+  profileMenuDailyMissions: 'Daily Missions',
+  profileMenuHandHistory: 'Hand History',
+  profileMenuDetailedStats: 'Detailed Stats',
+  profileMenuLeaderboard: 'Leaderboard',
+  profileMenuSettings: 'Settings',
+  // Friends referral
+  inviteFriends: 'Invite Friends',
+  inviteFriendsSub: (n) => `Share your code · +${n} 💰 per friend`,
+  // Common buttons
+  cancel: 'Cancel',
+  confirm: 'Confirm',
+  readyCheck: '✓ READY',
+  continueArrow: 'CONTINUE →',
+  autoPlace: '⚡ Auto-Place',
+  playNow: '▶ Play Now',
+  // Game screen
+  boardLabel: (n) => `Board ${n}`,
+  arrangeCards: (n) => `Place ${n} cards`,
+  timeUpAutoplaced: '⏱ Time up — cards placed automatically',
+  botSingular: 'Bot',
+  botPlural: (r, t) => `Bots ${r}/${t}`,
+  botEmojiPlural: (r, t) => `🤖 Bots ${r}/${t}`,
+  // Hand history
+  historyAll: (n) => `All (${n})`,
+  historyWins: (n) => `Wins (${n})`,
+  historyLosses: (n) => `Losses (${n})`,
+  historyEmptyTitle: 'No hands played yet',
+  historyEmptySub: 'Play your first game to see history!',
   settingsTitle: 'SETTINGS',
   proQuotes: 'Pro Quotes (AI Simulation)',
   proVoice: 'Pro Voice Clips (AI-Generated)',
