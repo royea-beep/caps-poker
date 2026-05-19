@@ -1056,7 +1056,7 @@ export default function SettingsScreen() {
         </Text>
         <OrientationPicker />
 
-        <Text style={styles.sectionTitle} accessibilityRole="header">🖼️ BACKGROUND THEME</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="BACKGROUND THEME">🖼️ BACKGROUND THEME</Text>
         <FriendsBgPicker />
 
         <Text style={styles.sectionTitle} accessibilityRole="header">PROFILE</Text>
@@ -1070,7 +1070,7 @@ export default function SettingsScreen() {
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
 
-        <Text style={styles.sectionTitle} accessibilityRole="header">🏠 HOME THEME</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="HOME THEME">🏠 HOME THEME</Text>
         <HomeThemePicker />
 
         <Text style={styles.sectionTitle} accessibilityRole="header">
@@ -1079,7 +1079,7 @@ export default function SettingsScreen() {
         </Text>
         <ButtonStylePicker />
 
-        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage="he">🃏 עיצוב קלפים</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage="he" accessibilityLabel="עיצוב קלפים">🃏 עיצוב קלפים</Text>
         <CardThemePicker />
         <FourColorSuitsToggle />
         <ColorblindToggle />
@@ -1233,9 +1233,9 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle} accessibilityRole="header">CREDITS</Text>
         <View style={styles.creditsBox}>
-          <Text style={styles.creditsText}>🤖 Pro Quotes: AI digital simulation — fictional quotes</Text>
-          <Text style={styles.creditsText}>🔊 Voice Clips: AI-generated voices via ElevenLabs</Text>
-          <Text style={styles.creditsText}>⚠️ Not affiliated with any poker player mentioned</Text>
+          <Text style={styles.creditsText} accessibilityLabel="Pro Quotes: AI digital simulation — fictional quotes">🤖 Pro Quotes: AI digital simulation — fictional quotes</Text>
+          <Text style={styles.creditsText} accessibilityLabel="Voice Clips: AI-generated voices via ElevenLabs">🔊 Voice Clips: AI-generated voices via ElevenLabs</Text>
+          <Text style={styles.creditsText} accessibilityLabel="Not affiliated with any poker player mentioned">⚠️ Not affiliated with any poker player mentioned</Text>
           <Text style={styles.creditsText}>Voices are parody / entertainment only</Text>
         </View>
         <Pressable

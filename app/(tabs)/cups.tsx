@@ -47,7 +47,7 @@ export default function CupsScreen() {
                   </View>
                 )}
               </View>
-              {cup.earned && <Text style={styles.earned}>✅</Text>}
+              {cup.earned && <Text style={styles.earned} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">✅</Text>}
             </View>
           ))}
         </ScrollView>

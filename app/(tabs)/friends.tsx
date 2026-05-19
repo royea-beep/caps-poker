@@ -14,7 +14,7 @@ export default function FriendsScreen() {
 
       <Pressable accessibilityRole="button" accessibilityLanguage="he" accessibilityLabel="הזמן חברים · שתף את הקוד שלך · +100 💰 לכל חבר" style={[styles.card, { borderColor: '#FFD700' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/referral' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎁</Text>
-        <View><Text style={styles.cardTitle}>הזמן חברים</Text><Text style={styles.cardSub}>שתף את הקוד שלך · +100 💰 לכל חבר</Text></View>
+        <View><Text style={styles.cardTitle}>הזמן חברים</Text><Text style={styles.cardSub} accessibilityLabel="שתף את הקוד שלך · +100 לכל חבר">שתף את הקוד שלך · +100 💰 לכל חבר</Text></View>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Leaderboard · See where you rank globally" style={[styles.card, { borderColor: '#4ade80' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/leaderboard' as any)}>

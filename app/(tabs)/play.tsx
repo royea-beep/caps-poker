@@ -15,13 +15,13 @@ export default function PlayScreen() {
       <Pressable accessibilityRole="button" accessibilityLabel="Quick Poker" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚡</Text>
         <Text style={styles.cardTitle}>Quick Poker</Text>
-        <Text style={styles.cardSub}>200 💰 · Fast-paced Omaha</Text>
+        <Text style={styles.cardSub} accessibilityLabel="200 · Fast-paced Omaha">200 💰 · Fast-paced Omaha</Text>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Sit and Go" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#3b82f6' }]} onPress={() => router.push('/sit-and-go' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎯</Text>
         <Text style={styles.cardTitle}>Sit &amp; Go</Text>
-        <Text style={styles.cardSub}>100 💰 · Tournament format</Text>
+        <Text style={styles.cardSub} accessibilityLabel="100 · Tournament format">100 💰 · Tournament format</Text>
       </Pressable>
 
       <Pressable accessibilityRole="button" accessibilityLabel="Tournament" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#8b5cf6' }]} onPress={() => router.push('/tournament' as any)}>

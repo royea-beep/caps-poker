@@ -115,7 +115,7 @@ export default function ChipStoreScreen() {
       {/* Balance */}
       <View style={styles.balanceContainer}>
         <Text style={styles.balanceLabel}>YOUR BALANCE</Text>
-        <Text style={styles.balanceAmount}>💰 {(chips ?? 0).toLocaleString()}</Text>
+        <Text style={styles.balanceAmount} accessibilityLabel={`${(chips ?? 0).toLocaleString()} chips`}>💰 {(chips ?? 0).toLocaleString()}</Text>
       </View>
 
       <ScrollView
