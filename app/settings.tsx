@@ -218,7 +218,7 @@ function RevealSpeedSelector() {
             style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Reveal speed ${o.label}`}
-            accessibilityState={{ checked:value === o.key }}
+            accessibilityState={{ checked: value === o.key }} aria-checked={value === o.key}
           >
             <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
           </Pressable>
@@ -332,7 +332,7 @@ function PlayerCountSelector() {
               style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
               accessibilityRole="radio"
               accessibilityLabel={`${n} players`}
-              accessibilityState={{ checked:value === n }}
+              accessibilityState={{ checked: value === n }} aria-checked={value === n}
             >
               <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>
                 {n}
@@ -370,7 +370,7 @@ function BotDifficultySelector() {
             style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Bot difficulty ${o.label}`}
-            accessibilityState={{ checked:value === o.key }}
+            accessibilityState={{ checked: value === o.key }} aria-checked={value === o.key}
           >
             <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
           </Pressable>
@@ -413,7 +413,7 @@ function OrientationPicker() {
             style={[orientationStyles.tile, active && orientationStyles.tileActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Orientation ${label}`}
-            accessibilityState={{ checked:active }}
+            accessibilityState={{ checked: active }} aria-checked={active}
           >
             <Text style={orientationStyles.tileIcon}>{icon}</Text>
             <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
@@ -441,7 +441,7 @@ function FourColorSuitsToggle() {
           style={[styles.selectorBtn, !fourColorSuits && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="2-color suits"
-          accessibilityState={{ checked:!fourColorSuits }}
+          accessibilityState={{ checked: !fourColorSuits }} aria-checked={!fourColorSuits}
         >
           <Text style={[styles.selectorText, !fourColorSuits && styles.selectorTextActive]}>2</Text>
         </Pressable>
@@ -450,7 +450,7 @@ function FourColorSuitsToggle() {
           style={[styles.selectorBtn, fourColorSuits && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="4-color suits"
-          accessibilityState={{ checked:fourColorSuits }}
+          accessibilityState={{ checked: fourColorSuits }} aria-checked={fourColorSuits}
         >
           <Text style={[styles.selectorText, fourColorSuits && styles.selectorTextActive]}>4</Text>
         </Pressable>
@@ -475,7 +475,7 @@ function ColorblindToggle() {
           style={[styles.selectorBtn, !colorblindMode && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="Colorblind mode off"
-          accessibilityState={{ checked:!colorblindMode }}
+          accessibilityState={{ checked: !colorblindMode }} aria-checked={!colorblindMode}
         >
           <Text style={[styles.selectorText, !colorblindMode && styles.selectorTextActive]}>Off</Text>
         </Pressable>
@@ -484,7 +484,7 @@ function ColorblindToggle() {
           style={[styles.selectorBtn, colorblindMode && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="Colorblind mode on"
-          accessibilityState={{ checked:colorblindMode }}
+          accessibilityState={{ checked: colorblindMode }} aria-checked={colorblindMode}
         >
           <Text style={[styles.selectorText, colorblindMode && styles.selectorTextActive]}>On</Text>
         </Pressable>
@@ -527,7 +527,7 @@ function HandSortToggle() {
             style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel="Card sort auto"
-            accessibilityState={{ checked:handSortMethod === 'caps' }}
+            accessibilityState={{ checked: handSortMethod === 'caps' }} aria-checked={handSortMethod === 'caps'}
           >
             <Text style={[styles.selectorText, handSortMethod === 'caps' && styles.selectorTextActive]}>Auto</Text>
           </Pressable>
@@ -536,7 +536,7 @@ function HandSortToggle() {
             style={[styles.selectorBtn, handSortMethod === 'user' && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel="Card sort pairs"
-            accessibilityState={{ checked:handSortMethod === 'user' }}
+            accessibilityState={{ checked: handSortMethod === 'user' }} aria-checked={handSortMethod === 'user'}
           >
             <Text style={[styles.selectorText, handSortMethod === 'user' && styles.selectorTextActive]}>Pairs</Text>
           </Pressable>
@@ -575,7 +575,7 @@ function CardThemePicker() {
             style={[themeStyles.themeBtn, active && themeStyles.themeBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Card theme ${t.name}`}
-            accessibilityState={{ checked:active }}
+            accessibilityState={{ checked: active }} aria-checked={active}
           >
             <Text style={[themeStyles.themeBtnLabel, active && themeStyles.themeBtnLabelActive]}>
               {t.name}
@@ -637,7 +637,7 @@ function HomeThemePicker() {
                 style={homeThemeStyles.swatchItem}
                 accessibilityRole="radio"
                 accessibilityLabel={`Home theme ${HOME_THEME_NAMES[id]}`}
-                accessibilityState={{ checked:active }}
+                accessibilityState={{ checked: active }} aria-checked={active}
               >
                 <View
                   style={[
@@ -689,7 +689,7 @@ function ButtonStylePicker() {
             style={[btnStyleStyles.option, active && { borderColor: t.accent, borderWidth: 2 }]}
             accessibilityRole="radio"
             accessibilityLabel={`Button style ${label}`}
-            accessibilityState={{ checked:active }}
+            accessibilityState={{ checked: active }} aria-checked={active}
           >
             <View style={[
               btnStyleStyles.preview,
@@ -732,7 +732,7 @@ function FriendsBgPicker() {
             style={[bgPickerStyles.tile, active && bgPickerStyles.tileActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Background ${label}`}
-            accessibilityState={{ checked:active }}
+            accessibilityState={{ checked: active }} aria-checked={active}
           >
             {Platform.OS === 'web' && entry ? (
               <img
@@ -779,7 +779,7 @@ function VisualThemePicker() {
             onPress={() => { hapticLight(); setVisualTheme(opt.id); }}
             accessibilityRole="radio"
             accessibilityLabel={`Visual style ${opt.label}`}
-            accessibilityState={{ checked:current === opt.id }}
+            accessibilityState={{ checked: current === opt.id }} aria-checked={current === opt.id}
           >
             <View style={[vtStyles.preview, { backgroundColor: opt.bg, borderColor: opt.accent }]}>
               <Text style={[vtStyles.previewSymbol, { color: opt.accent }]}>♠</Text>
