@@ -25,4 +25,33 @@ if [ -n "$SUPABASE_KEY" ]; then
     > /dev/null && echo "✅ Logged to Supabase deploy_log" || echo "⚠️  Supabase log failed (non-fatal)"
 fi
 
+
+
+# ─── Web deploy: export + FTP push to caps.ftable.co.il ───
+echo ''
+echo '🌐 Building web export...'
+export NODE_OPTIONS="--max-old-space-size=8192"
+WEB_OUT=dist
+rm -rf "$WEB_OUT"
+if npx expo export --platform web --output-dir "$WEB_OUT" >/tmp/expo-web-export.log 2>&1; then
+  echo "✅ Web export OK ($WEB_OUT)"
+else
+  echo '❌ Web export FAILED — see /tmp/expo-web-export.log'
+  tail -20 /tmp/expo-web-export.log
+  exit 1
+fi
+
+if [ -z "${FTP_PASSWORD:-}" ]; then
+  echo '⚠️  FTP_PASSWORD env not set — skipping caps.ftable.co.il upload'
+  echo '   export FTP_PASSWORD="<password>" to enable web FTP deploy'
+else
+  echo "📤 Uploading $WEB_OUT/ to caps.ftable.co.il via FTP..."
+  if python scripts/ftp_deploy.py; then
+    echo '✅ Web deploy to caps.ftable.co.il complete'
+  else
+    echo '❌ FTP deploy FAILED'
+    exit 1
+  fi
+fi
+
 echo "✅ OTA deployed: $MESSAGE"

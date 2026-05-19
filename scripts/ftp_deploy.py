@@ -3,7 +3,11 @@ import ftplib, os, sys
 
 HOST = 'ftable.co.il'
 USER = 'ftableco'
-PASS = 'CPANEL_PASSWORD_REDACTED'
+PASS = os.environ.get('FTP_PASSWORD') or 'CPANEL_PASSWORD_REDACTED'
+if PASS == 'CPANEL_PASSWORD_REDACTED':
+    print('ERROR: FTP_PASSWORD env var not set. Refusing to use placeholder.', file=sys.stderr)
+    print('       export FTP_PASSWORD="<your cpanel password>" before running.', file=sys.stderr)
+    sys.exit(1)
 REMOTE_BASE = '/home/ftableco/public_html/caps'
 LOCAL_BASE = os.path.join(os.path.dirname(__file__), '..', 'dist')
 
