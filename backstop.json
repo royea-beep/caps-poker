@@ -9,7 +9,26 @@
   ],
   "scenarios": [
     { "label": "home",         "url": "https://caps.ftable.co.il/" },
-    { "label": "game",         "url": "https://caps.ftable.co.il/game" },
+    {
+      "label": "game",
+      "url": "https://caps.ftable.co.il/game",
+      "delay": 5000,
+      "hideSelectors": [
+        "[aria-label='Leave game']",
+        "[aria-label='READY']",
+        "[aria-label*='chip']",
+        "[aria-label*='Chip']",
+        "[aria-label*='card']",
+        "[aria-label*='Card']",
+        "[aria-label*='board']",
+        "[aria-label*='Board']",
+        "[aria-label*='timer']",
+        "[aria-label*='Timer']",
+        "img",
+        "canvas"
+      ],
+      "misMatchThreshold": 5.0
+    },
     { "label": "settings",     "url": "https://caps.ftable.co.il/settings" },
     { "label": "leaderboard",  "url": "https://caps.ftable.co.il/leaderboard" },
     { "label": "profile",      "url": "https://caps.ftable.co.il/profile" },

@@ -161,7 +161,7 @@ export default function LeaderboardScreen() {
       </View>
 
       {/* Sort toggle */}
-      <View style={styles.sortRow}>
+      <View style={styles.sortRow} accessibilityRole="tablist" accessibilityLabel="Sort leaderboard by">
         <TouchableOpacity accessibilityRole="tab" accessibilityLabel="Sort by chips" accessibilityState={{ selected: sortBy === 'chips' }} onPress={() => setSortBy('chips')} style={[styles.sortBtn, sortBy === 'chips' && styles.sortBtnActive, { minHeight: 44 }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={[styles.sortBtnText, sortBy === 'chips' && styles.sortBtnTextActive]}>🪙 Chips</Text>
         </TouchableOpacity>

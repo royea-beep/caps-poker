@@ -1502,7 +1502,7 @@ export default function HomeScreen() {
               key={n}
               onPress={() => updateConfig({ numberOfPlayers: n })}
               accessibilityRole="radio"
-              accessibilityState={{ selected: config.numberOfPlayers === n }}
+              accessibilityState={{ checked: config.numberOfPlayers === n }}
               accessibilityLabel={`${n} players`}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{

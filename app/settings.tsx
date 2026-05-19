@@ -98,6 +98,8 @@ function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps)
           onSubmitEditing={commitValue}
           keyboardType="numeric"
           selectTextOnFocus
+          accessibilityLabel={label}
+          accessibilityHint={suffix ? `Value in ${suffix}` : undefined}
         />
         {suffix && <Text style={styles.suffix}>{suffix}</Text>}
       </View>
@@ -216,7 +218,7 @@ function RevealSpeedSelector() {
             style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Reveal speed ${o.label}`}
-            accessibilityState={{ selected: value === o.key }}
+            accessibilityState={{ checked:value === o.key }}
           >
             <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
           </Pressable>
@@ -330,7 +332,7 @@ function PlayerCountSelector() {
               style={[styles.selectorBtn, value === n && styles.selectorBtnActive]}
               accessibilityRole="radio"
               accessibilityLabel={`${n} players`}
-              accessibilityState={{ selected: value === n }}
+              accessibilityState={{ checked:value === n }}
             >
               <Text style={[styles.selectorText, value === n && styles.selectorTextActive]}>
                 {n}
@@ -368,7 +370,7 @@ function BotDifficultySelector() {
             style={[styles.selectorBtn, value === o.key && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Bot difficulty ${o.label}`}
-            accessibilityState={{ selected: value === o.key }}
+            accessibilityState={{ checked:value === o.key }}
           >
             <Text style={[styles.selectorText, value === o.key && styles.selectorTextActive]}>{o.label}</Text>
           </Pressable>
@@ -411,7 +413,7 @@ function OrientationPicker() {
             style={[orientationStyles.tile, active && orientationStyles.tileActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Orientation ${label}`}
-            accessibilityState={{ selected: active }}
+            accessibilityState={{ checked:active }}
           >
             <Text style={orientationStyles.tileIcon}>{icon}</Text>
             <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
@@ -439,7 +441,7 @@ function FourColorSuitsToggle() {
           style={[styles.selectorBtn, !fourColorSuits && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="2-color suits"
-          accessibilityState={{ selected: !fourColorSuits }}
+          accessibilityState={{ checked:!fourColorSuits }}
         >
           <Text style={[styles.selectorText, !fourColorSuits && styles.selectorTextActive]}>2</Text>
         </Pressable>
@@ -448,7 +450,7 @@ function FourColorSuitsToggle() {
           style={[styles.selectorBtn, fourColorSuits && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="4-color suits"
-          accessibilityState={{ selected: fourColorSuits }}
+          accessibilityState={{ checked:fourColorSuits }}
         >
           <Text style={[styles.selectorText, fourColorSuits && styles.selectorTextActive]}>4</Text>
         </Pressable>
@@ -473,7 +475,7 @@ function ColorblindToggle() {
           style={[styles.selectorBtn, !colorblindMode && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="Colorblind mode off"
-          accessibilityState={{ selected: !colorblindMode }}
+          accessibilityState={{ checked:!colorblindMode }}
         >
           <Text style={[styles.selectorText, !colorblindMode && styles.selectorTextActive]}>Off</Text>
         </Pressable>
@@ -482,7 +484,7 @@ function ColorblindToggle() {
           style={[styles.selectorBtn, colorblindMode && styles.selectorBtnActive]}
           accessibilityRole="radio"
           accessibilityLabel="Colorblind mode on"
-          accessibilityState={{ selected: colorblindMode }}
+          accessibilityState={{ checked:colorblindMode }}
         >
           <Text style={[styles.selectorText, colorblindMode && styles.selectorTextActive]}>On</Text>
         </Pressable>
@@ -525,7 +527,7 @@ function HandSortToggle() {
             style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel="Card sort auto"
-            accessibilityState={{ selected: handSortMethod === 'caps' }}
+            accessibilityState={{ checked:handSortMethod === 'caps' }}
           >
             <Text style={[styles.selectorText, handSortMethod === 'caps' && styles.selectorTextActive]}>Auto</Text>
           </Pressable>
@@ -534,7 +536,7 @@ function HandSortToggle() {
             style={[styles.selectorBtn, handSortMethod === 'user' && styles.selectorBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel="Card sort pairs"
-            accessibilityState={{ selected: handSortMethod === 'user' }}
+            accessibilityState={{ checked:handSortMethod === 'user' }}
           >
             <Text style={[styles.selectorText, handSortMethod === 'user' && styles.selectorTextActive]}>Pairs</Text>
           </Pressable>
@@ -573,7 +575,7 @@ function CardThemePicker() {
             style={[themeStyles.themeBtn, active && themeStyles.themeBtnActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Card theme ${t.name}`}
-            accessibilityState={{ selected: active }}
+            accessibilityState={{ checked:active }}
           >
             <Text style={[themeStyles.themeBtnLabel, active && themeStyles.themeBtnLabelActive]}>
               {t.name}
@@ -635,7 +637,7 @@ function HomeThemePicker() {
                 style={homeThemeStyles.swatchItem}
                 accessibilityRole="radio"
                 accessibilityLabel={`Home theme ${HOME_THEME_NAMES[id]}`}
-                accessibilityState={{ selected: active }}
+                accessibilityState={{ checked:active }}
               >
                 <View
                   style={[
@@ -687,7 +689,7 @@ function ButtonStylePicker() {
             style={[btnStyleStyles.option, active && { borderColor: t.accent, borderWidth: 2 }]}
             accessibilityRole="radio"
             accessibilityLabel={`Button style ${label}`}
-            accessibilityState={{ selected: active }}
+            accessibilityState={{ checked:active }}
           >
             <View style={[
               btnStyleStyles.preview,
@@ -730,7 +732,7 @@ function FriendsBgPicker() {
             style={[bgPickerStyles.tile, active && bgPickerStyles.tileActive]}
             accessibilityRole="radio"
             accessibilityLabel={`Background ${label}`}
-            accessibilityState={{ selected: active }}
+            accessibilityState={{ checked:active }}
           >
             {Platform.OS === 'web' && entry ? (
               <img
@@ -777,7 +779,7 @@ function VisualThemePicker() {
             onPress={() => { hapticLight(); setVisualTheme(opt.id); }}
             accessibilityRole="radio"
             accessibilityLabel={`Visual style ${opt.label}`}
-            accessibilityState={{ selected: current === opt.id }}
+            accessibilityState={{ checked:current === opt.id }}
           >
             <View style={[vtStyles.preview, { backgroundColor: opt.bg, borderColor: opt.accent }]}>
               <Text style={[vtStyles.previewSymbol, { color: opt.accent }]}>♠</Text>
