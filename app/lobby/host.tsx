@@ -177,6 +177,7 @@ export default function HostLobbyScreen() {
                 onPress={() => setMaxPlayers(n)}
                 disabled={serverStarted && connectedCount > n}
                 style={styles.countBtn}
+                accessibilityState={{ selected: maxPlayers === n }}
               />
             ))}
           </View>

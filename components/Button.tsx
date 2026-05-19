@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, Pressable, ViewStyle, Platform } from 'react-native';
+import { Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, Pressable, ViewStyle, Platform, AccessibilityState, AccessibilityRole } from 'react-native';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 import { COLORS } from '../constants/gameConfig';
@@ -11,6 +11,12 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  accessibilityState?: AccessibilityState;
+  accessibilityLiveRegion?: 'none' | 'polite' | 'assertive';
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  hitSlop?: { top?: number; bottom?: number; left?: number; right?: number } | number;
 }
 
 // Platform-aware shadow helper — returns iOS shadow, Android elevation, or web boxShadow
@@ -39,6 +45,12 @@ export function Button({
   disabled = false,
   loading = false,
   style,
+  accessibilityState,
+  accessibilityLiveRegion,
+  accessibilityRole: a11yRoleProp,
+  accessibilityLabel: a11yLabelProp,
+  accessibilityHint,
+  hitSlop,
 }: ButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -88,8 +100,12 @@ export function Button({
           { cursor: disabled ? 'not-allowed' : 'pointer' } as ViewStyle,
           style,
         ]}
-        accessibilityRole="button"
-        accessibilityLabel={title}
+        accessibilityRole={a11yRoleProp ?? "button"}
+        accessibilityLabel={a11yLabelProp ?? title}
+        accessibilityState={accessibilityState}
+        accessibilityLiveRegion={accessibilityLiveRegion}
+        accessibilityHint={accessibilityHint}
+        hitSlop={hitSlop}
       >
         {content}
       </Pressable>
@@ -111,8 +127,12 @@ export function Button({
         { transform: [{ scale: scaleAnim }] },
         style,
       ]}
-      accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityRole={a11yRoleProp ?? "button"}
+      accessibilityLabel={a11yLabelProp ?? title}
+      accessibilityState={accessibilityState}
+      accessibilityLiveRegion={accessibilityLiveRegion}
+      accessibilityHint={accessibilityHint}
+      hitSlop={hitSlop}
     >
       {content}
     </AnimatedTouchable>

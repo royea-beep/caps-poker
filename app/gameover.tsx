@@ -83,6 +83,8 @@ export default function GameOverScreen() {
             title={confirming ? 'ARE YOU SURE?' : 'PLAY AGAIN'}
             variant={confirming ? 'secondary' : 'gold'}
             onPress={handlePlayAgain}
+            accessibilityState={{ busy: confirming }}
+            accessibilityLiveRegion="polite"
           />
           <Button
             title="MAIN MENU"
