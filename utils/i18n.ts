@@ -129,6 +129,11 @@ interface Translations {
   profileMenuDetailedStats: string;
   profileMenuLeaderboard: string;
   profileMenuSettings: string;
+  tabHome: string;
+  tabPlay: string;
+  tabFriends: string;
+  tabCups: string;
+  tabProfile: string;
 
   // Friends referral (S-LOCALE-FIX)
   inviteFriends: string;
@@ -240,6 +245,11 @@ const he: Translations = {
   profileMenuDetailedStats: 'סטטיסטיקות מפורטות',
   profileMenuLeaderboard: 'לוח מנצחים',
   profileMenuSettings: 'הגדרות',
+  tabHome: 'בית',
+  tabPlay: 'שחק',
+  tabFriends: 'חברים',
+  tabCups: 'כוסות',
+  tabProfile: 'פרופיל',
   // Friends referral
   inviteFriends: 'הזמן חברים',
   inviteFriendsSub: (n) => `שתף את הקוד שלך · +${n} 💰 לכל חבר`,
@@ -343,6 +353,11 @@ const en: Translations = {
   profileMenuDetailedStats: 'Detailed Stats',
   profileMenuLeaderboard: 'Leaderboard',
   profileMenuSettings: 'Settings',
+  tabHome: 'Home',
+  tabPlay: 'Play',
+  tabFriends: 'Friends',
+  tabCups: 'Cups',
+  tabProfile: 'Profile',
   // Friends referral
   inviteFriends: 'Invite Friends',
   inviteFriendsSub: (n) => `Share your code · +${n} 💰 per friend`,

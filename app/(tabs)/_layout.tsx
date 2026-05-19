@@ -4,6 +4,7 @@
  * Stack screens (game, results, replay, etc.) live above in app/_layout.tsx
  */
 import { Tabs } from 'expo-router';
+import { t } from '../../utils/i18n';
 import { Platform, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,36 +50,36 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'בית',
-          tabBarIcon: ({ focused }) => <TabIcon label="בית" emoji="🏠" focused={focused} />,
+          title: t().tabHome,
+          tabBarIcon: ({ focused }) => <TabIcon label={t().tabHome} emoji="🏠" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="play"
         options={{
-          title: 'שחק',
-          tabBarIcon: ({ focused }) => <TabIcon label="שחק" emoji="♠️" focused={focused} />,
+          title: t().tabPlay,
+          tabBarIcon: ({ focused }) => <TabIcon label={t().tabPlay} emoji="♠️" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="friends"
         options={{
-          title: 'חברים',
-          tabBarIcon: ({ focused }) => <TabIcon label="חברים" emoji="👥" focused={focused} />,
+          title: t().tabFriends,
+          tabBarIcon: ({ focused }) => <TabIcon label={t().tabFriends} emoji="👥" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="cups"
         options={{
-          title: 'כוסות',
-          tabBarIcon: ({ focused }) => <TabIcon label="כוסות" emoji="🏆" focused={focused} />,
+          title: t().tabCups,
+          tabBarIcon: ({ focused }) => <TabIcon label={t().tabCups} emoji="🏆" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'פרופיל',
-          tabBarIcon: ({ focused }) => <TabIcon label="פרופיל" emoji="👤" focused={focused} />,
+          title: t().tabProfile,
+          tabBarIcon: ({ focused }) => <TabIcon label={t().tabProfile} emoji="👤" focused={focused} />,
         }}
       />
     </Tabs>
