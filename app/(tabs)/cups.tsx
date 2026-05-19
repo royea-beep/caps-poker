@@ -40,7 +40,7 @@ export default function CupsScreen() {
                 <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]} accessibilityLanguage="he">
                   {!cup.earned ? '🔒 ' : ''}{cup.name_he || TIER_LABELS[cup.tier] || cup.tier}
                 </Text>
-                <Text style={styles.cupTier}>{cup.tier.toUpperCase()}</Text>
+                <Text style={styles.cupTier}>{String(cup.tier ?? "").toUpperCase()}</Text>
                 {!cup.earned && (
                   <View style={styles.progressBar}>
                     <View style={[styles.progressFill, { width: `${Math.min(100, cup.progress)}%` as any, backgroundColor: cup.color }]} />
