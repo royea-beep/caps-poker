@@ -293,7 +293,7 @@ export default function JoinLobbyScreen() {
               {roomState.players
                 .filter((p) => p.connected)
                 .map((player) => (
-                  <View key={player.id} style={styles.playerRow}>
+                  <View key={player.id} style={styles.playerRow} accessible={true} accessibilityLabel={`Seat ${player.seat + 1}, ${player.name}${player.seat === 0 ? ', host' : ''}`}>
                     <View style={styles.playerSeat}>
                       <Text style={styles.seatText}>{player.seat + 1}</Text>
                     </View>

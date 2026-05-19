@@ -1496,7 +1496,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Player count selector — 2P / 3P / 4P */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
           {([2, 3, 4] as const).map(n => (
             <Pressable
               key={n}

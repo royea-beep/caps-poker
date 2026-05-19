@@ -70,7 +70,11 @@ export default function LeaderboardScreen() {
     const nameFontSize = pos <= 3 ? rf(16 - (pos - 1)) : rf(13);
 
     return (
-      <View style={[styles.row, isMe && styles.rowHighlight]}>
+      <View
+        style={[styles.row, isMe && styles.rowHighlight]}
+        accessible={true}
+        accessibilityLabel={`${medal === '🥇' ? 'Rank first place' : medal === '🥈' ? 'Rank second place' : medal === '🥉' ? 'Rank third place' : `Rank position ${pos}`}, ${getDisplayName(item)}${isMe ? ', you' : ''}, ${item.hands_played} hands, ${rc > 0 ? `rank up ${rc}` : rc < 0 ? `rank down ${Math.abs(rc)}` : 'no rank change'}, ${sortBy === 'winRate' ? `${winRate} percent win rate` : `${(item.total_chips ?? 0).toLocaleString()} chips`}`}
+      >
         {/* Position */}
         <Text
           style={[styles.rank, pos <= 3 && styles.rankMedal, isMe && styles.textHighlight]}

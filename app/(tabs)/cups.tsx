@@ -32,7 +32,7 @@ export default function CupsScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: rs(40) }} showsVerticalScrollIndicator={false}>
           {cups.map(cup => (
-            <View key={cup.id} style={[styles.cupRow, !cup.earned && styles.cupRowLocked]} accessibilityState={{ disabled: !cup.earned }}>
+            <View key={cup.id} style={[styles.cupRow, !cup.earned && styles.cupRowLocked]} accessibilityState={{ disabled: !cup.earned }} accessible={true} accessibilityLabel={`Trophy, ${cup.name_he || TIER_LABELS[cup.tier] || cup.tier}${!cup.earned ? ', locked' : ', earned'}, tier ${cup.tier}, progress ${cup.progress}%`}>
               <View style={[styles.cupIcon, { backgroundColor: cup.earned ? cup.color : 'rgba(255,255,255,0.08)' }]}>
                 <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }} accessibilityLabel="Trophy">🏆</Text>
               </View>

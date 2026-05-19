@@ -12,25 +12,25 @@ export default function PlayScreen() {
       <Text style={styles.title} accessibilityRole="header">PLAY</Text>
       <Text style={styles.sub}>Choose your game mode</Text>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Quick Poker" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Quick Poker. 200 · Fast-paced Omaha" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚡</Text>
         <Text style={styles.cardTitle}>Quick Poker</Text>
         <Text style={styles.cardSub} accessibilityLabel="200 · Fast-paced Omaha">200 💰 · Fast-paced Omaha</Text>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Sit and Go" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#3b82f6' }]} onPress={() => router.push('/sit-and-go' as any)}>
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Sit & Go. 100 · Tournament format" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#3b82f6' }]} onPress={() => router.push('/sit-and-go' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎯</Text>
         <Text style={styles.cardTitle}>Sit &amp; Go</Text>
         <Text style={styles.cardSub} accessibilityLabel="100 · Tournament format">100 💰 · Tournament format</Text>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Tournament" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#8b5cf6' }]} onPress={() => router.push('/tournament' as any)}>
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Tournament. Multi-round competition" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#8b5cf6' }]} onPress={() => router.push('/tournament' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text>
         <Text style={styles.cardTitle}>Tournament</Text>
         <Text style={styles.cardSub}>Multi-round competition</Text>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Online or Local WiFi" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#6b7280' }]} onPress={() => router.push('/settings' as any)}>
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Online / Local WiFi. Host or join a game" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#6b7280' }]} onPress={() => router.push('/settings' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
         <Text style={styles.cardTitle}>Online / Local WiFi</Text>
         <Text style={styles.cardSub}>Host or join a game</Text>

@@ -24,10 +24,10 @@ export default function ProfileScreen() {
         <Text style={styles.playerName}>{playerName}</Text>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}><Text style={styles.statValue}>{handsPlayed}</Text><Text style={styles.statLabel}>HANDS</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{currentWinStreak}</Text><Text style={styles.statLabel}>STREAK</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel="CHIPS">CHIPS 💰</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${handsPlayed} hands`}><Text style={styles.statValue}>{handsPlayed}</Text><Text style={styles.statLabel}>HANDS</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${winRate}% win rate`}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${currentWinStreak} streak`}><Text style={styles.statValue}>{currentWinStreak}</Text><Text style={styles.statLabel}>STREAK</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${(chips ?? 0).toLocaleString()} chips`}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel="CHIPS">CHIPS 💰</Text></View>
         </View>
 
         <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)} accessibilityRole="button" accessibilityLabel="הישגים" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

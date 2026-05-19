@@ -208,7 +208,7 @@ function RevealSpeedSelector() {
       <View style={styles.rowLeft}>
         <Text style={styles.rowLabel}>Reveal Speed</Text>
       </View>
-      <View style={styles.selectorRow}>
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Reveal speed">
         {options.map((o) => (
           <Pressable
             key={o.key}
@@ -322,7 +322,7 @@ function PlayerCountSelector() {
           <Text style={styles.rowLabel}>Players</Text>
           <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
         </View>
-        <View style={styles.selectorRow}>
+        <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
           {([2, 3, 4] as const).map((n) => (
             <Pressable
               key={n}
@@ -360,7 +360,7 @@ function BotDifficultySelector() {
         <Text style={styles.rowLabel}>Bot Difficulty</Text>
         <Text style={styles.rowHint}>{options.find(o => o.key === value)?.hint ?? ''}</Text>
       </View>
-      <View style={styles.selectorRow}>
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Bot difficulty">
         {options.map((o) => (
           <Pressable
             key={o.key}
@@ -433,7 +433,7 @@ function FourColorSuitsToggle() {
         <Text style={styles.rowLabel}>Suit Colors</Text>
         <Text style={styles.rowHint}>{fourColorSuits ? '4-color: ♥red ♦blue ♠black ♣green' : '2-color: red / black'}</Text>
       </View>
-      <View style={styles.selectorRow}>
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Four color suits">
         <Pressable
           onPress={() => { hapticLight(); setFourColorSuits(false); }}
           style={[styles.selectorBtn, !fourColorSuits && styles.selectorBtnActive]}
@@ -467,7 +467,7 @@ function ColorblindToggle() {
         <Text style={styles.rowLabel}>Colorblind Mode</Text>
         <Text style={styles.rowHint}>{colorblindMode ? 'Blue = Win, Orange = Lose' : 'Green = Win, Red = Lose'}</Text>
       </View>
-      <View style={styles.selectorRow}>
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Colorblind mode">
         <Pressable
           onPress={() => { hapticLight(); setColorblindMode(false); }}
           style={[styles.selectorBtn, !colorblindMode && styles.selectorBtnActive]}
@@ -519,7 +519,7 @@ function HandSortToggle() {
           <Text style={styles.rowLabel}>Card Sort</Text>
           <Text style={styles.rowHint}>{handSortMethod === 'caps' ? 'Auto (Trips→Pairs→Suits)' : 'Pairs+Suits'}</Text>
         </View>
-        <View style={styles.selectorRow}>
+        <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Hand sort">
           <Pressable
             onPress={() => { hapticLight(); setHandSortMethod('caps'); }}
             style={[styles.selectorBtn, handSortMethod === 'caps' && styles.selectorBtnActive]}
@@ -562,7 +562,7 @@ function CardThemePicker() {
   const setCardTheme = useGameStore((s) => s.setCardTheme);
 
   return (
-    <View style={themeStyles.pickerRow}>
+    <View style={themeStyles.pickerRow} accessibilityRole="radiogroup" accessibilityLabel="Card theme">
       {(['v1', 'v2', 'v3'] as CardThemeId[]).map((id) => {
         const t = CARD_THEMES[id];
         const active = cardTheme === id;
@@ -622,7 +622,7 @@ function HomeThemePicker() {
   const rows = [allIds.slice(0, 5), allIds.slice(5, 10)];
 
   return (
-    <View style={homeThemeStyles.container}>
+    <View style={homeThemeStyles.container} accessibilityRole="radiogroup" accessibilityLabel="Home theme">
       {rows.map((row, rowIdx) => (
         <View key={rowIdx} style={homeThemeStyles.swatchRow}>
           {row.map((id) => {
@@ -671,7 +671,7 @@ function ButtonStylePicker() {
   ];
 
   return (
-    <View style={btnStyleStyles.row}>
+    <View style={btnStyleStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Button style">
       {options.map(({ id, label }) => {
         const active = buttonStyle === id;
         const previewBg =
@@ -719,7 +719,7 @@ function FriendsBgPicker() {
   const setFriendsBg = useGameStore((s) => s.setFriendsBg);
 
   return (
-    <View style={bgPickerStyles.row}>
+    <View style={bgPickerStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Friends background">
       {BG_OPTIONS.map(({ id, label, hint }) => {
         const active = friendsBg === id;
         const entry = id !== 'none' ? FRIENDS_BGS[id as Exclude<FriendsBgId, 'none'>] : null;
@@ -769,7 +769,7 @@ function VisualThemePicker() {
         <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
         VISUAL STYLE
       </Text>
-      <View style={vtStyles.row}>
+      <View style={vtStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Visual theme">
         {options.map((opt) => (
           <Pressable
             key={opt.id}

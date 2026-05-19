@@ -193,7 +193,12 @@ export default function HostLobbyScreen() {
           {players
             .filter((p) => p.connected)
             .map((player) => (
-              <View key={player.id} style={styles.playerRow}>
+              <View
+                key={player.id}
+                style={styles.playerRow}
+                accessible={true}
+                accessibilityLabel={`Seat ${player.seat + 1}, ${player.name}${player.isHost ? ', host' : ''}${player.isReady ? ', ready' : ''}`}
+              >
                 <View style={styles.playerSeat}>
                   <Text style={styles.seatText}>{player.seat + 1}</Text>
                 </View>

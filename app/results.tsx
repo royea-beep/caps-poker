@@ -1124,7 +1124,7 @@ export default function ResultsScreen() {
                 const playerWon = board.winner === 'player';
                 const chipChange = playerWon ? potPerBoardTotal : -potPerBoardTotal;
                 return (
-                  <View key={i} style={styles.breakdownRow}>
+                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${board.playerHandName || '—'}${!playerWon && board.botHandName ? ` vs ${board.botHandName}` : ''}, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}>
                     <View style={styles.breakdownLeft}>
                       <Text style={styles.breakdownNum}>Board {i + 1}</Text>
                       <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
