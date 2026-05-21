@@ -34,6 +34,9 @@ const result = {
   ios_build: null,
   android_versionCode: null,
   ios_build_status: null,
+  latest_build_runtime: null,
+  ota_runtime: null,
+  ota_reaches_latest_build: null,
   runtime_version: null,
   latest_ota_hash: null,
   latest_ota_message: null,
@@ -63,6 +66,7 @@ if (iosList.length) {
   const chosen = finished ?? iosList[0];
   result.ios_build = bn(chosen);
   result.ios_build_status = chosen.status ?? null;
+  result.latest_build_runtime = chosen.runtimeVersion ?? null;
   if (finished) {
     result.notes.push(`iOS FINISHED build: ${result.ios_build}. Latest overall: ${bn(iosList[0])} (${iosList[0].status}).`);
   } else {
@@ -90,9 +94,18 @@ if (updList.length) {
   result.latest_ota_hash = u.group ?? u.id ?? null;
   result.latest_ota_message = u.message ?? null;
   result.latest_ota_created_at = u.createdAt ?? null;
+  result.ota_runtime = u.runtimeVersion ?? null;
   if (!result.runtime_version && u.runtimeVersion) result.runtime_version = u.runtimeVersion;
 } else {
   result.notes.push('eas update:list returned empty or failed');
+}
+
+// Runtime-mismatch guard: an OTA is ONLY delivered to builds whose runtimeVersion matches it.
+if (result.latest_build_runtime && result.ota_runtime) {
+  result.ota_reaches_latest_build = result.latest_build_runtime === result.ota_runtime;
+  if (!result.ota_reaches_latest_build) {
+    result.notes.push(`🚨 RUNTIME MISMATCH: latest OTA runtime ${result.ota_runtime} != latest FINISHED iOS build runtime ${result.latest_build_runtime} — the OTA will NOT reach that build. Ship a build at runtime ${result.ota_runtime} before relying on OTA delivery.`);
+  }
 }
 
 console.log(JSON.stringify(result, null, 2));
@@ -105,10 +118,13 @@ const md = `# CAPS Current Build (auto-generated)
 |-------|-------|
 | App version | ${result.app_version ?? '?'} |
 | iOS Build | **${result.ios_build ?? '?'}** (${result.ios_build_status ?? '?'}) |
+| iOS build runtime | ${result.latest_build_runtime ?? '?'} |
 | Android versionCode | ${result.android_versionCode ?? '?'} |
 | Runtime version | ${result.runtime_version ?? '?'} |
 | Latest OTA hash | \`${result.latest_ota_hash ?? '?'}\` |
 | Latest OTA message | ${result.latest_ota_message ?? '?'} |
+| OTA runtime | ${result.ota_runtime ?? '?'} |
+| OTA reaches latest build? | ${result.ota_reaches_latest_build === null ? '?' : (result.ota_reaches_latest_build ? '✅ yes' : '❌ NO — runtime mismatch (OTA reaches no one)')} |
 | OTA created at | ${result.latest_ota_created_at ?? '?'} |
 
 ## Iron Rule #26 reminder

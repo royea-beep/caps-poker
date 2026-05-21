@@ -3,8 +3,9 @@ name: caps-build-tracker
 description: |
   Use whenever Claude needs to know the current CAPS build number, OTA hash, or runtime version.
   Triggers: "what build", "current version", "which OTA", "מה הbuild", "איזה בילד", session-start status line.
-  Returns: { ios_build, android_versionCode, runtime_version, latest_ota_hash, latest_ota_message, app_version }
+  Returns: { ios_build, ios_build_status, latest_build_runtime, android_versionCode, runtime_version, ota_runtime, ota_reaches_latest_build, latest_ota_hash, latest_ota_message, app_version }
   This is the SOURCE OF TRUTH — never trust app.json buildNumber directly per Iron Rule #26.
+  Emits a 🚨 RUNTIME MISMATCH warning when the latest OTA runtime != latest FINISHED build runtime — in that case the OTA reaches NO device.
 ---
 
 # CAPS Build Tracker
@@ -32,3 +33,6 @@ Output goes both to stdout AND to `docs/CURRENT-BUILD.md`.
 4. The output of this skill OVERRIDES any build number in memory or context.
 5. `eas build:list` / `update:list` are READ-ONLY and safe. NEVER call `eas build`
    (free-tier exhausted; builds run via GitHub Actions, not EAS).
+6. If `ota_reaches_latest_build` is false (RUNTIME MISMATCH warning): the published OTA is
+   reaching NO device — a build at the OTA's runtimeVersion must ship first. Surface this loudly,
+   never report such an OTA as "live".
