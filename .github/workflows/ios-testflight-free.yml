@@ -1,0 +1,123 @@
+name: iOS TestFlight (FREE — macOS runner, no EAS cloud)
+
+# Restored from Wingman's free pattern (which itself was originally adapted FROM CAPS
+# per ci-setup-ios-creds.js header). Bypasses the EAS Free-plan iOS cloud quota wall.
+#
+# COST: $0/build
+# How it works:
+#   1. scripts/ci-setup-ios-creds.js — hardened ASC API flow: deny-lists known-revoked
+#      cert serials, deletes unsafe Apple certs, creates a fresh IOS_DISTRIBUTION cert,
+#      wires it into EAS along with a new provisioning profile.
+#   2. eas build --local — builds the IPA on the macOS-15 runner (NOT EAS cloud, so
+#      does not count against the Free-plan iOS-build quota).
+#   3. xcrun altool --upload-app — submits directly to TestFlight via the ASC API key.
+#
+# Secrets required (ALL ALREADY SET on royea-beep/caps-poker — see `gh secret list`):
+#   EXPO_TOKEN              — Expo account token (EAS credential lookup, not cloud build)
+#   APPLE_API_KEY_BASE64    — Base64 of AuthKey_HH732W7XQJ.p8
+#   APPLE_API_KEY_ID        — HH732W7XQJ
+#   APPLE_API_ISSUER_ID     — 686f97b8-3f8a-40b7-a6cd-5293a3168439
+
+on:
+  push:
+    branches: [main, master, fix/*]
+    paths:
+      # Auto-fire on a version bump only — other pushes don't burn macOS runner minutes.
+      - 'app.json'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight-free-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-submit:
+    name: Build & Submit to TestFlight (FREE)
+    runs-on: macos-15
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: 0
+
+      - name: Write Apple API key to repo root (CWD for the script)
+        run: |
+          echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 -d > AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+
+      - name: Select latest Xcode available on runner
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then echo "No Xcode found"; exit 1; fi
+          echo "Selecting $XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Setup iOS credentials (hardened cert + PP via ASC API)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: node scripts/ci-setup-ios-creds.js
+
+      - name: EAS Build — LOCAL (runs on this runner, NOT EAS cloud)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --local \
+            --output "$RUNNER_TEMP/CapsPoker.ipa"
+
+      - name: Submit to TestFlight via xcrun altool
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APPLE_API_KEY_BASE64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+          IPA_PATH="$RUNNER_TEMP/CapsPoker.ipa"
+          echo "IPA path: $IPA_PATH"
+          ls -lh "$IPA_PATH"
+
+          echo "--- Validating IPA before upload ---"
+          xcrun altool --validate-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$APPLE_API_KEY_ID" \
+            --apiIssuer "$APPLE_API_ISSUER_ID" 2>&1 | tail -20 || true
+
+          echo "--- Uploading to TestFlight ---"
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$APPLE_API_KEY_ID" \
+            --apiIssuer "$APPLE_API_ISSUER_ID"
+
+      - name: Cleanup key files
+        if: always()
+        run: |
+          rm -f AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+          rm -f ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
