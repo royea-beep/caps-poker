@@ -10,3 +10,6 @@ export const KILL_results       = true;
 export const KILL_Board         = true;
 export const KILL_CompleteOverlay = true;
 export const KILL_ProQuoteBanner  = true;
+// Card float loop removed 2026-05-22 — cards no longer bob up/down infinitely.
+// Future Card animations must use finite iterations (per battle-pass.tsx iron rule).
+export const KILL_Card          = true;

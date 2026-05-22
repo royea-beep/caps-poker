@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Pressable, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
-import { rf, rs, rv } from '../utils/responsive';
+import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
+import { rf, rs, rv, SCREEN_W as MODULE_SCREEN_W } from '../utils/responsive';
 import { t } from '../utils/i18n';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
 import { getDevice } from '../constants/deviceBreakpoints';
@@ -65,7 +65,10 @@ function AnimatedCardSlot({
 }
 
 export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
-  const { width: rawW } = useWindowDimensions();
+  // C-fix 2026-05-22: lock to module-level SCREEN_W (computed once in responsive.ts).
+  // Was useWindowDimensions() — re-fired on every focus/keyboard/resize event,
+  // causing the 2-row hand layout to shift while the player was placing cards.
+  const rawW = MODULE_SCREEN_W;
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;

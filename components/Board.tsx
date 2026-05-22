@@ -1,6 +1,6 @@
 // v-red-boards
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,7 +15,7 @@ import { Badge } from './Badge';
 import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
-import { rf, rs } from '../utils/responsive';
+import { rf, rs, SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { useGameColors } from '../utils/useGameColors';
@@ -154,7 +154,11 @@ export default function Board({
   isWinner,
   communityScale = 1.2,
 }: BoardProps) {
-  const { width: screenW, height: screenH } = useWindowDimensions();
+  // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
+  // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
+  // causing BOARD_HEIGHT + card sizes to drift on any focus/keyboard/resize event.
+  const screenW = MODULE_SCREEN_W;
+  const screenH = MODULE_SCREEN_H;
   const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height Â never jumps when bot places cards
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
