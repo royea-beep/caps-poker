@@ -119,8 +119,12 @@ jobs:
       - name: Start system log capture (crash detection)
         run: |
           mkdir -p artifacts
+          # Narrow predicate: only CapsPoker process logs + the crashreporter subsystem.
+          # Was: also matched eventMessage 'fatal' across the whole system, which produced
+          # false positives from iOS daemons (biomesyncd / FamilyControlsAgent / nanoregistryd)
+          # logging benign XPC/IDS "fatal error has occured" connectivity churn on every boot.
           xcrun simctl spawn "$UDID" log stream \
-            --predicate "subsystem == 'com.apple.crashreporter' OR processImagePath CONTAINS 'CapsPoker' OR eventMessage CONTAINS 'SIGABRT' OR eventMessage CONTAINS 'fatal'" \
+            --predicate "subsystem == 'com.apple.crashreporter' OR processImagePath CONTAINS 'CapsPoker'" \
             --style syslog > artifacts/simulator.log 2>&1 &
           echo "LOG_PID=$!" >> "$GITHUB_ENV"
           sleep 1
@@ -172,15 +176,19 @@ jobs:
           [ -n "$LOG_PID" ] && kill "$LOG_PID" 2>/dev/null || true
           sleep 2
 
-      - name: Crash detection — fail the job if SIGABRT/fatal in log
+      - name: Crash detection — fail only on CapsPoker-scoped crashes
         if: always()
         run: |
-          if grep -E "SIGABRT|fatal|crashed|EXC_BAD" artifacts/simulator.log > /dev/null 2>&1; then
-            echo "::error::Crash detected — see simulator.log artifact"
-            grep -E "SIGABRT|fatal|crashed|EXC_BAD" artifacts/simulator.log | head -10
+          # Tightened 2026-05-23: only flag log lines where the offending message both
+          # mentions CapsPoker AND a crash signature, OR comes from the crashreporter
+          # subsystem. Avoids false-positives from iOS daemons (biomesyncd, nanoregistryd,
+          # FamilyControlsAgent) logging "(IDS) ... fatal error has occured" on XPC churn.
+          if grep -E "(CapsPoker\[[0-9]+\]:.*(SIGABRT|EXC_BAD|abort\(\)|crashed|Hermes assertion failure))|(com\.apple\.crashreporter.*CapsPoker)|ReportCrash.*CapsPoker" artifacts/simulator.log > /dev/null 2>&1; then
+            echo "::error::CapsPoker crash detected — see simulator.log artifact"
+            grep -E "(CapsPoker\[[0-9]+\]:.*(SIGABRT|EXC_BAD|abort\(\)|crashed|Hermes assertion failure))|(com\.apple\.crashreporter.*CapsPoker)|ReportCrash.*CapsPoker" artifacts/simulator.log | head -10
             exit 1
           fi
-          echo "✅ No crash patterns detected"
+          echo "✅ No CapsPoker-scoped crash patterns detected"
 
       - name: Upload artifacts (screenshots + video + log)
         if: always()

@@ -27,9 +27,10 @@
     },
     "simulator": {
       "distribution": "internal",
+      "developmentClient": false,
       "ios": {
         "simulator": true,
-        "buildConfiguration": "Debug"
+        "buildConfiguration": "Release"
       }
     },
     "testflight": {
