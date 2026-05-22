@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions, Platform, Animated as AnimatedRN } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN } from 'react-native';
+import { SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,7 +108,11 @@ const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + head
 function GameScreenInner() {
   const router = useRouter();
   const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
-  const { height: SCREEN_H, width: screenW } = useWindowDimensions();
+  // C-fix 2026-05-22: lock dimensions at module load (responsive.ts) instead of
+  // useWindowDimensions(). Game is portrait-locked, so live-resize subscription is
+  // not needed and was the source of card-size jitter during keyboard/focus events.
+  const SCREEN_H = MODULE_SCREEN_H;
+  const screenW = MODULE_SCREEN_W;
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);

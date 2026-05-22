@@ -1,0 +1,211 @@
+name: iOS Simulator Smoke Test
+
+# Half-automated QA: builds the iOS app for the Simulator architecture (free,
+# no signing required, no EAS cloud quota burn), boots an iPhone simulator on
+# the macos-15 runner, installs the .app, launches it, navigates key screens,
+# captures screenshots + a screen recording, and uploads everything as artifacts.
+#
+# Use it to:
+#   - Catch native crashes BEFORE shipping a TestFlight binary (cheaper than the
+#     full sign + upload pipeline for early-warning).
+#   - See animations like the "bouncing cards" issue on actual UIKit, not just
+#     RN Web (which gates many animations behind `Platform.OS === 'web'` early
+#     returns and never shows the native motion problems).
+#
+# Triggers: workflow_dispatch + on push to main (only when app/, components/,
+# constants/, store/, or app.json changed — avoids burn on doc-only commits).
+#
+# Reference: 9soccer/.github/workflows/screenshots.yml uses `xcrun simctl` in
+# Safari mode (serves web build, opens in simulator Safari). We do something
+# different here — install the NATIVE Expo app and exercise actual native UI.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'constants/**'
+      - 'store/**'
+      - 'utils/**'
+      - 'app.json'
+      - 'eas.json'
+      - 'package.json'
+
+concurrency:
+  group: ios-simulator-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Build .app + simulator smoke
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: 0
+
+      - name: Select latest Xcode
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          [ -z "$XCODE_PATH" ] && { echo "No Xcode"; exit 1; }
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build .app for Simulator (local, no signing, no EAS cloud)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          # `simulator` profile (added to eas.json) sets ios.simulator=true so the
+          # build produces an unsigned .app for iPhoneSimulator architecture.
+          eas build \
+            --platform ios \
+            --profile simulator \
+            --non-interactive \
+            --local \
+            --output "$RUNNER_TEMP/CapsPoker.tar.gz"
+
+          # Extract .app from the .tar.gz EAS produces for simulator builds
+          mkdir -p "$RUNNER_TEMP/app"
+          tar -xzf "$RUNNER_TEMP/CapsPoker.tar.gz" -C "$RUNNER_TEMP/app"
+          APP_PATH=$(find "$RUNNER_TEMP/app" -name "*.app" -type d | head -1)
+          [ -z "$APP_PATH" ] && { echo "::error::No .app found in build output"; ls -la "$RUNNER_TEMP/app"; exit 1; }
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+          echo "Found: $APP_PATH"
+
+      - name: Boot iPhone simulator
+        run: |
+          UDID=$(xcrun simctl list devices available | \
+            grep -E "iPhone 1[567] Pro" | grep -v unavailable | head -1 | \
+            grep -oE '[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}')
+          [ -z "$UDID" ] && UDID=$(xcrun simctl list devices available | \
+            grep iPhone | grep -v unavailable | head -1 | \
+            grep -oE '[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}')
+          [ -z "$UDID" ] && { echo "::error::No simulator available"; exit 1; }
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          echo "Booting $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Install .app on simulator
+        run: |
+          xcrun simctl install "$UDID" "$APP_PATH"
+          # Extract bundle identifier from Info.plist (resilient: don't hardcode)
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist")
+          echo "BUNDLE_ID=$BUNDLE_ID" >> "$GITHUB_ENV"
+          echo "Installed: $BUNDLE_ID"
+
+      - name: Start system log capture (crash detection)
+        run: |
+          mkdir -p artifacts
+          xcrun simctl spawn "$UDID" log stream \
+            --predicate "subsystem == 'com.apple.crashreporter' OR processImagePath CONTAINS 'CapsPoker' OR eventMessage CONTAINS 'SIGABRT' OR eventMessage CONTAINS 'fatal'" \
+            --style syslog > artifacts/simulator.log 2>&1 &
+          echo "LOG_PID=$!" >> "$GITHUB_ENV"
+          sleep 1
+
+      - name: Start screen recording
+        run: |
+          xcrun simctl io "$UDID" recordVideo --codec=h264 artifacts/smoke-run.mp4 &
+          echo "REC_PID=$!" >> "$GITHUB_ENV"
+          sleep 1
+
+      - name: Launch + screenshot key screens
+        run: |
+          set +e  # don't fail the workflow on a crash — we WANT to capture it
+          xcrun simctl launch "$UDID" "$BUNDLE_ID"
+          sleep 8  # let the app finish boot + onboarding skip
+
+          shot() {
+            local tag="$1"
+            local delay="${2:-3}"
+            sleep "$delay"
+            xcrun simctl io "$UDID" screenshot "artifacts/$tag.png"
+            echo "📸 $tag"
+          }
+
+          # Capture initial home
+          shot "01_home_initial" 2
+
+          # Deep-link nav into key routes via expo-router URL scheme `caps-poker://`
+          deeplink() {
+            xcrun simctl openurl "$UDID" "caps-poker://$1"
+          }
+
+          deeplink "play"        && shot "02_play_tab" 3
+          deeplink "game"        && shot "03_game_screen" 4
+          deeplink "cups"        && shot "04_cups_tab" 3
+          deeplink "profile"     && shot "05_profile_tab" 3
+          deeplink "settings"    && shot "06_settings" 3
+          deeplink "leaderboard" && shot "07_leaderboard" 3
+          deeplink "shop"        && shot "08_shop" 3
+
+          # Back to home, hold a moment so the screen recording captures any
+          # post-launch animations settling (or NOT settling, if cards bounce).
+          deeplink "" && shot "09_home_final" 4
+
+      - name: Stop recording + log
+        if: always()
+        run: |
+          [ -n "$REC_PID" ] && kill -INT "$REC_PID" 2>/dev/null || true
+          [ -n "$LOG_PID" ] && kill "$LOG_PID" 2>/dev/null || true
+          sleep 2
+
+      - name: Crash detection — fail the job if SIGABRT/fatal in log
+        if: always()
+        run: |
+          if grep -E "SIGABRT|fatal|crashed|EXC_BAD" artifacts/simulator.log > /dev/null 2>&1; then
+            echo "::error::Crash detected — see simulator.log artifact"
+            grep -E "SIGABRT|fatal|crashed|EXC_BAD" artifacts/simulator.log | head -10
+            exit 1
+          fi
+          echo "✅ No crash patterns detected"
+
+      - name: Upload artifacts (screenshots + video + log)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-smoke-${{ github.run_number }}
+          path: artifacts/
+          retention-days: 14
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "# 🎮 iOS Simulator Smoke" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- App: \`$BUNDLE_ID\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Simulator UDID: \`$UDID\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for f in artifacts/*.png artifacts/*.mp4; do
+            [ -e "$f" ] || continue
+            SIZE=$(wc -c < "$f")
+            echo "- \`$(basename $f)\` (${SIZE} bytes)" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download from Artifacts above to watch the screen recording (mp4) and see if cards still bounce." >> $GITHUB_STEP_SUMMARY
+
+      - name: Shutdown simulator
+        if: always()
+        run: xcrun simctl shutdown "$UDID" 2>/dev/null || true

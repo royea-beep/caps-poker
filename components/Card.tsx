@@ -84,10 +84,9 @@ export default function CardComponent({
   const flipAnim = useRef(new Animated.Value(faceDown ? 0 : 1)).current;
   // Glow lift — native driver (transform only)
   const glowAnim = useRef(new Animated.Value(highlighted ? 1 : 0)).current;
-  // Float idle animation (S96) — community: -10px/3s, player: -5px/2s
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  const floatDistance = isCommunityCard ? -10 : -5;
-  const floatDuration = isCommunityCard ? 3000 : 2000;
+  // Float idle animation REMOVED 2026-05-22 — see KILL_Card in utils/animationKill.ts.
+  // Was: infinite Animated.loop on translateY making every card bob up/down forever.
+  // Iron rule (per battle-pass.tsx comment): never Animated.loop without finite iterations.
 
   const prevFaceDownRef = useRef(faceDown);
 
@@ -112,18 +111,7 @@ export default function CardComponent({
     }).start();
   }, [highlighted]);
 
-  useEffect(() => {
-    // Float loop — native only (Animated.loop is safe for Hermes)
-    if (Platform.OS === 'web') return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: 1, duration: floatDuration / 2, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: floatDuration / 2, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => { loop.stop(); };
-  }, []);
+  // Float loop useEffect REMOVED 2026-05-22 — see KILL_Card.
 
   // Back face: rotates 0deg to 90deg during first half, then opacity 0
   const backRotateY = flipAnim.interpolate({
@@ -148,8 +136,7 @@ export default function CardComponent({
   // Glow: scale up + lift (native driver)
   const glowScale = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] });
   const glowTranslateY = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
-  // Float idle (S96)
-  const floatY = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, floatDistance] });
+  // floatY interpolation REMOVED 2026-05-22 — see KILL_Card.
 
   // Face-down back card — diamond lattice pattern
   const renderBack = () => {
@@ -324,7 +311,7 @@ export default function CardComponent({
               { rotateY: frontRotateY },
               { scale: glowScale },
               { translateY: glowTranslateY },
-              { translateY: floatY },
+              // { translateY: floatY } removed 2026-05-22 — see KILL_Card
             ],
             opacity: frontOpacity,
           },
