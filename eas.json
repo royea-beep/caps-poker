@@ -25,6 +25,13 @@
         "distribution": "internal"
       }
     },
+    "simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug"
+      }
+    },
     "testflight": {
       "distribution": "store",
       "credentialsSource": "remote",
