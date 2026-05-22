@@ -340,7 +340,28 @@ async function main() {
     fs.writeFileSync('/tmp/caps_cert.pem',
       `-----BEGIN CERTIFICATE-----\n${appleCertContent.match(/.{1,64}/g).join('\n')}\n-----END CERTIFICATE-----\n`);
     fs.writeFileSync('/tmp/caps_key.pem', newCertPrivateKey);
-    execSync(`openssl pkcs12 -export -out /tmp/caps.p12 -inkey /tmp/caps_key.pem -in /tmp/caps_cert.pem -passout pass:${p12Pass} -legacy`, { stdio: 'pipe' });
+    // Pick an openssl that supports -legacy (OpenSSL 3). macOS-15 runner's default
+    // `openssl` is LibreSSL, which REJECTS -legacy ("Unrecognized flag legacy").
+    // Homebrew installs OpenSSL 3 at /opt/homebrew/opt/openssl@3/bin/openssl on
+    // Apple Silicon runners, /usr/local/opt/openssl@3/bin/openssl on Intel.
+    // Falls back to bare LibreSSL `openssl` WITHOUT -legacy (LibreSSL defaults to
+    // the legacy p12 format that Apple's signing tools expect, so the flag is
+    // unnecessary there).
+    const opensslCandidates = [
+      '/opt/homebrew/opt/openssl@3/bin/openssl',
+      '/usr/local/opt/openssl@3/bin/openssl',
+    ];
+    let opensslBin = null;
+    for (const cand of opensslCandidates) {
+      try { if (fs.existsSync(cand)) { execSync(`${cand} version`, { stdio: 'pipe' }); opensslBin = cand; break; } } catch {}
+    }
+    if (opensslBin) {
+      console.log(`   Using OpenSSL 3 at ${opensslBin} (with -legacy)`);
+      execSync(`${opensslBin} pkcs12 -export -out /tmp/caps.p12 -inkey /tmp/caps_key.pem -in /tmp/caps_cert.pem -passout pass:${p12Pass} -legacy`, { stdio: 'pipe' });
+    } else {
+      console.log('   OpenSSL 3 not found — using bare `openssl` (LibreSSL) without -legacy');
+      execSync(`openssl pkcs12 -export -out /tmp/caps.p12 -inkey /tmp/caps_key.pem -in /tmp/caps_cert.pem -passout pass:${p12Pass}`, { stdio: 'pipe' });
+    }
     const certP12Base64 = fs.readFileSync('/tmp/caps.p12').toString('base64');
 
     const tQ = await easGraphQL(`{ account { byId(accountId: "${EAS_ACCOUNT_ID}") { appleTeamsPaginated(first: 10) { edges { node { id appleTeamIdentifier } } } } } }`, {});
