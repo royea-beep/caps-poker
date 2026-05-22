@@ -1,4 +1,4 @@
-name: iOS TestFlight
+name: iOS TestFlight (DISABLED 2026-05-22 — manual-only fallback; replaced by ios-testflight-free.yml)
 
 # FREE build on GitHub-hosted macOS runner — zero EAS cloud charges
 # Previous approach: ubuntu-latest + eas build --platform ios --non-interactive (paid EAS cloud)
@@ -13,8 +13,10 @@ name: iOS TestFlight
 #   EXPO_PUBLIC_SUPABASE_ANON_KEY — Supabase anon key (injected at build time)
 
 on:
-  push:
-    branches: [main, master]
+  # 2026-05-22: push trigger REMOVED — this workflow uses manual GitHub-secret signing
+  # with revoked cert serial 45EBC138DF94E77658BA9558EAAE19FC. Replaced by
+  # ios-testflight-free.yml (ASC-API auto-refreshed cert + local macOS build).
+  # Kept for manual fallback only; will not auto-fire on push.
   workflow_dispatch:
 
 concurrency:
