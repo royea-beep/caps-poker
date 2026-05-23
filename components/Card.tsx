@@ -255,7 +255,12 @@ export default function CardComponent({
   const suitBorderColor = isRed ? 'rgba(211,47,47,0.28)' : 'rgba(80,80,80,0.22)';
   const isFaceCard = ['J', 'Q', 'K', 'A'].includes(card.rank);
 
-  const isV2 = cardConfig?.card_layout === 'v2';
+  // 2026-05-23: V2 layout (corner pip + dominant center suit, no center rank) is
+  // now the only path — the legacy "3-corner-pip + center-rank+center-suit overlap"
+  // branch was producing a cluttered card where the small corner suit was visually
+  // hidden behind the large center suit. Force isV2=true; the legacy `: ( … )` else
+  // branch below is removed.
+  const isV2 = true;
   const v2SuitColor = isRed ? V2_RED : V2_BLACK;
 
   // Highlight border — static conditional (instant feedback for card selection)
@@ -347,37 +352,7 @@ export default function CardComponent({
               </Text>
             </View>
           </>
-        ) : (
-          <>
-            {/* Top-left corner pip */}
-            <View style={styles.cornerTopLeft} pointerEvents="none">
-              <Text allowFontScaling={false} style={[styles.cornerRank, { color: suitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.cornerSuit, { color: suitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
-            </View>
-
-            {/* Center rank + suit */}
-            <View style={styles.centerDisplay}>
-              <Text allowFontScaling={false} style={[styles.centerRankText, { color: suitColor, fontSize: centerRankSize }]}>
-                {card.rank}
-              </Text>
-              <Text allowFontScaling={false} style={[styles.centerSuitText, {
-                color: suitColor,
-                fontSize: centerSuitSize,
-                textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 6,
-              }]}>
-                {SUIT_SYMBOLS[card.suit]}
-              </Text>
-            </View>
-
-            {/* Bottom-right corner pip — rotated 180° */}
-            <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
-              <Text allowFontScaling={false} style={[styles.cornerRank, { color: suitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.cornerSuit, { color: suitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
-            </View>
-          </>
-        )}
+        ) : null /* Legacy non-V2 branch removed 2026-05-23 — isV2 is now always true */}
       </Animated.View>
     </View>
   );

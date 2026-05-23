@@ -6,7 +6,14 @@ import PlayerHand from './PlayerHand';
 import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
-import { rf, rs, rb, rv } from '../utils/responsive';
+import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
+
+// 2026-05-23 zone fix #1+#2: explicit player-hand zone height + visible seam between
+// boards and hand. Previously the hand was residual (whatever space was left after
+// boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
+// visual boundary. Now: handHeight is computed once at module load, with a 140px
+// floor so 320pt phones still see a usable hand row.
+const HAND_ZONE_HEIGHT = Math.max(140, Math.floor(MODULE_SCREEN_H * 0.22));
 import { t } from '../utils/i18n';
 
 const HINT_TEXTS = [
@@ -125,13 +132,15 @@ export function BoardArrangement({
         </Pressable>
       )}
 
-      {/* Player hand */}
+      {/* Player hand — explicit zone (fix #1) + visible seam to boards above (fix #2) */}
       {isArranging && (
-        <PlayerHand
-          cards={playerHand}
-          selectedCardIds={selectedCardIds}
-          onSelectCard={onSelectCard}
-        />
+        <View style={baStyles.handZone}>
+          <PlayerHand
+            cards={playerHand}
+            selectedCardIds={selectedCardIds}
+            onSelectCard={onSelectCard}
+          />
+        </View>
       )}
 
       {/* Selection hint / board error */}
@@ -203,6 +212,12 @@ const baStyles = StyleSheet.create({
     flexDirection: 'column',
     paddingHorizontal: rs(16),
     gap: rs(4),
+  },
+  handZone: {
+    // 2026-05-23 zone fix: explicit hand-zone height + 1px gold seam above
+    height: HAND_ZONE_HEIGHT,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gold,
   },
   boardsGrid: {
     flexDirection: 'row',
