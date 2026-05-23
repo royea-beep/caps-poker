@@ -159,7 +159,10 @@ export default function Board({
   // causing BOARD_HEIGHT + card sizes to drift on any focus/keyboard/resize event.
   const screenW = MODULE_SCREEN_W;
   const screenH = MODULE_SCREEN_H;
-  const BOARD_HEIGHT = Math.floor(screenH * 0.19); // S82: fixed board height Â never jumps when bot places cards
+  // 2026-05-23 zone fix #3: cap at 130px so 4-board games on 320pt devices don't
+  // squeeze the player hand to zero. screenH * 0.19 = 162 @ 852, 108 @ 568 — cap
+  // bites only on tall devices, leaving 320pt-class layouts unchanged.
+  const BOARD_HEIGHT = Math.min(Math.floor(screenH * 0.19), 130); // S82: fixed board height Â never jumps when bot places cards
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const gameColors = useGameColors();
