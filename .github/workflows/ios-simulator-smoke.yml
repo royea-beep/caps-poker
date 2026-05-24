@@ -1,23 +1,21 @@
 name: iOS Simulator Smoke Test
 
-# Half-automated QA: builds the iOS app for the Simulator architecture (free,
-# no signing required, no EAS cloud quota burn), boots an iPhone simulator on
-# the macos-15 runner, installs the .app, launches it, navigates key screens,
-# captures screenshots + a screen recording, and uploads everything as artifacts.
+# Fully-automated visual QA. Builds the iOS app for the Simulator architecture
+# (free, no signing, no EAS cloud quota), boots an iPhone simulator on the
+# macos-15 runner, installs the .app, runs a deep-link tour of every meaningful
+# screen, captures one screenshot per screen + a single mp4 of the full flow,
+# then uploads everything to Supabase Storage so the gallery is one URL to share.
 #
-# Use it to:
-#   - Catch native crashes BEFORE shipping a TestFlight binary (cheaper than the
-#     full sign + upload pipeline for early-warning).
-#   - See animations like the "bouncing cards" issue on actual UIKit, not just
-#     RN Web (which gates many animations behind `Platform.OS === 'web'` early
-#     returns and never shows the native motion problems).
+# Trigger: workflow_dispatch (manual) + auto on push to main when relevant files change.
 #
-# Triggers: workflow_dispatch + on push to main (only when app/, components/,
-# constants/, store/, or app.json changed — avoids burn on doc-only commits).
-#
-# Reference: 9soccer/.github/workflows/screenshots.yml uses `xcrun simctl` in
-# Safari mode (serves web build, opens in simulator Safari). We do something
-# different here — install the NATIVE Expo app and exercise actual native UI.
+# Notes:
+#  - Game-flow inside /game (place 16 cards -> ready -> reveal -> results) cannot
+#    be fully driven without an XCUITest target or a debug auto-play deep-link.
+#    We capture the static placement state (initial 16 cards in hand, boards
+#    prefilled by the bot) and document the limitation. A follow-up PR can add
+#    `caps-poker://game?demo=1` to trigger an auto-play demo inside the app.
+#  - The crash-grep used to false-positive on the `log stream` predicate echo
+#    ("Filtering the log data..."). Fixed by `grep -v` on that line.
 
 on:
   workflow_dispatch:
@@ -32,6 +30,7 @@ on:
       - 'app.json'
       - 'eas.json'
       - 'package.json'
+      - '.github/workflows/ios-simulator-smoke.yml'
 
 concurrency:
   group: ios-simulator-smoke-${{ github.ref }}
@@ -39,7 +38,7 @@ concurrency:
 
 jobs:
   smoke:
-    name: Build .app + simulator smoke
+    name: Build .app + simulator tour + Supabase upload
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -61,7 +60,7 @@ jobs:
       - name: Select latest Xcode
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
-          [ -z "$XCODE_PATH" ] && { echo "No Xcode"; exit 1; }
+          [ -z "$XCODE_PATH" ] && { echo "::error::No Xcode"; exit 1; }
           sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
           xcodebuild -version
 
@@ -77,8 +76,6 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
-          # `simulator` profile (added to eas.json) sets ios.simulator=true so the
-          # build produces an unsigned .app for iPhoneSimulator architecture.
           eas build \
             --platform ios \
             --profile simulator \
@@ -86,11 +83,10 @@ jobs:
             --local \
             --output "$RUNNER_TEMP/CapsPoker.tar.gz"
 
-          # Extract .app from the .tar.gz EAS produces for simulator builds
           mkdir -p "$RUNNER_TEMP/app"
           tar -xzf "$RUNNER_TEMP/CapsPoker.tar.gz" -C "$RUNNER_TEMP/app"
           APP_PATH=$(find "$RUNNER_TEMP/app" -name "*.app" -type d | head -1)
-          [ -z "$APP_PATH" ] && { echo "::error::No .app found in build output"; ls -la "$RUNNER_TEMP/app"; exit 1; }
+          [ -z "$APP_PATH" ] && { echo "::error::No .app found"; ls -la "$RUNNER_TEMP/app"; exit 1; }
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
           echo "Found: $APP_PATH"
 
@@ -98,20 +94,19 @@ jobs:
         run: |
           UDID=$(xcrun simctl list devices available | \
             grep -E "iPhone 1[567] Pro" | grep -v unavailable | head -1 | \
-            grep -oE '[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}')
+            grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}")
           [ -z "$UDID" ] && UDID=$(xcrun simctl list devices available | \
             grep iPhone | grep -v unavailable | head -1 | \
-            grep -oE '[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}')
+            grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}")
           [ -z "$UDID" ] && { echo "::error::No simulator available"; exit 1; }
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           echo "Booting $UDID"
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
 
-      - name: Install .app on simulator
+      - name: Install .app + extract bundle id
         run: |
           xcrun simctl install "$UDID" "$APP_PATH"
-          # Extract bundle identifier from Info.plist (resilient: don't hardcode)
           BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist")
           echo "BUNDLE_ID=$BUNDLE_ID" >> "$GITHUB_ENV"
           echo "Installed: $BUNDLE_ID"
@@ -119,78 +114,149 @@ jobs:
       - name: Start system log capture (crash detection)
         run: |
           mkdir -p artifacts
-          # Narrow predicate: only CapsPoker process logs + the crashreporter subsystem.
-          # Was: also matched eventMessage 'fatal' across the whole system, which produced
-          # false positives from iOS daemons (biomesyncd / FamilyControlsAgent / nanoregistryd)
-          # logging benign XPC/IDS "fatal error has occured" connectivity churn on every boot.
           xcrun simctl spawn "$UDID" log stream \
             --predicate "subsystem == 'com.apple.crashreporter' OR processImagePath CONTAINS 'CapsPoker'" \
             --style syslog > artifacts/simulator.log 2>&1 &
           echo "LOG_PID=$!" >> "$GITHUB_ENV"
           sleep 1
 
-      - name: Start screen recording
+      - name: Start screen recording (single mp4 for the whole tour)
         run: |
-          xcrun simctl io "$UDID" recordVideo --codec=h264 artifacts/smoke-run.mp4 &
+          xcrun simctl io "$UDID" recordVideo --codec=h264 artifacts/full-tour.mp4 &
           echo "REC_PID=$!" >> "$GITHUB_ENV"
           sleep 1
 
-      - name: Launch + screenshot key screens
+      - name: Launch app + run deep-link screen tour
         run: |
-          set +e  # don't fail the workflow on a crash — we WANT to capture it
+          set +e
+
           xcrun simctl launch "$UDID" "$BUNDLE_ID"
-          sleep 8  # let the app finish boot + onboarding skip
+          sleep 10
 
           shot() {
             local tag="$1"
             local delay="${2:-3}"
             sleep "$delay"
-            xcrun simctl io "$UDID" screenshot "artifacts/$tag.png"
-            echo "📸 $tag"
+            xcrun simctl io "$UDID" screenshot "artifacts/${tag}.png" 2>/dev/null
+            local size=$(stat -f%z "artifacts/${tag}.png" 2>/dev/null || echo 0)
+            echo "screenshot ${tag}.png (${size} bytes)"
           }
 
-          # Capture initial home
-          shot "01_home_initial" 2
-
-          # Deep-link nav into key routes via expo-router URL scheme `caps-poker://`
           deeplink() {
             xcrun simctl openurl "$UDID" "caps-poker://$1"
           }
 
-          deeplink "play"        && shot "02_play_tab" 3
-          deeplink "game"        && shot "03_game_screen" 4
-          deeplink "cups"        && shot "04_cups_tab" 3
-          deeplink "profile"     && shot "05_profile_tab" 3
-          deeplink "settings"    && shot "06_settings" 3
-          deeplink "leaderboard" && shot "07_leaderboard" 3
-          deeplink "shop"        && shot "08_shop" 3
+          xcrun simctl ui "$UDID" appearance light 2>/dev/null || true
 
-          # Back to home, hold a moment so the screen recording captures any
-          # post-launch animations settling (or NOT settling, if cards bounce).
-          deeplink "" && shot "09_home_final" 4
+          shot "01_home_initial_light" 3
 
-      - name: Stop recording + log
+          deeplink ""        ; shot "02_home_light"        3
+          deeplink "play"    ; shot "03_play_tab_light"    3
+          deeplink "cups"    ; shot "04_cups_tab_light"    3
+          deeplink "friends" ; shot "05_friends_tab_light" 3
+          deeplink "profile" ; shot "06_profile_tab_light" 3
+
+          deeplink "game"    ; shot "10_game_initial_light" 4
+          shot                 "11_game_settled_light"      4
+
+          deeplink "settings"     ; shot "20_settings_light"      3
+          deeplink "leaderboard"  ; shot "21_leaderboard_light"   3
+          deeplink "hand-history" ; shot "22_hand_history_light"  3
+          deeplink "achievements" ; shot "23_achievements_light"  3
+          deeplink "missions"     ; shot "24_missions_light"      3
+          deeplink "battle-pass"  ; shot "25_battle_pass_light"   3
+          deeplink "shop"         ; shot "26_shop_light"          3
+          deeplink "chip-store"   ; shot "27_chip_store_light"    3
+          deeplink "stats"        ; shot "28_stats_light"         3
+          deeplink "rank"         ; shot "29_rank_light"          3
+          deeplink "tournament"   ; shot "30_tournament_light"    3
+          deeplink "quick-poker"  ; shot "31_quick_poker_light"   3
+          deeplink "play-of-day"  ; shot "32_play_of_day_light"   3
+          deeplink "coaching"     ; shot "33_coaching_light"      3
+          deeplink "referral"     ; shot "34_referral_light"      3
+          deeplink "results"      ; shot "35_results_light"       3
+          deeplink "heatmap"      ; shot "36_heatmap_light"       3
+
+          xcrun simctl ui "$UDID" appearance dark 2>/dev/null || true
+          deeplink ""        ; shot "50_home_dark"          3
+          deeplink "game"    ; shot "51_game_dark"          4
+          deeplink "settings"; shot "52_settings_dark"      3
+          deeplink "profile" ; shot "53_profile_dark"       3
+
+          xcrun simctl ui "$UDID" appearance light 2>/dev/null || true
+          deeplink "" ; shot "99_home_final_light" 4
+
+          echo "Total screenshots:"
+          ls artifacts/*.png 2>/dev/null | wc -l
+
+      - name: Stop recording + log stream
         if: always()
         run: |
           [ -n "$REC_PID" ] && kill -INT "$REC_PID" 2>/dev/null || true
           [ -n "$LOG_PID" ] && kill "$LOG_PID" 2>/dev/null || true
-          sleep 2
+          sleep 3
+          ls -la artifacts/ | head -50
 
-      - name: Crash detection — fail only on CapsPoker-scoped crashes
+      - name: Crash detection (CapsPoker-scoped, predicate-echo filtered)
         if: always()
         run: |
-          # Tightened 2026-05-23: only flag log lines where the offending message both
-          # mentions CapsPoker AND a crash signature, OR comes from the crashreporter
-          # subsystem. Avoids false-positives from iOS daemons (biomesyncd, nanoregistryd,
-          # FamilyControlsAgent) logging "(IDS) ... fatal error has occured" on XPC churn.
-          if grep -E "(CapsPoker\[[0-9]+\]:.*(SIGABRT|EXC_BAD|abort\(\)|crashed|Hermes assertion failure))|(com\.apple\.crashreporter.*CapsPoker)|ReportCrash.*CapsPoker" artifacts/simulator.log > /dev/null 2>&1; then
-            echo "::error::CapsPoker crash detected — see simulator.log artifact"
-            grep -E "(CapsPoker\[[0-9]+\]:.*(SIGABRT|EXC_BAD|abort\(\)|crashed|Hermes assertion failure))|(com\.apple\.crashreporter.*CapsPoker)|ReportCrash.*CapsPoker" artifacts/simulator.log | head -10
-            exit 1
-          fi
-          echo "✅ No CapsPoker-scoped crash patterns detected"
+          FILTERED=$(grep -v "Filtering the log data" artifacts/simulator.log 2>/dev/null || true)
 
-      - name: Upload artifacts (screenshots + video + log)
+          if echo "$FILTERED" | grep -E "(CapsPoker\[[0-9]+\]:.*(SIGABRT|EXC_BAD|abort\(\)|crashed|Hermes assertion failure))|(com\.apple\.crashreporter.*CapsPoker)|ReportCrash.*CapsPoker" > /dev/null 2>&1; then
+            echo "::error::CapsPoker crash detected - see simulator.log artifact + Supabase folder"
+            echo "$FILTERED" | grep -E "(CapsPoker\[[0-9]+\]:.*(SIGABRT|EXC_BAD|abort\(\)|crashed|Hermes assertion failure))|(com\.apple\.crashreporter.*CapsPoker)|ReportCrash.*CapsPoker" | head -10
+            CRASH_FOUND=1
+          else
+            echo "No CapsPoker-scoped crash patterns detected"
+            CRASH_FOUND=0
+          fi
+          echo "CRASH_FOUND=$CRASH_FOUND" >> "$GITHUB_ENV"
+
+      - name: Upload to Supabase Storage (auto-tour gallery)
+        if: always()
+        env:
+          SB_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          SB_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          FOLDER="caps-sim-auto-${{ github.run_number }}-${{ github.run_attempt }}"
+          BASE="${SB_URL}/storage/v1/object/screenshots"
+          PUBLIC_BASE="${SB_URL}/storage/v1/object/public/screenshots"
+          UPLOADED=0
+          FAILED=0
+
+          for f in artifacts/*.png artifacts/full-tour.mp4 artifacts/simulator.log; do
+            [ -e "$f" ] || continue
+            NAME=$(basename "$f")
+            CTYPE="application/octet-stream"
+            case "$NAME" in
+              *.png) CTYPE="image/png" ;;
+              *.mp4) CTYPE="video/mp4" ;;
+              *.log) CTYPE="text/plain" ;;
+            esac
+
+            HTTP=$(curl -s -o /tmp/upload-resp -w "%{http_code}" \
+              -X POST "${BASE}/${FOLDER}/${NAME}" \
+              -H "Authorization: Bearer ${SB_KEY}" \
+              -H "apikey: ${SB_KEY}" \
+              -H "Content-Type: ${CTYPE}" \
+              -H "x-upsert: true" \
+              --data-binary "@${f}")
+
+            if [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ]; then
+              UPLOADED=$((UPLOADED+1))
+              echo "OK ${NAME} -> ${PUBLIC_BASE}/${FOLDER}/${NAME}"
+            else
+              FAILED=$((FAILED+1))
+              echo "FAIL ${NAME} (HTTP ${HTTP}): $(cat /tmp/upload-resp | head -c 200)"
+            fi
+          done
+
+          echo "SUPABASE_FOLDER=${FOLDER}" >> "$GITHUB_ENV"
+          echo "SUPABASE_PUBLIC_BASE=${PUBLIC_BASE}" >> "$GITHUB_ENV"
+          echo "UPLOAD_OK=${UPLOADED}" >> "$GITHUB_ENV"
+          echo "UPLOAD_FAIL=${FAILED}" >> "$GITHUB_ENV"
+
+      - name: Upload artifacts (GitHub Actions fallback)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -201,19 +267,55 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          echo "# 🎮 iOS Simulator Smoke" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- App: \`$BUNDLE_ID\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Simulator UDID: \`$UDID\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          for f in artifacts/*.png artifacts/*.mp4; do
-            [ -e "$f" ] || continue
-            SIZE=$(wc -c < "$f")
-            echo "- \`$(basename $f)\` (${SIZE} bytes)" >> $GITHUB_STEP_SUMMARY
-          done
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Download from Artifacts above to watch the screen recording (mp4) and see if cards still bounce." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "# iOS Simulator Auto-Tour"
+            echo ""
+            echo "- App: \`$BUNDLE_ID\`"
+            echo "- Simulator UDID: \`$UDID\`"
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Screenshots uploaded: **${UPLOAD_OK:-0}** (failed: ${UPLOAD_FAIL:-0})"
+            echo "- Crash detected: $([ \"${CRASH_FOUND:-0}\" = \"1\" ] && echo \"YES\" || echo \"No\")"
+            echo ""
+            echo "## Supabase gallery"
+            echo ""
+            if [ -n "$SUPABASE_FOLDER" ]; then
+              echo "**Folder:** \`$SUPABASE_FOLDER\`"
+              echo ""
+              echo "Full mp4 (the whole tour, captures animations):"
+              echo ""
+              echo "\`\`\`"
+              echo "${SUPABASE_PUBLIC_BASE}/${SUPABASE_FOLDER}/full-tour.mp4"
+              echo "\`\`\`"
+              echo ""
+              echo "## Screenshot index"
+              echo ""
+              for f in artifacts/*.png; do
+                [ -e "$f" ] || continue
+                NAME=$(basename "$f")
+                SIZE=$(stat -f%z "$f" 2>/dev/null || echo 0)
+                echo "- [\`${NAME}\`](${SUPABASE_PUBLIC_BASE}/${SUPABASE_FOLDER}/${NAME}) - ${SIZE} bytes"
+              done
+            else
+              echo "_(Supabase upload step did not produce a folder name - check logs.)_"
+            fi
+            echo ""
+            echo "## Limitations / follow-up"
+            echo ""
+            echo "Game-flow interior states (placement -> ready -> reveal -> results)"
+            echo "need an XCUITest target or a debug auto-play deep link (e.g."
+            echo "\`caps-poker://game?demo=1\`) to drive the cards. Today we capture the"
+            echo "initial /game placement state only. Add the demo deep-link in a future"
+            echo "PR and the tour will pick up the full flow with no workflow change."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Shutdown simulator
         if: always()
         run: xcrun simctl shutdown "$UDID" 2>/dev/null || true
+
+      - name: Fail the workflow if a crash was detected
+        if: always()
+        run: |
+          if [ "${CRASH_FOUND:-0}" = "1" ]; then
+            echo "::error::CapsPoker crash signature found in simulator log"
+            exit 1
+          fi
