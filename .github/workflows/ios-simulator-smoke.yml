@@ -75,6 +75,9 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          # CI flag: components/_layout read this and skip overlays / push prompt so
+          # deep-link navigation in the tour isn't blocked by modals.
+          EXPO_PUBLIC_CAPS_CI: '1'
         run: |
           eas build \
             --platform ios \
@@ -160,8 +163,12 @@ jobs:
           deeplink "game"    ; shot "10_game_static_light"   4
 
           # Demo deep-link drives the full flow: auto-fill at +2s, auto-ready at +4s,
-          # bot reveal animation ~+5-7s, results lands ~+9s. Capture each.
-          deeplink "game?demo=1"
+          # bot reveal animation ~+5-7s, results lands ~+9s. Use simctl launch with
+          # URL as an arg instead of openurl, to bypass the iOS "Open in App?" prompt
+          # that blocked the previous run (caps-sim-auto-8-1).
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+          sleep 1
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" "caps-poker://game?demo=1"
           shot "12_demo_t0_placement_light"  3   # 16 cards in hand, bot prefilled
           shot "13_demo_t3_filled_light"     2   # right after auto-fill - all 16 placed
           shot "14_demo_t5_ready_light"      2   # right after auto-ready - reveal starting

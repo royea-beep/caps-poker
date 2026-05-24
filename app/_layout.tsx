@@ -419,7 +419,11 @@ export default function RootLayout() {
       try { initSession(); } catch (e) { debugLog('[launch] initSession failed: ' + String(e), 'error'); }
       try { await preloadSounds(); } catch (e) { debugLog('[launch] preloadSounds failed: ' + String(e), 'error'); }
       if (Platform.OS !== 'web') {
-        registerAndSavePushToken().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
+        // CI guard: sim auto-tour build sets EXPO_PUBLIC_CAPS_CI=1; skip push
+        // registration so iOS doesn't fire the permission prompt that blocks deep-links.
+        if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
+          registerAndSavePushToken().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
+        }
         // Track push notification opens (fire-and-forget, never blocks UX)
         const _pushSub = Notifications.addNotificationResponseReceivedListener((response) => {
           import('../utils/analytics').then(({ trackPushOpen }) => {

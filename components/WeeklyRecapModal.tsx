@@ -124,7 +124,7 @@ function XPProgressBar({ xp }: { xp: number }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function WeeklyRecapModal({ visible, onDismiss }: WeeklyRecapModalProps) {
+function WeeklyRecapModalImpl({ visible, onDismiss }: WeeklyRecapModalProps) {
   const scale   = useRef(new Animated.Value(0.85)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -438,3 +438,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+// PR (sim CI guards): when EXPO_PUBLIC_CAPS_CI === '1' we render a tiny shim
+// that fires onDismiss immediately and renders nothing. Keeps Rules-of-Hooks
+// clean - the real Impl is never mounted in CI mode.
+function WeeklyRecapModalCISkip({ visible, onDismiss }: WeeklyRecapModalProps) {
+  useEffect(() => { if (visible) onDismiss(); }, [visible]);
+  return null;
+}
+const CAPS_CI_MODE = process.env.EXPO_PUBLIC_CAPS_CI === '1';
+export function WeeklyRecapModal(props: WeeklyRecapModalProps) {
+  if (CAPS_CI_MODE) return <WeeklyRecapModalCISkip {...props} />;
+  return <WeeklyRecapModalImpl {...props} />;
+}

@@ -226,7 +226,7 @@ interface InteractiveTutorialProps {
 
 const TOTAL_STEPS = 3;
 
-export default function InteractiveTutorial({ onDone }: InteractiveTutorialProps) {
+function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const [step, setStep] = useState(0);
   const [step2CardPlaced, setStep2CardPlaced] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -494,3 +494,21 @@ const vis = StyleSheet.create({
     letterSpacing: 1,
   },
 });
+
+
+// PR (sim CI guards): when EXPO_PUBLIC_CAPS_CI === '1' we render a tiny shim that
+// fires onDone immediately and renders nothing. Keeps Rules-of-Hooks clean - the
+// real component (InteractiveTutorialImpl) is never mounted in CI mode, so its
+// hook order is irrelevant. Real users (no CI flag) get the full tutorial.
+function InteractiveTutorialCISkip({ onDone }: InteractiveTutorialProps) {
+  useEffect(() => {
+    AsyncStorage.setItem(INTERACTIVE_TUTORIAL_KEY, 'true').catch(() => {});
+    onDone();
+  }, []);
+  return null;
+}
+const CAPS_CI_MODE = process.env.EXPO_PUBLIC_CAPS_CI === '1';
+export default function InteractiveTutorial(props: InteractiveTutorialProps) {
+  if (CAPS_CI_MODE) return <InteractiveTutorialCISkip {...props} />;
+  return <InteractiveTutorialImpl {...props} />;
+}
