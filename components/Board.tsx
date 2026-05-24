@@ -463,7 +463,7 @@ export default function Board({
             const explText = expl ? (isHE ? expl.he : expl.en) : '';
             return (
               <View style={styles.hintRow}>
-                <Text style={styles.hintText}>Ã°ÂÂÂ¡ {hint}</Text>
+                <Text style={styles.hintText}>{hint}</Text>
                 {expl && (
                   <Pressable
                     onPress={() => {
@@ -478,7 +478,7 @@ export default function Board({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
-                    <Text style={styles.hintInfoIcon}>Â</Text>
+                    <Text style={styles.hintInfoIcon}>ⓘ</Text>
                   </Pressable>
                 )}
                 {hintInfoVisible && explText ? (
@@ -495,7 +495,7 @@ export default function Board({
         {winner && (
           <Animated.View style={[styles.winnerBadge, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : styles.tieBadge, bannerAnimStyle]}>
             <Text style={styles.winnerText}>
-              {winner === 'player' ? 'Â WIN' : winner === 'bot' ? 'Â LOSE' : 'ÃÂ± TIE'}
+              {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
             </Text>
             {winner === 'player' && playerHandName ? (
               <Text style={styles.bannerHandName}>{playerHandName}</Text>

@@ -154,6 +154,13 @@ interface Translations {
   botSingular: string;
   botPlural: (ready: number, total: number) => string;
   botEmojiPlural: (ready: number, total: number) => string;
+  boardFull: string;
+  leaveGame: {
+    title: string;
+    body: string;
+  };
+  a11yReadyReveal: string;
+  a11yPlaceRemaining: string;
 
   // Hand history (S-LOCALE-FIX)
   historyAll: (n: number) => string;
@@ -267,6 +274,13 @@ const he: Translations = {
   botSingular: 'בוט',
   botPlural: (r, t) => `בוטים ${r}/${t}`,
   botEmojiPlural: (r, t) => `🤖 בוטים ${r}/${t}`,
+  boardFull: 'הבורד מלא',
+  leaveGame: {
+    title: 'לעזוב את המשחק?',
+    body: 'תאבד את הפוט של היד הזו.',
+  },
+  a11yReadyReveal: 'מוכן, חשוף את הידיים',
+  a11yPlaceRemaining: 'הנח את הקלפים הנותרים על הבורדים',
   // Hand history
   historyAll: (n) => `הכל (${n})`,
   historyWins: (n) => `ניצחונות (${n})`,
@@ -375,6 +389,13 @@ const en: Translations = {
   botSingular: 'Bot',
   botPlural: (r, t) => `Bots ${r}/${t}`,
   botEmojiPlural: (r, t) => `🤖 Bots ${r}/${t}`,
+  boardFull: 'Board is full',
+  leaveGame: {
+    title: 'Leave Game?',
+    body: 'You will lose your pot for this hand.',
+  },
+  a11yReadyReveal: 'Ready, reveal hands',
+  a11yPlaceRemaining: 'Place remaining cards on boards',
   // Hand history
   historyAll: (n) => `All (${n})`,
   historyWins: (n) => `Wins (${n})`,

@@ -714,7 +714,7 @@ function GameScreenInner() {
           );
         }
         if (boardErrorTimer.current) clearTimeout(boardErrorTimer.current);
-        setBoardError('Board is full');
+        setBoardError(t().boardFull);
         boardErrorTimer.current = setTimeout(() => setBoardError(null), 1500);
         return;
       }
@@ -891,8 +891,8 @@ function GameScreenInner() {
 
     if (isArranging || phase.type === 'waiting_for_bot') {
       Alert.alert(
-        'Leave Game?',
-        'You will lose your pot for this hand.',
+        t().leaveGame.title,
+        t().leaveGame.body,
         [
           { text: 'Stay', style: 'cancel' },
           { text: 'Leave', style: 'destructive', onPress: leave },
@@ -1037,7 +1037,7 @@ function GameScreenInner() {
           {isArranging && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={allBoardsFull ? 'Ready, reveal hands' : 'Place remaining cards on boards'}
+              accessibilityLabel={allBoardsFull ? t().a11yReadyReveal : t().a11yPlaceRemaining}
               accessibilityState={{ disabled: !allBoardsFull }}
               style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady, landscapeStyles.readyBtn]}
               onPress={handleReady}
