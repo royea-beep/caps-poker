@@ -978,7 +978,7 @@ function GameScreenInner() {
                 <Text style={styles.freePlayLabel}>Arrange freely</Text>
               )}
               {playerReady && !allBotsReady && (
-                <Text style={styles.waitingText} accessibilityLiveRegion="polite">Waiting for bots...</Text>
+                <Text style={styles.waitingText} accessibilityLiveRegion="polite">{t().waitingForBots(numberOfBots)}</Text>
               )}
             </View>
             <View style={styles.headerChips}>
@@ -1099,7 +1099,7 @@ function GameScreenInner() {
           )}
           {playerReady && !allBotsReady && (
             <Text style={styles.waitingText} accessibilityLiveRegion="polite">
-              Waiting for bot{numberOfBots > 1 ? 's' : ''}...
+              {t().waitingForBots(numberOfBots)}
             </Text>
           )}
           {playerReady && allBotsReady && !showContinueButton && !showSafeReveal && (
