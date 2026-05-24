@@ -107,7 +107,7 @@ const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + head
 
 function GameScreenInner() {
   const router = useRouter();
-  const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
+  const { autoSim, autoSimCount, currentSimHand, demo } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string }>();
   // C-fix 2026-05-22: lock dimensions at module load (responsive.ts) instead of
   // useWindowDimensions(). Game is portrait-locked, so live-resize subscription is
   // not needed and was the source of card-size jitter during keyboard/focus events.
@@ -860,6 +860,19 @@ function GameScreenInner() {
       debugLog('H10.2 bots still running — waiting');
     }
   }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
+
+  // Demo deep-link (caps-poker://game?demo=1): auto-fill all 4 boards + auto-ready,
+  // so the iOS simulator auto-tour (ios-simulator-smoke.yml) can capture the full
+  // game flow without an XCUITest target. Same shape as autoSim, simpler params.
+  useEffect(() => {
+    if (demo !== '1') return;
+    debugLog('demo deep-link: auto-fill in 2s, ready in 4s');
+    const t1 = setTimeout(() => {
+      for (let i = 0; i < boardCount; i++) handleAutoFill(i);
+    }, 2000);
+    const t2 = setTimeout(() => { handleReady(); }, 4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [demo]);
 
   // Auto-sim: auto-fill all boards + press Ready (debug marathon mode)
   useEffect(() => {

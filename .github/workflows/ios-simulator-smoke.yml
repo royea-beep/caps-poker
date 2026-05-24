@@ -156,8 +156,17 @@ jobs:
           deeplink "friends" ; shot "05_friends_tab_light" 3
           deeplink "profile" ; shot "06_profile_tab_light" 3
 
-          deeplink "game"    ; shot "10_game_initial_light" 4
-          shot                 "11_game_settled_light"      4
+          # Static initial /game state (no demo) - 16 cards in hand, boards prefilled by bot
+          deeplink "game"    ; shot "10_game_static_light"   4
+
+          # Demo deep-link drives the full flow: auto-fill at +2s, auto-ready at +4s,
+          # bot reveal animation ~+5-7s, results lands ~+9s. Capture each.
+          deeplink "game?demo=1"
+          shot "12_demo_t0_placement_light"  3   # 16 cards in hand, bot prefilled
+          shot "13_demo_t3_filled_light"     2   # right after auto-fill - all 16 placed
+          shot "14_demo_t5_ready_light"      2   # right after auto-ready - reveal starting
+          shot "15_demo_t7_reveal_light"     2   # mid-reveal - bot cards flipping
+          shot "16_demo_t9_results_light"    3   # results screen - winners + chip delta
 
           deeplink "settings"     ; shot "20_settings_light"      3
           deeplink "leaderboard"  ; shot "21_leaderboard_light"   3
