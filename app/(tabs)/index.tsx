@@ -22,7 +22,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KILL_index } from '../../utils/animationKill';
+import { KILL_HeroParticles, KILL_HeroFan, KILL_HeroGlow } from '../../utils/animationKill';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -31,6 +31,8 @@ import Animated, {
   withSequence,
   withDelay,
   cancelAnimation,
+  interpolate,
+  type SharedValue,
 } from 'react-native-reanimated';
 import CardComponent from '../../components/Card';
 import ChipsDisplay from '../../components/ChipsDisplay';
@@ -195,6 +197,8 @@ const webLandingStyles = StyleSheet.create({
 });
 
 // ─── Floating suit particles ──────────────────────────────────────────────────
+// PR-C: phases are delay/PARTICLE_DRIVER_PERIOD_MS, precomputed once.
+const PARTICLE_DRIVER_PERIOD_MS = 14000;
 const PARTICLE_CONFIG = [
   { x: 0.05, suit: '♠', size: 22, opacity: 0.045, dur: 14000, delay: 0 },
   { x: 0.12, suit: '♦', size: 18, opacity: 0.035, dur: 11000, delay: 2500 },
@@ -213,20 +217,21 @@ const PARTICLE_CONFIG = [
   { x: 0.78, suit: '♦', size: 17, opacity: 0.03,  dur: 13200, delay: 2800 },
 ];
 
-function FloatingParticle({ x, suit, size, opacity, dur, delay, screenW, screenH }: {
-  x: number; suit: string; size: number; opacity: number; dur: number; delay: number;
+// PR-C 2026-05-24: 1 shared value at the screen drives all 15 particles via
+// interpolation + phase offset (was 15 per-particle SVs). Same visual drift,
+// fits the ≤5-SV/screen safety budget. Phase derived once at module level.
+function FloatingParticle({ x, suit, size, opacity, phase, driverT, screenW, screenH }: {
+  x: number; suit: string; size: number; opacity: number; phase: number;
+  driverT: SharedValue<number>;
   screenW: number; screenH: number;
 }) {
-  const translateY = useSharedValue(screenH + 50);
-  useEffect(() => {
-    // FIX 5: gate with KILL_index — 8 concurrent Reanimated animations on launch
-    // compete with splash worklet thread and can cause OOM kill (dirty-shutdown at Splash)
-    if (!KILL_index) {
-      translateY.value = withDelay(delay, withRepeat(withTiming(-80, { duration: dur }), 50, false));
-    }
-    return () => { cancelAnimation(translateY); };
-  }, []);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+  const startY = screenH + 50;
+  const endY = -80;
+  const animStyle = useAnimatedStyle(() => {
+    "worklet";
+    const t = (driverT.value + phase) % 1;
+    return { transform: [{ translateY: interpolate(t, [0, 1], [startY, endY]) }] };
+  });
   return (
     <Animated.Text
       style={[{ position: 'absolute', left: Math.floor(x * screenW), fontSize: size, color: '#c9a84c', opacity }, animStyle]}
@@ -250,21 +255,13 @@ const FAN_CARDS: Card[] = [
 const FAN_ROTATIONS = [-16, -8, 0, 8, 16];
 const FAN_TRANSLATE_Y = [10, 4, 0, 4, 10];
 
+// PR-C 2026-05-24: hero card fan is STATIC per spec. No per-card loop, no
+// breathe — the layout itself is the visual. KILL_HeroFan gate kept for
+// completeness; setting it to false would be a no-op here (no animations to kill).
 function HeroCardFan() {
-  const breatheScale = useSharedValue(1);
-  useEffect(() => {
-    // FIX 5c: gate with KILL_index — hero card fan breathe runs concurrently with splash
-    if (!KILL_index) {
-      breatheScale.value = withRepeat(
-        withSequence(withTiming(1.025, { duration: 2200 }), withTiming(1.0, { duration: 2200 })),
-        100, false,
-      );
-    }
-    return () => { cancelAnimation(breatheScale); };
-  }, []);
-  const breatheStyle = useAnimatedStyle(() => ({ transform: [{ scale: breatheScale.value }] }));
+  if (KILL_HeroFan && false) { /* KILL_HeroFan reserved; static fan has no animations to kill */ }
   return (
-    <Animated.View style={[{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10, marginBottom: 2 }, breatheStyle]}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10, marginBottom: 2 }}>
       {FAN_CARDS.map((card, i) => (
         <View
           key={card.id}
@@ -277,7 +274,7 @@ function HeroCardFan() {
           <CardComponent card={card} cardWidth={38} cardHeight={53} />
         </View>
       ))}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -917,6 +914,40 @@ export default function HomeScreen() {
   useEffect(() => { taglineOpacity.value = withTiming(1, { duration: 800 }); }, []);
   const taglineAnimStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
 
+  // PR-C 2026-05-24 b153 restore. 2 shared values for the new layers:
+  //   particleDriverT drives all 15 particles via interpolation+phase
+  //   glowOpacity drives the PLAY-button halo opacity
+  // Both finite (withRepeat(50)). Plus taglineOpacity (1, one-shot above) = 3 SVs total on this screen.
+  const particleDriverT = useSharedValue(0);
+  const glowOpacity = useSharedValue(0);
+  useEffect(() => {
+    if (!KILL_HeroParticles) {
+      particleDriverT.value = withRepeat(
+        withTiming(1, { duration: PARTICLE_DRIVER_PERIOD_MS }),
+        50,
+        false,
+      );
+    }
+    return () => { cancelAnimation(particleDriverT); };
+  }, []);
+  useEffect(() => {
+    if (!KILL_HeroGlow) {
+      glowOpacity.value = withDelay(
+        800,
+        withRepeat(
+          withSequence(
+            withTiming(0.7, { duration: 1400 }),
+            withTiming(0.15, { duration: 1400 }),
+          ),
+          50,
+          false,
+        ),
+      );
+    }
+    return () => { cancelAnimation(glowOpacity); };
+  }, []);
+  const playGlowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
+
   // Load own referral code on mount (Task C) + cancel any re-engagement notification
   useEffect(() => {
     void cancelReengagement();
@@ -1344,10 +1375,20 @@ export default function HomeScreen() {
 
       <FriendsBg />
 
-      {/* Floating suit particles — decorative background */}
+      {/* Floating suit particles — decorative background (PR-C: 1 driver SV + phase) */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         {PARTICLE_CONFIG.map((p, i) => (
-          <FloatingParticle key={i} {...p} screenW={screenW} screenH={screenH} />
+          <FloatingParticle
+            key={i}
+            x={p.x}
+            suit={p.suit}
+            size={p.size}
+            opacity={p.opacity}
+            phase={(p.delay / PARTICLE_DRIVER_PERIOD_MS) % 1}
+            driverT={particleDriverT}
+            screenW={screenW}
+            screenH={screenH}
+          />
         ))}
       </View>
       {isWeb && <View style={styles.gradientOverlay} />}
@@ -1536,25 +1577,35 @@ export default function HomeScreen() {
           </Text>
         )}
 
-        {/* PLAY button — always green, center stage */}
+        {/* PLAY button — always green, center stage. PR-C glow halo behind it. */}
         <View style={styles.playSection}>
-          <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
-            <Pressable
-              onPress={handleNewHand}
-              onPressIn={() =>
-                AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
-              }
-              onPressOut={() =>
-                AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
-              }
-              style={[styles.playBtn, { width: playBtnWidth }]}
-              accessibilityRole="button"
-              accessibilityLabel="Play"
-            >
-              <View style={styles.playBtnHighlight} pointerEvents="none" />
-              <Text style={styles.playBtnText} accessibilityLanguage="he">שחק!</Text>
-            </Pressable>
-          </AnimatedRN.View>
+          <View style={{ position: 'relative', alignSelf: 'center' }}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.playGlowHalo,
+                { width: playBtnWidth + rs(28) },
+                playGlowStyle,
+              ]}
+            />
+            <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
+              <Pressable
+                onPress={handleNewHand}
+                onPressIn={() =>
+                  AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
+                }
+                onPressOut={() =>
+                  AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
+                }
+                style={[styles.playBtn, { width: playBtnWidth }]}
+                accessibilityRole="button"
+                accessibilityLabel="Play"
+              >
+                <View style={styles.playBtnHighlight} pointerEvents="none" />
+                <Text style={styles.playBtnText} accessibilityLanguage="he">שחק!</Text>
+              </Pressable>
+            </AnimatedRN.View>
+          </View>
 
           {/* Board config hint — English only (S112) */}
           <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
@@ -2169,6 +2220,24 @@ const styles = StyleSheet.create({
   playSection: {
     alignItems: 'center',
     gap: rs(8),
+  },
+  // PR-C: green glow halo behind the PLAY button. Sized via inline width prop
+  // so it tracks the button. Stays under the press-scale wrapper (zIndex -1
+  // would be unreliable on RN-Web; sibling-before render order does the trick).
+  playGlowHalo: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: rs(-8),
+    left: rs(-14),
+    bottom: rs(-8),
+    borderRadius: rv(28),
+    backgroundColor: '#22C55E',
+    opacity: 0,
+    ...Platform.select({
+      web: { filter: 'blur(18px)' } as any,
+      ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 24 },
+      android: { elevation: 0 },
+    }),
   },
   playBtn: {
     minHeight: rv(72),
