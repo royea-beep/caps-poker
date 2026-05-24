@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
 import Board from './Board';
 import PlayerHand from './PlayerHand';
@@ -15,12 +16,6 @@ import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive
 // floor so 320pt phones still see a usable hand row.
 const HAND_ZONE_HEIGHT = Math.max(140, Math.floor(MODULE_SCREEN_H * 0.22));
 import { t } from '../utils/i18n';
-
-const HINT_TEXTS = [
-  '👆 Tap a card from your hand, then tap a board to place it',
-  '🎯 Try to win ALL boards for the COMPLETE bonus!',
-  '💡 Tip: Tap a placed card to remove it and try a different board',
-];
 
 export interface BoardArrangementProps {
   boards: BoardState[];
@@ -87,10 +82,11 @@ export function BoardArrangement({
   onContinue,
   potPerBoard,
 }: BoardArrangementProps) {
+  const insets = useSafeAreaInsets();
   return (
     <>
       {/* Boards */}
-      <View style={isWeb ? baStyles.boardsGrid : baStyles.boardsColumn}>
+      <View style={[isWeb ? baStyles.boardsGrid : baStyles.boardsColumn, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
         {boards.map((board, i) => (
           <Animated.View
             key={i}
@@ -128,13 +124,13 @@ export function BoardArrangement({
           style={baStyles.continueBtn}
           onPress={onContinue}
         >
-          <Text style={baStyles.continueBtnText}>TAP TO CONTINUE →</Text>
+          <Text style={baStyles.continueBtnText}>{t().tapToContinue}</Text>
         </Pressable>
       )}
 
       {/* Player hand — explicit zone (fix #1) + visible seam to boards above (fix #2) */}
       {isArranging && (
-        <View style={baStyles.handZone}>
+        <View style={[baStyles.handZone, { marginBottom: rs(76) + insets.bottom }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}
@@ -155,7 +151,7 @@ export function BoardArrangement({
       {/* First-time hint bar (first 3 games only) */}
       {isArranging && !boardError && gamesPlayed < 3 && (
         <View style={baStyles.firstTimeHint}>
-          <Text style={baStyles.firstTimeHintText}>{HINT_TEXTS[Math.min(gamesPlayed, 2)]}</Text>
+          <Text style={baStyles.firstTimeHintText}>{t().hintTexts[Math.min(gamesPlayed, 2)]}</Text>
         </View>
       )}
 
@@ -183,13 +179,13 @@ export function BoardArrangement({
 
       {/* Floating action buttons */}
       {isArranging && (
-        <View style={baStyles.floatingActions}>
+        <View style={[baStyles.floatingActions, { bottom: insets.bottom, paddingBottom: insets.bottom > 0 ? 0 : rs(8) }]}>
           <Pressable
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
             onPress={onUndo}
             disabled={boards.every((b) => b.playerCards.length === 0)}
           >
-            <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>ביטול</Text>
+            <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
@@ -299,12 +295,20 @@ const baStyles = StyleSheet.create({
     opacity: 0.85,
   },
   floatingActions: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: rs(12),
     paddingHorizontal: rs(20),
     paddingVertical: rs(10),
-    zIndex: 10,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(197,160,40,0.35)',
+    zIndex: 100,
+    elevation: 12,
   },
   floatingBtn: {
     paddingVertical: rs(14),

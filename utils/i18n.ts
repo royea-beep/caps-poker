@@ -161,6 +161,10 @@ interface Translations {
   };
   a11yReadyReveal: string;
   a11yPlaceRemaining: string;
+  community: string;
+  hintTexts: [string, string, string];
+  waitingForBots: (count: number) => string;
+  tapToContinue: string;
 
   // Hand history (S-LOCALE-FIX)
   historyAll: (n: number) => string;
@@ -281,6 +285,14 @@ const he: Translations = {
   },
   a11yReadyReveal: 'מוכן, חשוף את הידיים',
   a11yPlaceRemaining: 'הנח את הקלפים הנותרים על הבורדים',
+  community: 'קהילה',
+  hintTexts: [
+    '👆 הקש על קלף מהיד, ואז הקש על בורד כדי להניח',
+    '🎯 נסה לנצח את כל הבורדים לבונוס COMPLETE!',
+    '💡 טיפ: הקש על קלף שהונח כדי להסיר אותו ולנסות בורד אחר',
+  ],
+  waitingForBots: (n) => n > 1 ? 'ממתין לבוטים...' : 'ממתין לבוט...',
+  tapToContinue: 'הקש להמשך →',
   // Hand history
   historyAll: (n) => `הכל (${n})`,
   historyWins: (n) => `ניצחונות (${n})`,
@@ -396,6 +408,14 @@ const en: Translations = {
   },
   a11yReadyReveal: 'Ready, reveal hands',
   a11yPlaceRemaining: 'Place remaining cards on boards',
+  community: 'Community',
+  hintTexts: [
+    '👆 Tap a card from your hand, then tap a board to place it',
+    '🎯 Try to win ALL boards for the COMPLETE bonus!',
+    '💡 Tip: Tap a placed card to remove it and try a different board',
+  ],
+  waitingForBots: (n) => n > 1 ? 'Waiting for bots...' : 'Waiting for bot...',
+  tapToContinue: 'TAP TO CONTINUE →',
   // Hand history
   historyAll: (n) => `All (${n})`,
   historyWins: (n) => `Wins (${n})`,

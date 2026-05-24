@@ -386,7 +386,7 @@ export default function Board({
         {/* Community cards: flop + turn/river (slightly larger for readability) */}
         {/* A3: COMMUNITY label - gold pill for visual hierarchy */}
         <View style={styles.communityLabelWrap}>
-          <Text style={styles.communityLabelText}>קהילה</Text>
+          <Text style={styles.communityLabelText}>{t().community}</Text>
         </View>
         <View style={styles.cardRow}>
           {(openCards ?? []).map((c) => (
@@ -403,7 +403,7 @@ export default function Board({
           ))}
           <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
           {(closedCards ?? []).map((c, i) => (
-            <View key={c.id} style={styles.communityCardWrap}>
+            <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
               <CardComponent
                 card={c}
                 faceDown={!revealed}
@@ -651,23 +651,24 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   communitySeparator: {
-    width: 1,
+    width: 3,
     height: '80%',
     backgroundColor: COLORS.gold,
-    opacity: 0.3,
-    marginHorizontal: rs(3),
+    opacity: 0.55,
+    marginHorizontal: rs(6),
     alignSelf: 'center',
+    borderRadius: 1,
   },
   communityLabelWrap: {
-    alignSelf: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: 'rgba(201,168,76,0.12)',
-    paddingHorizontal: rs(10),
+    paddingHorizontal: rs(8),
     paddingVertical: rs(2),
-    borderRadius: rs(8),
+    borderRadius: rs(6),
     borderWidth: 0.5,
     borderColor: '#c9a84c',
-    marginBottom: rs(1),
-    zIndex: 10,
+    marginBottom: rs(3),
+    marginLeft: rs(2),
   },
   communityLabelText: {
     fontSize: rf(8),
@@ -697,6 +698,11 @@ const styles = StyleSheet.create({
   },
   communityCardWrap: {
     alignItems: 'center',
+  },
+  faceDownWrap: {
+    opacity: 0.5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: rs(4),
   },
   cardLabel: {
     fontSize: rf(9),
