@@ -39,7 +39,7 @@ concurrency:
 jobs:
   smoke:
     name: Build .app + simulator tour + Supabase upload
-    runs-on: macos-15
+    runs-on: macos-14  # ships iOS 17 simulator (no Open-in-App? prompt on first deep-link)
     timeout-minutes: 45
 
     steps:
@@ -277,12 +277,10 @@ jobs:
         if: always()
         run: |
           if [ -f artifacts/full-tour.mp4 ]; then
-            ORIG_SIZE=$(stat -f%z artifacts/full-tour.mp4)
+            ORIG_SIZE=$(stat -f%z artifacts/full-tour.mp4 2>/dev/null || stat -c%s artifacts/full-tour.mp4)
             echo "original mp4: $ORIG_SIZE bytes"
-            # Half-resolution + CRF 30 reliably lands a 15-min sim recording under 50MB.
-            # ffmpeg ships pre-installed on macos-15 runners.
-            ffmpeg -y -i artifacts/full-tour.mp4 \n              -vcodec libx264 -crf 30 -preset fast \n              -vf scale=iw/2:ih/2 \n              artifacts/full-tour-compressed.mp4 2>&1 | tail -3
-            COMPRESSED_SIZE=$(stat -f%z artifacts/full-tour-compressed.mp4)
+            ffmpeg -y -i artifacts/full-tour.mp4 -vcodec libx264 -crf 30 -preset fast -vf scale=iw/2:ih/2 artifacts/full-tour-compressed.mp4 2>&1 | tail -3
+            COMPRESSED_SIZE=$(stat -f%z artifacts/full-tour-compressed.mp4 2>/dev/null || stat -c%s artifacts/full-tour-compressed.mp4)
             echo "compressed mp4: $COMPRESSED_SIZE bytes"
             rm artifacts/full-tour.mp4
             mv artifacts/full-tour-compressed.mp4 artifacts/full-tour.mp4
