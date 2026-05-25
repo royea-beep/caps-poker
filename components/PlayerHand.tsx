@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { rf, rs, rv, SCREEN_W as MODULE_SCREEN_W } from '../utils/responsive';
+import { PRD } from '../utils/prdTokens';
 import { t } from '../utils/i18n';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
 import { getDevice } from '../constants/deviceBreakpoints';
@@ -214,18 +215,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(4),
   },
   selected: {
+    // PR-D study: lift translateY(-rs(6)) + gold outline + halo.
     borderColor: COLORS.gold,
-    transform: [{ translateY: -8 }, { rotate: '-3deg' }, { scale: 1.08 }],
+    transform: [{ translateY: PRD.selection.liftY }, { rotate: '-3deg' }, { scale: 1.08 }],
     borderRadius: rv(6),
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
         shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
+        shadowOpacity: PRD.selection.haloOpacity,
+        shadowRadius: 10,
       },
-      android: { elevation: 6 },
-      default: {},
+      android: { elevation: 8 },
+      default: { boxShadow: '0 0 12px rgba(245,200,66,0.55)' },
     }),
   },
   emptyRow: {

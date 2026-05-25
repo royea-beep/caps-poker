@@ -16,6 +16,7 @@ import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs, SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
+import { PRD } from '../utils/prdTokens';
 import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { useGameColors } from '../utils/useGameColors';
@@ -74,12 +75,14 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
   useEffect(() => {
     if (isArrangement) {
       if (!KILL_Board) {
+        // FINITE per iron rule
         pulseOpacity.value = withRepeat(
           withSequence(
             withTiming(1, { duration: 1000 }),
             withTiming(0.4, { duration: 1000 }),
           ),
-          -1,
+          200,
+          true,
         );
       }
     } else {
@@ -170,25 +173,29 @@ export default function Board({
   const hintInfoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [botTooltipVisible, setBotTooltipVisible] = useState(false);
   const botTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // S81 Card Bible: community and player cards SAME formula (tester: flop was smaller)
-  const ch = cardHeightProp ?? rv(screenW, 46, 59, 74, 53);
-  const cw = Math.round(ch * 0.72);
-  const commH = ch; // SAME as player cards (S81 fix)
-  const commW = cw;
-  const slotH = isArrangement ? Math.round(ch * 0.7) : ch;
-  const slotW = Math.round(slotH * 0.7);
+  // PR-D study tokens (caps-design-study) — explicit responsive dims.
+  // community: rs(28)x rs(40), slot: rs(34)x rs(48), hand: rs(46)x rs(65).
+  // cardHeightProp wins so legacy callers (BoardReveal, results) keep working.
+  const commW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
+  const commH = cardHeightProp ? cardHeightProp                  : PRD.card.community.h;
+  const ch    = cardHeightProp ?? (isArrangement ? PRD.card.slot.h : PRD.card.hand.h);
+  const cw    = cardHeightProp ? Math.round(cardHeightProp * 0.72) : (isArrangement ? PRD.card.slot.w : PRD.card.hand.w);
+  const slotH = isArrangement ? PRD.card.slot.h : ch;
+  const slotW = isArrangement ? PRD.card.slot.w : Math.round(slotH * 0.7);
 
   const pulseValue = useSharedValue(0.4);
 
   useEffect(() => {
     if (active) {
       if (!KILL_Board) {
+        // FINITE per iron rule
         pulseValue.value = withRepeat(
           withSequence(
             withTiming(1, { duration: 800 }),
             withTiming(0.4, { duration: 800 }),
           ),
-          -1,
+          200,
+          true,
         );
       }
     } else {
@@ -259,12 +266,13 @@ export default function Board({
   useEffect(() => {
     if (isWinner) {
       if (!KILL_Board) {
+        // FINITE per iron rule
         winnerPulse.value = withRepeat(
           withSequence(
             withTiming(1, { duration: 1000 }),
             withTiming(0.3, { duration: 1000 }),
           ),
-          -1,
+          200,
           false,
         );
       }
@@ -301,7 +309,8 @@ export default function Board({
   const botCardSets = allBotCards && allBotCards.some((bc) => bc.length > 0) ? allBotCards : safeBotCards.length > 0 ? [safeBotCards] : [];
   const multiBot = botCardSets.length > 1;
 
-  const boardAccent = BOARD_COLORS[index % BOARD_COLORS.length];
+  // PR-D study: per-board accent (B1 yellow, B2 blue, B3 green, B4 orange)
+  const boardAccent = PRD.board.accent[index % PRD.board.accent.length] ?? BOARD_COLORS[index % BOARD_COLORS.length];
 
   return (
     <Animated.View
@@ -514,7 +523,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.boardBg,
     borderRadius: rs(18),
-    borderWidth: rs(3),
+    borderWidth: PRD.board.border,
     borderColor: COLORS.boardBorder,
     overflow: 'hidden',
     ...Platform.select({
@@ -531,9 +540,10 @@ const styles = StyleSheet.create({
     }),
   },
   pressableInner: {
+    // PR-D study: board padding rs(6/5)
     flex: 1,
-    paddingHorizontal: rs(4),
-    paddingVertical: rs(3),
+    paddingHorizontal: PRD.board.cellPadH,
+    paddingVertical: PRD.board.cellPadV,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -644,14 +654,16 @@ const styles = StyleSheet.create({
     top: -2,
   },
   cardRow: {
+    // PR-D study: card gap = rs(3)
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: rs(6),
+    gap: PRD.card.gap,
     paddingVertical: 1,
   },
   communitySeparator: {
-    width: 3,
+    // PR-D study: 3px gold separator between flop and turn/river
+    width: PRD.board.flopSeparatorW,
     height: '80%',
     backgroundColor: COLORS.gold,
     opacity: 0.55,
@@ -677,19 +689,23 @@ const styles = StyleSheet.create({
     color: '#c9a84c',
   },
   emptySlot: {
+    // PR-D study: dashed rgba(255,255,255,0.18) on dark bg
     borderRadius: rs(8),
-    borderWidth: 1.5,
-    borderColor: '#8B4513',
+    borderWidth: rs(1.5),
+    borderColor: 'rgba(255,255,255,0.18)',
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.12)',
   },
   dropTarget: {
-    borderColor: '#c8a84b',
-    borderWidth: 2,
-    backgroundColor: 'rgba(201,168,76,0.08)',
+    // PR-D study: when a hand card is selected, slots switch to solid
+    // gold-bright + bg rgba(245,200,66,0.08) — "place me here" affordance.
+    borderColor: '#F5C842',
+    borderWidth: rs(2),
+    borderStyle: 'solid',
+    backgroundColor: 'rgba(245,200,66,0.08)',
   },
   plusText: {
     color: '#c8a84b55',
@@ -700,8 +716,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   faceDownWrap: {
+    // PR-D study: face-down community cards = opacity 0.5 + dark bg
     opacity: 0.5,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: rs(4),
   },
   cardLabel: {
