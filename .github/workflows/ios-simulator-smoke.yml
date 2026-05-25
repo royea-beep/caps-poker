@@ -93,17 +93,39 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
           echo "Found: $APP_PATH"
 
-      - name: Boot iPhone simulator
+      - name: Boot iPhone simulator (prefer iOS 17 - no Open-in-App prompt)
         run: |
-          UDID=$(xcrun simctl list devices available | \
-            grep -E "iPhone 1[567] Pro" | grep -v unavailable | head -1 | \
-            grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}")
-          [ -z "$UDID" ] && UDID=$(xcrun simctl list devices available | \
-            grep iPhone | grep -v unavailable | head -1 | \
-            grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}")
+          # iOS 17 simulators route simctl openurl directly to the app handler;
+          # iOS 18 added a confirmation prompt that cannot be dismissed from a
+          # headless GitHub runner. Prefer 17 if installed on the runner image.
+          ALL_JSON=$(xcrun simctl list devices available --json)
+          UDID=$(echo "$ALL_JSON" | jq -r '
+            .devices | to_entries
+            | map(select(.key | test("iOS-17")))
+            | first.value // []
+            | map(select(.name | test("iPhone 1[567] Pro"; "i")))
+            | first.udid // empty')
+          if [ -z "$UDID" ]; then
+            UDID=$(echo "$ALL_JSON" | jq -r '
+              .devices | to_entries
+              | map(select(.key | test("iOS-17")))
+              | first.value // []
+              | map(select(.name | test("iPhone")))
+              | first.udid // empty')
+          fi
+          if [ -z "$UDID" ]; then
+            echo "::warning::No iOS 17 simulator on runner; falling back to whatever iPhone is installed (iOS 18 Open-in-App prompt may block deep-link nav)"
+            UDID=$(xcrun simctl list devices available | \
+              grep -E "iPhone 1[567] Pro" | grep -v unavailable | head -1 | \
+              grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}")
+          fi
           [ -z "$UDID" ] && { echo "::error::No simulator available"; exit 1; }
+          IOS_VER=$(echo "$ALL_JSON" | jq -r --arg u "$UDID" '
+            .devices | to_entries[]
+            | select(.value | map(.udid) | contains([$u]))
+            | .key' | head -1)
           echo "UDID=$UDID" >> "$GITHUB_ENV"
-          echo "Booting $UDID"
+          echo "Booting $UDID on runtime $IOS_VER"
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
 
@@ -250,6 +272,23 @@ jobs:
             CRASH_FOUND=0
           fi
           echo "CRASH_FOUND=$CRASH_FOUND" >> "$GITHUB_ENV"
+
+      - name: Compress mp4 for Supabase free-tier 50MB cap
+        if: always()
+        run: |
+          if [ -f artifacts/full-tour.mp4 ]; then
+            ORIG_SIZE=$(stat -f%z artifacts/full-tour.mp4)
+            echo "original mp4: $ORIG_SIZE bytes"
+            # Half-resolution + CRF 30 reliably lands a 15-min sim recording under 50MB.
+            # ffmpeg ships pre-installed on macos-15 runners.
+            ffmpeg -y -i artifacts/full-tour.mp4 \n              -vcodec libx264 -crf 30 -preset fast \n              -vf scale=iw/2:ih/2 \n              artifacts/full-tour-compressed.mp4 2>&1 | tail -3
+            COMPRESSED_SIZE=$(stat -f%z artifacts/full-tour-compressed.mp4)
+            echo "compressed mp4: $COMPRESSED_SIZE bytes"
+            rm artifacts/full-tour.mp4
+            mv artifacts/full-tour-compressed.mp4 artifacts/full-tour.mp4
+          else
+            echo "no mp4 to compress"
+          fi
 
       - name: Upload to Supabase Storage (auto-tour gallery)
         if: always()
