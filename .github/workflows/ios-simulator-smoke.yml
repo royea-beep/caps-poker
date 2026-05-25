@@ -39,7 +39,7 @@ concurrency:
 jobs:
   smoke:
     name: Build .app + simulator tour + Supabase upload
-    runs-on: macos-14  # ships iOS 17 simulator (no Open-in-App? prompt on first deep-link)
+    runs-on: macos-15  # Expo SDK 55 needs Xcode 16; macos-14 fails on @MainActor concurrency
     timeout-minutes: 45
 
     steps:
