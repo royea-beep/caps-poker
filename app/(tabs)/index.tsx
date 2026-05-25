@@ -1029,9 +1029,12 @@ export default function HomeScreen() {
     })();
 
     // Interactive tutorial (S98) — shown if not yet seen (independent of old tutorial key)
-    AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY).then(val => {
-      if (!val) setShowInteractiveTutorial(true);
-    }).catch(() => {});
+    // CI guard: when EXPO_PUBLIC_CAPS_CI=1 (sim auto-tour build), never show the tutorial.
+    if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
+      AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY).then(val => {
+        if (!val) setShowInteractiveTutorial(true);
+      }).catch(() => {});
+    }
     // Old static tutorial — kept for Settings "replay tutorial" flow
     AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
       if (!val) setShowTutorial(false); // superseded by interactive tutorial
@@ -1064,10 +1067,12 @@ export default function HomeScreen() {
       }
     }).catch(() => { setGamesPlayed(0); });
 
-    // Onboarding — show once for first-time users
-    void AsyncStorage.getItem(ONBOARDING_SEEN_KEY).then(seen => {
-      if (!seen) setShowOnboarding(true);
-    }).catch(() => {});
+    // Onboarding — show once for first-time users (skipped in CI auto-tour)
+    if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
+      void AsyncStorage.getItem(ONBOARDING_SEEN_KEY).then(seen => {
+        if (!seen) setShowOnboarding(true);
+      }).catch(() => {});
+    }
 
     // Supabase daily streak — claim_daily_streak RPC
     void (async () => {
@@ -1098,13 +1103,15 @@ export default function HomeScreen() {
       } catch {}
     })();
 
-    // Weekly Recap — show on Sunday
-    const today = new Date();
-    if (today.getDay() === 0) { // Sunday = 0
-      const weekKey = `recap_${today.getFullYear()}_${Math.ceil(today.getDate() / 7)}`;
-      AsyncStorage.getItem('recap_week').then(stored => {
-        if (stored !== weekKey) setShowWeeklyRecap(true);
-      });
+    // Weekly Recap — show on Sunday (skipped in CI auto-tour)
+    if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
+      const today = new Date();
+      if (today.getDay() === 0) { // Sunday = 0
+        const weekKey = `recap_${today.getFullYear()}_${Math.ceil(today.getDate() / 7)}`;
+        AsyncStorage.getItem('recap_week').then(stored => {
+          if (stored !== weekKey) setShowWeeklyRecap(true);
+        });
+      }
     }
 
     // Home data cards — missions + leaderboard
