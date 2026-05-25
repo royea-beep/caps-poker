@@ -114,6 +114,16 @@ jobs:
           echo "BUNDLE_ID=$BUNDLE_ID" >> "$GITHUB_ENV"
           echo "Installed: $BUNDLE_ID"
 
+      - name: Pre-grant runtime permissions (mic / notifications)
+        run: |
+          # Stops iOS first-launch prompts from blocking deep-link navigation.
+          # Microphone is needed by BugReporter; notifications is needed by push.
+          xcrun simctl privacy "$UDID" grant microphone    "$BUNDLE_ID" 2>/dev/null || true
+          xcrun simctl privacy "$UDID" grant notifications "$BUNDLE_ID" 2>/dev/null || true
+          xcrun simctl privacy "$UDID" grant photos        "$BUNDLE_ID" 2>/dev/null || true
+          xcrun simctl privacy "$UDID" grant camera        "$BUNDLE_ID" 2>/dev/null || true
+          echo "Granted runtime permissions for $BUNDLE_ID"
+
       - name: Start system log capture (crash detection)
         run: |
           mkdir -p artifacts
@@ -145,9 +155,25 @@ jobs:
             echo "screenshot ${tag}.png (${size} bytes)"
           }
 
+          # AppleScript fallback to dismiss iOS "Open in App?" prompt that some
+          # OS versions show on the FIRST custom-scheme deep-link. Sends Return
+          # which activates the default button (Open). No-op if no dialog.
+          dismiss_alert() {
+            osascript -e 'tell application "Simulator" to activate' 2>/dev/null || true
+            osascript -e 'tell application "System Events" to tell process "Simulator" to keystroke return' 2>/dev/null || true
+          }
+
           deeplink() {
             xcrun simctl openurl "$UDID" "caps-poker://$1"
+            sleep 1
+            dismiss_alert
           }
+
+          # Warm up: fire a throwaway openurl that triggers (and we dismiss) the
+          # one-time "Open in App?" dialog so subsequent deep-links route directly.
+          deeplink "" >/dev/null 2>&1
+          sleep 2
+          dismiss_alert
 
           xcrun simctl ui "$UDID" appearance light 2>/dev/null || true
 
@@ -163,12 +189,9 @@ jobs:
           deeplink "game"    ; shot "10_game_static_light"   4
 
           # Demo deep-link drives the full flow: auto-fill at +2s, auto-ready at +4s,
-          # bot reveal animation ~+5-7s, results lands ~+9s. Use simctl launch with
-          # URL as an arg instead of openurl, to bypass the iOS "Open in App?" prompt
-          # that blocked the previous run (caps-sim-auto-8-1).
-          xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
-          sleep 1
-          xcrun simctl launch "$UDID" "$BUNDLE_ID" "caps-poker://game?demo=1"
+          # bot reveal animation ~+5-7s, results lands ~+9s. Plain openurl now works
+          # because the deeplink() helper dismisses any iOS "Open in App?" prompt.
+          deeplink "game?demo=1"
           shot "12_demo_t0_placement_light"  3   # 16 cards in hand, bot prefilled
           shot "13_demo_t3_filled_light"     2   # right after auto-fill - all 16 placed
           shot "14_demo_t5_ready_light"      2   # right after auto-ready - reveal starting
