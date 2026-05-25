@@ -8,13 +8,14 @@ import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
 import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
+import { PRD } from '../utils/prdTokens';
 
 // 2026-05-23 zone fix #1+#2: explicit player-hand zone height + visible seam between
 // boards and hand. Previously the hand was residual (whatever space was left after
 // boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
 // visual boundary. Now: handHeight is computed once at module load, with a 140px
 // floor so 320pt phones still see a usable hand row.
-const HAND_ZONE_HEIGHT = Math.max(140, Math.floor(MODULE_SCREEN_H * 0.22));
+const HAND_ZONE_HEIGHT = PRD.zone.handMinH; // PR-D study: max(rh(140), screenH*0.22)
 import { t } from '../utils/i18n';
 
 export interface BoardArrangementProps {
@@ -85,14 +86,14 @@ export function BoardArrangement({
   const insets = useSafeAreaInsets();
   return (
     <>
-      {/* Boards */}
-      <View style={[isWeb ? baStyles.boardsGrid : baStyles.boardsColumn, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
+      {/* Boards — PR-D study: 2x2 grid on every platform (was column on native) */}
+      <View style={[baStyles.boardsGrid, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
         {boards.map((board, i) => (
           <Animated.View
             key={i}
             style={[
-              isWeb ? (boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf) : baStyles.boardCellFull,
-              isWeb && screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
+              boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
+              screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
               boardShakeStyles[i],
             ]}
           >
@@ -210,34 +211,40 @@ const baStyles = StyleSheet.create({
     gap: rs(4),
   },
   handZone: {
-    // 2026-05-23 zone fix: explicit hand-zone height + 1px gold seam above
+    // PR-D study: explicit hand-zone height + gold hairline above with horizontal
+    // margin (rs(12)) so the separator reads as a divider, not a full border.
     height: HAND_ZONE_HEIGHT,
     borderTopWidth: 1,
     borderTopColor: COLORS.gold,
+    marginHorizontal: PRD.zone.hairlineMarginH,
   },
   boardsGrid: {
+    // PR-D study: 2x2 grid, gap rs(6), padding rs(6/5).
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'stretch',
     alignContent: 'stretch',
-    paddingHorizontal: Platform.OS === 'web' ? 6 : 8,
-    paddingVertical: Platform.OS === 'web' ? 4 : 0,
+    paddingHorizontal: PRD.board.cellPadH,
+    paddingVertical: PRD.board.cellPadV,
     width: '100%',
     flex: 1,
+    gap: PRD.board.gridGap,
   },
   boardCellFull: {
     flex: 1,
   },
   boardCellHalf: {
+    // PR-D study: 2x2 cells — width 50% minus half the grid gap so 2 fit per row.
     width: '50%',
-    minHeight: Platform.OS === 'web' ? 180 : undefined,
-    paddingHorizontal: Platform.OS === 'web' ? 3 : 4,
-    paddingVertical: Platform.OS === 'web' ? 3 : 4,
+    minHeight: PRD.board.cellHCap,
+    paddingHorizontal: rs(2),
+    paddingVertical: rs(2),
   },
   boardCellThird: {
     width: '33.33%',
-    paddingHorizontal: rs(4),
-    paddingVertical: 2,
+    minHeight: PRD.board.cellHCap,
+    paddingHorizontal: rs(2),
+    paddingVertical: rs(2),
   },
   selectionHint: {
     textAlign: 'center',
@@ -295,6 +302,7 @@ const baStyles = StyleSheet.create({
     opacity: 0.85,
   },
   floatingActions: {
+    // PR-D study: pinned absolute, solid bg, zIndex 100, height >= rs(72).
     position: 'absolute',
     left: 0,
     right: 0,
@@ -304,6 +312,7 @@ const baStyles = StyleSheet.create({
     gap: rs(12),
     paddingHorizontal: rs(20),
     paddingVertical: rs(10),
+    minHeight: PRD.zone.actionBarH,
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
     borderTopColor: 'rgba(197,160,40,0.35)',

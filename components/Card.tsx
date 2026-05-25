@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform, Animated } from 'react-native';
 import { rs } from '../utils/responsive';
+import { PRD } from '../utils/prdTokens';
 import { useGameStore } from '../store/gameStore';
 import { Card as CardType } from '../constants/gameConfig';
 
@@ -342,12 +343,12 @@ export default function CardComponent({
           <>
             {/* V2 Minimalist: top-left corner only */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
-              <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor }]}>{card.rank}</Text>
-              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+              <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor, fontSize: PRD.card.cornerRank(width), lineHeight: Math.round(PRD.card.cornerRank(width) * 1.1) }]}>{card.rank}</Text>
+              <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor, fontSize: PRD.card.cornerSuit(width), lineHeight: Math.round(PRD.card.cornerSuit(width) * 1.1) }]}>{SUIT_SYMBOLS[card.suit]}</Text>
             </View>
-            {/* V2 Minimalist: large center suit only */}
+            {/* V2 Minimalist: large center suit only — sized to ~55% of card width */}
             <View style={styles.centerDisplay}>
-              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor }]}>
+              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor, fontSize: PRD.card.centerSuit(width) }]}>
                 {SUIT_SYMBOLS[card.suit]}
               </Text>
             </View>
@@ -366,8 +367,8 @@ const styles = StyleSheet.create({
   },
   cornerTopLeft: {
     position: 'absolute',
-    top: 4,
-    left: 5,
+    top: rs(3),
+    left: rs(4),
     alignItems: 'center',
   },
   cornerBottomRight: {

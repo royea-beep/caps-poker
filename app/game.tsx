@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN } from 'react-native';
 import { SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
+import { PRD } from '../utils/prdTokens';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../utils/crash-evidence';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,12 +99,15 @@ const hapticNotify = (type: any) => {
 
 const COUNTDOWN_SECONDS = 30;
 
-// Layout constants
-const TOP_BAR_H = 44;
-const BOT_STATUS_H = 24;       // label + paddingVertical ≈ 24px
-const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical:12×2 + text ≈ 68px
-const HINT_H = 26;             // selectionHint / boardError bar
-const BOARD_CHROME = 40;       // per-board: border(4) + pressable pad(8) + header(18) + cardRow gaps(6) + margins
+// Layout constants — PR-D study zones
+// Top chrome (header + bot bar) locked at rh(68) per spec; FLOATING_ACTIONS at
+// rs(72)+insets per spec; boards flex-grow; gold hairline divider above hand.
+const TOP_CHROME_H = PRD.zone.topChromeH;          // rh(68) — spec
+const TOP_BAR_H = Math.round(TOP_CHROME_H * 44 / 68);
+const BOT_STATUS_H = Math.round(TOP_CHROME_H * 24 / 68);
+const FLOATING_ACTIONS_H = PRD.zone.actionBarH;    // rs(72) — spec
+const HINT_H = 26;                                  // selectionHint / boardError bar
+const BOARD_CHROME = 40;                            // per-board chrome budget
 
 function GameScreenInner() {
   const router = useRouter();
