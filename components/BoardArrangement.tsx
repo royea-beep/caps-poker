@@ -93,7 +93,6 @@ export function BoardArrangement({
             key={i}
             style={[
               boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
-              screenW < 500 && { paddingHorizontal: 2, paddingVertical: 2 },
               boardShakeStyles[i],
             ]}
           >
@@ -219,32 +218,37 @@ const baStyles = StyleSheet.create({
     marginHorizontal: PRD.zone.hairlineMarginH,
   },
   boardsGrid: {
-    // PR-D study: 2x2 grid, gap rs(6), padding rs(6/5).
+    // PR-D study: 2x2 grid. NOTE: do NOT use container `gap` with `width: '50%'`
+    // cells — RN computes 50% relative to content box, then adds gap, so total
+    // becomes 100% + gap and the row wraps. Instead, each cell carries
+    // padding = rs(3) and adjacent cells produce a visible gutter of rs(6).
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'stretch',
-    alignContent: 'stretch',
+    alignContent: 'flex-start',
     paddingHorizontal: PRD.board.cellPadH,
     paddingVertical: PRD.board.cellPadV,
-    width: '100%',
     flex: 1,
-    gap: PRD.board.gridGap,
+    flexShrink: 1,
+    minHeight: 0,
+    overflow: 'hidden',
   },
   boardCellFull: {
     flex: 1,
   },
   boardCellHalf: {
-    // PR-D study: 2x2 cells — width 50% minus half the grid gap so 2 fit per row.
+    // PR-D study: 2x2 cells. Each cell takes exactly 50% width; the rs(3)
+    // padding on each side produces the rs(6) gutter to the sibling cell.
     width: '50%',
     minHeight: PRD.board.cellHCap,
-    paddingHorizontal: rs(2),
-    paddingVertical: rs(2),
+    paddingHorizontal: rs(3),
+    paddingVertical: rs(3),
   },
   boardCellThird: {
-    width: '33.33%',
+    width: '33.333%',
     minHeight: PRD.board.cellHCap,
-    paddingHorizontal: rs(2),
-    paddingVertical: rs(2),
+    paddingHorizontal: rs(3),
+    paddingVertical: rs(3),
   },
   selectionHint: {
     textAlign: 'center',
