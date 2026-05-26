@@ -316,7 +316,7 @@ export default function Board({
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: theme.boardBg, borderColor: boardAccent, height: BOARD_HEIGHT },
+        { backgroundColor: theme.boardBg, borderColor: boardAccent }, // PR-E: removed fixed BOARD_HEIGHT — Board now fills its 2x2 grid cell
         Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
         active && styles.active,
         selected && styles.selected,
@@ -430,13 +430,17 @@ export default function Board({
           ))}
         </View>
 
+        {/* PR-E: AUTO button moved OUT of cardRow (was overflowing at 2x2
+            board width when 4 empty slots also rendered). Now position:absolute
+            in board top-right; still visible during arrangement on empty boards. */}
+        {isArrangement && playerCards.length === 0 && onAutoFill && (
+          <Pressable style={styles.autoBtn} onPress={onAutoFill}>
+            <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
+          </Pressable>
+        )}
+
         {/* Player cards */}
         <View style={styles.cardRow}>
-          {isArrangement && playerCards.length === 0 && onAutoFill && (
-            <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
-            </Pressable>
-          )}
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
@@ -826,21 +830,26 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    paddingHorizontal: rs(8),
-    paddingVertical: rs(3),
-    height: 26,
+    // PR-E: position absolute in top-right of board container so it never
+    // competes with the 4-slot cardRow at narrow 2x2 cell widths.
+    position: 'absolute',
+    top: rs(3),
+    right: rs(3),
+    paddingHorizontal: rs(6),
+    paddingVertical: rs(2),
+    minHeight: rs(20),
     justifyContent: 'center' as const,
-    borderRadius: 8,
-    backgroundColor: '#1A1A2E',
+    borderRadius: rs(6),
+    backgroundColor: 'rgba(26,26,46,0.85)',
     borderWidth: 1,
     borderColor: '#C5A028',
-    marginRight: rs(4),
     opacity: 1,
+    zIndex: 10,
   },
   autoBtnText: {
     color: '#e8c96a',
     fontSize: rf(8),
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });
