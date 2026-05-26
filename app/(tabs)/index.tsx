@@ -810,7 +810,17 @@ export default function HomeScreen() {
   const user = useAuthUser();
   const prevUserRef = useRef<typeof user>(undefined);
   const playerName = useGameStore((s) => s.playerName) || 'Player';
-  const [hasStartedGame, setHasStartedGame] = useState(!isWeb); // web shows landing page first
+  // Web shows marketing landing first; bypass for visual QA via ?play=1
+  // or EXPO_PUBLIC_WEB_PLAYABLE=1 at build time. Native always starts in-game.
+  const [hasStartedGame, setHasStartedGame] = useState(() => {
+    if (!isWeb) return true;
+    if (process.env.EXPO_PUBLIC_WEB_PLAYABLE === '1') return true;
+    if (typeof window !== 'undefined' && window.location?.search) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('play') === '1') return true;
+    }
+    return false;
+  });
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
