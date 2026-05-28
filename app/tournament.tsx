@@ -1301,7 +1301,9 @@ const styles = StyleSheet.create({
   modeBtnText: {
     fontSize: 12,
     fontWeight: '800',
-    color: COLORS.textDim,
+    // PR-J: was COLORS.textDim (#5a4a30) on red bg ~1.3:1 — severe fail.
+    // Use COLORS.text (#f0ead6) for ~9.5:1 — passes WCAG AA.
+    color: COLORS.text,
     letterSpacing: 2,
   },
   modeBtnTextActive: {

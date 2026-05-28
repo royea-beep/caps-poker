@@ -15,8 +15,16 @@ const ACTIVE = '#FFD700';
 const INACTIVE = 'rgba(255,255,255,0.35)';
 
 function TabIcon({ label, emoji, focused }: { label: string; emoji: string; focused: boolean }) {
+  // PR-J — emoji is decorative; the parent <a> already announces the localized
+  // label. Without hiding the emoji from the a11y tree, screen readers would
+  // read "house emoji house emoji home" (audit found 'innerText 🏠 🏠 בית').
   return (
-    <Text style={{ fontSize: focused ? 20 : 18, opacity: focused ? 1 : 0.5, textAlign: 'center' }}>
+    <Text
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ fontSize: focused ? 20 : 18, opacity: focused ? 1 : 0.5, textAlign: 'center' }}
+    >
       {emoji}
     </Text>
   );
@@ -32,9 +40,13 @@ export default function TabLayout() {
           backgroundColor: TAB_BG,
           borderTopColor: 'rgba(255,215,0,0.15)',
           borderTopWidth: 1,
-          height: 52 + (Platform.OS === 'ios' ? insets.bottom : 0),
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 6,
-          paddingTop: 6,
+          // PR-J — was 52; per-tab tappable rect measured 39px on web which
+          // fails WCAG 2.5.5 (44×44 min) and Apple HIG 44pt. Bumped to 64 so
+          // each tab gets a ~52px tappable rect on web and ~64px on iOS
+          // (plus safe-area insets).
+          height: 64 + (Platform.OS === 'ios' ? insets.bottom : 0),
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
+          paddingTop: 8,
         },
         tabBarActiveTintColor: ACTIVE,
         tabBarInactiveTintColor: INACTIVE,
@@ -51,6 +63,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t().tabHome,
+          // PR-J: explicit a11y label = localized word only
+          tabBarAccessibilityLabel: t().tabHome,
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabHome} emoji="🏠" focused={focused} />,
         }}
       />
@@ -58,6 +72,8 @@ export default function TabLayout() {
         name="play"
         options={{
           title: t().tabPlay,
+          // PR-J: explicit a11y label = localized word only
+          tabBarAccessibilityLabel: t().tabPlay,
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabPlay} emoji="♠️" focused={focused} />,
         }}
       />
@@ -65,6 +81,8 @@ export default function TabLayout() {
         name="friends"
         options={{
           title: t().tabFriends,
+          // PR-J: explicit a11y label = localized word only
+          tabBarAccessibilityLabel: t().tabFriends,
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabFriends} emoji="👥" focused={focused} />,
         }}
       />
@@ -72,6 +90,8 @@ export default function TabLayout() {
         name="cups"
         options={{
           title: t().tabCups,
+          // PR-J: explicit a11y label = localized word only
+          tabBarAccessibilityLabel: t().tabCups,
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabCups} emoji="🏆" focused={focused} />,
         }}
       />
@@ -79,6 +99,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t().tabProfile,
+          // PR-J: explicit a11y label = localized word only
+          tabBarAccessibilityLabel: t().tabProfile,
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabProfile} emoji="👤" focused={focused} />,
         }}
       />

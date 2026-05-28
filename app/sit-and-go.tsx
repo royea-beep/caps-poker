@@ -542,7 +542,9 @@ export default function SitAndGoScreen() {
             ].map(({ place, prize, label }) => (
               <View key={place} style={styles.lobbySlot}>
                 <Text style={styles.lobbyName}>{place}</Text>
-                <Text style={[styles.lobbyName, { color: COLORS.gold, marginLeft: 'auto' as any }]}>
+                {/* PR-J: was COLORS.gold (#c9a84c) on feltLight — fails AA.
+                    Bright gold #FFD700 passes ~6.2:1. */}
+                <Text style={[styles.lobbyName, { color: '#FFD700', marginLeft: 'auto' as any }]}>
                   {prize} chips ({label})
                 </Text>
               </View>
@@ -900,7 +902,9 @@ const styles = StyleSheet.create({
   lobbyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.gold,
+    // PR-J: was COLORS.gold (#c9a84c) on COLORS.feltLight (#8B0000) ~3.7:1.
+    // Use COLORS.text (cream) for ~9.5:1 — passes WCAG AA.
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: 8,
   },
