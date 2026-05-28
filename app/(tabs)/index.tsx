@@ -81,6 +81,7 @@ import LevelUpModal from '../../components/LevelUpModal';
 // @ts-ignore — parallel agent file, exists at deploy time
 import { WeeklyRecapModal } from '../../components/WeeklyRecapModal';
 import { StarterOfferModal } from '../../components/StarterOfferModal';
+import { debugLog } from '../../components/DebugOverlay';
 import { StreakPopup } from '../../components/StreakPopup';
 import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../../components/OnboardingOverlay';
 import { getHandHistory, HandRecord } from '../../utils/handHistory';
@@ -2045,7 +2046,7 @@ export default function HomeScreen() {
       {/* Welcome toast after sign-in */}
       {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
 
-      {showOnboarding && <OnboardingOverlay onDone={handleOnboardingDone} />}
+      {showOnboarding && offerResolved && <OnboardingOverlay onDone={handleOnboardingDone} />}
       {showStreakPopup && streakData && (
         <StreakPopup
           streak={streakData.current_streak}
@@ -2057,7 +2058,10 @@ export default function HomeScreen() {
       )}
       <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
       <WeeklyRecapModal visible={showWeeklyRecap} onDismiss={() => setShowWeeklyRecap(false)} />
-      <StarterOfferModal onResolved={() => setOfferResolved(true)} />
+      <StarterOfferModal onResolved={() => {
+        debugLog('[starter_offer] parent onResolved -> opening tutorial gate', 'info');
+        setOfferResolved(true);
+      }} />
       </SafeAreaView>
   );
 }

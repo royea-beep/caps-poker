@@ -56,9 +56,16 @@ export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
   const [purchased, setPurchased] = useState(false);
   const shownRef = useRef(false);
   const resolvedRef = useRef(false);
-  const resolve = () => {
+  // PR-H: guard checkOffer against React 18 StrictMode double-invocation
+  // (and any other re-entry). Without this guard the second useEffect call
+  // would re-run checkOffer, see SESSION_SHOWN_KEY already set by the first,
+  // and call resolve() while the offer modal is still on screen — opening
+  // the tutorial gate one tick later and stacking both overlays.
+  const inFlightRef = useRef(false);
+  const resolve = (reason: string) => {
     if (resolvedRef.current) return;
     resolvedRef.current = true;
+    debugLog(`[starter_offer] resolve fired: ${reason}`, 'info');
     onResolved?.();
   };
 
@@ -67,23 +74,31 @@ export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
   }, []);
 
   async function checkOffer() {
+    // PR-H guard — synchronous, runs before any await so the StrictMode 2nd call
+    // bails out before touching AsyncStorage / RPC / resolve().
+    if (inFlightRef.current) {
+      debugLog('[starter_offer] checkOffer skipped — already in flight (StrictMode 2nd call)', 'info');
+      return;
+    }
+    inFlightRef.current = true;
+
     // Show only once per session
     try {
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       const shown = await AsyncStorage.getItem(SESSION_SHOWN_KEY);
-      if (shown) { resolve(); return; }
+      if (shown) { resolve('session_shown_in_storage'); return; }
     } catch {}
 
     try {
       const sb = getSupabase();
-      if (!sb) { resolve(); return; }
+      if (!sb) { resolve('supabase_unavailable'); return; }
       const deviceId = await getDeviceId();
       const { data, error } = await sb.rpc('get_starter_offer_for_device', {
         p_device_id: deviceId,
       });
       if (error || !data) {
         debugLog(`[starter_offer] RPC error: ${error?.message ?? 'no data'}`, 'warn');
-        resolve();
+        resolve('rpc_error_or_no_data');
         return;
       }
       const result = data as StarterOffer;
@@ -99,11 +114,11 @@ export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
           } catch {}
         }
       } else {
-        resolve();
+        resolve('not_eligible');
       }
     } catch (e) {
       debugLog(`[starter_offer] checkOffer threw: ${e}`, 'warn');
-      resolve();
+      resolve('exception_in_checkoffer');
     }
   }
 
@@ -122,7 +137,7 @@ export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
   function handleDismiss() {
     void trackEvent('dismissed');
     setVisible(false);
-    resolve();
+    resolve('user_dismissed');
   }
 
   async function handleBuy() {
@@ -167,7 +182,7 @@ export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
 
       void trackEvent('purchase_success');
       setPurchased(true);
-      setTimeout(() => { setVisible(false); resolve(); }, 3000);
+      setTimeout(() => { setVisible(false); resolve('purchase_success'); }, 3000);
     } catch (e: unknown) {
       // RevenueCat throws with userCancelled flag — don't log cancellations as errors
       const err = e as { userCancelled?: boolean; message?: string };
