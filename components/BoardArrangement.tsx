@@ -89,59 +89,108 @@ export function BoardArrangement({
   const insets = useSafeAreaInsets();
   return (
     <>
-      {/* PR-K v4 — inline flexDirection+flexWrap on grid (StyleSheet drops them);
-          cell is plain <View> with inline width/height; <Animated.View> moves
-          INSIDE the cell wrapping Board so shake animation doesn't fight layout. */}
-      <View
-        style={[
-          baStyles.boardsGrid,
-          { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
-          !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
-        ]}
-      >
-        {boards.map((board, i) => {
-          const _rows = boardCount >= 4 ? 2 : 1;
-          const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
-          const _widthPct = boardCount === 3 ? '33.333%' : '50%';
-          return (
+      {/* PR-K v5 — v4 diag confirmed RNW silently drops StyleSheet + inline
+          row/wrap/50% on this subtree. Bypass RNW on web with raw <div> +
+          native CSS Grid via React.createElement. Native keeps the v4 View
+          path so we don't regress mobile (which may already be working). */}
+      {Platform.OS === 'web' && boardCount >= 2
+        ? React.createElement(
+            'div' as any,
+            {
+              style: {
+                display: 'grid',
+                gridTemplateColumns: boardCount === 3 ? '1fr 1fr 1fr' : '1fr 1fr',
+                gridTemplateRows: boardCount >= 4 ? '1fr 1fr' : '1fr',
+                gap: `${rs(6)}px`,
+                width: '100%',
+                flex: 1,
+                minHeight: 0,
+                paddingLeft: `${PRD.board.cellPadH}px`,
+                paddingRight: `${PRD.board.cellPadH}px`,
+                paddingTop: `${PRD.board.cellPadV}px`,
+                paddingBottom: `${PRD.board.cellPadV}px`,
+                overflow: 'hidden',
+                boxSizing: 'border-box',
+              },
+            },
+            boards.map((board, i) => (
+              <Animated.View
+                key={i}
+                style={[{ width: '100%', height: '100%', overflow: 'hidden' }, boardShakeStyles[i]]}
+              >
+                <Board
+                  index={i}
+                  openCards={board.openCards}
+                  closedCards={board.closedCards}
+                  playerCards={board.playerCards}
+                  botCards={board.allBotCards[0] || board.botCards}
+                  allBotCards={board.allBotCards}
+                  revealed={false}
+                  active={false}
+                  potAmount={potPerBoard * numberOfPlayers}
+                  onPress={() => onBoardPress(i)}
+                  onRemoveCard={(card) => onRemoveCard(i, card)}
+                  onAutoFill={() => onAutoFill(i)}
+                  isArrangement={isArranging}
+                  selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+                  cardHeight={BOARD_CARD_H}
+                  communityScale={communityScale}
+                />
+              </Animated.View>
+            ))
+          )
+        : (
           <View
-            key={i}
-            style={{
-              width: _widthPct as any,
-              height: _cellH,
-              flexBasis: _widthPct as any,
-              flexGrow: 0,
-              flexShrink: 0,
-              maxWidth: _widthPct as any,
-              paddingHorizontal: rs(3),
-              paddingVertical: rs(3),
-              overflow: 'hidden',
-            }}
+            style={[
+              baStyles.boardsGrid,
+              { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
+              !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
+            ]}
           >
-            <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
-              <Board
-                index={i}
-                openCards={board.openCards}
-                closedCards={board.closedCards}
-                playerCards={board.playerCards}
-                botCards={board.allBotCards[0] || board.botCards}
-                allBotCards={board.allBotCards}
-                revealed={false}
-                active={false}
-                potAmount={potPerBoard * numberOfPlayers}
-                onPress={() => onBoardPress(i)}
-                onRemoveCard={(card) => onRemoveCard(i, card)}
-                onAutoFill={() => onAutoFill(i)}
-                isArrangement={isArranging}
-                selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-                cardHeight={BOARD_CARD_H}
-                communityScale={communityScale}
-              />
-            </Animated.View>
+            {boards.map((board, i) => {
+              const _rows = boardCount >= 4 ? 2 : 1;
+              const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
+              const _widthPct = boardCount === 3 ? '33.333%' : '50%';
+              return (
+                <View
+                  key={i}
+                  style={{
+                    width: _widthPct as any,
+                    height: _cellH,
+                    flexBasis: _widthPct as any,
+                    flexGrow: 0,
+                    flexShrink: 0,
+                    maxWidth: _widthPct as any,
+                    paddingHorizontal: rs(3),
+                    paddingVertical: rs(3),
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
+                    <Board
+                      index={i}
+                      openCards={board.openCards}
+                      closedCards={board.closedCards}
+                      playerCards={board.playerCards}
+                      botCards={board.allBotCards[0] || board.botCards}
+                      allBotCards={board.allBotCards}
+                      revealed={false}
+                      active={false}
+                      potAmount={potPerBoard * numberOfPlayers}
+                      onPress={() => onBoardPress(i)}
+                      onRemoveCard={(card) => onRemoveCard(i, card)}
+                      onAutoFill={() => onAutoFill(i)}
+                      isArrangement={isArranging}
+                      selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+                      cardHeight={BOARD_CARD_H}
+                      communityScale={communityScale}
+                    />
+                  </Animated.View>
+                </View>
+              );
+            })}
           </View>
-          );
-        })}
-      </View>
+        )}
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
       {playerReady && allBotsReady && showContinueButton && (
