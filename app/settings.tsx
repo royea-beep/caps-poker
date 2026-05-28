@@ -711,9 +711,9 @@ function ButtonStylePicker() {
 
 const BG_OPTIONS: { id: FriendsBgId; label: string; hint: string }[] = [
   { id: 'none', label: 'None', hint: 'No bg' },
-  { id: 'sofa', label: 'Sofa', hint: 'Central Perk' },
-  { id: 'logo', label: 'Logo', hint: 'C. Perk sign' },
-  { id: 'fountain', label: 'Fountain', hint: 'NYC fountain' },
+  { id: 'sofa', label: 'Felt', hint: 'Green table' },
+  { id: 'logo', label: 'Neon', hint: 'Casino sign' },
+  { id: 'fountain', label: 'Vegas', hint: 'Strip lights' },
 ];
 
 function FriendsBgPicker() {

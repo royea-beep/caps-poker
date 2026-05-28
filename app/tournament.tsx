@@ -62,7 +62,7 @@ type TournamentPhase =
   | 'match-result'  // Show match result
   | 'champion';     // Tournament won
 
-const BOT_NAMES = ['Joey', 'Monica', 'Ross', 'Phoebe', 'Chandler', 'Rachel', 'Gunther'];
+const BOT_NAMES = ['Ace', 'Bluff', 'Chips', 'Dealer', 'Flush', 'River', 'Shark'];
 const TOTAL_PLAYERS = 8;
 const ENTRY_FEE = 200;
 const PRIZE_POOL = ENTRY_FEE * TOTAL_PLAYERS;
