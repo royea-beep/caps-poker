@@ -10,6 +10,48 @@ import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
 import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
+// PR-K v6 — RNW silently drops StyleSheet+inline grid props (v4 diag) AND
+// drops React.createElement('div',...) entirely because the RNW host config
+// doesn't recognize 'div' as an intrinsic (v5 diag — boards leaked up to
+// ScrollView contentContainer with NO grid wrapper). New strategy: render a
+// real RN <View nativeID="pr-k-boards-grid"> (which on web becomes a real
+// <div id="pr-k-boards-grid">) and inject a global stylesheet that overrides
+// RNW's atomic r- classes via id-selector + !important.
+const PR_K_GRID_ID = 'pr-k-boards-grid';
+if (Platform.OS === 'web' && typeof document !== 'undefined' && !document.getElementById('pr-k-styles')) {
+  const styleEl = document.createElement('style');
+  styleEl.id = 'pr-k-styles';
+  styleEl.textContent = `
+    #${PR_K_GRID_ID} {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      grid-template-rows: 1fr 1fr !important;
+      gap: ${rs(6)}px !important;
+      width: 100% !important;
+      min-height: 0 !important;
+      padding: ${rs(5)}px ${rs(6)}px !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+      flex: 1 1 auto !important;
+    }
+    #${PR_K_GRID_ID}[data-cols="3"] {
+      grid-template-columns: 1fr 1fr 1fr !important;
+      grid-template-rows: 1fr !important;
+    }
+    #${PR_K_GRID_ID}[data-rows="1"] {
+      grid-template-rows: 1fr !important;
+    }
+    #${PR_K_GRID_ID} > * {
+      width: 100% !important;
+      height: 100% !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+  `;
+  document.head.appendChild(styleEl);
+}
+
 // 2026-05-23 zone fix #1+#2: explicit player-hand zone height + visible seam between
 // boards and hand. Previously the hand was residual (whatever space was left after
 // boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
@@ -89,35 +131,41 @@ export function BoardArrangement({
   const insets = useSafeAreaInsets();
   return (
     <>
-      {/* PR-K v5 — v4 diag confirmed RNW silently drops StyleSheet + inline
-          row/wrap/50% on this subtree. Bypass RNW on web with raw <div> +
-          native CSS Grid via React.createElement. Native keeps the v4 View
-          path so we don't regress mobile (which may already be working). */}
-      {Platform.OS === 'web' && boardCount >= 2
-        ? React.createElement(
-            'div' as any,
-            {
-              style: {
-                display: 'grid',
-                gridTemplateColumns: boardCount === 3 ? '1fr 1fr 1fr' : '1fr 1fr',
-                gridTemplateRows: boardCount >= 4 ? '1fr 1fr' : '1fr',
-                gap: `${rs(6)}px`,
-                width: '100%',
-                flex: 1,
-                minHeight: 0,
-                paddingLeft: `${PRD.board.cellPadH}px`,
-                paddingRight: `${PRD.board.cellPadH}px`,
-                paddingTop: `${PRD.board.cellPadV}px`,
-                paddingBottom: `${PRD.board.cellPadV}px`,
+      {/* PR-K v6 — RN <View nativeID> renders as <div id> on web. Stylesheet
+          injected at module top targets the id with !important to override
+          RNW's atomic r- classes. Native ignores the nativeID and uses the
+          flex-row+wrap StyleSheet (which works on native — only RNW drops it). */}
+      <View
+        nativeID={Platform.OS === 'web' && boardCount >= 2 ? PR_K_GRID_ID : undefined}
+        {...(Platform.OS === 'web' && boardCount >= 2
+          ? { dataSet: { cols: boardCount === 3 ? '3' : '2', rows: boardCount >= 4 ? '2' : '1' } }
+          : {})}
+        style={[
+          baStyles.boardsGrid,
+          { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
+          !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
+        ]}
+      >
+        {boards.map((board, i) => {
+          const _rows = boardCount >= 4 ? 2 : 1;
+          const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
+          const _widthPct = boardCount === 3 ? '33.333%' : '50%';
+          return (
+            <View
+              key={i}
+              style={{
+                width: _widthPct as any,
+                height: _cellH,
+                flexBasis: _widthPct as any,
+                flexGrow: 0,
+                flexShrink: 0,
+                maxWidth: _widthPct as any,
+                paddingHorizontal: rs(3),
+                paddingVertical: rs(3),
                 overflow: 'hidden',
-                boxSizing: 'border-box',
-              },
-            },
-            boards.map((board, i) => (
-              <Animated.View
-                key={i}
-                style={[{ width: '100%', height: '100%', overflow: 'hidden' }, boardShakeStyles[i]]}
-              >
+              }}
+            >
+              <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
                 <Board
                   index={i}
                   openCards={board.openCards}
@@ -137,60 +185,10 @@ export function BoardArrangement({
                   communityScale={communityScale}
                 />
               </Animated.View>
-            ))
-          )
-        : (
-          <View
-            style={[
-              baStyles.boardsGrid,
-              { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
-              !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
-            ]}
-          >
-            {boards.map((board, i) => {
-              const _rows = boardCount >= 4 ? 2 : 1;
-              const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
-              const _widthPct = boardCount === 3 ? '33.333%' : '50%';
-              return (
-                <View
-                  key={i}
-                  style={{
-                    width: _widthPct as any,
-                    height: _cellH,
-                    flexBasis: _widthPct as any,
-                    flexGrow: 0,
-                    flexShrink: 0,
-                    maxWidth: _widthPct as any,
-                    paddingHorizontal: rs(3),
-                    paddingVertical: rs(3),
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
-                    <Board
-                      index={i}
-                      openCards={board.openCards}
-                      closedCards={board.closedCards}
-                      playerCards={board.playerCards}
-                      botCards={board.allBotCards[0] || board.botCards}
-                      allBotCards={board.allBotCards}
-                      revealed={false}
-                      active={false}
-                      potAmount={potPerBoard * numberOfPlayers}
-                      onPress={() => onBoardPress(i)}
-                      onRemoveCard={(card) => onRemoveCard(i, card)}
-                      onAutoFill={() => onAutoFill(i)}
-                      isArrangement={isArranging}
-                      selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-                      cardHeight={BOARD_CARD_H}
-                      communityScale={communityScale}
-                    />
-                  </Animated.View>
-                </View>
-              );
-            })}
-          </View>
-        )}
+            </View>
+          );
+        })}
+      </View>
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
       {playerReady && allBotsReady && showContinueButton && (
