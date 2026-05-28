@@ -102,7 +102,11 @@ export function BoardArrangement({
             key={i}
             style={[
               boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
-              { height: _cellH },
+              // PR-K v3: cell width is being overridden by an upstream flex:1 1 0%
+              // somewhere in the RNW/Reanimated pipeline. width:50% in StyleSheet alone
+              // loses the cascade. Set flexBasis/Grow/Shrink + maxWidth explicitly so the
+              // cell actually takes half the row.
+              { height: _cellH, flexBasis: boardCount === 3 ? '33.333%' : '50%' as any, flexGrow: 0, flexShrink: 0, maxWidth: boardCount === 3 ? '33.333%' : '50%' as any },
               boardShakeStyles[i],
             ]}
           >
