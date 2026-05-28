@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
@@ -10,47 +10,12 @@ import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
 import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
-// PR-K v6 — RNW silently drops StyleSheet+inline grid props (v4 diag) AND
-// drops React.createElement('div',...) entirely because the RNW host config
-// doesn't recognize 'div' as an intrinsic (v5 diag — boards leaked up to
-// ScrollView contentContainer with NO grid wrapper). New strategy: render a
-// real RN <View nativeID="pr-k-boards-grid"> (which on web becomes a real
-// <div id="pr-k-boards-grid">) and inject a global stylesheet that overrides
-// RNW's atomic r- classes via id-selector + !important.
-const PR_K_GRID_ID = 'pr-k-boards-grid';
-if (Platform.OS === 'web' && typeof document !== 'undefined' && !document.getElementById('pr-k-styles')) {
-  const styleEl = document.createElement('style');
-  styleEl.id = 'pr-k-styles';
-  styleEl.textContent = `
-    #${PR_K_GRID_ID} {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      grid-template-rows: 1fr 1fr !important;
-      gap: ${rs(6)}px !important;
-      width: 100% !important;
-      min-height: 0 !important;
-      padding: ${rs(5)}px ${rs(6)}px !important;
-      overflow: hidden !important;
-      box-sizing: border-box !important;
-      flex: 1 1 auto !important;
-    }
-    #${PR_K_GRID_ID}[data-cols="3"] {
-      grid-template-columns: 1fr 1fr 1fr !important;
-      grid-template-rows: 1fr !important;
-    }
-    #${PR_K_GRID_ID}[data-rows="1"] {
-      grid-template-rows: 1fr !important;
-    }
-    #${PR_K_GRID_ID} > * {
-      width: 100% !important;
-      height: 100% !important;
-      min-width: 0 !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-    }
-  `;
-  document.head.appendChild(styleEl);
-}
+// PR-K v7 — Module-top side-effect and nativeID/dataSet/inline styles ALL
+// dropped by RNW (v6 diag confirmed: zero data-* attrs, zero #pr-k-* in DOM,
+// no <style id="pr-k-styles"> injected). Going DOM-direct: a ref on the grid
+// View + useLayoutEffect that imperatively sets style.cssText on the real
+// host element after RNW renders. MutationObserver keeps the override alive
+// across re-renders.
 
 // 2026-05-23 zone fix #1+#2: explicit player-hand zone height + visible seam between
 // boards and hand. Previously the hand was residual (whatever space was left after
@@ -129,17 +94,50 @@ export function BoardArrangement({
   boardsZoneH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
+  const gridRef = useRef<View>(null);
+
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web' || boardCount < 2) return;
+    const node = gridRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+    const cols = boardCount === 3 ? '1fr 1fr 1fr' : '1fr 1fr';
+    const rows = boardCount >= 4 ? '1fr 1fr' : '1fr';
+    const apply = () => {
+      node.style.setProperty('display', 'grid', 'important');
+      node.style.setProperty('grid-template-columns', cols, 'important');
+      node.style.setProperty('grid-template-rows', rows, 'important');
+      node.style.setProperty('gap', `${rs(6)}px`, 'important');
+      node.style.setProperty('width', '100%', 'important');
+      node.style.setProperty('min-height', '0', 'important');
+      node.style.setProperty('padding-left', `${PRD.board.cellPadH}px`, 'important');
+      node.style.setProperty('padding-right', `${PRD.board.cellPadH}px`, 'important');
+      node.style.setProperty('padding-top', `${PRD.board.cellPadV}px`, 'important');
+      node.style.setProperty('padding-bottom', `${PRD.board.cellPadV}px`, 'important');
+      node.style.setProperty('overflow', 'hidden', 'important');
+      node.style.setProperty('box-sizing', 'border-box', 'important');
+      node.style.setProperty('flex', '1 1 auto', 'important');
+      Array.from(node.children).forEach((c) => {
+        const el = c as HTMLElement;
+        el.style.setProperty('width', '100%', 'important');
+        el.style.setProperty('height', '100%', 'important');
+        el.style.setProperty('min-width', '0', 'important');
+        el.style.setProperty('min-height', '0', 'important');
+        el.style.setProperty('max-width', 'none', 'important');
+        el.style.setProperty('overflow', 'hidden', 'important');
+      });
+    };
+    apply();
+    // Re-apply when React re-renders the subtree (RNW may overwrite our inline styles)
+    const mo = new MutationObserver(() => apply());
+    mo.observe(node, { attributes: true, childList: true, subtree: false, attributeFilter: ['style', 'class'] });
+    return () => mo.disconnect();
+  }, [boardCount]);
+
   return (
     <>
-      {/* PR-K v6 — RN <View nativeID> renders as <div id> on web. Stylesheet
-          injected at module top targets the id with !important to override
-          RNW's atomic r- classes. Native ignores the nativeID and uses the
-          flex-row+wrap StyleSheet (which works on native — only RNW drops it). */}
+      {/* PR-K v7 — ref + useLayoutEffect + MutationObserver direct DOM styling */}
       <View
-        nativeID={Platform.OS === 'web' && boardCount >= 2 ? PR_K_GRID_ID : undefined}
-        {...(Platform.OS === 'web' && boardCount >= 2
-          ? { dataSet: { cols: boardCount === 3 ? '3' : '2', rows: boardCount >= 4 ? '2' : '1' } }
-          : {})}
+        ref={gridRef as any}
         style={[
           baStyles.boardsGrid,
           { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
