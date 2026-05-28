@@ -22,9 +22,15 @@ export async function callRPC<T = unknown>(
     const d = data as any;
     if (d && d.success === false) {
       if (d.error_code === 'INSUFFICIENT_BALANCE') {
+        // Alert.alert is a native-only no-op on web (see CLAUDE.md). Callers must
+        // surface the error themselves on web — that's why PR-G changed this to
+        // return the failed response (with success:false, balance, error_code)
+        // instead of null. Caller can read result.balance and show a real message.
         Alert.alert('לא מספיק צ׳יפים', d.balance != null ? `יש לך ${d.balance}` : undefined);
       }
-      return null;
+      // PR-G Bug 2: return the failed response so callers can read error_code/balance.
+      // Caller-side `if (!result || !result.success)` checks still work the same way.
+      return data as T;
     }
     return data as T;
   } catch (err) {

@@ -40,12 +40,27 @@ interface StarterOffer {
 const STARTER_PRODUCT_ID = 'starter_pack_2x';
 const SESSION_SHOWN_KEY = 'caps_starter_offer_shown_this_session';
 
-export function StarterOfferModal() {
+// PR-G Bug 3: parent (lobby) gates other first-launch overlays (the
+// InteractiveTutorial) on this callback so they don't stack on top of
+// the offer. onResolved fires exactly once — when the offer has been
+// shown-and-dismissed, OR when the eligibility check returns that no
+// offer will be shown at all.
+interface StarterOfferModalProps {
+  onResolved?: () => void;
+}
+
+export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
   const [offer, setOffer] = useState<StarterOffer | null>(null);
   const [visible, setVisible] = useState(false);
   const [buying, setBuying] = useState(false);
   const [purchased, setPurchased] = useState(false);
   const shownRef = useRef(false);
+  const resolvedRef = useRef(false);
+  const resolve = () => {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    onResolved?.();
+  };
 
   useEffect(() => {
     void checkOffer();
@@ -56,18 +71,19 @@ export function StarterOfferModal() {
     try {
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       const shown = await AsyncStorage.getItem(SESSION_SHOWN_KEY);
-      if (shown) return;
+      if (shown) { resolve(); return; }
     } catch {}
 
     try {
       const sb = getSupabase();
-      if (!sb) return;
+      if (!sb) { resolve(); return; }
       const deviceId = await getDeviceId();
       const { data, error } = await sb.rpc('get_starter_offer_for_device', {
         p_device_id: deviceId,
       });
       if (error || !data) {
         debugLog(`[starter_offer] RPC error: ${error?.message ?? 'no data'}`, 'warn');
+        resolve();
         return;
       }
       const result = data as StarterOffer;
@@ -82,9 +98,12 @@ export function StarterOfferModal() {
             await AsyncStorage.setItem(SESSION_SHOWN_KEY, '1');
           } catch {}
         }
+      } else {
+        resolve();
       }
     } catch (e) {
       debugLog(`[starter_offer] checkOffer threw: ${e}`, 'warn');
+      resolve();
     }
   }
 
@@ -103,6 +122,7 @@ export function StarterOfferModal() {
   function handleDismiss() {
     void trackEvent('dismissed');
     setVisible(false);
+    resolve();
   }
 
   async function handleBuy() {
@@ -147,7 +167,7 @@ export function StarterOfferModal() {
 
       void trackEvent('purchase_success');
       setPurchased(true);
-      setTimeout(() => setVisible(false), 3000);
+      setTimeout(() => { setVisible(false); resolve(); }, 3000);
     } catch (e: unknown) {
       // RevenueCat throws with userCancelled flag — don't log cancellations as errors
       const err = e as { userCancelled?: boolean; message?: string };

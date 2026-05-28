@@ -51,6 +51,26 @@ function formatTime(secs: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// PR-G Bug 2 — produce a real error message from a failed spend_chips response.
+// The server returns { success: false, balance?: number, error_code?: string };
+// callRPC (post-PR-G) now passes the failed response through to callers instead
+// of returning null. Previously quick-poker hardcoded 'Not enough chips (200 required)'
+// for every failure mode (network, RLS, unregistered device) which was misleading.
+function formatBuyInError(
+  result: { success?: boolean; balance?: number; error_code?: string; new_balance?: number } | null | undefined,
+  needed: number,
+): string {
+  if (!result) return "Couldn't reach the chip server. Tap Go Back and try again.";
+  const have = result.balance ?? result.new_balance;
+  if (result.error_code === 'INSUFFICIENT_BALANCE' || (typeof have === 'number' && have < needed)) {
+    return typeof have === 'number'
+      ? `Not enough chips. You have ${have.toLocaleString()}; ${needed.toLocaleString()} needed.`
+      : `Not enough chips (${needed.toLocaleString()} needed).`;
+  }
+  if (result.error_code) return `Couldn't enter the game (${result.error_code}). Try again.`;
+  return "Couldn't enter the game. Try again.";
+}
+
 export default function QuickPokerScreen() {
   const router = useRouter();
   // @ts-ignore
@@ -76,7 +96,10 @@ export default function QuickPokerScreen() {
         setDeviceId(id);
         const result = await spendChips(id, 'quick_poker_buy_in');
         if (cancelled) return;
-        if (!result || !result.success) { setLoadError('Not enough chips (200 required)'); return; }
+        // PR-G Bug 2: surface the real error reason. Pre-PR-G this hardcoded
+        // 'Not enough chips (200 required)' for ANY failure mode (network, RLS,
+        // unregistered device) which was misleading when the user had >200 chips.
+        if (!result || !result.success) { setLoadError(formatBuyInError(result, BUY_IN)); return; }
         if (result.new_balance != null) setChips?.(result.new_balance);
         setPhase('playing');
       } catch { if (!cancelled) setLoadError('Error entering game'); }
@@ -141,7 +164,7 @@ export default function QuickPokerScreen() {
       try {
         const id = deviceId || await getDeviceId();
         const result = await spendChips(id, 'quick_poker_buy_in');
-        if (!result || !result.success) { setLoadError('Not enough chips (200 required)'); return; }
+        if (!result || !result.success) { setLoadError(formatBuyInError(result, BUY_IN)); return; }
         if (result.new_balance != null) setChips?.(result.new_balance);
         setPhase('playing');
       } catch { setLoadError('Error entering game'); }
@@ -168,7 +191,11 @@ export default function QuickPokerScreen() {
       <SafeAreaView style={styles.root}>
         <View style={styles.centerContent}>
           <Text style={styles.errorText}>{loadError}</Text>
-          <Pressable style={styles.btnSecondary} onPress={() => router.back()}>
+          {/* PR-G Bug 2: give the user a way out other than Back. */}
+          <Pressable style={styles.btnSecondary} onPress={() => router.push('/shop' as any)}>
+            <Text style={styles.btnSecondaryText}>Go to Shop</Text>
+          </Pressable>
+          <Pressable style={[styles.btnSecondary, { marginTop: 12 }]} onPress={() => router.back()}>
             <Text style={styles.btnSecondaryText}>Go Back</Text>
           </Pressable>
         </View>
