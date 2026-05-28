@@ -18,19 +18,20 @@ export default function FriendsScreen() {
         <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().inviteFriends}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={t().inviteFriendsSub(100).replace("💰 ", "")}>{t().inviteFriendsSub(100)}</Text></View>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Leaderboard · See where you rank globally" style={[styles.card, { borderColor: '#4ade80' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/leaderboard' as any)}>
+      {/* PR-I: routed through t() */}
+      <Pressable accessibilityRole="button" accessibilityLabel={`${t().friendsLeaderboardCard} · ${t().friendsLeaderboardCardSub}`} style={[styles.card, { borderColor: '#4ade80' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/leaderboard' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text>
-        <View><Text style={styles.cardTitle}>Leaderboard</Text><Text style={styles.cardSub}>See where you rank globally</Text></View>
+        <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCard}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCardSub}</Text></View>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Host Online Game · Create a room for friends to join" style={[styles.card, { borderColor: '#60a5fa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/internet-host' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${t().hostOnlineGame} · ${t().hostOnlineGameSub}`} style={[styles.card, { borderColor: '#60a5fa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/internet-host' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
-        <View><Text style={styles.cardTitle}>Host Online Game</Text><Text style={styles.cardSub}>Create a room for friends to join</Text></View>
+        <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostOnlineGame}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostOnlineGameSub}</Text></View>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Join Game · Enter a room code" style={[styles.card, { borderColor: '#a78bfa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/internet-join' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${t().joinGame} · ${t().joinOnlineGameSub}`} style={[styles.card, { borderColor: '#a78bfa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/internet-join' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎮</Text>
-        <View><Text style={styles.cardTitle}>Join Game</Text><Text style={styles.cardSub}>Enter a room code</Text></View>
+        <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinGame}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinOnlineGameSub}</Text></View>
       </Pressable>
     </SafeAreaView>
   );

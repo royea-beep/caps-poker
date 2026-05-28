@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { t, getLanguage } from '../../utils/i18n';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rs, rv } from '../../utils/responsive';
@@ -24,8 +25,9 @@ export default function CupsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header">CUPS / כוסות</Text>
-      <Text style={styles.sub} accessibilityLiveRegion="polite" accessibilityLanguage="he">{earned}/{total} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.</Text>
+      {/* PR-I: was bilingual "CUPS / כוסות" — single active-locale now */}
+      <Text style={styles.title} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().cupsTitle.toUpperCase()}</Text>
+      <Text style={styles.sub} accessibilityLiveRegion="polite" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().cupsSubtitle(earned, total)}</Text>
 
       {cups === null ? (
         <ActivityIndicator color="#FFD700" style={{ marginTop: rs(40) }} accessibilityLiveRegion="polite" />

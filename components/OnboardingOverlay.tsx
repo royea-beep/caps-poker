@@ -4,6 +4,7 @@
  * Uses RN Animated only — zero Reanimated.
  */
 import React, { useEffect, useRef, useState } from 'react';
+import { getLanguage } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Animated,
@@ -82,9 +83,9 @@ export function OnboardingOverlay({ onDone }: OnboardingOverlayProps) {
 
   return (
     <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
-      {/* Skip */}
+      {/* Skip — PR-I locale-aware. Pre-PR-I hardcoded English. */}
       <Pressable onPress={() => dismiss(true)} style={styles.skipBtn} hitSlop={12}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{getLanguage() === 'he' ? 'דלג' : 'Skip'}</Text>
       </Pressable>
 
       {/* Screen content */}
@@ -107,11 +108,11 @@ export function OnboardingOverlay({ onDone }: OnboardingOverlayProps) {
       {/* CTA */}
       {isLast ? (
         <Pressable onPress={() => dismiss(false)} style={styles.ctaBtn}>
-          <Text style={styles.ctaBtnText}>DEAL ME IN</Text>
+          <Text style={styles.ctaBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{getLanguage() === 'he' ? 'בואו נשחק!' : 'DEAL ME IN'}</Text>
         </Pressable>
       ) : (
         <Pressable onPress={handleNext} style={styles.nextBtn}>
-          <Text style={styles.nextBtnText}>Next →</Text>
+          <Text style={styles.nextBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{getLanguage() === 'he' ? 'הבא →' : 'Next →'}</Text>
         </Pressable>
       )}
     </Animated.View>

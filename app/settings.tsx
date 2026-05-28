@@ -971,7 +971,7 @@ export default function SettingsScreen() {
       : await new Promise<boolean>((resolve) => {
           Alert.alert(
             'מחיקת חשבון',
-            'האם אתה בטוח? כל הנתונים שלך יימחקו לצמיתות:\n\n• צ׳יפים ורצף יומי\n• היסטוריית ידות\n• הישגים וכוסות\n• פרופיל ודירוג',
+            'האם אתה בטוח? כל הנתונים שלך יימחקו לצמיתות:\n\n• צ׳יפים ורצף יומי\n• היסטוריית ידיים\n• הישגים וכוסות\n• פרופיל ודירוג',
             [
               { text: 'ביטול', style: 'cancel', onPress: () => resolve(false) },
               { text: 'כן, מחק הכל', style: 'destructive', onPress: () => resolve(true) },

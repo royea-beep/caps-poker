@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rs, rv } from '../../utils/responsive';
+import { t, getLanguage } from '../../utils/i18n';
 
 export default function PlayScreen() {
   const router = useRouter();
@@ -10,7 +11,7 @@ export default function PlayScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">PLAY</Text>
-      <Text style={styles.sub}>Choose your game mode</Text>
+      <Text style={styles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playChooseMode}</Text>
 
       <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Quick Poker. 200 · Fast-paced Omaha" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚡</Text>
@@ -30,10 +31,23 @@ export default function PlayScreen() {
         <Text style={styles.cardSub}>Multi-round competition</Text>
       </Pressable>
 
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Online / Local WiFi. Host or join a game" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#6b7280' }]} onPress={() => router.push('/settings' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
-        <Text style={styles.cardTitle}>Online / Local WiFi</Text>
-        <Text style={styles.cardSub}>Host or join a game</Text>
+      {/* PR-I — was a single card titled "Online / Local WiFi" whose onPress
+          routed to /settings (a lie surfaced by the 2026-05-28 audit). Split
+          into two honest cards now that /lobby/host and /lobby/join exist. */}
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={`${t().hostGame}. ${t().hostLocalGameSub}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/host' as any)}>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📡</Text>
+        <View>
+          <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostGame}</Text>
+          <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostLocalGameSub}</Text>
+        </View>
+      </Pressable>
+
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={`${t().joinGame}. ${t().joinLocalGameSub}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#a78bfa' }]} onPress={() => router.push('/lobby/join' as any)}>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔗</Text>
+        <View>
+          <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinGame}</Text>
+          <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinLocalGameSub}</Text>
+        </View>
       </Pressable>
     </SafeAreaView>
   );

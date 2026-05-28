@@ -137,8 +137,9 @@ export default function SideMenu({
           {/* Online / Multiplayer */}
           <MenuItem icon="🎮" label={t().playOnline} onPress={() => navigate('/lobby/internet-host')} />
           <MenuItem icon="🏆" label={t().tournaments} onPress={() => navigate('/tournament')} />
-          <MenuItem icon="📡" label="Host Game" onPress={() => navigate('/lobby/host')} />
-          <MenuItem icon="🔗" label="Join Game" onPress={() => navigate('/lobby/join')} />
+          {/* PR-I: routed through t() — was hardcoded English in a Hebrew menu */}
+          <MenuItem icon="📡" label={t().hostGame} onPress={() => navigate('/lobby/host')} />
+          <MenuItem icon="🔗" label={t().joinGame} onPress={() => navigate('/lobby/join')} />
 
           <View style={styles.divider} />
 
