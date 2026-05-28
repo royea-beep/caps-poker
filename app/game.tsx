@@ -1219,6 +1219,7 @@ function GameScreenInner() {
           doNavigateRef.current(boardsRef.current);
         }}
         potPerBoard={config.potPerBoard}
+        boardsZoneH={_boardsZoneH}
       />
       </Animated.View>
       {showSafeReveal && (

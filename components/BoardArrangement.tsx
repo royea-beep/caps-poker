@@ -49,6 +49,8 @@ export interface BoardArrangementProps {
   onTimeBank: () => void;
   onContinue: () => void;
   potPerBoard: number;
+  // PR-K v2 — numeric height of the boards zone (px) so cellH = zoneH/rows - gap.
+  boardsZoneH: number;
 }
 
 export function BoardArrangement({
@@ -82,23 +84,25 @@ export function BoardArrangement({
   onTimeBank,
   onContinue,
   potPerBoard,
+  boardsZoneH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
   return (
     <>
       {/* Boards — PR-D study: 2x2 grid on every platform (was column on native) */}
+      {/* PR-K v2 — numeric pixel cell height (was percentage in v1, which did not
+          resolve inside the flex-derived parent height and let cells grow to the
+          Board's intrinsic content height, pushing rows 3+4 below the fold). */}
       <View style={[baStyles.boardsGrid, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
-        {/* PR-K — 2x2 layout: when boardCount >= 4 each cell takes height: '50%'
-            so two rows fit the boards zone without scrolling. boardCount 2 (one
-            row of 2) and boardCount 3 (one row of 3) keep height: '100%'. The
-            grid itself is `flex: 1`, so '50%' / '100%' resolve against the
-            actual remaining vertical space between top chrome and hand zone. */}
-        {boards.map((board, i) => (
+        {boards.map((board, i) => {
+          const _rows = boardCount >= 4 ? 2 : 1;
+          const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
+          return (
           <Animated.View
             key={i}
             style={[
               boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
-              boardCount >= 4 ? { height: '50%' as any } : { height: '100%' as any },
+              { height: _cellH },
               boardShakeStyles[i],
             ]}
           >
@@ -121,7 +125,8 @@ export function BoardArrangement({
               communityScale={communityScale}
             />
           </Animated.View>
-        ))}
+          );
+        })}
       </View>
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
