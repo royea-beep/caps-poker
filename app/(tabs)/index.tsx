@@ -1810,11 +1810,11 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/hand-history' as any)}
             accessibilityRole="button"
-            accessibilityLabel={`היסטוריית ידיים, ${totalHandCount} ידות שוחקו`}
+            accessibilityLabel={`היסטוריית ידיים, ${totalHandCount} ידיים שוחקו`}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.statsBtn}
           >
-            <Text style={styles.statsBtnText} accessibilityLanguage="he">📊 {totalHandCount} ידות שוחקו</Text>
+            <Text style={styles.statsBtnText} accessibilityLanguage="he">📊 {totalHandCount} ידיים שוחקו</Text>
           </Pressable>
         )}
 

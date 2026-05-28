@@ -4,6 +4,7 @@
  * device_id only — no user auth.
  */
 import React, { useEffect, useState, useCallback } from 'react';
+import { t, getLanguage } from '../utils/i18n';
 import {
   View,
   Text,
@@ -259,8 +260,13 @@ export default function ShopScreen() {
           {shopData.items.map((item) => (
             <View key={item.event_type} style={styles.itemCard}>
               <View style={styles.itemInfo}>
-                <Text style={styles.itemDesc}>{item.description}</Text>
-                {item.description_he ? (
+                {/* PR-I: was rendering English title + Hebrew description side-by-side. */}
+                {/* Now show only the active-locale string. */}
+                <Text style={styles.itemDesc} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
+                  {getLanguage() === 'he' && item.description_he ? item.description_he : item.description}
+                </Text>
+                {/* PR-I: keep the secondary <Text> branch dead but parser-safe. */}
+                {false ? (
                   <Text style={styles.itemDescHe} accessibilityLanguage="he">{item.description_he}</Text>
                 ) : null}
                 <View style={styles.itemCostRow} accessibilityLabel={`Cost: ${(item.cost ?? 0).toLocaleString()} chips`}>
@@ -284,8 +290,8 @@ export default function ShopScreen() {
                 {buying === item.event_type ? (
                   <ActivityIndicator color="#000" size="small" />
                 ) : (
-                  <Text style={[styles.buyBtnText, !item.can_afford && styles.buyBtnTextDisabled]}>
-                    {item.can_afford ? 'Buy' : 'Can\'t afford'}
+                  <Text style={[styles.buyBtnText, !item.can_afford && styles.buyBtnTextDisabled]} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
+                    {item.can_afford ? t().shopBuy : t().shopCantAfford}
                   </Text>
                 )}
               </Pressable>

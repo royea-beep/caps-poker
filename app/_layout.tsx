@@ -21,7 +21,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
-import { setLanguage, Language } from '../utils/i18n';
+import { setLanguage, Language, applyHtmlLocale } from '../utils/i18n';
 import * as Updates from 'expo-updates';
 // expo-insights is a passive SDK — auto-collects crashes + app opens via native integration
 // No API call needed; installing the package is sufficient

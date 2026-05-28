@@ -41,6 +41,14 @@ function detectLanguageCode(): string {
 // Singleton — computed once per app session
 let _lang: Language | null = null;
 
+// PR-I: kick off the HTML lang/dir sync on first import (web only).
+// Wrapped in a microtask so React's first render still mounts before we touch the DOM.
+if (typeof queueMicrotask !== 'undefined') {
+  queueMicrotask(() => { try { applyHtmlLocale(); } catch {} });
+} else if (typeof setTimeout !== 'undefined') {
+  setTimeout(() => { try { applyHtmlLocale(); } catch {} }, 0);
+}
+
 export function getLanguage(): Language {
   if (!_lang) {
     const code = detectLanguageCode();
@@ -51,12 +59,28 @@ export function getLanguage(): Language {
 
 export function setLanguage(lang: Language): void {
   _lang = lang;
+  // PR-I: keep <html lang/dir> in sync with the active locale (web only).
+  applyHtmlLocale();
   // Notify store to bump version (lazy import to avoid circular dep)
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { useGameStore } = require('../store/gameStore');
     useGameStore.getState().bumpLanguageVersion?.();
   } catch {}
+}
+
+/**
+ * PR-I — write the active locale onto <html lang> and <html dir>.
+ * Audit #6: pre-PR-I the document had `<html dir="" lang="en">` despite
+ * Hebrew UI. Screen readers spoke Hebrew with the wrong voice, profile-row
+ * chevrons faced the wrong way, etc.
+ * No-op on native (no document).
+ */
+export function applyHtmlLocale(): void {
+  if (typeof document === 'undefined' || !document.documentElement) return;
+  const lang = getLanguage();
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
 }
 
 export function isRTL(): boolean {
@@ -201,6 +225,22 @@ interface Translations {
   playOnline: string;
   localMultiplayer: string;
   chooseLanguage: string;
+
+  // PR-I — nav cards (Friends tab + Play hub + SideMenu)
+  hostGame: string;
+  joinGame: string;
+  hostLocalGameSub: string;
+  joinLocalGameSub: string;
+  hostOnlineGame: string;
+  hostOnlineGameSub: string;
+  joinOnlineGameSub: string;
+  friendsLeaderboardCard: string;
+  friendsLeaderboardCardSub: string;
+  cupsTitle: string;
+  cupsSubtitle: (earned: number, total: number) => string;
+  playChooseMode: string;
+  shopBuy: string;
+  shopCantAfford: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -252,7 +292,7 @@ const he: Translations = {
   // Profile menu (S-LOCALE-FIX)
   profileMenuAchievements: 'הישגים',
   profileMenuDailyMissions: 'משימות יומיות',
-  profileMenuHandHistory: 'היסטוריית ידות',
+  profileMenuHandHistory: 'היסטוריית ידיים',
   profileMenuDetailedStats: 'סטטיסטיקות מפורטות',
   profileMenuLeaderboard: 'לוח מנצחים',
   profileMenuSettings: 'הגדרות',
@@ -297,7 +337,7 @@ const he: Translations = {
   historyAll: (n) => `הכל (${n})`,
   historyWins: (n) => `ניצחונות (${n})`,
   historyLosses: (n) => `הפסדים (${n})`,
-  historyEmptyTitle: 'אין ידות שוחקו עדיין',
+  historyEmptyTitle: 'אין ידיים שוחקו עדיין',
   historyEmptySub: 'שחק את המשחק הראשון שלך כדי לראות היסטוריה!',
   settingsTitle: 'הגדרות',
   proQuotes: 'ציטוטי מקצוענים (הדמיה)',
@@ -324,6 +364,21 @@ const he: Translations = {
   playOnline: 'שחק אונליין',
   localMultiplayer: 'מולטי-פלייר מקומי',
   chooseLanguage: 'בחר את השפה שלך',
+  // PR-I
+  hostGame: 'אירוח משחק',
+  joinGame: 'הצטרף למשחק',
+  hostLocalGameSub: 'שחק עם מישהו לידך (WiFi)',
+  joinLocalGameSub: 'מצא מארח ברשת שלך',
+  hostOnlineGame: 'אירוח משחק אונליין',
+  hostOnlineGameSub: 'צור חדר לחברים להצטרף',
+  joinOnlineGameSub: 'הזן קוד חדר',
+  friendsLeaderboardCard: 'לוח תוצאות',
+  friendsLeaderboardCardSub: 'ראה את הדירוג שלך גלובלית',
+  cupsTitle: 'כוסות',
+  cupsSubtitle: (e, t) => `${e}/${t} כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.`,
+  playChooseMode: 'בחר מצב משחק',
+  shopBuy: 'קנה',
+  shopCantAfford: 'אין מספיק צ׳יפים',
 };
 
 // ---------------------------------------------------------------------------
@@ -447,6 +502,21 @@ const en: Translations = {
   playOnline: 'PLAY ONLINE',
   localMultiplayer: 'LOCAL MULTIPLAYER',
   chooseLanguage: 'Choose your language',
+  // PR-I
+  hostGame: 'Host Game',
+  joinGame: 'Join Game',
+  hostLocalGameSub: 'Play with someone nearby (WiFi)',
+  joinLocalGameSub: 'Find a host on your network',
+  hostOnlineGame: 'Host Online Game',
+  hostOnlineGameSub: 'Create a room for friends to join',
+  joinOnlineGameSub: 'Enter a room code',
+  friendsLeaderboardCard: 'Leaderboard',
+  friendsLeaderboardCardSub: 'See where you rank globally',
+  cupsTitle: 'Cups',
+  cupsSubtitle: (e, t) => `${e}/${t} cups · 4 cards. 4 boards. 1 winner.`,
+  playChooseMode: 'Choose your game mode',
+  shopBuy: 'Buy',
+  shopCantAfford: "Can't afford",
 };
 
 const translations: Record<Language, Translations> = { he, en };

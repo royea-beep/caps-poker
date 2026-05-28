@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rs, rv } from '../../utils/responsive';
 import { useGameStore } from '../../store/gameStore';
-import { t, getLanguage } from '../../utils/i18n';
+import { t, getLanguage, isRTL } from '../../utils/i18n';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -32,22 +32,22 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuAchievements} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🥇</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuAchievements}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🥇</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuAchievements}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/missions' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuDailyMissions} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📋</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuDailyMissions}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📋</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuDailyMissions}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/hand-history' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuHandHistory} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📖</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuHandHistory}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📖</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuHandHistory}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuDetailedStats} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuDetailedStats}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuDetailedStats}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/leaderboard' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuLeaderboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuLeaderboard}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuLeaderboard}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
         <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuSettings} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚙️</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuSettings}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">›</Text>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚙️</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuSettings}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
