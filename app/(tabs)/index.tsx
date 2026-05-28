@@ -60,7 +60,7 @@ import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
 import { todaysQuote } from '../../constants/proQuotes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
-import { earnChips, fetchCardDisplayConfig } from '../../utils/supabaseEconomy';
+import { earnChips, fetchCardDisplayConfig, fetchPokerShop } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
 import { trackEvent } from '../../utils/heatmap';
 import { getSupabase } from '../../utils/supabase';
@@ -825,6 +825,10 @@ export default function HomeScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveTutorial, setShowInteractiveTutorial] = useState(false);
+  // Bug 3 (PR-G): offer modal must resolve before tutorial can show.
+  // StarterOfferModal calls onResolved() when its check completes
+  // (eligible+dismissed, or ineligible). Tutorial waits.
+  const [offerResolved, setOfferResolved] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
   const [showNudge, setShowNudge] = useState(false);
@@ -1006,6 +1010,22 @@ export default function HomeScreen() {
       build: Constants.expoConfig?.version ?? 'unknown',
       platform: Platform.OS,
     }, 'home');
+
+    // PR-G Bug 2: sync server-side chip balance into Zustand so all screens
+    // read one source of truth. Before this, Zustand defaulted to 1,050 chips
+    // while the server-side balance was different (e.g. 1,000 for anon web
+    // sessions). Profile/Sit&Go displayed the Zustand value, Chip Shop showed
+    // the server value, and Quick Poker's spend_chips RPC failed against the
+    // server balance with a misleading 'Not enough chips' message.
+    void (async () => {
+      try {
+        const deviceId = await getDeviceId();
+        const shop = await fetchPokerShop(deviceId);
+        if (shop && typeof shop.balance === 'number') {
+          useGameStore.getState().setChips(shop.balance);
+        }
+      } catch { /* non-blocking */ }
+    })();
 
     // Economy: daily_login earn_chips (idempotent — safe every open)
     void (async () => {
@@ -1411,9 +1431,19 @@ export default function HomeScreen() {
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
 
-      {/* Interactive Tutorial (S98) — 3 steps with real cards, first-launch */}
-      {showInteractiveTutorial && (
-        <InteractiveTutorial onDone={() => { setShowInteractiveTutorial(false); router.push('/game' as any); }} />
+      {/* Interactive Tutorial (S98) — 3 steps with real cards, first-launch.
+          PR-G Bug 1: only navigate to /game on native. On web, the
+            router.push fired on web too — /game would bounce back to / without
+            the ?play=1 param, the hasStartedGame lazy initializer would re-run
+            against the clean URL and return false, dropping the user back to the
+            marketing landing. Web users now stay in the lobby after tutorial.
+          PR-G Bug 3: tutorial waits for StarterOfferModal to resolve so the two
+            don't stack. */}
+      {showInteractiveTutorial && offerResolved && (
+        <InteractiveTutorial onDone={() => {
+          setShowInteractiveTutorial(false);
+          if (!isWeb) router.push('/game' as any);
+        }} />
       )}
 
       {/* Tutorial overlay — 5-slide static tutorial (Settings replay only) */}
@@ -2027,7 +2057,7 @@ export default function HomeScreen() {
       )}
       <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
       <WeeklyRecapModal visible={showWeeklyRecap} onDismiss={() => setShowWeeklyRecap(false)} />
-      <StarterOfferModal />
+      <StarterOfferModal onResolved={() => setOfferResolved(true)} />
       </SafeAreaView>
   );
 }
