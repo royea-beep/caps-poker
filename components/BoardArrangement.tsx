@@ -88,11 +88,17 @@ export function BoardArrangement({
     <>
       {/* Boards — PR-D study: 2x2 grid on every platform (was column on native) */}
       <View style={[baStyles.boardsGrid, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
+        {/* PR-K — 2x2 layout: when boardCount >= 4 each cell takes height: '50%'
+            so two rows fit the boards zone without scrolling. boardCount 2 (one
+            row of 2) and boardCount 3 (one row of 3) keep height: '100%'. The
+            grid itself is `flex: 1`, so '50%' / '100%' resolve against the
+            actual remaining vertical space between top chrome and hand zone. */}
         {boards.map((board, i) => (
           <Animated.View
             key={i}
             style={[
               boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
+              boardCount >= 4 ? { height: '50%' as any } : { height: '100%' as any },
               boardShakeStyles[i],
             ]}
           >
@@ -239,10 +245,14 @@ const baStyles = StyleSheet.create({
   boardCellHalf: {
     // PR-D study: 2x2 cells. Each cell takes exactly 50% width; the rs(3)
     // padding on each side produces the rs(6) gutter to the sibling cell.
+    // PR-K: dropped minHeight floor so cell can shrink on small phones when
+    // boardCount >= 4 needs 2 rows. height is set inline via boardCount check
+    // (see boards.map above). overflow: hidden so Board content that's too tall
+    // for the shrunken cell clips visually instead of pushing the layout.
     width: '50%',
-    minHeight: PRD.board.cellHCap,
     paddingHorizontal: rs(3),
     paddingVertical: rs(3),
+    overflow: 'hidden',
   },
   boardCellThird: {
     width: '33.333%',

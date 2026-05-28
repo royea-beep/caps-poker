@@ -150,7 +150,27 @@ function GameScreenInner() {
   const _boardColW = Math.max(80, Math.floor(screenW / 2) - 26);
   const _maxMobileWebCw = Math.max(18, Math.floor((_boardColW - 31) / 5));
   const _maxMobileWebCh = Math.round(_maxMobileWebCw / 0.72);
-  const mobileWebCardH = Math.min(CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60, _maxMobileWebCh);
+  // PR-K — 2x2 layout means each cell only gets half the vertical space.
+  // Tighten the per-card height when 4 boards share a 2x2 grid so the
+  // community-cards row + 4 player-slot rows still fit inside the smaller cell.
+  // Compute the available cell height from SCREEN_H and shrink BOARD_CARD_H to
+  // (cellH - board-chrome) / (communityScale + 4 * slotRatio + padding).
+  // slotRatio ≈ 0.7 (Board renders 4 player slots vertically per board).
+  // Fall back to the existing width-driven cap when the height calc would be larger.
+  const _gridRows = boardCount >= 4 ? 2 : 1;
+  const _boardsZoneH = Math.max(
+    160,
+    safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H,
+  );
+  const _cellH = Math.floor(_boardsZoneH / _gridRows) - 12; // 12 = cell padding + grid gutter
+  const _boardChromeH = 32; // board label + flop separator + intra-row padding
+  const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
+  const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
+  const mobileWebCardH = Math.min(
+    CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
+    _maxMobileWebCh,
+    boardCount >= 4 ? _maxCellCardH : 9999,
+  );
   const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
   const communityScale = nativeCardDims.communityScale;
   // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
