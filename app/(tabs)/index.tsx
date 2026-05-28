@@ -2046,7 +2046,7 @@ export default function HomeScreen() {
       {/* Welcome toast after sign-in */}
       {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
 
-      {showOnboarding && <OnboardingOverlay onDone={handleOnboardingDone} />}
+      {showOnboarding && offerResolved && <OnboardingOverlay onDone={handleOnboardingDone} />}
       {showStreakPopup && streakData && (
         <StreakPopup
           streak={streakData.current_streak}
