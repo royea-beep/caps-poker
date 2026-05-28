@@ -89,46 +89,56 @@ export function BoardArrangement({
   const insets = useSafeAreaInsets();
   return (
     <>
-      {/* Boards — PR-D study: 2x2 grid on every platform (was column on native) */}
-      {/* PR-K v2 — numeric pixel cell height (was percentage in v1, which did not
-          resolve inside the flex-derived parent height and let cells grow to the
-          Board's intrinsic content height, pushing rows 3+4 below the fold). */}
-      <View style={[baStyles.boardsGrid, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
+      {/* PR-K v4 — inline flexDirection+flexWrap on grid (StyleSheet drops them);
+          cell is plain <View> with inline width/height; <Animated.View> moves
+          INSIDE the cell wrapping Board so shake animation doesn't fight layout. */}
+      <View
+        style={[
+          baStyles.boardsGrid,
+          { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
+          !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
+        ]}
+      >
         {boards.map((board, i) => {
           const _rows = boardCount >= 4 ? 2 : 1;
           const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
+          const _widthPct = boardCount === 3 ? '33.333%' : '50%';
           return (
-          <Animated.View
+          <View
             key={i}
-            style={[
-              boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
-              // PR-K v3: cell width is being overridden by an upstream flex:1 1 0%
-              // somewhere in the RNW/Reanimated pipeline. width:50% in StyleSheet alone
-              // loses the cascade. Set flexBasis/Grow/Shrink + maxWidth explicitly so the
-              // cell actually takes half the row.
-              { height: _cellH, flexBasis: boardCount === 3 ? '33.333%' : '50%' as any, flexGrow: 0, flexShrink: 0, maxWidth: boardCount === 3 ? '33.333%' : '50%' as any },
-              boardShakeStyles[i],
-            ]}
+            style={{
+              width: _widthPct as any,
+              height: _cellH,
+              flexBasis: _widthPct as any,
+              flexGrow: 0,
+              flexShrink: 0,
+              maxWidth: _widthPct as any,
+              paddingHorizontal: rs(3),
+              paddingVertical: rs(3),
+              overflow: 'hidden',
+            }}
           >
-            <Board
-              index={i}
-              openCards={board.openCards}
-              closedCards={board.closedCards}
-              playerCards={board.playerCards}
-              botCards={board.allBotCards[0] || board.botCards}
-              allBotCards={board.allBotCards}
-              revealed={false}
-              active={false}
-              potAmount={potPerBoard * numberOfPlayers}
-              onPress={() => onBoardPress(i)}
-              onRemoveCard={(card) => onRemoveCard(i, card)}
-              onAutoFill={() => onAutoFill(i)}
-              isArrangement={isArranging}
-              selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-              cardHeight={BOARD_CARD_H}
-              communityScale={communityScale}
-            />
-          </Animated.View>
+            <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
+              <Board
+                index={i}
+                openCards={board.openCards}
+                closedCards={board.closedCards}
+                playerCards={board.playerCards}
+                botCards={board.allBotCards[0] || board.botCards}
+                allBotCards={board.allBotCards}
+                revealed={false}
+                active={false}
+                potAmount={potPerBoard * numberOfPlayers}
+                onPress={() => onBoardPress(i)}
+                onRemoveCard={(card) => onRemoveCard(i, card)}
+                onAutoFill={() => onAutoFill(i)}
+                isArrangement={isArranging}
+                selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+                cardHeight={BOARD_CARD_H}
+                communityScale={communityScale}
+              />
+            </Animated.View>
+          </View>
           );
         })}
       </View>
