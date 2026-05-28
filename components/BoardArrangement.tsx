@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
@@ -94,29 +94,34 @@ export function BoardArrangement({
   boardsZoneH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
-  const gridRef = useRef<View>(null);
 
-  useLayoutEffect(() => {
-    if (Platform.OS !== 'web' || boardCount < 2) return;
-    const node = gridRef.current as unknown as HTMLElement | null;
-    if (!node) return;
+  const gridRefCallback = useCallback((node: any) => {
+    if (Platform.OS !== 'web') return;
+    if (!node) {
+      // eslint-disable-next-line no-console
+      console.log('[PR-K v8] ref callback got NULL');
+      return;
+    }
+    // eslint-disable-next-line no-console
+    console.log('[PR-K v8] ref callback got', node?.tagName, 'children:', node?.children?.length, 'boardCount:', boardCount);
+    if (boardCount < 2) return;
     const cols = boardCount === 3 ? '1fr 1fr 1fr' : '1fr 1fr';
     const rows = boardCount >= 4 ? '1fr 1fr' : '1fr';
-    const apply = () => {
-      node.style.setProperty('display', 'grid', 'important');
-      node.style.setProperty('grid-template-columns', cols, 'important');
-      node.style.setProperty('grid-template-rows', rows, 'important');
-      node.style.setProperty('gap', `${rs(6)}px`, 'important');
-      node.style.setProperty('width', '100%', 'important');
-      node.style.setProperty('min-height', '0', 'important');
-      node.style.setProperty('padding-left', `${PRD.board.cellPadH}px`, 'important');
-      node.style.setProperty('padding-right', `${PRD.board.cellPadH}px`, 'important');
-      node.style.setProperty('padding-top', `${PRD.board.cellPadV}px`, 'important');
-      node.style.setProperty('padding-bottom', `${PRD.board.cellPadV}px`, 'important');
-      node.style.setProperty('overflow', 'hidden', 'important');
-      node.style.setProperty('box-sizing', 'border-box', 'important');
-      node.style.setProperty('flex', '1 1 auto', 'important');
-      Array.from(node.children).forEach((c) => {
+    const apply = (target: HTMLElement) => {
+      target.style.setProperty('display', 'grid', 'important');
+      target.style.setProperty('grid-template-columns', cols, 'important');
+      target.style.setProperty('grid-template-rows', rows, 'important');
+      target.style.setProperty('gap', `${rs(6)}px`, 'important');
+      target.style.setProperty('width', '100%', 'important');
+      target.style.setProperty('min-height', '0', 'important');
+      target.style.setProperty('padding-left', `${PRD.board.cellPadH}px`, 'important');
+      target.style.setProperty('padding-right', `${PRD.board.cellPadH}px`, 'important');
+      target.style.setProperty('padding-top', `${PRD.board.cellPadV}px`, 'important');
+      target.style.setProperty('padding-bottom', `${PRD.board.cellPadV}px`, 'important');
+      target.style.setProperty('overflow', 'hidden', 'important');
+      target.style.setProperty('box-sizing', 'border-box', 'important');
+      target.style.setProperty('flex', '1 1 auto', 'important');
+      Array.from(target.children).forEach((c) => {
         const el = c as HTMLElement;
         el.style.setProperty('width', '100%', 'important');
         el.style.setProperty('height', '100%', 'important');
@@ -126,18 +131,22 @@ export function BoardArrangement({
         el.style.setProperty('overflow', 'hidden', 'important');
       });
     };
-    apply();
-    // Re-apply when React re-renders the subtree (RNW may overwrite our inline styles)
-    const mo = new MutationObserver(() => apply());
-    mo.observe(node, { attributes: true, childList: true, subtree: false, attributeFilter: ['style', 'class'] });
-    return () => mo.disconnect();
+    apply(node);
+    // Re-apply on every paint frame for 60 frames (1s) in case RNW overwrites
+    let frames = 60;
+    const tick = () => {
+      if (frames-- <= 0) return;
+      apply(node);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }, [boardCount]);
 
   return (
     <>
-      {/* PR-K v7 — ref + useLayoutEffect + MutationObserver direct DOM styling */}
+      {/* PR-K v8 — useCallback ref + console.log to confirm ref fires + 60-frame loop */}
       <View
-        ref={gridRef as any}
+        ref={gridRefCallback}
         style={[
           baStyles.boardsGrid,
           { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
