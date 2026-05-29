@@ -1696,13 +1696,16 @@ const orientationStyles = StyleSheet.create({
     fontSize: rf(24),
   },
   tileLabel: {
-    color: COLORS.textSecondary,
+    // PR-J: was COLORS.textSecondary (#8a7a5a) on COLORS.feltLight (#8B0000)
+    // ~2.7:1 — fails WCAG AA. Use COLORS.text (cream) for ~9.5:1.
+    color: COLORS.text,
     fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   tileLabelActive: {
-    color: COLORS.gold,
+    // PR-J: brighten the active gold so it stays distinguishable from inactive cream.
+    color: '#FFD700',
   },
   check: {
     fontSize: rf(10),

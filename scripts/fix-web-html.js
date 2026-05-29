@@ -30,7 +30,9 @@ html = html.replace(
 // 2. Fix viewport for iOS Safari (replace existing, don't duplicate)
 html = html.replace(
   /<meta name="viewport" content="[^"]*" \/>/,
-  '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />'
+  // PR-J — dropped maximum-scale=1 so users can pinch-zoom (WCAG 1.4.4).
+  // viewport-fit=cover keeps content under iOS notch.
+  '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />'
 );
 
 // 3. Add iOS Safari meta tags
