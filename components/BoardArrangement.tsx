@@ -124,23 +124,40 @@ export function BoardArrangement({
       <View
         style={[
           baStyles.boardsGrid,
-          { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
+          // PR-L Task A — 4p keeps row+wrap for the 2x2 grid; 2p/3p use plain
+          // column so cells can flex:1 vertically and absorb the empty space
+          // that opens up when the hand zone disappears in the ready state.
+          boardCount === 4
+            ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
+            : { flexDirection: 'column', alignItems: 'stretch' },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
       >
         {boards.map((board, i) => {
-          const _rows = boardCount >= 4 ? 2 : 1;
+          // PR-L Task A — native: 4p stays 2x2 (row+wrap), 2p/3p use column
+          // direction (vertical-stack) so boards are wide+short instead of
+          // tall+narrow. Device review of build 457 showed 2p/3p horizontal
+          // columns had massive empty maroon space above community cards +
+          // community-card edge clipping. Web keeps its existing vertical-
+          // stack behavior (RNW absorbs the row+wrap — documented limitation).
+          const _rows = boardCount === 4 ? 2 : boardCount;
           const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
-          const _widthPct = boardCount === 3 ? '33.333%' : '50%';
+          const isVertical = boardCount !== 4;
+          const _widthPct = boardCount === 4 ? '50%' : '100%';
           return (
             <View
               key={i}
               style={{
                 width: _widthPct as any,
-                height: _cellH,
-                flexBasis: _widthPct as any,
-                flexGrow: 0,
-                flexShrink: 0,
+                // PR-L Task E — for the vertical (column-direction) 2p/3p case,
+                // let each cell flex:1 inside the boardsGrid so when the hand
+                // zone disappears in the ready state, cells absorb the freed
+                // vertical space instead of leaving black gap above the buttons.
+                // 4p keeps a fixed height because flex:1 + row+wrap on web
+                // would collapse to 0 (and we want a stable footprint anyway).
+                ...(isVertical
+                  ? { flex: 1, minHeight: _cellH }
+                  : { height: _cellH, flexBasis: _widthPct as any, flexGrow: 0, flexShrink: 0 }),
                 maxWidth: _widthPct as any,
                 paddingHorizontal: rs(3),
                 paddingVertical: rs(3),
@@ -224,11 +241,22 @@ export function BoardArrangement({
         </Pressable>
       )}
 
-      {/* WIN ALL bonus hint */}
+      {/* PR-L Task G — WIN ALL banner moved to position:absolute ABOVE the
+          button bar instead of normal-flow above it (it was visually rendering
+          below the absolute-positioned button bar, looking like an
+          afterthought). Now sits directly above buttons. */}
       {isArranging && allBoardsFull && (
-        <Text style={baStyles.winAllHint}>
-          {t().winAll(potPerBoard * boardCount * numberOfPlayers + Math.round(potPerBoard * boardCount * 0.5))}
-        </Text>
+        <View
+          style={[
+            baStyles.winAllBanner,
+            { bottom: insets.bottom + PRD.zone.actionBarH + rs(4) },
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={baStyles.winAllHint}>
+            {t().winAll(potPerBoard * boardCount * numberOfPlayers + Math.round(potPerBoard * boardCount * 0.5))}
+          </Text>
+        </View>
       )}
 
       {/* Floating action buttons */}
@@ -360,8 +388,17 @@ const baStyles = StyleSheet.create({
     fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 0.5,
-    marginBottom: rs(2),
-    opacity: 0.85,
+    opacity: 0.95,
+  },
+  // PR-L Task G — wrapper for absolute-positioned WIN ALL banner.
+  winAllBanner: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(2),
+    zIndex: 99, // below the action bar (100) so the bar's border still shows
   },
   floatingActions: {
     // PR-D study: pinned absolute, solid bg, zIndex 100, height >= rs(72).
@@ -400,9 +437,13 @@ const baStyles = StyleSheet.create({
     }),
   },
   undoBtn: {
+    // PR-L Task F — balance with placeBtn (was no flex → undoBtn shrunk to
+    // intrinsic text width while placeBtn took 100% via flex:1).
+    flex: 1,
     backgroundColor: '#2A1A06',
     borderWidth: 1.5,
     borderColor: '#F5C842',
+    alignItems: 'center',
   },
   placeBtn: {
     backgroundColor: COLORS.gold,

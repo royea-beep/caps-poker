@@ -1,5 +1,6 @@
 // v-red-boards
 import React, { useEffect, useRef, useState } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -176,8 +177,30 @@ export default function Board({
   // PR-D study tokens (caps-design-study) — explicit responsive dims.
   // community: rs(28)x rs(40), slot: rs(34)x rs(48), hand: rs(46)x rs(65).
   // cardHeightProp wins so legacy callers (BoardReveal, results) keep working.
-  const commW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
-  const commH = cardHeightProp ? cardHeightProp                  : PRD.card.community.h;
+  //
+  // PR-L Task C — width-aware community card cap.
+  // Measure the actual rendered board width via onLayout, then cap commW so
+  // 5 community cards + 4 inter-card gaps + separator + separator margins +
+  // pressableInner horizontal padding all fit. This guards against narrow
+  // 4p cells where the default cardHeight*0.7 would otherwise overflow.
+  const [measuredBoardW, setMeasuredBoardW] = useState(0);
+  const onBoardLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && Math.abs(w - measuredBoardW) > 1) setMeasuredBoardW(w);
+  };
+  const _baseCommW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
+  const _commRowConstants =
+    4 * PRD.card.gap +           // 4 flex gaps between 6 children
+    PRD.board.flopSeparatorW +   // separator width
+    2 * rs(6) +                  // separator marginHorizontal
+    2 * PRD.board.cellPadH;      // pressableInner padding
+  const _maxCommWFromWidth = measuredBoardW > 0
+    ? Math.max(18, Math.floor((measuredBoardW - _commRowConstants) / 5))
+    : _baseCommW;
+  const commW = Math.min(_baseCommW, _maxCommWFromWidth);
+  const _baseCommH = cardHeightProp ? cardHeightProp : PRD.card.community.h;
+  // Keep aspect ratio when commW is shrunken — community card aspect is w/h ≈ 0.7.
+  const commH = commW < _baseCommW ? Math.round(commW / 0.7) : _baseCommH;
   const ch    = cardHeightProp ?? (isArrangement ? PRD.card.slot.h : PRD.card.hand.h);
   const cw    = cardHeightProp ? Math.round(cardHeightProp * 0.72) : (isArrangement ? PRD.card.slot.w : PRD.card.hand.w);
   const slotH = isArrangement ? PRD.card.slot.h : ch;
@@ -314,6 +337,7 @@ export default function Board({
 
   return (
     <Animated.View
+      onLayout={onBoardLayout}
       style={[
         styles.container,
         { backgroundColor: theme.boardBg, borderColor: boardAccent }, // PR-E: removed fixed BOARD_HEIGHT — Board now fills its 2x2 grid cell
@@ -345,7 +369,17 @@ export default function Board({
               />
             )}
             {revealed && playerHandName && (
-              <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
+              // PR-L Task D — narrow boards (2p/3p horizontal cols) clipped
+              // mid-word ("Straigh…", "Pai…"). Add numberOfLines + adjustsFontSizeToFit
+              // + flexShrink so the text fits whatever width is left.
+              <Text
+                style={[styles.handName, styles.handNameShrink, winner === 'player' && styles.winnerHandName]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
+              >
+                {playerHandName}
+              </Text>
             )}
           </View>
           <View style={styles.potArea}>
@@ -354,6 +388,22 @@ export default function Board({
         </View>
 
         {/* Bot card rows Â hidden during arrangement (board stays clean for player placement) */}
+        {/* PR-L Task B — hoist AUTO button BEFORE the contentCenter wrapper
+            so its absolute positioning (top:rs(3) right:rs(3)) still anchors
+            to the board rather than to the centered content wrapper. */}
+        {isArrangement && playerCards.length === 0 && onAutoFill && (
+          <Pressable style={styles.autoBtn} onPress={onAutoFill}>
+            <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
+          </Pressable>
+        )}
+
+        {/* PR-L Task B — center the content rows (bot rows, community label,
+            community cards, player slots) vertically within the space below
+            the header. Was relying on pressableInner's justifyContent:center
+            with the header inline; that centered the entire stack including
+            the header, leaving cards visually low with a maroon block above. */}
+        <View style={styles.contentCenter}>
+
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
@@ -384,7 +434,12 @@ export default function Board({
                 </View>
               )}
               {revealed && (allBotHandNames?.[botIdx] || (botIdx === 0 && botHandName)) && (
-                <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}>
+                <Text
+                  style={[styles.handName, styles.handNameShrink, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.65}
+                >
                   {allBotHandNames?.[botIdx] || botHandName}
                 </Text>
               )}
@@ -430,14 +485,7 @@ export default function Board({
           ))}
         </View>
 
-        {/* PR-E: AUTO button moved OUT of cardRow (was overflowing at 2x2
-            board width when 4 empty slots also rendered). Now position:absolute
-            in board top-right; still visible during arrangement on empty boards. */}
-        {isArrangement && playerCards.length === 0 && onAutoFill && (
-          <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-            <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
-          </Pressable>
-        )}
+        {/* PR-E AUTO button hoisted above the contentCenter wrapper (PR-L Task B) */}
 
         {/* Player cards */}
         <View style={styles.cardRow}>
@@ -504,6 +552,7 @@ export default function Board({
             <HandNameOverlay handName={playerHandName} isWinner={winner === 'player'} />
           )}
         </View>
+        </View>{/* /contentCenter — PR-L Task B */}
 
         {winner && (
           <Animated.View style={[styles.winnerBadge, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : styles.tieBadge, bannerAnimStyle]}>
@@ -544,12 +593,21 @@ const styles = StyleSheet.create({
     }),
   },
   pressableInner: {
-    // PR-D study: board padding rs(6/5)
+    // PR-D study: board padding rs(6/5).
+    // PR-L Task B — justifyContent now lives on the inner contentCenter wrapper.
+    // pressableInner just stacks header + contentCenter; contentCenter is
+    // flex:1 + justifyContent:center, so the header stays at top and the
+    // content rows center in the remaining vertical space.
     flex: 1,
     paddingHorizontal: PRD.board.cellPadH,
     paddingVertical: PRD.board.cellPadV,
-    justifyContent: 'center',
     overflow: 'hidden',
+  },
+  // PR-L Task B — wrapper for the centered content rows.
+  contentCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 0,
   },
   active: {
     borderColor: COLORS.gold,
@@ -753,6 +811,12 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: rf(8),
     fontWeight: '600',
+  },
+  // PR-L Task D — let the rank text shrink within the header row.
+  handNameShrink: {
+    flexShrink: 1,
+    flexGrow: 0,
+    minWidth: 0,
   },
   winnerHandName: {
     color: COLORS.goldLight,
