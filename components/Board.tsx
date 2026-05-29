@@ -345,7 +345,17 @@ export default function Board({
               />
             )}
             {revealed && playerHandName && (
-              <Text style={[styles.handName, winner === 'player' && styles.winnerHandName]}>{playerHandName}</Text>
+              // PR-L Task D — narrow boards (2p/3p horizontal cols) clipped
+              // mid-word ("Straigh…", "Pai…"). Add numberOfLines + adjustsFontSizeToFit
+              // + flexShrink so the text fits whatever width is left.
+              <Text
+                style={[styles.handName, styles.handNameShrink, winner === 'player' && styles.winnerHandName]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
+              >
+                {playerHandName}
+              </Text>
             )}
           </View>
           <View style={styles.potArea}>
@@ -384,7 +394,12 @@ export default function Board({
                 </View>
               )}
               {revealed && (allBotHandNames?.[botIdx] || (botIdx === 0 && botHandName)) && (
-                <Text style={[styles.handName, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}>
+                <Text
+                  style={[styles.handName, styles.handNameShrink, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.65}
+                >
                   {allBotHandNames?.[botIdx] || botHandName}
                 </Text>
               )}
@@ -753,6 +768,12 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: rf(8),
     fontWeight: '600',
+  },
+  // PR-L Task D — let the rank text shrink within the header row.
+  handNameShrink: {
+    flexShrink: 1,
+    flexGrow: 0,
+    minWidth: 0,
   },
   winnerHandName: {
     color: COLORS.goldLight,
