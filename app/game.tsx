@@ -138,7 +138,10 @@ function GameScreenInner() {
 
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
-  const PLAYER_HAND_H = SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124;
+  // PR-K v9 — web reserves more so hand has its 2-row footprint; boards get the rest.
+  const PLAYER_HAND_H = Platform.OS === 'web'
+    ? (SCREEN_H < 700 ? 130 : SCREEN_H < 800 ? 145 : 160)
+    : (SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;

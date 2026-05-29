@@ -75,22 +75,28 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const device = getDevice(SCREEN_W, 0);
 
-  // Mobile web uses 2-row layout like native (single row overflows on narrow screen)
-  const useTwoRows = Platform.OS !== 'web' || device.isMobileWeb;
+  // PR-K v9 — hand zone capped at 2 rows on web so boards get vertical space.
+  // Native keeps the legacy 2-or-4-row path below the breakpoint. The 4-row
+  // (quad) path was pushing the hand to ~480px on 390 viewports, leaving 4
+  // boards stacked vertically with no room to lay out as a 2×2 grid.
+  const isWeb = Platform.OS === 'web';
+  const useTwoRows = !isWeb || device.isMobileWeb;
 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  const useQuadRows = useTwoRows && safeCards.length > 12;
+  // Web: never quad-rows — always at most 2 rows. Native keeps quad for very tall hands.
+  const useQuadRows = !isWeb && useTwoRows && safeCards.length > 12;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   const cardW = (() => {
-    if (Platform.OS !== 'web') return Math.min(38, Math.max(24, maxCardW));
-    if (device.isMobileWeb)  return Math.min(60, Math.max(26, maxCardW));
-    if (device.isTabletWeb)  return Math.min(72, Math.max(58, maxCardW));
-    return Math.min(88, Math.max(70, maxCardW));
+    if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
+    // PR-K v9: cap web card width so a full 16-card 2-row hand fits in ~25% of screen height
+    if (device.isMobileWeb)  return Math.min(44, Math.max(24, maxCardW));
+    if (device.isTabletWeb)  return Math.min(56, Math.max(44, maxCardW));
+    return Math.min(72, Math.max(56, maxCardW));
   })();
   const cardH = Math.round(cardW / 0.72);
 

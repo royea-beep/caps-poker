@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
@@ -22,7 +22,12 @@ import { PRD } from '../utils/prdTokens';
 // boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
 // visual boundary. Now: handHeight is computed once at module load, with a 140px
 // floor so 320pt phones still see a usable hand row.
-const HAND_ZONE_HEIGHT = PRD.zone.handMinH; // PR-D study: max(rh(140), screenH*0.22)
+// PR-K v9 — web caps the hand zone at ~17% of screen height (was 22%), since
+// PlayerHand now renders max 2 rows of small cards on web. Native keeps the
+// 22% floor because it still uses the 4-row quad layout for tall hands.
+const HAND_ZONE_HEIGHT = Platform.OS === 'web'
+  ? Math.max(120, Math.floor((MODULE_SCREEN_H ?? 844) * 0.17))
+  : PRD.zone.handMinH;
 import { t } from '../utils/i18n';
 
 export interface BoardArrangementProps {
@@ -95,58 +100,13 @@ export function BoardArrangement({
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
-  const gridRefCallback = useCallback((node: any) => {
-    if (Platform.OS !== 'web') return;
-    if (!node) {
-      // eslint-disable-next-line no-console
-      console.log('[PR-K v8] ref callback got NULL');
-      return;
-    }
-    // eslint-disable-next-line no-console
-    console.log('[PR-K v8] ref callback got', node?.tagName, 'children:', node?.children?.length, 'boardCount:', boardCount);
-    if (boardCount < 2) return;
-    const cols = boardCount === 3 ? '1fr 1fr 1fr' : '1fr 1fr';
-    const rows = boardCount >= 4 ? '1fr 1fr' : '1fr';
-    const apply = (target: HTMLElement) => {
-      target.style.setProperty('display', 'grid', 'important');
-      target.style.setProperty('grid-template-columns', cols, 'important');
-      target.style.setProperty('grid-template-rows', rows, 'important');
-      target.style.setProperty('gap', `${rs(6)}px`, 'important');
-      target.style.setProperty('width', '100%', 'important');
-      target.style.setProperty('min-height', '0', 'important');
-      target.style.setProperty('padding-left', `${PRD.board.cellPadH}px`, 'important');
-      target.style.setProperty('padding-right', `${PRD.board.cellPadH}px`, 'important');
-      target.style.setProperty('padding-top', `${PRD.board.cellPadV}px`, 'important');
-      target.style.setProperty('padding-bottom', `${PRD.board.cellPadV}px`, 'important');
-      target.style.setProperty('overflow', 'hidden', 'important');
-      target.style.setProperty('box-sizing', 'border-box', 'important');
-      target.style.setProperty('flex', '1 1 auto', 'important');
-      Array.from(target.children).forEach((c) => {
-        const el = c as HTMLElement;
-        el.style.setProperty('width', '100%', 'important');
-        el.style.setProperty('height', '100%', 'important');
-        el.style.setProperty('min-width', '0', 'important');
-        el.style.setProperty('min-height', '0', 'important');
-        el.style.setProperty('max-width', 'none', 'important');
-        el.style.setProperty('overflow', 'hidden', 'important');
-      });
-    };
-    apply(node);
-    // Re-apply on every paint frame for 60 frames (1s) in case RNW overwrites
-    let frames = 60;
-    const tick = () => {
-      if (frames-- <= 0) return;
-      apply(node);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [boardCount]);
-
   return (
     <>
-      {/* PR-K v8 — useCallback ref + console.log to confirm ref fires + 60-frame loop */}
+      {/* PR-K v9 — STOP fighting RNW. Hand zone is being shrunk to 2 rows max on
+          web so boards get real vertical space. Going back to plain flex-row+wrap
+          on the grid container — once boards have breathing room, even RNW's
+          imperfect style compilation should produce a usable 2×2. */}
       <View
-        ref={gridRefCallback}
         style={[
           baStyles.boardsGrid,
           { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
