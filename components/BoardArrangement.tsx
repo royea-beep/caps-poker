@@ -10,12 +10,24 @@ import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
 import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
+// PR-K v7 — Module-top side-effect and nativeID/dataSet/inline styles ALL
+// dropped by RNW (v6 diag confirmed: zero data-* attrs, zero #pr-k-* in DOM,
+// no <style id="pr-k-styles"> injected). Going DOM-direct: a ref on the grid
+// View + useLayoutEffect that imperatively sets style.cssText on the real
+// host element after RNW renders. MutationObserver keeps the override alive
+// across re-renders.
+
 // 2026-05-23 zone fix #1+#2: explicit player-hand zone height + visible seam between
 // boards and hand. Previously the hand was residual (whatever space was left after
 // boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
 // visual boundary. Now: handHeight is computed once at module load, with a 140px
 // floor so 320pt phones still see a usable hand row.
-const HAND_ZONE_HEIGHT = PRD.zone.handMinH; // PR-D study: max(rh(140), screenH*0.22)
+// PR-K v9 — web caps the hand zone at ~17% of screen height (was 22%), since
+// PlayerHand now renders max 2 rows of small cards on web. Native keeps the
+// 22% floor because it still uses the 4-row quad layout for tall hands.
+const HAND_ZONE_HEIGHT = Platform.OS === 'web'
+  ? Math.max(120, Math.floor((MODULE_SCREEN_H ?? 844) * 0.17))
+  : PRD.zone.handMinH;
 import { t } from '../utils/i18n';
 
 export interface BoardArrangementProps {
@@ -49,6 +61,8 @@ export interface BoardArrangementProps {
   onTimeBank: () => void;
   onContinue: () => void;
   potPerBoard: number;
+  // PR-K v2 — numeric height of the boards zone (px) so cellH = zoneH/rows - gap.
+  boardsZoneH: number;
 }
 
 export function BoardArrangement({
@@ -82,40 +96,80 @@ export function BoardArrangement({
   onTimeBank,
   onContinue,
   potPerBoard,
+  boardsZoneH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
+
   return (
     <>
-      {/* Boards — PR-D study: 2x2 grid on every platform (was column on native) */}
-      <View style={[baStyles.boardsGrid, !isWeb && { paddingTop: insets.top * 0.5 + rs(4) }]}>
-        {boards.map((board, i) => (
-          <Animated.View
-            key={i}
-            style={[
-              boardCount === 3 ? baStyles.boardCellThird : baStyles.boardCellHalf,
-              boardShakeStyles[i],
-            ]}
-          >
-            <Board
-              index={i}
-              openCards={board.openCards}
-              closedCards={board.closedCards}
-              playerCards={board.playerCards}
-              botCards={board.allBotCards[0] || board.botCards}
-              allBotCards={board.allBotCards}
-              revealed={false}
-              active={false}
-              potAmount={potPerBoard * numberOfPlayers}
-              onPress={() => onBoardPress(i)}
-              onRemoveCard={(card) => onRemoveCard(i, card)}
-              onAutoFill={() => onAutoFill(i)}
-              isArrangement={isArranging}
-              selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-              cardHeight={BOARD_CARD_H}
-              communityScale={communityScale}
-            />
-          </Animated.View>
-        ))}
+      {/*
+        PR-K accepted limitation (2026-05-28):
+        ------------------------------------------------------------------
+        WEB renders boards VERTICAL-STACK, full-width. NATIVE renders 2×2.
+
+        Why: react-native-web 0.21.2 silently drops `flexDirection:'row'` +
+        `flexWrap:'wrap'` on this subtree regardless of how we express them
+        (StyleSheet, inline override, both). 9 attempted bypasses across
+        v4–v8 (inline override, raw <div> via createElement, nativeID +
+        injected <style>, useRef + useLayoutEffect + MutationObserver,
+        useCallback ref + RAF loop) all failed — RNW absorbs the wrapper
+        and the boards leak up to a column-direction parent.
+
+        Native (iOS/Android) uses the same JSX but goes through
+        React Native's real renderer, which honors flex-wrap normally,
+        so the 2×2 grid works there. The actual product ships on native.
+
+        Leaving the row+wrap StyleSheet intact so native benefits.
+      */}
+      <View
+        style={[
+          baStyles.boardsGrid,
+          { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' },
+          !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
+        ]}
+      >
+        {boards.map((board, i) => {
+          const _rows = boardCount >= 4 ? 2 : 1;
+          const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
+          const _widthPct = boardCount === 3 ? '33.333%' : '50%';
+          return (
+            <View
+              key={i}
+              style={{
+                width: _widthPct as any,
+                height: _cellH,
+                flexBasis: _widthPct as any,
+                flexGrow: 0,
+                flexShrink: 0,
+                maxWidth: _widthPct as any,
+                paddingHorizontal: rs(3),
+                paddingVertical: rs(3),
+                overflow: 'hidden',
+              }}
+            >
+              <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
+                <Board
+                  index={i}
+                  openCards={board.openCards}
+                  closedCards={board.closedCards}
+                  playerCards={board.playerCards}
+                  botCards={board.allBotCards[0] || board.botCards}
+                  allBotCards={board.allBotCards}
+                  revealed={false}
+                  active={false}
+                  potAmount={potPerBoard * numberOfPlayers}
+                  onPress={() => onBoardPress(i)}
+                  onRemoveCard={(card) => onRemoveCard(i, card)}
+                  onAutoFill={() => onAutoFill(i)}
+                  isArrangement={isArranging}
+                  selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
+                  cardHeight={BOARD_CARD_H}
+                  communityScale={communityScale}
+                />
+              </Animated.View>
+            </View>
+          );
+        })}
       </View>
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
@@ -239,10 +293,14 @@ const baStyles = StyleSheet.create({
   boardCellHalf: {
     // PR-D study: 2x2 cells. Each cell takes exactly 50% width; the rs(3)
     // padding on each side produces the rs(6) gutter to the sibling cell.
+    // PR-K: dropped minHeight floor so cell can shrink on small phones when
+    // boardCount >= 4 needs 2 rows. height is set inline via boardCount check
+    // (see boards.map above). overflow: hidden so Board content that's too tall
+    // for the shrunken cell clips visually instead of pushing the layout.
     width: '50%',
-    minHeight: PRD.board.cellHCap,
     paddingHorizontal: rs(3),
     paddingVertical: rs(3),
+    overflow: 'hidden',
   },
   boardCellThird: {
     width: '33.333%',
