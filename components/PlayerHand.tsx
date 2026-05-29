@@ -93,10 +93,13 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   const cardW = (() => {
     if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
-    // PR-K v9: cap web card width so a full 16-card 2-row hand fits in ~25% of screen height
-    if (device.isMobileWeb)  return Math.min(44, Math.max(24, maxCardW));
-    if (device.isTabletWeb)  return Math.min(56, Math.max(44, maxCardW));
-    return Math.min(72, Math.max(56, maxCardW));
+    // PR-K v9: cap web card width tight so 8/row fits without horizontal overflow.
+    // SCREEN_W can be > viewport (module-level const captured at boot), so the
+    // upper cap matters more than the dynamic max — it guards against module-load
+    // SCREEN_W being larger than the actual rendered viewport.
+    if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
+    if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
+    return Math.min(56, Math.max(42, maxCardW));
   })();
   const cardH = Math.round(cardW / 0.72);
 
