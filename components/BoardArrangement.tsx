@@ -102,10 +102,25 @@ export function BoardArrangement({
 
   return (
     <>
-      {/* PR-K v9 — STOP fighting RNW. Hand zone is being shrunk to 2 rows max on
-          web so boards get real vertical space. Going back to plain flex-row+wrap
-          on the grid container — once boards have breathing room, even RNW's
-          imperfect style compilation should produce a usable 2×2. */}
+      {/*
+        PR-K accepted limitation (2026-05-28):
+        ------------------------------------------------------------------
+        WEB renders boards VERTICAL-STACK, full-width. NATIVE renders 2×2.
+
+        Why: react-native-web 0.21.2 silently drops `flexDirection:'row'` +
+        `flexWrap:'wrap'` on this subtree regardless of how we express them
+        (StyleSheet, inline override, both). 9 attempted bypasses across
+        v4–v8 (inline override, raw <div> via createElement, nativeID +
+        injected <style>, useRef + useLayoutEffect + MutationObserver,
+        useCallback ref + RAF loop) all failed — RNW absorbs the wrapper
+        and the boards leak up to a column-direction parent.
+
+        Native (iOS/Android) uses the same JSX but goes through
+        React Native's real renderer, which honors flex-wrap normally,
+        so the 2×2 grid works there. The actual product ships on native.
+
+        Leaving the row+wrap StyleSheet intact so native benefits.
+      */}
       <View
         style={[
           baStyles.boardsGrid,
