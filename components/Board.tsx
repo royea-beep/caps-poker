@@ -68,6 +68,12 @@ interface BoardProps {
   cardHeight?: number;
   isWinner?: boolean;
   communityScale?: number;
+  // PR-M 2026-05-29 — fit-to-cell. When parent passes cellWidth/cellHeight
+  // (BoardArrangement does), Board derives card dimensions so every row fits
+  // INSIDE the cell without overflow. Legacy callers (results, BoardReveal)
+  // omit these and keep the original PRD token sizing.
+  cellWidth?: number;
+  cellHeight?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -157,6 +163,8 @@ export default function Board({
   cardHeight: cardHeightProp,
   isWinner,
   communityScale = 1.2,
+  cellWidth,
+  cellHeight,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
@@ -188,23 +196,56 @@ export default function Board({
     const w = e.nativeEvent.layout.width;
     if (w > 0 && Math.abs(w - measuredBoardW) > 1) setMeasuredBoardW(w);
   };
-  const _baseCommW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
-  const _commRowConstants =
-    4 * PRD.card.gap +           // 4 flex gaps between 6 children
-    PRD.board.flopSeparatorW +   // separator width
-    2 * rs(6) +                  // separator marginHorizontal
-    2 * PRD.board.cellPadH;      // pressableInner padding
-  const _maxCommWFromWidth = measuredBoardW > 0
-    ? Math.max(18, Math.floor((measuredBoardW - _commRowConstants) / 5))
-    : _baseCommW;
-  const commW = Math.min(_baseCommW, _maxCommWFromWidth);
-  const _baseCommH = cardHeightProp ? cardHeightProp : PRD.card.community.h;
-  // Keep aspect ratio when commW is shrunken — community card aspect is w/h ≈ 0.7.
-  const commH = commW < _baseCommW ? Math.round(commW / 0.7) : _baseCommH;
-  const ch    = cardHeightProp ?? (isArrangement ? PRD.card.slot.h : PRD.card.hand.h);
-  const cw    = cardHeightProp ? Math.round(cardHeightProp * 0.72) : (isArrangement ? PRD.card.slot.w : PRD.card.hand.w);
-  const slotH = isArrangement ? PRD.card.slot.h : ch;
-  const slotW = isArrangement ? PRD.card.slot.w : Math.round(slotH * 0.7);
+  // PR-M 2026-05-29 — fit-to-cell math. When cellWidth/cellHeight are given,
+  // derive card dims so the 2 internal rows (community + player slots) plus the
+  // compact header strip fit INSIDE the cell. Otherwise fall back to legacy PRD
+  // tokens so results/BoardReveal callers stay pixel-identical.
+  const CARD_ASPECT = 0.72; // w/h — narrow playing card
+  let commW: number;
+  let commH: number;
+  let cw: number;
+  let ch: number;
+  let slotH: number;
+  let slotW: number;
+  if (cellWidth && cellHeight) {
+    // Compact one-strip header at rs(20). Two card rows split the remainder.
+    const HEADER_H = rs(20);
+    const PAD_V = PRD.board.cellPadV; // rs(2) after PR-M
+    const PAD_H = PRD.board.cellPadH; // rs(4) after PR-M
+    const innerW = Math.max(40, cellWidth - 2 * PAD_H);
+    const innerH = Math.max(40, cellHeight - HEADER_H - 2 * PAD_V);
+    const rowH = Math.max(20, Math.floor(innerH / 2) - rs(2));
+    // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
+    const sepW = PRD.board.flopSeparatorW;
+    const sepMarginH = rs(4);
+    const commGap = PRD.card.gap;
+    const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
+    const commWByHeight = Math.max(14, Math.round(rowH * CARD_ASPECT));
+    commW = Math.min(commWByWidth, commWByHeight);
+    commH = Math.round(commW / CARD_ASPECT);
+    // Player slot row: 4 slots + 3 gaps
+    const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
+    const slotWByHeight = Math.max(14, Math.round(rowH * CARD_ASPECT));
+    slotW = Math.min(slotWByWidth, slotWByHeight);
+    slotH = Math.round(slotW / CARD_ASPECT);
+    ch = slotH;
+    cw = slotW;
+  } else {
+    // Legacy path — PRD tokens.
+    const _baseCommW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
+    const _commRowConstants =
+      4 * PRD.card.gap + PRD.board.flopSeparatorW + 2 * rs(6) + 2 * PRD.board.cellPadH;
+    const _maxCommWFromWidth = measuredBoardW > 0
+      ? Math.max(18, Math.floor((measuredBoardW - _commRowConstants) / 5))
+      : _baseCommW;
+    commW = Math.min(_baseCommW, _maxCommWFromWidth);
+    const _baseCommH = cardHeightProp ? cardHeightProp : PRD.card.community.h;
+    commH = commW < _baseCommW ? Math.round(commW / 0.7) : _baseCommH;
+    ch    = cardHeightProp ?? (isArrangement ? PRD.card.slot.h : PRD.card.hand.h);
+    cw    = cardHeightProp ? Math.round(cardHeightProp * 0.72) : (isArrangement ? PRD.card.slot.w : PRD.card.hand.w);
+    slotH = isArrangement ? PRD.card.slot.h : ch;
+    slotW = isArrangement ? PRD.card.slot.w : Math.round(slotH * 0.7);
+  }
 
   const pulseValue = useSharedValue(0.4);
 
@@ -447,11 +488,9 @@ export default function Board({
           ) : null
         )}
 
-        {/* Community cards: flop + turn/river (slightly larger for readability) */}
-        {/* A3: COMMUNITY label - gold pill for visual hierarchy */}
-        <View style={styles.communityLabelWrap}>
-          <Text style={styles.communityLabelText}>{t().community}</Text>
-        </View>
+        {/* PR-M 2026-05-29 — Community label pill REMOVED. The 5-card row IS
+            the community; the pill was redundant chrome eating rs(20+) of
+            vertical budget per board. */}
         <View style={styles.cardRow}>
           {(openCards ?? []).map((c) => (
             <CardComponent

@@ -25,9 +25,11 @@ import { PRD } from '../utils/prdTokens';
 // PR-K v9 — web caps the hand zone at ~17% of screen height (was 22%), since
 // PlayerHand now renders max 2 rows of small cards on web. Native keeps the
 // 22% floor because it still uses the 4-row quad layout for tall hands.
-const HAND_ZONE_HEIGHT = Platform.OS === 'web'
+// PR-M 2026-05-29 — hand zone capped at SCREEN_H * 0.32 (PRD.zone.handMaxH).
+const _rawHandZoneH = Platform.OS === 'web'
   ? Math.max(120, Math.floor((MODULE_SCREEN_H ?? 844) * 0.17))
   : PRD.zone.handMinH;
+const HAND_ZONE_HEIGHT = Math.min(_rawHandZoneH, PRD.zone.handMaxH);
 import { t } from '../utils/i18n';
 
 export interface BoardArrangementProps {
@@ -63,6 +65,10 @@ export interface BoardArrangementProps {
   potPerBoard: number;
   // PR-K v2 — numeric height of the boards zone (px) so cellH = zoneH/rows - gap.
   boardsZoneH: number;
+  // PR-M 2026-05-29 — strict per-cell dimensions computed in game.tsx so every
+  // board fits the viewport with no overflow at any boardCount.
+  cellW: number;
+  cellH: number;
 }
 
 export function BoardArrangement({
@@ -97,6 +103,8 @@ export function BoardArrangement({
   onContinue,
   potPerBoard,
   boardsZoneH,
+  cellW,
+  cellH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -127,40 +135,33 @@ export function BoardArrangement({
           // PR-L Task A — 4p keeps row+wrap for the 2x2 grid; 2p/3p use plain
           // column so cells can flex:1 vertically and absorb the empty space
           // that opens up when the hand zone disappears in the ready state.
+          // PR-M 2026-05-29 — explicit flexWrap: 'nowrap' for column case.
+          // Baseline boardsGrid had flexWrap: 'wrap' (for the 4p 2x2 grid).
+          // For 3p (column), the wrap caused cell 3 to wrap into a phantom
+          // second column at top=84 instead of stacking under cell 2.
           boardCount === 4
             ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
-            : { flexDirection: 'column', alignItems: 'stretch' },
+            : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch' },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
       >
         {boards.map((board, i) => {
-          // PR-L Task A — native: 4p stays 2x2 (row+wrap), 2p/3p use column
-          // direction (vertical-stack) so boards are wide+short instead of
-          // tall+narrow. Device review of build 457 showed 2p/3p horizontal
-          // columns had massive empty maroon space above community cards +
-          // community-card edge clipping. Web keeps its existing vertical-
-          // stack behavior (RNW absorbs the row+wrap — documented limitation).
-          const _rows = boardCount === 4 ? 2 : boardCount;
-          const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
-          const isVertical = boardCount !== 4;
+          // PR-M 2026-05-29 — STRICT cell sizing. Replace flex:1 expansion (which
+          // pushed board 3 off-screen in 3p mode) with deterministic height: cellH
+          // and width: cellW computed once in game.tsx from SCREEN_H/_W minus chrome.
+          //   boardCount=2 (4p): 2 rows x 1 col
+          //   boardCount=3 (3p): 3 rows x 1 col
+          //   boardCount=4 (2p): 2 rows x 2 cols
           const _widthPct = boardCount === 4 ? '50%' : '100%';
           return (
             <View
               key={i}
               style={{
                 width: _widthPct as any,
-                // PR-L Task E — for the vertical (column-direction) 2p/3p case,
-                // let each cell flex:1 inside the boardsGrid so when the hand
-                // zone disappears in the ready state, cells absorb the freed
-                // vertical space instead of leaving black gap above the buttons.
-                // 4p keeps a fixed height because flex:1 + row+wrap on web
-                // would collapse to 0 (and we want a stable footprint anyway).
-                ...(isVertical
-                  ? { flex: 1, minHeight: _cellH }
-                  : { height: _cellH, flexBasis: _widthPct as any, flexGrow: 0, flexShrink: 0 }),
+                height: cellH,
                 maxWidth: _widthPct as any,
-                paddingHorizontal: rs(3),
-                paddingVertical: rs(3),
+                paddingHorizontal: rs(2),
+                paddingVertical: rs(2),
                 overflow: 'hidden',
               }}
             >
@@ -182,6 +183,8 @@ export function BoardArrangement({
                   selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
+                  cellWidth={cellW}
+                  cellHeight={cellH}
                 />
               </Animated.View>
             </View>
