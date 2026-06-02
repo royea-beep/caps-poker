@@ -69,6 +69,8 @@ export interface BoardArrangementProps {
   // board fits the viewport with no overflow at any boardCount.
   cellW: number;
   cellH: number;
+  // PR-N 2026-06-02 — 2x2 grid only at >=360pt widths for boardCount=4.
+  use2x2Grid: boolean;
 }
 
 export function BoardArrangement({
@@ -105,6 +107,7 @@ export function BoardArrangement({
   boardsZoneH,
   cellW,
   cellH,
+  use2x2Grid,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -135,11 +138,8 @@ export function BoardArrangement({
           // PR-L Task A — 4p keeps row+wrap for the 2x2 grid; 2p/3p use plain
           // column so cells can flex:1 vertically and absorb the empty space
           // that opens up when the hand zone disappears in the ready state.
-          // PR-M 2026-05-29 — explicit flexWrap: 'nowrap' for column case.
-          // Baseline boardsGrid had flexWrap: 'wrap' (for the 4p 2x2 grid).
-          // For 3p (column), the wrap caused cell 3 to wrap into a phantom
-          // second column at top=84 instead of stacking under cell 2.
-          boardCount === 4
+          // PR-N 2026-06-02 — 2x2 only when use2x2Grid (set by game.tsx for 4p+>=360pt).
+          use2x2Grid
             ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
             : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch' },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
@@ -152,7 +152,7 @@ export function BoardArrangement({
           //   boardCount=2 (4p): 2 rows x 1 col
           //   boardCount=3 (3p): 3 rows x 1 col
           //   boardCount=4 (2p): 2 rows x 2 cols
-          const _widthPct = boardCount === 4 ? '50%' : '100%';
+          const _widthPct = use2x2Grid ? '50%' : '100%';
           return (
             <View
               key={i}
@@ -202,9 +202,13 @@ export function BoardArrangement({
         </Pressable>
       )}
 
-      {/* Player hand — explicit zone (fix #1) + visible seam to boards above (fix #2) */}
+      {/* PR-N 2026-06-02 — marginBottom slimmed to insets.bottom only. The previous
+          rs(76) buffer above the floatingActions inflated total hand footprint to
+          ~35% of SCREEN_H. Now handZone visual = HAND_ZONE_HEIGHT exactly, and the
+          floatingActions absolute overlay sits below the handZone with its own
+          padding for the iOS home indicator. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { marginBottom: rs(76) + insets.bottom }]}>
+        <View style={[baStyles.handZone, { marginBottom: PRD.zone.actionBarH + insets.bottom + rs(4) }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}
@@ -222,8 +226,11 @@ export function BoardArrangement({
         </Text>
       )}
 
-      {/* First-time hint bar (first 3 games only) */}
-      {isArranging && !boardError && gamesPlayed < 3 && (
+      {/* PR-N 2026-06-02 — first-time hint trimmed from gamesPlayed<3 to gamesPlayed<1.
+          The third-game tip (Tap a placed card to remove it) was permanently eating
+          vertical budget for repeat players. First-game user still sees the orientation
+          hint; everyone else gets the screen back. */}
+      {isArranging && !boardError && gamesPlayed < 1 && (
         <View style={baStyles.firstTimeHint}>
           <Text style={baStyles.firstTimeHintText}>{t().hintTexts[Math.min(gamesPlayed, 2)]}</Text>
         </View>

@@ -68,8 +68,15 @@ export default function CardComponent({
   suitsOnly = false,
   isCommunityCard = false,
 }: CardProps) {
-  const width = Math.max(cardWidth ?? (small ? rs(52) : rs(58)), 44);
-  const height = Math.max(cardHeight ?? (small ? rs(74) : rs(82)), 62);
+  // PR-N 2026-06-02 — Card Display Bible amendment (UNLOCKED by user in PR-N spec).
+  // Community cards have no tap target during placement and only need to convey
+  // rank+suit. Floor drops 44/62 -> 24/34 ONLY when isCommunityCard is set so the
+  // 5-card community row fits inside narrow 2x2 cells at 320pt and inside short
+  // 3p cells when boardsZoneH is tight. Hand cards stay at 44/62 for tap target.
+  const _minW = isCommunityCard ? 24 : 44;
+  const _minH = isCommunityCard ? 34 : 62;
+  const width = Math.max(cardWidth ?? (small ? rs(52) : rs(58)), _minW);
+  const height = Math.max(cardHeight ?? (small ? rs(74) : rs(82)), _minH);
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
@@ -77,8 +84,12 @@ export default function CardComponent({
   // Card sizing — width-based (S80/S81 Card Bible)
   const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.46;
   const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.34;
-  const centerRankSize = Math.max(20, Math.floor(width * mainRankRatio));
-  const centerSuitSize = Math.max(14, Math.floor(width * mainSuitRatio));
+  // PR-N 2026-06-02 — font floor relaxed for community cards (rank 20->10, suit 14->8)
+  // so they fit inside the smaller 24x34 card box without overflowing the rank text.
+  const _rankFloor = isCommunityCard ? 10 : 20;
+  const _suitFloor = isCommunityCard ? 8  : 14;
+  const centerRankSize = Math.max(_rankFloor, Math.floor(width * mainRankRatio));
+  const centerSuitSize = Math.max(_suitFloor, Math.floor(width * mainSuitRatio));
 
   // 3D flip — RN Animated only, ZERO Reanimated (S81)
   // flipAnim: 0 = face-down (back visible), 1 = face-up (front visible)
