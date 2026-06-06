@@ -35,7 +35,9 @@ export const PRD = {
   },
   zone: {
     topChromeH:      rh(68),
-    handMinH:        Math.max(rh(140), Math.floor(SCREEN_H * 0.22)),
+    // PR-O — shrink from rh(140) / 0.22 → rh(110) / 0.18 so the 4×4 hand grid
+    // (16 cards) sits fully above the action bar instead of behind it.
+    handMinH:        Math.max(rh(110), Math.floor(SCREEN_H * 0.18)),
     actionBarH:      rs(72),
     hairlineMarginH: rs(12),
   },

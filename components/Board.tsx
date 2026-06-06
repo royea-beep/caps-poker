@@ -452,7 +452,10 @@ export default function Board({
         <View style={styles.communityLabelWrap}>
           <Text style={styles.communityLabelText}>{t().community}</Text>
         </View>
-        <View style={styles.cardRow}>
+        {/* PR-O — Community now renders as a VERTICAL stack (column) so each
+            board is tall+narrow inside a 1xN grid. 3 face-up cards on top,
+            horizontal divider, 2 face-down on bottom = 5 rows. */}
+        <View style={styles.cardCol}>
           {(openCards ?? []).map((c) => (
             <CardComponent
               key={c.id}
@@ -465,7 +468,7 @@ export default function Board({
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
-          <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
+          <View style={[styles.communitySeparatorH, { backgroundColor: boardAccent }]} />
           {(closedCards ?? []).map((c, i) => (
             <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
               <CardComponent
@@ -487,8 +490,8 @@ export default function Board({
 
         {/* PR-E AUTO button hoisted above the contentCenter wrapper (PR-L Task B) */}
 
-        {/* Player cards */}
-        <View style={styles.cardRow}>
+        {/* Player cards — PR-O — vertical stack (column) to match 1xN tall+narrow cell. */}
+        <View style={styles.cardCol}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
@@ -723,6 +726,14 @@ const styles = StyleSheet.create({
     gap: PRD.card.gap,
     paddingVertical: 1,
   },
+  // PR-O — vertical stack for community + slots inside 1xN tall+narrow cells.
+  cardCol: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: PRD.card.gap,
+    paddingHorizontal: 1,
+  },
   communitySeparator: {
     // PR-D study: 3px gold separator between flop and turn/river
     width: PRD.board.flopSeparatorW,
@@ -730,6 +741,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gold,
     opacity: 0.55,
     marginHorizontal: rs(6),
+    alignSelf: 'center',
+    borderRadius: 1,
+  },
+  // PR-O — horizontal divider for vertical-stack community: full-width thin line.
+  communitySeparatorH: {
+    height: PRD.board.flopSeparatorW,
+    width: '80%',
+    backgroundColor: COLORS.gold,
+    opacity: 0.55,
+    marginVertical: rs(2),
     alignSelf: 'center',
     borderRadius: 1,
   },

@@ -124,40 +124,27 @@ export function BoardArrangement({
       <View
         style={[
           baStyles.boardsGrid,
-          // PR-L Task A — 4p keeps row+wrap for the 2x2 grid; 2p/3p use plain
-          // column so cells can flex:1 vertically and absorb the empty space
-          // that opens up when the hand zone disappears in the ready state.
-          boardCount === 4
-            ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
-            : { flexDirection: 'column', alignItems: 'stretch' },
+          // PR-O — Always 1xN (single row of N columns) regardless of boardCount.
+          // Roye device-tested build 460: 2x2 grid (old behavior) left the right
+          // half of every cell empty maroon. 1xN gives each board a tall+narrow
+          // column with community cards stacked vertically (see Board.tsx).
+          { flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch', alignContent: 'stretch' },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
       >
         {boards.map((board, i) => {
-          // PR-L Task A — native: 4p stays 2x2 (row+wrap), 2p/3p use column
-          // direction (vertical-stack) so boards are wide+short instead of
-          // tall+narrow. Device review of build 457 showed 2p/3p horizontal
-          // columns had massive empty maroon space above community cards +
-          // community-card edge clipping. Web keeps its existing vertical-
-          // stack behavior (RNW absorbs the row+wrap — documented limitation).
-          const _rows = boardCount === 4 ? 2 : boardCount;
-          const _cellH = Math.max(60, Math.floor(boardsZoneH / _rows) - rs(8));
-          const isVertical = boardCount !== 4;
-          const _widthPct = boardCount === 4 ? '50%' : '100%';
+          // PR-O — 1xN: cellH = full boardsZoneH, cellW = screenW / N (handled
+          // by flex on the parent + width:Npct here). Cells flex:1 so they
+          // absorb any extra vertical space (e.g. when hand zone disappears).
+          const _cellH = Math.max(60, Math.floor(boardsZoneH) - rs(8));
+          const _widthPct = `${Math.floor(100 / Math.max(1, boardCount))}%`;
           return (
             <View
               key={i}
               style={{
                 width: _widthPct as any,
-                // PR-L Task E — for the vertical (column-direction) 2p/3p case,
-                // let each cell flex:1 inside the boardsGrid so when the hand
-                // zone disappears in the ready state, cells absorb the freed
-                // vertical space instead of leaving black gap above the buttons.
-                // 4p keeps a fixed height because flex:1 + row+wrap on web
-                // would collapse to 0 (and we want a stable footprint anyway).
-                ...(isVertical
-                  ? { flex: 1, minHeight: _cellH }
-                  : { height: _cellH, flexBasis: _widthPct as any, flexGrow: 0, flexShrink: 0 }),
+                flex: 1,
+                minHeight: _cellH,
                 maxWidth: _widthPct as any,
                 paddingHorizontal: rs(3),
                 paddingVertical: rs(3),
@@ -210,26 +197,12 @@ export function BoardArrangement({
         </View>
       )}
 
-      {/* Selection hint / board error */}
-      {isArranging && (boardError || selectedCardIds.length > 0) && (
-        <Text style={boardError ? baStyles.boardErrorText : baStyles.selectionHint}>
-          {boardError
-            ? boardError
-            : `${selectedCardIds.length} card${selectedCardIds.length !== 1 ? 's' : ''} selected — tap a board`}
-        </Text>
-      )}
-
-      {/* First-time hint bar (first 3 games only) */}
-      {isArranging && !boardError && gamesPlayed < 3 && (
-        <View style={baStyles.firstTimeHint}>
-          <Text style={baStyles.firstTimeHintText}>{t().hintTexts[Math.min(gamesPlayed, 2)]}</Text>
-        </View>
-      )}
-
-      {/* Pro quote tip during arrangement — shown after 3 games */}
-      {isArranging && !boardError && selectedCardIds.length === 0 && gamesPlayed >= 3 && (
-        <ProQuoteBanner context="tutorial" />
-      )}
+      {/* PR-O — The "row above the action bar" (selection hint / board error /
+          first-time hint / pro-quote banner) has been deleted to save a chrome
+          row. board errors now surface only via the existing per-board shake +
+          autoPlaceToast in game.tsx. Selection hints, first-time hints, and pro
+          quotes are tutorial niceties that no longer compete for vertical space
+          on small phones. */}
 
       {/* Time bank button — visible when countdown < 20s and not yet used */}
       {isArranging && countdownActive && countdown < 20 && !timeBankUsed && (
@@ -259,7 +232,9 @@ export function BoardArrangement({
         </View>
       )}
 
-      {/* Floating action buttons */}
+      {/* Floating action buttons — PR-O — inlined "Place N cards" pill between
+          Cancel and Confirm, replacing the old top-bar pill so we save the chrome
+          row above. Pill is non-interactive (label-only). */}
       {isArranging && (
         <View style={[baStyles.floatingActions, { bottom: insets.bottom, paddingBottom: insets.bottom > 0 ? 0 : rs(8) }]}>
           <Pressable
@@ -269,6 +244,11 @@ export function BoardArrangement({
           >
             <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
           </Pressable>
+          <View style={baStyles.placePill} accessibilityLiveRegion="polite">
+            <Text style={baStyles.placePillText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              {cardsRemaining === 0 ? t().allPlaced : t().arrangeCards(cardsRemaining)}
+            </Text>
+          </View>
           <Pressable
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={onReady}
@@ -417,6 +397,26 @@ const baStyles = StyleSheet.create({
     borderTopColor: 'rgba(197,160,40,0.35)',
     zIndex: 100,
     elevation: 12,
+  },
+  // PR-O — "Place N cards" inline pill between Cancel and Confirm in floatingActions.
+  placePill: {
+    flexShrink: 0,
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(14),
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.6)',
+    borderRadius: rb(18),
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
+  placePillText: {
+    color: COLORS.gold,
+    fontSize: rf(12),
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   floatingBtn: {
     paddingVertical: rs(14),
