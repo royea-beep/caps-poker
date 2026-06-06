@@ -246,32 +246,35 @@ export function BoardArrangement({
         </View>
       )}
 
-      {/* Floating action buttons — PR-O — inlined "Place N cards" pill between
-          Cancel and Confirm, replacing the old top-bar pill so we save the chrome
-          row above. Pill is non-interactive (label-only). */}
+      {/* Floating action buttons — PR-O regression #6 — pill is now its OWN
+          row above the [Cancel, Confirm] row (was inline at index 1, looked
+          like a 3rd button). Column layout: row 1 = pill (full-width label,
+          non-interactive), row 2 = [Cancel, Confirm]. */}
       {isArranging && (
         <View style={[baStyles.floatingActions, { bottom: insets.bottom, paddingBottom: insets.bottom > 0 ? 0 : rs(8) }]}>
-          <Pressable
-            style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
-            onPress={onUndo}
-            disabled={boards.every((b) => b.playerCards.length === 0)}
-          >
-            <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
-          </Pressable>
-          <View style={baStyles.placePill} accessibilityLiveRegion="polite">
+          <View style={baStyles.placePill} accessibilityLiveRegion="polite" pointerEvents="none">
             <Text style={baStyles.placePillText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {cardsRemaining === 0 ? t().allPlaced : t().arrangeCards(cardsRemaining)}
             </Text>
           </View>
-          <Pressable
-            style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-            onPress={onReady}
-            disabled={!allBoardsFull}
-          >
-            <Text style={[baStyles.floatingBtnText, baStyles.placeBtnText]}>
-              {allBoardsFull ? t().readyCheck : t().confirm}
-            </Text>
-          </Pressable>
+          <View style={baStyles.floatingButtonsRow}>
+            <Pressable
+              style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
+              onPress={onUndo}
+              disabled={boards.every((b) => b.playerCards.length === 0)}
+            >
+              <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              onPress={onReady}
+              disabled={!allBoardsFull}
+            >
+              <Text style={[baStyles.floatingBtnText, baStyles.placeBtnText]}>
+                {allBoardsFull ? t().readyCheck : t().confirm}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       )}
     </>
@@ -395,35 +398,42 @@ const baStyles = StyleSheet.create({
     zIndex: 99, // below the action bar (100) so the bar's border still shows
   },
   floatingActions: {
-    // PR-D study: pinned absolute, solid bg, zIndex 100, height >= rs(72).
+    // PR-D study: pinned absolute, solid bg, zIndex 100.
+    // PR-O regression #6 — flexDirection column so the label pill stacks
+    // ABOVE the [Cancel, Confirm] row instead of rendering between them
+    // like a 3rd button.
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: rs(12),
+    flexDirection: 'column',
+    gap: rs(6),
     paddingHorizontal: rs(20),
-    paddingVertical: rs(10),
-    minHeight: PRD.zone.actionBarH,
+    paddingVertical: rs(8),
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
     borderTopColor: 'rgba(197,160,40,0.35)',
     zIndex: 100,
     elevation: 12,
   },
-  // PR-O — "Place N cards" inline pill between Cancel and Confirm in floatingActions.
+  // PR-O regression #6 — new row wrapper for the [Cancel, Confirm] pair.
+  floatingButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: rs(12),
+    width: '100%',
+  },
+  // PR-O regression #6 — pill is now a label-row above the buttons. Flat
+  // background, subtle border, small radius so it does NOT look like a CTA.
   placePill: {
-    flexShrink: 0,
-    paddingVertical: rs(8),
-    paddingHorizontal: rs(14),
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.6)',
-    borderRadius: rb(18),
+    alignSelf: 'center',
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 0,
+    borderRadius: rb(4),
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
   },
   placePillText: {
     color: COLORS.gold,

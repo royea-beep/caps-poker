@@ -141,9 +141,13 @@ function GameScreenInner() {
   // PR-O — Shrink hand zone (~22% native, ~18% web; was ~28%). Old height
   // hid the 4th row of the 16-card grid behind the action bar. PlayerHand
   // auto-rows 4×4 when 16 cards remain.
+  // PR-O regression #5 — PLAYER_HAND_H must equal BoardArrangement's
+  // HAND_ZONE_HEIGHT (PRD.zone.handMinH on native, slightly less on web).
+  // Otherwise boards/hand zones overlap and the 2nd row of the hand grid
+  // renders BEHIND the action bar. Sync to PRD.zone.handMinH.
   const PLAYER_HAND_H = Platform.OS === 'web'
-    ? (SCREEN_H < 700 ? 105 : SCREEN_H < 800 ? 118 : 130)
-    : (SCREEN_H < 700 ? 80 : SCREEN_H < 800 ? 90 : 100);
+    ? Math.max(120, Math.floor(SCREEN_H * 0.17))
+    : PRD.zone.handMinH;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -174,10 +178,12 @@ function GameScreenInner() {
     ? Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols)
     : screenW - _gridSidePad
   );
-  const _boardChromeH = 32; // board label + community-label pill + intra-row padding
-  // 1×N (vertical content): 5 community-stacked rows + 4 slot-stacked rows × 0.7 = 7.8.
-  // Vertical-stack (horizontal content, PR-M behavior): 1 community row + 4 slot rows × 0.7 = 3.8.
-  const _rowsPerBoard = _is1xN ? (5 + 4 * 0.7) : (1 + 4 * 0.7);
+  const _boardChromeH = 36; // board label + community-label pill + intra-row padding + separator
+  // PR-O regression #3 — verticalContent slots are now community-card sized
+  // (was 0.7× scale) so 5 community + 4 slots = 9 equal rows. Use 9 instead
+  // of 7.8 so the height cap actually keeps all 9 inside the cell.
+  // Vertical-stack (PR-M): 1 community row + 4 slot rows × 0.7 = 3.8.
+  const _rowsPerBoard = _is1xN ? 9 : (1 + 4 * 0.7);
   // Height-driven cap (per-cell)
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
   // Mobile web card-size caps:
@@ -211,12 +217,14 @@ function GameScreenInner() {
   // content + width-driven cap. 2/3-board cases use PR-M's row-based height cap.
   const _maxNativeCwFromWidth = Math.max(28, _cellW - 26);
   const _maxNativeChFromWidth = Math.round(_maxNativeCwFromWidth / 0.72);
-  // 1×N: 5 community-stacked + 4 slot-stacked × 0.7 rows.
-  // Vertical-stack (PR-M): 1 community row × scale + 4 slot rows × 0.7, fed by boardSpace.
+  // PR-O regression #3 — 1×N now uses 9 equal-height rows (5 community + 4
+  // slots, all at the community card height). Was 5*scale + 4*0.7 which
+  // assumed smaller slots and let the 4 slots overflow the cell.
+  // Vertical-stack (PR-M): 1 community row × scale + 4 slot rows × 0.7.
   const maxNativeCardH = _is1xN
     ? Math.max(
-        28,
-        Math.floor((_cellH - _boardChromeH - CARD_ROW_PAD) / (5 * communityScale + 4 * 0.7)),
+        24,
+        Math.floor((_cellH - _boardChromeH - CARD_ROW_PAD) / 9),
       )
     : Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
   const nativeCardH = isLandscape
@@ -1185,7 +1193,9 @@ function GameScreenInner() {
         </View>
         <View style={styles.headerChips}>
           <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
-          <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
+          {/* PR-O regression #1 — defensive Number()/?? guard against NaN/undefined
+              from store rehydration race (Number(undefined) → NaN → "NaN" rendered). */}
+          <Text style={styles.headerChipsAmount}>{(Number.isFinite(chips as number) ? (chips as number) : 0).toLocaleString()}</Text>
         </View>
       </View>
 
@@ -1274,7 +1284,9 @@ function GameScreenInner() {
 
       {/* Guided first-game tooltips (tips 1Â6) — non-blocking */}
       {/* Tutorial dim overlay — steps 1-2 only, focuses attention, non-blocking */}
-      {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
+      {/* PR-O regression #4 — strict gate behind gamesPlayed === 0 so the dark
+          overlay never appears on the player's 2nd+ game. */}
+      {isFirstGame && gamesPlayed === 0 && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
         <View
           style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', zIndex: 40, alignItems: 'center', justifyContent: tooltipStep === 1 ? 'flex-end' : 'flex-start', paddingBottom: tooltipStep === 1 ? rs(200) : 0, paddingTop: tooltipStep === 2 ? rs(80) : 0 }}
           pointerEvents="none"
@@ -1290,7 +1302,9 @@ function GameScreenInner() {
       )}
 
       {/* Guided first-game tooltips (tips 1–6) — non-blocking */}
-      {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
+      {/* PR-O regression #4 — also gate tooltip body so subsequent games don't
+          render the "לחץ על קלף..." hint. */}
+      {isFirstGame && gamesPlayed === 0 && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
         <GuidedTooltip
           text={TIPS[tooltipStep - 1]?.() ?? ''}
           visible={tooltipVisible}

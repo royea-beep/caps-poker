@@ -85,11 +85,14 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  // PR-O — Use 4×4 grid for 16-card hands on BOTH native and web mobile.
-  // Old behavior: web capped at 2 rows of 8, which forced cards wider and
-  // pushed the 4th-row content behind the action bar on iPhone Safari.
-  const useQuadRows = useTwoRows && safeCards.length > 12;
-  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
+  // PR-O regression #5 — 4×4 grid for 16 cards required ~280px vertical
+  // (4 rows × ~61px card height, Card.tsx enforces 44pt min width → 61px
+  // height) but hand zone is only 0.16×SCREEN_H ≈ 135px on 390×844, so the
+  // bottom 1–2 rows rendered BEHIND the action bar. Revert to the pre-PR-O
+  // 2-row grid: 2 rows × 61 + label + gap ≈ 145px which fits the shrunken
+  // hand zone above the action bar.
+  const useQuadRows = false;
+  const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / 2)) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);

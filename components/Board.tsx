@@ -209,8 +209,17 @@ export default function Board({
   const commH = commW < _baseCommW ? Math.round(commW / 0.7) : _baseCommH;
   const ch    = cardHeightProp ?? (isArrangement ? PRD.card.slot.h : PRD.card.hand.h);
   const cw    = cardHeightProp ? Math.round(cardHeightProp * 0.72) : (isArrangement ? PRD.card.slot.w : PRD.card.hand.w);
-  const slotH = isArrangement ? PRD.card.slot.h : ch;
-  const slotW = isArrangement ? PRD.card.slot.w : Math.round(slotH * 0.7);
+  // PR-O regression #3 — in verticalContent (1×N) mode the slot column
+  // contains 4 slots vertically. With PRD.card.slot.h (rs(48)) each, total
+  // ≈ 200px which overflows the narrow tall cell and pushed the board frame
+  // out of view (regression #2). Use the community-card derived dims for
+  // slot dims in verticalContent mode so 5 community + 4 slots all fit.
+  const slotH = verticalContent
+    ? commH
+    : (isArrangement ? PRD.card.slot.h : ch);
+  const slotW = verticalContent
+    ? commW
+    : (isArrangement ? PRD.card.slot.w : Math.round((isArrangement ? PRD.card.slot.h : ch) * 0.7));
 
   const pulseValue = useSharedValue(0.4);
 
@@ -527,7 +536,11 @@ export default function Board({
               <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           }
-          {isArrangement && playerCards.length >= 2 && (() => {
+          {/* PR-O regression #3 — hide hand-hint row in verticalContent (1×N)
+              mode. 1×N cells are too tall+narrow for a 44pt-min text row plus
+              5 community + 4 slot stacked cards. The hint is decorative and
+              still appears in the 2/3-board horizontal layouts. */}
+          {isArrangement && !verticalContent && playerCards.length >= 2 && (() => {
             const hint = getHandHint(playerCards);
             const expl = HINT_EXPLANATIONS[hint];
             const isHE = getLanguage() === 'he';
@@ -734,12 +747,16 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   // PR-O — vertical stack for community + slots inside 1xN tall+narrow cells.
+  // PR-O regression #3 — gap minimized + flexShrink so 5 community + 4 slot
+  // cards (9 total) fit in the cell without overflowing the maroon frame.
   cardCol: {
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: PRD.card.gap,
+    gap: 1,
     paddingHorizontal: 1,
+    flexShrink: 1,
+    minHeight: 0,
   },
   communitySeparator: {
     // PR-D study: 3px gold separator between flop and turn/river
