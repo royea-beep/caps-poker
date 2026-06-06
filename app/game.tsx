@@ -149,43 +149,57 @@ function GameScreenInner() {
   const BOARD_GAPS = (boardCount - 1) * 4;
   // PR-O — HINT_H removed from budget (consolidated into action row).
   const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  // PR-O — Always 1xN grid: 1 row, N columns (N = boardCount). Each board cell
-  // becomes tall+narrow, so community cards stack vertically (5 high) and the
-  // 4 placement slots also stack vertically. Limiting factor for card size
-  // flips to cell WIDTH instead of cell HEIGHT (vs. the old 2x2 layout where
-  // height drove the cap).
+  // PR-O scope-corrected — Only the 4-board case (2-player game) uses the 1×4
+  // horizontal grid with tall+narrow cells + vertical community + vertical slots.
+  // The 2-board (4-player) and 3-board (3-player) cases revert to PR-M's
+  // vertical-stack behavior: each board takes the full screen width as a wide
+  // row, with horizontal community cards + horizontal slot row.
+  const _is1xN = boardCount === 4;
   const _gridGap = 4;
   const _gridSidePadIfWide = 8;
   const _gridSidePad = _gridSidePadIfWide;
-  const _gridRows = 1;
-  const _gridCols = boardCount; // 2|3|4 → 1x2 / 1x3 / 1x4
+  const _gridRows = _is1xN ? 1 : boardCount;
+  const _gridCols = _is1xN ? boardCount : 1;
   const _boardsZoneH = Math.max(
     160,
     safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H,
   );
-  // _cellH = full boardsZoneH (1 row), minus minimal grid gap
-  const _cellH = Math.max(48, Math.floor(_boardsZoneH - 4));
-  // _cellW = (screenW - sidePad*2 - (N-1)*gap) / N
-  const _cellW = Math.max(80, Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
-  const _boardChromeH = 32; // board label + community-label pill + intra-row padding
-  // With vertical community (5 cards stacked) + vertical slots (4 rows of 0.7-scale),
-  // total rows-of-card-height per board = 5 + 4 * 0.7 = 7.8.
-  const _rowsPerBoard = 5 + 4 * 0.7;
-  // Height-driven cap (per-cell, vertical layout)
-  const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
-  // Width-driven cap for mobile web: each cell is now narrow, so cards must
-  // shrink to fit the cell width. Card aspect w/h ≈ 0.72 → cardH = cardW / 0.72.
-  // Cell padding overhead ~ 26px (Board pressableInner + cardRow padding).
-  const _boardColW = Math.max(60, _cellW - 26);
-  const _maxMobileWebCw = Math.max(18, _boardColW);
-  const _maxMobileWebCh = Math.round(_maxMobileWebCw / 0.72);
-  // Mobile web uses both caps (width AND height) so cards never overflow either
-  // dimension of the new tall+narrow cell.
-  const mobileWebCardH = Math.min(
-    CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
-    _maxMobileWebCh,
-    _maxCellCardH,
+  // 1×N: cellH = full boardsZoneH (single row). Vertical-stack: cellH = zoneH / rows.
+  const _cellH = Math.max(48, _is1xN
+    ? Math.floor(_boardsZoneH - 4)
+    : Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - 4
   );
+  // 1×N: cellW = (screenW - sidePad - (N-1)*gap) / N. Vertical-stack: cellW = screenW - sidePad (full-width cell).
+  const _cellW = Math.max(80, _is1xN
+    ? Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols)
+    : screenW - _gridSidePad
+  );
+  const _boardChromeH = 32; // board label + community-label pill + intra-row padding
+  // 1×N (vertical content): 5 community-stacked rows + 4 slot-stacked rows × 0.7 = 7.8.
+  // Vertical-stack (horizontal content, PR-M behavior): 1 community row + 4 slot rows × 0.7 = 3.8.
+  const _rowsPerBoard = _is1xN ? (5 + 4 * 0.7) : (1 + 4 * 0.7);
+  // Height-driven cap (per-cell)
+  const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
+  // Mobile web card-size caps:
+  //   • 1×N narrow cell → width-driven cap (card aspect w/h ≈ 0.72).
+  //   • Vertical-stack full-width cell → revert to PR-M's 5-cards-fit math.
+  //     Board column overhead ~26, cardRow has 5 cards + 4 gaps(6) + separator(7) = 31 overhead.
+  const _maxMobileWebCw = _is1xN
+    ? Math.max(18, Math.max(60, _cellW - 26))
+    : Math.max(18, Math.floor((Math.max(80, Math.floor(screenW / 2) - 26) - 31) / 5));
+  const _maxMobileWebCh = Math.round(_maxMobileWebCw / 0.72);
+  // 1×N uses both width AND height caps. Vertical-stack uses width-only (PR-M),
+  // skipping the per-cell height cap since cells are wide and shallow there.
+  const mobileWebCardH = _is1xN
+    ? Math.min(
+        CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
+        _maxMobileWebCh,
+        _maxCellCardH,
+      )
+    : Math.min(
+        CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
+        _maxMobileWebCh,
+      );
   const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
   const communityScale = nativeCardDims.communityScale;
   // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
@@ -193,18 +207,23 @@ function GameScreenInner() {
   // ch*(communityScale + 0.7) + 4 <= boardSpace Â maxCh = floor((boardSpace-4)/(communityScale+0.7))
   // Landscape uses a 2-column grid with more height per row — no cap needed there.
   const CARD_ROW_PAD = 4;
-  // PR-O — Width-driven native cap (each cell now narrow).
+  // PR-O scope-corrected — only the 1×4 case (boardCount === 4) uses vertical
+  // content + width-driven cap. 2/3-board cases use PR-M's row-based height cap.
   const _maxNativeCwFromWidth = Math.max(28, _cellW - 26);
   const _maxNativeChFromWidth = Math.round(_maxNativeCwFromWidth / 0.72);
-  // PR-O — Height-driven native cap: 5 community-stacked rows (scaled) +
-  // 4 slot-stacked rows (0.7 scaled) must fit in the new tall+narrow cell.
-  const maxNativeCardH = Math.max(
-    28,
-    Math.floor((_cellH - _boardChromeH - CARD_ROW_PAD) / (5 * communityScale + 4 * 0.7)),
-  );
+  // 1×N: 5 community-stacked + 4 slot-stacked × 0.7 rows.
+  // Vertical-stack (PR-M): 1 community row × scale + 4 slot rows × 0.7, fed by boardSpace.
+  const maxNativeCardH = _is1xN
+    ? Math.max(
+        28,
+        Math.floor((_cellH - _boardChromeH - CARD_ROW_PAD) / (5 * communityScale + 4 * 0.7)),
+      )
+    : Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
   const nativeCardH = isLandscape
     ? nativeCardDims.cardHeight
-    : Math.min(nativeCardDims.cardHeight, maxNativeCardH, _maxNativeChFromWidth);
+    : (_is1xN
+        ? Math.min(nativeCardDims.cardHeight, maxNativeCardH, _maxNativeChFromWidth)
+        : Math.min(nativeCardDims.cardHeight, maxNativeCardH));
   const BOARD_CARD_H = rvOld(
     screenW,
     mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
@@ -1241,6 +1260,7 @@ function GameScreenInner() {
         }}
         potPerBoard={config.potPerBoard}
         boardsZoneH={_boardsZoneH}
+        is1xN={_is1xN}
       />
       </Animated.View>
       {showSafeReveal && (

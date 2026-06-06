@@ -63,6 +63,10 @@ export interface BoardArrangementProps {
   potPerBoard: number;
   // PR-K v2 — numeric height of the boards zone (px) so cellH = zoneH/rows - gap.
   boardsZoneH: number;
+  // PR-O scope-corrected — true ONLY for boardCount === 4 (2-player game).
+  // Switches the grid from PR-M's vertical-stack (column) layout to a 1×N
+  // horizontal row of tall+narrow cells with vertical community + slots.
+  is1xN?: boolean;
 }
 
 export function BoardArrangement({
@@ -97,6 +101,7 @@ export function BoardArrangement({
   onContinue,
   potPerBoard,
   boardsZoneH,
+  is1xN = false,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -124,25 +129,33 @@ export function BoardArrangement({
       <View
         style={[
           baStyles.boardsGrid,
-          // PR-O — Always 1xN (single row of N columns) regardless of boardCount.
-          // Roye device-tested build 460: 2x2 grid (old behavior) left the right
-          // half of every cell empty maroon. 1xN gives each board a tall+narrow
-          // column with community cards stacked vertically (see Board.tsx).
-          { flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch', alignContent: 'stretch' },
+          // PR-O scope-corrected — only the 4-board case (2-player game) uses
+          // a 1×N horizontal grid with tall+narrow cells. The 2- and 3-board
+          // cases revert to PR-M's vertical-stack (column) behavior with full-
+          // width cells and horizontal community + horizontal slot rows.
+          is1xN
+            ? { flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch', alignContent: 'stretch' }
+            : { flexDirection: 'column', alignItems: 'stretch' },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
       >
         {boards.map((board, i) => {
-          // PR-O — 1xN: cellH = full boardsZoneH, cellW = screenW / N (handled
-          // by flex on the parent + width:Npct here). Cells flex:1 so they
-          // absorb any extra vertical space (e.g. when hand zone disappears).
-          const _cellH = Math.max(60, Math.floor(boardsZoneH) - rs(8));
-          const _widthPct = `${Math.floor(100 / Math.max(1, boardCount))}%`;
+          // 1×N: cellH = full boardsZoneH (single row of N narrow cells).
+          // Vertical-stack: cellH = boardsZoneH / boardCount (one cell per row).
+          const _cellH = is1xN
+            ? Math.max(60, Math.floor(boardsZoneH) - rs(8))
+            : Math.max(60, Math.floor(boardsZoneH / Math.max(1, boardCount)) - rs(8));
+          const _widthPct = is1xN
+            ? (`${Math.floor(100 / Math.max(1, boardCount))}%` as const)
+            : ('100%' as const);
           return (
             <View
               key={i}
               style={{
                 width: _widthPct as any,
+                // 1×N: flex:1 + minHeight so cells absorb extra vertical space.
+                // Vertical-stack: also flex:1 so cells absorb space when hand zone
+                // disappears in the ready state (PR-L Task E behavior).
                 flex: 1,
                 minHeight: _cellH,
                 maxWidth: _widthPct as any,
@@ -169,6 +182,7 @@ export function BoardArrangement({
                   selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
+                  verticalContent={is1xN}
                 />
               </Animated.View>
             </View>

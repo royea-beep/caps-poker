@@ -68,6 +68,11 @@ interface BoardProps {
   cardHeight?: number;
   isWinner?: boolean;
   communityScale?: number;
+  // PR-O scope-corrected — when true (only 4-board / 2-player case), render
+  // community cards as a vertical stack (3 face-up / horizontal divider / 2
+  // face-down) and player slots as a vertical column. Default false = PR-M's
+  // horizontal community row + horizontal slot row.
+  verticalContent?: boolean;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -157,6 +162,7 @@ export default function Board({
   cardHeight: cardHeightProp,
   isWinner,
   communityScale = 1.2,
+  verticalContent = false,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
@@ -452,10 +458,10 @@ export default function Board({
         <View style={styles.communityLabelWrap}>
           <Text style={styles.communityLabelText}>{t().community}</Text>
         </View>
-        {/* PR-O — Community now renders as a VERTICAL stack (column) so each
-            board is tall+narrow inside a 1xN grid. 3 face-up cards on top,
-            horizontal divider, 2 face-down on bottom = 5 rows. */}
-        <View style={styles.cardCol}>
+        {/* PR-O scope-corrected — vertical stack only when verticalContent=true
+            (4-board case). Default behavior is PR-M's horizontal community row:
+            3 face-up + vertical gold separator + 2 face-down, side by side. */}
+        <View style={verticalContent ? styles.cardCol : styles.cardRow}>
           {(openCards ?? []).map((c) => (
             <CardComponent
               key={c.id}
@@ -468,7 +474,7 @@ export default function Board({
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
-          <View style={[styles.communitySeparatorH, { backgroundColor: boardAccent }]} />
+          <View style={[verticalContent ? styles.communitySeparatorH : styles.communitySeparator, { backgroundColor: boardAccent }]} />
           {(closedCards ?? []).map((c, i) => (
             <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
               <CardComponent
@@ -490,8 +496,9 @@ export default function Board({
 
         {/* PR-E AUTO button hoisted above the contentCenter wrapper (PR-L Task B) */}
 
-        {/* Player cards — PR-O — vertical stack (column) to match 1xN tall+narrow cell. */}
-        <View style={styles.cardCol}>
+        {/* Player cards — PR-O scope-corrected — vertical stack only when
+            verticalContent=true. Default = PR-M horizontal slot row. */}
+        <View style={verticalContent ? styles.cardCol : styles.cardRow}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
