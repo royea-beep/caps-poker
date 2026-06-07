@@ -85,23 +85,51 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  // Web: never quad-rows — always at most 2 rows. Native keeps quad for very tall hands.
-  const useQuadRows = !isWeb && useTwoRows && safeCards.length > 12;
+  // Shrink-fix 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards on BOTH
+  // native AND web mobile. (Web mobile previously stayed 2×8 → 8 cards × 56dp =
+  // 448dp on 390 viewport = horizontal overflow.)
+  const useQuadRows = useTwoRows && safeCards.length >= 13;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  // PR-O 2026-06-07 Fix 3c — when quad rows are active, derive cardH from the
+  // available hand zone height (handMinH - label - 3 row gaps) / 4. This
+  // guarantees the 4th row fits inside the zone. cardW preserves Card.tsx's
+  // 0.72 aspect implicitly. Outside quad mode the existing width-derived math
+  // continues to drive sizing.
+  const HAND_LABEL_H = rs(18);
+  const HAND_LABEL_MB = rs(3);                       // labelRow.marginBottom
+  const HAND_ROW_GAP = rs(3);
+  const HAND_CONTAINER_PAD_V = rs(3);                // styles.container.paddingVertical (×2)
+  const CARD_WRAPPER_BORDER_V = 2;                   // cardWrapper.borderWidth (×2 per row)
+  const handZoneH = PRD.zone.handMinH;
+  // Shrink-fix iter 3 — the previous formula only subtracted label + 3 gaps,
+  // leaving 25dp of hidden chrome (container.paddingVertical × 2 = 6, label
+  // marginBottom = 3, cardWrapper.borderWidth × 2 × 4 rows = 16). At 4×4 grid
+  // those 25dp pushed the 4th row past the action bar by 42dp on 390×844.
+  const cardHForQuad = Math.floor(
+    (handZoneH
+      - HAND_LABEL_H
+      - HAND_LABEL_MB
+      - 3 * HAND_ROW_GAP
+      - 2 * HAND_CONTAINER_PAD_V
+      - 4 * 2 * CARD_WRAPPER_BORDER_V
+    ) / 4
+  );
+  const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
   const cardW = (() => {
+    if (useQuadRows) {
+      // Width bounded by maxCardW so we never overflow horizontally on either platform.
+      return Math.max(20, Math.min(cardWForQuad, maxCardW));
+    }
     if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
-    // PR-K v9: cap web card width tight so 8/row fits without horizontal overflow.
-    // SCREEN_W can be > viewport (module-level const captured at boot), so the
-    // upper cap matters more than the dynamic max — it guards against module-load
-    // SCREEN_W being larger than the actual rendered viewport.
+    // PR-K v9 web 2x8 path stays for partial hands (length < 13).
     if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
     return Math.min(56, Math.max(42, maxCardW));
   })();
-  const cardH = Math.round(cardW / 0.72);
+  const cardH = Math.max(20, Math.round(cardW / 0.72));
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, rowSize);

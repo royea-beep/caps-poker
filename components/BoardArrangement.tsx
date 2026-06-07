@@ -7,7 +7,7 @@ import PlayerHand from './PlayerHand';
 import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
-import { rf, rs, rb, rv, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
+import { rf, rs, rb, rv } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
 // PR-K v7 — Module-top side-effect and nativeID/dataSet/inline styles ALL
@@ -22,14 +22,11 @@ import { PRD } from '../utils/prdTokens';
 // boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
 // visual boundary. Now: handHeight is computed once at module load, with a 140px
 // floor so 320pt phones still see a usable hand row.
-// PR-K v9 — web caps the hand zone at ~17% of screen height (was 22%), since
-// PlayerHand now renders max 2 rows of small cards on web. Native keeps the
-// 22% floor because it still uses the 4-row quad layout for tall hands.
-// PR-M 2026-05-29 — hand zone capped at SCREEN_H * 0.32 (PRD.zone.handMaxH).
-const _rawHandZoneH = Platform.OS === 'web'
-  ? Math.max(120, Math.floor((MODULE_SCREEN_H ?? 844) * 0.17))
-  : PRD.zone.handMinH;
-const HAND_ZONE_HEIGHT = Math.min(_rawHandZoneH, PRD.zone.handMaxH);
+// PR-O 2026-06-07 Fix 3b — unify HAND_ZONE_HEIGHT with PRD.zone.handMinH on BOTH
+// platforms. The split web/native constants drifted out of sync from the
+// PlayerHand 4×4 row budget; PlayerHand computes cardH from PRD.zone.handMinH
+// directly, so any other zone height here = dead gap + clipped bottom row.
+const HAND_ZONE_HEIGHT = PRD.zone.handMinH;
 import { t } from '../utils/i18n';
 
 export interface BoardArrangementProps {
@@ -207,8 +204,14 @@ export function BoardArrangement({
           ~35% of SCREEN_H. Now handZone visual = HAND_ZONE_HEIGHT exactly, and the
           floatingActions absolute overlay sits below the handZone with its own
           padding for the iOS home indicator. */}
+      {/* Shrink-fix iter 4 — PRD.zone.actionBarH=rs(56) under-counted the
+          actually-rendered action-bar height (~71dp on 390 viewport because
+          of inner padding + button minHeight + border). The 17dp residual
+          overlap of hand row 4 into the action bar came from this mismatch.
+          Bumped to rs(72) + rs(4) safety so the hand container's bottom
+          sits cleanly above the action bar top. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { marginBottom: PRD.zone.actionBarH + insets.bottom + rs(4) }]}>
+        <View style={[baStyles.handZone, { marginBottom: rs(72) + insets.bottom + rs(8) }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}

@@ -212,21 +212,34 @@ export default function Board({
     const HEADER_H = rs(20);
     const PAD_V = PRD.board.cellPadV; // rs(2) after PR-M
     const PAD_H = PRD.board.cellPadH; // rs(4) after PR-M
-    const innerW = Math.max(40, cellWidth - 2 * PAD_H);
+    // PR-O 2026-06-07 Fix 2 — innerW must also subtract:
+    //   * container.borderWidth (PRD.board.border) on each side
+    //   * BoardArrangement cell wrapper paddingHorizontal (rs(2) each side)
+    //   * Roye's breathing room (rs(6) each side) so cards never touch border
+    const BORDER_W = PRD.board.border;       // rs(2)
+    const CELL_WRAPPER_PAD_H = rs(2);        // BoardArrangement cell paddingHorizontal
+    const BREATHING_H = rs(6);               // visible gap between border and first card
+    const innerW = Math.max(40, cellWidth - 2 * PAD_H - 2 * BORDER_W - 2 * CELL_WRAPPER_PAD_H - 2 * BREATHING_H);
     const innerH = Math.max(40, cellHeight - HEADER_H - 2 * PAD_V);
-    const rowH = Math.max(20, Math.floor(innerH / 2) - rs(2));
+    const rowGap = rs(2);
+    const rowH = Math.max(20, Math.floor(innerH / 2) - rowGap);
+    // PR-O 2026-06-07 Fix 1 — derive card HEIGHT from cell first, then width.
+    // Was: width-first → commH = round(commW/0.72) → vertical slack at 4-board.
+    // Now: cardH_byHeight = (innerH - rowGap)/2, cardW_fromHeight = h*0.72.
+    // Final commW = min(commWByWidth, cardW_fromHeight) preserves aspect AND
+    // lets contentCenter justifyContent:'space-evenly' distribute any slack.
+    const cardH_byHeight = Math.max(20, Math.floor((innerH - rowGap) / 2));
+    const cardW_fromHeight = Math.max(14, Math.round(cardH_byHeight * CARD_ASPECT));
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
     const sepW = PRD.board.flopSeparatorW;
     const sepMarginH = rs(4);
     const commGap = PRD.card.gap;
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
-    const commWByHeight = Math.max(14, Math.round(rowH * CARD_ASPECT));
-    commW = Math.min(commWByWidth, commWByHeight);
+    commW = Math.min(commWByWidth, cardW_fromHeight);
     commH = Math.round(commW / CARD_ASPECT);
     // Player slot row: 4 slots + 3 gaps
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
-    const slotWByHeight = Math.max(14, Math.round(rowH * CARD_ASPECT));
-    slotW = Math.min(slotWByWidth, slotWByHeight);
+    slotW = Math.min(slotWByWidth, cardW_fromHeight);
     slotH = Math.round(slotW / CARD_ASPECT);
     ch = slotH;
     cw = slotW;
@@ -434,7 +447,7 @@ export default function Board({
             to the board rather than to the centered content wrapper. */}
         {isArrangement && playerCards.length === 0 && onAutoFill && (
           <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-            <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
+            <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
           </Pressable>
         )}
 
@@ -647,9 +660,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   // PR-L Task B — wrapper for the centered content rows.
+  // PR-O 2026-06-07 Fix 1 — space-evenly so any vertical slack (when row is
+  // width-limited and cardH_byHeight wins) distributes as top + middle + bottom
+  // equally, eliminating the empty maroon block below the cards.
   contentCenter: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-evenly',
     minHeight: 0,
   },
   active: {
@@ -760,11 +776,14 @@ const styles = StyleSheet.create({
   },
   cardRow: {
     // PR-D study: card gap = rs(3)
+    // PR-O 2026-06-07 Fix 2 — paddingHorizontal: rs(6) guarantees the rendered
+    // row never touches the inner gold border (≥6dp breathing room).
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: PRD.card.gap,
     paddingVertical: 1,
+    paddingHorizontal: rs(6),
   },
   communitySeparator: {
     // PR-D study: 3px gold separator between flop and turn/river
@@ -937,16 +956,20 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // PR-E: position absolute in top-right of board container so it never
-    // competes with the 4-slot cardRow at narrow 2x2 cell widths.
+    // Shrink-fix iter 6 — RTL fix: in dir=rtl, the boardLabel (inside
+    // headerLeft with flex:1) lays out on the PHYSICAL RIGHT edge. autoBtn at
+    // right:rs(3) ended up on the same edge → overlap on all 4 boards.
+    // Switched to left:rs(3) so autoBtn anchors to the physical LEFT edge —
+    // opposite end from the label in Hebrew RTL.
     position: 'absolute',
     top: rs(3),
-    right: rs(3),
-    paddingHorizontal: rs(6),
-    paddingVertical: rs(2),
-    minHeight: rs(20),
+    left: rs(3),
+    maxWidth: rs(95),
+    paddingHorizontal: rs(4),
+    paddingVertical: rs(1),
+    minHeight: rs(16),
     justifyContent: 'center' as const,
-    borderRadius: rs(6),
+    borderRadius: rs(5),
     backgroundColor: 'rgba(26,26,46,0.85)',
     borderWidth: 1,
     borderColor: '#C5A028',
@@ -955,8 +978,8 @@ const styles = StyleSheet.create({
   },
   autoBtnText: {
     color: '#e8c96a',
-    fontSize: rf(8),
+    fontSize: rf(7),
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });
