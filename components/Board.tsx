@@ -956,16 +956,19 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // PR-E: position absolute in top-right of board container so it never
-    // competes with the 4-slot cardRow at narrow 2x2 cell widths.
+    // PR-E: absolute top-right so it never competes with the 4-slot cardRow.
+    // Shrink-fix 2026-06-07 — moved down past the header strip (top:rs(3) →
+    // rs(26)) and tightened padding so the BOARD N colored pill in header is
+    // fully visible. The auto-pill now sits in the upper-right of the
+    // contentCenter area, above the community-card row.
     position: 'absolute',
-    top: rs(3),
+    top: rs(26),
     right: rs(3),
-    paddingHorizontal: rs(6),
-    paddingVertical: rs(2),
-    minHeight: rs(20),
+    paddingHorizontal: rs(5),
+    paddingVertical: rs(1),
+    minHeight: rs(16),
     justifyContent: 'center' as const,
-    borderRadius: rs(6),
+    borderRadius: rs(5),
     backgroundColor: 'rgba(26,26,46,0.85)',
     borderWidth: 1,
     borderColor: '#C5A028',
