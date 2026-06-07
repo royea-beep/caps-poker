@@ -39,11 +39,14 @@ export const PRD = {
     // handZone.marginBottom drops to just rs(8) + insets.bottom so total footprint
     // (zone + buffer + action bar) stays under 50%.
     topChromeH:      rh(56),
-    // PR-O 2026-06-07 Fix 3 — bump handMinH to 32% of SCREEN_H so the 4×4 grid
-    // (16 cards) has room for 4 rows × ~60dp + 3 row gaps + label without the
-    // bottom row clipping. 0.32 × 844 ≈ 270dp lands cardH at ~60dp.
-    handMinH:        Math.max(rh(180), Math.floor(SCREEN_H * 0.32)),
-    handMaxH:        Math.floor(SCREEN_H * 0.32),
+    // Shrink-fix 2026-06-07 iter 2 — 0.32 was 45dp short of fitting the rendered
+    // 4×4 grid because Card.tsx 62dp height floor + per-row cardWrapper border
+    // (2dp × 2 = 4) + container.paddingVertical (rs(3) × 2 = 6) + 3 row gaps
+    // (rs(3) × 3 = 9) + labelRow (~21) added up to ~292dp actual chrome. Bumped
+    // to 0.38 (320dp on 844) so 4 rows of ~62dp + 52dp chrome = 300dp fits with
+    // 20dp safety.
+    handMinH:        Math.max(rh(180), Math.floor(SCREEN_H * 0.38)),
+    handMaxH:        Math.floor(SCREEN_H * 0.38),
     actionBarH:      rs(56),
     hairlineMarginH: rs(8),
   },
