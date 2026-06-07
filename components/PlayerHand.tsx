@@ -85,14 +85,31 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
+  // PR-O 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards (was >12).
   // Web: never quad-rows — always at most 2 rows. Native keeps quad for very tall hands.
-  const useQuadRows = !isWeb && useTwoRows && safeCards.length > 12;
+  const useQuadRows = !isWeb && useTwoRows && safeCards.length >= 13;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
   const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  // PR-O 2026-06-07 Fix 3c — when quad rows are active, derive cardH from the
+  // available hand zone height (handMinH - label - 3 row gaps) / 4. This
+  // guarantees the 4th row fits inside the zone. cardW preserves Card.tsx's
+  // 0.72 aspect implicitly. Outside quad mode the existing width-derived math
+  // continues to drive sizing.
+  const HAND_LABEL_H = rs(18);
+  const HAND_ROW_GAP = rs(3);
+  const handZoneH = PRD.zone.handMinH;
+  const cardHForQuad = Math.floor((handZoneH - HAND_LABEL_H - 3 * HAND_ROW_GAP) / 4);
+  const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
   const cardW = (() => {
-    if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
+    if (!isWeb) {
+      if (useQuadRows) {
+        // Width still bounded by maxCardW so we never overflow horizontally.
+        return Math.max(20, Math.min(cardWForQuad, maxCardW));
+      }
+      return Math.min(38, Math.max(24, maxCardW));
+    }
     // PR-K v9: cap web card width tight so 8/row fits without horizontal overflow.
     // SCREEN_W can be > viewport (module-level const captured at boot), so the
     // upper cap matters more than the dynamic max — it guards against module-load
@@ -101,7 +118,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
     return Math.min(56, Math.max(42, maxCardW));
   })();
-  const cardH = Math.round(cardW / 0.72);
+  const cardH = useQuadRows && !isWeb
+    ? Math.max(20, Math.round(cardW / 0.72))
+    : Math.round(cardW / 0.72);
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, rowSize);

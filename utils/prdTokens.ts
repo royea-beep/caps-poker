@@ -39,8 +39,11 @@ export const PRD = {
     // handZone.marginBottom drops to just rs(8) + insets.bottom so total footprint
     // (zone + buffer + action bar) stays under 50%.
     topChromeH:      rh(56),
-    handMinH:        Math.max(rh(100), Math.floor(SCREEN_H * 0.16)),
-    handMaxH:        Math.floor(SCREEN_H * 0.28),
+    // PR-O 2026-06-07 Fix 3 — bump handMinH to 32% of SCREEN_H so the 4×4 grid
+    // (16 cards) has room for 4 rows × ~60dp + 3 row gaps + label without the
+    // bottom row clipping. 0.32 × 844 ≈ 270dp lands cardH at ~60dp.
+    handMinH:        Math.max(rh(180), Math.floor(SCREEN_H * 0.32)),
+    handMaxH:        Math.floor(SCREEN_H * 0.32),
     actionBarH:      rs(56),
     hairlineMarginH: rs(8),
   },
