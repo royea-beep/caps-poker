@@ -105,7 +105,11 @@ const COUNTDOWN_SECONDS = 30;
 const TOP_CHROME_H = PRD.zone.topChromeH;          // rh(68) — spec
 const TOP_BAR_H = Math.round(TOP_CHROME_H * 44 / 68);
 const BOT_STATUS_H = Math.round(TOP_CHROME_H * 24 / 68);
-const FLOATING_ACTIONS_H = PRD.zone.actionBarH;    // rs(72) — spec
+// PR-O v3 — Fix #6 added a pill row ABOVE the [Cancel, Confirm] row, so the
+// floating action zone is no longer just actionBarH. Add pill row + gap +
+// padding so the boards-zone reservation and hand-zone marginBottom both
+// account for the full chrome at the bottom of the screen.
+const FLOATING_ACTIONS_H = PRD.zone.actionBarH + rs(28);    // ≈ rs(100) — actionBar + pill row + gap
 const HINT_H = 26;                                  // selectionHint / boardError bar
 const BOARD_CHROME = 40;                            // per-board chrome budget
 
@@ -138,16 +142,12 @@ function GameScreenInner() {
 
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
-  // PR-O — Shrink hand zone (~22% native, ~18% web; was ~28%). Old height
-  // hid the 4th row of the 16-card grid behind the action bar. PlayerHand
-  // auto-rows 4×4 when 16 cards remain.
-  // PR-O regression #5 — PLAYER_HAND_H must equal BoardArrangement's
-  // HAND_ZONE_HEIGHT (PRD.zone.handMinH on native, slightly less on web).
-  // Otherwise boards/hand zones overlap and the 2nd row of the hand grid
-  // renders BEHIND the action bar. Sync to PRD.zone.handMinH.
-  const PLAYER_HAND_H = Platform.OS === 'web'
-    ? Math.max(120, Math.floor(SCREEN_H * 0.17))
-    : PRD.zone.handMinH;
+  // PR-O v3 — gap fix: hand was 0.17×SCREEN_H on web → ~140dp on 390×844,
+  // leaving a 134dp dead black gap between boards and hand. Bumped to match
+  // handMinH (0.30) so 4×4 hand grid has ~63dp per row AND the boards-zone
+  // calc absorbs the freed space cleanly. Native + web now both use the
+  // same handMinH source so screenshot matches device.
+  const PLAYER_HAND_H = PRD.zone.handMinH;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;

@@ -200,9 +200,12 @@ export function BoardArrangement({
         </Pressable>
       )}
 
-      {/* Player hand — explicit zone (fix #1) + visible seam to boards above (fix #2) */}
+      {/* Player hand — explicit zone (fix #1) + visible seam to boards above (fix #2).
+          PR-O v3 — marginBottom was rs(76) (just actionBarH); fix #6 added a pill row
+          above [Cancel, Confirm] which pushed the floating-actions zone to ~rs(100).
+          Bumped so hand floats ABOVE the pill+bar stack with a tiny gap, not behind. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { marginBottom: rs(76) + insets.bottom }]}>
+        <View style={[baStyles.handZone, { marginBottom: rs(104) + insets.bottom }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}

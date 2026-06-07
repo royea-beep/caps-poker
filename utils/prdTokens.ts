@@ -35,9 +35,11 @@ export const PRD = {
   },
   zone: {
     topChromeH:      rh(68),
-    // PR-O — shrink from rh(140) / 0.22 → rh(110) / 0.18 so the 4×4 hand grid
-    // (16 cards) sits fully above the action bar instead of behind it.
-    handMinH:        Math.max(rh(110), Math.floor(SCREEN_H * 0.18)),
+    // PR-O v3 — gap fix: at 0.18 the 4×4 grid card height was below Card.tsx's
+    // 44pt floor, forcing a fallback to 2×8 that still hid bottom rows AND
+    // left a 134dp dead gap between boards and hand. Bumped to 0.30 so 4×4
+    // gets ~63dp per row (readable), boards zone naturally absorbs the rest.
+    handMinH:        Math.max(rh(180), Math.floor(SCREEN_H * 0.30)),
     actionBarH:      rs(72),
     hairlineMarginH: rs(12),
   },
