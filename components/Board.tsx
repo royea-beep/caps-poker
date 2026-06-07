@@ -447,7 +447,7 @@ export default function Board({
             to the board rather than to the centered content wrapper. */}
         {isArrangement && playerCards.length === 0 && onAutoFill && (
           <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-            <Text style={styles.autoBtnText}>{t().autoPlace}</Text>
+            <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
           </Pressable>
         )}
 
@@ -956,15 +956,16 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // PR-E: absolute top-right so it never competes with the 4-slot cardRow.
-    // Shrink-fix 2026-06-07 — moved down past the header strip (top:rs(3) →
-    // rs(26)) and tightened padding so the BOARD N colored pill in header is
-    // fully visible. The auto-pill now sits in the upper-right of the
-    // contentCenter area, above the community-card row.
+    // Shrink-fix iter 5 — Roye spec: top-right corner on the SAME LINE as the
+    // BOARD-N pill (top-left), above the community-card row. Brought top back
+    // to rs(3) so it's at the header line, capped maxWidth so the 13-char
+    // Hebrew text "מיקום אוטומטי" can't extend into the BOARD-N pill area.
+    // autoBtnText now has adjustsFontSizeToFit to compress on narrow cells.
     position: 'absolute',
-    top: rs(26),
+    top: rs(3),
     right: rs(3),
-    paddingHorizontal: rs(5),
+    maxWidth: rs(95),
+    paddingHorizontal: rs(4),
     paddingVertical: rs(1),
     minHeight: rs(16),
     justifyContent: 'center' as const,
@@ -977,8 +978,8 @@ const styles = StyleSheet.create({
   },
   autoBtnText: {
     color: '#e8c96a',
-    fontSize: rf(8),
+    fontSize: rf(7),
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });
