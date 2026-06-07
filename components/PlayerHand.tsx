@@ -99,9 +99,24 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // 0.72 aspect implicitly. Outside quad mode the existing width-derived math
   // continues to drive sizing.
   const HAND_LABEL_H = rs(18);
+  const HAND_LABEL_MB = rs(3);                       // labelRow.marginBottom
   const HAND_ROW_GAP = rs(3);
+  const HAND_CONTAINER_PAD_V = rs(3);                // styles.container.paddingVertical (×2)
+  const CARD_WRAPPER_BORDER_V = 2;                   // cardWrapper.borderWidth (×2 per row)
   const handZoneH = PRD.zone.handMinH;
-  const cardHForQuad = Math.floor((handZoneH - HAND_LABEL_H - 3 * HAND_ROW_GAP) / 4);
+  // Shrink-fix iter 3 — the previous formula only subtracted label + 3 gaps,
+  // leaving 25dp of hidden chrome (container.paddingVertical × 2 = 6, label
+  // marginBottom = 3, cardWrapper.borderWidth × 2 × 4 rows = 16). At 4×4 grid
+  // those 25dp pushed the 4th row past the action bar by 42dp on 390×844.
+  const cardHForQuad = Math.floor(
+    (handZoneH
+      - HAND_LABEL_H
+      - HAND_LABEL_MB
+      - 3 * HAND_ROW_GAP
+      - 2 * HAND_CONTAINER_PAD_V
+      - 4 * 2 * CARD_WRAPPER_BORDER_V
+    ) / 4
+  );
   const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
   const cardW = (() => {
     if (useQuadRows) {
