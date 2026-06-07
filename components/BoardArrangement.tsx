@@ -204,13 +204,13 @@ export function BoardArrangement({
           ~35% of SCREEN_H. Now handZone visual = HAND_ZONE_HEIGHT exactly, and the
           floatingActions absolute overlay sits below the handZone with its own
           padding for the iOS home indicator. */}
+      {/* Shrink-fix iter 4 — PRD.zone.actionBarH=rs(56) under-counted the
+          actually-rendered action-bar height (~71dp on 390 viewport because
+          of inner padding + button minHeight + border). The 17dp residual
+          overlap of hand row 4 into the action bar came from this mismatch.
+          Bumped to rs(72) + rs(4) safety so the hand container's bottom
+          sits cleanly above the action bar top. */}
       {isArranging && (
-        {/* Shrink-fix iter 4 — PRD.zone.actionBarH=rs(56) under-counted the
-            actually-rendered action-bar height (~71dp on 390 viewport because
-            of inner padding + button minHeight + border). The 17dp residual
-            overlap of hand row 4 into the action bar came from this mismatch.
-            Bumped to rs(72) + rs(4) safety so the hand container's bottom
-            sits cleanly above the action bar top. */}
         <View style={[baStyles.handZone, { marginBottom: rs(72) + insets.bottom + rs(4) }]}>
           <PlayerHand
             cards={playerHand}
