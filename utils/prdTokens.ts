@@ -45,8 +45,8 @@ export const PRD = {
     // (rs(3) × 3 = 9) + labelRow (~21) added up to ~292dp actual chrome. Bumped
     // to 0.38 (320dp on 844) so 4 rows of ~62dp + 52dp chrome = 300dp fits with
     // 20dp safety.
-    handMinH:        Math.max(rh(180), Math.floor(SCREEN_H * 0.38)),
-    handMaxH:        Math.floor(SCREEN_H * 0.38),
+    handMinH:        Math.max(rh(180), Math.floor(SCREEN_H * 0.40)),
+    handMaxH:        Math.floor(SCREEN_H * 0.40),
     actionBarH:      rs(56),
     hairlineMarginH: rs(8),
   },
