@@ -2,10 +2,7 @@
  * utils/prdTokens.ts
  *
  * PR-D study tokens (caps-design-study, 2026-05-25).
- *
- * Exact responsive values derived from
- *   screenshots/caps-design-study/placement_320|393|430.png
- *   screenshots/caps-design-study/ready_320|393|430.png
+ * PR-M 2026-05-29 — aggressive vertical budget pass.
  *
  * All values derived from utils/responsive.ts (rs/rh) so they scale linearly
  * with screenW/393 and screenH/852. SCREEN_W/H are locked at module load — no
@@ -25,19 +22,26 @@ export const PRD = {
     cornerSuit: (cardW: number): number => Math.max(7,  Math.round(cardW * 0.22)),
   },
   board: {
-    gridGap:        rs(6),
-    cellPadH:       rs(6),
-    cellPadV:       rs(5),
+    // PR-M: tighter cell padding so the cell usable height matches what the
+    // outer cellH math budgets. Was rs(6/5) -> now rs(4/2).
+    gridGap:        rs(4),
+    cellPadH:       rs(4),
+    cellPadV:       rs(2),
     cellHCap:       rh(118),
     border:         rs(2),
     accent:         ['#FFD24A', '#4DAEFF', '#5BD17A', '#FF8E5A'] as const,
     flopSeparatorW: rs(3),
   },
   zone: {
-    topChromeH:      rh(68),
-    handMinH:        Math.max(rh(140), Math.floor(SCREEN_H * 0.22)),
-    actionBarH:      rs(72),
-    hairlineMarginH: rs(12),
+    // PR-M 2026-05-29 — aggressive vertical budget. Top chrome collapses from
+    // rh(68) to rh(56), action bar from rs(72) to rs(56), hand zone gets a HARD
+    // cap at 32% of screen height. Boards consume everything else so the 3p
+    // vertical-stack stops clipping board 3 off the viewport.
+    topChromeH:      rh(56),
+    handMinH:        Math.max(rh(120), Math.floor(SCREEN_H * 0.22)),
+    handMaxH:        Math.floor(SCREEN_H * 0.32),
+    actionBarH:      rs(56),
+    hairlineMarginH: rs(8),
   },
   selection: {
     liftY:        -rs(6),

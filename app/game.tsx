@@ -99,15 +99,15 @@ const hapticNotify = (type: any) => {
 
 const COUNTDOWN_SECONDS = 30;
 
-// Layout constants — PR-D study zones
-// Top chrome (header + bot bar) locked at rh(68) per spec; FLOATING_ACTIONS at
-// rs(72)+insets per spec; boards flex-grow; gold hairline divider above hand.
-const TOP_CHROME_H = PRD.zone.topChromeH;          // rh(68) — spec
-const TOP_BAR_H = Math.round(TOP_CHROME_H * 44 / 68);
-const BOT_STATUS_H = Math.round(TOP_CHROME_H * 24 / 68);
-const FLOATING_ACTIONS_H = PRD.zone.actionBarH;    // rs(72) — spec
-const HINT_H = 26;                                  // selectionHint / boardError bar
-const BOARD_CHROME = 40;                            // per-board chrome budget
+// Layout constants — PR-M aggressive vertical budget (2026-05-29).
+// Top chrome (header + bot bar) collapsed to rh(56); FLOATING_ACTIONS to rs(56).
+// Boards consume everything else so 3p vertical-stack stops clipping board 3.
+const TOP_CHROME_H = PRD.zone.topChromeH;          // rh(56) — PR-M
+const TOP_BAR_H = Math.round(TOP_CHROME_H * 36 / 56);  // ~36/56 = top button row
+const BOT_STATUS_H = Math.round(TOP_CHROME_H * 20 / 56);// ~20/56 = bot pill row
+const FLOATING_ACTIONS_H = PRD.zone.actionBarH;    // rs(56) — PR-M
+const HINT_H = 22;                                  // selectionHint / boardError bar
+const BOARD_CHROME = 28;                            // per-board chrome budget (was 40)
 
 function GameScreenInner() {
   const router = useRouter();
@@ -139,9 +139,11 @@ function GameScreenInner() {
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
   // PR-K v9 — web reserves more so hand has its 2-row footprint; boards get the rest.
-  const PLAYER_HAND_H = Platform.OS === 'web'
-    ? (SCREEN_H < 700 ? 130 : SCREEN_H < 800 ? 145 : 160)
-    : (SCREEN_H < 700 ? 100 : SCREEN_H < 800 ? 112 : 124);
+  // PR-M 2026-05-29 — hand zone HARD CAP at SCREEN_H * 0.32 (PRD.zone.handMaxH).
+  const _rawHandH = Platform.OS === 'web'
+    ? (SCREEN_H < 700 ? 124 : SCREEN_H < 800 ? 138 : 152)
+    : (SCREEN_H < 700 ?  96 : SCREEN_H < 800 ? 108 : 120);
+  const PLAYER_HAND_H = Math.min(_rawHandH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -160,12 +162,30 @@ function GameScreenInner() {
   // (cellH - board-chrome) / (communityScale + 4 * slotRatio + padding).
   // slotRatio ≈ 0.7 (Board renders 4 player slots vertically per board).
   // Fall back to the existing width-driven cap when the height calc would be larger.
-  const _gridRows = boardCount >= 4 ? 2 : 1;
+  // PR-M 2026-05-29 — per-boardCount grid math anchored to ACTUAL chrome cost.
+  //   boardCount=2 (4p): 2 rows x 1 col
+  //   boardCount=3 (3p): 3 rows x 1 col
+  //   boardCount=4 (2p): 2 rows x 2 cols
+  //
+  // Previous formula subtracted FLOATING_ACTIONS_H AND used a tight chrome
+  // estimate that did not match the rendered topBar/botSection padding +
+  // borders + the handZone marginBottom (which reserves the action bar
+  // overlay). Web verification at 320x3p showed board 3 clipping ~40px
+  // because of the gap. New formula: action bar is reserved by hand
+  // marginBottom (rs(76)), and we add a conservative rs(28) safety buffer
+  // for invisible chrome (border lines, Animated.View entering wrappers).
+  const _gridRows = boardCount === 4 ? 2 : boardCount;
+  const _gridCols = boardCount === 4 ? 2 : 1;
+  const _handMarginB = 76; // rs(76) — handZone marginBottom in BoardArrangement
+  const _chromeSafety = 28; // padding/borders/FadeIn wrapper overhead
   const _boardsZoneH = Math.max(
-    160,
-    safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H,
+    180,
+    safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - _handMarginB - HINT_H - _chromeSafety,
   );
-  const _cellH = Math.floor(_boardsZoneH / _gridRows) - 12; // 12 = cell padding + grid gutter
+  const _gridGap = 4; // tiny inter-cell breathing room (per-cell paddingV provides the rest)
+  const _gridSidePad = 8;
+  const _cellH = Math.max(48, Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - 4);
+  const _cellW = Math.max(80, Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
   const _boardChromeH = 32; // board label + flop separator + intra-row padding
   const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
@@ -1223,6 +1243,8 @@ function GameScreenInner() {
         }}
         potPerBoard={config.potPerBoard}
         boardsZoneH={_boardsZoneH}
+        cellW={_cellW}
+        cellH={_cellH}
       />
       </Animated.View>
       {showSafeReveal && (
