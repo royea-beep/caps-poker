@@ -85,9 +85,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  // PR-O 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards (was >12).
-  // Web: never quad-rows — always at most 2 rows. Native keeps quad for very tall hands.
-  const useQuadRows = !isWeb && useTwoRows && safeCards.length >= 13;
+  // Shrink-fix 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards on BOTH
+  // native AND web mobile. (Web mobile previously stayed 2×8 → 8 cards × 56dp =
+  // 448dp on 390 viewport = horizontal overflow.)
+  const useQuadRows = useTwoRows && safeCards.length >= 13;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = 12;
@@ -103,24 +104,17 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const cardHForQuad = Math.floor((handZoneH - HAND_LABEL_H - 3 * HAND_ROW_GAP) / 4);
   const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
   const cardW = (() => {
-    if (!isWeb) {
-      if (useQuadRows) {
-        // Width still bounded by maxCardW so we never overflow horizontally.
-        return Math.max(20, Math.min(cardWForQuad, maxCardW));
-      }
-      return Math.min(38, Math.max(24, maxCardW));
+    if (useQuadRows) {
+      // Width bounded by maxCardW so we never overflow horizontally on either platform.
+      return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    // PR-K v9: cap web card width tight so 8/row fits without horizontal overflow.
-    // SCREEN_W can be > viewport (module-level const captured at boot), so the
-    // upper cap matters more than the dynamic max — it guards against module-load
-    // SCREEN_W being larger than the actual rendered viewport.
+    if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
+    // PR-K v9 web 2x8 path stays for partial hands (length < 13).
     if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
     return Math.min(56, Math.max(42, maxCardW));
   })();
-  const cardH = useQuadRows && !isWeb
-    ? Math.max(20, Math.round(cardW / 0.72))
-    : Math.round(cardW / 0.72);
+  const cardH = Math.max(20, Math.round(cardW / 0.72));
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, rowSize);
