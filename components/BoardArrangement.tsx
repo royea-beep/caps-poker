@@ -22,12 +22,12 @@ import { PRD } from '../utils/prdTokens';
 // boards stacked), which on 4-board games at 320pt squeezed it to ~20px and gave no
 // visual boundary. Now: handHeight is computed once at module load, with a 140px
 // floor so 320pt phones still see a usable hand row.
-// PR-K v9 — web caps the hand zone at ~17% of screen height (was 22%), since
-// PlayerHand now renders max 2 rows of small cards on web. Native keeps the
-// 22% floor because it still uses the 4-row quad layout for tall hands.
-const HAND_ZONE_HEIGHT = Platform.OS === 'web'
-  ? Math.max(120, Math.floor((MODULE_SCREEN_H ?? 844) * 0.17))
-  : PRD.zone.handMinH;
+// PR-O v3.1 — unified with PRD.zone.handMinH on BOTH platforms. The previous
+// web-specific 0.17 hardcode was the root cause of the 200+dp dead gap
+// regression: game.tsx boards-zone calc used PRD.zone.handMinH (0.42) but
+// the handZone style used 0.17 → boards reserved space for a 354dp hand
+// but the container was only 143dp, leaving 211dp of empty space.
+const HAND_ZONE_HEIGHT = PRD.zone.handMinH;
 import { t } from '../utils/i18n';
 
 export interface BoardArrangementProps {
