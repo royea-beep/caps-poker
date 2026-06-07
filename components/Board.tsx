@@ -556,7 +556,11 @@ export default function Board({
               <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
             ))
           }
-          {isArrangement && playerCards.length >= 2 && (() => {
+          {/* PR-N 2026-06-02 — hand-strength hint suppressed during arrangement.
+              It was rendering OUTSIDE the board bounds on narrow 3p cells and
+              ate vertical budget for the placement row. Hint still appears on
+              the reveal/results screens where there is room for it. */}
+          {false && isArrangement && playerCards.length >= 2 && (() => {
             const hint = getHandHint(playerCards);
             const expl = HINT_EXPLANATIONS[hint];
             const isHE = getLanguage() === 'he';

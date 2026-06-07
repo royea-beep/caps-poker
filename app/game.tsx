@@ -139,11 +139,12 @@ function GameScreenInner() {
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
   // PR-K v9 — web reserves more so hand has its 2-row footprint; boards get the rest.
-  // PR-M 2026-05-29 — hand zone HARD CAP at SCREEN_H * 0.32 (PRD.zone.handMaxH).
-  const _rawHandH = Platform.OS === 'web'
-    ? (SCREEN_H < 700 ? 124 : SCREEN_H < 800 ? 138 : 152)
-    : (SCREEN_H < 700 ?  96 : SCREEN_H < 800 ? 108 : 120);
-  const PLAYER_HAND_H = Math.min(_rawHandH, PRD.zone.handMaxH);
+  // PR-N 2026-06-02 — anchor PLAYER_HAND_H to PRD.zone.handMinH directly so the JS
+  // boards-zone math matches what BoardArrangement actually renders for the handZone.
+  // Previous mismatch (game.tsx 120, BoardArrangement 187) was the silent under-allocation
+  // that pushed Board 3 placement slots off-screen on build 459. handMinH is now
+  // max(rh(100), 0.16*SCREEN_H) and capped above by handMaxH = 0.28*SCREEN_H.
+  const PLAYER_HAND_H = Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -174,16 +175,25 @@ function GameScreenInner() {
   // because of the gap. New formula: action bar is reserved by hand
   // marginBottom (rs(76)), and we add a conservative rs(28) safety buffer
   // for invisible chrome (border lines, Animated.View entering wrappers).
-  const _gridRows = boardCount === 4 ? 2 : boardCount;
-  const _gridCols = boardCount === 4 ? 2 : 1;
-  const _handMarginB = 76; // rs(76) — handZone marginBottom in BoardArrangement
+  // PR-N 2026-06-02 — 4-board (2P) 2x2 grid only when the projected per-cell
+  // width is wide enough for the 4-slot placement row (Card.tsx 44pt floor
+  // for non-community cards). 4 slots * 44 + 3 gaps * 3 + 8 cell padding = 193.
+  // Below that, drop to 4-row vertical stack so slots never clip.
+  const _gridGap = 4;
+  const _gridSidePadIfWide = 8;
+  const _projectedCellW2x2 = Math.floor((screenW - _gridSidePadIfWide - _gridGap) / 2);
+  const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= 180;
+  const _gridRows = _use2x2 ? 2 : boardCount;
+  const _gridCols = _use2x2 ? 2 : 1;
+  // PR-N 2026-06-02 — handZone marginBottom slimmed from rs(76) to actionBarH+rs(4).
+  const _handMarginB = PRD.zone.actionBarH + 4; // matches BoardArrangement style
   const _chromeSafety = 28; // padding/borders/FadeIn wrapper overhead
   const _boardsZoneH = Math.max(
     180,
     safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - _handMarginB - HINT_H - _chromeSafety,
   );
-  const _gridGap = 4; // tiny inter-cell breathing room (per-cell paddingV provides the rest)
-  const _gridSidePad = 8;
+  // _gridGap and _gridSidePadIfWide already defined above for the use2x2 check.
+  const _gridSidePad = _gridSidePadIfWide;
   const _cellH = Math.max(48, Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - 4);
   const _cellW = Math.max(80, Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
   const _boardChromeH = 32; // board label + flop separator + intra-row padding
@@ -1245,6 +1255,7 @@ function GameScreenInner() {
         boardsZoneH={_boardsZoneH}
         cellW={_cellW}
         cellH={_cellH}
+        use2x2Grid={_use2x2}
       />
       </Animated.View>
       {showSafeReveal && (

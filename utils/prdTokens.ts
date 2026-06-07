@@ -33,13 +33,14 @@ export const PRD = {
     flopSeparatorW: rs(3),
   },
   zone: {
-    // PR-M 2026-05-29 — aggressive vertical budget. Top chrome collapses from
-    // rh(68) to rh(56), action bar from rs(72) to rs(56), hand zone gets a HARD
-    // cap at 32% of screen height. Boards consume everything else so the 3p
-    // vertical-stack stops clipping board 3 off the viewport.
+    // PR-N 2026-06-02 — tighten hand zone further. Build 459 device test showed
+    // hand rendered ~35% of SCREEN_H because handZone.marginBottom inflated the
+    // visual footprint. New cap: 28% of SCREEN_H for the hand zone itself, and
+    // handZone.marginBottom drops to just rs(8) + insets.bottom so total footprint
+    // (zone + buffer + action bar) stays under 50%.
     topChromeH:      rh(56),
-    handMinH:        Math.max(rh(120), Math.floor(SCREEN_H * 0.22)),
-    handMaxH:        Math.floor(SCREEN_H * 0.32),
+    handMinH:        Math.max(rh(100), Math.floor(SCREEN_H * 0.16)),
+    handMaxH:        Math.floor(SCREEN_H * 0.28),
     actionBarH:      rs(56),
     hairlineMarginH: rs(8),
   },
