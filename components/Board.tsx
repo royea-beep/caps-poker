@@ -956,14 +956,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // Shrink-fix iter 5 — Roye spec: top-right corner on the SAME LINE as the
-    // BOARD-N pill (top-left), above the community-card row. Brought top back
-    // to rs(3) so it's at the header line, capped maxWidth so the 13-char
-    // Hebrew text "מיקום אוטומטי" can't extend into the BOARD-N pill area.
-    // autoBtnText now has adjustsFontSizeToFit to compress on narrow cells.
+    // Shrink-fix iter 6 — RTL fix: in dir=rtl, the boardLabel (inside
+    // headerLeft with flex:1) lays out on the PHYSICAL RIGHT edge. autoBtn at
+    // right:rs(3) ended up on the same edge → overlap on all 4 boards.
+    // Switched to left:rs(3) so autoBtn anchors to the physical LEFT edge —
+    // opposite end from the label in Hebrew RTL.
     position: 'absolute',
     top: rs(3),
-    right: rs(3),
+    left: rs(3),
     maxWidth: rs(95),
     paddingHorizontal: rs(4),
     paddingVertical: rs(1),
