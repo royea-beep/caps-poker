@@ -144,7 +144,19 @@ function GameScreenInner() {
   // Previous mismatch (game.tsx 120, BoardArrangement 187) was the silent under-allocation
   // that pushed Board 3 placement slots off-screen on build 459. handMinH is now
   // max(rh(100), 0.16*SCREEN_H) and capped above by handMaxH = 0.28*SCREEN_H.
-  const PLAYER_HAND_H = Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
+  // 2026-06-08 Fix — per-boardCount hand-zone height.
+  // Previously PLAYER_HAND_H = global PRD.zone.handMinH (337dp on 844 viewport),
+  // sized for the 2p worst case (16-card 4×4 grid). 4p mode only has 8 cards
+  // (2 rows × 4 cols, ~168dp content) — leaving 172dp of dead space inside the
+  // outer hand zone. Roye device review of build 465 flagged this dead band
+  // below the hand.
+  //
+  // Fix: shrink hand zone for boardCount === 2 (4p / 8 cards). 3p (12 cards
+  // / 2 rows × 6) and 2p (16 cards / 4 rows × 4) keep the existing math
+  // until separate passes.
+  const PLAYER_HAND_H = boardCount === 2
+    ? 170
+    : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -1256,6 +1268,7 @@ function GameScreenInner() {
         cellW={_cellW}
         cellH={_cellH}
         use2x2Grid={_use2x2}
+        handZoneH={PLAYER_HAND_H}
       />
       </Animated.View>
       {showSafeReveal && (

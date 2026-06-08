@@ -68,6 +68,9 @@ export interface BoardArrangementProps {
   cellH: number;
   // PR-N 2026-06-02 — 2x2 grid only at >=360pt widths for boardCount=4.
   use2x2Grid: boolean;
+  // 2026-06-08 Fix — per-boardCount hand zone height (game.tsx owns the math).
+  // Optional: when omitted, falls back to module-level HAND_ZONE_HEIGHT.
+  handZoneH?: number;
 }
 
 export function BoardArrangement({
@@ -105,6 +108,7 @@ export function BoardArrangement({
   cellW,
   cellH,
   use2x2Grid,
+  handZoneH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -211,7 +215,7 @@ export function BoardArrangement({
           Bumped to rs(72) + rs(4) safety so the hand container's bottom
           sits cleanly above the action bar top. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { marginBottom: rs(72) + insets.bottom + rs(8) }]}>
+        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: rs(72) + insets.bottom + rs(8) }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}
