@@ -160,15 +160,18 @@ function GameScreenInner() {
   // boards-zone grows ~13dp. Each cell ends up ~164dp tall. Then BoardArrangement
   // hints Board with cellHeight - 12 (safety pad), Board math sizes cards into
   // 152dp inner so placed cards have ~6dp clearance above + below the gold border.
-  // 4-board (boardCount===4 / 2-player / 2×2 grid + 4×4 hand) — shrink hand from
-  // current 337 to 290. PlayerHand 4×4 minimum = 4×62 + chrome ≈ 283. 290dp gives
-  // 7dp buffer. Frees ~47dp to boards-zone → each 2×2 cell grows from ~176 to ~199.
+  // 4-board (boardCount===4 / 2-player / 2×2 grid + 4×4 hand) — 290dp was 7dp
+  // SHORT (initial math missed cardWrapper.borderWidth 2*2=4dp/row × 4 rows = 16dp
+  // and grid.gap 2dp × 3 = 6dp). Real minimum: 4*62 + 18(label) + 3(label-mb) +
+  // 6(container-padV) + 6(row gaps) + 16(cardWrapper borders) = 297dp.
+  // Bumped to 305dp (8dp buffer). Boards-zone shrinks 15dp → cell h drops
+  // from ~188 to ~181 (still 25dp+ clearance, well above 6dp target).
   const PLAYER_HAND_H = boardCount === 2
     ? 170
     : boardCount === 3
       ? 162
       : boardCount === 4
-        ? 290
+        ? 305
         : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
