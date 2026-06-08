@@ -144,7 +144,35 @@ function GameScreenInner() {
   // Previous mismatch (game.tsx 120, BoardArrangement 187) was the silent under-allocation
   // that pushed Board 3 placement slots off-screen on build 459. handMinH is now
   // max(rh(100), 0.16*SCREEN_H) and capped above by handMaxH = 0.28*SCREEN_H.
-  const PLAYER_HAND_H = Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
+  // 2026-06-08 Fix — per-boardCount hand-zone height.
+  // Previously PLAYER_HAND_H = global PRD.zone.handMinH (337dp on 844 viewport),
+  // sized for the 2p worst case (16-card 4×4 grid). 4p mode only has 8 cards
+  // (2 rows × 4 cols, ~168dp content) — leaving 172dp of dead space inside the
+  // outer hand zone. Roye device review of build 465 flagged this dead band
+  // below the hand.
+  //
+  // Fix: shrink hand zone per-boardCount.
+  // - boardCount === 2 (4p): 8 cards, 2 rows × 4 cols, ~168dp content → 170dp.
+  // - boardCount === 3 (3p): 12 cards, 2 rows × 6 cols, ~168dp content → 175dp
+  //   (slight extra for 2x6 wrapping; freed ~162dp moves to boards).
+  // - boardCount === 4 (2p): keeps existing 4×4 worst case until next pass.
+  // 3-board placed-card clearance pass: lower 3p hand from 175 -> 162 so
+  // boards-zone grows ~13dp. Each cell ends up ~164dp tall. Then BoardArrangement
+  // hints Board with cellHeight - 12 (safety pad), Board math sizes cards into
+  // 152dp inner so placed cards have ~6dp clearance above + below the gold border.
+  // 4-board (boardCount===4 / 2-player / 2×2 grid + 4×4 hand) — 290dp was 7dp
+  // SHORT (initial math missed cardWrapper.borderWidth 2*2=4dp/row × 4 rows = 16dp
+  // and grid.gap 2dp × 3 = 6dp). Real minimum: 4*62 + 18(label) + 3(label-mb) +
+  // 6(container-padV) + 6(row gaps) + 16(cardWrapper borders) = 297dp.
+  // Bumped to 305dp (8dp buffer). Boards-zone shrinks 15dp → cell h drops
+  // from ~188 to ~181 (still 25dp+ clearance, well above 6dp target).
+  const PLAYER_HAND_H = boardCount === 2
+    ? 170
+    : boardCount === 3
+      ? 162
+      : boardCount === 4
+        ? 305
+        : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -1256,6 +1284,7 @@ function GameScreenInner() {
         cellW={_cellW}
         cellH={_cellH}
         use2x2Grid={_use2x2}
+        handZoneH={PLAYER_HAND_H}
       />
       </Animated.View>
       {showSafeReveal && (

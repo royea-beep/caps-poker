@@ -74,6 +74,10 @@ interface BoardProps {
   // omit these and keep the original PRD token sizing.
   cellWidth?: number;
   cellHeight?: number;
+  // 2026-06-08 — when true (3-board case), Board adds explicit paddingVertical:6
+  // to contentCenter so the safety pad isn't absorbed by space-evenly distribution.
+  // Guarantees ≥6dp top + ≥6dp bottom clearance for placed cards.
+  contentSafetyPad?: boolean;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -165,6 +169,7 @@ export default function Board({
   communityScale = 1.2,
   cellWidth,
   cellHeight,
+  contentSafetyPad,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
@@ -459,7 +464,7 @@ export default function Board({
             the header. Was relying on pressableInner's justifyContent:center
             with the header inline; that centered the entire stack including
             the header, leaving cards visually low with a maroon block above. */}
-        <View style={styles.contentCenter}>
+        <View style={[styles.contentCenter, contentSafetyPad && { paddingVertical: 6 }]}>
 
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
