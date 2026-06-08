@@ -312,6 +312,17 @@ function GameScreenInner() {
     botHighlightIds: string[];
     boardHighlightIds: string[];
   }>>([]);
+  // BUILD467-VERIFY: layout debug readout — reads same AsyncStorage flag the
+  // DebugOverlay in _layout.tsx reads. OFF by default; flip to 'true' on-device
+  // (Settings â†’ debug toggle, or `AsyncStorage.setItem('debug_overlay_enabled','true')`)
+  // to display live computed responsive values for screenshot comparison.
+  const [layoutDebugVisible, setLayoutDebugVisible] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('debug_overlay_enabled')
+      .then((v) => { if (v === 'true') setLayoutDebugVisible(true); })
+      .catch(() => {});
+  }, []);
+
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
   const playerReadyRef = useRef(false);
@@ -1167,6 +1178,32 @@ function GameScreenInner() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
       <FriendsBg />
+      {/* BUILD467-VERIFY layout debug readout — gated by AsyncStorage debug_overlay_enabled */}
+      {layoutDebugVisible && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: insets.top + 4,
+            right: 4,
+            zIndex: 99998,
+            backgroundColor: 'rgba(0,0,0,0.78)',
+            borderColor: 'rgba(0,255,0,0.45)',
+            borderWidth: 1,
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 4,
+            maxWidth: 180,
+          }}
+        >
+          <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+            {`B467 dim ${screenW}x${SCREEN_H}`}{'\n'}
+            {`bc=${boardCount} hand=${PLAYER_HAND_H}`}{'\n'}
+            {`cell=${_cellW}x${_cellH}`}{'\n'}
+            {`maxCardH=${_maxCellCardH}`}
+          </Text>
+        </View>
+      )}
       {/* watermark removed from game screen */}
       {/* D1: auto-place trail flash overlay */}
       <AnimatedRN.View
