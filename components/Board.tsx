@@ -464,7 +464,7 @@ export default function Board({
             the header. Was relying on pressableInner's justifyContent:center
             with the header inline; that centered the entire stack including
             the header, leaving cards visually low with a maroon block above. */}
-        <View style={[styles.contentCenter, contentSafetyPad && { paddingVertical: 6 }]}>
+        <View style={[styles.contentCenter, contentSafetyPad && { paddingVertical: rs(6) }]}>
 
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (

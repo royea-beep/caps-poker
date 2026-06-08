@@ -185,7 +185,7 @@ export function BoardArrangement({
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
                   cellWidth={cellW}
-                  cellHeight={(boardCount === 3 || boardCount === 4) ? Math.max(48, cellH - 12) : cellH}
+                  cellHeight={(boardCount === 3 || boardCount === 4) ? Math.max(rs(48), cellH - rs(12)) : cellH}
                   contentSafetyPad={boardCount === 3 || boardCount === 4}
                 />
               </Animated.View>
@@ -216,7 +216,7 @@ export function BoardArrangement({
           Bumped to rs(72) + rs(4) safety so the hand container's bottom
           sits cleanly above the action bar top. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: (rs(72) + insets.bottom + rs(8)) + (boardCount === 4 ? 40 : 0) }]}>
+        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: (rs(72) + insets.bottom + rs(8)) + (boardCount === 4 ? rs(40) : 0) }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}

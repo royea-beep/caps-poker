@@ -83,7 +83,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const useTwoRows = !isWeb || device.isMobileWeb;
 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
-  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
+  const availableW = SCREEN_W - rs(16); // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
   // Shrink-fix 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards on BOTH
   // native AND web mobile. (Web mobile previously stayed 2×8 → 8 cards × 56dp =
@@ -91,8 +91,8 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const useQuadRows = useTwoRows && safeCards.length >= 13;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
-  const CARD_WRAPPER_OVERHEAD = 12;
-  const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  const CARD_WRAPPER_OVERHEAD = rs(12);
+  const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * rs(3) - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   // PR-O 2026-06-07 Fix 3c — when quad rows are active, derive cardH from the
   // available hand zone height (handMinH - label - 3 row gaps) / 4. This
   // guarantees the 4th row fits inside the zone. cardW preserves Card.tsx's

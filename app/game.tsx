@@ -41,7 +41,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
-import { rf, rs, rv } from '../utils/responsive';
+import { rf, rh, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
 import GuidedTooltip from '../components/GuidedTooltip';
@@ -166,12 +166,14 @@ function GameScreenInner() {
   // 6(container-padV) + 6(row gaps) + 16(cardWrapper borders) = 297dp.
   // Bumped to 305dp (8dp buffer). Boards-zone shrinks 15dp → cell h drops
   // from ~188 to ~181 (still 25dp+ clearance, well above 6dp target).
+  // Wrap each tuned literal (designed against 844-height viewport) in rh() so
+  // it scales proportionally on shorter (568/667) and taller (932) screens.
   const PLAYER_HAND_H = boardCount === 2
-    ? 170
+    ? rh(170)
     : boardCount === 3
-      ? 162
+      ? rh(162)
       : boardCount === 4
-        ? 305
+        ? rh(305)
         : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
@@ -207,24 +209,26 @@ function GameScreenInner() {
   // width is wide enough for the 4-slot placement row (Card.tsx 44pt floor
   // for non-community cards). 4 slots * 44 + 3 gaps * 3 + 8 cell padding = 193.
   // Below that, drop to 4-row vertical stack so slots never clip.
-  const _gridGap = 4;
-  const _gridSidePadIfWide = 8;
+  // Wrap layout literals in rs() so the grid math scales with viewport width.
+  // The breakpoint (>= 180) is a logical-pixel slot-floor threshold, not a token.
+  const _gridGap = rs(4);
+  const _gridSidePadIfWide = rs(8);
   const _projectedCellW2x2 = Math.floor((screenW - _gridSidePadIfWide - _gridGap) / 2);
-  const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= 180;
+  const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= rs(180);
   const _gridRows = _use2x2 ? 2 : boardCount;
   const _gridCols = _use2x2 ? 2 : 1;
   // PR-N 2026-06-02 — handZone marginBottom slimmed from rs(76) to actionBarH+rs(4).
-  const _handMarginB = PRD.zone.actionBarH + 4; // matches BoardArrangement style
-  const _chromeSafety = 28; // padding/borders/FadeIn wrapper overhead
+  const _handMarginB = PRD.zone.actionBarH + rs(4); // matches BoardArrangement style
+  const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
   const _boardsZoneH = Math.max(
-    180,
+    rh(180),
     safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - _handMarginB - HINT_H - _chromeSafety,
   );
   // _gridGap and _gridSidePadIfWide already defined above for the use2x2 check.
   const _gridSidePad = _gridSidePadIfWide;
-  const _cellH = Math.max(48, Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - 4);
-  const _cellW = Math.max(80, Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
-  const _boardChromeH = 32; // board label + flop separator + intra-row padding
+  const _cellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
+  const _cellW = Math.max(rs(80), Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
+  const _boardChromeH = rh(32); // board label + flop separator + intra-row padding
   const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
   const mobileWebCardH = Math.min(
