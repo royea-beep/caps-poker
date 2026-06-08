@@ -436,20 +436,23 @@ export default function Board({
               </Text>
             )}
           </View>
-          <View style={styles.potArea}>
-            {winner && <FloatingChips amount={potAmount} winner={winner} />}
-          </View>
+          {/* Build 465 — AUTO-PLACE in header as flex sibling of headerLeft.
+              Header justifyContent='space-between' puts it at opposite physical
+              end from BOARD-N pill on web + native, RTL or LTR. */}
+          {isArrangement && playerCards.length === 0 && onAutoFill ? (
+            <Pressable style={styles.autoBtn} onPress={onAutoFill}>
+              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.potArea}>
+              {winner && <FloatingChips amount={potAmount} winner={winner} />}
+            </View>
+          )}
         </View>
 
         {/* Bot card rows Â hidden during arrangement (board stays clean for player placement) */}
-        {/* PR-L Task B — hoist AUTO button BEFORE the contentCenter wrapper
-            so its absolute positioning (top:rs(3) right:rs(3)) still anchors
-            to the board rather than to the centered content wrapper. */}
-        {isArrangement && playerCards.length === 0 && onAutoFill && (
-          <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-            <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
-          </Pressable>
-        )}
+        {/* Build 465 — AUTO-PLACE was hoisted out of absolute positioning into
+            the header above (flex sibling of headerLeft). This block removed. */}
 
         {/* PR-L Task B — center the content rows (bot rows, community label,
             community cards, player slots) vertically within the space below
@@ -956,14 +959,10 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // Shrink-fix iter 6 — RTL fix: in dir=rtl, the boardLabel (inside
-    // headerLeft with flex:1) lays out on the PHYSICAL RIGHT edge. autoBtn at
-    // right:rs(3) ended up on the same edge → overlap on all 4 boards.
-    // Switched to left:rs(3) so autoBtn anchors to the physical LEFT edge —
-    // opposite end from the label in Hebrew RTL.
-    position: 'absolute',
-    top: rs(3),
-    left: rs(3),
+    // Build 465 — now a flex sibling of headerLeft inside header. No more
+    // absolute positioning. Header's justifyContent='space-between' anchors
+    // the pill at the opposite physical end of the BOARD-N label naturally
+    // on every platform + RTL state.
     maxWidth: rs(95),
     paddingHorizontal: rs(4),
     paddingVertical: rs(1),
