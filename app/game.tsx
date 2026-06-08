@@ -151,12 +151,16 @@ function GameScreenInner() {
   // outer hand zone. Roye device review of build 465 flagged this dead band
   // below the hand.
   //
-  // Fix: shrink hand zone for boardCount === 2 (4p / 8 cards). 3p (12 cards
-  // / 2 rows × 6) and 2p (16 cards / 4 rows × 4) keep the existing math
-  // until separate passes.
+  // Fix: shrink hand zone per-boardCount.
+  // - boardCount === 2 (4p): 8 cards, 2 rows × 4 cols, ~168dp content → 170dp.
+  // - boardCount === 3 (3p): 12 cards, 2 rows × 6 cols, ~168dp content → 175dp
+  //   (slight extra for 2x6 wrapping; freed ~162dp moves to boards).
+  // - boardCount === 4 (2p): keeps existing 4×4 worst case until next pass.
   const PLAYER_HAND_H = boardCount === 2
     ? 170
-    : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
+    : boardCount === 3
+      ? 175
+      : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
