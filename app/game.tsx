@@ -156,10 +156,14 @@ function GameScreenInner() {
   // - boardCount === 3 (3p): 12 cards, 2 rows × 6 cols, ~168dp content → 175dp
   //   (slight extra for 2x6 wrapping; freed ~162dp moves to boards).
   // - boardCount === 4 (2p): keeps existing 4×4 worst case until next pass.
+  // 3-board placed-card clearance pass: lower 3p hand from 175 -> 162 so
+  // boards-zone grows ~13dp. Each cell ends up ~164dp tall. Then BoardArrangement
+  // hints Board with cellHeight - 12 (safety pad), Board math sizes cards into
+  // 152dp inner so placed cards have ~6dp clearance above + below the gold border.
   const PLAYER_HAND_H = boardCount === 2
     ? 170
     : boardCount === 3
-      ? 175
+      ? 162
       : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;

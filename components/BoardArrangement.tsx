@@ -185,7 +185,7 @@ export function BoardArrangement({
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
                   cellWidth={cellW}
-                  cellHeight={cellH}
+                  cellHeight={boardCount === 3 ? Math.max(48, cellH - 12) : cellH}
                 />
               </Animated.View>
             </View>
