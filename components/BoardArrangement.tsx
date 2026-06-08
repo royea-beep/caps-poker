@@ -186,6 +186,7 @@ export function BoardArrangement({
                   communityScale={communityScale}
                   cellWidth={cellW}
                   cellHeight={boardCount === 3 ? Math.max(48, cellH - 12) : cellH}
+                  contentSafetyPad={boardCount === 3}
                 />
               </Animated.View>
             </View>
