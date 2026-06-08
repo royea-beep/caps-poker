@@ -216,7 +216,7 @@ export function BoardArrangement({
           Bumped to rs(72) + rs(4) safety so the hand container's bottom
           sits cleanly above the action bar top. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: rs(72) + insets.bottom + rs(8) }]}>
+        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: (rs(72) + insets.bottom + rs(8)) + (boardCount === 4 ? 32 : 0) }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}
