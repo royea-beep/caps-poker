@@ -213,8 +213,10 @@ export default function Board({
   let slotH: number;
   let slotW: number;
   if (cellWidth && cellHeight) {
-    // Compact one-strip header at rs(20). Two card rows split the remainder.
-    const HEADER_H = rs(20);
+    // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)ârs(16). The actual rendered
+    // header strip is max(boardLabel ~12dp, autoBtn minHeight rs(14)) = ~14dp, plus
+    // a 2dp safety. HIG 44pt tap target maintained via hitSlop on autoBtn.
+    const HEADER_H = rs(16);
     const PAD_V = PRD.board.cellPadV; // rs(2) after PR-M
     const PAD_H = PRD.board.cellPadH; // rs(4) after PR-M
     // PR-O 2026-06-07 Fix 2 — innerW must also subtract:
@@ -445,7 +447,11 @@ export default function Board({
               Header justifyContent='space-between' puts it at opposite physical
               end from BOARD-N pill on web + native, RTL or LTR. */}
           {isArrangement && playerCards.length === 0 && onAutoFill ? (
-            <Pressable style={styles.autoBtn} onPress={onAutoFill}>
+            <Pressable
+              style={styles.autoBtn}
+              onPress={onAutoFill}
+              hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+            >
               <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
             </Pressable>
           ) : (
@@ -464,7 +470,13 @@ export default function Board({
             the header. Was relying on pressableInner's justifyContent:center
             with the header inline; that centered the entire stack including
             the header, leaving cards visually low with a maroon block above. */}
-        <View style={[styles.contentCenter, contentSafetyPad && { paddingVertical: rs(6) }]}>
+        {/* BOARD-DENSITY 2026-06-09 — removed `contentSafetyPad && paddingVertical: rs(6)`.
+            That rs(6)×2 = 12dp inner padding double-counted the cellHâ’rs(12) outer-chrome
+            safety already deducted in BoardArrangement.tsx:188, so contentCenter's
+            justifyContent:'space-evenly' surfaced it as empty bands above/between/below the
+            card rows on bc=3/4. Card-sizing math (innerH = cellHeight - HEADER_H - 2*PAD_V)
+            now matches the real available height. */}
+        <View style={styles.contentCenter}>
 
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
@@ -710,10 +722,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.neonRed,
   },
   header: {
+    // BOARD-DENSITY 2026-06-09 — marginBottom rs(2) â 0. Saves 2dp/board uniformly
+    // across all bc=2/3/4 modes. Header strip + contentCenter remain visually distinct
+    // via the boardLabel pill background and contentCenter rendering.
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: rs(2),
+    marginBottom: 0,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -786,11 +801,12 @@ const styles = StyleSheet.create({
     // PR-D study: card gap = rs(3)
     // PR-O 2026-06-07 Fix 2 — paddingHorizontal: rs(6) guarantees the rendered
     // row never touches the inner gold border (≥6dp breathing room).
+    // BOARD-DENSITY 2026-06-09 — paddingVertical 1 â 0. Saves 2dp per row Ã 2 rows = 4dp/board.
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: PRD.card.gap,
-    paddingVertical: 1,
+    paddingVertical: 0,
     paddingHorizontal: rs(6),
   },
   communitySeparator: {
@@ -964,14 +980,13 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // Build 465 — now a flex sibling of headerLeft inside header. No more
-    // absolute positioning. Header's justifyContent='space-between' anchors
-    // the pill at the opposite physical end of the BOARD-N label naturally
-    // on every platform + RTL state.
+    // BOARD-DENSITY 2026-06-09 — minHeight rs(16) â rs(14); matches HEADER_H math.
+    // hitSlop {top:15, bottom:15, left:10, right:10} on the Pressable expands the
+    // tap target to ~44dp vertical (HIG-compliant) without inflating the visual.
     maxWidth: rs(95),
     paddingHorizontal: rs(4),
     paddingVertical: rs(1),
-    minHeight: rs(16),
+    minHeight: rs(14),
     justifyContent: 'center' as const,
     borderRadius: rs(5),
     backgroundColor: 'rgba(26,26,46,0.85)',
