@@ -89,7 +89,8 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const useTwoRows = !isWeb || device.isMobileWeb;
 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
-  const availableW = SCREEN_W - rs(16); // paddingHorizontal 8 each side from styles.grid
+  // VISUAL-POLISH 2026-06-09 — must match styles.grid.paddingHorizontal (rs(16) each side -> rs(32) total).
+  const availableW = SCREEN_W - rs(32);
   const safeCards = cards ?? [];
   // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
   // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
@@ -250,7 +251,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   grid: {
-    paddingHorizontal: rs(8),
+    // VISUAL-POLISH 2026-06-09 — paddingHorizontal rs(8) â rs(16). Matches the
+    // boardsGrid horizontal feel and gives bc=4's 8-across row meaningful
+    // breathing room from the screen edges at narrower widths.
+    paddingHorizontal: rs(16),
     gap: rs(2),
   },
   row: {

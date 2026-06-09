@@ -802,8 +802,13 @@ const styles = StyleSheet.create({
     // PR-O 2026-06-07 Fix 2 — paddingHorizontal: rs(6) guarantees the rendered
     // row never touches the inner gold border (≥6dp breathing room).
     // BOARD-DENSITY 2026-06-09 — paddingVertical 1 â 0. Saves 2dp per row Ã 2 rows = 4dp/board.
+    // VISUAL-POLISH 2026-06-09 — justifyContent 'center' â 'space-evenly'. With cap-bound
+    // small cards in a wide cell (e.g. bc=4 stack on Pro Max: 5 cards Ã 27dp = 135 content
+    // in 393dp inner width), centering left â¥118dp of empty maroon on each side. space-evenly
+    // distributes the leftover as equal gaps between cards (and around the row), spreading
+    // cards across the full board width while preserving the community/slot separator group.
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
     gap: PRD.card.gap,
     paddingVertical: 0,
@@ -983,22 +988,25 @@ const styles = StyleSheet.create({
     // BOARD-DENSITY 2026-06-09 — minHeight rs(16) â rs(14); matches HEADER_H math.
     // hitSlop {top:15, bottom:15, left:10, right:10} on the Pressable expands the
     // tap target to ~44dp vertical (HIG-compliant) without inflating the visual.
+    // VISUAL-POLISH 2026-06-09 — toned down so cards read first. Background opacity
+    // 0.85 â 0.55, gold border solid -> 35% alpha, font weight 800 -> 700. Layout +
+    // minHeight + hitSlop unchanged so tap target stays >= 44pt HIG.
     maxWidth: rs(95),
     paddingHorizontal: rs(4),
     paddingVertical: rs(1),
     minHeight: rs(14),
     justifyContent: 'center' as const,
     borderRadius: rs(5),
-    backgroundColor: 'rgba(26,26,46,0.85)',
+    backgroundColor: 'rgba(26,26,46,0.55)',
     borderWidth: 1,
-    borderColor: '#C5A028',
+    borderColor: 'rgba(197,160,40,0.35)',
     opacity: 1,
     zIndex: 10,
   },
   autoBtnText: {
-    color: '#e8c96a',
+    color: 'rgba(232,201,106,0.85)',
     fontSize: rf(7),
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.3,
   },
 });

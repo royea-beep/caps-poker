@@ -59,19 +59,28 @@ function compute(screenW: number, screenH: number, insetsTop: number, insetsBott
   }
   const _handZoneActualH = Math.max(rh(80, screenH), _availForBoardsAndHand - _boardsZoneH);
 
-  const _cellH = Math.max(rh(48, screenH), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4, screenW));
+  const _packedCellH = Math.max(rh(48, screenH), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4, screenW));
   const _cellW = Math.max(rs(80, screenW), Math.floor((screenW - _gridSidePadIfWide - (_gridCols - 1) * _gridGap) / _gridCols));
 
-  // Replicate Board.tsx fit-cell math
-  const _cellHeightPropForBoard =
+  // Replicate Board.tsx fit-cell math from the PACKED cell
+  const _cellHeightPropForPacked =
     boardCount === 3 || boardCount === 4
-      ? Math.max(rs(48, screenW), _cellH - rs(12, screenW))
-      : _cellH;
-  const _innerH = Math.max(40, _cellHeightPropForBoard - rs(16, screenW) - 2 * rs(2, screenW));
-  const _fitBoardCardH = Math.max(rh(22, screenH), Math.floor((_innerH - rs(2, screenW)) / 2));
-  // Setting cap is in dp at base 393x852; scale by screenH/852 to match rh().
+      ? Math.max(rs(48, screenW), _packedCellH - rs(12, screenW))
+      : _packedCellH;
+  const _packedInnerH = Math.max(40, _cellHeightPropForPacked - rs(16, screenW) - 2 * rs(2, screenW));
+  const _fitBoardCardH = Math.max(rh(22, screenH), Math.floor((_packedInnerH - rs(2, screenW)) / 2));
   const capScaled = Math.round(boardCardCapDp * screenH / 852);
   const _boardCardH = Math.min(_fitBoardCardH, capScaled);
+  // VISUAL-POLISH snug cell
+  const _idealCellH =
+    2 * _boardCardH
+    + rs(16, screenW)
+    + 2 * rs(2, screenW)
+    + rs(2, screenW)
+    + (boardCount === 3 || boardCount === 4 ? rs(12, screenW) : 0)
+    + rs(4, screenW);
+  const _cellH = Math.min(_packedCellH, _idealCellH);
+  const _snugReclaimedTotal = (_packedCellH - _cellH) * _gridRows;
 
   return {
     PLAYER_HAND_H_PREFERRED,
@@ -82,12 +91,15 @@ function compute(screenW: number, screenH: number, insetsTop: number, insetsBott
     _handZoneActualH,
     shrunkHandFromPreferred,
     _cellH,
+    _packedCellH,
     _cellW,
     _gridRows,
     _gridCols,
     _fitBoardCardH,
     capScaled,
     _boardCardH,
+    _idealCellH,
+    _snugReclaimedTotal,
   };
 }
 
@@ -95,15 +107,16 @@ const cases: Array<{ w: number; h: number; insTop: number; insBot: number; label
   { w: 320, h: 568, insTop: 20, insBot: 0,  label: 'SE1/5s (20/0)'           },
   { w: 393, h: 852, insTop: 47, insBot: 34, label: 'iP15/16 base (47/34)'    },
   { w: 430, h: 932, insTop: 59, insBot: 34, label: 'iP15/16 ProMax (59/34)'  },
+  { w: 440, h: 956, insTop: 59, insBot: 34, label: 'iP16 ProMax (59/34)'    },
 ];
 
 for (const c of cases) {
   console.log(`\n=== ${c.label}  ${c.w}x${c.h} ===`);
-  console.log('bc  hand_pref handMB avail minBZ  bZone  handZ  cell  rowsxcols  fitCH  cap  bCardH  shrunk?');
+  console.log('bc  hand cell  rxc  fitCH cap bCardH  packed->snug ideal  reclaimed');
   for (const bc of [2, 3, 4] as const) {
     const r = compute(c.w, c.h, c.insTop, c.insBot, bc, 70);
     console.log(
-      `${bc}   ${String(r.PLAYER_HAND_H_PREFERRED).padStart(8)} ${String(r._handMarginB).padStart(6)} ${String(r._availForBoardsAndHand).padStart(5)} ${String(r._minBoardsZoneH).padStart(5)}  ${String(r._boardsZoneH).padStart(5)}  ${String(r._handZoneActualH).padStart(5)}  ${String(r._cellW).padStart(3)}x${String(r._cellH).padStart(3)}  ${r._gridRows}x${r._gridCols}        ${String(r._fitBoardCardH).padStart(4)}  ${String(r.capScaled).padStart(3)}  ${String(r._boardCardH).padStart(4)}    ${r.shrunkHandFromPreferred ? 'YES' : 'no'}`,
+      `${bc}   ${String(r._handZoneActualH).padStart(4)} ${String(r._cellW).padStart(3)}x${String(r._cellH).padStart(3)}  ${r._gridRows}x${r._gridCols}  ${String(r._fitBoardCardH).padStart(4)}  ${String(r.capScaled).padStart(3)}  ${String(r._boardCardH).padStart(4)}    ${String(r._packedCellH).padStart(3)}->${String(r._cellH).padStart(3)} (ideal ${String(r._idealCellH).padStart(3)})  reclaim=${r._snugReclaimedTotal}dp`,
     );
   }
 }

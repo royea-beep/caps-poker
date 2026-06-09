@@ -291,26 +291,39 @@ function GameScreenInner() {
   // Step 3: the hand zone is whatever remains.
   const _handZoneActualH = Math.max(rh(80), _availForBoardsAndHand - _boardsZoneH);
 
-  const _cellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
+  // Packed cellH — what each cell would get if cells filled the full boards zone.
+  const _packedCellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
   const _cellW = Math.max(rs(80), Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
   const _boardChromeH = rh(32); // board label + flop separator + intra-row padding
   const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
-  const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
 
-  // FIT-ALL-BOARDS 2026-06-09 — compute the actual board card height after the
-  // boards-first allocation, applying the user-tunable cap from Settings
-  // (`max_board_card_h`). Defaults to rh(70) (~70dp@852) with range [50, 100].
-  // This same value is passed to PlayerHand as `maxCardH` so hand cards stay
-  // <= board cards (boards-first rule).
-  const _maxBoardCardSetting = boardCardCapDp; // state — read from AsyncStorage below
-  // Replicate Board.tsx cell-height-driven sizing so the cap is comparable.
-  const _cellHeightPropForBoard =
+  // VISUAL-POLISH 2026-06-09 — board card height + SNUG cell height.
+  // Step 1: derive the board card height the packed cell could hold, clamped by
+  // the Settings cap (`max_board_card_h_dp`, default rh(70), range [rh(50), rh(100)]).
+  // Step 2: idealCellH = chrome + 2*boardCardH (what the cell actually needs to
+  // render the two card rows with snug chrome). When cap binds (bc=2 on most
+  // devices), idealCellH < packedCellH and the cell SHRINKS — the leftover
+  // becomes inter-board spacing via boardsGrid's justifyContent:'space-evenly'
+  // (no more 8-10dp internal dead band above/below cards).
+  const _maxBoardCardSetting = boardCardCapDp;
+  const _cellHeightPropForPacked =
     boardCount === 3 || boardCount === 4
-      ? Math.max(rs(48), _cellH - rs(12))
-      : _cellH;
-  const _innerH = Math.max(40, _cellHeightPropForBoard - rs(16) - 2 * rs(2));
-  const _fitBoardCardH = Math.max(rh(22), Math.floor((_innerH - rs(2)) / 2));
+      ? Math.max(rs(48), _packedCellH - rs(12))
+      : _packedCellH;
+  const _packedInnerH = Math.max(40, _cellHeightPropForPacked - rs(16) - 2 * rs(2));
+  const _fitBoardCardH = Math.max(rh(22), Math.floor((_packedInnerH - rs(2)) / 2));
   const _boardCardH = Math.min(_fitBoardCardH, _maxBoardCardSetting);
+  // Ideal cellH that snugly fits exactly 2*_boardCardH + chrome. The bc=3/4 path
+  // accounts for the rs(12) outer chrome compensated by BoardArrangement.tsx:188.
+  const _idealCellH =
+    2 * _boardCardH
+    + rs(16)            // HEADER_H
+    + 2 * rs(2)         // PAD_V
+    + rs(2)             // rowGap
+    + (boardCount === 3 || boardCount === 4 ? rs(12) : 0) // bc=3/4 outer chrome that the prop subtraction will reclaim
+    + rs(4);            // safety
+  const _cellH = Math.min(_packedCellH, _idealCellH);
+  const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
   const _handCardCap = _boardCardH;
   const mobileWebCardH = Math.min(
     CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
@@ -393,14 +406,13 @@ function GameScreenInner() {
     botHighlightIds: string[];
     boardHighlightIds: string[];
   }>>([]);
-  // BUILD467-VERIFY / FIT-ALL-BOARDS / BC4-STACK-REBALANCE:
-  // layout debug readout. The 469 device screenshots did not show the readout
-  // even with Settings â Debug overlay flipped ON; root cause unconfirmed but
-  // likely a missing/stale AsyncStorage write or a gating race. For this build
-  // cycle the readout is FORCED on (no AsyncStorage gate) so we can see the
-  // live numbers on-device, then re-gate once the wiring is verified. The View
-  // is pointerEvents:'none', top-right corner, ~70x60dp — minimal UX impact.
-  const LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC = true;
+  // BUILD467-VERIFY / FIT-ALL-BOARDS / BC4-STACK-REBALANCE / VISUAL-POLISH:
+  // layout debug readout. Build 470 confirmed the readout RENDERS when forced on;
+  // re-gated here so the overlay is OFF by default and only appears when the
+  // Settings â "Debug overlay" toggle (-> AsyncStorage `debug_overlay_enabled`)
+  // is true. The AppState 'change' listener + 3 staggered re-checks below pick up
+  // toggle changes without requiring the user to back out + re-enter the game.
+  const LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC = false;
   const [layoutDebugVisible, setLayoutDebugVisible] = useState<boolean>(LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC);
   useEffect(() => {
     if (LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC) return; // unconditional
@@ -1292,7 +1304,7 @@ function GameScreenInner() {
           }}
         >
           <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
-            {`B470 dim ${screenW}x${SCREEN_H}`}{'\n'}
+            {`B471 dim ${screenW}x${SCREEN_H}`}{'\n'}
             {`bc=${boardCount} hand=${_handZoneActualH}/${PLAYER_HAND_H}`}{'\n'}
             {`cell=${_cellW}x${_cellH} grid=${_gridCols}x${_gridRows}`}{'\n'}
             {`bCardH=${_boardCardH} cap=${boardCardCapDp}`}
