@@ -91,10 +91,12 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
   const availableW = SCREEN_W - rs(16); // paddingHorizontal 8 each side from styles.grid
   const safeCards = cards ?? [];
-  // Shrink-fix 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards on BOTH
-  // native AND web mobile. (Web mobile previously stayed 2×8 → 8 cards × 56dp =
-  // 448dp on 390 viewport = horizontal overflow.)
-  const useQuadRows = useTwoRows && safeCards.length >= 13;
+  // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
+  // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
+  // wider 2x8 layout we measured 8-across fits >= 320 width with margin. Going
+  // 2x8 frees vertical space for the (now 1x4 stacked) boards. Other modes have
+  // <=12 cards and were already 2-row.
+  const useQuadRows = false;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = rs(12);

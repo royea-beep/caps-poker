@@ -29,20 +29,19 @@ function compute(screenW: number, screenH: number, insetsTop: number, insetsBott
   const PLAYER_HAND_H_PREFERRED =
     boardCount === 2 ? rh(170, screenH)
     : boardCount === 3 ? rh(162, screenH)
-    : rh(305, screenH);
+    : rh(125, screenH); // BC4-STACK-REBALANCE: bc=4 is now 2-row hand (rh(125) for 5dp 320 margin)
 
   const safeH = screenH - insetsTop - insetsBottom;
 
   const _gridGap          = rs(4, screenW);
   const _gridSidePadIfWide = rs(8, screenW);
-  const _projectedCellW2x2 = Math.floor((screenW - _gridSidePadIfWide - _gridGap) / 2);
-  const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= rs(180, screenW);
-  const _gridRows = _use2x2 ? 2 : boardCount;
-  const _gridCols = _use2x2 ? 2 : 1;
+  // BC4-STACK-REBALANCE: bc=4 now 1x4 stack (no 2x2)
+  const _use2x2 = false;
+  const _gridRows = boardCount;
+  const _gridCols = 1;
 
-  // NEW _handMarginB — aligned with BoardArrangement.tsx:219 literal:
-  // (rs(72) + insets.bottom + rs(8)) + (bc=4 ? rs(40) : 0)
-  const _handMarginB = rs(72, screenW) + insetsBottom + rs(8, screenW) + (boardCount === 4 ? rs(40, screenW) : 0);
+  // BC4-STACK-REBALANCE: dropped +rs(40) bc=4 extra (no 4x4 hand grid anymore)
+  const _handMarginB = rs(72, screenW) + insetsBottom + rs(8, screenW);
   const _chromeSafety = rs(28, screenW);
 
   // boards-first

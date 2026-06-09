@@ -199,12 +199,17 @@ function GameScreenInner() {
   // from ~188 to ~181 (still 25dp+ clearance, well above 6dp target).
   // Wrap each tuned literal (designed against 844-height viewport) in rh() so
   // it scales proportionally on shorter (568/667) and taller (932) screens.
+  // BC4-STACK-REBALANCE 2026-06-09 — bc=4 (2-player) was rh(305) for the 16-card
+  // 4x4 hand grid. New design switches bc=4 to 1x4 vertical board stack + 2-row
+  // hand (8x2). Lower hand height pushes the freed vertical room into the boards
+  // zone. rh(125) gives â¥5dp margin at 320 (worst case: hand cardH 23 + chrome
+  // 31 = 54 content vs 83 zone) and accommodates the 2x8 layout up to 430 width.
   const PLAYER_HAND_H = boardCount === 2
     ? rh(170)
     : boardCount === 3
       ? rh(162)
       : boardCount === 4
-        ? rh(305)
+        ? rh(125)
         : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
@@ -245,16 +250,23 @@ function GameScreenInner() {
   const _gridGap = rs(4);
   const _gridSidePadIfWide = rs(8);
   const _projectedCellW2x2 = Math.floor((screenW - _gridSidePadIfWide - _gridGap) / 2);
-  const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= rs(180);
-  const _gridRows = _use2x2 ? 2 : boardCount;
-  const _gridCols = _use2x2 ? 2 : 1;
+  // BC4-STACK-REBALANCE 2026-06-09 — bc=4 now uses the 1x4 full-width stack like
+  // bc=2/3, matching the user-requested visual consistency. _use2x2 retained for
+  // type-stability but always false; PR-N's half-width 2x2 path is retired.
+  const _use2x2 = false;
+  const _gridRows = boardCount;
+  const _gridCols = 1;
+  void _projectedCellW2x2; // referenced only for the retired 2x2 size gate; keep computed for potential reinstatement
   // FIT-ALL-BOARDS 2026-06-09 — _handMarginB was rs(60) but BoardArrangement.tsx:219
   // actually applies `(rs(72) + insets.bottom + rs(8)) + (bc=4 ? rs(40) : 0)` —
   // ~54–94dp larger than the estimate. The discrepancy made _boardsZoneH believe
   // it had ~94dp more room than the real boardsGrid container, causing cellH to
   // overflow and `boardsGrid overflow:'hidden'` to silently clip boards 3/4 on bc=4
   // and the bottom of board 3 on bc=3. Re-align with the actual literal:
-  const _handMarginB = rs(72) + insets.bottom + rs(8) + (boardCount === 4 ? rs(40) : 0);
+  // BC4-STACK-REBALANCE 2026-06-09 — the bc=4 +rs(40) extra was added when bc=4
+  // used a 4x4 hand grid that needed to be pushed above the action bar. The new
+  // 2x8 hand is short enough not to need it; drop the special case.
+  const _handMarginB = rs(72) + insets.bottom + rs(8);
   const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
   const _gridSidePad = _gridSidePadIfWide;
 
@@ -381,15 +393,17 @@ function GameScreenInner() {
     botHighlightIds: string[];
     boardHighlightIds: string[];
   }>>([]);
-  // BUILD467-VERIFY / FIT-ALL-BOARDS: layout debug readout — reads same AsyncStorage
-  // flag the DebugOverlay in _layout.tsx reads. OFF by default; flip via the Settings
-  // toggle ("Debug overlay"). Re-checks on every AppState 'change' so flipping the
-  // toggle while the game screen is mounted is reflected on the next foreground/blur
-  // event (the user does not need to back out + re-enter the game).
-  // Also re-checks on a short interval immediately after mount in case the toggle
-  // was flipped a moment before the screen rendered.
-  const [layoutDebugVisible, setLayoutDebugVisible] = useState(false);
+  // BUILD467-VERIFY / FIT-ALL-BOARDS / BC4-STACK-REBALANCE:
+  // layout debug readout. The 469 device screenshots did not show the readout
+  // even with Settings â Debug overlay flipped ON; root cause unconfirmed but
+  // likely a missing/stale AsyncStorage write or a gating race. For this build
+  // cycle the readout is FORCED on (no AsyncStorage gate) so we can see the
+  // live numbers on-device, then re-gate once the wiring is verified. The View
+  // is pointerEvents:'none', top-right corner, ~70x60dp — minimal UX impact.
+  const LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC = true;
+  const [layoutDebugVisible, setLayoutDebugVisible] = useState<boolean>(LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC);
   useEffect(() => {
+    if (LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC) return; // unconditional
     let alive = true;
     const recheck = () => {
       AsyncStorage.getItem('debug_overlay_enabled')
@@ -398,12 +412,11 @@ function GameScreenInner() {
     };
     recheck();
     const sub = AppState.addEventListener('change', recheck);
-    // Belt-and-suspenders: re-check 3 times in the first 6 seconds after mount.
     const t1 = setTimeout(recheck, 1500);
     const t2 = setTimeout(recheck, 3500);
     const t3 = setTimeout(recheck, 6000);
     return () => { alive = false; sub.remove(); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, []);
+  }, [LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC]);
 
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
@@ -1279,7 +1292,7 @@ function GameScreenInner() {
           }}
         >
           <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
-            {`B469 dim ${screenW}x${SCREEN_H}`}{'\n'}
+            {`B470 dim ${screenW}x${SCREEN_H}`}{'\n'}
             {`bc=${boardCount} hand=${_handZoneActualH}/${PLAYER_HAND_H}`}{'\n'}
             {`cell=${_cellW}x${_cellH} grid=${_gridCols}x${_gridRows}`}{'\n'}
             {`bCardH=${_boardCardH} cap=${boardCardCapDp}`}
