@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, AppState } from 'react-native';
 import { SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -136,6 +136,37 @@ function GameScreenInner() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
+  // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
+  // Persisted in AsyncStorage under 'max_board_card_h_dp'. Default rh(70) gives
+  // ~70dp on the iPhone 15/16 base viewport (852pt height). User can adjust in
+  // Settings within the [50, 100] range (dp at base). Re-checked on AppState
+  // changes so toggling the setting mid-session takes effect without a restart.
+  const BOARD_CARD_CAP_DEFAULT = rh(70);
+  const BOARD_CARD_CAP_MIN = rh(50);
+  const BOARD_CARD_CAP_MAX = rh(100);
+  const [boardCardCapDp, setBoardCardCapDp] = useState<number>(BOARD_CARD_CAP_DEFAULT);
+  useEffect(() => {
+    let alive = true;
+    const recheck = () => {
+      AsyncStorage.getItem('max_board_card_h_dp')
+        .then((v) => {
+          if (!alive) return;
+          const n = v ? parseFloat(v) : NaN;
+          if (Number.isFinite(n) && n >= BOARD_CARD_CAP_MIN && n <= BOARD_CARD_CAP_MAX) {
+            setBoardCardCapDp(n);
+          } else {
+            setBoardCardCapDp(BOARD_CARD_CAP_DEFAULT);
+          }
+        })
+        .catch(() => {});
+    };
+    recheck();
+    const sub = AppState.addEventListener('change', recheck);
+    const t1 = setTimeout(recheck, 1500);
+    const t2 = setTimeout(recheck, 4000);
+    return () => { alive = false; sub.remove(); clearTimeout(t1); clearTimeout(t2); };
+  }, [BOARD_CARD_CAP_DEFAULT, BOARD_CARD_CAP_MIN, BOARD_CARD_CAP_MAX]);
+
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
   // PR-K v9 — web reserves more so hand has its 2-row footprint; boards get the rest.
@@ -217,20 +248,58 @@ function GameScreenInner() {
   const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= rs(180);
   const _gridRows = _use2x2 ? 2 : boardCount;
   const _gridCols = _use2x2 ? 2 : 1;
-  // PR-N 2026-06-02 — handZone marginBottom slimmed from rs(76) to actionBarH+rs(4).
-  const _handMarginB = PRD.zone.actionBarH + rs(4); // matches BoardArrangement style
+  // FIT-ALL-BOARDS 2026-06-09 — _handMarginB was rs(60) but BoardArrangement.tsx:219
+  // actually applies `(rs(72) + insets.bottom + rs(8)) + (bc=4 ? rs(40) : 0)` —
+  // ~54–94dp larger than the estimate. The discrepancy made _boardsZoneH believe
+  // it had ~94dp more room than the real boardsGrid container, causing cellH to
+  // overflow and `boardsGrid overflow:'hidden'` to silently clip boards 3/4 on bc=4
+  // and the bottom of board 3 on bc=3. Re-align with the actual literal:
+  const _handMarginB = rs(72) + insets.bottom + rs(8) + (boardCount === 4 ? rs(40) : 0);
   const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
-  const _boardsZoneH = Math.max(
-    rh(180),
-    safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - _handMarginB - HINT_H - _chromeSafety,
-  );
-  // _gridGap and _gridSidePadIfWide already defined above for the use2x2 check.
   const _gridSidePad = _gridSidePadIfWide;
+
+  // FIT-ALL-BOARDS 2026-06-09 — boards-first allocation. Compute the minimum
+  // boards-zone height needed to fit `_gridRows` board cells, each carrying:
+  //   chrome per cell (header + paddings + borders + cell wrapper padV) ≈ rs(34)
+  //   + 2 card rows of MIN_BOARD_CARD_H (so the smallest readable layout fits)
+  //   + rowGap rs(2)
+  // If the boards-zone derived from PLAYER_HAND_H is below this floor, REDUCE the
+  // hand zone instead of clamping the boards-zone (the old Math.max(rh(180), …)
+  // floor faked extra boards-zone height that the parent flex container did NOT
+  // actually have, leading to clipped boards). Boards have priority.
+  const MIN_BOARD_CARD_H = rh(22); // tight readable minimum (~22dp@852, scales)
+  const CELL_CHROME_V = rs(34);    // HEADER_H rs(16) + 2*PAD_V rs(4) + container border rs(4) + cell wrapper padV rs(4) + pressableInner padV rs(4) + rowGap rs(2)
+  const _minCellH = 2 * MIN_BOARD_CARD_H + CELL_CHROME_V;
+  const _minBoardsZoneH = _gridRows * _minCellH + (_gridRows - 1) * _gridGap + rs(8); // +rs(8) safety
+  const _availForBoardsAndHand = safeH - TOP_BAR_H - BOT_STATUS_H - _handMarginB - HINT_H - _chromeSafety;
+  // Step 1: tentative boards-zone using the preferred PLAYER_HAND_H.
+  let _boardsZoneH = _availForBoardsAndHand - PLAYER_HAND_H;
+  // Step 2: if boards-zone fell below the minimum, give boards priority — shrink hand.
+  if (_boardsZoneH < _minBoardsZoneH) _boardsZoneH = _minBoardsZoneH;
+  // Step 3: the hand zone is whatever remains.
+  const _handZoneActualH = Math.max(rh(80), _availForBoardsAndHand - _boardsZoneH);
+
   const _cellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
   const _cellW = Math.max(rs(80), Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
   const _boardChromeH = rh(32); // board label + flop separator + intra-row padding
   const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
+
+  // FIT-ALL-BOARDS 2026-06-09 — compute the actual board card height after the
+  // boards-first allocation, applying the user-tunable cap from Settings
+  // (`max_board_card_h`). Defaults to rh(70) (~70dp@852) with range [50, 100].
+  // This same value is passed to PlayerHand as `maxCardH` so hand cards stay
+  // <= board cards (boards-first rule).
+  const _maxBoardCardSetting = boardCardCapDp; // state — read from AsyncStorage below
+  // Replicate Board.tsx cell-height-driven sizing so the cap is comparable.
+  const _cellHeightPropForBoard =
+    boardCount === 3 || boardCount === 4
+      ? Math.max(rs(48), _cellH - rs(12))
+      : _cellH;
+  const _innerH = Math.max(40, _cellHeightPropForBoard - rs(16) - 2 * rs(2));
+  const _fitBoardCardH = Math.max(rh(22), Math.floor((_innerH - rs(2)) / 2));
+  const _boardCardH = Math.min(_fitBoardCardH, _maxBoardCardSetting);
+  const _handCardCap = _boardCardH;
   const mobileWebCardH = Math.min(
     CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
     _maxMobileWebCh,
@@ -312,15 +381,28 @@ function GameScreenInner() {
     botHighlightIds: string[];
     boardHighlightIds: string[];
   }>>([]);
-  // BUILD467-VERIFY: layout debug readout — reads same AsyncStorage flag the
-  // DebugOverlay in _layout.tsx reads. OFF by default; flip to 'true' on-device
-  // (Settings â†’ debug toggle, or `AsyncStorage.setItem('debug_overlay_enabled','true')`)
-  // to display live computed responsive values for screenshot comparison.
+  // BUILD467-VERIFY / FIT-ALL-BOARDS: layout debug readout — reads same AsyncStorage
+  // flag the DebugOverlay in _layout.tsx reads. OFF by default; flip via the Settings
+  // toggle ("Debug overlay"). Re-checks on every AppState 'change' so flipping the
+  // toggle while the game screen is mounted is reflected on the next foreground/blur
+  // event (the user does not need to back out + re-enter the game).
+  // Also re-checks on a short interval immediately after mount in case the toggle
+  // was flipped a moment before the screen rendered.
   const [layoutDebugVisible, setLayoutDebugVisible] = useState(false);
   useEffect(() => {
-    AsyncStorage.getItem('debug_overlay_enabled')
-      .then((v) => { if (v === 'true') setLayoutDebugVisible(true); })
-      .catch(() => {});
+    let alive = true;
+    const recheck = () => {
+      AsyncStorage.getItem('debug_overlay_enabled')
+        .then((v) => { if (alive) setLayoutDebugVisible(v === 'true'); })
+        .catch(() => {});
+    };
+    recheck();
+    const sub = AppState.addEventListener('change', recheck);
+    // Belt-and-suspenders: re-check 3 times in the first 6 seconds after mount.
+    const t1 = setTimeout(recheck, 1500);
+    const t2 = setTimeout(recheck, 3500);
+    const t3 = setTimeout(recheck, 6000);
+    return () => { alive = false; sub.remove(); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
@@ -1197,10 +1279,10 @@ function GameScreenInner() {
           }}
         >
           <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
-            {`B467 dim ${screenW}x${SCREEN_H}`}{'\n'}
-            {`bc=${boardCount} hand=${PLAYER_HAND_H}`}{'\n'}
-            {`cell=${_cellW}x${_cellH}`}{'\n'}
-            {`maxCardH=${_maxCellCardH}`}
+            {`B469 dim ${screenW}x${SCREEN_H}`}{'\n'}
+            {`bc=${boardCount} hand=${_handZoneActualH}/${PLAYER_HAND_H}`}{'\n'}
+            {`cell=${_cellW}x${_cellH} grid=${_gridCols}x${_gridRows}`}{'\n'}
+            {`bCardH=${_boardCardH} cap=${boardCardCapDp}`}
           </Text>
         </View>
       )}
@@ -1325,7 +1407,8 @@ function GameScreenInner() {
         cellW={_cellW}
         cellH={_cellH}
         use2x2Grid={_use2x2}
-        handZoneH={PLAYER_HAND_H}
+        handZoneH={_handZoneActualH}
+        maxHandCardH={_handCardCap}
       />
       </Animated.View>
       {showSafeReveal && (

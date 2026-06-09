@@ -16,6 +16,12 @@ interface PlayerHandProps {
   cards: Card[];
   selectedCardIds?: string[];
   onSelectCard: (card: Card) => void;
+  // FIT-ALL-BOARDS 2026-06-09 — actual rendered hand-zone height. When omitted,
+  // falls back to PRD.zone.handMinH for backwards-compat. Game screen passes the
+  // boards-first remainder so hand cards size to fit the real container.
+  handZoneH?: number;
+  // Optional cap so hand cards never exceed board card height (boards-first rule).
+  maxCardH?: number;
 }
 
 // Per-card animated slot — each mounts with its own deal animation
@@ -65,7 +71,7 @@ function AnimatedCardSlot({
   );
 }
 
-export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
+export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH }: PlayerHandProps) {
   // C-fix 2026-05-22: lock to module-level SCREEN_W (computed once in responsive.ts).
   // Was useWindowDimensions() — re-fired on every focus/keyboard/resize event,
   // causing the 2-row hand layout to shift while the player was placing cards.
@@ -103,7 +109,11 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const HAND_ROW_GAP = rs(3);
   const HAND_CONTAINER_PAD_V = rs(3);                // styles.container.paddingVertical (×2)
   const CARD_WRAPPER_BORDER_V = 2;                   // cardWrapper.borderWidth (×2 per row)
-  const handZoneH = PRD.zone.handMinH;
+  // FIT-ALL-BOARDS 2026-06-09 — use the ACTUAL handZone height passed by the game
+  // screen (boards-first remainder). The legacy PRD.zone.handMinH fallback (~341dp
+  // at 852) caused cards to be sized for a 341dp zone but render in a 162/170/305dp
+  // container â visibly "too-big" hand cards on bc=2/3 and overflow on bc=4.
+  const handZoneH = handZoneHProp ?? PRD.zone.handMinH;
   // Shrink-fix iter 3 — the previous formula only subtracted label + 3 gaps,
   // leaving 25dp of hidden chrome (container.paddingVertical × 2 = 6, label
   // marginBottom = 3, cardWrapper.borderWidth × 2 × 4 rows = 16). At 4×4 grid
@@ -129,7 +139,15 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
     return Math.min(56, Math.max(42, maxCardW));
   })();
-  const cardH = Math.max(20, Math.round(cardW / 0.72));
+  let cardH = Math.max(20, Math.round(cardW / 0.72));
+  // FIT-ALL-BOARDS 2026-06-09 — boards-first rule. Hand cards must never exceed
+  // the board card height; if they do, the boards visually shrink while the hand
+  // looks oversized. Clamp here, then back-derive width so aspect stays at 0.72.
+  let cardWFinal = cardW;
+  if (maxCardH && cardH > maxCardH) {
+    cardH = Math.max(20, maxCardH);
+    cardWFinal = Math.max(14, Math.round(cardH * 0.72));
+  }
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, rowSize);
@@ -144,7 +162,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
       index={globalIndex}
       selIndex={selectedCardIds.indexOf(card.id)}
       onSelectCard={onSelectCard}
-      cardW={cardW}
+      cardW={cardWFinal}
       cardH={cardH}
     />
   );

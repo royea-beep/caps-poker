@@ -71,6 +71,8 @@ export interface BoardArrangementProps {
   // 2026-06-08 Fix — per-boardCount hand zone height (game.tsx owns the math).
   // Optional: when omitted, falls back to module-level HAND_ZONE_HEIGHT.
   handZoneH?: number;
+  // FIT-ALL-BOARDS 2026-06-09 — cap so hand cards never exceed the board card height.
+  maxHandCardH?: number;
 }
 
 export function BoardArrangement({
@@ -109,6 +111,7 @@ export function BoardArrangement({
   cellH,
   use2x2Grid,
   handZoneH,
+  maxHandCardH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -140,9 +143,14 @@ export function BoardArrangement({
           // column so cells can flex:1 vertically and absorb the empty space
           // that opens up when the hand zone disappears in the ready state.
           // PR-N 2026-06-02 — 2x2 only when use2x2Grid (set by game.tsx for 4p+>=360pt).
+          // FIT-ALL-BOARDS 2026-06-09 — column path adds justifyContent:'space-evenly'
+          // so when the boards-first math sizes cells smaller than the available zone
+          // (e.g. bc=2 after the board-card-h cap binds), the leftover vertical space
+          // becomes balanced spacing above, between, and below boards — not a dead
+          // band at the bottom.
           use2x2Grid
             ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
-            : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch' },
+            : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch', justifyContent: 'space-evenly' as const },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
       >
@@ -221,6 +229,8 @@ export function BoardArrangement({
             cards={playerHand}
             selectedCardIds={selectedCardIds}
             onSelectCard={onSelectCard}
+            handZoneH={handZoneH ?? HAND_ZONE_HEIGHT}
+            maxCardH={maxHandCardH}
           />
         </View>
       )}
