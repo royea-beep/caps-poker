@@ -263,20 +263,20 @@ export default function CardComponent({
   const isV2 = true;
   const v2SuitColor = isRed ? V2_RED : V2_BLACK;
 
-  // Highlight border — static conditional (instant feedback for card selection)
-  // Face cards (J/Q/K/A) get subtle gold border for prestige
-  // Community cards get gold frame for visual hierarchy (S105)
+  // VAMOS-THEME-PROPAGATION C2/C3 — Gold KEPT only for the winning-card highlight.
+  // Community frame → MINT (obsidian inner-detail rule). Face-card prestige border
+  // → mint hairline. Highlighted (winning) stays #c9a84c gold.
   const highlightBorder = highlighted
-    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
+    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }                   // WINNING — gold
     : isCommunityCard
-    ? { borderWidth: rs(2.5), borderColor: '#c9a84c' as const }
+    ? { borderWidth: rs(2.5), borderColor: OBSIDIAN.mint }                    // community frame — mint
     : isFaceCard
-    ? { borderWidth: 1.5, borderColor: 'rgba(201,168,76,0.45)' as const }
+    ? { borderWidth: 1.5, borderColor: OBSIDIAN.mintHairline }                // face-card prestige — mint hairline
     : { borderWidth: 1, borderColor: suitBorderColor };
   const highlightShadow = highlighted && Platform.OS === 'ios'
     ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 14 }
     : isCommunityCard && Platform.OS === 'ios'
-    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 }
+    ? { shadowColor: OBSIDIAN.mint, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 }
     : {};
 
   return (

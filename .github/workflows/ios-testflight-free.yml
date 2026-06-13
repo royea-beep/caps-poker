@@ -22,8 +22,15 @@ on:
   push:
     branches: [main, master, fix/*]
     paths:
-      # Auto-fire on a version bump only — other pushes don't burn macOS runner minutes.
+      # VAMOS-THEME-PROPAGATION E1 (2026-06-13) — also auto-fire on app+component
+      # code pushes, not just version bumps. Roye no longer wants manual dispatches.
       - 'app.json'
+      - 'app/**'
+      - 'components/**'
+      - 'constants/**'
+      - 'utils/**'
+      - 'store/**'
+      - 'package.json'
   workflow_dispatch:
 
 concurrency:

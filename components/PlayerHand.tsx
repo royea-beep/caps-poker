@@ -242,10 +242,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   countBadge: {
+    // VAMOS-THEME-PROPAGATION C1 — count pill mint (gold reserved for winning)
     width: rv(20),
     height: rv(20),
     borderRadius: rv(10),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -280,19 +281,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(4),
   },
   selected: {
-    // PR-D study: lift translateY(-rs(6)) + gold outline + halo.
-    borderColor: COLORS.gold,
+    // VAMOS-THEME-PROPAGATION C1 — selected hand-card now MINT (gold reserved for
+    // winning-card highlight only). Same lift+rotate, same halo intensity.
+    borderColor: COLORS.mint,
     transform: [{ translateY: PRD.selection.liftY }, { rotate: '-3deg' }, { scale: 1.08 }],
     borderRadius: rv(6),
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: PRD.selection.haloOpacity,
         shadowRadius: 10,
       },
       android: { elevation: 8 },
-      default: { boxShadow: '0 0 12px rgba(245,200,66,0.55)' },
+      default: { boxShadow: '0 0 12px rgba(79,214,168,0.55)' },
     }),
   },
   emptyRow: {
@@ -306,13 +308,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   selBadge: {
+    // VAMOS-THEME-PROPAGATION C1 — selection order pip mint
     position: 'absolute',
     top: -2,
     right: -2,
     width: rv(16),
     height: rv(16),
     borderRadius: rv(8),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
