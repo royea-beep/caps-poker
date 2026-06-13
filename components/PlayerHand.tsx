@@ -136,7 +136,11 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       // Width bounded by maxCardW so we never overflow horizontally on either platform.
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
+    // VAMOS-FULL-POLISH B2 — bc=4 (16 cards in 8-across row) clipped at 320-class widths
+    // because the previous floor (Math.max(24, ...)) forced cards above what availableW
+    // could support. Drop the 24 floor; respect maxCardW first, only cap with a soft 18dp
+    // minimum to keep cards readable. cards now NEVER overflow grid padding.
+    if (!isWeb) return Math.min(38, Math.max(18, maxCardW));
     // PR-K v9 web 2x8 path stays for partial hands (length < 13).
     if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));

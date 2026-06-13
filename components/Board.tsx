@@ -474,8 +474,11 @@ export default function Board({
               hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
             >
               {/* VAMOS-VISUAL-C — mint bolt prefix for the quiet Auto-Place chip */}
+              {/* VAMOS-FULL-POLISH B1 — i18n autoPlace already prefixes "⚡ ", so strip it
+                  at the call site to keep ONE styled mint bolt (not ⚡⚡). Translators keep
+                  the bolt in their string for non-CAPS surfaces; CAPS Board styles it. */}
               <Text style={styles.autoBtnBolt}>{'⚡'}</Text>
-              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
+              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace.replace(/^\s*⚡\s*/, '')}</Text>
             </Pressable>
           ) : (
             <View style={styles.potArea}>

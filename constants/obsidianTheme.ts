@@ -39,12 +39,15 @@ export const OBSIDIAN = {
   cardInk: '#1B1B24',
   cardRed: '#CC1733',
 
-  /** Card-back — dark with mint geometric emblem */
-  backTop: '#181B22',
-  backBottom: '#0E1014',
-  backBorder: 'rgba(79,214,168,0.30)',
-  backEmblemOutline: 'rgba(79,214,168,0.55)',
-  backEmblemCore: 'rgba(79,214,168,0.55)',
+  /** Card-back — VAMOS-FULL-POLISH B3 — raised contrast so face-down cards read
+   *  distinctly from the obsidian felt (bg ~#161922). 3-state UX gate:
+   *  face-up cream / face-down (this) / empty slot mint-dash. Lighter base +
+   *  stronger mint border + brighter emblem. */
+  backTop: '#2A2F3D',
+  backBottom: '#181B25',
+  backBorder: 'rgba(79,214,168,0.55)',
+  backEmblemOutline: 'rgba(79,214,168,0.80)',
+  backEmblemCore: 'rgba(79,214,168,0.80)',
 
   /** Slot ghost target */
   slotFill: 'rgba(79,214,168,0.03)',
