@@ -4,6 +4,8 @@ import { rs } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useGameStore } from '../store/gameStore';
 import { Card as CardType } from '../constants/gameConfig';
+import { OBSIDIAN, OBSIDIAN_GEOM, cardLiftShadow, cardLiftShadowSmall, cardBackShadow } from '../constants/obsidianTheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Card Display Bible (S81 — PERMANENT — never change without "UNLOCK CARD BIBLE"):
 // - Every card shows ONLY: large centered rank + large centered suit
@@ -150,73 +152,61 @@ export default function CardComponent({
   const glowTranslateY = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
   // floatY interpolation REMOVED 2026-05-22 — see KILL_Card.
 
-  // Face-down back card — diamond lattice pattern
+  // VAMOS-VISUAL-C — geometric mint card-back (rotated <View>s, no svg dep).
   const renderBack = () => {
+    const emblemSize = Math.max(10, Math.floor(Math.min(width, height) * 0.34));
+    const emblemCore = Math.max(4, Math.floor(emblemSize * 0.35));
+    const emblemStroke = Math.max(1, Math.floor(emblemSize * 0.07));
     const cardStyle: any[] = [
       {
         width,
         height,
-        backgroundColor: CARD_BACK_BG,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        borderColor: CARD_BACK_BORDER,
+        backgroundColor: OBSIDIAN.backTop,
+        borderRadius: OBSIDIAN_GEOM.cardBackRadius,
+        borderWidth: 1,
+        borderColor: OBSIDIAN.backBorder,
         overflow: 'hidden' as const,
         justifyContent: 'center' as const,
         alignItems: 'center' as const,
       },
-      Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 2, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6 },
-        android: { elevation: 5 },
-        default: { boxShadow: '2px 3px 10px rgba(0,0,0,0.45)' } as any,
-      }),
-      Platform.OS === 'web' && { background: 'linear-gradient(180deg, #142244 0%, #0a1230 100%)' } as any,
+      cardBackShadow,
     ];
 
-    if (Platform.OS === 'web') {
-      const svgStr = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect x='4.5' y='0' width='3' height='3' fill='%23c9a84c' opacity='0.22' transform='rotate(45 6 1.5)'/></svg>";
-      return (
-        <View style={cardStyle}>
-          <View style={[StyleSheet.absoluteFillObject, {
-            backgroundImage: `url("data:image/svg+xml,${svgStr}")`,
-            backgroundRepeat: 'repeat',
-          } as any]} />
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.3, bottom: 0, top: '55%' }]} />
-          <View style={styles.backCenter}>
-            <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.3) }]}>{'\u2666'}</Text>
-          </View>
-        </View>
-      );
-    }
-
-    const cols = Math.ceil(width / 12);
-    const rows = Math.ceil(height / 12);
-    const dots: React.ReactElement[] = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        dots.push(
-          <View
-            key={`${r}-${c}`}
-            style={{
-              position: 'absolute',
-              width: 4,
-              height: 4,
-              backgroundColor: '#c9a84c',
-              opacity: 0.18,
-              left: c * 12 + (r % 2 === 0 ? 0 : 6) - 2,
-              top: r * 10 - 2,
-              transform: [{ rotate: '45deg' }],
-            }}
-          />
-        );
-      }
-    }
     return (
       <View style={cardStyle}>
-        <View style={StyleSheet.absoluteFillObject}>{dots}</View>
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#0a0a1e', opacity: 0.25, bottom: 0, top: '55%' }]} />
-        <View style={styles.backCenter}>
-          <Text style={[styles.backDiamond, { fontSize: Math.floor(height * 0.3) }]}>{'\u2666'}</Text>
-        </View>
+        {/* VAMOS-VISUAL-C-FINISH — true back gradient (native + web), tokenized */}
+        <LinearGradient
+          colors={[OBSIDIAN.backTop, OBSIDIAN.backBottom]}
+          start={{ x: 0.3, y: 0 }}
+          end={{ x: 0.7, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+        {/* Subtle bottom darkening for depth */}
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: OBSIDIAN.backBottom, opacity: 0.45, top: '55%' }]} pointerEvents="none" />
+        {/* Outline diamond \u2014 rotated square outline in mint */}
+        <View
+          style={{
+            position: 'absolute',
+            width: emblemSize,
+            height: emblemSize,
+            borderWidth: emblemStroke,
+            borderColor: OBSIDIAN.backEmblemOutline,
+            transform: [{ rotate: '45deg' }],
+          }}
+          pointerEvents="none"
+        />
+        {/* Filled mint core \u2014 small filled square at center */}
+        <View
+          style={{
+            position: 'absolute',
+            width: emblemCore,
+            height: emblemCore,
+            backgroundColor: OBSIDIAN.backEmblemCore,
+            transform: [{ rotate: '45deg' }],
+          }}
+          pointerEvents="none"
+        />
       </View>
     );
   };
@@ -239,11 +229,9 @@ export default function CardComponent({
         default: { boxShadow: '0 8px 24px rgba(0,0,0,0.55)' } as any,
       });
 
-  const v2Shadow = Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8 } as any,
-    android: { elevation: 4 } as any,
-    default: { boxShadow: '0 2px 8px rgba(0,0,0,0.12)' } as any,
-  });
+  // VAMOS-VISUAL-C — lifted face-up: cardLiftShadow for normal/hand/slot cards,
+  // cardLiftShadowSmall for community/bc=4 cards (legibility+perf gate D1/D2).
+  const v2Shadow = width < 40 ? cardLiftShadowSmall : cardLiftShadow;
   const v2Border = highlighted
     ? { borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' as const }
     : { borderWidth: 0 };
@@ -314,9 +302,12 @@ export default function CardComponent({
             left: 0,
             width,
             height,
-            backgroundColor: isV2 ? '#FFFFFF' : '#FFFEF8',
-            borderRadius: isV2 ? 10 : 8,
+            // VAMOS-VISUAL-C — near-white with faint cream undertone, sharper radius (8 vs 10).
+            backgroundColor: isV2 ? OBSIDIAN.cardFaceFallback : '#FFFEF8',
+            borderRadius: isV2 ? OBSIDIAN_GEOM.cardRadius : 8,
           },
+          // VAMOS-VISUAL-C-FINISH — solid bg kept as fallback; the LinearGradient child
+          // below renders the true cream gradient on native AND web.
           !isV2 && Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
           isV2 ? v2Shadow : faceUpShadow,
           isV2 ? v2Border : highlightBorder,
@@ -334,9 +325,37 @@ export default function CardComponent({
           },
         ]}
       >
+        {/* VAMOS-VISUAL-C-FINISH — true cream gradient (native + web), borderRadius on the
+            gradient itself so we don't need overflow:hidden on the shadowed Animated.View. */}
+        {isV2 && (
+          <LinearGradient
+            colors={[OBSIDIAN.cardFaceTop, OBSIDIAN.cardFaceBottom]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={[StyleSheet.absoluteFillObject, { borderRadius: OBSIDIAN_GEOM.cardRadius }]}
+            pointerEvents="none"
+          />
+        )}
         {/* Subtle depth gradient — native only */}
         {Platform.OS !== 'web' && (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000', opacity: 0.025, top: '65%', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }]} pointerEvents="none" />
+        )}
+        {/* VAMOS-VISUAL-C — 1px inset top highlight for lift cue */}
+        {isV2 && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 1,
+              right: 1,
+              height: 1,
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              borderTopLeftRadius: OBSIDIAN_GEOM.cardRadius,
+              borderTopRightRadius: OBSIDIAN_GEOM.cardRadius,
+              opacity: 0.7,
+            }}
+            pointerEvents="none"
+          />
         )}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>

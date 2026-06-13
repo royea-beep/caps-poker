@@ -18,6 +18,8 @@ import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameCo
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs, SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
+import { OBSIDIAN, OBSIDIAN_GEOM, boardIdentityGlow } from '../constants/obsidianTheme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { useGameColors } from '../utils/useGameColors';
@@ -401,8 +403,14 @@ export default function Board({
       onLayout={onBoardLayout}
       style={[
         styles.container,
-        { backgroundColor: theme.boardBg, borderColor: boardAccent }, // PR-E: removed fixed BOARD_HEIGHT — Board now fills its 2x2 grid cell
-        Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
+        // VAMOS-VISUAL-C Option C — obsidian board surface + per-board identity glow.
+        // Identity color (boardAccent) drives BORDER + GLOW; mint drives inner details.
+        { backgroundColor: OBSIDIAN.bgFallback, borderColor: boardAccent },
+        boardIdentityGlow(boardAccent),
+        Platform.OS === 'web' && {
+          background: `linear-gradient(165deg, ${OBSIDIAN.bgTop} 0%, ${OBSIDIAN.bgBottom} 100%)`,
+          boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
+        } as any,
         active && styles.active,
         selected && styles.selected,
         winner === 'player' && styles.playerWon,
@@ -412,11 +420,24 @@ export default function Board({
         isWinner && winnerPulseStyle,
       ]}
     >
+      {/* VAMOS-VISUAL-C-FINISH — true obsidian gradient on native (and web). Sits BEHIND
+          the per-board identity glow on the container border, IN FRONT of nothing. The
+          container's overflow:'hidden' + borderRadius clip the gradient cleanly. */}
+      <LinearGradient
+        colors={[OBSIDIAN.bgTop, OBSIDIAN.bgBottom]}
+        // 165° in CSS = mostly top→bottom with a slight right→down skew. Approximate
+        // with start at top-center-left and end at bottom-center-right.
+        start={{ x: 0.3, y: 0 }}
+        end={{ x: 0.7, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
       <Pressable onPress={onPress} style={styles.pressableInner}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
+            {/* VAMOS-VISUAL-C — minimal chip tab: thin identity-color border + identity-color text on dark, not a filled gold pill */}
+            <Text style={[styles.boardLabel, { color: boardAccent, borderColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
@@ -452,6 +473,8 @@ export default function Board({
               onPress={onAutoFill}
               hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
             >
+              {/* VAMOS-VISUAL-C — mint bolt prefix for the quiet Auto-Place chip */}
+              <Text style={styles.autoBtnBolt}>{'⚡'}</Text>
               <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
             </Pressable>
           ) : (
@@ -537,7 +560,8 @@ export default function Board({
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
-          <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
+          {/* VAMOS-VISUAL-C — separator now MINT (cohesive inner detail), no longer per-board identity */}
+          <View style={[styles.communitySeparator, { backgroundColor: OBSIDIAN.mint }]} />
           {(closedCards ?? []).map((c, i) => (
             <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
               <CardComponent
@@ -649,24 +673,15 @@ export default function Board({
 
 const styles = StyleSheet.create({
   container: {
+    // VAMOS-VISUAL-C — obsidian surface, sharper radius (14 vs 18), 1px identity edge.
+    // Outer drop shadow + identity glow applied inline at usage site so they can swap
+    // shadowColor per board without a per-instance StyleSheet.
     flex: 1,
-    backgroundColor: COLORS.boardBg,
-    borderRadius: rs(18),
-    borderWidth: PRD.board.border,
+    backgroundColor: OBSIDIAN.bgFallback,
+    borderRadius: OBSIDIAN_GEOM.boardRadius,
+    borderWidth: 1,
     borderColor: COLORS.boardBorder,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 10,
-      },
-      android: { elevation: 10 },
-      default: {
-        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-      } as any,
-    }),
   },
   pressableInner: {
     // PR-D study: board padding rs(6/5).
@@ -750,15 +765,19 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   boardLabel: {
-    color: '#0a0a0a',
+    // VAMOS-VISUAL-C — minimal chip: thin identity-color border + identity-color text on dark
+    // (color + borderColor are overridden inline to the per-board accent).
+    color: '#ffffff',
     fontSize: rf(10),
-    fontWeight: '900',
+    fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    backgroundColor: '#c8a84b',
-    paddingHorizontal: rs(6),
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
+    paddingHorizontal: rs(7),
     paddingVertical: rs(1),
-    borderRadius: 6,
+    borderRadius: OBSIDIAN_GEOM.tabRadius,
     overflow: 'hidden',
   },
   rowLabel: {
@@ -815,14 +834,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(6),
   },
   communitySeparator: {
-    // PR-D study: 3px gold separator between flop and turn/river
+    // VAMOS-VISUAL-C — 2-3px mint separator with soft glow (was gold/identity)
     width: PRD.board.flopSeparatorW,
     height: '80%',
-    backgroundColor: COLORS.gold,
-    opacity: 0.55,
+    backgroundColor: OBSIDIAN.mint,
+    opacity: 0.9,
     marginHorizontal: rs(6),
     alignSelf: 'center',
     borderRadius: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: OBSIDIAN.mint,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 4,
+      },
+      android: { elevation: 2 },
+      default: { boxShadow: `0 0 8px ${OBSIDIAN.mint}` } as any,
+    }),
   },
   communityLabelWrap: {
     alignSelf: 'flex-start',
@@ -842,23 +871,22 @@ const styles = StyleSheet.create({
     color: '#c9a84c',
   },
   emptySlot: {
-    // PR-D study: dashed rgba(255,255,255,0.18) on dark bg
-    borderRadius: rs(8),
-    borderWidth: rs(1.5),
-    borderColor: 'rgba(255,255,255,0.18)',
+    // VAMOS-VISUAL-C — ghost target: mint dashed on near-transparent fill
+    borderRadius: OBSIDIAN_GEOM.slotRadius,
+    borderWidth: 1,
+    borderColor: OBSIDIAN.slotDash,
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: OBSIDIAN.slotFill,
   },
   dropTarget: {
-    // PR-D study: when a hand card is selected, slots switch to solid
-    // gold-bright + bg rgba(245,200,66,0.08) — "place me here" affordance.
-    borderColor: '#F5C842',
-    borderWidth: rs(2),
+    // VAMOS-VISUAL-C — when a hand card is selected, slot brightens to solid mint
+    borderColor: OBSIDIAN.slotDashActive,
+    borderWidth: rs(1.5),
     borderStyle: 'solid',
-    backgroundColor: 'rgba(245,200,66,0.08)',
+    backgroundColor: OBSIDIAN.mintGhost,
   },
   plusText: {
     color: '#c8a84b55',
@@ -943,13 +971,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   winnerBadge: {
+    // VAMOS-VISUAL-C-FINISH — bottom corner radius matches OBSIDIAN_GEOM.boardRadius
+    // (14) minus the 1px container border. Top edge gets a thin mint hairline so the
+    // badge reads as part of the obsidian board, not a foreign gold bar.
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     paddingVertical: rs(5),
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: OBSIDIAN_GEOM.boardRadius - 1,
+    borderBottomRightRadius: OBSIDIAN_GEOM.boardRadius - 1,
+    borderTopWidth: 1,
+    borderTopColor: OBSIDIAN.mintHairline,
     alignItems: 'center',
     ...Platform.select({
       ios: {
@@ -969,44 +1002,52 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.neonRed,
   },
   tieBadge: {
-    backgroundColor: COLORS.goldDim,
+    // VAMOS-VISUAL-C-FINISH — was COLORS.goldDim (clashed). Mint at 92% reads neutral.
+    backgroundColor: 'rgba(79,214,168,0.92)',
   },
   winnerText: {
-    color: COLORS.background,
+    // VAMOS-VISUAL-C-FINISH — dark ink on green/red/mint stays high-contrast and
+    // matches the obsidian palette (no gold text).
+    color: OBSIDIAN.cardInk,
     fontSize: rf(11),
     fontWeight: '900',
     letterSpacing: 2,
   },
   bannerHandName: {
-    color: COLORS.background,
+    color: OBSIDIAN.cardInk,
     fontSize: rf(8),
     fontWeight: '700',
     letterSpacing: 0.5,
     opacity: 0.85,
   },
   autoBtn: {
-    // BOARD-DENSITY 2026-06-09 — minHeight rs(16) â rs(14); matches HEADER_H math.
-    // hitSlop {top:15, bottom:15, left:10, right:10} on the Pressable expands the
-    // tap target to ~44dp vertical (HIG-compliant) without inflating the visual.
-    // VISUAL-POLISH 2026-06-09 — toned down so cards read first. Background opacity
-    // 0.85 â 0.55, gold border solid -> 35% alpha, font weight 800 -> 700. Layout +
-    // minHeight + hitSlop unchanged so tap target stays >= 44pt HIG.
-    maxWidth: rs(95),
-    paddingHorizontal: rs(4),
+    // VAMOS-VISUAL-C — quiet chip with mint bolt. Layout/minHeight/hitSlop unchanged
+    // so tap target stays >= 44pt HIG via the Pressable's hitSlop on the call site.
+    maxWidth: rs(105),
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: rs(3),
+    paddingHorizontal: rs(6),
     paddingVertical: rs(1),
     minHeight: rs(14),
     justifyContent: 'center' as const,
-    borderRadius: rs(5),
-    backgroundColor: 'rgba(26,26,46,0.55)',
+    borderRadius: OBSIDIAN_GEOM.tabRadius,
+    backgroundColor: OBSIDIAN.autoBg,
     borderWidth: 1,
-    borderColor: 'rgba(197,160,40,0.35)',
+    borderColor: OBSIDIAN.autoBorder,
     opacity: 1,
     zIndex: 10,
   },
   autoBtnText: {
-    color: 'rgba(232,201,106,0.85)',
+    color: OBSIDIAN.autoText,
     fontSize: rf(7),
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  autoBtnBolt: {
+    color: OBSIDIAN.autoBolt,
+    fontSize: rf(8),
+    fontWeight: '900',
+    lineHeight: rf(10),
   },
 });
