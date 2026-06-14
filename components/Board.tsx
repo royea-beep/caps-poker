@@ -219,9 +219,6 @@ export default function Board({
   let ch: number;
   let slotH: number;
   let slotW: number;
-  // VAMOS-PLACEMENT-POLISH-2 FIX 4 — natural content width for hugging. Computed
-  // inside the cellWidth branch so the legacy path stays flex:1 (BoardReveal/results).
-  let boardNaturalW: number | undefined;
   if (cellWidth && cellHeight) {
     // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)ârs(16). The actual rendered
     // header strip is max(boardLabel ~12dp, autoBtn minHeight rs(14)) = ~14dp, plus
@@ -260,12 +257,6 @@ export default function Board({
     slotH = Math.round(slotW / CARD_ASPECT);
     ch = slotH;
     cw = slotW;
-    // VAMOS-PLACEMENT-POLISH-2 FIX 4 — hug content. Board's natural width = the
-    // community row (widest row) + horizontal chrome. The cell still controls how
-    // many boards fit per row in BoardArrangement; the board just doesn't span the
-    // full cell anymore, so the dead interior space shifts to symmetric left/right
-    // outside the board (intentional framing).
-    boardNaturalW = 5 * commW + 4 * commGap + sepW + 2 * sepMarginH + 2 * BREATHING_H + 2 * PAD_H + 2 * BORDER_W;
   } else {
     // Legacy path — PRD tokens.
     const _baseCommW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
@@ -418,12 +409,10 @@ export default function Board({
       style={[
         styles.container,
         // VAMOS-VISUAL-C Option C — obsidian board surface + per-board identity glow.
-        // VAMOS-PLACEMENT-POLISH-2 FIX 4 — when in cell-sized mode (placement screen
-        // path), board hugs content via width: boardNaturalW + alignSelf:'center'.
-        // Legacy callers (BoardReveal/results) leave boardNaturalW undefined and keep
-        // flex:1 spanning the cell.
+        // VAMOS-BOARD-RESTORE 2026-06-14 — reverted FIX 4 (board hug content). In a
+        // column-laid grid `flex` controls the MAIN AXIS = height; flex:0 collapsed
+        // every board's height to ~0. Restored to layout-471 flex:1 full-cell.
         { backgroundColor: OBSIDIAN.bgFallback, borderColor: boardAccent },
-        boardNaturalW != null && { width: boardNaturalW, alignSelf: 'center' as const, flex: 0 },
         boardIdentityGlow(boardAccent),
         Platform.OS === 'web' && {
           background: `linear-gradient(165deg, ${OBSIDIAN.bgTop} 0%, ${OBSIDIAN.bgBottom} 100%)`,
