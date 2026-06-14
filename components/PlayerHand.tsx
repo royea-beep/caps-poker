@@ -89,8 +89,15 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const useTwoRows = !isWeb || device.isMobileWeb;
 
   // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
-  // VISUAL-POLISH 2026-06-09 — must match styles.grid.paddingHorizontal (rs(16) each side -> rs(32) total).
-  const availableW = SCREEN_W - rs(32);
+  // VAMOS-PLACEMENT-POLISH B1 (#1) 2026-06-14 — Roye saw bc=4 hand row bleeding off
+  // both screen edges. Root cause: rs(16) outer padding scales with SCREEN_W/393, so
+  // at 320 it's only ~13dp (below the 12-16dp spec). Plus the .selected card's scale
+  // (1.08) + rotate(-3deg) extends visual past the card box, eating the small slack.
+  // Fix: FIXED 16dp inset (not rs-scaled) so the inset can't collapse on narrow screens,
+  // and tighten the floor to 16dp so 8-across at 320 still fits with room for transforms.
+  // Row width is now measured (8·cardW + 7·gap + 8·overhead) vs availableW.
+  const HAND_HORIZ_INSET = 16;
+  const availableW = SCREEN_W - 2 * HAND_HORIZ_INSET;
   const safeCards = cards ?? [];
   // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
   // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
@@ -136,11 +143,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       // Width bounded by maxCardW so we never overflow horizontally on either platform.
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    // VAMOS-FULL-POLISH B2 — bc=4 (16 cards in 8-across row) clipped at 320-class widths
-    // because the previous floor (Math.max(24, ...)) forced cards above what availableW
-    // could support. Drop the 24 floor; respect maxCardW first, only cap with a soft 18dp
-    // minimum to keep cards readable. cards now NEVER overflow grid padding.
-    if (!isWeb) return Math.min(38, Math.max(18, maxCardW));
+    // VAMOS-PLACEMENT-POLISH B1 — floor lowered 18→16 so 8-across at 320 fits with
+    // measured slack. selected card transform (1.08 scale + rotate −3°) can extend
+    // ~3-4dp past the box; the 16dp outer inset + 16dp card floor leave room for it.
+    if (!isWeb) return Math.min(38, Math.max(16, maxCardW));
     // PR-K v9 web 2x8 path stays for partial hands (length < 13).
     if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
@@ -256,10 +262,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   grid: {
-    // VISUAL-POLISH 2026-06-09 — paddingHorizontal rs(8) â rs(16). Matches the
-    // boardsGrid horizontal feel and gives bc=4's 8-across row meaningful
-    // breathing room from the screen edges at narrower widths.
-    paddingHorizontal: rs(16),
+    // VAMOS-PLACEMENT-POLISH B1 (#1) — FIXED 16dp inset (not rs-scaled). rs(16)
+    // collapses to ~13dp at 320 widths which was exactly when bc=4 needed more
+    // not less. Mirrors HAND_HORIZ_INSET in the cardW math above.
+    paddingHorizontal: 16,
     gap: rs(2),
   },
   row: {

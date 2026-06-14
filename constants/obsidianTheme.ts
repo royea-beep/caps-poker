@@ -39,15 +39,15 @@ export const OBSIDIAN = {
   cardInk: '#1B1B24',
   cardRed: '#CC1733',
 
-  /** Card-back — VAMOS-FULL-POLISH B3 — raised contrast so face-down cards read
-   *  distinctly from the obsidian felt (bg ~#161922). 3-state UX gate:
-   *  face-up cream / face-down (this) / empty slot mint-dash. Lighter base +
-   *  stronger mint border + brighter emblem. */
-  backTop: '#2A2F3D',
-  backBottom: '#181B25',
-  backBorder: 'rgba(79,214,168,0.55)',
-  backEmblemOutline: 'rgba(79,214,168,0.80)',
-  backEmblemCore: 'rgba(79,214,168,0.80)',
+  /** Card-back — VAMOS-PLACEMENT-POLISH D1 (#6) — second bump for face-down community
+   *  legibility. Lifted from #2A2F3D base to brighter slate so face-down community
+   *  cards clearly read as hidden cards on the obsidian felt. Border + emblem
+   *  remain at 55%/80% mint. */
+  backTop: '#363D4E',
+  backBottom: '#1F2330',
+  backBorder: 'rgba(79,214,168,0.65)',
+  backEmblemOutline: 'rgba(79,214,168,0.85)',
+  backEmblemCore: 'rgba(79,214,168,0.85)',
 
   /** Slot ghost target */
   slotFill: 'rgba(79,214,168,0.03)',
@@ -106,28 +106,29 @@ export function boardIdentityGlow(identityColor: string) {
   });
 }
 
-/** Lifted face-up card shadow — tactile depth without muddying small sizes. */
+/** VAMOS-PLACEMENT-POLISH D3 (#8) — toned down so face-up cards REST on the board
+ *  instead of looking like they float ~6dp above it. Offset+radius+opacity all cut. */
 export const cardLiftShadow = Platform.select({
   ios: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.30,
+    shadowRadius: 5,
   } as const,
-  android: { elevation: 8 } as const,
-  default: { boxShadow: '0 6px 14px rgba(0,0,0,0.50)' as any } as any,
+  android: { elevation: 4 } as const,
+  default: { boxShadow: '0 2px 6px rgba(0,0,0,0.30)' as any } as any,
 });
 
-/** Reduced lift for small (community/bc=4) cards — perf + legibility gate. */
+/** Even subtler for small (community/bc=4) cards. */
 export const cardLiftShadowSmall = Platform.select({
   ios: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
   } as const,
-  android: { elevation: 4 } as const,
-  default: { boxShadow: '0 3px 8px rgba(0,0,0,0.40)' as any } as any,
+  android: { elevation: 2 } as const,
+  default: { boxShadow: '0 1px 4px rgba(0,0,0,0.25)' as any } as any,
 });
 
 /** Card-back shadow (close to surface — sits on felt). */

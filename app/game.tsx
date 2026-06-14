@@ -1539,7 +1539,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   countdownLabel: {
-    color: '#FFC107',
+    // VAMOS-PLACEMENT-POLISH D4 (#9) — amber #FFC107 → mint
+    color: COLORS.mint,
     fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 1,
@@ -1611,9 +1612,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(40,167,69,0.5)',
   },
   botThinkingPill: {
-    backgroundColor: 'rgba(255,193,7,0.15)',
+    // VAMOS-PLACEMENT-POLISH D4 (#9) — amber → mint ghost
+    backgroundColor: 'rgba(79,214,168,0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(255,193,7,0.4)',
+    borderColor: 'rgba(79,214,168,0.4)',
   },
   botStatusText: {
     fontSize: rf(10),
@@ -1624,7 +1626,8 @@ const styles = StyleSheet.create({
     color: '#28A745',
   },
   botThinkingText: {
-    color: '#FFC107',
+    // VAMOS-PLACEMENT-POLISH D4 (#9) — amber → mint
+    color: COLORS.mint,
   },
   botLabel: {
     color: COLORS.textSecondary,
@@ -1679,19 +1682,23 @@ const styles = StyleSheet.create({
     }),
   },
   undoBtn: {
+    // VAMOS-PLACEMENT-POLISH B2 (#2) — Cancel/Undo restyled as a SECONDARY in-theme
+    // action: mint-outline on transparent. Matches mint primary, no clashing gold.
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#C5A028',
+    borderColor: COLORS.mint,
   },
   placeBtn: {
-    backgroundColor: '#C5A028',
+    // VAMOS-PLACEMENT-POLISH B2 (#2) — primary CTA is now MINT solid (was '#C5A028'
+    // gold literal). Disabled state cascades via placeBtnDisabled opacity.
+    backgroundColor: COLORS.mint,
     flex: 1,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.45,
         shadowRadius: 8,
       },
       android: { elevation: 8 },
@@ -1699,8 +1706,9 @@ const styles = StyleSheet.create({
     }),
   },
   placeBtnDisabled: {
-    backgroundColor: COLORS.goldDim,
-    opacity: 0.6,
+    // VAMOS-PLACEMENT-POLISH B2 (#2) — solid muted mint instead of opacity over gold.
+    backgroundColor: 'rgba(79,214,168,0.35)',
+    opacity: 1,
   },
   placeBtnReady: {
     backgroundColor: '#28A745',

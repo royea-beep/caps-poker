@@ -697,13 +697,14 @@ const styles = StyleSheet.create({
     paddingVertical: PRD.board.cellPadV,
     overflow: 'hidden',
   },
-  // PR-L Task B — wrapper for the centered content rows.
-  // PR-O 2026-06-07 Fix 1 — space-evenly so any vertical slack (when row is
-  // width-limited and cardH_byHeight wins) distributes as top + middle + bottom
-  // equally, eliminating the empty maroon block below the cards.
+  // VAMOS-PLACEMENT-POLISH C3 (#5) — was 'space-evenly' which distributed vertical
+  // slack as bands above + between + below the rows (visible "sparse" feel). Switch
+  // to 'center' + modest row gap so any slack consolidates as a single margin and
+  // the two rows read as a snug grouped block.
   contentCenter: {
     flex: 1,
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
+    gap: rs(4),
     minHeight: 0,
   },
   active: {
@@ -820,41 +821,29 @@ const styles = StyleSheet.create({
     top: -2,
   },
   cardRow: {
-    // PR-D study: card gap = rs(3)
-    // PR-O 2026-06-07 Fix 2 — paddingHorizontal: rs(6) guarantees the rendered
-    // row never touches the inner gold border (≥6dp breathing room).
-    // BOARD-DENSITY 2026-06-09 — paddingVertical 1 â 0. Saves 2dp per row Ã 2 rows = 4dp/board.
-    // VISUAL-POLISH 2026-06-09 — justifyContent 'center' â 'space-evenly'. With cap-bound
-    // small cards in a wide cell (e.g. bc=4 stack on Pro Max: 5 cards Ã 27dp = 135 content
-    // in 393dp inner width), centering left â¥118dp of empty maroon on each side. space-evenly
-    // distributes the leftover as equal gaps between cards (and around the row), spreading
-    // cards across the full board width while preserving the community/slot separator group.
+    // VAMOS-PLACEMENT-POLISH C1+C2 (#4,#3) — REVERT 'space-evenly' → 'center'.
+    // space-evenly spread the row too thin, breaking the grouped reading of
+    // "3 face-up + sep + 2 backs". 'center' + modest gap keeps the row tidy
+    // and aligns the placement-slot row visually since both rows share the
+    // same justification + same gap.
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: PRD.card.gap,
     paddingVertical: 0,
     paddingHorizontal: rs(6),
   },
   communitySeparator: {
-    // VAMOS-VISUAL-C — 2-3px mint separator with soft glow (was gold/identity)
-    width: PRD.board.flopSeparatorW,
-    height: '80%',
-    backgroundColor: OBSIDIAN.mint,
-    opacity: 0.9,
-    marginHorizontal: rs(6),
+    // VAMOS-PLACEMENT-POLISH D2 (#7) — was "random bright bar". Toned to subtle
+    // divider: thinner (1.5dp vs rs(3)), shorter (60% vs 80%), opacity 0.45,
+    // no glow. Reads as "flop | turn-river" cue, not a hero element.
+    width: 1.5,
+    height: '60%',
+    backgroundColor: OBSIDIAN.mintHairline,
+    opacity: 0.55,
+    marginHorizontal: rs(5),
     alignSelf: 'center',
     borderRadius: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: OBSIDIAN.mint,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 4,
-      },
-      android: { elevation: 2 },
-      default: { boxShadow: `0 0 8px ${OBSIDIAN.mint}` } as any,
-    }),
   },
   communityLabelWrap: {
     alignSelf: 'flex-start',
