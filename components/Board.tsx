@@ -202,6 +202,11 @@ export default function Board({
   const onBoardLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     if (w > 0 && Math.abs(w - measuredBoardW) > 1) setMeasuredBoardW(w);
+    // VAMOS-PLACEMENT-POLISH-2 FIX 4 — dev: log rendered board width so Roye can
+    // confirm hugging worked (board width < screen width, centered).
+    if (__DEV__ && index === 0) {
+      console.log('[board-0]', { renderedW: w, naturalW: undefined });
+    }
   };
   // PR-M 2026-05-29 — fit-to-cell math. When cellWidth/cellHeight are given,
   // derive card dims so the 2 internal rows (community + player slots) plus the
@@ -214,6 +219,9 @@ export default function Board({
   let ch: number;
   let slotH: number;
   let slotW: number;
+  // VAMOS-PLACEMENT-POLISH-2 FIX 4 — natural content width for hugging. Computed
+  // inside the cellWidth branch so the legacy path stays flex:1 (BoardReveal/results).
+  let boardNaturalW: number | undefined;
   if (cellWidth && cellHeight) {
     // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)ârs(16). The actual rendered
     // header strip is max(boardLabel ~12dp, autoBtn minHeight rs(14)) = ~14dp, plus
@@ -252,6 +260,12 @@ export default function Board({
     slotH = Math.round(slotW / CARD_ASPECT);
     ch = slotH;
     cw = slotW;
+    // VAMOS-PLACEMENT-POLISH-2 FIX 4 — hug content. Board's natural width = the
+    // community row (widest row) + horizontal chrome. The cell still controls how
+    // many boards fit per row in BoardArrangement; the board just doesn't span the
+    // full cell anymore, so the dead interior space shifts to symmetric left/right
+    // outside the board (intentional framing).
+    boardNaturalW = 5 * commW + 4 * commGap + sepW + 2 * sepMarginH + 2 * BREATHING_H + 2 * PAD_H + 2 * BORDER_W;
   } else {
     // Legacy path — PRD tokens.
     const _baseCommW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
@@ -404,8 +418,12 @@ export default function Board({
       style={[
         styles.container,
         // VAMOS-VISUAL-C Option C — obsidian board surface + per-board identity glow.
-        // Identity color (boardAccent) drives BORDER + GLOW; mint drives inner details.
+        // VAMOS-PLACEMENT-POLISH-2 FIX 4 — when in cell-sized mode (placement screen
+        // path), board hugs content via width: boardNaturalW + alignSelf:'center'.
+        // Legacy callers (BoardReveal/results) leave boardNaturalW undefined and keep
+        // flex:1 spanning the cell.
         { backgroundColor: OBSIDIAN.bgFallback, borderColor: boardAccent },
+        boardNaturalW != null && { width: boardNaturalW, alignSelf: 'center' as const, flex: 0 },
         boardIdentityGlow(boardAccent),
         Platform.OS === 'web' && {
           background: `linear-gradient(165deg, ${OBSIDIAN.bgTop} 0%, ${OBSIDIAN.bgBottom} 100%)`,
@@ -834,13 +852,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(6),
   },
   communitySeparator: {
-    // VAMOS-PLACEMENT-POLISH D2 (#7) — was "random bright bar". Toned to subtle
-    // divider: thinner (1.5dp vs rs(3)), shorter (60% vs 80%), opacity 0.45,
-    // no glow. Reads as "flop | turn-river" cue, not a hero element.
+    // VAMOS-PLACEMENT-POLISH-2 FIX 5 — nudged 0.55 → 0.68 opacity (prior pass was
+    // too faint to read on the obsidian felt). Still no glow, still thin.
     width: 1.5,
     height: '60%',
     backgroundColor: OBSIDIAN.mintHairline,
-    opacity: 0.55,
+    opacity: 0.68,
     marginHorizontal: rs(5),
     alignSelf: 'center',
     borderRadius: 1,

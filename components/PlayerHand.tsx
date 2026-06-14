@@ -88,16 +88,15 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const isWeb = Platform.OS === 'web';
   const useTwoRows = !isWeb || device.isMobileWeb;
 
-  // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
-  // VAMOS-PLACEMENT-POLISH B1 (#1) 2026-06-14 — Roye saw bc=4 hand row bleeding off
-  // both screen edges. Root cause: rs(16) outer padding scales with SCREEN_W/393, so
-  // at 320 it's only ~13dp (below the 12-16dp spec). Plus the .selected card's scale
-  // (1.08) + rotate(-3deg) extends visual past the card box, eating the small slack.
-  // Fix: FIXED 16dp inset (not rs-scaled) so the inset can't collapse on narrow screens,
-  // and tighten the floor to 16dp so 8-across at 320 still fits with room for transforms.
-  // Row width is now measured (8·cardW + 7·gap + 8·overhead) vs availableW.
+  // VAMOS-PLACEMENT-POLISH-2 FIX 1 (2026-06-14) — prior pass left only 1.5-3dp inside
+  // slack per side at bc=4 (8-across). The .selected card transform (1.08 scale +
+  // rotate −3°) extends visually past the card box by ~3-4dp, overflowing into the
+  // outer 16dp inset and CLIPPING. Real fix: enforce ≥8dp clear inside the grid,
+  // and tighten the card-gap on 8-across so the floor doesn't have to drop.
   const HAND_HORIZ_INSET = 16;
+  const SAFETY_INSIDE_GRID = 8;
   const availableW = SCREEN_W - 2 * HAND_HORIZ_INSET;
+  const usableW = availableW - 2 * SAFETY_INSIDE_GRID;
   const safeCards = cards ?? [];
   // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
   // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
@@ -108,7 +107,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = rs(12);
-  const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * rs(3) - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  // VAMOS-PLACEMENT-POLISH-2 FIX 1 — tighten gap on 8-across so the floor doesn't
+  // have to drop below readable. Smaller gap recovers the 8+dp safety we need.
+  const CARD_GAP_DP = cardsPerRow >= 8 ? 1 : rs(3);
+  const maxCardW = Math.floor((usableW - (cardsPerRow - 1) * CARD_GAP_DP - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
   // PR-O 2026-06-07 Fix 3c — when quad rows are active, derive cardH from the
   // available hand zone height (handMinH - label - 3 row gaps) / 4. This
   // guarantees the 4th row fits inside the zone. cardW preserves Card.tsx's
@@ -189,24 +191,33 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
         </View>
       </View>
       {safeCards.length > 0 ? (
-        <View style={styles.grid}>
+        <View
+          style={styles.grid}
+          // VAMOS-PLACEMENT-POLISH-2 FIX 1 — runtime measurement: log actual rendered
+          // grid (container) width vs the inner row content width. Roye can read these
+          // in the dev console / via React DevTools to verify content ≤ container − 16.
+          onLayout={(e) => { if (__DEV__) { console.log('[hand-grid]', { w: e.nativeEvent.layout.width, cardsPerRow, CARD_GAP_DP, computedRowW: cardsPerRow * cardWFinal + (cardsPerRow - 1) * CARD_GAP_DP + cardsPerRow * CARD_WRAPPER_OVERHEAD }); } }}
+        >
           {useTwoRows ? (
             <>
-              <View style={styles.row}>
+              <View
+                style={[styles.row, { gap: CARD_GAP_DP }]}
+                onLayout={(e) => { if (__DEV__ && topRow.length >= 8) console.log('[hand-row-8x]', { rendered: e.nativeEvent.layout.width, cardW: cardWFinal, gap: CARD_GAP_DP }); }}
+              >
                 {topRow.map((card, i) => renderCard(card, i))}
               </View>
               {row2.length > 0 && (
-                <View style={styles.row}>
+                <View style={[styles.row, { gap: CARD_GAP_DP }]}>
                   {row2.map((card, i) => renderCard(card, rowSize + i))}
                 </View>
               )}
               {row3.length > 0 && (
-                <View style={styles.row}>
+                <View style={[styles.row, { gap: CARD_GAP_DP }]}>
                   {row3.map((card, i) => renderCard(card, rowSize * 2 + i))}
                 </View>
               )}
               {bottomRow.length > 0 && (
-                <View style={styles.row}>
+                <View style={[styles.row, { gap: CARD_GAP_DP }]}>
                   {bottomRow.map((card, i) => renderCard(card, (useQuadRows ? rowSize * 3 : rowSize) + i))}
                 </View>
               )}

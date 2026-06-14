@@ -1560,22 +1560,24 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase' as any,
   },
   headerChips: {
+    // VAMOS-PLACEMENT-POLISH-2 FIX 3 — money/balance pill: gold rgba bg/border → mint
     flexDirection: 'row',
     alignItems: 'center',
     gap: rs(4),
-    backgroundColor: 'rgba(201,168,76,0.12)',
+    backgroundColor: 'rgba(79,214,168,0.12)',
     borderRadius: rv(12),
     paddingVertical: rs(4),
     paddingHorizontal: rs(10),
     borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.25)',
+    borderColor: 'rgba(79,214,168,0.25)',
   },
   headerChipsEmoji: {
     fontSize: rf(14),
     lineHeight: rf(18),
   },
   headerChipsAmount: {
-    color: COLORS.gold,
+    // VAMOS-PLACEMENT-POLISH-2 FIX 3 — amount text gold → mint
+    color: COLORS.mint,
     fontSize: rf(14),
     fontWeight: '800',
     letterSpacing: 0.5,

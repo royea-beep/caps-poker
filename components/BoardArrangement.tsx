@@ -429,7 +429,7 @@ const baStyles = StyleSheet.create({
     zIndex: 99, // below the action bar (100) so the bar's border still shows
   },
   floatingActions: {
-    // PR-D study: pinned absolute, solid bg, zIndex 100, height >= rs(72).
+    // VAMOS-PLACEMENT-POLISH-2 FIX 2 — border-top hairline gold → mint
     position: 'absolute',
     left: 0,
     right: 0,
@@ -442,7 +442,7 @@ const baStyles = StyleSheet.create({
     minHeight: PRD.zone.actionBarH,
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(197,160,40,0.35)',
+    borderTopColor: 'rgba(79,214,168,0.30)',
     zIndex: 100,
     elevation: 12,
   },
@@ -465,23 +465,26 @@ const baStyles = StyleSheet.create({
     }),
   },
   undoBtn: {
-    // PR-L Task F — balance with placeBtn (was no flex → undoBtn shrunk to
-    // intrinsic text width while placeBtn took 100% via flex:1).
+    // VAMOS-PLACEMENT-POLISH-2 FIX 2 — THIS is the bottom Cancel button (BoardArrangement
+    // is where the placement commit bar lives — NOT game.tsx undoBtn which is a
+    // different element). Was gold-on-dark-brown clash; now mint outline on neutral
+    // dark fill so it pairs with the mint Confirm.
     flex: 1,
-    backgroundColor: '#2A1A06',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1.5,
-    borderColor: '#F5C842',
+    borderColor: COLORS.mint,
     alignItems: 'center',
   },
   placeBtn: {
-    backgroundColor: COLORS.gold,
+    // VAMOS-PLACEMENT-POLISH-2 FIX 6 — "PLACE N CARDS" / "CONFIRM" pill: gold → mint solid
+    backgroundColor: COLORS.mint,
     flex: 1,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.45,
         shadowRadius: 8,
       },
       android: { elevation: 8 },
@@ -489,8 +492,9 @@ const baStyles = StyleSheet.create({
     }),
   },
   placeBtnDisabled: {
-    backgroundColor: COLORS.goldDim,
-    opacity: 0.6,
+    // VAMOS-PLACEMENT-POLISH-2 — solid muted mint (not COLORS.goldDim opacity hack)
+    backgroundColor: 'rgba(79,214,168,0.35)',
+    opacity: 1,
   },
   placeBtnReady: {
     backgroundColor: '#28A745',
@@ -518,7 +522,8 @@ const baStyles = StyleSheet.create({
     opacity: 0.4,
   },
   undoBtnText: {
-    color: '#F5C842',
+    // VAMOS-PLACEMENT-POLISH-2 FIX 2 — gold #F5C842 → mint
+    color: COLORS.mint,
   },
   placeBtnText: {
     color: COLORS.background,
