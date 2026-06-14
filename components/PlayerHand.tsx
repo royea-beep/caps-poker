@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { rf, rs, rv, SCREEN_W as MODULE_SCREEN_W } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
@@ -88,15 +88,16 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const isWeb = Platform.OS === 'web';
   const useTwoRows = !isWeb || device.isMobileWeb;
 
-  // VAMOS-PLACEMENT-POLISH-2 FIX 1 (2026-06-14) — prior pass left only 1.5-3dp inside
-  // slack per side at bc=4 (8-across). The .selected card transform (1.08 scale +
-  // rotate −3°) extends visually past the card box by ~3-4dp, overflowing into the
-  // outer 16dp inset and CLIPPING. Real fix: enforce ≥8dp clear inside the grid,
-  // and tighten the card-gap on 8-across so the floor doesn't have to drop.
+  // VAMOS-HAND-FIT (2026-06-14) — measure-then-size architecture. cardW is now
+  // DERIVED from the real rendered grid width (via onLayout below), not assumed
+  // from SCREEN_W. First paint falls back to SCREEN_W − 32 (the static inset);
+  // after first measurement the real container width drives the math and the
+  // hand re-renders with cards that mathematically fit by construction.
   const HAND_HORIZ_INSET = 16;
   const SAFETY_INSIDE_GRID = 8;
-  const availableW = SCREEN_W - 2 * HAND_HORIZ_INSET;
-  const usableW = availableW - 2 * SAFETY_INSIDE_GRID;
+  const [measuredRowW, setMeasuredRowW] = useState(0);
+  const fallbackRowW = SCREEN_W - 2 * HAND_HORIZ_INSET;
+  const rowW = measuredRowW > 0 ? measuredRowW : fallbackRowW;
   const safeCards = cards ?? [];
   // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
   // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
@@ -107,10 +108,22 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
   const CARD_WRAPPER_OVERHEAD = rs(12);
-  // VAMOS-PLACEMENT-POLISH-2 FIX 1 — tighten gap on 8-across so the floor doesn't
-  // have to drop below readable. Smaller gap recovers the 8+dp safety we need.
-  const CARD_GAP_DP = cardsPerRow >= 8 ? 1 : rs(3);
-  const maxCardW = Math.floor((usableW - (cardsPerRow - 1) * CARD_GAP_DP - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  // VAMOS-HAND-FIT — gap starts at 2 for 8-across (vs rs(3) for ≤6-across). If even
+  // the MIN_CARD_W floor would overflow rowW, the spec says: drop gap, then allow
+  // cardW below the soft min. Fit always wins; cramped is recoverable, clipped is not.
+  let CARD_GAP_DP = cardsPerRow >= 8 ? 2 : rs(3);
+  const derive = (g: number) =>
+    Math.floor((rowW - 2 * SAFETY_INSIDE_GRID - (cardsPerRow - 1) * g - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  let maxCardW = derive(CARD_GAP_DP);
+  // Soft-min protection: if cards would be < 16dp at the chosen gap and we're
+  // NOT already at gap=2, shrink the gap first. (8-across already starts at 2.)
+  if (maxCardW < 16 && CARD_GAP_DP > 2) {
+    CARD_GAP_DP = 2;
+    maxCardW = derive(CARD_GAP_DP);
+  }
+  // Even after gap shrink: if still < 14, accept it. A 12-14dp card is readable;
+  // a clipped card is not. Floor at 10 absolute (defensive — shouldn't trigger).
+  maxCardW = Math.max(10, maxCardW);
   // PR-O 2026-06-07 Fix 3c — when quad rows are active, derive cardH from the
   // available hand zone height (handMinH - label - 3 row gaps) / 4. This
   // guarantees the 4th row fits inside the zone. cardW preserves Card.tsx's
@@ -145,10 +158,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       // Width bounded by maxCardW so we never overflow horizontally on either platform.
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    // VAMOS-PLACEMENT-POLISH B1 — floor lowered 18→16 so 8-across at 320 fits with
-    // measured slack. selected card transform (1.08 scale + rotate −3°) can extend
-    // ~3-4dp past the box; the 16dp outer inset + 16dp card floor leave room for it.
-    if (!isWeb) return Math.min(38, Math.max(16, maxCardW));
+    // VAMOS-HAND-FIT — maxCardW is now the derived-to-fit width. Cap at MAX_CARD_W
+    // (38, matches bc=2 4-across). NO floor here — the absolute floor is inside
+    // the derive() block above so fit always wins on narrow widths.
+    if (!isWeb) return Math.min(38, maxCardW);
     // PR-K v9 web 2x8 path stays for partial hands (length < 13).
     if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
     if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
@@ -193,10 +206,17 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       {safeCards.length > 0 ? (
         <View
           style={styles.grid}
-          // VAMOS-PLACEMENT-POLISH-2 FIX 1 — runtime measurement: log actual rendered
-          // grid (container) width vs the inner row content width. Roye can read these
-          // in the dev console / via React DevTools to verify content ≤ container − 16.
-          onLayout={(e) => { if (__DEV__) { console.log('[hand-grid]', { w: e.nativeEvent.layout.width, cardsPerRow, CARD_GAP_DP, computedRowW: cardsPerRow * cardWFinal + (cardsPerRow - 1) * CARD_GAP_DP + cardsPerRow * CARD_WRAPPER_OVERHEAD }); } }}
+          // VAMOS-HAND-FIT — measure-then-size. The container's real width drives
+          // the cardW math; first paint uses SCREEN_W − 32 fallback, then re-renders
+          // once measured. Dev log also prints rendered-vs-fit numbers for proof.
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - measuredRowW) > 1) setMeasuredRowW(w);
+            if (__DEV__) {
+              const computedRowW = cardsPerRow * cardWFinal + (cardsPerRow - 1) * CARD_GAP_DP + cardsPerRow * CARD_WRAPPER_OVERHEAD;
+              console.log('[hand-grid]', { rowW: w, cardsPerRow, CARD_GAP_DP, cardW: cardWFinal, computedRowW, fits: computedRowW + 2 * SAFETY_INSIDE_GRID <= w });
+            }
+          }}
         >
           {useTwoRows ? (
             <>
