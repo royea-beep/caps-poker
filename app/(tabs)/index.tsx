@@ -1661,7 +1661,7 @@ export default function HomeScreen() {
           {/* Board config hint — English only (S112) */}
           <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
             {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
-            {config.potPerBoard > 0 ? ` · ${config.potPerBoard <= 25 ? 'Low' : config.potPerBoard <= 100 ? 'Mid' : 'High'} Stakes · ${config.potPerBoard}/board` : ' · Free'}
+            {config.potPerBoard > 0 ? ` · ${config.potPerBoard <= 25 ? 'Low' : config.potPerBoard <= 100 ? 'Mid' : 'High'} Blinds · ${config.potPerBoard}/board` : ' · Free'}
           </Text>
         </View>
 
