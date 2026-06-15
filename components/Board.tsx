@@ -237,7 +237,14 @@ export default function Board({
     //   * Roye's breathing room (rs(6) each side) so cards never touch border
     const BORDER_W = PRD.board.border;       // rs(2)
     const CELL_WRAPPER_PAD_H = rs(2);        // BoardArrangement cell paddingHorizontal
-    const BREATHING_H = rs(6);               // visible gap between border and first card
+    // VAMOS-BOARD-FILL-3 2026-06-15 — at bc=2/3 the cells are full-screen-wide (one
+    // board per row), so the 5-card row is the natural width bottleneck. Tighten
+    // BREATHING_H + commGap + sepMarginH inside the cardRow so cards can grow
+    // UNIFORMLY (keeping strict 0.72 aspect, no distortion). Visible padding stays
+    // > 20dp via the cell wrapper + container border + outer paddingH. bc=4 keeps
+    // original tighter spacing (already tight).
+    const isLowBoard = boardCount === 2 || boardCount === 3;
+    const BREATHING_H = isLowBoard ? rs(2) : rs(6);
     const innerW = Math.max(40, cellWidth - 2 * PAD_H - 2 * BORDER_W - 2 * CELL_WRAPPER_PAD_H - 2 * BREATHING_H);
     const innerH = Math.max(40, cellHeight - HEADER_H - 2 * PAD_V);
     const rowGap = rs(2);
@@ -251,28 +258,20 @@ export default function Board({
     const cardW_fromHeight = Math.max(14, Math.round(cardH_byHeight * CARD_ASPECT));
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
     const sepW = PRD.board.flopSeparatorW;
-    const sepMarginH = rs(4);
-    const commGap = PRD.card.gap;
+    // VAMOS-BOARD-FILL-3 — also tighten sepMarginH + commGap at bc=2/3 to widen
+    // commWByWidth so uniform 0.72-aspect cards can grow. bc=4 keeps wider gaps.
+    const sepMarginH = isLowBoard ? rs(1) : rs(4);
+    const commGap = isLowBoard ? rs(1) : PRD.card.gap;
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
+    // VAMOS-BOARD-FILL-3 — REVERT ASPECT_LOW. Cards keep natural 0.72 aspect at all
+    // board counts. At bc=2/3 the relaxed inner-chrome above gives commWByWidth more
+    // room; uniform scaling lets commW and commH grow together without distortion.
     commW = Math.min(commWByWidth, cardW_fromHeight);
-    // VAMOS-BOARD-FILL-2 — at bc=2/3 the WIDTH cap (commWByWidth) is tight while
-    // vertical room is generous. Allow commH to grow taller than strict 0.72 aspect
-    // (up to cardH_byHeight ceiling) so cards fill the board. Aspect target 0.55
-    // = card is ~1.82× as tall as wide. bc=4 keeps strict aspect (cards there are
-    // already at the vertical ceiling).
-    const isLowBoard = boardCount === 2 || boardCount === 3;
-    const ASPECT_LOW = 0.55;
-    const targetCommH = isLowBoard
-      ? Math.min(cardH_byHeight, Math.round(commW / ASPECT_LOW))
-      : Math.round(commW / CARD_ASPECT);
-    commH = targetCommH;
+    commH = Math.round(commW / CARD_ASPECT);
     // Player slot row: 4 slots + 3 gaps
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
     slotW = Math.min(slotWByWidth, cardW_fromHeight);
-    const targetSlotH = isLowBoard
-      ? Math.min(cardH_byHeight, Math.round(slotW / ASPECT_LOW))
-      : Math.round(slotW / CARD_ASPECT);
-    slotH = targetSlotH;
+    slotH = Math.round(slotW / CARD_ASPECT);
     ch = slotH;
     cw = slotW;
   } else {
