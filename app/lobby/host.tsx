@@ -210,7 +210,7 @@ export default function HostLobbyScreen() {
             ))}
           {connectedCount < maxPlayers && serverStarted && (
             <View style={styles.waitingRow} accessibilityLiveRegion="polite">
-              <ActivityIndicator size="small" color={COLORS.gold} />
+              <ActivityIndicator size="small" color={COLORS.mint} />
               <Text style={styles.waitingText}>
                 Waiting for {maxPlayers - connectedCount} more player
                 {maxPlayers - connectedCount > 1 ? 's' : ''}...
@@ -279,10 +279,10 @@ const styles = StyleSheet.create({
     padding: rs(24),
     borderRadius: rv(16),
     borderWidth: 1.5,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     gap: rs(4),
     ...Platform.select({
-      ios: { shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 },
+      ios: { shadowColor: COLORS.mint, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 },
       android: { elevation: 6 },
       default: { boxShadow: '0 4px 20px rgba(201,168,76,0.2)' } as any,
     }),
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     width: rv(28),
     height: rv(28),
     borderRadius: rv(14),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hostBadge: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1,

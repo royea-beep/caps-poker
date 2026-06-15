@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
   },
   title: {
-    color: COLORS.mintBright,
+    color: COLORS.goldBright,
     fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
@@ -1471,7 +1471,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: COLORS.background,
-    color: COLORS.mintBright,
+    color: COLORS.goldBright,
     fontSize: rf(16),
     fontWeight: '700',
     paddingHorizontal: rs(12),

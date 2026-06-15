@@ -270,7 +270,7 @@ export default function StatsScreen() {
 
   const netColor = stats.netChipsAllTime >= 0 ? COLORS.goldLight : '#F44336';
   const winRateColor =
-    stats.winRate >= 60 ? '#4CAF50' : stats.winRate >= 40 ? COLORS.gold : '#F44336';
+    stats.winRate >= 60 ? '#4CAF50' : stats.winRate >= 40 ? COLORS.mint : '#F44336';
 
   const streakText =
     stats.currentWinStreak > 0
@@ -391,10 +391,10 @@ export default function StatsScreen() {
                   <View style={styles.boardBarArea}>
                     <ProgressBar
                       pct={rate}
-                      color={rate >= 50 ? '#4CAF50' : rate >= 33 ? COLORS.gold : '#F44336'}
+                      color={rate >= 50 ? '#4CAF50' : rate >= 33 ? COLORS.mint : '#F44336'}
                     />
                   </View>
-                  <Text style={[styles.boardPct, { color: rate >= 50 ? '#4CAF50' : rate >= 33 ? COLORS.gold : '#F44336' }]}>
+                  <Text style={[styles.boardPct, { color: rate >= 50 ? '#4CAF50' : rate >= 33 ? COLORS.mint : '#F44336' }]}>
                     {rate}%
                   </Text>
                 </View>
@@ -416,7 +416,7 @@ export default function StatsScreen() {
                 <View key={name} style={styles.handRow}>
                   <Text style={styles.handName}>{name}</Text>
                   <View style={styles.handBarArea}>
-                    <ProgressBar pct={pct} color={COLORS.gold} />
+                    <ProgressBar pct={pct} color={COLORS.mint} />
                   </View>
                   <Text style={styles.handPct}>{pct}%</Text>
                   <Text style={styles.handCount}>{count}×</Text>
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   backText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(13),
     fontWeight: '700',
     letterSpacing: 1,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterBtnActive: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
   },
   filterBtnText: {
     color: 'rgba(255,255,255,0.45)',
