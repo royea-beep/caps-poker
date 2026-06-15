@@ -109,21 +109,28 @@ async function measure(page) {
 
 (async () => {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 440, height: 956 }, deviceScaleFactor: 2 });
-  const page = await ctx.newPage();
-  await page.goto('https://caps.ftable.co.il/game', { waitUntil: 'networkidle', timeout: 30000 });
-  await page.waitForTimeout(2000);
-
   const allResults = [];
   for (const { n, bc } of MAP) {
-    await page.evaluate((n) => {
-      const k = 'caps-poker-storage';
-      const o = JSON.parse(localStorage.getItem(k));
-      o.state.config.numberOfPlayers = n;
-      localStorage.setItem(k, JSON.stringify(o));
-    }, n);
     for (const w of W) {
-      await page.setViewportSize({ width: w, height: 956 });
+      // VAMOS-HAND-CLIP-2 — fresh context per iteration so SCREEN_W in the Expo Web
+      // app (Dimensions.get at module load) matches the actual viewport. Seed
+      // localStorage by visiting / first, write numberOfPlayers, then deep-link /game.
+      const ctx = await browser.newContext({ viewport: { width: w, height: 956 }, deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      await page.goto('https://caps.ftable.co.il/', { waitUntil: 'networkidle', timeout: 30000 });
+      await page.waitForTimeout(1500); // let zustand-persist write its initial state
+      await page.evaluate((n) => {
+        try {
+          const k = 'caps-poker-storage';
+          const existing = localStorage.getItem(k);
+          if (existing) {
+            const o = JSON.parse(existing);
+            o.state.config = o.state.config || {};
+            o.state.config.numberOfPlayers = n;
+            localStorage.setItem(k, JSON.stringify(o));
+          }
+        } catch (e) { /* ignore */ }
+      }, n);
       await page.goto('https://caps.ftable.co.il/game', { waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForTimeout(2600);
 
@@ -139,6 +146,7 @@ async function measure(page) {
       const boardLine = cr ? `b0comm[L=${cr.leftOffsetInBoard},R=${cr.rightOffsetInBoard},Δ=${cr.centeringDelta}]` : 'b0comm[none]';
       const slotLine = sr ? `b0slot[L=${sr.leftOffsetInBoard},R=${sr.rightOffsetInBoard},Δ=${sr.centeringDelta}]` : 'b0slot[none]';
       console.log(`bc=${bc} w=${w} | ${handLine} | ${boardLine} | ${slotLine} | money.amount=${m.moneyPillColor?.amountColor || 'n/a'}`);
+      await ctx.close();
     }
   }
   await browser.close();

@@ -166,15 +166,18 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       // Width bounded by maxCardW so we never overflow horizontally on either platform.
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    // VAMOS-HAND-CLIP-2 2026-06-15 — drop Math.max floors on ALL web paths. The
-    // floors (22/32/42) were FORCING cards to be larger than maxCardW on narrow
-    // viewports, producing the ~462px hand-card span "regardless of viewport"
-    // bug. Now every path is `min(cap, maxCardW)` — fit always wins, native and
-    // web are now consistent.
-    if (!isWeb) return Math.min(38, maxCardW);
-    if (device.isMobileWeb)  return Math.min(32, maxCardW);
-    if (device.isTabletWeb)  return Math.min(42, maxCardW);
-    return Math.min(56, maxCardW);
+    // VAMOS-HAND-CLIP-2 (2nd iter) 2026-06-15 — Measure-then-size proved that
+    // the previous per-device-class web caps (32/42/56) were NOT shrinking on
+    // narrow viewports because some upstream `rowW` / `SCREEN_W` / `device`
+    // detection on web returns a wider-than-viewport value, leaving maxCardW
+    // larger than the cap and forcing cardW = cap. The desktop-web cap of 56
+    // multiplied by 16 cards = 462px row, overflowing every viewport ≤ 440.
+    //
+    // Real fix: collapse ALL paths (web + native) to the same `min(38, maxCardW)`
+    // rule. 38 is the native cap (matches bc=2 4-across); on web it produces the
+    // same predictable size native users get, and `maxCardW` from measure-then-
+    // size shrinks cards on narrow viewports as designed.
+    return Math.min(38, maxCardW);
   })();
   let cardH = Math.max(20, Math.round(cardW / 0.72));
   // FIT-ALL-BOARDS 2026-06-09 — boards-first rule. Hand cards must never exceed

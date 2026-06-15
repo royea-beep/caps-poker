@@ -1,21 +1,23 @@
 # CAPS Placement-Matrix Auto-QA Findings (numeric)
 
-Generated: 2026-06-15T11:18:42.107Z
+Generated: 2026-06-15T11:41:55.711Z
 Base URL: https://caps.ftable.co.il/game
 
-## Hand row (clip + margin)
+## Hand row — CARD extents vs viewport (VAMOS-HAND-CLIP-2)
 
-| bc | width | VW | L margin | R margin | Clip? | Cards | W avg | W min | W max |
-|---|---|---|---|---|---|---|---|---|---|
-| 4 | 440 | 440 | 13 | 13 | false | 16 | 56 | 56 | 56 |
-| 4 | 390 | 390 | 8 | 8 | false | 16 | 56 | 56 | 56 |
-| 4 | 320 | 320 | 8 | 8 | false | 16 | 56 | 56 | 56 |
-| 3 | 440 | 440 | 13 | 13 | false | 12 | 56 | 56 | 56 |
-| 3 | 390 | 390 | 8 | 8 | false | 12 | 56 | 56 | 56 |
-| 3 | 320 | 320 | 8 | 8 | false | 12 | 56 | 56 | 56 |
-| 2 | 440 | 440 | 13 | 13 | false | 8 | 56 | 56 | 56 |
-| 2 | 390 | 390 | 8 | 8 | false | 8 | 56 | 56 | 56 |
-| 2 | 320 | 320 | 8 | 8 | false | 8 | 56 | 56 | 56 |
+The hand-row container has `overflow:hidden`, so its rect always "fits" by definition. Real clip is whether any **card** extent breaks the viewport. **cardClip = (cardLeftOverflow > 0 OR cardRightOverflow > 0).**
+
+| bc | width | VW | card span | card L margin | card R margin | cardClip | L overflow | R overflow | cards | W avg |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 4 | 440 | 440 | 462 | -11 | -11 | true | 11 | 11 | 16 | 56 |
+| 4 | 390 | 390 | 462 | -36 | -36 | true | 36 | 36 | 16 | 56 |
+| 4 | 320 | 320 | 462 | -71 | -71 | true | 71 | 71 | 16 | 56 |
+| 3 | 440 | 440 | 351 | 45 | 44 | false | 0 | 0 | 12 | 56 |
+| 3 | 390 | 390 | 351 | 20 | 19 | false | 0 | 0 | 12 | 56 |
+| 3 | 320 | 320 | 351 | -15 | -16 | true | 15 | 16 | 12 | 56 |
+| 2 | 440 | 440 | 233 | 104 | 103 | false | 0 | 0 | 8 | 56 |
+| 2 | 390 | 390 | 233 | 79 | 78 | false | 0 | 0 | 8 | 56 |
+| 2 | 320 | 320 | 233 | 44 | 43 | false | 0 | 0 | 8 | 56 |
 
 ## Board 0 — community row centering inside board
 
