@@ -705,14 +705,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   // VAMOS-PLACEMENT-POLISH C3 (#5) — was 'space-evenly' which distributed vertical
-  // slack as bands above + between + below the rows (visible "sparse" feel). Switch
-  // to 'center' + modest row gap so any slack consolidates as a single margin and
-  // the two rows read as a snug grouped block.
+  // slack as bands above + between + below the rows. 'center' + modest gap snugs them.
+  // VAMOS-BOARD-FILL 2026-06-15 — explicit alignItems:'center' so the rows + slot row
+  // are horizontally centered inside the board (not pushed left). Remaining void
+  // becomes symmetric framing around the centered content.
   contentCenter: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     gap: rs(4),
     minHeight: 0,
+    width: '100%',
   },
   active: {
     borderColor: COLORS.gold,
@@ -841,12 +844,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(6),
   },
   communitySeparator: {
-    // VAMOS-PLACEMENT-POLISH-2 FIX 5 — nudged 0.55 → 0.68 opacity (prior pass was
-    // too faint to read on the obsidian felt). Still no glow, still thin.
-    width: 1.5,
+    // VAMOS-BOARD-FILL 2026-06-15 — strengthened: 1.5 → 2 width, 0.68 → 0.80 opacity,
+    // backgroundColor mintHairline → mint (no glow). Reads as a deliberate divider.
+    width: 2,
     height: '60%',
-    backgroundColor: OBSIDIAN.mintHairline,
-    opacity: 0.68,
+    backgroundColor: OBSIDIAN.mint,
+    opacity: 0.80,
     marginHorizontal: rs(5),
     alignSelf: 'center',
     borderRadius: 1,

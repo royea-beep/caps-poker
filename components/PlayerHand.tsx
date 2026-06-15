@@ -94,7 +94,10 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   // after first measurement the real container width drives the math and the
   // hand re-renders with cards that mathematically fit by construction.
   const HAND_HORIZ_INSET = 16;
-  const SAFETY_INSIDE_GRID = 8;
+  // VAMOS-BOARD-FILL 2026-06-15 — bumped safety 8 → 14 so bc=4 hand has visible
+  // breathing room from the screen edges (was reading edge-to-edge on device).
+  // Slack exists at 440 (cardW drops ~1dp); 320 still fits by construction.
+  const SAFETY_INSIDE_GRID = 14;
   const [measuredRowW, setMeasuredRowW] = useState(0);
   const fallbackRowW = SCREEN_W - 2 * HAND_HORIZ_INSET;
   const rowW = measuredRowW > 0 ? measuredRowW : fallbackRowW;

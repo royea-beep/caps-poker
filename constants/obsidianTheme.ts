@@ -54,10 +54,11 @@ export const OBSIDIAN = {
   slotDash: 'rgba(79,214,168,0.30)',
   slotDashActive: '#4FD6A8',
 
-  /** Auto-Place quiet chip */
-  autoBg: 'rgba(255,255,255,0.04)',
-  autoBorder: 'rgba(255,255,255,0.10)',
-  autoText: 'rgba(220,220,220,0.85)',
+  /** Auto-Place chip — VAMOS-BOARD-FILL 2026-06-15: switched from neutral gray to
+   *  mint so it matches the rest of the obsidian/mint chrome (no more gray). */
+  autoBg: 'rgba(79,214,168,0.10)',
+  autoBorder: 'rgba(79,214,168,0.35)',
+  autoText: '#4FD6A8',
   autoBolt: '#4FD6A8',
 } as const;
 

@@ -1546,16 +1546,19 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   freePlayLabel: {
-    color: COLORS.textMuted,
+    // VAMOS-BOARD-FILL 2026-06-15 — the "PLACE N CARDS" / "מקם N קלפים" header status
+    // pill. Was the gray pill Roye flagged ("prior pass restyled placeBtn by mistake"
+    // — that was the Confirm button, not THIS pill). Now mint to match top chrome.
+    color: COLORS.mint,
     fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 1.5,
     paddingHorizontal: rs(12),
     paddingVertical: rs(4),
     borderRadius: rv(12),
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(79,214,168,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(79,214,168,0.30)',
     overflow: 'hidden',
     textTransform: 'uppercase' as any,
   },
