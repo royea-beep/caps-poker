@@ -1,6 +1,6 @@
 # CAPS Placement-Matrix Auto-QA Findings (numeric)
 
-Generated: 2026-06-15T11:41:55.711Z
+Generated: 2026-06-15T12:08:59.901Z
 Base URL: https://caps.ftable.co.il/game
 
 ## Hand row — CARD extents vs viewport (VAMOS-HAND-CLIP-2)
@@ -48,6 +48,20 @@ The hand-row container has `overflow:hidden`, so its rect always "fits" by defin
 | 2 | 440 | 418 | 91 | 90 | 1 |
 | 2 | 390 | 378 | 71 | 70 | 1 |
 | 2 | 320 | 308 | 36 | 35 | 1 |
+
+## VAMOS-HAND-DIAG — hand sizing internals (data-* attrs on hand-row)
+
+| bc | width | SCREEN_W | Dimensions.w | rowW | gridOuter | maxCardW | cardW pre | cardW final | cardsPerRow | gap | cardW src | final src |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 4 | 440 | 393 | 440 | 361 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
+| 4 | 390 | 393 | 390 | 361 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
+| 4 | 320 | 393 | 320 | 361 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
+| 3 | 440 | 393 | 440 | 361 | 0 | 41 | 38 | 38 | 6 | 3 | min38 | cardW |
+| 3 | 390 | 393 | 390 | 361 | 0 | 41 | 38 | 38 | 6 | 3 | min38 | cardW |
+| 3 | 320 | 393 | 320 | 361 | 0 | 41 | 38 | 38 | 6 | 3 | min38 | cardW |
+| 2 | 440 | 393 | 440 | 361 | 0 | 69 | 38 | 38 | 4 | 3 | min38 | cardW |
+| 2 | 390 | 393 | 390 | 361 | 0 | 69 | 38 | 38 | 4 | 3 | min38 | cardW |
+| 2 | 320 | 393 | 320 | 361 | 0 | 69 | 38 | 38 | 4 | 3 | min38 | cardW |
 
 ## Money pill resolved color
 
