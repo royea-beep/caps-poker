@@ -341,7 +341,7 @@ function PlayerCountSelector() {
           ))}
         </View>
       </View>
-      <Text style={{ color: COLORS.gold, opacity: 0.7, fontSize: rf(11), textAlign: 'center', marginBottom: rs(4) }}>
+      <Text style={{ color: COLORS.mint, opacity: 0.7, fontSize: rf(11), textAlign: 'center', marginBottom: rs(4) }}>
         {modeHints[value]}
       </Text>
     </>
@@ -417,7 +417,7 @@ function OrientationPicker() {
           >
             <Text style={orientationStyles.tileIcon}>{icon}</Text>
             <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
-            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[orientationStyles.check, { color: COLORS.gold }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[orientationStyles.check, { color: COLORS.mint }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -747,7 +747,7 @@ function FriendsBgPicker() {
               {label}
             </Text>
             <Text style={bgPickerStyles.tileHint}>{hint}</Text>
-            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[bgPickerStyles.check, { color: COLORS.gold }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[bgPickerStyles.check, { color: COLORS.mint }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
   },
   title: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
@@ -1381,7 +1381,7 @@ const styles = StyleSheet.create({
     gap: rs(4),
   },
   sectionTitle: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(12),
     fontWeight: '800',
     letterSpacing: 3,
@@ -1433,7 +1433,7 @@ const styles = StyleSheet.create({
   profileEdit: {
     fontSize: rf(11),
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 1,
   },
   rowLabel: {
@@ -1471,7 +1471,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: COLORS.background,
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(16),
     fontWeight: '700',
     paddingHorizontal: rs(12),
@@ -1507,8 +1507,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   selectorBtnActive: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
+    borderColor: COLORS.mint,
   },
   selectorText: {
     color: COLORS.textSecondary,
@@ -1527,8 +1527,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.boardBorder,
   },
   toggleBtnActive: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
+    borderColor: COLORS.mint,
   },
   toggleText: {
     color: COLORS.textSecondary,
@@ -1580,7 +1580,7 @@ const styles = StyleSheet.create({
   },
   privacyLinkText: {
     fontSize: rf(12),
-    color: 'rgba(201,168,76,1)',
+    color: 'rgba(79,214,168,1)',
     textDecorationLine: 'underline',
   },
 });
@@ -1602,7 +1602,7 @@ const themeStyles = StyleSheet.create({
     gap: rs(8),
   },
   themeBtnActive: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
   },
   themeBtnLabel: {
@@ -1613,7 +1613,7 @@ const themeStyles = StyleSheet.create({
     textAlign: 'center',
   },
   themeBtnLabelActive: {
-    color: COLORS.gold,
+    color: COLORS.mint,
   },
   previewRow: {
     flexDirection: 'row',
@@ -1621,7 +1621,7 @@ const themeStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   activePill: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     paddingHorizontal: rs(8),
     paddingVertical: rs(2),
     borderRadius: rv(6),
@@ -1692,7 +1692,7 @@ const bgPickerStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileActive: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
   },
   noPreview: {
@@ -1706,7 +1706,7 @@ const bgPickerStyles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   tileLabelActive: {
-    color: COLORS.gold,
+    color: COLORS.mint,
   },
   tileHint: {
     color: COLORS.textMuted,
@@ -1738,7 +1738,7 @@ const orientationStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileActive: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
   },
   tileIcon: {
