@@ -80,6 +80,10 @@ interface BoardProps {
   // to contentCenter so the safety pad isn't absorbed by space-evenly distribution.
   // Guarantees ≥6dp top + ≥6dp bottom clearance for placed cards.
   contentSafetyPad?: boolean;
+  // VAMOS-BOARD-FILL-2 2026-06-15 — plumb boardCount from BoardArrangement so Board
+  // can raise the card cap at bc=2/3 (tall boards = vertical room to use). bc=4 path
+  // unchanged.
+  boardCount?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -172,6 +176,7 @@ export default function Board({
   cellWidth,
   cellHeight,
   contentSafetyPad,
+  boardCount,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
@@ -250,11 +255,24 @@ export default function Board({
     const commGap = PRD.card.gap;
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
     commW = Math.min(commWByWidth, cardW_fromHeight);
-    commH = Math.round(commW / CARD_ASPECT);
+    // VAMOS-BOARD-FILL-2 — at bc=2/3 the WIDTH cap (commWByWidth) is tight while
+    // vertical room is generous. Allow commH to grow taller than strict 0.72 aspect
+    // (up to cardH_byHeight ceiling) so cards fill the board. Aspect target 0.55
+    // = card is ~1.82× as tall as wide. bc=4 keeps strict aspect (cards there are
+    // already at the vertical ceiling).
+    const isLowBoard = boardCount === 2 || boardCount === 3;
+    const ASPECT_LOW = 0.55;
+    const targetCommH = isLowBoard
+      ? Math.min(cardH_byHeight, Math.round(commW / ASPECT_LOW))
+      : Math.round(commW / CARD_ASPECT);
+    commH = targetCommH;
     // Player slot row: 4 slots + 3 gaps
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
     slotW = Math.min(slotWByWidth, cardW_fromHeight);
-    slotH = Math.round(slotW / CARD_ASPECT);
+    const targetSlotH = isLowBoard
+      ? Math.min(cardH_byHeight, Math.round(slotW / ASPECT_LOW))
+      : Math.round(slotW / CARD_ASPECT);
+    slotH = targetSlotH;
     ch = slotH;
     cw = slotW;
   } else {

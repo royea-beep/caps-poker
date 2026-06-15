@@ -195,6 +195,8 @@ export function BoardArrangement({
                   cellWidth={cellW}
                   cellHeight={(boardCount === 3 || boardCount === 4) ? Math.max(rs(48), cellH - rs(12)) : cellH}
                   contentSafetyPad={boardCount === 3 || boardCount === 4}
+                  /* VAMOS-BOARD-FILL-2 — plumb boardCount so Board can raise the card cap at bc=2/3 */
+                  boardCount={boardCount}
                 />
               </Animated.View>
             </View>

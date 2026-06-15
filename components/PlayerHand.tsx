@@ -88,19 +88,23 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const isWeb = Platform.OS === 'web';
   const useTwoRows = !isWeb || device.isMobileWeb;
 
-  // VAMOS-HAND-FIT (2026-06-14) — measure-then-size architecture. cardW is now
-  // DERIVED from the real rendered grid width (via onLayout below), not assumed
-  // from SCREEN_W. First paint falls back to SCREEN_W − 32 (the static inset);
-  // after first measurement the real container width drives the math and the
-  // hand re-renders with cards that mathematically fit by construction.
+  // VAMOS-HAND-FIT (2026-06-14) — measure-then-size architecture. cardW DERIVED
+  // from the real rendered grid width (via onLayout below), not assumed.
+  //
+  // VAMOS-BOARD-FILL-2 (2026-06-15) — BUG FIX: onLayout reports the .grid View's
+  // OUTER width (including its own 16dp paddingHorizontal), not the inner usable
+  // content area. The prior math treated measuredRowW as if it were inner, eating
+  // the SAFETY budget on top of the padding the rows already had to dodge. Result:
+  // bc=4 hand sat near the screen edges despite SAFETY=14. Real fix: subtract
+  // HAND_HORIZ_INSET*2 from the measured outer width to get the true rowW the rows
+  // can use.
   const HAND_HORIZ_INSET = 16;
-  // VAMOS-BOARD-FILL 2026-06-15 — bumped safety 8 → 14 so bc=4 hand has visible
-  // breathing room from the screen edges (was reading edge-to-edge on device).
-  // Slack exists at 440 (cardW drops ~1dp); 320 still fits by construction.
   const SAFETY_INSIDE_GRID = 14;
-  const [measuredRowW, setMeasuredRowW] = useState(0);
-  const fallbackRowW = SCREEN_W - 2 * HAND_HORIZ_INSET;
-  const rowW = measuredRowW > 0 ? measuredRowW : fallbackRowW;
+  const [measuredGridOuterW, setMeasuredGridOuterW] = useState(0);
+  const fallbackGridOuterW = SCREEN_W;
+  const gridOuterW = measuredGridOuterW > 0 ? measuredGridOuterW : fallbackGridOuterW;
+  // rowW = the inner content area the rows actually render into.
+  const rowW = Math.max(40, gridOuterW - 2 * HAND_HORIZ_INSET);
   const safeCards = cards ?? [];
   // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
   // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
@@ -209,15 +213,17 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       {safeCards.length > 0 ? (
         <View
           style={styles.grid}
-          // VAMOS-HAND-FIT — measure-then-size. The container's real width drives
-          // the cardW math; first paint uses SCREEN_W − 32 fallback, then re-renders
-          // once measured. Dev log also prints rendered-vs-fit numbers for proof.
+          // VAMOS-HAND-FIT + BOARD-FILL-2 — measure-then-size. onLayout reports the
+          // .grid View's OUTER width (incl. its 16dp paddingHorizontal). We store
+          // the outer and derive rowW = outer − 32 above. Dev log prints both so
+          // Roye can confirm the outer-vs-inner distinction at a glance.
           onLayout={(e) => {
             const w = e.nativeEvent.layout.width;
-            if (w > 0 && Math.abs(w - measuredRowW) > 1) setMeasuredRowW(w);
+            if (w > 0 && Math.abs(w - measuredGridOuterW) > 1) setMeasuredGridOuterW(w);
             if (__DEV__) {
               const computedRowW = cardsPerRow * cardWFinal + (cardsPerRow - 1) * CARD_GAP_DP + cardsPerRow * CARD_WRAPPER_OVERHEAD;
-              console.log('[hand-grid]', { rowW: w, cardsPerRow, CARD_GAP_DP, cardW: cardWFinal, computedRowW, fits: computedRowW + 2 * SAFETY_INSIDE_GRID <= w });
+              const innerRowW = Math.max(40, w - 2 * HAND_HORIZ_INSET);
+              console.log('[hand-grid]', { gridOuterW: w, innerRowW, cardsPerRow, CARD_GAP_DP, cardW: cardWFinal, computedRowW, fits: computedRowW + 2 * SAFETY_INSIDE_GRID <= innerRowW });
             }
           }}
         >
