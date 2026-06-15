@@ -58,6 +58,7 @@ function AnimatedCardSlot({
     <Animated.View style={animStyle}>
       <Pressable
         onPress={() => onSelectCard(card)}
+        testID="hand-card"
         style={[styles.cardWrapper, isSelected && styles.selected]}
       >
         <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
@@ -213,6 +214,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       {safeCards.length > 0 ? (
         <View
           style={styles.grid}
+          testID="hand-row"
           // VAMOS-HAND-FIT + BOARD-FILL-2 — measure-then-size. onLayout reports the
           // .grid View's OUTER width (incl. its 16dp paddingHorizontal). We store
           // the outer and derive rowW = outer − 32 above. Dev log prints both so

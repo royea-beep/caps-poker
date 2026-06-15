@@ -423,6 +423,7 @@ export default function Board({
   return (
     <Animated.View
       onLayout={onBoardLayout}
+      testID={`board-${index}`}
       style={[
         styles.container,
         // VAMOS-VISUAL-C Option C — obsidian board surface + per-board identity glow.
@@ -574,7 +575,7 @@ export default function Board({
         {/* PR-M 2026-05-29 — Community label pill REMOVED. The 5-card row IS
             the community; the pill was redundant chrome eating rs(20+) of
             vertical budget per board. */}
-        <View style={styles.cardRow}>
+        <View style={styles.cardRow} testID={`community-row-${index}`}>
           {(openCards ?? []).map((c) => (
             <CardComponent
               key={c.id}
@@ -611,7 +612,7 @@ export default function Board({
         {/* PR-E AUTO button hoisted above the contentCenter wrapper (PR-L Task B) */}
 
         {/* Player cards */}
-        <View style={styles.cardRow}>
+        <View style={styles.cardRow} testID={`slot-row-${index}`}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
@@ -721,11 +722,12 @@ const styles = StyleSheet.create({
     paddingVertical: PRD.board.cellPadV,
     overflow: 'hidden',
   },
-  // VAMOS-PLACEMENT-POLISH C3 (#5) — was 'space-evenly' which distributed vertical
-  // slack as bands above + between + below the rows. 'center' + modest gap snugs them.
-  // VAMOS-BOARD-FILL 2026-06-15 — explicit alignItems:'center' so the rows + slot row
-  // are horizontally centered inside the board (not pushed left). Remaining void
-  // becomes symmetric framing around the centered content.
+  // VAMOS-CENTER-FIX 2026-06-15 — the rows were left-pushed in RTL because the HTML
+  // root has dir='rtl' (utils/i18n.ts applyHtmlLocale), which inverts flexbox start
+  // anchors in React Native Web. Force direction:'ltr' on contentCenter so the cards
+  // are centered by Latin-orientation flex math regardless of app language.
+  // alignItems:'center' centers each cardRow horizontally (sized to its intrinsic
+  // children width). gap separates rows vertically.
   contentCenter: {
     flex: 1,
     justifyContent: 'center',
@@ -733,6 +735,7 @@ const styles = StyleSheet.create({
     gap: rs(4),
     minHeight: 0,
     width: '100%',
+    ...(Platform.OS === 'web' ? ({ direction: 'ltr' } as any) : null),
   },
   active: {
     borderColor: COLORS.gold,
@@ -848,14 +851,13 @@ const styles = StyleSheet.create({
     top: -2,
   },
   cardRow: {
-    // VAMOS-PLACEMENT-POLISH C1+C2 (#4,#3) — REVERT 'space-evenly' → 'center'.
-    // space-evenly spread the row too thin, breaking the grouped reading of
-    // "3 face-up + sep + 2 backs". 'center' + modest gap keeps the row tidy
-    // and aligns the placement-slot row visually since both rows share the
-    // same justification + same gap.
+    // VAMOS-CENTER-FIX 2026-06-15 — added alignSelf:'center' as belt-and-braces
+    // for the direction:'ltr' fix on contentCenter. The row centers itself in
+    // its parent regardless of any residual RTL anchor confusion.
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
     gap: PRD.card.gap,
     paddingVertical: 0,
     paddingHorizontal: rs(6),
