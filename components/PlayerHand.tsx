@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform, Dimensions } from 'react-native';
 import { rf, rs, rv, SCREEN_W as MODULE_SCREEN_W } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { t } from '../utils/i18n';
@@ -161,32 +161,23 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
     ) / 4
   );
   const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
+  // VAMOS-HAND-DIAG 2026-06-15 — tag which code path actually set cardW.
+  let cardWSource: 'quad' | 'min38' = 'min38';
   const cardW = (() => {
     if (useQuadRows) {
-      // Width bounded by maxCardW so we never overflow horizontally on either platform.
+      cardWSource = 'quad';
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    // VAMOS-HAND-CLIP-2 (2nd iter) 2026-06-15 — Measure-then-size proved that
-    // the previous per-device-class web caps (32/42/56) were NOT shrinking on
-    // narrow viewports because some upstream `rowW` / `SCREEN_W` / `device`
-    // detection on web returns a wider-than-viewport value, leaving maxCardW
-    // larger than the cap and forcing cardW = cap. The desktop-web cap of 56
-    // multiplied by 16 cards = 462px row, overflowing every viewport ≤ 440.
-    //
-    // Real fix: collapse ALL paths (web + native) to the same `min(38, maxCardW)`
-    // rule. 38 is the native cap (matches bc=2 4-across); on web it produces the
-    // same predictable size native users get, and `maxCardW` from measure-then-
-    // size shrinks cards on narrow viewports as designed.
+    cardWSource = 'min38';
     return Math.min(38, maxCardW);
   })();
   let cardH = Math.max(20, Math.round(cardW / 0.72));
-  // FIT-ALL-BOARDS 2026-06-09 — boards-first rule. Hand cards must never exceed
-  // the board card height; if they do, the boards visually shrink while the hand
-  // looks oversized. Clamp here, then back-derive width so aspect stays at 0.72.
   let cardWFinal = cardW;
+  let cardWFinalSource: 'cardW' | 'backDerivedFromMaxCardH' = 'cardW';
   if (maxCardH && cardH > maxCardH) {
     cardH = Math.max(20, maxCardH);
     cardWFinal = Math.max(14, Math.round(cardH * 0.72));
+    cardWFinalSource = 'backDerivedFromMaxCardH';
   }
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
@@ -219,6 +210,23 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
         <View
           style={styles.grid}
           testID="hand-row"
+          /* VAMOS-HAND-DIAG 2026-06-15 — surface diag values on the DOM node so QA
+             harness can read with zero ambiguity (RN Web → data-* attributes). */
+          {...(Platform.OS === 'web' ? {
+            dataSet: {
+              screenw: String(SCREEN_W),
+              dimw: String(Dimensions.get('window').width),
+              roww: String(rowW),
+              gridouter: String(measuredGridOuterW),
+              maxcardw: String(maxCardW),
+              cardw: String(cardWFinal),
+              cardwpre: String(cardW),
+              cardwsrc: cardWSource,
+              cardwfinalsrc: cardWFinalSource,
+              cpr: String(cardsPerRow),
+              gap: String(CARD_GAP_DP),
+            },
+          } : {})}
           // VAMOS-HAND-FIT + BOARD-FILL-2 — measure-then-size. onLayout reports the
           // .grid View's OUTER width (incl. its 16dp paddingHorizontal). We store
           // the outer and derive rowW = outer − 32 above. Dev log prints both so
@@ -229,7 +237,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
             if (__DEV__) {
               const computedRowW = cardsPerRow * cardWFinal + (cardsPerRow - 1) * CARD_GAP_DP + cardsPerRow * CARD_WRAPPER_OVERHEAD;
               const innerRowW = Math.max(40, w - 2 * HAND_HORIZ_INSET);
+              const dimW = Dimensions.get('window').width;
               console.log('[hand-grid]', { gridOuterW: w, innerRowW, cardsPerRow, CARD_GAP_DP, cardW: cardWFinal, computedRowW, fits: computedRowW + 2 * SAFETY_INSIDE_GRID <= innerRowW });
+              console.log('[hand-diag]', { SCREEN_W, dimW, rowW, gridOuterW: w, maxCardW, cardWPre: cardW, cardWFinal, cardsPerRow, gap: CARD_GAP_DP, cardWSource, cardWFinalSource });
             }
           }}
         >

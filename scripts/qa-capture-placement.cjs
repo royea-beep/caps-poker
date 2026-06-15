@@ -25,6 +25,11 @@ async function measure(page) {
     const handRow = document.querySelector('[data-testid="hand-row"]');
     const handCards = [...document.querySelectorAll('[data-testid="hand-card"]')];
 
+    // VAMOS-HAND-DIAG — read the data-* attrs surfaced by PlayerHand.tsx
+    const handDiag = handRow ? Object.fromEntries([
+      'screenw','dimw','roww','gridouter','maxcardw','cardw','cardwpre','cardwsrc','cardwfinalsrc','cpr','gap',
+    ].map(k => [k, handRow.getAttribute(`data-${k}`)])) : null;
+
     // Money pill: find the '💰' emoji as anchor, then read parent View bg/border + numeric Text color.
     let moneyPillColor = null;
     {
@@ -103,7 +108,7 @@ async function measure(page) {
       };
     })() : null;
 
-    return { VW, boardData, handData, moneyPillColor };
+    return { VW, boardData, handData, moneyPillColor, handDiag };
   });
 }
 
@@ -145,7 +150,8 @@ async function measure(page) {
       const handLine = h ? `hand[cardSpan=${h.cardSpan},cardL=${h.cardLeftMargin},cardR=${h.cardRightMargin},cardClip=${h.cardClip},Loverflow=${h.cardLeftOverflow},Roverflow=${h.cardRightOverflow},n=${h.cardCount},Wavg=${h.cardWavg}]` : 'hand[none]';
       const boardLine = cr ? `b0comm[L=${cr.leftOffsetInBoard},R=${cr.rightOffsetInBoard},Δ=${cr.centeringDelta}]` : 'b0comm[none]';
       const slotLine = sr ? `b0slot[L=${sr.leftOffsetInBoard},R=${sr.rightOffsetInBoard},Δ=${sr.centeringDelta}]` : 'b0slot[none]';
-      console.log(`bc=${bc} w=${w} | ${handLine} | ${boardLine} | ${slotLine} | money.amount=${m.moneyPillColor?.amountColor || 'n/a'}`);
+      const diagLine = m.handDiag ? `diag[SCREEN_W=${m.handDiag.screenw},dimW=${m.handDiag.dimw},rowW=${m.handDiag.roww},gridO=${m.handDiag.gridouter},maxCardW=${m.handDiag.maxcardw},cardWpre=${m.handDiag.cardwpre},cardW=${m.handDiag.cardw},cpr=${m.handDiag.cpr},gap=${m.handDiag.gap},src=${m.handDiag.cardwsrc}/${m.handDiag.cardwfinalsrc}]` : 'diag[none]';
+      console.log(`bc=${bc} w=${w} | ${handLine} | ${diagLine}`);
       await ctx.close();
     }
   }
@@ -189,6 +195,15 @@ async function measure(page) {
     const b = r.boardData?.[0];
     const sr = b?.slotRow;
     md.push(`| ${r.bc} | ${r.width} | ${b?.boardRect.w ?? '?'} | ${sr?.leftOffsetInBoard ?? '?'} | ${sr?.rightOffsetInBoard ?? '?'} | ${sr?.centeringDelta ?? '?'} |`);
+  }
+  md.push('');
+  md.push('## VAMOS-HAND-DIAG — hand sizing internals (data-* attrs on hand-row)');
+  md.push('');
+  md.push('| bc | width | SCREEN_W | Dimensions.w | rowW | gridOuter | maxCardW | cardW pre | cardW final | cardsPerRow | gap | cardW src | final src |');
+  md.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+  for (const r of allResults) {
+    const d = r.handDiag || {};
+    md.push(`| ${r.bc} | ${r.width} | ${d.screenw ?? '—'} | ${d.dimw ?? '—'} | ${d.roww ?? '—'} | ${d.gridouter ?? '—'} | ${d.maxcardw ?? '—'} | ${d.cardwpre ?? '—'} | ${d.cardw ?? '—'} | ${d.cpr ?? '—'} | ${d.gap ?? '—'} | ${d.cardwsrc ?? '—'} | ${d.cardwfinalsrc ?? '—'} |`);
   }
   md.push('');
   md.push('## Money pill resolved color');
