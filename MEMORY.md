@@ -1,5 +1,7 @@
 # CAPS POKER — Project Memory
 
+
+- THEME (done 2026-06-15): app-wide obsidian `#161922` / mint `#4FD6A8` (tokens mint, mintLight `#7FE3C2`, mintBright `#A7EED6`, mintDim). Gold = SEMANTIC ONLY: winner highlight (Card.tsx inline literal `#c9a84c`, locked), medals, cup tiers, currency amounts. See docs/GEMS.md → "Headless Visual-QA Loop".
 ## Iron Rules (NEVER change without explicit "UNLOCK [rule]" from user)
 - Rule 1: React Native + Expo only — no bare workflow, no Capacitor
 - Rule 2: iOS portrait only — no landscape, no tablet
