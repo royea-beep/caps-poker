@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(18),
     fontWeight: '900',
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     letterSpacing: 4,
   },
   filterRow: {
@@ -415,8 +415,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterTabActive: {
-    backgroundColor: COLORS.gold + '22',
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint + '22',
+    borderColor: COLORS.mint,
   },
   filterTabText: {
     color: COLORS.textMuted,
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   filterTabTextActive: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
   },
   scrollContent: {
     padding: rs(12),
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   },
   handNameLabel: {
     fontSize: rf(10),
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontWeight: '700',
     letterSpacing: 0.5,
     marginTop: rs(2),
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   },
   bonusTag: {
     fontSize: rf(10),
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontWeight: '700',
   },
   expandArrow: {
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     marginLeft: rs(4),
   },
   handNameWin: {
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
     fontWeight: '800',
   },
   metaRow: {
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
   },
   emptyPlayBtn: {
     marginTop: rs(12),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     paddingHorizontal: rs(28),
     paddingVertical: rs(12),
     borderRadius: rv(10),
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   replayBtnText: {
     fontSize: rf(12),
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 1.5,
   },
 });

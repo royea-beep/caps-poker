@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#161922',
     borderRadius: rs(16),
     borderWidth: 1,
-    borderColor: COLORS.gold ?? '#c9a84c',
+    borderColor: COLORS.mint ?? '#c9a84c',
     paddingHorizontal: rs(24),
     paddingVertical: rv(28),
     width: '100%',
