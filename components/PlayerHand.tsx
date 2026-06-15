@@ -76,7 +76,9 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   // C-fix 2026-05-22: lock to module-level SCREEN_W (computed once in responsive.ts).
   // Was useWindowDimensions() — re-fired on every focus/keyboard/resize event,
   // causing the 2-row hand layout to shift while the player was placing cards.
-  const rawW = MODULE_SCREEN_W;
+  // VAMOS-HAND-FIX-FINAL 2026-06-15 — was MODULE_SCREEN_W (frozen at module load).
+  // Live Dimensions tracks viewport on web; on native it matches device width.
+  const rawW = Dimensions.get('window').width || MODULE_SCREEN_W;
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;

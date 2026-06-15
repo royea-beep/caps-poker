@@ -70,15 +70,22 @@ export default function CardComponent({
   suitsOnly = false,
   isCommunityCard = false,
 }: CardProps) {
-  // PR-N 2026-06-02 — Card Display Bible amendment (UNLOCKED by user in PR-N spec).
-  // Community cards have no tap target during placement and only need to convey
-  // rank+suit. Floor drops 44/62 -> 24/34 ONLY when isCommunityCard is set so the
-  // 5-card community row fits inside narrow 2x2 cells at 320pt and inside short
-  // 3p cells when boardsZoneH is tight. Hand cards stay at 44/62 for tap target.
+  // VAMOS-HAND-FIX-FINAL 2026-06-15 — when an EXPLICIT cardWidth is provided
+  // (placement hand path: PlayerHand passes a measure-then-size value), it is
+  // authoritative. Only a tiny absolute safety floor (16) applies. This unblocks
+  // the bc=4 16-card hand from clipping at narrow viewports without changing
+  // other Card usages (Card-default path keeps the original 44/62 tap-target
+  // floor; community-card path keeps 24/34).
   const _minW = isCommunityCard ? 24 : 44;
   const _minH = isCommunityCard ? 34 : 62;
-  const width = Math.max(cardWidth ?? (small ? rs(52) : rs(58)), _minW);
-  const height = Math.max(cardHeight ?? (small ? rs(74) : rs(82)), _minH);
+  const _explicitFloorW = isCommunityCard ? 24 : 16;
+  const _explicitFloorH = isCommunityCard ? 34 : 22;
+  const width = cardWidth != null
+    ? Math.max(_explicitFloorW, cardWidth)
+    : Math.max(small ? rs(52) : rs(58), _minW);
+  const height = cardHeight != null
+    ? Math.max(_explicitFloorH, cardHeight)
+    : Math.max(small ? rs(74) : rs(82), _minH);
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
