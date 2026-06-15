@@ -1312,7 +1312,7 @@ export default function SettingsScreen() {
         {/* Gambling disclaimer + legal links (Apple requirement) */}
         <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }} accessibilityLanguage="he">
-            {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 12+."}
+            {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 17+."}
           </Text>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
             <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage="he">מדיניות פרטיות</Text>

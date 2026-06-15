@@ -1960,7 +1960,7 @@ export default function HomeScreen() {
           marginTop: 24,
           marginBottom: 8,
         }} accessibilityLanguage="he">
-          {"משחק חינמי | צ'יפים וירטואליים בלבד | גילאי 12+"}
+          {"משחק חינמי | צ'יפים וירטואליים בלבד | אין הימורים בכסף אמיתי | גילאי 17+"}
         </Text>
 
       </View>
