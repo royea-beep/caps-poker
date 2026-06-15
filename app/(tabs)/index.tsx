@@ -133,7 +133,7 @@ const webLandingStyles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject as object,
     zIndex: 1000,
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -178,7 +178,7 @@ const webLandingStyles = StyleSheet.create({
     lineHeight: 22,
   },
   playButton: {
-    // VAMOS-THEME-SWEEP — PLAY NOW: maroon #6B1520 + gold-brown border → obsidian + mint border
+    // VAMOS-THEME-SWEEP — PLAY NOW: maroon #161922 + gold-brown border → obsidian + mint border
     backgroundColor: '#161922',
     paddingHorizontal: 52,
     paddingVertical: 18,
@@ -535,7 +535,7 @@ const dailyRewardModalStyles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(20),
     borderWidth: 1.5,
     borderColor: 'rgba(201,168,76,0.5)',
@@ -710,7 +710,7 @@ const welcomeStyles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(16),
     borderWidth: 1,
     borderColor: 'rgba(201,168,76,0.35)',
@@ -1601,7 +1601,7 @@ export default function HomeScreen() {
               style={{
                 paddingHorizontal: 16, paddingVertical: 8,
                 borderRadius: 20,
-                backgroundColor: config.numberOfPlayers === n ? '#6B1520' : 'transparent',
+                backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
                 borderWidth: 1,
                 borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
               }}
@@ -2702,7 +2702,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   modalCard: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(18),
     borderWidth: 1,
     borderColor: 'rgba(201,168,76,0.4)',

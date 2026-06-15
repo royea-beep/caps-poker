@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.boardBorder,
   },
   title: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sortBtnTextActive: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
   },
   listContent: {
     padding: rs(12),
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     marginTop: rs(2),
   },
   textHighlight: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
   },
   emptyContainer: {
     flex: 1,

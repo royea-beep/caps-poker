@@ -51,6 +51,12 @@ export const colors = {
 
   // Mint accent (NEW tokens for direct use)
   mint: '#4FD6A8',
+  // VAMOS-THEME-SWEEP-4 — light/bright/dim variants for use where the chrome
+  // previously used goldLight/goldBright/goldDim. Semantic gold paths
+  // (winner/celebration text) keep using gold* tokens.
+  mintLight: '#7FE3C2',
+  mintBright: '#A7EED6',
+  mintDim: 'rgba(79,214,168,0.55)',
   mintGlow: 'rgba(79,214,168,0.55)',
   mintHairline: 'rgba(79,214,168,0.30)',
   mintGhost: 'rgba(79,214,168,0.10)',

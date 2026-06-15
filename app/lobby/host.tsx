@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(22),
     fontWeight: '900',
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     letterSpacing: 6,
     textAlign: 'center',
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
   },
   codeValue: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(56),
     fontWeight: '900',
     letterSpacing: 20,

@@ -1138,7 +1138,7 @@ function GameScreenInner() {
   // ÂÂ Landscape / widescreen layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
   if (isLandscape) {
     return (
-      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
+      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any]}>
         <FriendsBg />
         {/* watermark removed from game screen */}
         {/* LEFT — Your hand */}
@@ -1283,7 +1283,7 @@ function GameScreenInner() {
   // ÂÂ End landscape layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any]}>
       <FriendsBg />
       {/* BUILD467-VERIFY layout debug readout — gated by AsyncStorage debug_overlay_enabled */}
       {layoutDebugVisible && (

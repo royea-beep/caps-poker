@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.boardBorder,
   },
   title: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     backgroundColor: COLORS.feltLight,
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(36, 24, 44),
     fontWeight: '900',
     letterSpacing: 10,
@@ -365,14 +365,14 @@ const styles = StyleSheet.create({
   },
   scanBtn: {
     borderWidth: 1,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderRadius: rv(10),
     paddingVertical: rs(10),
     paddingHorizontal: rs(20),
     marginTop: rs(8),
   },
   scanBtnText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(14),
     fontWeight: '700',
     textAlign: 'center',
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     width: rs(220),
     height: rs(220),
     borderWidth: 3,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderRadius: rs(16),
     backgroundColor: 'transparent',
   },

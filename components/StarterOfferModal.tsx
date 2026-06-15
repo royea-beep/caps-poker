@@ -279,7 +279,7 @@ function OfferView({ chips, price, days, buying, onBuy, onDismiss }: OfferViewPr
         disabled={buying}
       >
         {buying ? (
-          <ActivityIndicator color="#1C0508" />
+          <ActivityIndicator color="#161922" />
         ) : (
           <Text style={styles.ctaText}>קחו אותו! 🃏</Text>
         )}
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     padding: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rs(16),
     borderWidth: 1,
     borderColor: COLORS.gold ?? '#c9a84c',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     marginBottom: rv(12),
   },
   badgeText: {
-    color: '#1C0508',
+    color: '#161922',
     fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   ctaText: {
-    color: '#1C0508',
+    color: '#161922',
     fontSize: rf(16),
     fontWeight: '900',
   },

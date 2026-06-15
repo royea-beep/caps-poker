@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
   upgradeNudgeText: { color: COLORS.gold, fontSize: rf(14), fontWeight: '700', textAlign: 'center' },
   upgradeNudgeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(16) },
   upgradeNudgeBtn: { paddingVertical: rs(8), paddingHorizontal: rs(20), backgroundColor: COLORS.gold, borderRadius: rv(8) },
-  upgradeNudgeBtnText: { color: '#1C0508', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
+  upgradeNudgeBtnText: { color: '#161922', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
   upgradeNudgeDismiss: { color: COLORS.textMuted, fontSize: rf(12) },
   xpBanner: { width: '100%', backgroundColor: 'rgba(201,168,76,0.10)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: rv(10), padding: rs(14), gap: rs(6) },
   xpBannerTitle: { color: '#FFD700', fontSize: rf(16), fontWeight: '800', letterSpacing: 1 },
