@@ -10,9 +10,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SCREEN_W = Dimensions.get('window').width;
 
+// VAMOS-THEME-SWEEP 2026-06-15 — tab bar chrome: gold #FFD700 → mint #4FD6A8.
+// Border-top hairline also retoned to mint @15%. Cascades to all 5 tabs.
 const TAB_BG = '#0D0D0D';
-const ACTIVE = '#FFD700';
+const ACTIVE = '#4FD6A8';
 const INACTIVE = 'rgba(255,255,255,0.35)';
+const TAB_BORDER = 'rgba(79,214,168,0.20)';
 
 function TabIcon({ label, emoji, focused }: { label: string; emoji: string; focused: boolean }) {
   // PR-J — emoji is decorative; the parent <a> already announces the localized
@@ -38,7 +41,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: TAB_BG,
-          borderTopColor: 'rgba(255,215,0,0.15)',
+          borderTopColor: TAB_BORDER,
           borderTopWidth: 1,
           // PR-J — was 52; per-tab tappable rect measured 39px on web which
           // fails WCAG 2.5.5 (44×44 min) and Apple HIG 44pt. Bumped to 64 so
