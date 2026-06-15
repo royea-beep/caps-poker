@@ -262,8 +262,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sortBtnActive: {
-    backgroundColor: COLORS.gold + '22',
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint + '22',
+    borderColor: COLORS.mint,
   },
   sortBtnText: {
     color: COLORS.textMuted,

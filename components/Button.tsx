@@ -151,12 +151,17 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   variantGold: {
-    backgroundColor: COLORS.gold,
+    // VAMOS-THEME-SWEEP-5 — shared primary button bg gold → mint. Cascades to
+    // START GAME / JOIN / "Need 2 more players" / selected-state chip across
+    // every screen that uses <Button variant="gold"> (the de-facto primary CTA).
+    // Winner highlight (Card.tsx highlighted) uses literal '#c9a84c' directly,
+    // so this token swap doesn't affect it. KEEP gold = victory rule preserved.
+    backgroundColor: COLORS.mint,
   },
   variantSecondary: {
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1.5,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
   },
   variantGhost: {
     backgroundColor: 'transparent',
