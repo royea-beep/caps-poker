@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   codeSection: {
     alignItems: 'center',
-    backgroundColor: 'rgba(201,168,76,0.07)',
+    backgroundColor: 'rgba(79,214,168,0.07)',
     padding: rs(24),
     borderRadius: rv(16),
     borderWidth: 1.5,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: COLORS.mint, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 },
       android: { elevation: 6 },
-      default: { boxShadow: '0 4px 20px rgba(201,168,76,0.2)' } as any,
+      default: { boxShadow: '0 4px 20px rgba(79,214,168,0.2)' } as any,
     }),
   },
   codeLabel: {

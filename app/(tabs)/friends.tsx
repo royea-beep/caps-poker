@@ -13,7 +13,7 @@ export default function FriendsScreen() {
       <Text style={styles.title} accessibilityRole="header">FRIENDS</Text>
       <Text style={styles.sub} accessibilityRole="header">Challenge · Invite · Compete</Text>
 
-      <Pressable accessibilityRole="button" accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={`${t().inviteFriends} · ${t().inviteFriendsSub(100)}`} style={[styles.card, { borderColor: '#FFD700' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/referral' as any)}>
+      <Pressable accessibilityRole="button" accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={`${t().inviteFriends} · ${t().inviteFriendsSub(100)}`} style={[styles.card, { borderColor: '#4FD6A8' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/referral' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎁</Text>
         <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().inviteFriends}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={t().inviteFriendsSub(100).replace("💰 ", "")}>{t().inviteFriendsSub(100)}</Text></View>
       </Pressable>
@@ -38,8 +38,9 @@ export default function FriendsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1C0508', paddingHorizontal: rs(20), paddingTop: rs(16) },
-  title: { color: '#FFD700', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
+  // VAMOS-THEME-SWEEP-3 — bg maroon → obsidian, title gold → mint
+  container: { flex: 1, backgroundColor: '#161922', paddingHorizontal: rs(20), paddingTop: rs(16) },
+  title: { color: '#4FD6A8', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
   sub: { color: 'rgba(255,255,255,0.75)', fontSize: rf(12), textAlign: 'center', marginBottom: rs(24) },
   card: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderRadius: rv(14), padding: rs(16), marginBottom: rs(12), flexDirection: 'row', alignItems: 'center', gap: rs(14) },
   cardEmoji: { fontSize: rf(26) },
