@@ -166,14 +166,15 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
       // Width bounded by maxCardW so we never overflow horizontally on either platform.
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    // VAMOS-HAND-FIT — maxCardW is now the derived-to-fit width. Cap at MAX_CARD_W
-    // (38, matches bc=2 4-across). NO floor here — the absolute floor is inside
-    // the derive() block above so fit always wins on narrow widths.
+    // VAMOS-HAND-CLIP-2 2026-06-15 — drop Math.max floors on ALL web paths. The
+    // floors (22/32/42) were FORCING cards to be larger than maxCardW on narrow
+    // viewports, producing the ~462px hand-card span "regardless of viewport"
+    // bug. Now every path is `min(cap, maxCardW)` — fit always wins, native and
+    // web are now consistent.
     if (!isWeb) return Math.min(38, maxCardW);
-    // PR-K v9 web 2x8 path stays for partial hands (length < 13).
-    if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
-    if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
-    return Math.min(56, Math.max(42, maxCardW));
+    if (device.isMobileWeb)  return Math.min(32, maxCardW);
+    if (device.isTabletWeb)  return Math.min(42, maxCardW);
+    return Math.min(56, maxCardW);
   })();
   let cardH = Math.max(20, Math.round(cardW / 0.72));
   // FIT-ALL-BOARDS 2026-06-09 — boards-first rule. Hand cards must never exceed

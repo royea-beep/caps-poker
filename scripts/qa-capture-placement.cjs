@@ -68,21 +68,38 @@ async function measure(page) {
       };
     });
 
+    // VAMOS-HAND-CLIP-2 — measure CARD extents (min(left), max(right) across all
+    // hand-card nodes) vs viewport. The hand-row container has overflow:hidden
+    // which masks card overflow — the prior "container clip" check was useless.
     const handData = handRow ? (() => {
       const hr = rect(handRow);
       const cards = handCards.map(rect);
       const cardWidths = cards.map(c => c.w);
       const minW = cardWidths.length ? Math.min(...cardWidths) : null;
       const maxW = cardWidths.length ? Math.max(...cardWidths) : null;
+      const minLeft = cardWidths.length ? Math.min(...cards.map(c => c.left)) : null;
+      const maxRight = cardWidths.length ? Math.max(...cards.map(c => c.right)) : null;
+      const cardSpan = (minLeft != null && maxRight != null) ? (maxRight - minLeft) : null;
+      const cardLeftOverflow = (minLeft != null) ? Math.max(0, 0 - minLeft) : null;
+      const cardRightOverflow = (maxRight != null) ? Math.max(0, maxRight - VW) : null;
       return {
         rect: hr,
-        leftMarginFromVW: hr.left,
-        rightMarginFromVW: VW - hr.right,
-        clip: hr.left < 0 || hr.right > VW,
+        containerLeftMargin: hr.left,
+        containerRightMargin: VW - hr.right,
+        containerClip: hr.left < 0 || hr.right > VW,
         cardCount: cards.length,
         cardWmin: minW,
         cardWmax: maxW,
         cardWavg: cards.length ? Math.round(cardWidths.reduce((s, x) => s + x, 0) / cards.length) : null,
+        // NEW: real card-extent measurements
+        cardMinLeft: minLeft,
+        cardMaxRight: maxRight,
+        cardSpan,
+        cardLeftMargin: (minLeft != null) ? minLeft : null,
+        cardRightMargin: (maxRight != null) ? (VW - maxRight) : null,
+        cardClip: (cardLeftOverflow > 0) || (cardRightOverflow > 0),
+        cardLeftOverflow,
+        cardRightOverflow,
       };
     })() : null;
 
@@ -118,7 +135,7 @@ async function measure(page) {
       const board0 = m.boardData?.[0];
       const cr = board0?.communityRow;
       const sr = board0?.slotRow;
-      const handLine = h ? `hand[L=${h.leftMarginFromVW},R=${h.rightMarginFromVW},clip=${h.clip},n=${h.cardCount},Wavg=${h.cardWavg}]` : 'hand[none]';
+      const handLine = h ? `hand[cardSpan=${h.cardSpan},cardL=${h.cardLeftMargin},cardR=${h.cardRightMargin},cardClip=${h.cardClip},Loverflow=${h.cardLeftOverflow},Roverflow=${h.cardRightOverflow},n=${h.cardCount},Wavg=${h.cardWavg}]` : 'hand[none]';
       const boardLine = cr ? `b0comm[L=${cr.leftOffsetInBoard},R=${cr.rightOffsetInBoard},Δ=${cr.centeringDelta}]` : 'b0comm[none]';
       const slotLine = sr ? `b0slot[L=${sr.leftOffsetInBoard},R=${sr.rightOffsetInBoard},Δ=${sr.centeringDelta}]` : 'b0slot[none]';
       console.log(`bc=${bc} w=${w} | ${handLine} | ${boardLine} | ${slotLine} | money.amount=${m.moneyPillColor?.amountColor || 'n/a'}`);
@@ -133,13 +150,15 @@ async function measure(page) {
   md.push(`Generated: ${new Date().toISOString()}`);
   md.push(`Base URL: https://caps.ftable.co.il/game`);
   md.push('');
-  md.push('## Hand row (clip + margin)');
+  md.push('## Hand row — CARD extents vs viewport (VAMOS-HAND-CLIP-2)');
   md.push('');
-  md.push('| bc | width | VW | L margin | R margin | Clip? | Cards | W avg | W min | W max |');
-  md.push('|---|---|---|---|---|---|---|---|---|---|');
+  md.push('The hand-row container has `overflow:hidden`, so its rect always "fits" by definition. Real clip is whether any **card** extent breaks the viewport. **cardClip = (cardLeftOverflow > 0 OR cardRightOverflow > 0).**');
+  md.push('');
+  md.push('| bc | width | VW | card span | card L margin | card R margin | cardClip | L overflow | R overflow | cards | W avg |');
+  md.push('|---|---|---|---|---|---|---|---|---|---|---|');
   for (const r of allResults) {
     const h = r.handData || {};
-    md.push(`| ${r.bc} | ${r.width} | ${r.VW || r.width} | ${h.leftMarginFromVW ?? '?'} | ${h.rightMarginFromVW ?? '?'} | ${h.clip ?? '?'} | ${h.cardCount ?? '?'} | ${h.cardWavg ?? '?'} | ${h.cardWmin ?? '?'} | ${h.cardWmax ?? '?'} |`);
+    md.push(`| ${r.bc} | ${r.width} | ${r.VW || r.width} | ${h.cardSpan ?? '?'} | ${h.cardLeftMargin ?? '?'} | ${h.cardRightMargin ?? '?'} | ${h.cardClip ?? '?'} | ${h.cardLeftOverflow ?? '?'} | ${h.cardRightOverflow ?? '?'} | ${h.cardCount ?? '?'} | ${h.cardWavg ?? '?'} |`);
   }
   md.push('');
   md.push('## Board 0 — community row centering inside board');
