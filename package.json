@@ -11,7 +11,7 @@
     "ota": "NODE_OPTIONS='--max-old-space-size=8192' npx expo export --platform ios --platform android --output-dir /tmp/caps_ota --dump-assetmap --source-maps && NODE_OPTIONS='--max-old-space-size=8192' eas update --branch production --environment production --input-dir /tmp/caps_ota --skip-bundler",
     "postinstall": "echo 'postinstall: no patches needed'",
     "test": "NODE_OPTIONS='--max-old-space-size=8192' jest --testPathIgnorePatterns='tests/visual' --testPathIgnorePatterns='.claude'",
-    "qa:placement": "node scripts/qa-placement.cjs",
+    "qa:placement": "node scripts/qa-capture-placement.cjs",
     "visual-audit": "npx tsx tests/visual-audit.spec.ts",
     "visual-qa": "playwright test",
     "visual-qa:update": "playwright test --update-snapshots",

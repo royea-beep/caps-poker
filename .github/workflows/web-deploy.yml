@@ -5,11 +5,13 @@ name: Web Deploy (Vercel)
 # (prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP) under team team_ayrePMw5z8jSPhRe67RiBD0k.
 #
 # Required secrets: EXPO_TOKEN, VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-# Triggers on push to main or manually
+# Triggers on push to main, master, or any fix/** branch (VAMOS-QA-LOOP 2026-06-15:
+# added fix/** so the auto-QA loop against caps.ftable.co.il always reflects current
+# work; previously only main/master triggered, leaving fix branches' deploys stale).
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, 'fix/**']
   workflow_dispatch:
 
 concurrency:
