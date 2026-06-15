@@ -133,7 +133,7 @@ const webLandingStyles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject as object,
     zIndex: 1000,
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -150,16 +150,18 @@ const webLandingStyles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
+    // VAMOS-THEME-SWEEP — was '#8B6914' gold-brown; now mint
     fontSize: 42,
     fontWeight: '800' as const,
-    color: '#8B6914',
+    color: '#4FD6A8',
     letterSpacing: 6,
     marginBottom: 8,
     ...Platform.select({ web: { fontFamily: 'Playfair Display, Georgia, serif' } as any, default: {} }),
   },
   tagline: {
+    // VAMOS-THEME-SWEEP — was '#c9a84c' gold; now mint at slightly reduced sat
     fontSize: 18,
-    color: '#c9a84c',
+    color: 'rgba(79,214,168,0.85)',
     marginBottom: 36,
     textAlign: 'center' as const,
     letterSpacing: 0.5,
@@ -176,12 +178,13 @@ const webLandingStyles = StyleSheet.create({
     lineHeight: 22,
   },
   playButton: {
-    backgroundColor: '#6B1520',
+    // VAMOS-THEME-SWEEP — PLAY NOW: maroon #161922 + gold-brown border → obsidian + mint border
+    backgroundColor: '#161922',
     paddingHorizontal: 52,
     paddingVertical: 18,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#8B6914',
+    borderColor: '#4FD6A8',
     marginBottom: 24,
   },
   playButtonText: {
@@ -532,7 +535,7 @@ const dailyRewardModalStyles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(20),
     borderWidth: 1.5,
     borderColor: 'rgba(201,168,76,0.5)',
@@ -707,7 +710,7 @@ const welcomeStyles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(16),
     borderWidth: 1,
     borderColor: 'rgba(201,168,76,0.35)',
@@ -1598,7 +1601,7 @@ export default function HomeScreen() {
               style={{
                 paddingHorizontal: 16, paddingVertical: 8,
                 borderRadius: 20,
-                backgroundColor: config.numberOfPlayers === n ? '#6B1520' : 'transparent',
+                backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
                 borderWidth: 1,
                 borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
               }}
@@ -2699,7 +2702,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   modalCard: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(18),
     borderWidth: 1,
     borderColor: 'rgba(201,168,76,0.4)',

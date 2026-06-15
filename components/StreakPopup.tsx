@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rv(20),
     borderWidth: 1.5,
     borderColor: 'rgba(201,168,76,0.5)',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   collectBtnText: {
-    color: '#1C0508',
+    color: '#161922',
     fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 3,

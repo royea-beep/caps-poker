@@ -84,7 +84,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const opponentName = useGameStore((s) => s.opponentName);
   const visualTheme = useGameStore((s) => s.visualTheme);
-  const revealBg = getTheme(visualTheme).background; // #1C0508 for Five-O, #0a0a0a for Classic
+  const revealBg = getTheme(visualTheme).background; // #161922 for Five-O, #0a0a0a for Classic
   const [currentIdx, setCurrentIdx] = useState(0);
   const currentIdxRef = useRef(0);
   useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);

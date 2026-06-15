@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.boardBorder,
   },
   title: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(18),
     fontWeight: '900',
     letterSpacing: 4,
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     marginTop: rs(16),
   },
   roomCode: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(48, 32, 56),
     fontWeight: '900',
     letterSpacing: 12,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(20),
   },
   codeActionText: {
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(14),
     fontWeight: '700',
     letterSpacing: 1,

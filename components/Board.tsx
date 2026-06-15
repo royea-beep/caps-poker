@@ -18,6 +18,8 @@ import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameCo
 import { rv } from '../constants/deviceBreakpoints';
 import { rf, rs, SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
+import { OBSIDIAN, OBSIDIAN_GEOM, boardIdentityGlow } from '../constants/obsidianTheme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { useGameColors } from '../utils/useGameColors';
@@ -78,6 +80,10 @@ interface BoardProps {
   // to contentCenter so the safety pad isn't absorbed by space-evenly distribution.
   // Guarantees ≥6dp top + ≥6dp bottom clearance for placed cards.
   contentSafetyPad?: boolean;
+  // VAMOS-BOARD-FILL-2 2026-06-15 — plumb boardCount from BoardArrangement so Board
+  // can raise the card cap at bc=2/3 (tall boards = vertical room to use). bc=4 path
+  // unchanged.
+  boardCount?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -170,6 +176,7 @@ export default function Board({
   cellWidth,
   cellHeight,
   contentSafetyPad,
+  boardCount,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
@@ -200,6 +207,11 @@ export default function Board({
   const onBoardLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     if (w > 0 && Math.abs(w - measuredBoardW) > 1) setMeasuredBoardW(w);
+    // VAMOS-PLACEMENT-POLISH-2 FIX 4 — dev: log rendered board width so Roye can
+    // confirm hugging worked (board width < screen width, centered).
+    if (__DEV__ && index === 0) {
+      console.log('[board-0]', { renderedW: w, naturalW: undefined });
+    }
   };
   // PR-M 2026-05-29 — fit-to-cell math. When cellWidth/cellHeight are given,
   // derive card dims so the 2 internal rows (community + player slots) plus the
@@ -213,8 +225,10 @@ export default function Board({
   let slotH: number;
   let slotW: number;
   if (cellWidth && cellHeight) {
-    // Compact one-strip header at rs(20). Two card rows split the remainder.
-    const HEADER_H = rs(20);
+    // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)ârs(16). The actual rendered
+    // header strip is max(boardLabel ~12dp, autoBtn minHeight rs(14)) = ~14dp, plus
+    // a 2dp safety. HIG 44pt tap target maintained via hitSlop on autoBtn.
+    const HEADER_H = rs(16);
     const PAD_V = PRD.board.cellPadV; // rs(2) after PR-M
     const PAD_H = PRD.board.cellPadH; // rs(4) after PR-M
     // PR-O 2026-06-07 Fix 2 — innerW must also subtract:
@@ -223,7 +237,14 @@ export default function Board({
     //   * Roye's breathing room (rs(6) each side) so cards never touch border
     const BORDER_W = PRD.board.border;       // rs(2)
     const CELL_WRAPPER_PAD_H = rs(2);        // BoardArrangement cell paddingHorizontal
-    const BREATHING_H = rs(6);               // visible gap between border and first card
+    // VAMOS-BOARD-FILL-3 2026-06-15 — at bc=2/3 the cells are full-screen-wide (one
+    // board per row), so the 5-card row is the natural width bottleneck. Tighten
+    // BREATHING_H + commGap + sepMarginH inside the cardRow so cards can grow
+    // UNIFORMLY (keeping strict 0.72 aspect, no distortion). Visible padding stays
+    // > 20dp via the cell wrapper + container border + outer paddingH. bc=4 keeps
+    // original tighter spacing (already tight).
+    const isLowBoard = boardCount === 2 || boardCount === 3;
+    const BREATHING_H = isLowBoard ? rs(2) : rs(6);
     const innerW = Math.max(40, cellWidth - 2 * PAD_H - 2 * BORDER_W - 2 * CELL_WRAPPER_PAD_H - 2 * BREATHING_H);
     const innerH = Math.max(40, cellHeight - HEADER_H - 2 * PAD_V);
     const rowGap = rs(2);
@@ -237,9 +258,14 @@ export default function Board({
     const cardW_fromHeight = Math.max(14, Math.round(cardH_byHeight * CARD_ASPECT));
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
     const sepW = PRD.board.flopSeparatorW;
-    const sepMarginH = rs(4);
-    const commGap = PRD.card.gap;
+    // VAMOS-BOARD-FILL-3 — also tighten sepMarginH + commGap at bc=2/3 to widen
+    // commWByWidth so uniform 0.72-aspect cards can grow. bc=4 keeps wider gaps.
+    const sepMarginH = isLowBoard ? rs(1) : rs(4);
+    const commGap = isLowBoard ? rs(1) : PRD.card.gap;
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
+    // VAMOS-BOARD-FILL-3 — REVERT ASPECT_LOW. Cards keep natural 0.72 aspect at all
+    // board counts. At bc=2/3 the relaxed inner-chrome above gives commWByWidth more
+    // room; uniform scaling lets commW and commH grow together without distortion.
     commW = Math.min(commWByWidth, cardW_fromHeight);
     commH = Math.round(commW / CARD_ASPECT);
     // Player slot row: 4 slots + 3 gaps
@@ -397,10 +423,19 @@ export default function Board({
   return (
     <Animated.View
       onLayout={onBoardLayout}
+      testID={`board-${index}`}
       style={[
         styles.container,
-        { backgroundColor: theme.boardBg, borderColor: boardAccent }, // PR-E: removed fixed BOARD_HEIGHT — Board now fills its 2x2 grid cell
-        Platform.OS === 'web' && visualTheme === 'fiveo' && { boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.6)' } as any,
+        // VAMOS-VISUAL-C Option C — obsidian board surface + per-board identity glow.
+        // VAMOS-BOARD-RESTORE 2026-06-14 — reverted FIX 4 (board hug content). In a
+        // column-laid grid `flex` controls the MAIN AXIS = height; flex:0 collapsed
+        // every board's height to ~0. Restored to layout-471 flex:1 full-cell.
+        { backgroundColor: OBSIDIAN.bgFallback, borderColor: boardAccent },
+        boardIdentityGlow(boardAccent),
+        Platform.OS === 'web' && {
+          background: `linear-gradient(165deg, ${OBSIDIAN.bgTop} 0%, ${OBSIDIAN.bgBottom} 100%)`,
+          boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
+        } as any,
         active && styles.active,
         selected && styles.selected,
         winner === 'player' && styles.playerWon,
@@ -410,11 +445,24 @@ export default function Board({
         isWinner && winnerPulseStyle,
       ]}
     >
+      {/* VAMOS-VISUAL-C-FINISH — true obsidian gradient on native (and web). Sits BEHIND
+          the per-board identity glow on the container border, IN FRONT of nothing. The
+          container's overflow:'hidden' + borderRadius clip the gradient cleanly. */}
+      <LinearGradient
+        colors={[OBSIDIAN.bgTop, OBSIDIAN.bgBottom]}
+        // 165° in CSS = mostly top→bottom with a slight right→down skew. Approximate
+        // with start at top-center-left and end at bottom-center-right.
+        start={{ x: 0.3, y: 0 }}
+        end={{ x: 0.7, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
       <Pressable onPress={onPress} style={styles.pressableInner}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.boardLabel, { backgroundColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
+            {/* VAMOS-VISUAL-C — minimal chip tab: thin identity-color border + identity-color text on dark, not a filled gold pill */}
+            <Text style={[styles.boardLabel, { color: boardAccent, borderColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
@@ -445,8 +493,17 @@ export default function Board({
               Header justifyContent='space-between' puts it at opposite physical
               end from BOARD-N pill on web + native, RTL or LTR. */}
           {isArrangement && playerCards.length === 0 && onAutoFill ? (
-            <Pressable style={styles.autoBtn} onPress={onAutoFill}>
-              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace}</Text>
+            <Pressable
+              style={styles.autoBtn}
+              onPress={onAutoFill}
+              hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+            >
+              {/* VAMOS-VISUAL-C — mint bolt prefix for the quiet Auto-Place chip */}
+              {/* VAMOS-FULL-POLISH B1 — i18n autoPlace already prefixes "⚡ ", so strip it
+                  at the call site to keep ONE styled mint bolt (not ⚡⚡). Translators keep
+                  the bolt in their string for non-CAPS surfaces; CAPS Board styles it. */}
+              <Text style={styles.autoBtnBolt}>{'⚡'}</Text>
+              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace.replace(/^\s*⚡\s*/, '')}</Text>
             </Pressable>
           ) : (
             <View style={styles.potArea}>
@@ -464,7 +521,13 @@ export default function Board({
             the header. Was relying on pressableInner's justifyContent:center
             with the header inline; that centered the entire stack including
             the header, leaving cards visually low with a maroon block above. */}
-        <View style={[styles.contentCenter, contentSafetyPad && { paddingVertical: 6 }]}>
+        {/* BOARD-DENSITY 2026-06-09 — removed `contentSafetyPad && paddingVertical: rs(6)`.
+            That rs(6)×2 = 12dp inner padding double-counted the cellHâ’rs(12) outer-chrome
+            safety already deducted in BoardArrangement.tsx:188, so contentCenter's
+            justifyContent:'space-evenly' surfaced it as empty bands above/between/below the
+            card rows on bc=3/4. Card-sizing math (innerH = cellHeight - HEADER_H - 2*PAD_V)
+            now matches the real available height. */}
+        <View style={styles.contentCenter}>
 
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
@@ -512,7 +575,7 @@ export default function Board({
         {/* PR-M 2026-05-29 — Community label pill REMOVED. The 5-card row IS
             the community; the pill was redundant chrome eating rs(20+) of
             vertical budget per board. */}
-        <View style={styles.cardRow}>
+        <View style={styles.cardRow} testID={`community-row-${index}`}>
           {(openCards ?? []).map((c) => (
             <CardComponent
               key={c.id}
@@ -525,7 +588,8 @@ export default function Board({
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
-          <View style={[styles.communitySeparator, { backgroundColor: boardAccent }]} />
+          {/* VAMOS-VISUAL-C — separator now MINT (cohesive inner detail), no longer per-board identity */}
+          <View style={[styles.communitySeparator, { backgroundColor: OBSIDIAN.mint }]} />
           {(closedCards ?? []).map((c, i) => (
             <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
               <CardComponent
@@ -548,7 +612,7 @@ export default function Board({
         {/* PR-E AUTO button hoisted above the contentCenter wrapper (PR-L Task B) */}
 
         {/* Player cards */}
-        <View style={styles.cardRow}>
+        <View style={styles.cardRow} testID={`slot-row-${index}`}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
@@ -637,24 +701,15 @@ export default function Board({
 
 const styles = StyleSheet.create({
   container: {
+    // VAMOS-VISUAL-C — obsidian surface, sharper radius (14 vs 18), 1px identity edge.
+    // Outer drop shadow + identity glow applied inline at usage site so they can swap
+    // shadowColor per board without a per-instance StyleSheet.
     flex: 1,
-    backgroundColor: COLORS.boardBg,
-    borderRadius: rs(18),
-    borderWidth: PRD.board.border,
+    backgroundColor: OBSIDIAN.bgFallback,
+    borderRadius: OBSIDIAN_GEOM.boardRadius,
+    borderWidth: 1,
     borderColor: COLORS.boardBorder,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 10,
-      },
-      android: { elevation: 10 },
-      default: {
-        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-      } as any,
-    }),
   },
   pressableInner: {
     // PR-D study: board padding rs(6/5).
@@ -667,14 +722,20 @@ const styles = StyleSheet.create({
     paddingVertical: PRD.board.cellPadV,
     overflow: 'hidden',
   },
-  // PR-L Task B — wrapper for the centered content rows.
-  // PR-O 2026-06-07 Fix 1 — space-evenly so any vertical slack (when row is
-  // width-limited and cardH_byHeight wins) distributes as top + middle + bottom
-  // equally, eliminating the empty maroon block below the cards.
+  // VAMOS-CENTER-FIX 2026-06-15 — the rows were left-pushed in RTL because the HTML
+  // root has dir='rtl' (utils/i18n.ts applyHtmlLocale), which inverts flexbox start
+  // anchors in React Native Web. Force direction:'ltr' on contentCenter so the cards
+  // are centered by Latin-orientation flex math regardless of app language.
+  // alignItems:'center' centers each cardRow horizontally (sized to its intrinsic
+  // children width). gap separates rows vertically.
   contentCenter: {
     flex: 1,
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: rs(4),
     minHeight: 0,
+    width: '100%',
+    ...(Platform.OS === 'web' ? ({ direction: 'ltr' } as any) : null),
   },
   active: {
     borderColor: COLORS.gold,
@@ -710,10 +771,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.neonRed,
   },
   header: {
+    // BOARD-DENSITY 2026-06-09 — marginBottom rs(2) â 0. Saves 2dp/board uniformly
+    // across all bc=2/3/4 modes. Header strip + contentCenter remain visually distinct
+    // via the boardLabel pill background and contentCenter rendering.
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: rs(2),
+    marginBottom: 0,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -735,15 +799,19 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   boardLabel: {
-    color: '#0a0a0a',
+    // VAMOS-VISUAL-C — minimal chip: thin identity-color border + identity-color text on dark
+    // (color + borderColor are overridden inline to the per-board accent).
+    color: '#ffffff',
     fontSize: rf(10),
-    fontWeight: '900',
+    fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    backgroundColor: '#c8a84b',
-    paddingHorizontal: rs(6),
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
+    paddingHorizontal: rs(7),
     paddingVertical: rs(1),
-    borderRadius: 6,
+    borderRadius: OBSIDIAN_GEOM.tabRadius,
     overflow: 'hidden',
   },
   rowLabel: {
@@ -783,23 +851,25 @@ const styles = StyleSheet.create({
     top: -2,
   },
   cardRow: {
-    // PR-D study: card gap = rs(3)
-    // PR-O 2026-06-07 Fix 2 — paddingHorizontal: rs(6) guarantees the rendered
-    // row never touches the inner gold border (≥6dp breathing room).
+    // VAMOS-CENTER-FIX 2026-06-15 — added alignSelf:'center' as belt-and-braces
+    // for the direction:'ltr' fix on contentCenter. The row centers itself in
+    // its parent regardless of any residual RTL anchor confusion.
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
     gap: PRD.card.gap,
-    paddingVertical: 1,
+    paddingVertical: 0,
     paddingHorizontal: rs(6),
   },
   communitySeparator: {
-    // PR-D study: 3px gold separator between flop and turn/river
-    width: PRD.board.flopSeparatorW,
-    height: '80%',
-    backgroundColor: COLORS.gold,
-    opacity: 0.55,
-    marginHorizontal: rs(6),
+    // VAMOS-BOARD-FILL 2026-06-15 — strengthened: 1.5 → 2 width, 0.68 → 0.80 opacity,
+    // backgroundColor mintHairline → mint (no glow). Reads as a deliberate divider.
+    width: 2,
+    height: '60%',
+    backgroundColor: OBSIDIAN.mint,
+    opacity: 0.80,
+    marginHorizontal: rs(5),
     alignSelf: 'center',
     borderRadius: 1,
   },
@@ -821,23 +891,22 @@ const styles = StyleSheet.create({
     color: '#c9a84c',
   },
   emptySlot: {
-    // PR-D study: dashed rgba(255,255,255,0.18) on dark bg
-    borderRadius: rs(8),
-    borderWidth: rs(1.5),
-    borderColor: 'rgba(255,255,255,0.18)',
+    // VAMOS-VISUAL-C — ghost target: mint dashed on near-transparent fill
+    borderRadius: OBSIDIAN_GEOM.slotRadius,
+    borderWidth: 1,
+    borderColor: OBSIDIAN.slotDash,
     borderStyle: 'dashed',
     margin: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: OBSIDIAN.slotFill,
   },
   dropTarget: {
-    // PR-D study: when a hand card is selected, slots switch to solid
-    // gold-bright + bg rgba(245,200,66,0.08) — "place me here" affordance.
-    borderColor: '#F5C842',
-    borderWidth: rs(2),
+    // VAMOS-VISUAL-C — when a hand card is selected, slot brightens to solid mint
+    borderColor: OBSIDIAN.slotDashActive,
+    borderWidth: rs(1.5),
     borderStyle: 'solid',
-    backgroundColor: 'rgba(245,200,66,0.08)',
+    backgroundColor: OBSIDIAN.mintGhost,
   },
   plusText: {
     color: '#c8a84b55',
@@ -922,13 +991,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   winnerBadge: {
+    // VAMOS-VISUAL-C-FINISH — bottom corner radius matches OBSIDIAN_GEOM.boardRadius
+    // (14) minus the 1px container border. Top edge gets a thin mint hairline so the
+    // badge reads as part of the obsidian board, not a foreign gold bar.
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     paddingVertical: rs(5),
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: OBSIDIAN_GEOM.boardRadius - 1,
+    borderBottomRightRadius: OBSIDIAN_GEOM.boardRadius - 1,
+    borderTopWidth: 1,
+    borderTopColor: OBSIDIAN.mintHairline,
     alignItems: 'center',
     ...Platform.select({
       ios: {
@@ -948,42 +1022,52 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.neonRed,
   },
   tieBadge: {
-    backgroundColor: COLORS.goldDim,
+    // VAMOS-VISUAL-C-FINISH — was COLORS.goldDim (clashed). Mint at 92% reads neutral.
+    backgroundColor: 'rgba(79,214,168,0.92)',
   },
   winnerText: {
-    color: COLORS.background,
+    // VAMOS-VISUAL-C-FINISH — dark ink on green/red/mint stays high-contrast and
+    // matches the obsidian palette (no gold text).
+    color: OBSIDIAN.cardInk,
     fontSize: rf(11),
     fontWeight: '900',
     letterSpacing: 2,
   },
   bannerHandName: {
-    color: COLORS.background,
+    color: OBSIDIAN.cardInk,
     fontSize: rf(8),
     fontWeight: '700',
     letterSpacing: 0.5,
     opacity: 0.85,
   },
   autoBtn: {
-    // Build 465 — now a flex sibling of headerLeft inside header. No more
-    // absolute positioning. Header's justifyContent='space-between' anchors
-    // the pill at the opposite physical end of the BOARD-N label naturally
-    // on every platform + RTL state.
-    maxWidth: rs(95),
-    paddingHorizontal: rs(4),
+    // VAMOS-VISUAL-C — quiet chip with mint bolt. Layout/minHeight/hitSlop unchanged
+    // so tap target stays >= 44pt HIG via the Pressable's hitSlop on the call site.
+    maxWidth: rs(105),
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: rs(3),
+    paddingHorizontal: rs(6),
     paddingVertical: rs(1),
-    minHeight: rs(16),
+    minHeight: rs(14),
     justifyContent: 'center' as const,
-    borderRadius: rs(5),
-    backgroundColor: 'rgba(26,26,46,0.85)',
+    borderRadius: OBSIDIAN_GEOM.tabRadius,
+    backgroundColor: OBSIDIAN.autoBg,
     borderWidth: 1,
-    borderColor: '#C5A028',
+    borderColor: OBSIDIAN.autoBorder,
     opacity: 1,
     zIndex: 10,
   },
   autoBtnText: {
-    color: '#e8c96a',
+    color: OBSIDIAN.autoText,
     fontSize: rf(7),
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  autoBtnBolt: {
+    color: OBSIDIAN.autoBolt,
+    fontSize: rf(8),
+    fontWeight: '900',
+    lineHeight: rf(10),
   },
 });

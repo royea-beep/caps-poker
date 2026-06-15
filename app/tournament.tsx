@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 36,
     fontWeight: '900',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 6,
     textAlign: 'center',
   },
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
   matchScore: {
     fontSize: 48,
     fontWeight: '900',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 8,
     textAlign: 'center',
   },
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
   bracketRoundLabel: {
     fontSize: 12,
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 2,
     marginBottom: 4,
   },
@@ -1046,7 +1046,7 @@ const styles = StyleSheet.create({
   },
   bracketMatchFinal: {
     paddingVertical: 16,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
     marginVertical: 24,
   },
@@ -1077,11 +1077,11 @@ const styles = StyleSheet.create({
     color: COLORS.textDim,
   },
   bracketWinner: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontWeight: '800',
   },
   bracketHuman: {
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
   },
 
   // Game area
@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
   roundLabel: {
     fontSize: 13,
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 1,
   },
   matchScoreSmall: {
@@ -1124,7 +1124,7 @@ const styles = StyleSheet.create({
   roundResultText: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.gold,
+    color: COLORS.mint,
   },
   gameArea: {
     flexGrow: 1,
@@ -1155,7 +1155,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(201,168,76,0.06)',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.goldDim,
+    borderColor: COLORS.mintDim,
     borderStyle: 'dashed',
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
   teaserText: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
     letterSpacing: 1,
   },
   teaserSubtext: {
@@ -1180,7 +1180,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(201,168,76,0.06)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.goldDim,
+    borderColor: COLORS.mintDim,
     padding: 16,
     width: '100%',
     gap: 12,
@@ -1189,7 +1189,7 @@ const styles = StyleSheet.create({
   roomPanelTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
     letterSpacing: 1,
   },
   roomPanelSubtitle: {
@@ -1199,7 +1199,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   roomButton: {
-    backgroundColor: COLORS.goldDim,
+    backgroundColor: COLORS.mintDim,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 24,
@@ -1228,7 +1228,7 @@ const styles = StyleSheet.create({
   roomCodeValue: {
     fontSize: 32,
     fontWeight: '900',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 8,
     fontVariant: ['tabular-nums'],
   },
@@ -1257,7 +1257,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   joinButton: {
-    backgroundColor: COLORS.goldDim,
+    backgroundColor: COLORS.mintDim,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -1274,7 +1274,7 @@ const styles = StyleSheet.create({
   comingSoonBadge: {
     fontSize: 10,
     fontWeight: '800',
-    color: COLORS.goldDim,
+    color: COLORS.mintDim,
     letterSpacing: 3,
     marginTop: 4,
   },
@@ -1296,7 +1296,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   modeBtnActive: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
   },
   modeBtnText: {
     fontSize: 12,
@@ -1323,7 +1323,7 @@ const styles = StyleSheet.create({
   onlineTitle: {
     fontSize: 18,
     fontWeight: '900',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 4,
   },
 
@@ -1340,7 +1340,7 @@ const styles = StyleSheet.create({
   resultsSummaryTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 2,
     textAlign: 'center',
     marginBottom: 4,
@@ -1355,13 +1355,13 @@ const styles = StyleSheet.create({
   },
   resultRowChampion: {
     borderWidth: 2,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     backgroundColor: 'rgba(201,168,76,0.08)',
   },
   resultRank: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     width: 32,
     textAlign: 'center',
   },
@@ -1375,11 +1375,11 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   resultNameYou: {
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
   },
   resultNameChampion: {
     fontWeight: '900',
-    color: COLORS.gold,
+    color: COLORS.mint,
   },
   resultRound: {
     fontSize: 10,

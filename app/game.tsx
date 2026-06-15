@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, AppState } from 'react-native';
 import { SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -41,7 +41,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
-import { rf, rs, rv } from '../utils/responsive';
+import { rf, rh, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
 import GuidedTooltip from '../components/GuidedTooltip';
@@ -136,6 +136,37 @@ function GameScreenInner() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
+  // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
+  // Persisted in AsyncStorage under 'max_board_card_h_dp'. Default rh(70) gives
+  // ~70dp on the iPhone 15/16 base viewport (852pt height). User can adjust in
+  // Settings within the [50, 100] range (dp at base). Re-checked on AppState
+  // changes so toggling the setting mid-session takes effect without a restart.
+  const BOARD_CARD_CAP_DEFAULT = rh(70);
+  const BOARD_CARD_CAP_MIN = rh(50);
+  const BOARD_CARD_CAP_MAX = rh(100);
+  const [boardCardCapDp, setBoardCardCapDp] = useState<number>(BOARD_CARD_CAP_DEFAULT);
+  useEffect(() => {
+    let alive = true;
+    const recheck = () => {
+      AsyncStorage.getItem('max_board_card_h_dp')
+        .then((v) => {
+          if (!alive) return;
+          const n = v ? parseFloat(v) : NaN;
+          if (Number.isFinite(n) && n >= BOARD_CARD_CAP_MIN && n <= BOARD_CARD_CAP_MAX) {
+            setBoardCardCapDp(n);
+          } else {
+            setBoardCardCapDp(BOARD_CARD_CAP_DEFAULT);
+          }
+        })
+        .catch(() => {});
+    };
+    recheck();
+    const sub = AppState.addEventListener('change', recheck);
+    const t1 = setTimeout(recheck, 1500);
+    const t2 = setTimeout(recheck, 4000);
+    return () => { alive = false; sub.remove(); clearTimeout(t1); clearTimeout(t2); };
+  }, [BOARD_CARD_CAP_DEFAULT, BOARD_CARD_CAP_MIN, BOARD_CARD_CAP_MAX]);
+
   // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
   // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
   // PR-K v9 — web reserves more so hand has its 2-row footprint; boards get the rest.
@@ -166,12 +197,19 @@ function GameScreenInner() {
   // 6(container-padV) + 6(row gaps) + 16(cardWrapper borders) = 297dp.
   // Bumped to 305dp (8dp buffer). Boards-zone shrinks 15dp → cell h drops
   // from ~188 to ~181 (still 25dp+ clearance, well above 6dp target).
+  // Wrap each tuned literal (designed against 844-height viewport) in rh() so
+  // it scales proportionally on shorter (568/667) and taller (932) screens.
+  // BC4-STACK-REBALANCE 2026-06-09 — bc=4 (2-player) was rh(305) for the 16-card
+  // 4x4 hand grid. New design switches bc=4 to 1x4 vertical board stack + 2-row
+  // hand (8x2). Lower hand height pushes the freed vertical room into the boards
+  // zone. rh(125) gives â¥5dp margin at 320 (worst case: hand cardH 23 + chrome
+  // 31 = 54 content vs 83 zone) and accommodates the 2x8 layout up to 430 width.
   const PLAYER_HAND_H = boardCount === 2
-    ? 170
+    ? rh(170)
     : boardCount === 3
-      ? 162
+      ? rh(162)
       : boardCount === 4
-        ? 305
+        ? rh(125)
         : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
@@ -207,26 +245,86 @@ function GameScreenInner() {
   // width is wide enough for the 4-slot placement row (Card.tsx 44pt floor
   // for non-community cards). 4 slots * 44 + 3 gaps * 3 + 8 cell padding = 193.
   // Below that, drop to 4-row vertical stack so slots never clip.
-  const _gridGap = 4;
-  const _gridSidePadIfWide = 8;
+  // Wrap layout literals in rs() so the grid math scales with viewport width.
+  // The breakpoint (>= 180) is a logical-pixel slot-floor threshold, not a token.
+  const _gridGap = rs(4);
+  const _gridSidePadIfWide = rs(8);
   const _projectedCellW2x2 = Math.floor((screenW - _gridSidePadIfWide - _gridGap) / 2);
-  const _use2x2 = boardCount === 4 && _projectedCellW2x2 >= 180;
-  const _gridRows = _use2x2 ? 2 : boardCount;
-  const _gridCols = _use2x2 ? 2 : 1;
-  // PR-N 2026-06-02 — handZone marginBottom slimmed from rs(76) to actionBarH+rs(4).
-  const _handMarginB = PRD.zone.actionBarH + 4; // matches BoardArrangement style
-  const _chromeSafety = 28; // padding/borders/FadeIn wrapper overhead
-  const _boardsZoneH = Math.max(
-    180,
-    safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - _handMarginB - HINT_H - _chromeSafety,
-  );
-  // _gridGap and _gridSidePadIfWide already defined above for the use2x2 check.
+  // BC4-STACK-REBALANCE 2026-06-09 — bc=4 now uses the 1x4 full-width stack like
+  // bc=2/3, matching the user-requested visual consistency. _use2x2 retained for
+  // type-stability but always false; PR-N's half-width 2x2 path is retired.
+  const _use2x2 = false;
+  const _gridRows = boardCount;
+  const _gridCols = 1;
+  void _projectedCellW2x2; // referenced only for the retired 2x2 size gate; keep computed for potential reinstatement
+  // FIT-ALL-BOARDS 2026-06-09 — _handMarginB was rs(60) but BoardArrangement.tsx:219
+  // actually applies `(rs(72) + insets.bottom + rs(8)) + (bc=4 ? rs(40) : 0)` —
+  // ~54–94dp larger than the estimate. The discrepancy made _boardsZoneH believe
+  // it had ~94dp more room than the real boardsGrid container, causing cellH to
+  // overflow and `boardsGrid overflow:'hidden'` to silently clip boards 3/4 on bc=4
+  // and the bottom of board 3 on bc=3. Re-align with the actual literal:
+  // BC4-STACK-REBALANCE 2026-06-09 — the bc=4 +rs(40) extra was added when bc=4
+  // used a 4x4 hand grid that needed to be pushed above the action bar. The new
+  // 2x8 hand is short enough not to need it; drop the special case.
+  const _handMarginB = rs(72) + insets.bottom + rs(8);
+  const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
   const _gridSidePad = _gridSidePadIfWide;
-  const _cellH = Math.max(48, Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - 4);
-  const _cellW = Math.max(80, Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
-  const _boardChromeH = 32; // board label + flop separator + intra-row padding
+
+  // FIT-ALL-BOARDS 2026-06-09 — boards-first allocation. Compute the minimum
+  // boards-zone height needed to fit `_gridRows` board cells, each carrying:
+  //   chrome per cell (header + paddings + borders + cell wrapper padV) ≈ rs(34)
+  //   + 2 card rows of MIN_BOARD_CARD_H (so the smallest readable layout fits)
+  //   + rowGap rs(2)
+  // If the boards-zone derived from PLAYER_HAND_H is below this floor, REDUCE the
+  // hand zone instead of clamping the boards-zone (the old Math.max(rh(180), …)
+  // floor faked extra boards-zone height that the parent flex container did NOT
+  // actually have, leading to clipped boards). Boards have priority.
+  const MIN_BOARD_CARD_H = rh(22); // tight readable minimum (~22dp@852, scales)
+  const CELL_CHROME_V = rs(34);    // HEADER_H rs(16) + 2*PAD_V rs(4) + container border rs(4) + cell wrapper padV rs(4) + pressableInner padV rs(4) + rowGap rs(2)
+  const _minCellH = 2 * MIN_BOARD_CARD_H + CELL_CHROME_V;
+  const _minBoardsZoneH = _gridRows * _minCellH + (_gridRows - 1) * _gridGap + rs(8); // +rs(8) safety
+  const _availForBoardsAndHand = safeH - TOP_BAR_H - BOT_STATUS_H - _handMarginB - HINT_H - _chromeSafety;
+  // Step 1: tentative boards-zone using the preferred PLAYER_HAND_H.
+  let _boardsZoneH = _availForBoardsAndHand - PLAYER_HAND_H;
+  // Step 2: if boards-zone fell below the minimum, give boards priority — shrink hand.
+  if (_boardsZoneH < _minBoardsZoneH) _boardsZoneH = _minBoardsZoneH;
+  // Step 3: the hand zone is whatever remains.
+  const _handZoneActualH = Math.max(rh(80), _availForBoardsAndHand - _boardsZoneH);
+
+  // Packed cellH — what each cell would get if cells filled the full boards zone.
+  const _packedCellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
+  const _cellW = Math.max(rs(80), Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
+  const _boardChromeH = rh(32); // board label + flop separator + intra-row padding
   const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
+
+  // VISUAL-POLISH 2026-06-09 — board card height + SNUG cell height.
+  // Step 1: derive the board card height the packed cell could hold, clamped by
+  // the Settings cap (`max_board_card_h_dp`, default rh(70), range [rh(50), rh(100)]).
+  // Step 2: idealCellH = chrome + 2*boardCardH (what the cell actually needs to
+  // render the two card rows with snug chrome). When cap binds (bc=2 on most
+  // devices), idealCellH < packedCellH and the cell SHRINKS — the leftover
+  // becomes inter-board spacing via boardsGrid's justifyContent:'space-evenly'
+  // (no more 8-10dp internal dead band above/below cards).
+  const _maxBoardCardSetting = boardCardCapDp;
+  const _cellHeightPropForPacked =
+    boardCount === 3 || boardCount === 4
+      ? Math.max(rs(48), _packedCellH - rs(12))
+      : _packedCellH;
+  const _packedInnerH = Math.max(40, _cellHeightPropForPacked - rs(16) - 2 * rs(2));
+  const _fitBoardCardH = Math.max(rh(22), Math.floor((_packedInnerH - rs(2)) / 2));
+  const _boardCardH = Math.min(_fitBoardCardH, _maxBoardCardSetting);
+  // Ideal cellH that snugly fits exactly 2*_boardCardH + chrome. The bc=3/4 path
+  // accounts for the rs(12) outer chrome compensated by BoardArrangement.tsx:188.
+  const _idealCellH =
+    2 * _boardCardH
+    + rs(16)            // HEADER_H
+    + 2 * rs(2)         // PAD_V
+    + rs(2)             // rowGap
+    + (boardCount === 3 || boardCount === 4 ? rs(12) : 0) // bc=3/4 outer chrome that the prop subtraction will reclaim
+    + rs(4);            // safety
+  const _cellH = Math.min(_packedCellH, _idealCellH);
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
+  const _handCardCap = _boardCardH;
   const mobileWebCardH = Math.min(
     CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
     _maxMobileWebCh,
@@ -308,6 +406,30 @@ function GameScreenInner() {
     botHighlightIds: string[];
     boardHighlightIds: string[];
   }>>([]);
+  // BUILD467-VERIFY / FIT-ALL-BOARDS / BC4-STACK-REBALANCE / VISUAL-POLISH:
+  // layout debug readout. Build 470 confirmed the readout RENDERS when forced on;
+  // re-gated here so the overlay is OFF by default and only appears when the
+  // Settings â "Debug overlay" toggle (-> AsyncStorage `debug_overlay_enabled`)
+  // is true. The AppState 'change' listener + 3 staggered re-checks below pick up
+  // toggle changes without requiring the user to back out + re-enter the game.
+  const LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC = false;
+  const [layoutDebugVisible, setLayoutDebugVisible] = useState<boolean>(LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC);
+  useEffect(() => {
+    if (LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC) return; // unconditional
+    let alive = true;
+    const recheck = () => {
+      AsyncStorage.getItem('debug_overlay_enabled')
+        .then((v) => { if (alive) setLayoutDebugVisible(v === 'true'); })
+        .catch(() => {});
+    };
+    recheck();
+    const sub = AppState.addEventListener('change', recheck);
+    const t1 = setTimeout(recheck, 1500);
+    const t2 = setTimeout(recheck, 3500);
+    const t3 = setTimeout(recheck, 6000);
+    return () => { alive = false; sub.remove(); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [LAYOUT_DEBUG_FORCE_ON_FOR_DIAGNOSTIC]);
+
   const precalculatedResultsRef = useRef<ReturnType<typeof calculateHandResultsMulti> | null>(null);
   const hasNavigatedRef = useRef(false);
   const playerReadyRef = useRef(false);
@@ -1016,7 +1138,7 @@ function GameScreenInner() {
   // ÂÂ Landscape / widescreen layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
   if (isLandscape) {
     return (
-      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
+      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any]}>
         <FriendsBg />
         {/* watermark removed from game screen */}
         {/* LEFT — Your hand */}
@@ -1161,8 +1283,34 @@ function GameScreenInner() {
   // ÂÂ End landscape layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #1C0508 70%)' } as any]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any]}>
       <FriendsBg />
+      {/* BUILD467-VERIFY layout debug readout — gated by AsyncStorage debug_overlay_enabled */}
+      {layoutDebugVisible && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: insets.top + 4,
+            right: 4,
+            zIndex: 99998,
+            backgroundColor: 'rgba(0,0,0,0.78)',
+            borderColor: 'rgba(0,255,0,0.45)',
+            borderWidth: 1,
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 4,
+            maxWidth: 180,
+          }}
+        >
+          <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+            {`B471 dim ${screenW}x${SCREEN_H}`}{'\n'}
+            {`bc=${boardCount} hand=${_handZoneActualH}/${PLAYER_HAND_H}`}{'\n'}
+            {`cell=${_cellW}x${_cellH} grid=${_gridCols}x${_gridRows}`}{'\n'}
+            {`bCardH=${_boardCardH} cap=${boardCardCapDp}`}
+          </Text>
+        </View>
+      )}
       {/* watermark removed from game screen */}
       {/* D1: auto-place trail flash overlay */}
       <AnimatedRN.View
@@ -1284,7 +1432,8 @@ function GameScreenInner() {
         cellW={_cellW}
         cellH={_cellH}
         use2x2Grid={_use2x2}
-        handZoneH={PLAYER_HAND_H}
+        handZoneH={_handZoneActualH}
+        maxHandCardH={_handCardCap}
       />
       </Animated.View>
       {showSafeReveal && (
@@ -1390,42 +1539,48 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   countdownLabel: {
-    color: '#FFC107',
+    // VAMOS-PLACEMENT-POLISH D4 (#9) — amber #FFC107 → mint
+    color: COLORS.mint,
     fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 1,
   },
   freePlayLabel: {
-    color: COLORS.textMuted,
+    // VAMOS-BOARD-FILL 2026-06-15 — the "PLACE N CARDS" / "מקם N קלפים" header status
+    // pill. Was the gray pill Roye flagged ("prior pass restyled placeBtn by mistake"
+    // — that was the Confirm button, not THIS pill). Now mint to match top chrome.
+    color: COLORS.mint,
     fontSize: rf(12),
     fontWeight: '700',
     letterSpacing: 1.5,
     paddingHorizontal: rs(12),
     paddingVertical: rs(4),
     borderRadius: rv(12),
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(79,214,168,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(79,214,168,0.30)',
     overflow: 'hidden',
     textTransform: 'uppercase' as any,
   },
   headerChips: {
+    // VAMOS-PLACEMENT-POLISH-2 FIX 3 — money/balance pill: gold rgba bg/border → mint
     flexDirection: 'row',
     alignItems: 'center',
     gap: rs(4),
-    backgroundColor: 'rgba(201,168,76,0.12)',
+    backgroundColor: 'rgba(79,214,168,0.12)',
     borderRadius: rv(12),
     paddingVertical: rs(4),
     paddingHorizontal: rs(10),
     borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.25)',
+    borderColor: 'rgba(79,214,168,0.25)',
   },
   headerChipsEmoji: {
     fontSize: rf(14),
     lineHeight: rf(18),
   },
   headerChipsAmount: {
-    color: COLORS.gold,
+    // VAMOS-PLACEMENT-POLISH-2 FIX 3 — amount text gold → mint
+    color: COLORS.mint,
     fontSize: rf(14),
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -1462,9 +1617,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(40,167,69,0.5)',
   },
   botThinkingPill: {
-    backgroundColor: 'rgba(255,193,7,0.15)',
+    // VAMOS-PLACEMENT-POLISH D4 (#9) — amber → mint ghost
+    backgroundColor: 'rgba(79,214,168,0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(255,193,7,0.4)',
+    borderColor: 'rgba(79,214,168,0.4)',
   },
   botStatusText: {
     fontSize: rf(10),
@@ -1475,7 +1631,8 @@ const styles = StyleSheet.create({
     color: '#28A745',
   },
   botThinkingText: {
-    color: '#FFC107',
+    // VAMOS-PLACEMENT-POLISH D4 (#9) — amber → mint
+    color: COLORS.mint,
   },
   botLabel: {
     color: COLORS.textSecondary,
@@ -1530,19 +1687,23 @@ const styles = StyleSheet.create({
     }),
   },
   undoBtn: {
+    // VAMOS-PLACEMENT-POLISH B2 (#2) — Cancel/Undo restyled as a SECONDARY in-theme
+    // action: mint-outline on transparent. Matches mint primary, no clashing gold.
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#C5A028',
+    borderColor: COLORS.mint,
   },
   placeBtn: {
-    backgroundColor: '#C5A028',
+    // VAMOS-PLACEMENT-POLISH B2 (#2) — primary CTA is now MINT solid (was '#C5A028'
+    // gold literal). Disabled state cascades via placeBtnDisabled opacity.
+    backgroundColor: COLORS.mint,
     flex: 1,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.45,
         shadowRadius: 8,
       },
       android: { elevation: 8 },
@@ -1550,8 +1711,9 @@ const styles = StyleSheet.create({
     }),
   },
   placeBtnDisabled: {
-    backgroundColor: COLORS.goldDim,
-    opacity: 0.6,
+    // VAMOS-PLACEMENT-POLISH B2 (#2) — solid muted mint instead of opacity over gold.
+    backgroundColor: 'rgba(79,214,168,0.35)',
+    opacity: 1,
   },
   placeBtnReady: {
     backgroundColor: '#28A745',

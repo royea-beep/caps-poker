@@ -849,7 +849,7 @@ export default function ResultsScreen() {
 
           {/* Title + score */}
           <View style={styles.titleSection}>
-            <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.gold : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.gold }]}>
+            <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.mint }]}>
               {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
             </Text>
             <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
@@ -1242,12 +1242,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { padding: rs(16), paddingBottom: rs(110), gap: rs(12), alignItems: 'center' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: COLORS.gold, fontSize: rf(20), fontWeight: '800' },
+  loadingText: { color: COLORS.mint, fontSize: rf(20), fontWeight: '800' },
   titleSection: { alignItems: 'center', gap: rs(8) },
-  title: { fontSize: rf(24), fontWeight: '900', color: COLORS.gold, letterSpacing: 6 },
+  title: { fontSize: rf(24), fontWeight: '900', color: COLORS.mint, letterSpacing: 6 },
   scoreDisplay: { fontSize: rf(42), fontWeight: '900' },
   scoreSep: { color: COLORS.textDim, fontSize: rf(32), fontWeight: '300' },
-  tieBonusText: { color: COLORS.gold, fontSize: rf(13), fontWeight: '600', opacity: 0.75, marginTop: rs(2) },
+  tieBonusText: { color: COLORS.mint, fontSize: rf(13), fontWeight: '600', opacity: 0.75, marginTop: rs(2) },
   netSection: { width: '100%' },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: rs(4) },
   netLabel: { color: COLORS.textMuted, fontSize: rf(16), fontWeight: '600' },
@@ -1257,8 +1257,8 @@ const styles = StyleSheet.create({
   shareRow: { width: '100%', alignItems: 'center' },
   shareBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: rv(16), backgroundColor: 'rgba(255,255,255,0.06)' },
   shareBtnText: { color: 'rgba(255,255,255,0.7)', fontSize: rf(14), fontWeight: '700', letterSpacing: 0.5 },
-  coachingBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: COLORS.gold, borderRadius: rv(16), backgroundColor: 'rgba(255,215,0,0.08)' },
-  coachingBtnText: { color: COLORS.gold, fontSize: rf(14), fontWeight: '800', letterSpacing: 1.5 },
+  coachingBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: COLORS.mint, borderRadius: rv(16), backgroundColor: 'rgba(255,215,0,0.08)' },
+  coachingBtnText: { color: COLORS.mint, fontSize: rf(14), fontWeight: '800', letterSpacing: 1.5 },
   waitingNextHand: { backgroundColor: COLORS.feltLight, paddingVertical: rs(14), borderRadius: rv(10), borderWidth: 1, borderColor: COLORS.boardBorder, alignItems: 'center' },
   waitingNextHandText: { color: COLORS.textSecondary, fontSize: rf(16), fontWeight: '600' },
   bestHandRow: { width: '100%', paddingHorizontal: rs(4), paddingVertical: rs(6) },
@@ -1269,10 +1269,10 @@ const styles = StyleSheet.create({
   statItem: { color: 'rgba(255,255,255,0.85)', fontSize: rf(12) },
   statSep: { color: 'rgba(255,255,255,0.6)', fontSize: rf(12) },
   upgradeNudge: { width: '100%', backgroundColor: 'rgba(201,168,76,0.12)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)', borderRadius: rv(10), padding: rs(14), gap: rs(10) },
-  upgradeNudgeText: { color: COLORS.gold, fontSize: rf(14), fontWeight: '700', textAlign: 'center' },
+  upgradeNudgeText: { color: COLORS.mint, fontSize: rf(14), fontWeight: '700', textAlign: 'center' },
   upgradeNudgeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(16) },
-  upgradeNudgeBtn: { paddingVertical: rs(8), paddingHorizontal: rs(20), backgroundColor: COLORS.gold, borderRadius: rv(8) },
-  upgradeNudgeBtnText: { color: '#1C0508', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
+  upgradeNudgeBtn: { paddingVertical: rs(8), paddingHorizontal: rs(20), backgroundColor: COLORS.mint, borderRadius: rv(8) },
+  upgradeNudgeBtnText: { color: '#161922', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
   upgradeNudgeDismiss: { color: COLORS.textMuted, fontSize: rf(12) },
   xpBanner: { width: '100%', backgroundColor: 'rgba(201,168,76,0.10)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: rv(10), padding: rs(14), gap: rs(6) },
   xpBannerTitle: { color: '#FFD700', fontSize: rf(16), fontWeight: '800', letterSpacing: 1 },
@@ -1313,7 +1313,7 @@ const styles = StyleSheet.create({
     marginBottom: rs(4),
   },
   autoContinueText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(13),
     fontWeight: '600',
     letterSpacing: 0.5,
@@ -1326,7 +1326,7 @@ const styles = StyleSheet.create({
     right: '10%',
     backgroundColor: 'rgba(28,5,8,0.92)',
     borderWidth: 2,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderRadius: rv(16),
     paddingVertical: rs(20),
     paddingHorizontal: rs(24),

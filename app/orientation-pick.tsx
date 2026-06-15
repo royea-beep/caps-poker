@@ -51,8 +51,8 @@ export default function OrientationPickScreen() {
         {/* Widescreen */}
         <Pressable style={[styles.card, styles.cardPro]} onPress={() => pick('landscape')}>
           <Text style={styles.cardIcon}>🖥️</Text>
-          <Text style={[styles.cardName, { color: COLORS.gold }]}>WIDESCREEN</Text>
-          <Text style={[styles.cardTag, { color: COLORS.gold }]}>Pro</Text>
+          <Text style={[styles.cardName, { color: COLORS.mint }]}>WIDESCREEN</Text>
+          <Text style={[styles.cardTag, { color: COLORS.mint }]}>Pro</Text>
           <Text style={styles.cardDesc}>Phone/tablet horizontal{'\n'}Side-by-side boards</Text>
           <View style={[styles.selectBtn, styles.selectBtnGold]}>
             <Text style={[styles.selectBtnText, { color: COLORS.background }]}>SELECT</Text>
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   title: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: 34,
     fontWeight: '900',
     letterSpacing: 5,
@@ -104,10 +104,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardPro: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   selectBtnGold: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
+    borderColor: COLORS.mint,
   },
   selectBtnText: {
     color: COLORS.textSecondary,

@@ -179,7 +179,7 @@ export default function ShopScreen() {
 
       {loading ? (
         <View style={styles.centerState} accessibilityLiveRegion="polite">
-          <ActivityIndicator color={COLORS.gold} size="large" />
+          <ActivityIndicator color={COLORS.mint} size="large" />
           <Text style={styles.loadingText}>Loading shop...</Text>
         </View>
       ) : !shopData || shopData.items.length === 0 ? (
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     paddingRight: rs(12),
   },
   backText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(15),
     fontWeight: '600',
   },
@@ -333,15 +333,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   balancePill: {
-    backgroundColor: 'rgba(201,168,76,0.15)',
+    backgroundColor: 'rgba(79,214,168,0.15)',
     borderRadius: rv(20),
     paddingHorizontal: rs(10),
     paddingVertical: rs(4),
     borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.35)',
+    borderColor: 'rgba(79,214,168,0.35)',
   },
   balanceText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(13),
     fontWeight: '700',
   },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   toastText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(20),
     fontWeight: '900',
   },
@@ -384,10 +384,10 @@ const styles = StyleSheet.create({
     paddingVertical: rs(10),
     borderRadius: rv(12),
     borderWidth: 1,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
   },
   retryBtnText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(14),
     fontWeight: '700',
   },
@@ -406,10 +406,10 @@ const styles = StyleSheet.create({
     marginBottom: rs(4),
   },
   iapCard: {
-    backgroundColor: 'rgba(201,168,76,0.08)',
+    backgroundColor: 'rgba(79,214,168,0.08)',
     borderRadius: rv(14),
     borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.3)',
+    borderColor: 'rgba(79,214,168,0.3)',
     padding: rs(14),
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,13 +429,13 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
   },
   iapPrice: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(13),
     fontWeight: '700',
     marginTop: rs(2),
   },
   iapBtn: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     borderRadius: rv(10),
     paddingHorizontal: rs(14),
     paddingVertical: rs(10),
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
   },
   itemCost: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(13),
     fontWeight: '700',
   },

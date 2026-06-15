@@ -341,7 +341,7 @@ function PlayerCountSelector() {
           ))}
         </View>
       </View>
-      <Text style={{ color: COLORS.gold, opacity: 0.7, fontSize: rf(11), textAlign: 'center', marginBottom: rs(4) }}>
+      <Text style={{ color: COLORS.mint, opacity: 0.7, fontSize: rf(11), textAlign: 'center', marginBottom: rs(4) }}>
         {modeHints[value]}
       </Text>
     </>
@@ -417,7 +417,7 @@ function OrientationPicker() {
           >
             <Text style={orientationStyles.tileIcon}>{icon}</Text>
             <Text style={[orientationStyles.tileLabel, active && orientationStyles.tileLabelActive]}>{label}</Text>
-            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[orientationStyles.check, { color: COLORS.gold }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[orientationStyles.check, { color: COLORS.mint }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -747,7 +747,7 @@ function FriendsBgPicker() {
               {label}
             </Text>
             <Text style={bgPickerStyles.tileHint}>{hint}</Text>
-            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[bgPickerStyles.check, { color: COLORS.gold }]}>✓</Text>}
+            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[bgPickerStyles.check, { color: COLORS.mint }]}>✓</Text>}
           </Pressable>
         );
       })}
@@ -1025,6 +1025,14 @@ export default function SettingsScreen() {
   const [muteQuotes, setMuteQuotes] = useState(false);
   const [muteSounds, setMuteSounds] = useState(false);
   const isBeta = Constants.expoConfig?.extra?.isBeta === true;
+  // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
+  // Stored in AsyncStorage under 'max_board_card_h_dp' in dp at base 393x852.
+  // Range [50, 100], default 70. Stepper UI below adjusts in 5-dp increments.
+  const BOARD_CAP_DEFAULT = 70;
+  const BOARD_CAP_MIN = 50;
+  const BOARD_CAP_MAX = 100;
+  const BOARD_CAP_STEP = 5;
+  const [boardCardCap, setBoardCardCap] = useState<number>(BOARD_CAP_DEFAULT);
 
   useEffect(() => {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
@@ -1032,7 +1040,19 @@ export default function SettingsScreen() {
     }).catch(() => {});
     AsyncStorage.getItem('caps_beta_mute_quotes').then(v => setMuteQuotes(v === 'true')).catch(() => {});
     AsyncStorage.getItem('caps_beta_mute_sounds').then(v => setMuteSounds(v === 'true')).catch(() => {});
+    AsyncStorage.getItem('max_board_card_h_dp').then(v => {
+      const n = v ? parseFloat(v) : NaN;
+      if (Number.isFinite(n) && n >= BOARD_CAP_MIN && n <= BOARD_CAP_MAX) {
+        setBoardCardCap(n);
+      }
+    }).catch(() => {});
   }, []);
+
+  const applyBoardCardCap = (next: number) => {
+    const clamped = Math.max(BOARD_CAP_MIN, Math.min(BOARD_CAP_MAX, next));
+    setBoardCardCap(clamped);
+    AsyncStorage.setItem('max_board_card_h_dp', String(clamped)).catch(() => {});
+  };
 
   const boardCount = getBoardCount(config.numberOfPlayers);
   const buyIn = config.potPerBoard * boardCount;
@@ -1173,6 +1193,35 @@ export default function SettingsScreen() {
               {debugEnabled ? 'ON' : 'OFF'}
             </Text>
           </Pressable>
+        </View>
+        {/* FIT-ALL-BOARDS 2026-06-09 — Max board card height stepper.
+            Persisted; consumed by game.tsx via AsyncStorage + AppState re-check. */}
+        <View style={styles.row}>
+          <View style={styles.rowLeft}>
+            <Text style={styles.rowLabel}>Max board card</Text>
+            <Text style={styles.rowHint}>Cap on board card height ({BOARD_CAP_MIN}â{BOARD_CAP_MAX} dp). Default {BOARD_CAP_DEFAULT}.</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={() => applyBoardCardCap(boardCardCap - BOARD_CAP_STEP)}
+              style={styles.toggleBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Decrease max board card height"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.toggleText}>â</Text>
+            </Pressable>
+            <Text style={[styles.toggleText, { minWidth: 36, textAlign: 'center' }]}>{boardCardCap}</Text>
+            <Pressable
+              onPress={() => applyBoardCardCap(boardCardCap + BOARD_CAP_STEP)}
+              style={styles.toggleBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Increase max board card height"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.toggleText}>+</Text>
+            </Pressable>
+          </View>
         </View>
 
         <Button
@@ -1332,7 +1381,7 @@ const styles = StyleSheet.create({
     gap: rs(4),
   },
   sectionTitle: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(12),
     fontWeight: '800',
     letterSpacing: 3,
@@ -1384,7 +1433,7 @@ const styles = StyleSheet.create({
   profileEdit: {
     fontSize: rf(11),
     fontWeight: '800',
-    color: COLORS.gold,
+    color: COLORS.mint,
     letterSpacing: 1,
   },
   rowLabel: {
@@ -1458,8 +1507,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   selectorBtnActive: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
+    borderColor: COLORS.mint,
   },
   selectorText: {
     color: COLORS.textSecondary,
@@ -1478,8 +1527,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.boardBorder,
   },
   toggleBtnActive: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
+    borderColor: COLORS.mint,
   },
   toggleText: {
     color: COLORS.textSecondary,
@@ -1531,7 +1580,7 @@ const styles = StyleSheet.create({
   },
   privacyLinkText: {
     fontSize: rf(12),
-    color: 'rgba(201,168,76,1)',
+    color: 'rgba(79,214,168,1)',
     textDecorationLine: 'underline',
   },
 });
@@ -1553,7 +1602,7 @@ const themeStyles = StyleSheet.create({
     gap: rs(8),
   },
   themeBtnActive: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
   },
   themeBtnLabel: {
@@ -1564,7 +1613,7 @@ const themeStyles = StyleSheet.create({
     textAlign: 'center',
   },
   themeBtnLabelActive: {
-    color: COLORS.gold,
+    color: COLORS.mint,
   },
   previewRow: {
     flexDirection: 'row',
@@ -1572,7 +1621,7 @@ const themeStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   activePill: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     paddingHorizontal: rs(8),
     paddingVertical: rs(2),
     borderRadius: rv(6),
@@ -1643,7 +1692,7 @@ const bgPickerStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileActive: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
   },
   noPreview: {
@@ -1657,7 +1706,7 @@ const bgPickerStyles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   tileLabelActive: {
-    color: COLORS.gold,
+    color: COLORS.mint,
   },
   tileHint: {
     color: COLORS.textMuted,
@@ -1689,7 +1738,7 @@ const orientationStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileActive: {
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
     borderWidth: 2,
   },
   tileIcon: {

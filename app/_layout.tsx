@@ -150,7 +150,7 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 const splashStyles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,
@@ -525,7 +525,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-    <RootWrapper style={{ flex: 1, backgroundColor: '#1C0508' }}>
+    <RootWrapper style={{ flex: 1, backgroundColor: '#161922' }}>
       <StatusBar style="light" />
       <CrashBoundary>
       <BugReporter>

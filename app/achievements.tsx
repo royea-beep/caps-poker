@@ -490,13 +490,13 @@ const styles = StyleSheet.create({
     minWidth: rs(60),
   },
   backText: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(13),
     fontWeight: '700',
     letterSpacing: 1,
   },
   title: {
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
     fontSize: rf(20),
     fontWeight: '900',
     letterSpacing: 3,
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   modalName: {
-    color: COLORS.goldLight,
+    color: COLORS.mintLight,
     fontSize: rf(20),
     fontWeight: '900',
     textAlign: 'center',

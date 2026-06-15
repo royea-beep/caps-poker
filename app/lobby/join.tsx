@@ -271,7 +271,7 @@ export default function JoinLobbyScreen() {
         {/* Scanning progress */}
         {isScanning && (
           <View style={styles.scanStatus} accessibilityLiveRegion="polite">
-            <ActivityIndicator size="small" color={COLORS.gold} />
+            <ActivityIndicator size="small" color={COLORS.mint} />
             <Text style={styles.scanText}>Scanning network for host...</Text>
           </View>
         )}
@@ -305,7 +305,7 @@ export default function JoinLobbyScreen() {
             </View>
 
             <View style={styles.waitingRow} accessibilityLiveRegion="polite">
-              <ActivityIndicator size="small" color={COLORS.gold} />
+              <ActivityIndicator size="small" color={COLORS.mint} />
               <Text style={styles.waitingText}>
                 {waitingForGame ? 'Game starting...' : 'Waiting for host to start...'}
               </Text>
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(22),
     fontWeight: '900',
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     letterSpacing: 6,
     textAlign: 'center',
   },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     backgroundColor: COLORS.feltLight,
-    color: COLORS.goldBright,
+    color: COLORS.mintBright,
     fontSize: rf(40),
     fontWeight: '900',
     letterSpacing: 16,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     padding: rs(16),
     borderRadius: rv(12),
     borderWidth: 1.5,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.mint,
   },
   ipInput: {
     backgroundColor: COLORS.feltLight,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     width: rv(28),
     height: rv(28),
     borderRadius: rv(14),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hostBadge: {
-    color: COLORS.gold,
+    color: COLORS.mint,
     fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 1,

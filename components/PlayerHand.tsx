@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Pressable, Text, StyleSheet, Platform, Dimensions } from 'react-native';
 import { rf, rs, rv, SCREEN_W as MODULE_SCREEN_W } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { t } from '../utils/i18n';
@@ -16,6 +16,12 @@ interface PlayerHandProps {
   cards: Card[];
   selectedCardIds?: string[];
   onSelectCard: (card: Card) => void;
+  // FIT-ALL-BOARDS 2026-06-09 — actual rendered hand-zone height. When omitted,
+  // falls back to PRD.zone.handMinH for backwards-compat. Game screen passes the
+  // boards-first remainder so hand cards size to fit the real container.
+  handZoneH?: number;
+  // Optional cap so hand cards never exceed board card height (boards-first rule).
+  maxCardH?: number;
 }
 
 // Per-card animated slot — each mounts with its own deal animation
@@ -52,6 +58,7 @@ function AnimatedCardSlot({
     <Animated.View style={animStyle}>
       <Pressable
         onPress={() => onSelectCard(card)}
+        testID="hand-card"
         style={[styles.cardWrapper, isSelected && styles.selected]}
       >
         <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
@@ -65,11 +72,13 @@ function AnimatedCardSlot({
   );
 }
 
-export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }: PlayerHandProps) {
+export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH }: PlayerHandProps) {
   // C-fix 2026-05-22: lock to module-level SCREEN_W (computed once in responsive.ts).
   // Was useWindowDimensions() — re-fired on every focus/keyboard/resize event,
   // causing the 2-row hand layout to shift while the player was placing cards.
-  const rawW = MODULE_SCREEN_W;
+  // VAMOS-HAND-FIX-FINAL 2026-06-15 — was MODULE_SCREEN_W (frozen at module load).
+  // Live Dimensions tracks viewport on web; on native it matches device width.
+  const rawW = Dimensions.get('window').width || MODULE_SCREEN_W;
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
@@ -82,17 +91,49 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const isWeb = Platform.OS === 'web';
   const useTwoRows = !isWeb || device.isMobileWeb;
 
-  // Dynamic card sizing: always size as if full 8-card hand (4 per row) — prevents giant cards when few remain
-  const availableW = SCREEN_W - 16; // paddingHorizontal 8 each side from styles.grid
+  // VAMOS-HAND-FIT (2026-06-14) — measure-then-size architecture. cardW DERIVED
+  // from the real rendered grid width (via onLayout below), not assumed.
+  //
+  // VAMOS-BOARD-FILL-2 (2026-06-15) — BUG FIX: onLayout reports the .grid View's
+  // OUTER width (including its own 16dp paddingHorizontal), not the inner usable
+  // content area. The prior math treated measuredRowW as if it were inner, eating
+  // the SAFETY budget on top of the padding the rows already had to dodge. Result:
+  // bc=4 hand sat near the screen edges despite SAFETY=14. Real fix: subtract
+  // HAND_HORIZ_INSET*2 from the measured outer width to get the true rowW the rows
+  // can use.
+  const HAND_HORIZ_INSET = 16;
+  const SAFETY_INSIDE_GRID = 14;
+  const [measuredGridOuterW, setMeasuredGridOuterW] = useState(0);
+  const fallbackGridOuterW = SCREEN_W;
+  const gridOuterW = measuredGridOuterW > 0 ? measuredGridOuterW : fallbackGridOuterW;
+  // rowW = the inner content area the rows actually render into.
+  const rowW = Math.max(40, gridOuterW - 2 * HAND_HORIZ_INSET);
   const safeCards = cards ?? [];
-  // Shrink-fix 2026-06-07 Fix 3c — force 4×4 when hand has ≥13 cards on BOTH
-  // native AND web mobile. (Web mobile previously stayed 2×8 → 8 cards × 56dp =
-  // 448dp on 390 viewport = horizontal overflow.)
-  const useQuadRows = useTwoRows && safeCards.length >= 13;
+  // BC4-STACK-REBALANCE 2026-06-09 — retire the >=13-cards quad-row (4x4) path.
+  // The 4-player (bc=4) game has 16 cards; with cards capped at boardCardH and the
+  // wider 2x8 layout we measured 8-across fits >= 320 width with margin. Going
+  // 2x8 frees vertical space for the (now 1x4 stacked) boards. Other modes have
+  // <=12 cards and were already 2-row.
+  const useQuadRows = false;
   const cardsPerRow = useTwoRows ? Math.max(4, Math.ceil(safeCards.length / (useQuadRows ? 4 : 2))) : Math.max(1, safeCards.length);
   // cardWrapper: paddingHorizontal(4)*2 + borderWidth(2)*2 = 12px overhead per card
-  const CARD_WRAPPER_OVERHEAD = 12;
-  const maxCardW = Math.floor((availableW - (cardsPerRow - 1) * 3 - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  const CARD_WRAPPER_OVERHEAD = rs(12);
+  // VAMOS-HAND-FIT — gap starts at 2 for 8-across (vs rs(3) for ≤6-across). If even
+  // the MIN_CARD_W floor would overflow rowW, the spec says: drop gap, then allow
+  // cardW below the soft min. Fit always wins; cramped is recoverable, clipped is not.
+  let CARD_GAP_DP = cardsPerRow >= 8 ? 2 : rs(3);
+  const derive = (g: number) =>
+    Math.floor((rowW - 2 * SAFETY_INSIDE_GRID - (cardsPerRow - 1) * g - cardsPerRow * CARD_WRAPPER_OVERHEAD) / cardsPerRow);
+  let maxCardW = derive(CARD_GAP_DP);
+  // Soft-min protection: if cards would be < 16dp at the chosen gap and we're
+  // NOT already at gap=2, shrink the gap first. (8-across already starts at 2.)
+  if (maxCardW < 16 && CARD_GAP_DP > 2) {
+    CARD_GAP_DP = 2;
+    maxCardW = derive(CARD_GAP_DP);
+  }
+  // Even after gap shrink: if still < 14, accept it. A 12-14dp card is readable;
+  // a clipped card is not. Floor at 10 absolute (defensive — shouldn't trigger).
+  maxCardW = Math.max(10, maxCardW);
   // PR-O 2026-06-07 Fix 3c — when quad rows are active, derive cardH from the
   // available hand zone height (handMinH - label - 3 row gaps) / 4. This
   // guarantees the 4th row fits inside the zone. cardW preserves Card.tsx's
@@ -103,7 +144,11 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
   const HAND_ROW_GAP = rs(3);
   const HAND_CONTAINER_PAD_V = rs(3);                // styles.container.paddingVertical (×2)
   const CARD_WRAPPER_BORDER_V = 2;                   // cardWrapper.borderWidth (×2 per row)
-  const handZoneH = PRD.zone.handMinH;
+  // FIT-ALL-BOARDS 2026-06-09 — use the ACTUAL handZone height passed by the game
+  // screen (boards-first remainder). The legacy PRD.zone.handMinH fallback (~341dp
+  // at 852) caused cards to be sized for a 341dp zone but render in a 162/170/305dp
+  // container â visibly "too-big" hand cards on bc=2/3 and overflow on bc=4.
+  const handZoneH = handZoneHProp ?? PRD.zone.handMinH;
   // Shrink-fix iter 3 — the previous formula only subtracted label + 3 gaps,
   // leaving 25dp of hidden chrome (container.paddingVertical × 2 = 6, label
   // marginBottom = 3, cardWrapper.borderWidth × 2 × 4 rows = 16). At 4×4 grid
@@ -118,18 +163,24 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
     ) / 4
   );
   const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
+  // VAMOS-HAND-DIAG 2026-06-15 — tag which code path actually set cardW.
+  let cardWSource: 'quad' | 'min38' = 'min38';
   const cardW = (() => {
     if (useQuadRows) {
-      // Width bounded by maxCardW so we never overflow horizontally on either platform.
+      cardWSource = 'quad';
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    if (!isWeb) return Math.min(38, Math.max(24, maxCardW));
-    // PR-K v9 web 2x8 path stays for partial hands (length < 13).
-    if (device.isMobileWeb)  return Math.min(32, Math.max(22, maxCardW));
-    if (device.isTabletWeb)  return Math.min(42, Math.max(32, maxCardW));
-    return Math.min(56, Math.max(42, maxCardW));
+    cardWSource = 'min38';
+    return Math.min(38, maxCardW);
   })();
-  const cardH = Math.max(20, Math.round(cardW / 0.72));
+  let cardH = Math.max(20, Math.round(cardW / 0.72));
+  let cardWFinal = cardW;
+  let cardWFinalSource: 'cardW' | 'backDerivedFromMaxCardH' = 'cardW';
+  if (maxCardH && cardH > maxCardH) {
+    cardH = Math.max(20, maxCardH);
+    cardWFinal = Math.max(14, Math.round(cardH * 0.72));
+    cardWFinalSource = 'backDerivedFromMaxCardH';
+  }
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, rowSize);
@@ -144,7 +195,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
       index={globalIndex}
       selIndex={selectedCardIds.indexOf(card.id)}
       onSelectCard={onSelectCard}
-      cardW={cardW}
+      cardW={cardWFinal}
       cardH={cardH}
     />
   );
@@ -158,24 +209,62 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard }
         </View>
       </View>
       {safeCards.length > 0 ? (
-        <View style={styles.grid}>
+        <View
+          style={styles.grid}
+          testID="hand-row"
+          /* VAMOS-HAND-DIAG 2026-06-15 — surface diag values on the DOM node so QA
+             harness can read with zero ambiguity (RN Web → data-* attributes). */
+          {...(Platform.OS === 'web' ? {
+            dataSet: {
+              screenw: String(SCREEN_W),
+              dimw: String(Dimensions.get('window').width),
+              roww: String(rowW),
+              gridouter: String(measuredGridOuterW),
+              maxcardw: String(maxCardW),
+              cardw: String(cardWFinal),
+              cardwpre: String(cardW),
+              cardwsrc: cardWSource,
+              cardwfinalsrc: cardWFinalSource,
+              cpr: String(cardsPerRow),
+              gap: String(CARD_GAP_DP),
+            },
+          } : {})}
+          // VAMOS-HAND-FIT + BOARD-FILL-2 — measure-then-size. onLayout reports the
+          // .grid View's OUTER width (incl. its 16dp paddingHorizontal). We store
+          // the outer and derive rowW = outer − 32 above. Dev log prints both so
+          // Roye can confirm the outer-vs-inner distinction at a glance.
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - measuredGridOuterW) > 1) setMeasuredGridOuterW(w);
+            if (__DEV__) {
+              const computedRowW = cardsPerRow * cardWFinal + (cardsPerRow - 1) * CARD_GAP_DP + cardsPerRow * CARD_WRAPPER_OVERHEAD;
+              const innerRowW = Math.max(40, w - 2 * HAND_HORIZ_INSET);
+              const dimW = Dimensions.get('window').width;
+              console.log('[hand-grid]', { gridOuterW: w, innerRowW, cardsPerRow, CARD_GAP_DP, cardW: cardWFinal, computedRowW, fits: computedRowW + 2 * SAFETY_INSIDE_GRID <= innerRowW });
+              console.log('[hand-diag]', { SCREEN_W, dimW, rowW, gridOuterW: w, maxCardW, cardWPre: cardW, cardWFinal, cardsPerRow, gap: CARD_GAP_DP, cardWSource, cardWFinalSource });
+            }
+          }}
+        >
           {useTwoRows ? (
             <>
-              <View style={styles.row}>
+              <View
+                style={[styles.row, { gap: CARD_GAP_DP }]}
+                onLayout={(e) => { if (__DEV__ && topRow.length >= 8) console.log('[hand-row-8x]', { rendered: e.nativeEvent.layout.width, cardW: cardWFinal, gap: CARD_GAP_DP }); }}
+              >
                 {topRow.map((card, i) => renderCard(card, i))}
               </View>
               {row2.length > 0 && (
-                <View style={styles.row}>
+                <View style={[styles.row, { gap: CARD_GAP_DP }]}>
                   {row2.map((card, i) => renderCard(card, rowSize + i))}
                 </View>
               )}
               {row3.length > 0 && (
-                <View style={styles.row}>
+                <View style={[styles.row, { gap: CARD_GAP_DP }]}>
                   {row3.map((card, i) => renderCard(card, rowSize * 2 + i))}
                 </View>
               )}
               {bottomRow.length > 0 && (
-                <View style={styles.row}>
+                <View style={[styles.row, { gap: CARD_GAP_DP }]}>
                   {bottomRow.map((card, i) => renderCard(card, (useQuadRows ? rowSize * 3 : rowSize) + i))}
                 </View>
               )}
@@ -217,10 +306,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   countBadge: {
+    // VAMOS-THEME-PROPAGATION C1 — count pill mint (gold reserved for winning)
     width: rv(20),
     height: rv(20),
     borderRadius: rv(10),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -230,7 +320,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   grid: {
-    paddingHorizontal: rs(8),
+    // VAMOS-PLACEMENT-POLISH B1 (#1) — FIXED 16dp inset (not rs-scaled). rs(16)
+    // collapses to ~13dp at 320 widths which was exactly when bc=4 needed more
+    // not less. Mirrors HAND_HORIZ_INSET in the cardW math above.
+    paddingHorizontal: 16,
     gap: rs(2),
   },
   row: {
@@ -252,19 +345,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(4),
   },
   selected: {
-    // PR-D study: lift translateY(-rs(6)) + gold outline + halo.
-    borderColor: COLORS.gold,
+    // VAMOS-THEME-PROPAGATION C1 — selected hand-card now MINT (gold reserved for
+    // winning-card highlight only). Same lift+rotate, same halo intensity.
+    borderColor: COLORS.mint,
     transform: [{ translateY: PRD.selection.liftY }, { rotate: '-3deg' }, { scale: 1.08 }],
     borderRadius: rv(6),
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: PRD.selection.haloOpacity,
         shadowRadius: 10,
       },
       android: { elevation: 8 },
-      default: { boxShadow: '0 0 12px rgba(245,200,66,0.55)' },
+      default: { boxShadow: '0 0 12px rgba(79,214,168,0.55)' },
     }),
   },
   emptyRow: {
@@ -278,13 +372,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   selBadge: {
+    // VAMOS-THEME-PROPAGATION C1 — selection order pip mint
     position: 'absolute',
     top: -2,
     right: -2,
     width: rv(16),
     height: rv(16),
     borderRadius: rv(8),
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.mint,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,

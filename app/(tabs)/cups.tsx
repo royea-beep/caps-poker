@@ -30,7 +30,7 @@ export default function CupsScreen() {
       <Text style={styles.sub} accessibilityLiveRegion="polite" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().cupsSubtitle(earned, total)}</Text>
 
       {cups === null ? (
-        <ActivityIndicator color="#FFD700" style={{ marginTop: rs(40) }} accessibilityLiveRegion="polite" />
+        <ActivityIndicator color="#4FD6A8" style={{ marginTop: rs(40) }} accessibilityLiveRegion="polite" />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: rs(40) }} showsVerticalScrollIndicator={false}>
           {cups.map(cup => (
@@ -59,8 +59,9 @@ export default function CupsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1C0508', paddingHorizontal: rs(20), paddingTop: rs(16) },
-  title: { color: '#FFD700', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
+  // VAMOS-THEME-SWEEP-3 — bg + title gold→mint. Per-cup tier underline colors KEPT (semantic).
+  container: { flex: 1, backgroundColor: '#161922', paddingHorizontal: rs(20), paddingTop: rs(16) },
+  title: { color: '#4FD6A8', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
   sub: { color: 'rgba(255,255,255,0.75)', fontSize: rf(11), textAlign: 'center', marginBottom: rs(24) },
   cupRow: { flexDirection: 'row', alignItems: 'center', gap: rs(14), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: rv(14), padding: rs(16), marginBottom: rs(10) },
   cupRowLocked: { opacity: 0.7 },

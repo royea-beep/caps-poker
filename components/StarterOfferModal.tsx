@@ -279,7 +279,7 @@ function OfferView({ chips, price, days, buying, onBuy, onDismiss }: OfferViewPr
         disabled={buying}
       >
         {buying ? (
-          <ActivityIndicator color="#1C0508" />
+          <ActivityIndicator color="#161922" />
         ) : (
           <Text style={styles.ctaText}>קחו אותו! 🃏</Text>
         )}
@@ -301,10 +301,10 @@ const styles = StyleSheet.create({
     padding: rs(24),
   },
   card: {
-    backgroundColor: '#1C0508',
+    backgroundColor: '#161922',
     borderRadius: rs(16),
     borderWidth: 1,
-    borderColor: COLORS.gold ?? '#c9a84c',
+    borderColor: COLORS.mint ?? '#4FD6A8',
     paddingHorizontal: rs(24),
     paddingVertical: rv(28),
     width: '100%',
@@ -315,14 +315,14 @@ const styles = StyleSheet.create({
     direction: 'rtl' as never,
   },
   badge: {
-    backgroundColor: '#c9a84c',
+    backgroundColor: '#4FD6A8',
     borderRadius: rs(20),
     paddingHorizontal: rs(12),
     paddingVertical: rs(4),
     marginBottom: rv(12),
   },
   badgeText: {
-    color: '#1C0508',
+    color: '#161922',
     fontSize: rf(11),
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(24),
     fontWeight: '900',
-    color: '#c9a84c',
+    color: '#4FD6A8',
     marginBottom: rv(8),
     textAlign: 'center',
   },
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     marginBottom: rv(20),
   },
   ctaBtn: {
-    backgroundColor: '#c9a84c',
+    backgroundColor: '#4FD6A8',
     borderRadius: rs(12),
     paddingVertical: rv(14),
     paddingHorizontal: rs(32),
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   ctaText: {
-    color: '#1C0508',
+    color: '#161922',
     fontSize: rf(16),
     fontWeight: '900',
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: rf(22),
     fontWeight: '900',
-    color: '#c9a84c',
+    color: '#4FD6A8',
     marginBottom: rv(6),
   },
   successSub: {

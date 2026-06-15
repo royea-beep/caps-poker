@@ -71,6 +71,8 @@ export interface BoardArrangementProps {
   // 2026-06-08 Fix — per-boardCount hand zone height (game.tsx owns the math).
   // Optional: when omitted, falls back to module-level HAND_ZONE_HEIGHT.
   handZoneH?: number;
+  // FIT-ALL-BOARDS 2026-06-09 — cap so hand cards never exceed the board card height.
+  maxHandCardH?: number;
 }
 
 export function BoardArrangement({
@@ -109,6 +111,7 @@ export function BoardArrangement({
   cellH,
   use2x2Grid,
   handZoneH,
+  maxHandCardH,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -140,9 +143,14 @@ export function BoardArrangement({
           // column so cells can flex:1 vertically and absorb the empty space
           // that opens up when the hand zone disappears in the ready state.
           // PR-N 2026-06-02 — 2x2 only when use2x2Grid (set by game.tsx for 4p+>=360pt).
+          // FIT-ALL-BOARDS 2026-06-09 — column path adds justifyContent:'space-evenly'
+          // so when the boards-first math sizes cells smaller than the available zone
+          // (e.g. bc=2 after the board-card-h cap binds), the leftover vertical space
+          // becomes balanced spacing above, between, and below boards — not a dead
+          // band at the bottom.
           use2x2Grid
             ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
-            : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch' },
+            : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch', justifyContent: 'space-evenly' as const },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
       >
@@ -185,8 +193,10 @@ export function BoardArrangement({
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
                   cellWidth={cellW}
-                  cellHeight={(boardCount === 3 || boardCount === 4) ? Math.max(48, cellH - 12) : cellH}
+                  cellHeight={(boardCount === 3 || boardCount === 4) ? Math.max(rs(48), cellH - rs(12)) : cellH}
                   contentSafetyPad={boardCount === 3 || boardCount === 4}
+                  /* VAMOS-BOARD-FILL-2 — plumb boardCount so Board can raise the card cap at bc=2/3 */
+                  boardCount={boardCount}
                 />
               </Animated.View>
             </View>
@@ -216,11 +226,13 @@ export function BoardArrangement({
           Bumped to rs(72) + rs(4) safety so the hand container's bottom
           sits cleanly above the action bar top. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: (rs(72) + insets.bottom + rs(8)) + (boardCount === 4 ? 40 : 0) }]}>
+        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: (rs(72) + insets.bottom + rs(8)) }]}>
           <PlayerHand
             cards={playerHand}
             selectedCardIds={selectedCardIds}
             onSelectCard={onSelectCard}
+            handZoneH={handZoneH ?? HAND_ZONE_HEIGHT}
+            maxCardH={maxHandCardH}
           />
         </View>
       )}
@@ -419,7 +431,7 @@ const baStyles = StyleSheet.create({
     zIndex: 99, // below the action bar (100) so the bar's border still shows
   },
   floatingActions: {
-    // PR-D study: pinned absolute, solid bg, zIndex 100, height >= rs(72).
+    // VAMOS-PLACEMENT-POLISH-2 FIX 2 — border-top hairline gold → mint
     position: 'absolute',
     left: 0,
     right: 0,
@@ -432,7 +444,7 @@ const baStyles = StyleSheet.create({
     minHeight: PRD.zone.actionBarH,
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(197,160,40,0.35)',
+    borderTopColor: 'rgba(79,214,168,0.30)',
     zIndex: 100,
     elevation: 12,
   },
@@ -455,23 +467,26 @@ const baStyles = StyleSheet.create({
     }),
   },
   undoBtn: {
-    // PR-L Task F — balance with placeBtn (was no flex → undoBtn shrunk to
-    // intrinsic text width while placeBtn took 100% via flex:1).
+    // VAMOS-PLACEMENT-POLISH-2 FIX 2 — THIS is the bottom Cancel button (BoardArrangement
+    // is where the placement commit bar lives — NOT game.tsx undoBtn which is a
+    // different element). Was gold-on-dark-brown clash; now mint outline on neutral
+    // dark fill so it pairs with the mint Confirm.
     flex: 1,
-    backgroundColor: '#2A1A06',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1.5,
-    borderColor: '#F5C842',
+    borderColor: COLORS.mint,
     alignItems: 'center',
   },
   placeBtn: {
-    backgroundColor: COLORS.gold,
+    // VAMOS-PLACEMENT-POLISH-2 FIX 6 — "PLACE N CARDS" / "CONFIRM" pill: gold → mint solid
+    backgroundColor: COLORS.mint,
     flex: 1,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: COLORS.mint,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.45,
         shadowRadius: 8,
       },
       android: { elevation: 8 },
@@ -479,8 +494,9 @@ const baStyles = StyleSheet.create({
     }),
   },
   placeBtnDisabled: {
-    backgroundColor: COLORS.goldDim,
-    opacity: 0.6,
+    // VAMOS-PLACEMENT-POLISH-2 — solid muted mint (not COLORS.goldDim opacity hack)
+    backgroundColor: 'rgba(79,214,168,0.35)',
+    opacity: 1,
   },
   placeBtnReady: {
     backgroundColor: '#28A745',
@@ -508,7 +524,8 @@ const baStyles = StyleSheet.create({
     opacity: 0.4,
   },
   undoBtnText: {
-    color: '#F5C842',
+    // VAMOS-PLACEMENT-POLISH-2 FIX 2 — gold #F5C842 → mint
+    color: COLORS.mint,
   },
   placeBtnText: {
     color: COLORS.background,

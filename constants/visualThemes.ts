@@ -20,43 +20,47 @@ export interface ThemeTokens {
   loseColor: string;
 }
 
+// VAMOS-THEME-PROPAGATION 2026-06-13 — both themes obsidianized.
+// "classic" is now Option C (Obsidian + Lift). "fiveo" keeps slightly warmer
+// navy surface so users who picked it still see a distinct vibe, but on the
+// same obsidian board so the whole app reads cohesive.
 export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
   classic: {
     background: '#0a0a0a',
-    surface: '#111111',
-    boardBg: '#5C1818',
-    boardBorder: '#8B4513',
-    textPrimary: '#f0f0e8',
-    textSecondary: '#c9a84c',
-    textMuted: '#666666',
-    accent: '#c9a84c',
+    surface: '#161922',         // was '#111111' — obsidian
+    boardBg: '#161922',         // was '#5C1818' (maroon) — obsidian
+    boardBorder: 'rgba(79,214,168,0.45)',  // was '#8B4513' (brown) — mint hairline
+    textPrimary: '#f0ead6',     // was '#f0f0e8' — slightly warmer
+    textSecondary: '#4FD6A8',   // was '#c9a84c' (gold) — mint
+    textMuted: '#9aa19b',       // was '#666666' — cool gray
+    accent: '#4FD6A8',          // was '#c9a84c' (gold) — mint
     accentText: '#0a0a0a',
-    cardFace: '#FFFEF8',
+    cardFace: '#FCFAF3',        // was '#FFFEF8' — cream fallback
     cardBorder: 'rgba(0,0,0,0.15)',
-    cardShadow: 'rgba(201,168,76,0.3)',
-    primaryBtn: '#c9a84c',
+    cardShadow: 'rgba(79,214,168,0.30)',   // was rgba(201,168,76,0.3) — mint glow
+    primaryBtn: '#4FD6A8',      // was '#c9a84c' — mint CTA
     primaryBtnText: '#0a0a0a',
     primaryBtnRadius: 12,
     winColor: '#22c55e',
     loseColor: '#ef4444',
   },
   fiveo: {
-    background: '#1C0508',      // very dark red-black — pure red hue, dimly lit casino
-    surface: '#1A1A2E',         // dark navy — panels, modals, overlays
-    boardBg: '#6B1520',         // brighter than background — boards must POP
-    boardBorder: '#8B6914',     // warm golden-brown — visible table rail
+    background: '#0a0a0a',      // was '#1C0508' (dark red) — obsidian
+    surface: '#1A1A2E',         // KEEP — slightly warmer navy panel
+    boardBg: '#161922',         // was '#6B1520' (red) — obsidian (cohesive board)
+    boardBorder: 'rgba(79,214,168,0.45)',  // was '#8B6914' (gold-brown) — mint
     textPrimary: '#ffffff',
-    textSecondary: '#FFD700',
+    textSecondary: '#4FD6A8',   // was '#FFD700' (gold) — mint
     textMuted: '#bbbbbb',
-    accent: '#FFD700',
-    accentText: '#000000',
-    cardFace: '#FAFAFA',        // pure white cards
+    accent: '#4FD6A8',          // was '#FFD700' (gold) — mint
+    accentText: '#0a0a0a',
+    cardFace: '#FAFAFA',
     cardBorder: 'rgba(0,0,0,0.25)',
     cardShadow: 'rgba(0,0,0,0.6)',
-    primaryBtn: '#FFD700',
+    primaryBtn: '#4FD6A8',      // was '#FFD700' — mint CTA
     primaryBtnText: '#1A1A2E',
     primaryBtnRadius: 8,
-    winColor: '#28A745',        // green badge — Match Five-O WIN style
+    winColor: '#28A745',
     loseColor: '#CC0000',
   },
 };
