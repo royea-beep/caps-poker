@@ -1,6 +1,6 @@
 # CAPS Placement-Matrix Auto-QA Findings (numeric)
 
-Generated: 2026-06-15T12:08:59.901Z
+Generated: 2026-06-15T12:23:04.600Z
 Base URL: https://caps.ftable.co.il/game
 
 ## Hand row — CARD extents vs viewport (VAMOS-HAND-CLIP-2)
@@ -9,15 +9,15 @@ The hand-row container has `overflow:hidden`, so its rect always "fits" by defin
 
 | bc | width | VW | card span | card L margin | card R margin | cardClip | L overflow | R overflow | cards | W avg |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 4 | 440 | 440 | 462 | -11 | -11 | true | 11 | 11 | 16 | 56 |
-| 4 | 390 | 390 | 462 | -36 | -36 | true | 36 | 36 | 16 | 56 |
-| 4 | 320 | 320 | 462 | -71 | -71 | true | 71 | 71 | 16 | 56 |
-| 3 | 440 | 440 | 351 | 45 | 44 | false | 0 | 0 | 12 | 56 |
-| 3 | 390 | 390 | 351 | 20 | 19 | false | 0 | 0 | 12 | 56 |
-| 3 | 320 | 320 | 351 | -15 | -16 | true | 15 | 16 | 12 | 56 |
-| 2 | 440 | 440 | 233 | 104 | 103 | false | 0 | 0 | 8 | 56 |
-| 2 | 390 | 390 | 233 | 79 | 78 | false | 0 | 0 | 8 | 56 |
-| 2 | 320 | 320 | 233 | 44 | 43 | false | 0 | 0 | 8 | 56 |
+| 4 | 440 | 440 | 366 | 37 | 37 | false | 0 | 0 | 16 | 44 |
+| 4 | 390 | 390 | 326 | 32 | 32 | false | 0 | 0 | 16 | 39 |
+| 4 | 320 | 320 | 254 | 33 | 33 | false | 0 | 0 | 16 | 30 |
+| 3 | 440 | 440 | 315 | 63 | 62 | false | 0 | 0 | 12 | 50 |
+| 3 | 390 | 390 | 315 | 38 | 37 | false | 0 | 0 | 12 | 50 |
+| 3 | 320 | 320 | 255 | 33 | 32 | false | 0 | 0 | 12 | 40 |
+| 2 | 440 | 440 | 209 | 116 | 115 | false | 0 | 0 | 8 | 50 |
+| 2 | 390 | 390 | 209 | 91 | 90 | false | 0 | 0 | 8 | 50 |
+| 2 | 320 | 320 | 209 | 56 | 55 | false | 0 | 0 | 8 | 50 |
 
 ## Board 0 — community row centering inside board
 
@@ -53,15 +53,15 @@ The hand-row container has `overflow:hidden`, so its rect always "fits" by defin
 
 | bc | width | SCREEN_W | Dimensions.w | rowW | gridOuter | maxCardW | cardW pre | cardW final | cardsPerRow | gap | cardW src | final src |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 4 | 440 | 393 | 440 | 361 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
-| 4 | 390 | 393 | 390 | 361 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
-| 4 | 320 | 393 | 320 | 361 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
-| 3 | 440 | 393 | 440 | 361 | 0 | 41 | 38 | 38 | 6 | 3 | min38 | cardW |
-| 3 | 390 | 393 | 390 | 361 | 0 | 41 | 38 | 38 | 6 | 3 | min38 | cardW |
-| 3 | 320 | 393 | 320 | 361 | 0 | 41 | 38 | 38 | 6 | 3 | min38 | cardW |
-| 2 | 440 | 393 | 440 | 361 | 0 | 69 | 38 | 38 | 4 | 3 | min38 | cardW |
-| 2 | 390 | 393 | 390 | 361 | 0 | 69 | 38 | 38 | 4 | 3 | min38 | cardW |
-| 2 | 320 | 393 | 320 | 361 | 0 | 69 | 38 | 38 | 4 | 3 | min38 | cardW |
+| 4 | 440 | 430 | 440 | 398 | 0 | 32 | 32 | 32 | 8 | 2 | min38 | cardW |
+| 4 | 390 | 390 | 390 | 358 | 0 | 27 | 27 | 27 | 8 | 2 | min38 | cardW |
+| 4 | 320 | 320 | 320 | 288 | 0 | 18 | 18 | 18 | 8 | 2 | min38 | cardW |
+| 3 | 440 | 430 | 440 | 398 | 0 | 47 | 38 | 38 | 6 | 3 | min38 | cardW |
+| 3 | 390 | 390 | 390 | 358 | 0 | 40 | 38 | 38 | 6 | 3 | min38 | cardW |
+| 3 | 320 | 320 | 320 | 288 | 0 | 28 | 28 | 28 | 6 | 3 | min38 | cardW |
+| 2 | 440 | 430 | 440 | 398 | 0 | 78 | 38 | 38 | 4 | 3 | min38 | cardW |
+| 2 | 390 | 390 | 390 | 358 | 0 | 68 | 38 | 38 | 4 | 3 | min38 | cardW |
+| 2 | 320 | 320 | 320 | 288 | 0 | 50 | 38 | 38 | 4 | 3 | min38 | cardW |
 
 ## Money pill resolved color
 
