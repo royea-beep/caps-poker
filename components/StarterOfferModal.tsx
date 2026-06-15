@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#161922',
     borderRadius: rs(16),
     borderWidth: 1,
-    borderColor: COLORS.mint ?? '#c9a84c',
+    borderColor: COLORS.mint ?? '#4FD6A8',
     paddingHorizontal: rs(24),
     paddingVertical: rv(28),
     width: '100%',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     direction: 'rtl' as never,
   },
   badge: {
-    backgroundColor: '#c9a84c',
+    backgroundColor: '#4FD6A8',
     borderRadius: rs(20),
     paddingHorizontal: rs(12),
     paddingVertical: rs(4),
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(24),
     fontWeight: '900',
-    color: '#c9a84c',
+    color: '#4FD6A8',
     marginBottom: rv(8),
     textAlign: 'center',
   },
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     marginBottom: rv(20),
   },
   ctaBtn: {
-    backgroundColor: '#c9a84c',
+    backgroundColor: '#4FD6A8',
     borderRadius: rs(12),
     paddingVertical: rv(14),
     paddingHorizontal: rs(32),
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: rf(22),
     fontWeight: '900',
-    color: '#c9a84c',
+    color: '#4FD6A8',
     marginBottom: rv(6),
   },
   successSub: {
