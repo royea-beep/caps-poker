@@ -281,27 +281,41 @@ export default function Board({
     const _slotBudgetH = boardCount === 4
       ? Math.max(20, _rowsBudget - _commBudgetH)
       : _commBudgetH;
-    const _commW_fromH = Math.max(14, Math.round(_commBudgetH * CARD_ASPECT));
-    const _slotW_fromH = Math.max(14, Math.round(_slotBudgetH * CARD_ASPECT));
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
     const sepW = PRD.board.flopSeparatorW;
-    // VAMOS-PLACEMENT-AUDIT 2026-06-16 — bc=2/3 had commGap rs(1) + sepMarginH rs(1),
-    // which left ~0dp visible gap between flop cards at bc=2 (5 × 67pt + 4 × 1 + sep +
-    // 2 ≈ 349 == innerW). Bump bc=2/3 commGap to rs(3) (cards lose ~3pt, gain real
-    // breathing). bc=4 sepMarginH tightened rs(4) → rs(2) so flop and turn/river
-    // don't visually float as separate groups (P4).
     const sepMarginH = isLowBoard ? rs(2) : rs(2);
     const commGap = isLowBoard ? rs(3) : PRD.card.gap;
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
-    // VAMOS-BOARD-FILL-3 — REVERT ASPECT_LOW. Cards keep natural 0.72 aspect at all
-    // board counts. At bc=2/3 the relaxed inner-chrome above gives commWByWidth more
-    // room; uniform scaling lets commW and commH grow together without distortion.
-    commW = Math.min(commWByWidth, _commW_fromH);
-    commH = Math.round(commW / CARD_ASPECT);
-    // Player slot row: 4 slots + 3 gaps
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
-    slotW = Math.min(slotWByWidth, _slotW_fromH);
-    slotH = Math.round(slotW / CARD_ASPECT);
+    // VAMOS-CARDS-BIG 2026-06-16 — relaxed strict 0.72 aspect to bounded portrait
+    // range [ASPECT_MIN=0.62, ASPECT_MAX=0.85] so cards GROW into whichever budget
+    // axis was previously sitting unused:
+    //   bc=4 (height-bound, surplus width) → cards grow WIDER toward aspect 0.85.
+    //   bc=2 (width-bound,  surplus height) → cards grow TALLER toward aspect 0.62.
+    //   bc=3 (often both within range)     → cards take both budgets fully.
+    // Stays portrait (W/H < 1) so the deck still reads as playing cards. Lever 1's
+    // community>slot intent at bc=4 is preserved via _commBudgetH / _slotBudgetH.
+    const ASPECT_MAX = 0.85;
+    const ASPECT_MIN = 0.62;
+    const fitToBox = (widthCap: number, heightCap: number): { w: number; h: number } => {
+      const ratio = widthCap / heightCap;
+      if (ratio > ASPECT_MAX) {
+        // Width budget exceeds the aspect ceiling — cap width, height takes full budget.
+        return { w: Math.max(14, Math.floor(heightCap * ASPECT_MAX)), h: Math.max(20, heightCap) };
+      }
+      if (ratio < ASPECT_MIN) {
+        // Height budget exceeds the aspect floor — cap height, width takes full budget.
+        return { w: Math.max(14, widthCap), h: Math.max(20, Math.floor(widthCap / ASPECT_MIN)) };
+      }
+      // Both budgets are inside the aspect range — use them fully.
+      return { w: Math.max(14, widthCap), h: Math.max(20, heightCap) };
+    };
+    const _comm = fitToBox(commWByWidth, _commBudgetH);
+    const _slot = fitToBox(slotWByWidth, _slotBudgetH);
+    commW = _comm.w;
+    commH = _comm.h;
+    slotW = _slot.w;
+    slotH = _slot.h;
     ch = slotH;
     cw = slotW;
     // VAMOS-OTA-VERIFY 2026-06-16 — diagnostic: confirm the LIVE path executes at
@@ -773,7 +787,13 @@ const styles = StyleSheet.create({
   // children width). gap separates rows vertically.
   contentCenter: {
     flex: 1,
-    justifyContent: 'center',
+    // VAMOS-CARDS-BIG 2026-06-16 — top-align card rows so the community row sits
+    // strictly below the (measured-and-padded) header strip. Was 'center', which
+    // vertically centered the rows in the tall innerH at bc=2 and let big cards
+    // ride up into the BOARD label / Auto-Place pill band. With flex-start the
+    // first row anchors at contentCenter.top = header.bottom + header.marginBottom
+    // (rs(3)) — overlap is now geometrically impossible.
+    justifyContent: 'flex-start',
     alignItems: 'center',
     gap: rs(4),
     minHeight: 0,
