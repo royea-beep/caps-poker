@@ -285,10 +285,13 @@ export default function Board({
     const _slotW_fromH = Math.max(14, Math.round(_slotBudgetH * CARD_ASPECT));
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
     const sepW = PRD.board.flopSeparatorW;
-    // VAMOS-BOARD-FILL-3 — also tighten sepMarginH + commGap at bc=2/3 to widen
-    // commWByWidth so uniform 0.72-aspect cards can grow. bc=4 keeps wider gaps.
-    const sepMarginH = isLowBoard ? rs(1) : rs(4);
-    const commGap = isLowBoard ? rs(1) : PRD.card.gap;
+    // VAMOS-PLACEMENT-AUDIT 2026-06-16 — bc=2/3 had commGap rs(1) + sepMarginH rs(1),
+    // which left ~0dp visible gap between flop cards at bc=2 (5 × 67pt + 4 × 1 + sep +
+    // 2 ≈ 349 == innerW). Bump bc=2/3 commGap to rs(3) (cards lose ~3pt, gain real
+    // breathing). bc=4 sepMarginH tightened rs(4) → rs(2) so flop and turn/river
+    // don't visually float as separate groups (P4).
+    const sepMarginH = isLowBoard ? rs(2) : rs(2);
+    const commGap = isLowBoard ? rs(3) : PRD.card.gap;
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
     // VAMOS-BOARD-FILL-3 — REVERT ASPECT_LOW. Cards keep natural 0.72 aspect at all
     // board counts. At bc=2/3 the relaxed inner-chrome above gives commWByWidth more
@@ -811,13 +814,16 @@ const styles = StyleSheet.create({
     borderColor: COLORS.neonRed,
   },
   header: {
-    // BOARD-DENSITY 2026-06-09 — marginBottom rs(2) â 0. Saves 2dp/board uniformly
-    // across all bc=2/3/4 modes. Header strip + contentCenter remain visually distinct
-    // via the boardLabel pill background and contentCenter rendering.
+    // VAMOS-PLACEMENT-AUDIT 2026-06-16 — restored a small marginBottom (was 0
+    // since BOARD-DENSITY 2026-06-09). At bc=2 the tall community cards visually
+    // rode right up under the Auto-Place pill; the rs(3) gap is consumed by the
+    // measured-HEADER_H sizing math too (header now reports its rendered height
+    // including this margin), so it costs nothing in card size while guaranteeing
+    // a visible separation strip between header chrome and play surface.
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 0,
+    marginBottom: rs(3),
   },
   headerLeft: {
     flexDirection: 'row',
@@ -891,13 +897,18 @@ const styles = StyleSheet.create({
     top: -2,
   },
   cardRow: {
-    // VAMOS-CENTER-FIX 2026-06-15 — added alignSelf:'center' as belt-and-braces
-    // for the direction:'ltr' fix on contentCenter. The row centers itself in
-    // its parent regardless of any residual RTL anchor confusion.
+    // VAMOS-PLACEMENT-AUDIT 2026-06-16 — added `width: '100%'` so the row fills
+    // the cell horizontally. Previously the row was CONTENT-sized; under a parent
+    // with alignItems:'center' it appeared centered but its own bounding box was
+    // narrow → the COMMUNITY row (5 cards + sep, wide) centered fine but the
+    // SLOT row (4 small cards, narrow) hugged the middle visually, reading as
+    // a left/right void on bc=3/4. With width:100% + justifyContent:'center'
+    // the centering is deterministic and rows visually align across the cell.
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
+    width: '100%',
     gap: PRD.card.gap,
     paddingVertical: 0,
     paddingHorizontal: rs(6),
