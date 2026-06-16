@@ -268,8 +268,21 @@ export default function Board({
     // Now: cardH_byHeight = (innerH - rowGap)/2, cardW_fromHeight = h*0.72.
     // Final commW = min(commWByWidth, cardW_fromHeight) preserves aspect AND
     // lets contentCenter justifyContent:'space-evenly' distribute any slack.
-    const cardH_byHeight = Math.max(20, Math.floor((innerH - rowGap) / 2));
-    const cardW_fromHeight = Math.max(14, Math.round(cardH_byHeight * CARD_ASPECT));
+    // VAMOS-LEVER1-BC4 2026-06-16 — at bc=4 ONLY, split innerH 62/38 in favor of
+    // the community row so flop/turn/river cards grow toward the width-cap. Slot
+    // row gets the remainder (placed cards render smaller). STATIC — does NOT
+    // resize when slots fill, to avoid jarring mid-placement layout shift. Tap
+    // target is the whole board (Pressable at L474), so smaller slots do NOT
+    // reduce tap usability. bc=2/3 keep the existing symmetric 50/50 split.
+    const _rowsBudget = innerH - rowGap;
+    const _commBudgetH = boardCount === 4
+      ? Math.max(20, Math.floor(_rowsBudget * 0.62))
+      : Math.max(20, Math.floor(_rowsBudget / 2));
+    const _slotBudgetH = boardCount === 4
+      ? Math.max(20, _rowsBudget - _commBudgetH)
+      : _commBudgetH;
+    const _commW_fromH = Math.max(14, Math.round(_commBudgetH * CARD_ASPECT));
+    const _slotW_fromH = Math.max(14, Math.round(_slotBudgetH * CARD_ASPECT));
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
     const sepW = PRD.board.flopSeparatorW;
     // VAMOS-BOARD-FILL-3 — also tighten sepMarginH + commGap at bc=2/3 to widen
@@ -280,11 +293,11 @@ export default function Board({
     // VAMOS-BOARD-FILL-3 — REVERT ASPECT_LOW. Cards keep natural 0.72 aspect at all
     // board counts. At bc=2/3 the relaxed inner-chrome above gives commWByWidth more
     // room; uniform scaling lets commW and commH grow together without distortion.
-    commW = Math.min(commWByWidth, cardW_fromHeight);
+    commW = Math.min(commWByWidth, _commW_fromH);
     commH = Math.round(commW / CARD_ASPECT);
     // Player slot row: 4 slots + 3 gaps
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
-    slotW = Math.min(slotWByWidth, cardW_fromHeight);
+    slotW = Math.min(slotWByWidth, _slotW_fromH);
     slotH = Math.round(slotW / CARD_ASPECT);
     ch = slotH;
     cw = slotW;
