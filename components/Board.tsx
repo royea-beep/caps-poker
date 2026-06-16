@@ -213,6 +213,16 @@ export default function Board({
       console.log('[board-0]', { renderedW: w, naturalW: undefined });
     }
   };
+  // VAMOS-CARDS-FIX 2026-06-16 — measure rendered header height so cards never
+  // overlap it (bc=2 overlap was caused by HEADER_H being a constant rs(16) guess
+  // that under-counted real header on device: BOARD pill + Auto-Place pill +
+  // Hebrew glyph ascent + iOS shadow). Falls back to rs(22) (was rs(16)) until the
+  // first onLayout fires.
+  const [measuredHeaderH, setMeasuredHeaderH] = useState(0);
+  const onHeaderLayout = (e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    if (h > 0 && Math.abs(h - measuredHeaderH) > 1) setMeasuredHeaderH(h);
+  };
   // PR-M 2026-05-29 — fit-to-cell math. When cellWidth/cellHeight are given,
   // derive card dims so the 2 internal rows (community + player slots) plus the
   // compact header strip fit INSIDE the cell. Otherwise fall back to legacy PRD
@@ -228,7 +238,11 @@ export default function Board({
     // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)ârs(16). The actual rendered
     // header strip is max(boardLabel ~12dp, autoBtn minHeight rs(14)) = ~14dp, plus
     // a 2dp safety. HIG 44pt tap target maintained via hitSlop on autoBtn.
-    const HEADER_H = rs(16);
+    // VAMOS-CARDS-FIX 2026-06-16 — HEADER_H is MEASURED via onHeaderLayout when
+    // available. Old rs(16) constant under-counted real rendered header on device
+    // (BOARD pill + Auto-Place + Hebrew ascent + iOS shadow); cards overlapped at
+    // bc=2. Fallback rs(22) (was rs(16)) until first onLayout fires.
+    const HEADER_H = measuredHeaderH > 0 ? measuredHeaderH + rs(2) : rs(22);
     const PAD_V = PRD.board.cellPadV; // rs(2) after PR-M
     const PAD_H = PRD.board.cellPadH; // rs(4) after PR-M
     // PR-O 2026-06-07 Fix 2 — innerW must also subtract:
@@ -459,7 +473,7 @@ export default function Board({
       />
       <Pressable onPress={onPress} style={styles.pressableInner}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={styles.header} onLayout={onHeaderLayout}>
           <View style={styles.headerLeft}>
             {/* VAMOS-VISUAL-C — minimal chip tab: thin identity-color border + identity-color text on dark, not a filled gold pill */}
             <Text style={[styles.boardLabel, { color: boardAccent, borderColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
