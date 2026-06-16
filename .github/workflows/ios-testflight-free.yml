@@ -19,18 +19,14 @@ name: iOS TestFlight (FREE — macOS runner, no EAS cloud)
 #   APPLE_API_ISSUER_ID     — 686f97b8-3f8a-40b7-a6cd-5293a3168439
 
 on:
+  # VAMOS-BUILD-HARDEN 2026-06-16 — REMOVED the broad path-based push trigger.
+  # Auto-firing on every app/** push burned the Apple per-app daily upload quota
+  # (~10/day) on 2026-06-16: builds 500 + 501 hit 409 "Upload limit reached".
+  # Builds are now deliberate: workflow_dispatch (gh workflow run) or `build-*` tag.
+  # Web deploy stays auto (no Apple quota).
   push:
-    branches: [main, master, fix/*]
-    paths:
-      # VAMOS-THEME-PROPAGATION E1 (2026-06-13) — also auto-fire on app+component
-      # code pushes, not just version bumps. Roye no longer wants manual dispatches.
-      - 'app.json'
-      - 'app/**'
-      - 'components/**'
-      - 'constants/**'
-      - 'utils/**'
-      - 'store/**'
-      - 'package.json'
+    tags:
+      - 'build-*'
   workflow_dispatch:
 
 concurrency:
@@ -105,7 +101,16 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        # VAMOS-BUILD-HARDEN 2026-06-16 — fail-fast on altool errors.
+        # Was: validate piped through `| tail -20 || true` (swallowed exit code) and
+        # upload's inner ERROR/409 still let the GitHub step return success. Today's
+        # builds 500 + 501 hit Apple's 409 "Upload limit reached" and STILL reported
+        # green. Now: strict shell + tee logs + grep for "UPLOAD SUCCEEDED" and absence
+        # of "UPLOAD FAILED" / "VERIFY FAILED" — any other state exits 1 (RED run).
+        shell: bash
         run: |
+          set -euo pipefail
+
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$APPLE_API_KEY_BASE64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
 
@@ -114,18 +119,38 @@ jobs:
           ls -lh "$IPA_PATH"
 
           echo "--- Validating IPA before upload ---"
+          VALIDATE_LOG="$RUNNER_TEMP/altool-validate.log"
+          set +e
           xcrun altool --validate-app \
             --type ios \
             --file "$IPA_PATH" \
             --apiKey "$APPLE_API_KEY_ID" \
-            --apiIssuer "$APPLE_API_ISSUER_ID" 2>&1 | tail -20 || true
+            --apiIssuer "$APPLE_API_ISSUER_ID" 2>&1 | tee "$VALIDATE_LOG"
+          VALIDATE_RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$VALIDATE_RC" -ne 0 ] \
+             || grep -qE "VERIFY FAILED|Validation failed|ERROR ITMS|409|Upload limit reached" "$VALIDATE_LOG"; then
+            echo "::error::altool VALIDATE failed (rc=$VALIDATE_RC). See log above."
+            exit 1
+          fi
 
           echo "--- Uploading to TestFlight ---"
+          UPLOAD_LOG="$RUNNER_TEMP/altool-upload.log"
+          set +e
           xcrun altool --upload-app \
             --type ios \
             --file "$IPA_PATH" \
             --apiKey "$APPLE_API_KEY_ID" \
-            --apiIssuer "$APPLE_API_ISSUER_ID"
+            --apiIssuer "$APPLE_API_ISSUER_ID" 2>&1 | tee "$UPLOAD_LOG"
+          UPLOAD_RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$UPLOAD_RC" -ne 0 ] \
+             || grep -qE "UPLOAD FAILED|VERIFY FAILED|Validation failed|ERROR ITMS|409|Upload limit reached" "$UPLOAD_LOG" \
+             || ! grep -qE "UPLOAD SUCCEEDED" "$UPLOAD_LOG"; then
+            echo "::error::altool UPLOAD failed (rc=$UPLOAD_RC) or no 'UPLOAD SUCCEEDED' marker. See log above."
+            exit 1
+          fi
+          echo "✅ altool upload confirmed."
 
       - name: Cleanup key files
         if: always()
