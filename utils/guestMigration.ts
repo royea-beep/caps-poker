@@ -16,7 +16,7 @@ export async function migrateGuestToUser(userId: string, playerName: string): Pr
       .from('user_profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (existing) return false; // Already migrated — don't overwrite
 
