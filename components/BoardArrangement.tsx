@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
+import * as Application from 'expo-application';
+import * as Updates from 'expo-updates';
 import Board from './Board';
 import PlayerHand from './PlayerHand';
 import ProQuoteBanner from './ProQuoteBanner';
@@ -261,6 +263,16 @@ export function BoardArrangement({
         <ProQuoteBanner context="tutorial" />
       )}
 
+      {/* VAMOS-OTA-VERIFY 2026-06-16 — TEMPORARY stamp so Roye can verify OTA
+          adoption in 5 seconds: tag changes when the new bundle applies. Remove
+          before App Store submission. Dim + tiny + bottom-left so it does not
+          touch the action bar. */}
+      {isArranging && (
+        <Text style={baStyles.otaVerifyStamp} pointerEvents="none" accessibilityElementsHidden>
+          {`b${Application.nativeBuildVersion ?? '?'} · ota:${Updates.updateId ? String(Updates.updateId).slice(0, 8) : 'embedded'}`}
+        </Text>
+      )}
+
       {/* Time bank button — visible when countdown < 20s and not yet used */}
       {isArranging && countdownActive && countdown < 20 && !timeBankUsed && (
         <Pressable
@@ -320,6 +332,18 @@ const baStyles = StyleSheet.create({
     flexDirection: 'column',
     paddingHorizontal: rs(16),
     gap: rs(4),
+  },
+  // VAMOS-OTA-VERIFY 2026-06-16 — tiny dim stamp so OTA adoption is visible at a
+  // glance. Remove before App Store submission.
+  otaVerifyStamp: {
+    position: 'absolute',
+    left: rs(8),
+    bottom: rs(2),
+    fontSize: rf(8),
+    color: 'rgba(255,255,255,0.25)',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+    zIndex: 1,
   },
   handZone: {
     // PR-D study: explicit hand-zone height + gold hairline above with horizontal

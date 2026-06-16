@@ -301,6 +301,13 @@ export default function Board({
     slotH = Math.round(slotW / CARD_ASPECT);
     ch = slotH;
     cw = slotW;
+    // VAMOS-OTA-VERIFY 2026-06-16 — diagnostic: confirm the LIVE path executes at
+    // bc=4 and Lever 1's 62/38 split is in the rendered numbers (not the fallback).
+    // Index 0 only to avoid 4× log spam; gated to bc=4 since that's the verify case.
+    if (__DEV__ && index === 0 && boardCount === 4) {
+      // eslint-disable-next-line no-console
+      console.log('[board-size]', { path: 'live', boardCount, innerW, innerH, _commBudgetH, _slotBudgetH, commW, commH, slotW, slotH });
+    }
   } else {
     // Legacy path — PRD tokens.
     const _baseCommW = cardHeightProp ? Math.round(cardHeightProp * 0.7) : PRD.card.community.w;
@@ -315,6 +322,12 @@ export default function Board({
     ch    = cardHeightProp ?? (isArrangement ? PRD.card.slot.h : PRD.card.hand.h);
     cw    = cardHeightProp ? Math.round(cardHeightProp * 0.72) : (isArrangement ? PRD.card.slot.w : PRD.card.hand.w);
     slotH = isArrangement ? PRD.card.slot.h : ch;
+    // VAMOS-OTA-VERIFY 2026-06-16 — diagnostic: tag the FALLBACK path so we can
+    // see in headless logs which path actually fires at bc=4.
+    if (__DEV__ && index === 0 && boardCount === 4) {
+      // eslint-disable-next-line no-console
+      console.log('[board-size]', { path: 'fallback', boardCount, commW, commH, slotW: undefined, slotH });
+    }
     slotW = isArrangement ? PRD.card.slot.w : Math.round(slotH * 0.7);
   }
 
