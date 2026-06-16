@@ -888,13 +888,34 @@ export default function HomeScreen() {
     const sb = getSupabase();
     if (!sb) return;
     getDeviceId().then(async (deviceId) => {
-      const { data } = await sb
-        .from('sit_n_go_sessions')
-        .select('player_id, winner_id, chips_won, ended_at')
-        .eq('player_id', deviceId)
-        .order('ended_at', { ascending: false })
+      // Derive feed from real schema (no phantom columns).
+      // 1) My participation rows on finished sessions (finish_position != null = SnG resolved).
+      const { data: myRows } = await sb
+        .from('sit_and_go_players')
+        .select('session_id, finish_position, chips, sit_and_go_sessions(started_at, prize_pool)')
+        .eq('device_id', deviceId)
+        .not('finish_position', 'is', null)
+        .order('joined_at', { ascending: false })
         .limit(5);
-      if (data) setActivityFeed(data as FeedItem[]);
+      if (!myRows?.length) { setActivityFeed([]); return; }
+      // 2) Resolve winner (finish_position=1) per session in one round-trip.
+      const sessionIds = myRows.map((r: any) => r.session_id);
+      const { data: winners } = await sb
+        .from('sit_and_go_players')
+        .select('session_id, device_id, chips')
+        .in('session_id', sessionIds)
+        .eq('finish_position', 1);
+      const wmap = new Map((winners ?? []).map((w: any) => [w.session_id, w]));
+      setActivityFeed(myRows.map((r: any) => {
+        const w = wmap.get(r.session_id) as { device_id: string; chips: number } | undefined;
+        const sess = r.sit_and_go_sessions;
+        return {
+          player_id: deviceId,
+          winner_id: w?.device_id ?? null,
+          chips_won: r.finish_position === 1 ? (w?.chips ?? sess?.prize_pool ?? null) : null,
+          ended_at: sess?.started_at ?? '',
+        };
+      }) as FeedItem[]);
     }).catch(() => {});
   }, []);
 
