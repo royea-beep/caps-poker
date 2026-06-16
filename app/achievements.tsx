@@ -350,9 +350,10 @@ export default function AchievementsScreen() {
           setLoading(false);
           return;
         }
-        const { data, error } = await sb.rpc('get_achievements_list', {
-          user_id: deviceId,
-        });
+        const { data: { user } } = await sb.auth.getUser();
+        const { data, error } = user
+          ? await sb.rpc('get_achievements_list', { p_user_id: user.id })
+          : await sb.rpc('get_achievements_list_d', { p_device_id: deviceId });
         if (cancelled) return;
         if (!error && Array.isArray(data)) {
           setAchievements(data as AchievementItem[]);
