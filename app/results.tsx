@@ -664,7 +664,12 @@ export default function ResultsScreen() {
   }, [revealData, chips, config, clearRevealData, router, isMultiplayer, mpServer, mpClient, connectedPlayers]);
 
   const handleHome = useCallback(() => { clearRevealData(); router.replace('/'); }, [clearRevealData, router]);
-  const handleRematch = useCallback(() => { clearRevealData(); router.replace('/game'); }, [clearRevealData, router]);
+  const handleRematch = useCallback(() => {
+    if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
+    setAutoContinueActive(false);
+    clearRevealData();
+    router.replace('/game');
+  }, [clearRevealData, router]);
 
   const handleShareHand = useCallback(async () => {
     if (!revealData) return;
