@@ -34,8 +34,12 @@ on:
   workflow_dispatch:
 
 concurrency:
+  # VAMOS-BUILD-DIAGNOSE 2026-06-16 — newer pushes cancel older in-flight builds.
+  # Was cancel-in-progress: false; today's rapid 498/499/500/501 cycle burned the
+  # Apple per-app daily upload quota (10/day) — 500 + 501 hit 409 "Upload limit
+  # reached". Latest push should win; older races should not race to upload.
   group: ios-testflight-free-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-and-submit:
