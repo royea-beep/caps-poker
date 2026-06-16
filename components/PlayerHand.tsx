@@ -164,14 +164,17 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   );
   const cardWForQuad = Math.max(14, Math.round(cardHForQuad * 0.72));
   // VAMOS-HAND-DIAG 2026-06-15 — tag which code path actually set cardW.
-  let cardWSource: 'quad' | 'min38' = 'min38';
+  // VAMOS-CARDS-FIX 2026-06-16 — replaced the 38pt hard cap with the boards-first
+  // rule (maxCardH guard back-derives cardW if hand cardH would exceed boardCardH).
+  // bc=2/3 hand cards can now grow toward board scale; bc=4 unchanged (maxCardW binds).
+  let cardWSource: 'quad' | 'boards-first' = 'boards-first';
   const cardW = (() => {
     if (useQuadRows) {
       cardWSource = 'quad';
       return Math.max(20, Math.min(cardWForQuad, maxCardW));
     }
-    cardWSource = 'min38';
-    return Math.min(38, maxCardW);
+    cardWSource = 'boards-first';
+    return maxCardW;
   })();
   let cardH = Math.max(20, Math.round(cardW / 0.72));
   let cardWFinal = cardW;
