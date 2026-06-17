@@ -662,8 +662,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 <AnimatedRN.View style={{ opacity: chipFadeIn }}>
                   <AnimatedRN.Text style={[styles.chipDelta, { color: chipColor }]}>
                     {chipCounterAnim.interpolate({
+                      // VAMOS-FIX-RESULTS-CRASH 2026-06-17 — outputRange entries
+                      // MUST have identical non-numeric structure for RN's pattern
+                      // interpolation. Was: "-0" vs "-100 🪙" (mismatched suffix)
+                      // → "invalid pattern -0 and -100 🪙" ErrorBoundary on every
+                      // loss (negative chipSign). Both entries now carry the 🪙
+                      // suffix → same pattern → no crash.
                       inputRange: [0, board.potAmount],
-                      outputRange: [`${chipSign}0`, `${chipSign}${board.potAmount} 🪙`],
+                      outputRange: [`${chipSign}0 🪙`, `${chipSign}${board.potAmount} 🪙`],
                       extrapolate: 'clamp',
                     })}
                   </AnimatedRN.Text>
