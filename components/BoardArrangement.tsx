@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
 import * as Application from 'expo-application';
@@ -138,23 +138,24 @@ export function BoardArrangement({
 
         Leaving the row+wrap StyleSheet intact so native benefits.
       */}
-      <View
-        style={[
+      {/* VAMOS-SCROLL-V2 2026-06-17 — boards wrapped in a vertical ScrollView with
+          BOUNDED height = boardsZoneH (the existing fixed zone). Every board uses
+          the same bc=3-quality cellH. At bc=4 the content height
+          (4 × (cellH + gap)) > viewport → real scroll. At bc=2/3 content fits.
+          flex:1 is NOT used on the ScrollView — that would collapse it. The
+          contentContainer holds the column stack; alignSelf:'stretch' keeps it
+          full-width inside the wrapping flex parent. The 2×2 grid path is
+          retired (proven smaller cards Jun 9). */}
+      <ScrollView
+        style={{ height: boardsZoneH, alignSelf: 'stretch' }}
+        contentContainerStyle={[
           baStyles.boardsGrid,
-          // PR-L Task A — 4p keeps row+wrap for the 2x2 grid; 2p/3p use plain
-          // column so cells can flex:1 vertically and absorb the empty space
-          // that opens up when the hand zone disappears in the ready state.
-          // PR-N 2026-06-02 — 2x2 only when use2x2Grid (set by game.tsx for 4p+>=360pt).
-          // FIT-ALL-BOARDS 2026-06-09 — column path adds justifyContent:'space-evenly'
-          // so when the boards-first math sizes cells smaller than the available zone
-          // (e.g. bc=2 after the board-card-h cap binds), the leftover vertical space
-          // becomes balanced spacing above, between, and below boards — not a dead
-          // band at the bottom.
-          use2x2Grid
-            ? { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', alignContent: 'flex-start' }
-            : { flexDirection: 'column', flexWrap: 'nowrap' as 'nowrap', alignItems: 'stretch', justifyContent: 'space-evenly' as const },
+          { flexDirection: 'column', alignItems: 'stretch' },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
+        showsVerticalScrollIndicator={true}
+        scrollEnabled={true}
+        bounces={true}
       >
         {boards.map((board, i) => {
           // PR-M 2026-05-29 — STRICT cell sizing. Replace flex:1 expansion (which
@@ -195,8 +196,12 @@ export function BoardArrangement({
                   cardHeight={BOARD_CARD_H}
                   communityScale={communityScale}
                   cellWidth={cellW}
-                  cellHeight={(boardCount === 3 || boardCount === 4) ? Math.max(rs(48), cellH - rs(12)) : cellH}
-                  contentSafetyPad={boardCount === 3 || boardCount === 4}
+                  // VAMOS-SCROLL-V2 2026-06-17 — every board uses the same cellH
+                  // regardless of boardCount (was: cellH - rs(12) at bc=3/4 to
+                  // squeeze the 4-board stack). The scrollable viewport now
+                  // replaces the cram-stack, so no bc-specific shrink needed.
+                  cellHeight={cellH}
+                  contentSafetyPad={false}
                   /* VAMOS-BOARD-FILL-2 — plumb boardCount so Board can raise the card cap at bc=2/3 */
                   boardCount={boardCount}
                 />
@@ -204,7 +209,7 @@ export function BoardArrangement({
             </View>
           );
         })}
-      </View>
+      </ScrollView>
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
       {playerReady && allBotsReady && showContinueButton && (

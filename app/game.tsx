@@ -322,7 +322,17 @@ function GameScreenInner() {
     + rs(2)             // rowGap
     + (boardCount === 3 || boardCount === 4 ? rs(12) : 0) // bc=3/4 outer chrome that the prop subtraction will reclaim
     + rs(4);            // safety
-  const _cellH = Math.min(_packedCellH, _idealCellH);
+  // VAMOS-SCROLL-V2 2026-06-17 — every board uses a FIXED cellH equal to the
+  // bc=3 "good" size (boardsZoneH / 3) +5% breathing — NOT the bc=2 size (that
+  // was the exaggerated previous attempt). At bc=2 both boards fit with slack;
+  // at bc=3 all three fit; at bc=4 content overflows the viewport and the
+  // BoardArrangement ScrollView scrolls to reach board 4. Cards-big sizing math
+  // (aspect [0.62, 0.85], top-anchor, Lever 1, measured HEADER_H) is untouched.
+  const _bc3CellH = Math.floor(_boardsZoneH / 3);
+  const _goodCellH = Math.max(rh(140), Math.floor(_bc3CellH * 1.05));
+  const _legacyCellH = Math.min(_packedCellH, _idealCellH);
+  const _cellH = _goodCellH;
+  void _legacyCellH;
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
   const _handCardCap = _boardCardH;
   const mobileWebCardH = Math.min(
