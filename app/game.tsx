@@ -217,7 +217,7 @@ function GameScreenInner() {
   const _HAND_ROW_GAP_V = rs(4);
   const _HAND_LABEL_H = rs(22);
   const _HAND_CONTAINER_PADV = rs(6);
-  const _BOARD_CHROME_V = rs(30); // header strip + paddings + rowGap inside a cell
+  const _BOARD_CHROME_V = rs(20); // header strip + paddings + rowGap inside a cell (measured, was 30 which over-counted by ~10pt)
   const _BOARD_INTER_GAP = rs(4);
   const _MIN_CARD_W = rs(55); // readable floor
   const _MAX_CARD_W = Math.floor((screenW - 2 * _HAND_INSET - _HAND_END_SAFETY) / 2); // soft cap
