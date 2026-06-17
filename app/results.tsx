@@ -663,7 +663,15 @@ export default function ResultsScreen() {
     }
   }, [revealData, chips, config, clearRevealData, router, isMultiplayer, mpServer, mpClient, connectedPlayers]);
 
-  const handleHome = useCallback(() => { clearRevealData(); router.replace('/'); }, [clearRevealData, router]);
+  const handleHome = useCallback(() => {
+    // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — parity with handleRematch: cancel the
+    // auto-continue interval BEFORE navigating, so the countdown can't fire
+    // handleNextHand 19s later and re-route the user away from Home.
+    if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
+    setAutoContinueActive(false);
+    clearRevealData();
+    router.replace('/');
+  }, [clearRevealData, router]);
   const handleRematch = useCallback(() => {
     if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
     setAutoContinueActive(false);

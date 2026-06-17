@@ -445,6 +445,32 @@ function GameScreenInner() {
   const playerReadyRef = useRef(false);
   // FIX 4: double-tap guard on deal button — prevents two handleReady calls before setState re-renders
   const isDealingRef = useRef(false);
+  // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — fail-safe to release the isDealingRef
+  // lock if a navigate silently fails to occur. Without this, a successful
+  // handleReady that hits the `doNavigateRef.current(...)` happy path never
+  // resets isDealingRef; if navigation throws/no-ops, subsequent presses are
+  // silently DEBOUNCED forever. This timeout flips the LOCK only — it does NOT
+  // navigate itself, so it can't cause double-navigate (the screen has already
+  // transitioned if doNavigate worked).
+  const dealLockResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — fail-safe for the waiting_for_bot stall.
+  const waitingForBotResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (dealLockResetRef.current) clearTimeout(dealLockResetRef.current);
+      if (waitingForBotResetRef.current) clearTimeout(waitingForBotResetRef.current);
+    };
+  }, []);
+  // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — auto-clear the waiting_for_bot fail-safe
+  // timeout the moment phase transitions out of waiting_for_bot (normal advance,
+  // navigation). Prevents the 8s timer from firing doNavigate after a normal
+  // advance has already occurred (double-navigate guard).
+  useEffect(() => {
+    if (phase.type !== 'waiting_for_bot' && waitingForBotResetRef.current) {
+      clearTimeout(waitingForBotResetRef.current);
+      waitingForBotResetRef.current = null;
+    }
+  }, [phase.type]);
   const botsReadyCountRef = useRef(0);
   const adaptiveDifficultyRef = useRef<string>(config.botDifficulty ?? 'easy');
 
@@ -1039,6 +1065,17 @@ function GameScreenInner() {
     // FIX 4: debounce — prevent double-tap crash (two rapid presses before state update)
     if (isDealingRef.current) { debugLog('H0 handleReady DEBOUNCED - already dealing'); return; }
     isDealingRef.current = true;
+    // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — fail-safe lock release. If navigation
+    // didn't happen within 2.5s, release the lock so the user can press again.
+    // Does NOT navigate — only flips isDealingRef. Cleared on unmount or on
+    // subsequent press (replaced by a fresh timeout).
+    if (dealLockResetRef.current) clearTimeout(dealLockResetRef.current);
+    dealLockResetRef.current = setTimeout(() => {
+      if (isDealingRef.current) {
+        debugLog('H-failsafe: isDealingRef stuck for 2.5s — releasing lock');
+        isDealingRef.current = false;
+      }
+    }, 2500);
     trackAction('deal_pressed');
     // Heatmap (D7)
     import('../utils/heatmap').then(({ trackEvent }) => {
@@ -1075,6 +1112,18 @@ function GameScreenInner() {
       }
     } else {
       debugLog('H10.2 bots still running — waiting');
+      // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — PRODUCTION fail-safe for the
+      // waiting_for_bot stall. If a bot-complete handler silently no-ops, the
+      // game would stall forever in this phase. After 8s, force doNavigate via
+      // the SAME entry point a normal bot-complete uses. Cleared automatically
+      // when phase transitions out of waiting_for_bot (useEffect below).
+      if (waitingForBotResetRef.current) clearTimeout(waitingForBotResetRef.current);
+      waitingForBotResetRef.current = setTimeout(() => {
+        if (playerReadyRef.current && boardsRef.current && boardsRef.current.length > 0) {
+          debugLog('H-failsafe: waiting_for_bot stalled 8s — forcing doNavigate');
+          doNavigateRef.current(boardsRef.current);
+        }
+      }, 8000);
     }
   }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
 

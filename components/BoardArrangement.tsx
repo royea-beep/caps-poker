@@ -148,9 +148,20 @@ export function BoardArrangement({
           retired (proven smaller cards Jun 9). */}
       <ScrollView
         style={{ height: boardsZoneH, alignSelf: 'stretch' }}
+        // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — FRESH contentContainerStyle. Was
+        // inheriting baStyles.boardsGrid which carries flex:1 + flexWrap:'wrap' +
+        // overflow:'hidden' — those THREE together caused boards 3/4 to wrap to a
+        // hidden second column at the same Y as boards 1/2 (this is plain flexbox
+        // behavior, NOT RNW-specific — affected native iOS too). The fix is to
+        // stop inheriting and write a clean column-stack contentContainer with NO
+        // flex, NO flexWrap, NO overflow.
         contentContainerStyle={[
-          baStyles.boardsGrid,
-          { flexDirection: 'column', alignItems: 'stretch' },
+          {
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            paddingHorizontal: PRD.board.cellPadH,
+            paddingVertical: PRD.board.cellPadV,
+          },
           !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
         ]}
         showsVerticalScrollIndicator={true}
@@ -174,6 +185,11 @@ export function BoardArrangement({
                 maxWidth: _widthPct as any,
                 paddingHorizontal: rs(2),
                 paddingVertical: rs(2),
+                // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — explicit inter-board gap
+                // (was relying on baStyles.boardsGrid `justifyContent:space-evenly`,
+                // which doesn't apply now that we use flex-start packing inside the
+                // ScrollView contentContainer for deterministic stacking).
+                marginBottom: i < boards.length - 1 ? rs(4) : 0,
                 overflow: 'hidden',
               }}
             >
