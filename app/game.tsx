@@ -344,18 +344,19 @@ function GameScreenInner() {
   const _minBoardsZoneH = _gridRows * _minCellH + (_gridRows - 1) * _gridGap + rs(8); // +rs(8) safety
   const _availForBoardsAndHand = safeH - TOP_BAR_H - BOT_STATUS_H - _handMarginB - HINT_H - _chromeSafety;
   // Step 1: tentative boards-zone using the preferred PLAYER_HAND_H.
-  let _boardsZoneH = _availForBoardsAndHand - PLAYER_HAND_H;
-  // Step 2: if boards-zone fell below the minimum, give boards priority — shrink hand.
-  if (_boardsZoneH < _minBoardsZoneH) _boardsZoneH = _minBoardsZoneH;
-  // VAMOS-FILL-PER-MODE 2026-06-17 — in non-scroll modes (bc=2/3 fit), cap the
-  // boards-zone at the actual content height so we DON'T render an empty band
-  // above/below the boards (the dead gap). In scroll mode (bc=4), keep the
-  // computed viewport so the ScrollView has bounded space for the scroll.
+  // VAMOS-FIX-HAND-CLIP 2026-06-17 — HAND gets full reservation FIRST; boards
+  // take what remains and scroll if needed. Was: boards had floor _minBoardsZoneH
+  // and could STEAL from the hand (bc=4 3-row hand clipped the bottom row on
+  // device). Hand can NEVER be clipped now; boards just scroll a bit more.
+  const _handZoneActualH = PLAYER_HAND_H;
+  let _boardsZoneH = _availForBoardsAndHand - _handZoneActualH;
+  // In non-scroll modes, cap boards at content (no dead band above hand).
   if (!_BOARDS_SCROLL) {
     _boardsZoneH = Math.min(_boardsZoneH, _MODE_BOARDS_CONTENT);
   }
-  // Step 3: the hand zone is whatever remains.
-  const _handZoneActualH = Math.max(rh(80), _availForBoardsAndHand - _boardsZoneH);
+  // Floor: boards viewport should be at least ~1 board tall. If somehow we go
+  // below, the hand still wins — boards just scroll inside a tighter viewport.
+  _boardsZoneH = Math.max(_boardsZoneH, rh(120));
 
   // Packed cellH — what each cell would get if cells filled the full boards zone.
   const _packedCellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
