@@ -217,10 +217,21 @@ function GameScreenInner() {
   const _HAND_ROW_GAP_V = rs(4);
   const _HAND_LABEL_H = rs(22);
   const _HAND_CONTAINER_PADV = rs(6);
-  const _BOARD_CHROME_V = rs(20); // header strip + paddings + rowGap inside a cell (measured, was 30 which over-counted by ~10pt)
+  const _BOARD_CHROME_V = rs(18); // header strip + paddings + rowGap inside a cell (rs(20) was still 4pt over bc=3's edge; rs(18) lands bc=3 at 708 ≤ 710 → non-scroll)
   const _BOARD_INTER_GAP = rs(4);
   const _MIN_CARD_W = rs(55); // readable floor
-  const _MAX_CARD_W = Math.floor((screenW - 2 * _HAND_INSET - _HAND_END_SAFETY) / 2); // soft cap
+  // VAMOS-FILL-FIX-WIDTHCAP 2026-06-17 — HARD cap by the board's flop-row fit
+  // so cards can never grow wider than (boardInnerW - chrome) / 5. Without this
+  // the bc=2 vertical-fill grew W to 75pt and the leftmost flop card clipped
+  // outside the board frame. Conservative chrome estimates: outer cell margin
+  // ~rs(28), inter-card gaps + separator + sepMargins ~rs(24).
+  const _modeCellW = Math.max(rs(80), screenW - rs(12)); // gridCols=1 fixed
+  const _modeInnerW = _modeCellW - rs(28);
+  const _W_HORIZONTAL_FIT = Math.max(_MIN_CARD_W, Math.floor((_modeInnerW - rs(24)) / 5));
+  const _MAX_CARD_W = Math.min(
+    Math.floor((screenW - 2 * _HAND_INSET - _HAND_END_SAFETY) / 2),
+    _W_HORIZONTAL_FIT
+  );
   const _availTotal = (SCREEN_H - insets.top - insets.bottom)
     - TOP_BAR_H - BOT_STATUS_H - FLOATING_ACTIONS_H - HINT_H - rs(8);
   const _handSize = CARDS_PER_BOARD * boardCount; // 8 / 12 / 16
