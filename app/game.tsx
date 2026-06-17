@@ -214,16 +214,17 @@ function GameScreenInner() {
   const _UNIVERSAL_HAND_CARDS_PER_ROW = 6;
   const _UNIVERSAL_HAND_GAP = rs(2);
   const _UNIVERSAL_HAND_INSET = 16; // matches PlayerHand HAND_HORIZ_INSET
-  const _UNIVERSAL_HAND_SAFETY = rs(8); // matches PlayerHand SAFETY_INSIDE_GRID*2
-  const _UNIVERSAL_HAND_WRAPPER = rs(4); // tight per-card wrapper overhead (down from 12)
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — in unified mode PlayerHand renders each
+  // card WITHOUT the legacy cardWrapper (no paddingH, no border), so the only
+  // chrome per card is the gap. SAFETY trimmed to rs(4) end safety total.
+  const _UNIVERSAL_HAND_END_SAFETY = rs(4);
   const UNIVERSAL_CARD_W = Math.max(
     rs(40),
     Math.floor(
       (screenW
         - 2 * _UNIVERSAL_HAND_INSET
-        - _UNIVERSAL_HAND_SAFETY
+        - _UNIVERSAL_HAND_END_SAFETY
         - (_UNIVERSAL_HAND_CARDS_PER_ROW - 1) * _UNIVERSAL_HAND_GAP
-        - _UNIVERSAL_HAND_CARDS_PER_ROW * _UNIVERSAL_HAND_WRAPPER
       ) / _UNIVERSAL_HAND_CARDS_PER_ROW
     )
   );

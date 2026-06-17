@@ -36,6 +36,7 @@ function AnimatedCardSlot({
   onSelectCard,
   cardW,
   cardH,
+  isUnified,
 }: {
   card: Card;
   index: number;
@@ -43,6 +44,7 @@ function AnimatedCardSlot({
   onSelectCard: (card: Card) => void;
   cardW: number;
   cardH: number;
+  isUnified?: boolean;
 }) {
   const opacity = useSharedValue(0);
 
@@ -63,7 +65,7 @@ function AnimatedCardSlot({
       <Pressable
         onPress={() => onSelectCard(card)}
         testID="hand-card"
-        style={[styles.cardWrapper, isSelected && styles.selected]}
+        style={[isUnified ? styles.unifiedCardWrapper : styles.cardWrapper, isSelected && styles.selected]}
       >
         <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
         {isSelected && (
@@ -202,11 +204,13 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   const row3 = useQuadRows ? safeCards.slice(rowSize * 2, rowSize * 3) : [];
   const bottomRow = safeCards.slice(useQuadRows ? rowSize * 3 : rowSize);
 
+  const isUnified = !!universalCardW;
   const renderCard = (card: Card, globalIndex: number) => (
     <AnimatedCardSlot
       key={card.id}
       card={card}
       index={globalIndex}
+      isUnified={isUnified}
       selIndex={selectedCardIds.indexOf(card.id)}
       onSelectCard={onSelectCard}
       cardW={cardWFinal}
@@ -375,6 +379,17 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     padding: 1,
     paddingHorizontal: rs(4),
+  },
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — zero-overhead wrapper for unified mode.
+  // The legacy `cardWrapper` adds 12pt of horizontal overhead (paddingH 4×2 +
+  // border 2×2) which broke the 6-per-row budget — at universalCardW=53 that's
+  // 65 effective px per card; 6×65 + 10 gap = 400 > 361 rowW → wrapped at 4/row
+  // instead of the spec's 6/row. Strip the overhead in unified mode; tap target
+  // is satisfied by the card itself (≥40pt min, plus the row gap).
+  unifiedCardWrapper: {
+    borderRadius: rv(6),
+    borderWidth: 0,
+    padding: 0,
   },
   selected: {
     // VAMOS-THEME-PROPAGATION C1 — selected hand-card now MINT (gold reserved for
