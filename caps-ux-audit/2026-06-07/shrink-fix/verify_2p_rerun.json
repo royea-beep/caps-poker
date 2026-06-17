@@ -1,0 +1,194 @@
+{
+  "commit": "2f2810b",
+  "verdict": "INCONCLUSIVE",
+  "seedAudit": {
+    "rawLength": 858,
+    "chipsValue": 9900,
+    "chipsType": "number",
+    "parseError": null,
+    "hasState": true,
+    "hasConfig": true,
+    "potPerBoard": 25,
+    "numberOfPlayers": 2
+  },
+  "chromeProbe": {
+    "candidates": [
+      {
+        "text": "✕סדר 16 קלפים💰9,900",
+        "top": 0,
+        "left": 0,
+        "right": 390
+      },
+      {
+        "text": "💰9,900",
+        "top": 12,
+        "left": 12,
+        "right": 98
+      },
+      {
+        "text": "💰",
+        "top": 17,
+        "left": 68,
+        "right": 87
+      },
+      {
+        "text": "9,900",
+        "top": 17,
+        "left": 23,
+        "right": 64
+      }
+    ],
+    "nanInChrome": false,
+    "chipsText": "9,900"
+  },
+  "layout": {
+    "labels": [
+      {
+        "text": "לוח 1",
+        "n": 1,
+        "top": 90,
+        "left": 203,
+        "right": 378,
+        "bottom": 106
+      },
+      {
+        "text": "לוח 1",
+        "n": 1,
+        "top": 90,
+        "left": 338.5,
+        "right": 378,
+        "bottom": 106
+      },
+      {
+        "text": "לוח 2",
+        "n": 2,
+        "top": 90,
+        "left": 12,
+        "right": 187,
+        "bottom": 106
+      },
+      {
+        "text": "לוח 2",
+        "n": 2,
+        "top": 90,
+        "left": 146.34375,
+        "right": 187,
+        "bottom": 106
+      },
+      {
+        "text": "לוח 3",
+        "n": 3,
+        "top": 257,
+        "left": 203,
+        "right": 378,
+        "bottom": 273
+      },
+      {
+        "text": "לוח 3",
+        "n": 3,
+        "top": 257,
+        "left": 337.34375,
+        "right": 378,
+        "bottom": 273
+      },
+      {
+        "text": "לוח 4",
+        "n": 4,
+        "top": 257,
+        "left": 12,
+        "right": 187,
+        "bottom": 273
+      },
+      {
+        "text": "לוח 4",
+        "n": 4,
+        "top": 257,
+        "left": 146.125,
+        "right": 187,
+        "bottom": 273
+      }
+    ],
+    "autoBtns": [
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 91,
+        "left": 202,
+        "right": 266.140625,
+        "bottom": 107
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 94,
+        "left": 207,
+        "right": 261.140625,
+        "bottom": 104
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 91,
+        "left": 11,
+        "right": 75.140625,
+        "bottom": 107
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 94,
+        "left": 16,
+        "right": 70.140625,
+        "bottom": 104
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 258,
+        "left": 202,
+        "right": 266.140625,
+        "bottom": 274
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 261,
+        "left": 207,
+        "right": 261.140625,
+        "bottom": 271
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 258,
+        "left": 11,
+        "right": 75.140625,
+        "bottom": 274
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 261,
+        "left": 16,
+        "right": 70.140625,
+        "bottom": 271
+      }
+    ]
+  },
+  "perBoardIntersects": {
+    "לוח 1": false,
+    "לוח 2": false,
+    "לוח 3": false,
+    "לוח 4": false
+  },
+  "handProbe": {
+    "cardCount": 0,
+    "rows": [],
+    "rowCount": 0
+  },
+  "waitCards": {
+    "cardCount": 0,
+    "elapsed": 12170
+  },
+  "consoleErrors": [
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "elapsedMs": 16887,
+  "screenshotPath": "C:/Projects/POKER/Caps/caps-ux-audit/2026-06-07/shrink-fix/2p.png"
+}

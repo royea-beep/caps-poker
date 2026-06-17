@@ -1,0 +1,349 @@
+{
+  "boardCount": 4,
+  "boards": [
+    {
+      "index": 0,
+      "boardLeft": 6,
+      "boardRight": 193,
+      "boardTop": 86,
+      "boardBottom": 351,
+      "boardWidth": 187,
+      "borderWidth": 2,
+      "borderRadius": 18,
+      "leftClearance": -2.5,
+      "rightClearance": -3.5,
+      "firstCardLeft": 9.5,
+      "lastCardRight": 190.5,
+      "cardCount": 10,
+      "cardRowTop": 177,
+      "cardRects": [
+        {
+          "left": 9.5,
+          "right": 39.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 10.5,
+          "right": 38.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 42.5,
+          "right": 72.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 43.5,
+          "right": 71.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 93.5,
+          "right": 123.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 94.5,
+          "right": 124.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 126.5,
+          "right": 156.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 127.5,
+          "right": 157.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 159.5,
+          "right": 189.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 160.5,
+          "right": 190.5,
+          "width": 30,
+          "height": 42
+        }
+      ],
+      "notes": [],
+      "boardInnerLeft": 8,
+      "boardInnerRight": 191,
+      "totalRowsSeen": 2
+    },
+    {
+      "index": 1,
+      "boardLeft": 197,
+      "boardRight": 384,
+      "boardTop": 86,
+      "boardBottom": 351,
+      "boardWidth": 187,
+      "borderWidth": 2,
+      "borderRadius": 18,
+      "leftClearance": -2.5,
+      "rightClearance": -3.5,
+      "firstCardLeft": 200.5,
+      "lastCardRight": 381.5,
+      "cardCount": 10,
+      "cardRowTop": 177,
+      "cardRects": [
+        {
+          "left": 200.5,
+          "right": 230.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 201.5,
+          "right": 229.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 233.5,
+          "right": 263.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 234.5,
+          "right": 262.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 284.5,
+          "right": 314.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 285.5,
+          "right": 315.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 317.5,
+          "right": 347.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 318.5,
+          "right": 348.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 350.5,
+          "right": 380.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 351.5,
+          "right": 381.5,
+          "width": 30,
+          "height": 42
+        }
+      ],
+      "notes": [],
+      "boardInnerLeft": 199,
+      "boardInnerRight": 382,
+      "totalRowsSeen": 2
+    },
+    {
+      "index": 2,
+      "boardLeft": 6,
+      "boardRight": 193,
+      "boardTop": 355,
+      "boardBottom": 620,
+      "boardWidth": 187,
+      "borderWidth": 2,
+      "borderRadius": 18,
+      "leftClearance": -2.5,
+      "rightClearance": -3.5,
+      "firstCardLeft": 9.5,
+      "lastCardRight": 190.5,
+      "cardCount": 10,
+      "cardRowTop": 446,
+      "cardRects": [
+        {
+          "left": 9.5,
+          "right": 39.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 10.5,
+          "right": 38.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 42.5,
+          "right": 72.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 43.5,
+          "right": 71.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 93.5,
+          "right": 123.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 94.5,
+          "right": 124.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 126.5,
+          "right": 156.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 127.5,
+          "right": 157.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 159.5,
+          "right": 189.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 160.5,
+          "right": 190.5,
+          "width": 30,
+          "height": 42
+        }
+      ],
+      "notes": [],
+      "boardInnerLeft": 8,
+      "boardInnerRight": 191,
+      "totalRowsSeen": 2
+    },
+    {
+      "index": 3,
+      "boardLeft": 197,
+      "boardRight": 384,
+      "boardTop": 355,
+      "boardBottom": 620,
+      "boardWidth": 187,
+      "borderWidth": 2,
+      "borderRadius": 18,
+      "leftClearance": -2.5,
+      "rightClearance": -3.5,
+      "firstCardLeft": 200.5,
+      "lastCardRight": 381.5,
+      "cardCount": 10,
+      "cardRowTop": 446,
+      "cardRects": [
+        {
+          "left": 200.5,
+          "right": 230.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 201.5,
+          "right": 229.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 233.5,
+          "right": 263.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 234.5,
+          "right": 262.5,
+          "width": 28,
+          "height": 40
+        },
+        {
+          "left": 284.5,
+          "right": 314.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 285.5,
+          "right": 315.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 317.5,
+          "right": 347.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 318.5,
+          "right": 348.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 350.5,
+          "right": 380.5,
+          "width": 30,
+          "height": 42
+        },
+        {
+          "left": 351.5,
+          "right": 381.5,
+          "width": 30,
+          "height": 42
+        }
+      ],
+      "notes": [],
+      "boardInnerLeft": 199,
+      "boardInnerRight": 382,
+      "totalRowsSeen": 2
+    }
+  ],
+  "worstClipDp": -3.5,
+  "bestClearanceDp": -2.5,
+  "notes": [
+    "found_board_candidates=4"
+  ],
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\community-fix\\390_4p.png",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "players": 2,
+  "expectedBoards": 4,
+  "expectedPadding": 4
+}

@@ -560,7 +560,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {/* Bot cards — show all bots if allBotCards available, else fall back to single botCards */}
           {(board.allBotCards && board.allBotCards.length > 1 ? board.allBotCards : [board.botCards]).map((botHand, botIdx) => {
             const isFirstBot = botIdx === 0;
-            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `🤖 בוט ${botIdx + 1}` : '🤖 בוט';
+            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `🤖 Bot ${botIdx + 1}` : '🤖 Bot';
             const rawBotHandName = board.allBotHandNames?.[botIdx] ?? (isFirstBot ? board.botHandName : '');
             const botHandName = getHandName(rawBotHandName, lang);
             return (
@@ -600,7 +600,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
           {/* Community cards — flop face-up, turn+river flip in sequence (middle) */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>קהילה</Text>
+            <Text style={styles.sectionLabel}>Community</Text>
             <View style={[styles.cardRow, { gap: commGap }]}>
               {allCommunity.map((c, i) => {
                 const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);

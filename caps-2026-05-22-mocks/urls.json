@@ -1,0 +1,50 @@
+[
+  {
+    "variant": "01_current",
+    "route": "home",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/01_current_home.png",
+    "label": "CURRENT — Monaco Casino + S83 Clean Lobby (as shipped)"
+  },
+  {
+    "variant": "01_current",
+    "route": "game",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/01_current_game.png",
+    "label": "CURRENT — Monaco Casino + S83 Clean Lobby (as shipped)"
+  },
+  {
+    "variant": "02_b153_style",
+    "route": "home",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/02_b153_style_home.png",
+    "label": "b153 STYLE — particles + hero card fan + glow pulse (gold palette)"
+  },
+  {
+    "variant": "02_b153_style",
+    "route": "game",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/02_b153_style_game.png",
+    "label": "b153 STYLE — particles + hero card fan + glow pulse (gold palette)"
+  },
+  {
+    "variant": "03_neon_gaming",
+    "route": "home",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/03_neon_gaming_home.png",
+    "label": "NEON GAMING — sprint-21 palette (#00D4FF, #8B5CF6, #00FF88, #FF3366)"
+  },
+  {
+    "variant": "03_neon_gaming",
+    "route": "game",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/03_neon_gaming_game.png",
+    "label": "NEON GAMING — sprint-21 palette (#00D4FF, #8B5CF6, #00FF88, #FF3366)"
+  },
+  {
+    "variant": "04_neon_plus_b153",
+    "route": "home",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/04_neon_plus_b153_home.png",
+    "label": "NEON + b153 combined — particles + fan + glow on neon palette"
+  },
+  {
+    "variant": "04_neon_plus_b153",
+    "route": "game",
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-mocks/04_neon_plus_b153_game.png",
+    "label": "NEON + b153 combined — particles + fan + glow on neon palette"
+  }
+]

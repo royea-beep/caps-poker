@@ -1,0 +1,289 @@
+{
+  "commit": "2f2810b",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "chipsTextObserved": null,
+  "nanInChrome": true,
+  "cardWaitFinalCount": 168,
+  "cardCount": 168,
+  "boardLabels": [
+    {
+      "text": "לוח 1",
+      "top": 90,
+      "left": 338.5,
+      "right": 378,
+      "bottom": 106,
+      "width": 39.5,
+      "height": 16,
+      "n": 1
+    },
+    {
+      "text": "לוח 2",
+      "top": 90,
+      "left": 146.3,
+      "right": 187,
+      "bottom": 106,
+      "width": 40.7,
+      "height": 16,
+      "n": 2
+    },
+    {
+      "text": "לוח 3",
+      "top": 257,
+      "left": 337.3,
+      "right": 378,
+      "bottom": 273,
+      "width": 40.7,
+      "height": 16,
+      "n": 3
+    },
+    {
+      "text": "לוח 4",
+      "top": 257,
+      "left": 146.1,
+      "right": 187,
+      "bottom": 273,
+      "width": 40.9,
+      "height": 16,
+      "n": 4
+    }
+  ],
+  "boards": [
+    {
+      "index": 0,
+      "left": 6,
+      "top": 86,
+      "right": 193,
+      "bottom": 249,
+      "centerX": 99.5,
+      "width": 187
+    },
+    {
+      "index": 1,
+      "left": 197,
+      "top": 86,
+      "right": 384,
+      "bottom": 249,
+      "centerX": 290.5,
+      "width": 187
+    },
+    {
+      "index": 2,
+      "left": 6,
+      "top": 253,
+      "right": 193,
+      "bottom": 416,
+      "centerX": 99.5,
+      "width": 187
+    },
+    {
+      "index": 3,
+      "left": 197,
+      "top": 253,
+      "right": 384,
+      "bottom": 416,
+      "centerX": 290.5,
+      "width": 187
+    }
+  ],
+  "autoBtns": [
+    {
+      "text": "⚡ מיקום אוטומטי",
+      "textTop": 94,
+      "textLeft": 207,
+      "textRight": 261.1,
+      "textBottom": 104,
+      "containerTop": 94,
+      "containerLeft": 207,
+      "containerRight": 261.1,
+      "containerBottom": 104,
+      "containerWidth": 54.1,
+      "containerHeight": 10
+    },
+    {
+      "text": "⚡ מיקום אוטומטי",
+      "textTop": 94,
+      "textLeft": 16,
+      "textRight": 70.1,
+      "textBottom": 104,
+      "containerTop": 94,
+      "containerLeft": 16,
+      "containerRight": 70.1,
+      "containerBottom": 104,
+      "containerWidth": 54.1,
+      "containerHeight": 10
+    },
+    {
+      "text": "⚡ מיקום אוטומטי",
+      "textTop": 261,
+      "textLeft": 207,
+      "textRight": 261.1,
+      "textBottom": 271,
+      "containerTop": 261,
+      "containerLeft": 207,
+      "containerRight": 261.1,
+      "containerBottom": 271,
+      "containerWidth": 54.1,
+      "containerHeight": 10
+    },
+    {
+      "text": "⚡ מיקום אוטומטי",
+      "textTop": 261,
+      "textLeft": 16,
+      "textRight": 70.1,
+      "textBottom": 271,
+      "containerTop": 261,
+      "containerLeft": 16,
+      "containerRight": 70.1,
+      "containerBottom": 271,
+      "containerWidth": 54.1,
+      "containerHeight": 10
+    }
+  ],
+  "perBoard": [
+    {
+      "boardIndex": 0,
+      "boardLabelN": 2,
+      "boardCenterX": 99.5,
+      "labelRect": {
+        "left": 146.3,
+        "top": 90,
+        "right": 187,
+        "bottom": 106
+      },
+      "btnRect": {
+        "left": 16,
+        "top": 94,
+        "right": 70.1,
+        "bottom": 104
+      },
+      "communityRect": {
+        "left": 17,
+        "top": 122.3,
+        "right": 183,
+        "bottom": 161.3
+      },
+      "autoBtn_vs_label_intersects": false,
+      "autoBtn_vs_label_intersectRect": null,
+      "autoBtn_vs_community_intersects": false,
+      "autoBtn_vs_community_intersectRect": null,
+      "autoBtnPhysicalSide": "LEFT",
+      "labelPhysicalSide": "RIGHT",
+      "sidesOpposite": true
+    },
+    {
+      "boardIndex": 1,
+      "boardLabelN": 1,
+      "boardCenterX": 290.5,
+      "labelRect": {
+        "left": 338.5,
+        "top": 90,
+        "right": 378,
+        "bottom": 106
+      },
+      "btnRect": {
+        "left": 207,
+        "top": 94,
+        "right": 261.1,
+        "bottom": 104
+      },
+      "communityRect": {
+        "left": 208,
+        "top": 122.3,
+        "right": 374,
+        "bottom": 161.3
+      },
+      "autoBtn_vs_label_intersects": false,
+      "autoBtn_vs_label_intersectRect": null,
+      "autoBtn_vs_community_intersects": false,
+      "autoBtn_vs_community_intersectRect": null,
+      "autoBtnPhysicalSide": "LEFT",
+      "labelPhysicalSide": "RIGHT",
+      "sidesOpposite": true
+    },
+    {
+      "boardIndex": 2,
+      "boardLabelN": 4,
+      "boardCenterX": 99.5,
+      "labelRect": {
+        "left": 146.1,
+        "top": 257,
+        "right": 187,
+        "bottom": 273
+      },
+      "btnRect": {
+        "left": 16,
+        "top": 261,
+        "right": 70.1,
+        "bottom": 271
+      },
+      "communityRect": {
+        "left": 17,
+        "top": 289.3,
+        "right": 183,
+        "bottom": 328.3
+      },
+      "autoBtn_vs_label_intersects": false,
+      "autoBtn_vs_label_intersectRect": null,
+      "autoBtn_vs_community_intersects": false,
+      "autoBtn_vs_community_intersectRect": null,
+      "autoBtnPhysicalSide": "LEFT",
+      "labelPhysicalSide": "RIGHT",
+      "sidesOpposite": true
+    },
+    {
+      "boardIndex": 3,
+      "boardLabelN": 3,
+      "boardCenterX": 290.5,
+      "labelRect": {
+        "left": 337.3,
+        "top": 257,
+        "right": 378,
+        "bottom": 273
+      },
+      "btnRect": {
+        "left": 207,
+        "top": 261,
+        "right": 261.1,
+        "bottom": 271
+      },
+      "communityRect": {
+        "left": 208,
+        "top": 289.3,
+        "right": 374,
+        "bottom": 328.3
+      },
+      "autoBtn_vs_label_intersects": false,
+      "autoBtn_vs_label_intersectRect": null,
+      "autoBtn_vs_community_intersects": false,
+      "autoBtn_vs_community_intersectRect": null,
+      "autoBtnPhysicalSide": "LEFT",
+      "labelPhysicalSide": "RIGHT",
+      "sidesOpposite": true
+    }
+  ],
+  "handLayout": {
+    "handCardCount": 16,
+    "handRows": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "handBottom": 770,
+    "cleanFourByFour": true
+  },
+  "consoleErrorCount": 1,
+  "consoleErrorsSample": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\shrink-fix\\2p.png",
+  "allAutoBtnVsLabelClear": true,
+  "allAutoBtnVsCommunityClear": true,
+  "allSidesOpposite": true,
+  "handClean": true,
+  "elapsedMs": 10047,
+  "verdict": "PASS"
+}

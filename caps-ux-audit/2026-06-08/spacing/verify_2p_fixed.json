@@ -1,0 +1,145 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "topChrome": {
+    "top": 0,
+    "bottom": 86,
+    "height": 86
+  },
+  "boards": [
+    {
+      "index": 0,
+      "cell": {
+        "left": 6,
+        "right": 384,
+        "top": 86,
+        "bottom": 334,
+        "width": 378,
+        "height": 248
+      },
+      "header": {
+        "top": 86,
+        "bottom": 112.7,
+        "height": 26.7
+      },
+      "community": {
+        "top": 112.7,
+        "bottom": 204.7,
+        "height": 92,
+        "count": 5,
+        "cardWidth": 66
+      },
+      "slotRow": {
+        "top": 210.3,
+        "bottom": 325.3,
+        "height": 115,
+        "count": 4,
+        "cardWidth": 83
+      },
+      "content_bottom": 325.3,
+      "empty_inside_cell": 8.7
+    },
+    {
+      "index": 1,
+      "cell": {
+        "left": 6,
+        "right": 384,
+        "top": 338,
+        "bottom": 586,
+        "width": 378,
+        "height": 248
+      },
+      "header": {
+        "top": 338,
+        "bottom": 364.7,
+        "height": 26.7
+      },
+      "community": {
+        "top": 364.7,
+        "bottom": 456.7,
+        "height": 92,
+        "count": 5,
+        "cardWidth": 66
+      },
+      "slotRow": {
+        "top": 462.3,
+        "bottom": 577.3,
+        "height": 115,
+        "count": 4,
+        "cardWidth": 83
+      },
+      "content_bottom": 577.3,
+      "empty_inside_cell": 8.7
+    }
+  ],
+  "handZone": {
+    "top": 622,
+    "bottom": 760,
+    "height": 138
+  },
+  "handGrid": {
+    "top": 622,
+    "bottom": 760,
+    "height": 138,
+    "cardCount": 8,
+    "rows": 2,
+    "rowCounts": [
+      4,
+      4
+    ],
+    "cardWidth": 56,
+    "cardHeight": 68
+  },
+  "actionBar": {
+    "top": 773,
+    "bottom": 844,
+    "height": 71
+  },
+  "gaps": {
+    "topChrome_to_board0": 0,
+    "board0_to_board1": 4,
+    "lastBoard_to_handZone": 36,
+    "handZone_to_handGrid": 0,
+    "handGrid_to_handZoneBottom": 0,
+    "handZone_to_actionBar": 13,
+    "handGrid_to_actionBar": 13,
+    "actionBar_to_viewport": 0
+  },
+  "empty_inside_handZone": 0,
+  "largestGap": {
+    "name": "lastBoard_to_handZone",
+    "value": 36
+  },
+  "totalDead": 83.4,
+  "totalDeadPct": 9.9,
+  "autoPlacePill": {
+    "left": 12,
+    "right": 76.1,
+    "top": 90,
+    "bottom": 106
+  },
+  "boardLabelPill": {
+    "left": 338.5,
+    "right": 378,
+    "top": 90,
+    "bottom": 106
+  },
+  "autoPlaceOverlap": false,
+  "commit": "275c87f",
+  "label": "2p (2-board / 4-player)",
+  "numberOfPlayers": 4,
+  "expectedBoards": 2,
+  "cardWaitFinalCount": 94,
+  "consoleErrors": [
+    "[warning] [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.",
+    "[log] [SCREEN-REC] captureScreen loaded, type: function",
+    "[warning] expo-file-system is not supported on web",
+    "[warning] expo-file-system is not supported on web",
+    "[warning] Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle ex",
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-08\\spacing\\2p.png",
+  "elapsedMs": 10013
+}

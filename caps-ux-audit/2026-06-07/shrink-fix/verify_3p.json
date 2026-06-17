@@ -1,0 +1,295 @@
+{
+  "boardCount": 3,
+  "boards": [
+    {
+      "index": 0,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 86,
+      "boardBottom": 196,
+      "boardWidth": 378,
+      "boardHeight": 110,
+      "borderWidth": 2,
+      "leftClearance": 92,
+      "rightClearance": 92,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 109,
+      "cardRowsBottom": 201,
+      "cardHeight": 44,
+      "emptyMaroonBelowDp": -7,
+      "cardRects": [
+        {
+          "left": 100,
+          "right": 132,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 135,
+          "right": 167,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 188,
+          "right": 220,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 223,
+          "right": 255,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 258,
+          "right": 290,
+          "width": 32,
+          "height": 44
+        }
+      ],
+      "notes": []
+    },
+    {
+      "index": 1,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 200,
+      "boardBottom": 310,
+      "boardWidth": 378,
+      "boardHeight": 110,
+      "borderWidth": 2,
+      "leftClearance": 92,
+      "rightClearance": 92,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 223,
+      "cardRowsBottom": 315,
+      "cardHeight": 44,
+      "emptyMaroonBelowDp": -7,
+      "cardRects": [
+        {
+          "left": 100,
+          "right": 132,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 135,
+          "right": 167,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 188,
+          "right": 220,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 223,
+          "right": 255,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 258,
+          "right": 290,
+          "width": 32,
+          "height": 44
+        }
+      ],
+      "notes": []
+    },
+    {
+      "index": 2,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 314,
+      "boardBottom": 424,
+      "boardWidth": 378,
+      "boardHeight": 110,
+      "borderWidth": 2,
+      "leftClearance": 92,
+      "rightClearance": 92,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 337,
+      "cardRowsBottom": 429,
+      "cardHeight": 44,
+      "emptyMaroonBelowDp": -7,
+      "cardRects": [
+        {
+          "left": 100,
+          "right": 132,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 135,
+          "right": 167,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 188,
+          "right": 220,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 223,
+          "right": 255,
+          "width": 32,
+          "height": 44
+        },
+        {
+          "left": 258,
+          "right": 290,
+          "width": 32,
+          "height": 44
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "worst_left_clearance": 92,
+  "worst_right_clearance": 92,
+  "worst_maroon_below_dp": -7,
+  "hand_clip_dp": -146,
+  "notes": [
+    "board_candidates=3 expected=3"
+  ],
+  "action_bar_top_y": 773,
+  "hand_bottom_y": 627,
+  "hand_card_count": 12,
+  "global_max_board_bottom": 424,
+  "hand_card_rects": [
+    {
+      "left": 19.5,
+      "right": 75.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 78.5,
+      "right": 134.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 137.5,
+      "right": 193.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 196.5,
+      "right": 252.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 255.5,
+      "right": 311.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 314.5,
+      "right": 370.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 19.5,
+      "right": 75.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 78.5,
+      "right": 134.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 137.5,
+      "right": 193.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 196.5,
+      "right": 252.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 255.5,
+      "right": 311.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 314.5,
+      "right": 370.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    }
+  ],
+  "viewport_innerWidth": 390,
+  "hand_rows": 2,
+  "hand_cols": 6,
+  "top_chrome_has_nan": true,
+  "top_chrome_nan_samples": [
+    "✕\nסדר 12 קלפים\n💰\nNaN\n🤖\nבוטים 2/2\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n10\n♦\n♦\n♦\n5\n♠\n♠\n♦\n7\n♥\n♥\n♦\n9\n♣\n♣\n♦\n8",
+    "✕\nסדר 12 קלפים\n💰\nNaN\n🤖\nבוטים 2/2\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n10\n♦\n♦\n♦\n5\n♠\n♠\n♦\n7\n♥\n♥\n♦\n9\n♣\n♣\n♦\n8",
+    "✕\nסדר 12 קלפים\n💰\nNaN\n🤖\nבוטים 2/2\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n10\n♦\n♦\n♦\n5\n♠\n♠\n♦\n7\n♥\n♥\n♦\n9\n♣\n♣\n♦\n8",
+    "✕\nסדר 12 קלפים\n💰\nNaN\n🤖\nבוטים 2/2\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n10\n♦\n♦\n♦\n5\n♠\n♠\n♦\n7\n♥\n♥\n♦\n9\n♣\n♣\n♦\n8"
+  ],
+  "hand_left_clip_dp": 0,
+  "hand_right_clip_dp": 0,
+  "allBoardsClean": true,
+  "passDetail": {
+    "clearancePass": true,
+    "maroonPass": true,
+    "handPass": true,
+    "handHClipPass": true,
+    "cardHeightForMaroonLimit": 44,
+    "maroonLimitDp": 44
+  },
+  "label": "3p",
+  "numberOfPlayers": 3,
+  "expectedBoards": 3,
+  "gridMode": "3x1",
+  "expectedHandRows": 2,
+  "expectedHandCols": 6,
+  "expectedHandCards": 12,
+  "handGridPass": true,
+  "pass": false,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "cardWaitFinalCount": 120,
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\shrink-fix\\3p.png",
+  "elapsedMs": 9997
+}

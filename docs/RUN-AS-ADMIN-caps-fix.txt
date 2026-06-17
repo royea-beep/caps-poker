@@ -1,0 +1,2 @@
+Right-click fix-defender.ps1 → Run as Administrator
+Location: C:\Projects\Caps\fix-defender.ps1

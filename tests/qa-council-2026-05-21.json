@@ -1,0 +1,478 @@
+{
+  "runAt": "2026-05-21T11:57:24.981Z",
+  "site": "https://caps.ftable.co.il",
+  "folder": "caps-2026-05-21-qa",
+  "tally": {
+    "PASS": 7,
+    "DEGRADED": 6,
+    "FAIL": 1
+  },
+  "totals": {
+    "critical": 0,
+    "serious": 6,
+    "moderate": 14,
+    "minor": 0
+  },
+  "routes": [
+    {
+      "name": "home",
+      "path": "/",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/home.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()"
+      ],
+      "appConsoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()",
+        "Failed to load resource: the server responded with a status of 404 ()"
+      ],
+      "crashHits": [],
+      "bodyLen": 1402,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "DEGRADED",
+      "reasons": [
+        "DEGRADED: 5 app console error(s) — Failed to load resource: the server responded with a status of 404 ()"
+      ]
+    },
+    {
+      "name": "game",
+      "path": "/game",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/game.png",
+      "navError": null,
+      "pageErrors": [
+        "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+        "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+        "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+        "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+        "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+      ],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 798,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "FAIL",
+      "reasons": [
+        "FAIL: 5 uncaught JS error(s) — play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+      ]
+    },
+    {
+      "name": "settings",
+      "path": "/settings",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/settings.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 2029,
+      "counts": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 12
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "DEGRADED",
+      "reasons": [
+        "DEGRADED: 1 axe serious"
+      ]
+    },
+    {
+      "name": "leaderboard",
+      "path": "/leaderboard",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/leaderboard.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 754,
+      "counts": {
+        "critical": 0,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 37
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "nodes": 1
+        }
+      ],
+      "verdict": "DEGRADED",
+      "reasons": [
+        "DEGRADED: 2 axe serious"
+      ]
+    },
+    {
+      "name": "profile",
+      "path": "/profile",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/profile.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 226,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (226 chars)"
+      ]
+    },
+    {
+      "name": "play",
+      "path": "/play",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/play.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 247,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (247 chars)"
+      ]
+    },
+    {
+      "name": "friends",
+      "path": "/friends",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/friends.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 280,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (280 chars)"
+      ]
+    },
+    {
+      "name": "cups",
+      "path": "/cups",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/cups.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 211,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (211 chars)"
+      ]
+    },
+    {
+      "name": "shop",
+      "path": "/shop",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/shop.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 369,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (369 chars)"
+      ]
+    },
+    {
+      "name": "chip-store",
+      "path": "/chip-store",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/chip-store.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 439,
+      "counts": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 4
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "DEGRADED",
+      "reasons": [
+        "DEGRADED: 1 axe serious"
+      ]
+    },
+    {
+      "name": "host",
+      "path": "/lobby/host",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/host.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 216,
+      "counts": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 5
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "DEGRADED",
+      "reasons": [
+        "DEGRADED: 1 axe serious"
+      ]
+    },
+    {
+      "name": "join",
+      "path": "/lobby/join",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/join.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 40,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (40 chars)"
+      ]
+    },
+    {
+      "name": "rank",
+      "path": "/rank",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/rank.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 46,
+      "counts": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "PASS: axe crit/ser=0, no uncaught/app-console errors, no crash text, rendered (46 chars)"
+      ]
+    },
+    {
+      "name": "hand-history",
+      "path": "/hand-history",
+      "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-21-qa/hand-history.png",
+      "navError": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "appConsoleErrors": [],
+      "crashHits": [],
+      "bodyLen": 118,
+      "counts": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "nodes": 1
+        }
+      ],
+      "verdict": "DEGRADED",
+      "reasons": [
+        "DEGRADED: 1 axe serious"
+      ]
+    }
+  ]
+}

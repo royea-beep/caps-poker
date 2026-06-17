@@ -1,0 +1,157 @@
+{
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "topBar": {
+    "top": 0,
+    "bottom": 52,
+    "h": 52,
+    "w": 390,
+    "x": 0
+  },
+  "botSection": {
+    "top": 52,
+    "bottom": 82,
+    "h": 30,
+    "w": 390,
+    "x": 0
+  },
+  "topChromeBottom": 82,
+  "backBtn": {
+    "top": 4,
+    "bottom": 48,
+    "h": 44,
+    "w": 44,
+    "x": 334
+  },
+  "chipsAmount": {
+    "top": 17,
+    "bottom": 36,
+    "h": 19,
+    "w": 41,
+    "x": 23
+  },
+  "board0": {
+    "top": 86,
+    "bottom": 249,
+    "h": 163,
+    "w": 378,
+    "x": 6
+  },
+  "board0Header": {
+    "top": 90,
+    "bottom": 106,
+    "h": 16,
+    "w": 366,
+    "x": 12
+  },
+  "board0Community": {
+    "top": 108,
+    "bottom": 179,
+    "h": 71,
+    "w": 366,
+    "x": 12
+  },
+  "board0Slots": {
+    "top": 108,
+    "bottom": 179,
+    "h": 71,
+    "w": 366,
+    "x": 12
+  },
+  "board1": {
+    "top": 253,
+    "bottom": 416,
+    "h": 163,
+    "w": 378,
+    "x": 6
+  },
+  "board1Header": {
+    "top": 257,
+    "bottom": 273,
+    "h": 16,
+    "w": 366,
+    "x": 12
+  },
+  "board1Community": {
+    "top": 275,
+    "bottom": 346,
+    "h": 71,
+    "w": 366,
+    "x": 12
+  },
+  "board1Slots": {
+    "top": 275,
+    "bottom": 346,
+    "h": 71,
+    "w": 366,
+    "x": 12
+  },
+  "outerHandZone": {
+    "top": 424,
+    "bottom": 764,
+    "h": 340,
+    "w": 374,
+    "x": 8
+  },
+  "innerHandZone": {
+    "top": 425,
+    "bottom": 593,
+    "h": 168,
+    "w": 374,
+    "x": 8
+  },
+  "handLabel": {
+    "top": 432,
+    "bottom": 446,
+    "h": 14,
+    "w": 45,
+    "x": 337
+  },
+  "handGrid": {
+    "top": 452,
+    "bottom": 590,
+    "h": 138,
+    "w": 374,
+    "x": 8
+  },
+  "handRow0": {
+    "top": 452,
+    "bottom": 520,
+    "h": 68,
+    "w": 358,
+    "x": 16
+  },
+  "handRow1": {
+    "top": 522,
+    "bottom": 590,
+    "h": 68,
+    "w": 358,
+    "x": 16
+  },
+  "handRow2": null,
+  "handRow3": null,
+  "handRowCount": 2,
+  "actionBar": {
+    "top": 773,
+    "bottom": 844,
+    "h": 71,
+    "w": 390,
+    "x": 0
+  },
+  "cancelBtn": {
+    "top": 800,
+    "bottom": 821,
+    "h": 21,
+    "w": 43,
+    "x": 264
+  },
+  "confirmBtn": {
+    "top": 800,
+    "bottom": 821,
+    "h": 21,
+    "w": 47,
+    "x": 81
+  }
+}

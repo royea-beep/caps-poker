@@ -157,7 +157,7 @@ export function BoardResultCard({
           botCards && botCards.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.handRowVertical}>
               <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
-                {multiBot ? `בוט ${botIdx + 1}` : 'בוט'}
+                {multiBot ? `Bot ${botIdx + 1}` : 'Bot'}
               </Text>
               <View style={styles.cardsRow}>
                 {botCards.map((c: any) => (

@@ -1,0 +1,442 @@
+{
+  "commit": "53441fe",
+  "branch": "fix/four-board-row",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "players": 2,
+  "expectedBoards": 4,
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\four-in-row\\2p-v3.png",
+  "cardWaitFinalCount": 201,
+  "chips": {
+    "all": [
+      {
+        "text": "9,900",
+        "top": 17,
+        "left": 23
+      }
+    ],
+    "hasNaN": false,
+    "chipsText": "9,900"
+  },
+  "boards": {
+    "labelCount": 4,
+    "autoBtnCount": 4,
+    "boardCount": 4,
+    "rowsOfBoards": [
+      {
+        "y": 86,
+        "count": 4
+      }
+    ],
+    "boardsInSingleRow": 4,
+    "allInOneRow": true,
+    "perBoard": [
+      {
+        "boardIndex": 0,
+        "boardRect": {
+          "top": 86,
+          "left": 6,
+          "right": 97.5,
+          "bottom": 182,
+          "w": 91.5,
+          "h": 96
+        },
+        "boardLabel": {
+          "text": "לוח 4",
+          "top": 91,
+          "left": 74.7,
+          "right": 85.5,
+          "bottom": 147,
+          "w": 10.8,
+          "h": 56
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 114,
+          "left": 17,
+          "right": 71.1,
+          "bottom": 124,
+          "w": 54.1,
+          "h": 10
+        },
+        "rowCount": 1,
+        "rowSizes": [
+          5
+        ],
+        "rowsDetail": [
+          {
+            "avgTop": 151,
+            "count": 5,
+            "leftMost": 10.8,
+            "rightMost": 92.8
+          }
+        ],
+        "cardCountInside": 5,
+        "communityRowFound": true,
+        "communityRowCount": 5,
+        "communityRowGlyphs": [
+          "♦|A|♠|♠",
+          "♦|2|♠|♠",
+          "♦|9|♠|♠",
+          "♦|7|♠|♠",
+          "♦|10|♥|♥"
+        ],
+        "communityWithRank": 5,
+        "communityWithAnyText": 5,
+        "slotRowFound": false,
+        "slotRowCount": 0,
+        "anyClipLeft": false,
+        "anyClipRight": false,
+        "anyClipTop": false,
+        "anyClipBottom": false,
+        "cardsClipped": 0,
+        "contentHeight": 0,
+        "emptyVertical": 0,
+        "emptyRatio": 0,
+        "commW": null,
+        "slotW": null,
+        "autoBtn_vs_label_intersects": false,
+        "autoBtn_vs_label_intersect_rect": null,
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_topVsLabel_top_dp": 23
+      },
+      {
+        "boardIndex": 1,
+        "boardRect": {
+          "top": 86,
+          "left": 101.5,
+          "right": 193,
+          "bottom": 182,
+          "w": 91.5,
+          "h": 96
+        },
+        "boardLabel": {
+          "text": "לוח 3",
+          "top": 91,
+          "left": 170.2,
+          "right": 181,
+          "bottom": 147,
+          "w": 10.8,
+          "h": 56
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 114,
+          "left": 112.5,
+          "right": 166.6,
+          "bottom": 124,
+          "w": 54.1,
+          "h": 10
+        },
+        "rowCount": 1,
+        "rowSizes": [
+          5
+        ],
+        "rowsDetail": [
+          {
+            "avgTop": 151,
+            "count": 5,
+            "leftMost": 106.3,
+            "rightMost": 188.3
+          }
+        ],
+        "cardCountInside": 5,
+        "communityRowFound": true,
+        "communityRowCount": 5,
+        "communityRowGlyphs": [
+          "♦|7|♣|♣",
+          "♦|6|♥|♥",
+          "♦|8|♦|♦",
+          "♦|A|♣|♣",
+          "♦|3|♦|♦"
+        ],
+        "communityWithRank": 5,
+        "communityWithAnyText": 5,
+        "slotRowFound": false,
+        "slotRowCount": 0,
+        "anyClipLeft": false,
+        "anyClipRight": false,
+        "anyClipTop": false,
+        "anyClipBottom": false,
+        "cardsClipped": 0,
+        "contentHeight": 0,
+        "emptyVertical": 0,
+        "emptyRatio": 0,
+        "commW": null,
+        "slotW": null,
+        "autoBtn_vs_label_intersects": false,
+        "autoBtn_vs_label_intersect_rect": null,
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_topVsLabel_top_dp": 23
+      },
+      {
+        "boardIndex": 2,
+        "boardRect": {
+          "top": 86,
+          "left": 197,
+          "right": 288.5,
+          "bottom": 182,
+          "w": 91.5,
+          "h": 96
+        },
+        "boardLabel": {
+          "text": "לוח 2",
+          "top": 91,
+          "left": 265.7,
+          "right": 276.5,
+          "bottom": 147,
+          "w": 10.8,
+          "h": 56
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 114,
+          "left": 208,
+          "right": 262.1,
+          "bottom": 124,
+          "w": 54.1,
+          "h": 10
+        },
+        "rowCount": 1,
+        "rowSizes": [
+          5
+        ],
+        "rowsDetail": [
+          {
+            "avgTop": 151,
+            "count": 5,
+            "leftMost": 201.8,
+            "rightMost": 283.8
+          }
+        ],
+        "cardCountInside": 5,
+        "communityRowFound": true,
+        "communityRowCount": 5,
+        "communityRowGlyphs": [
+          "♦|2|♣|♣",
+          "♦|4|♣|♣",
+          "♦|Q|♠|♠",
+          "♦|Q|♥|♥",
+          "♦|8|♣|♣"
+        ],
+        "communityWithRank": 5,
+        "communityWithAnyText": 5,
+        "slotRowFound": false,
+        "slotRowCount": 0,
+        "anyClipLeft": false,
+        "anyClipRight": false,
+        "anyClipTop": false,
+        "anyClipBottom": false,
+        "cardsClipped": 0,
+        "contentHeight": 0,
+        "emptyVertical": 0,
+        "emptyRatio": 0,
+        "commW": null,
+        "slotW": null,
+        "autoBtn_vs_label_intersects": false,
+        "autoBtn_vs_label_intersect_rect": null,
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_topVsLabel_top_dp": 23
+      },
+      {
+        "boardIndex": 3,
+        "boardRect": {
+          "top": 86,
+          "left": 292.5,
+          "right": 384,
+          "bottom": 182,
+          "w": 91.5,
+          "h": 96
+        },
+        "boardLabel": {
+          "text": "לוח 1",
+          "top": 91,
+          "left": 361.2,
+          "right": 372,
+          "bottom": 147,
+          "w": 10.8,
+          "h": 56
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 114,
+          "left": 303.5,
+          "right": 357.6,
+          "bottom": 124,
+          "w": 54.1,
+          "h": 10
+        },
+        "rowCount": 1,
+        "rowSizes": [
+          5
+        ],
+        "rowsDetail": [
+          {
+            "avgTop": 151,
+            "count": 5,
+            "leftMost": 297.3,
+            "rightMost": 379.3
+          }
+        ],
+        "cardCountInside": 5,
+        "communityRowFound": true,
+        "communityRowCount": 5,
+        "communityRowGlyphs": [
+          "♦|K|♥|♥",
+          "♦|5|♦|♦",
+          "♦|9|♦|♦",
+          "♦|Q|♦|♦",
+          "♦|3|♠|♠"
+        ],
+        "communityWithRank": 5,
+        "communityWithAnyText": 5,
+        "slotRowFound": false,
+        "slotRowCount": 0,
+        "anyClipLeft": false,
+        "anyClipRight": false,
+        "anyClipTop": false,
+        "anyClipBottom": false,
+        "cardsClipped": 0,
+        "contentHeight": 0,
+        "emptyVertical": 0,
+        "emptyRatio": 0,
+        "commW": null,
+        "slotW": null,
+        "autoBtn_vs_label_intersects": false,
+        "autoBtn_vs_label_intersect_rect": null,
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_topVsLabel_top_dp": 23
+      }
+    ],
+    "allAutoBtns": [
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 114,
+        "left": 303.5,
+        "right": 357.6,
+        "bottom": 124,
+        "w": 54.1,
+        "h": 10
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 114,
+        "left": 208,
+        "right": 262.1,
+        "bottom": 124,
+        "w": 54.1,
+        "h": 10
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 114,
+        "left": 112.5,
+        "right": 166.6,
+        "bottom": 124,
+        "w": 54.1,
+        "h": 10
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 114,
+        "left": 17,
+        "right": 71.1,
+        "bottom": 124,
+        "w": 54.1,
+        "h": 10
+      }
+    ],
+    "allLabels": [
+      {
+        "text": "לוח 1",
+        "top": 91,
+        "left": 361.2,
+        "right": 372,
+        "bottom": 147,
+        "w": 10.8,
+        "h": 56
+      },
+      {
+        "text": "לוח 2",
+        "top": 91,
+        "left": 265.7,
+        "right": 276.5,
+        "bottom": 147,
+        "w": 10.8,
+        "h": 56
+      },
+      {
+        "text": "לוח 3",
+        "top": 91,
+        "left": 170.2,
+        "right": 181,
+        "bottom": 147,
+        "w": 10.8,
+        "h": 56
+      },
+      {
+        "text": "לוח 4",
+        "top": 91,
+        "left": 74.7,
+        "right": 85.5,
+        "bottom": 147,
+        "w": 10.8,
+        "h": 56
+      }
+    ]
+  },
+  "hand": {
+    "handCardCount": 16,
+    "handRowCounts": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "handRowCount": 4,
+    "handBottomY": 770,
+    "actionBarTopY": 773,
+    "handClipDp": -3
+  },
+  "communitySummary": {
+    "totalCommunityCards": 20,
+    "totalCommunityWithRank": 20,
+    "totalCommunityWithText": 20,
+    "expected": 20
+  },
+  "consoleErrors": [
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "verdict": {
+    "boardCount4": true,
+    "boardsInSingleHorizontalRow": true,
+    "allBoards_autoBtn_no_overlap_with_label": true,
+    "allBoards_autoBtn_no_overlap_with_community": true,
+    "allBoards_no_card_clip": true,
+    "allBoards_community_row_5": true,
+    "allBoards_slot_row_4": false,
+    "allBoards_emptyRatio_lt_0_5": true,
+    "allBoards_height_le_120dp": true,
+    "hand_4x4_16_cards": true,
+    "hand_no_clip": true,
+    "chips_not_nan": true,
+    "pass": false
+  },
+  "failures": [
+    "B0: slot row count=0 (expected 4)",
+    "B1: slot row count=0 (expected 4)",
+    "B2: slot row count=0 (expected 4)",
+    "B3: slot row count=0 (expected 4)"
+  ],
+  "elapsedMs": 10059
+}

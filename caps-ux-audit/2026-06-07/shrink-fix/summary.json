@@ -1,0 +1,44 @@
+[
+  {
+    "label": "2p",
+    "pass": false,
+    "hand_grid": "4x4=16",
+    "hand_grid_pass": true,
+    "hand_clip_dp": 42,
+    "hand_left_clip_dp": 0,
+    "hand_right_clip_dp": 0,
+    "worst_left_clearance": 9,
+    "worst_right_clearance": 9,
+    "worst_maroon_below_dp": 19,
+    "top_chrome_has_nan": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-ux-audit/2026-06-07/shrink-fix/2p.png"
+  },
+  {
+    "label": "3p",
+    "pass": false,
+    "hand_grid": "2x6=12",
+    "hand_grid_pass": true,
+    "hand_clip_dp": -146,
+    "hand_left_clip_dp": 0,
+    "hand_right_clip_dp": 0,
+    "worst_left_clearance": 92,
+    "worst_right_clearance": 92,
+    "worst_maroon_below_dp": -7,
+    "top_chrome_has_nan": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-ux-audit/2026-06-07/shrink-fix/3p.png"
+  },
+  {
+    "label": "4p",
+    "pass": false,
+    "hand_grid": "2x4=8",
+    "hand_grid_pass": true,
+    "hand_clip_dp": -146,
+    "hand_left_clip_dp": 0,
+    "hand_right_clip_dp": 0,
+    "worst_left_clearance": 39.5,
+    "worst_right_clearance": 39.5,
+    "worst_maroon_below_dp": -6,
+    "top_chrome_has_nan": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-ux-audit/2026-06-07/shrink-fix/4p.png"
+  }
+]

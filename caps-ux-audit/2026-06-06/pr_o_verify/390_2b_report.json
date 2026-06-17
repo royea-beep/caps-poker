@@ -1,0 +1,95 @@
+{
+  "countText": "16",
+  "metrics": {
+    "SCREEN_W": 390,
+    "SCREEN_H": 844,
+    "topChrome": {
+      "top": 0,
+      "bottom": 52,
+      "h": 52
+    },
+    "boards": {
+      "top": 140.5,
+      "bottom": 328.5,
+      "h": 188,
+      "count": 12
+    },
+    "hand": {
+      "top": 628,
+      "bottom": 900,
+      "h": 272,
+      "left": 85.5,
+      "right": 306.5,
+      "w": 221,
+      "rows": [
+        {
+          "top": 628,
+          "bottom": 690,
+          "count": 4
+        },
+        {
+          "top": 698,
+          "bottom": 760,
+          "count": 4
+        },
+        {
+          "top": 768,
+          "bottom": 830,
+          "count": 4
+        },
+        {
+          "top": 838,
+          "bottom": 900,
+          "count": 4
+        }
+      ]
+    },
+    "pill": {
+      "x": 0,
+      "y": 744,
+      "w": 390,
+      "h": 100,
+      "top": 744,
+      "bottom": 844,
+      "left": 0,
+      "right": 390
+    },
+    "actionBar": null,
+    "handCardCount": 16,
+    "visibleCardCount": 12,
+    "rowsBelowViewport": 1,
+    "lastRowBottom": 900,
+    "lastRowTop": 838,
+    "bodyChecks": {
+      "hasNaN": false,
+      "hasOldText": false,
+      "hasPillText": true
+    },
+    "bodyTextHead": "✕\n💰\n‎-50\n🤖\nבוט 1\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\nקהילה\n♦\n7\n♦\n♦\n♦\n6\n♠\n♠\n♦\n10\n♦\n♦\n♦\n8\n♣\n♣\n♦\n7\n♣\n♣\nלוח 2\n⚡ מיקום אוטומטי\nקהילה\n♦\n10\n♠\n♠\n♦\n9\n♥\n♥\n♦\n6\n♣\n♣\n♦\nK\n♦\n♦\n♦\n7\n♥\n♥\nלוח 3\n⚡ מיקום אוטומטי\nקהילה\n♦\n4\n♣\n♣\n♦\n3\n♥\n♥\n♦\nA\n♥\n♥\n♦\n3\n♠\n♠\n♦\n10\n♣\n♣\nלוח 4\n⚡ מיקום אוטומטי\nקהילה\n♦\n3\n♣\n♣\n♦\n5\n♥\n♥\n♦\n9\n♣\n♣\n♦\nJ\n♥\n♥\n♦\n2\n♣\n♣\nהיד שלך\n16\n♦\n5\n♠\n♠\n♦\n5\n♦\n♦\n♦\n5\n♣\n♣\n♦\n2\n♠\n♠\n♦\n2\n♦\n♦\n♦\n6\n♥\n♥\n♦\n6\n♦\n♦\n♦\n8\n♥\n♥\n♦\n8\n♦\n♦\n♦\nA\n♠\n♠\n♦\nA\n♦\n♦\n♦\n9\n♠\n♠\n♦\n4\n♦\n♦\n♦\nQ\n♦\n♦\n♦\nJ\n♣\n♣\n♦\nK\n♣\n♣\nסדר 16 קלפים\nביטול\nאישור"
+  },
+  "derived": {
+    "gap_boards_to_hand": 299.5,
+    "overlap_hand_pill": 156,
+    "overlap_hand_actionBar": null,
+    "rows_below_viewport": 1,
+    "handCardCount": 16
+  },
+  "verdict": {
+    "passOverlaps": false,
+    "passRows": false,
+    "passCount": true,
+    "overall": "FAIL"
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 406 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ]
+}

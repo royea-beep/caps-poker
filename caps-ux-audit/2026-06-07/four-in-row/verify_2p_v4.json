@@ -1,0 +1,608 @@
+{
+  "metrics": {
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "boardLabels": [
+      {
+        "text": "לוח 1",
+        "rect": {
+          "x": 338.5,
+          "y": 90,
+          "w": 39.5,
+          "h": 16,
+          "right": 378,
+          "bottom": 106
+        }
+      },
+      {
+        "text": "לוח 2",
+        "rect": {
+          "x": 146.34375,
+          "y": 90,
+          "w": 40.65625,
+          "h": 16,
+          "right": 187,
+          "bottom": 106
+        }
+      },
+      {
+        "text": "לוח 3",
+        "rect": {
+          "x": 337.34375,
+          "y": 257,
+          "w": 40.65625,
+          "h": 16,
+          "right": 378,
+          "bottom": 273
+        }
+      },
+      {
+        "text": "לוח 4",
+        "rect": {
+          "x": 146.125,
+          "y": 257,
+          "w": 40.875,
+          "h": 16,
+          "right": 187,
+          "bottom": 273
+        }
+      }
+    ],
+    "autoBtns": [
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "rect": {
+          "x": 208,
+          "y": 93,
+          "w": 54.140625,
+          "h": 10,
+          "right": 262.140625,
+          "bottom": 103
+        }
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "rect": {
+          "x": 17,
+          "y": 93,
+          "w": 54.140625,
+          "h": 10,
+          "right": 71.140625,
+          "bottom": 103
+        }
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "rect": {
+          "x": 208,
+          "y": 260,
+          "w": 54.140625,
+          "h": 10,
+          "right": 262.140625,
+          "bottom": 270
+        }
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "rect": {
+          "x": 17,
+          "y": 260,
+          "w": 54.140625,
+          "h": 10,
+          "right": 71.140625,
+          "bottom": 270
+        }
+      }
+    ],
+    "autoVsBoardPairs": [
+      {
+        "autoBtn": "⚡ מיקום אוטומטי",
+        "autoRect": {
+          "x": 208,
+          "y": 93,
+          "w": 54.140625,
+          "h": 10,
+          "right": 262.140625,
+          "bottom": 103
+        },
+        "boardLabel": "לוח 1",
+        "boardRect": {
+          "x": 338.5,
+          "y": 90,
+          "w": 39.5,
+          "h": 16,
+          "right": 378,
+          "bottom": 106
+        },
+        "intersect": null,
+        "sameY": true,
+        "dyCenters": 0
+      },
+      {
+        "autoBtn": "⚡ מיקום אוטומטי",
+        "autoRect": {
+          "x": 17,
+          "y": 93,
+          "w": 54.140625,
+          "h": 10,
+          "right": 71.140625,
+          "bottom": 103
+        },
+        "boardLabel": "לוח 1",
+        "boardRect": {
+          "x": 338.5,
+          "y": 90,
+          "w": 39.5,
+          "h": 16,
+          "right": 378,
+          "bottom": 106
+        },
+        "intersect": null,
+        "sameY": true,
+        "dyCenters": 0
+      },
+      {
+        "autoBtn": "⚡ מיקום אוטומטי",
+        "autoRect": {
+          "x": 208,
+          "y": 260,
+          "w": 54.140625,
+          "h": 10,
+          "right": 262.140625,
+          "bottom": 270
+        },
+        "boardLabel": "לוח 3",
+        "boardRect": {
+          "x": 337.34375,
+          "y": 257,
+          "w": 40.65625,
+          "h": 16,
+          "right": 378,
+          "bottom": 273
+        },
+        "intersect": null,
+        "sameY": true,
+        "dyCenters": 0
+      },
+      {
+        "autoBtn": "⚡ מיקום אוטומטי",
+        "autoRect": {
+          "x": 17,
+          "y": 260,
+          "w": 54.140625,
+          "h": 10,
+          "right": 71.140625,
+          "bottom": 270
+        },
+        "boardLabel": "לוח 3",
+        "boardRect": {
+          "x": 337.34375,
+          "y": 257,
+          "w": 40.65625,
+          "h": 16,
+          "right": 378,
+          "bottom": 273
+        },
+        "intersect": null,
+        "sameY": true,
+        "dyCenters": 0
+      }
+    ],
+    "chipsCandidates": [
+      {
+        "text": "900",
+        "rect": {
+          "x": 23,
+          "y": 16.5,
+          "w": 26.671875,
+          "h": 19,
+          "right": 49.671875,
+          "bottom": 35.5
+        }
+      },
+      {
+        "text": "6",
+        "rect": {
+          "x": 351,
+          "y": 126.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 356.015625,
+          "bottom": 136.328125
+        }
+      },
+      {
+        "text": "7",
+        "rect": {
+          "x": 291,
+          "y": 126.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 296.015625,
+          "bottom": 136.328125
+        }
+      },
+      {
+        "text": "8",
+        "rect": {
+          "x": 222.5,
+          "y": 126.39955139160156,
+          "w": 0,
+          "h": 9.985031127929688,
+          "right": 222.5,
+          "bottom": 136.38458251953125
+        }
+      },
+      {
+        "text": "5",
+        "rect": {
+          "x": 160,
+          "y": 126.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 165.015625,
+          "bottom": 136.328125
+        }
+      },
+      {
+        "text": "9",
+        "rect": {
+          "x": 100,
+          "y": 126.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 105.015625,
+          "bottom": 136.328125
+        }
+      },
+      {
+        "text": "7",
+        "rect": {
+          "x": 61.5,
+          "y": 126.39955139160156,
+          "w": 0,
+          "h": 9.985031127929688,
+          "right": 61.5,
+          "bottom": 136.38458251953125
+        }
+      },
+      {
+        "text": "2",
+        "rect": {
+          "x": 351,
+          "y": 293.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 356.015625,
+          "bottom": 303.328125
+        }
+      },
+      {
+        "text": "4",
+        "rect": {
+          "x": 321,
+          "y": 293.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 326.015625,
+          "bottom": 303.328125
+        }
+      },
+      {
+        "text": "3",
+        "rect": {
+          "x": 252.5,
+          "y": 293.3995666503906,
+          "w": 0,
+          "h": 9.985015869140625,
+          "right": 252.5,
+          "bottom": 303.38458251953125
+        }
+      },
+      {
+        "text": "6",
+        "rect": {
+          "x": 160,
+          "y": 293.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 165.015625,
+          "bottom": 303.328125
+        }
+      },
+      {
+        "text": "6",
+        "rect": {
+          "x": 130,
+          "y": 293.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 135.015625,
+          "bottom": 303.328125
+        }
+      },
+      {
+        "text": "2",
+        "rect": {
+          "x": 100,
+          "y": 293.328125,
+          "w": 5.015625,
+          "h": 10,
+          "right": 105.015625,
+          "bottom": 303.328125
+        }
+      },
+      {
+        "text": "9",
+        "rect": {
+          "x": 61.5,
+          "y": 293.3995666503906,
+          "w": 0,
+          "h": 9.985015869140625,
+          "right": 61.5,
+          "bottom": 303.38458251953125
+        }
+      },
+      {
+        "text": "8",
+        "rect": {
+          "x": 31.5,
+          "y": 293.3995666503906,
+          "w": 0,
+          "h": 9.985015869140625,
+          "right": 31.5,
+          "bottom": 303.38458251953125
+        }
+      },
+      {
+        "text": "16",
+        "rect": {
+          "x": 315.125,
+          "y": 432,
+          "w": 10.828125,
+          "h": 14,
+          "right": 325.953125,
+          "bottom": 446
+        }
+      },
+      {
+        "text": "3",
+        "rect": {
+          "x": 274.5,
+          "y": 459,
+          "w": 8.90625,
+          "h": 18,
+          "right": 283.40625,
+          "bottom": 477
+        }
+      },
+      {
+        "text": "3",
+        "rect": {
+          "x": 207.5,
+          "y": 459,
+          "w": 8.90625,
+          "h": 18,
+          "right": 216.40625,
+          "bottom": 477
+        }
+      },
+      {
+        "text": "3",
+        "rect": {
+          "x": 140.5,
+          "y": 459,
+          "w": 8.90625,
+          "h": 18,
+          "right": 149.40625,
+          "bottom": 477
+        }
+      },
+      {
+        "text": "10",
+        "rect": {
+          "x": 73.5,
+          "y": 459,
+          "w": 17.796875,
+          "h": 18,
+          "right": 91.296875,
+          "bottom": 477
+        }
+      }
+    ],
+    "hasNaN": false,
+    "cardLikeCount": 16,
+    "cardLikes": [
+      {
+        "rect": {
+          "x": 270.5,
+          "y": 456,
+          "w": 52,
+          "h": 72,
+          "right": 322.5,
+          "bottom": 528
+        }
+      },
+      {
+        "rect": {
+          "x": 203.5,
+          "y": 456,
+          "w": 52,
+          "h": 72,
+          "right": 255.5,
+          "bottom": 528
+        }
+      },
+      {
+        "rect": {
+          "x": 136.5,
+          "y": 456,
+          "w": 52,
+          "h": 72,
+          "right": 188.5,
+          "bottom": 528
+        }
+      },
+      {
+        "rect": {
+          "x": 69.5,
+          "y": 456,
+          "w": 52,
+          "h": 72,
+          "right": 121.5,
+          "bottom": 528
+        }
+      },
+      {
+        "rect": {
+          "x": 270.5,
+          "y": 536,
+          "w": 52,
+          "h": 72,
+          "right": 322.5,
+          "bottom": 608
+        }
+      },
+      {
+        "rect": {
+          "x": 203.5,
+          "y": 536,
+          "w": 52,
+          "h": 72,
+          "right": 255.5,
+          "bottom": 608
+        }
+      },
+      {
+        "rect": {
+          "x": 136.5,
+          "y": 536,
+          "w": 52,
+          "h": 72,
+          "right": 188.5,
+          "bottom": 608
+        }
+      },
+      {
+        "rect": {
+          "x": 69.5,
+          "y": 536,
+          "w": 52,
+          "h": 72,
+          "right": 121.5,
+          "bottom": 608
+        }
+      },
+      {
+        "rect": {
+          "x": 270.5,
+          "y": 616,
+          "w": 52,
+          "h": 72,
+          "right": 322.5,
+          "bottom": 688
+        }
+      },
+      {
+        "rect": {
+          "x": 203.5,
+          "y": 616,
+          "w": 52,
+          "h": 72,
+          "right": 255.5,
+          "bottom": 688
+        }
+      },
+      {
+        "rect": {
+          "x": 136.5,
+          "y": 616,
+          "w": 52,
+          "h": 72,
+          "right": 188.5,
+          "bottom": 688
+        }
+      },
+      {
+        "rect": {
+          "x": 69.5,
+          "y": 616,
+          "w": 52,
+          "h": 72,
+          "right": 121.5,
+          "bottom": 688
+        }
+      },
+      {
+        "rect": {
+          "x": 270.5,
+          "y": 696,
+          "w": 52,
+          "h": 72,
+          "right": 322.5,
+          "bottom": 768
+        }
+      },
+      {
+        "rect": {
+          "x": 203.5,
+          "y": 696,
+          "w": 52,
+          "h": 72,
+          "right": 255.5,
+          "bottom": 768
+        }
+      },
+      {
+        "rect": {
+          "x": 136.5,
+          "y": 696,
+          "w": 52,
+          "h": 72,
+          "right": 188.5,
+          "bottom": 768
+        }
+      },
+      {
+        "rect": {
+          "x": 69.5,
+          "y": 696,
+          "w": 52,
+          "h": 72,
+          "right": 121.5,
+          "bottom": 768
+        }
+      }
+    ],
+    "bodyText": "✕\nסדר 16 קלפים\n💰\n900\n🤖\nבוט 1\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n6\n♦\n♦\n♦\nK\n♣\n♣\n♦\n7\n♦\n♦\n♦\nQ\n♥\n♥\n♦\n8\n♦\n♦\nלוח 2\n⚡ מיקום אוטומטי\n♦\n5\n♥\n♥\n♦\nJ\n♣\n♣\n♦\n9\n♣\n♣\n♦\n7\n♠\n♠\n♦\nQ\n♠\n♠\nלוח 3\n⚡ מיקום אוטומטי\n♦\n2\n♦\n♦\n♦\n4\n♥\n♥\n♦\nJ\n♦\n♦\n♦\n3\n♣\n♣\n♦\nA\n♦\n♦\nלוח 4\n⚡ מיקום אוטומטי\n♦\n6\n♠\n♠\n♦\n6\n♥\n♥\n♦\n2\n♥\n♥\n♦\n9\n♥\n♥\n♦\n8\n♠\n♠\nהיד שלך\n16\n♦\n3\n♠\n♠\n♦\n3\n♥\n♥\n♦\n3\n♦\n♦\n♦\n10\n♠\n♠\n♦\n10\n♥\n♥\n♦\n10\n♣\n♣\n♦\n5\n♠\n♠\n♦\n5\n♣\n♣\n♦\n9\n♠\n♠\n♦\nJ\n♠\n♠\n♦\n8\n♥\n♥\n♦\nK\n♥\n♥\n♦\nA\n♥\n♥\n♦\nQ\n♦\n♦\n♦\n2\n♣\n♣\n♦\n7\n♣\n♣\nביטול\nאישור"
+  },
+  "verdict": {
+    "boardCount": 4,
+    "gridLayout": "2x2",
+    "autoBtnsCount": 4,
+    "autoIntersectsAnyBoardLabel": false,
+    "intersectsDetail": [],
+    "autoVsBoardPairsSameYCounts": 4,
+    "handCardCount": 12,
+    "handRows": [
+      4,
+      4,
+      4
+    ],
+    "chipsHasNaN": false,
+    "chipsTopLeftText": "900",
+    "errors": [
+      "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+      "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+      "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+      "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+      "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+    ],
+    "expectedGrid": "2x2",
+    "pass": true
+  },
+  "capturedAt": "2026-06-08T06:22:15.019Z",
+  "url": "http://localhost:8765/game?play=1"
+}

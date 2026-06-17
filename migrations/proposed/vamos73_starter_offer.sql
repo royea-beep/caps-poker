@@ -1,0 +1,104 @@
+-- VAMOS 73 — CAPS Starter Pack 2x Offer (PROPOSED — DO NOT APPLY)
+-- Generated: 2026-04-18
+-- Status: READ-ONLY proposal. Requires Roye review before execution.
+--
+-- PURPOSE:
+--   Convert the existing $2.99 "Popular" package into a first-time-only
+--   double-value offer (10,000 chips instead of 5,000). Returning buyers
+--   see the standard 5,000 price. This is a proven conversion hook for
+--   anonymous IAP flows where there is no account system to enforce "once".
+--
+-- ENFORCEMENT STRATEGY (anonymous / no auth):
+--   Since user_profiles has no auth_id, enforcement must happen via device_id.
+--   A new JSONB key `starter_2x_redeemed` is proposed in app_config (global
+--   reference only). Per-device tracking is handled by the client: after
+--   purchase, the client writes device_id to a new `starter_pack_redemptions`
+--   table. On home screen load, CAPS fetches this table to hide/show the offer.
+--
+-- ============================================================
+-- STEP 1: Add per-device redemption tracking table
+-- ============================================================
+--
+-- CREATE TABLE IF NOT EXISTS starter_pack_redemptions (
+--   device_id   TEXT        NOT NULL PRIMARY KEY,
+--   redeemed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--   chips_given INTEGER     NOT NULL DEFAULT 10000,
+--   price_usd   NUMERIC(6,2) NOT NULL DEFAULT 2.99
+-- );
+--
+-- -- RLS: devices can only insert/select their own row
+-- ALTER TABLE starter_pack_redemptions ENABLE ROW LEVEL SECURITY;
+--
+-- CREATE POLICY starter_pack_own_device ON starter_pack_redemptions
+--   USING (device_id = current_setting('request.jwt.claims', true)::jsonb->>'device_id');
+--
+-- ============================================================
+-- STEP 2: Update app_config chip_store_packages to add 2x flag
+-- ============================================================
+--
+-- The existing package at index 1 ($2.99, 5000 chips) gains a
+-- `first_time_chips` field. The client checks starter_pack_redemptions;
+-- if not redeemed, it displays `first_time_chips` (10000) with a
+-- "FIRST TIME — 2x VALUE" badge. After redemption it shows base chips.
+--
+-- UPDATE app_config
+-- SET value = jsonb_set(
+--   value,
+--   '{chip_store_packages, 1}',
+--   (value->'chip_store_packages'->1) || '{"first_time_chips": 10000, "first_time_badge": "2x VALUE"}'
+-- )
+-- WHERE key = 'chip_store_packages';
+--
+-- ============================================================
+-- STEP 3: Add starter_pack_2x feature flag
+-- ============================================================
+--
+-- INSERT INTO app_config (key, value) VALUES
+-- ('starter_pack_2x_enabled', 'true'::jsonb)
+-- ON CONFLICT (key) DO UPDATE SET value = 'true'::jsonb;
+--
+-- ============================================================
+-- STEP 4: Dedicated push template for flash deal
+-- ============================================================
+--
+-- The existing `flash_deal` push template has send_count=0.
+-- Activate it by scheduling a D1 push for new installs.
+--
+-- UPDATE push_templates
+-- SET
+--   title_en = '🎰 Welcome offer: double chips at $2.99',
+--   title_he = '🎰 הצעת קבלה: שבב כפול ב-$2.99',
+--   body_en  = 'Your first pack gives you 10,000 chips instead of 5,000. Today only.',
+--   body_he  = 'החבילה הראשונה שלך: 10,000 שבבים במקום 5,000. היום בלבד.',
+--   is_active = TRUE
+-- WHERE template_name = 'flash_deal';
+--
+-- ============================================================
+-- ROLLBACK (if needed)
+-- ============================================================
+--
+-- DROP TABLE IF EXISTS starter_pack_redemptions;
+--
+-- UPDATE app_config
+-- SET value = (
+--   SELECT jsonb_agg(
+--     CASE WHEN idx = 1
+--     THEN pkg - 'first_time_chips' - 'first_time_badge'
+--     ELSE pkg END
+--   )
+--   FROM jsonb_array_elements(value) WITH ORDINALITY arr(pkg, idx)
+-- )
+-- WHERE key = 'chip_store_packages';
+--
+-- DELETE FROM app_config WHERE key = 'starter_pack_2x_enabled';
+--
+-- ============================================================
+-- EXPECTED OUTCOME
+-- ============================================================
+--
+-- Before: $2.99 → 5,000 chips (one of 5 packages, no differentiation)
+-- After:  $2.99 → 10,000 chips for first-time buyers (badge + push)
+--         $2.99 → 5,000 chips for returning buyers (standard price)
+--
+-- Projected conversion lift: 0.5% → 2-3% on first-session users
+-- See vamos73_revenue_simulation.md for full model.

@@ -104,7 +104,7 @@ function WebLandingHero({ onPlay }: { onPlay: () => void }) {
       <View style={webLandingStyles.hero}>
         <Text style={webLandingStyles.suitRow} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">♠ ♥ ♦ ♣</Text>
         <Text style={webLandingStyles.title}>CAPS POKER</Text>
-        <Text style={webLandingStyles.tagline}>5 Boards. 4 Cards. Your Strategy.</Text>
+        <Text style={webLandingStyles.tagline}>Up to 4 Boards. 4 Cards. Your Strategy.</Text>
 
         <View style={webLandingStyles.howToPlay}>
           <Text style={webLandingStyles.step} accessibilityLabel="Place your cards across multiple poker boards">♠ Place your cards across multiple poker boards</Text>

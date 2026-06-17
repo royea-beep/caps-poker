@@ -1,0 +1,25 @@
+{
+  "nanFreeBody": true,
+  "hintTextHidden": true,
+  "pillPresent": true,
+  "boardCount": 5,
+  "notes": [
+    "cardLikes=64 buckets=28 rows=5 cols=5"
+  ],
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\projects\\POKER\\Caps\\caps-ux-audit\\2026-06-06\\pr_o_verify\\390_4b.png",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "players": 2,
+  "expectedBoards": 4,
+  "seedState": {
+    "caps_games_played": "99",
+    "guidedModeForced": null,
+    "persistedNumberOfPlayers": 2
+  },
+  "usedJsDismissFallback": false
+}

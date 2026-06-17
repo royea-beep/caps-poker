@@ -1,0 +1,294 @@
+{
+  "iter": 5,
+  "iter_label": "5b-tight-text-rect",
+  "commit": "56c5ae1",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\shrink-fix\\2p.png",
+  "cardWaitFinalCount": 170,
+  "chips": {
+    "all": [
+      {
+        "text": "9,900",
+        "top": 17,
+        "left": 23
+      }
+    ],
+    "hasNaN": false,
+    "chipsText": "9,900"
+  },
+  "boards": {
+    "labelCount": 4,
+    "autoBtnCount": 4,
+    "boardCount": 4,
+    "perBoard": [
+      {
+        "boardIndex": 0,
+        "boardRect": {
+          "top": 86,
+          "left": 6,
+          "right": 193,
+          "bottom": 249
+        },
+        "boardLabel": {
+          "text": "לוח 2",
+          "top": 91,
+          "left": 152.3,
+          "right": 181,
+          "bottom": 105,
+          "width": 28.7
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 94,
+          "left": 128.9,
+          "right": 183,
+          "bottom": 104,
+          "width": 54.1
+        },
+        "firstCommunityCard": {
+          "top": 122.3,
+          "left": 17,
+          "right": 44,
+          "bottom": 160.3
+        },
+        "autoBtn_vs_label_intersects": true,
+        "autoBtn_vs_label_intersect_rect": {
+          "left": 152.3,
+          "right": 181,
+          "top": 94,
+          "bottom": 104,
+          "w": 28.7,
+          "h": 10
+        },
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_y_alignment_with_label": true,
+        "autoBtn_topVsLabel_top_dp": 3
+      },
+      {
+        "boardIndex": 1,
+        "boardRect": {
+          "top": 86,
+          "left": 197,
+          "right": 384,
+          "bottom": 249
+        },
+        "boardLabel": {
+          "text": "לוח 1",
+          "top": 91,
+          "left": 344.5,
+          "right": 372,
+          "bottom": 105,
+          "width": 27.5
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 94,
+          "left": 319.9,
+          "right": 374,
+          "bottom": 104,
+          "width": 54.1
+        },
+        "firstCommunityCard": {
+          "top": 122.3,
+          "left": 208,
+          "right": 235,
+          "bottom": 160.3
+        },
+        "autoBtn_vs_label_intersects": true,
+        "autoBtn_vs_label_intersect_rect": {
+          "left": 344.5,
+          "right": 372,
+          "top": 94,
+          "bottom": 104,
+          "w": 27.5,
+          "h": 10
+        },
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_y_alignment_with_label": true,
+        "autoBtn_topVsLabel_top_dp": 3
+      },
+      {
+        "boardIndex": 2,
+        "boardRect": {
+          "top": 253,
+          "left": 6,
+          "right": 193,
+          "bottom": 416
+        },
+        "boardLabel": {
+          "text": "לוח 4",
+          "top": 258,
+          "left": 152.1,
+          "right": 181,
+          "bottom": 272,
+          "width": 28.9
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 261,
+          "left": 128.9,
+          "right": 183,
+          "bottom": 271,
+          "width": 54.1
+        },
+        "firstCommunityCard": {
+          "top": 289.3,
+          "left": 17,
+          "right": 44,
+          "bottom": 327.3
+        },
+        "autoBtn_vs_label_intersects": true,
+        "autoBtn_vs_label_intersect_rect": {
+          "left": 152.1,
+          "right": 181,
+          "top": 261,
+          "bottom": 271,
+          "w": 28.9,
+          "h": 10
+        },
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_y_alignment_with_label": true,
+        "autoBtn_topVsLabel_top_dp": 3
+      },
+      {
+        "boardIndex": 3,
+        "boardRect": {
+          "top": 253,
+          "left": 197,
+          "right": 384,
+          "bottom": 416
+        },
+        "boardLabel": {
+          "text": "לוח 3",
+          "top": 258,
+          "left": 343.3,
+          "right": 372,
+          "bottom": 272,
+          "width": 28.7
+        },
+        "autoBtn": {
+          "text": "⚡ מיקום אוטומטי",
+          "top": 261,
+          "left": 319.9,
+          "right": 374,
+          "bottom": 271,
+          "width": 54.1
+        },
+        "firstCommunityCard": {
+          "top": 289.3,
+          "left": 208,
+          "right": 235,
+          "bottom": 327.3
+        },
+        "autoBtn_vs_label_intersects": true,
+        "autoBtn_vs_label_intersect_rect": {
+          "left": 343.3,
+          "right": 372,
+          "top": 261,
+          "bottom": 271,
+          "w": 28.7,
+          "h": 10
+        },
+        "autoBtn_vs_community_intersects": false,
+        "autoBtn_vs_community_intersect_rect": null,
+        "autoBtn_y_alignment_with_label": true,
+        "autoBtn_topVsLabel_top_dp": 3
+      }
+    ],
+    "allAutoBtns": [
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 94,
+        "left": 319.9,
+        "right": 374,
+        "bottom": 104,
+        "w": 54.1
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 94,
+        "left": 128.9,
+        "right": 183,
+        "bottom": 104,
+        "w": 54.1
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 261,
+        "left": 319.9,
+        "right": 374,
+        "bottom": 271,
+        "w": 54.1
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 261,
+        "left": 128.9,
+        "right": 183,
+        "bottom": 271,
+        "w": 54.1
+      }
+    ],
+    "allLabels": [
+      {
+        "text": "לוח 1",
+        "top": 91,
+        "left": 344.5,
+        "right": 372,
+        "bottom": 105,
+        "w": 27.5
+      },
+      {
+        "text": "לוח 2",
+        "top": 91,
+        "left": 152.3,
+        "right": 181,
+        "bottom": 105,
+        "w": 28.7
+      },
+      {
+        "text": "לוח 3",
+        "top": 258,
+        "left": 343.3,
+        "right": 372,
+        "bottom": 272,
+        "w": 28.7
+      },
+      {
+        "text": "לוח 4",
+        "top": 258,
+        "left": 152.1,
+        "right": 181,
+        "bottom": 272,
+        "w": 28.9
+      }
+    ]
+  },
+  "hand": {
+    "handCardCount": 16,
+    "handRowCounts": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "handRowCount": 4,
+    "handBottomY": 770,
+    "actionBarTopY": 773,
+    "handClipDp": -3
+  },
+  "verdict": {
+    "allBoards_autoBtn_no_overlap": false,
+    "chips_not_nan": true,
+    "hand_rows_4": true,
+    "hand_cards_16": true,
+    "hand_no_clip": true,
+    "pass": false
+  }
+}

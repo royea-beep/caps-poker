@@ -1,0 +1,58 @@
+[
+  {
+    "name": "home",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "game",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "settings",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "leaderboard",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "profile",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "play",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "friends",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "cups",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "shop",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "chip-store",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "host",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "join",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "rank",
+    "error": "new row violates row-level security policy"
+  },
+  {
+    "name": "hand-history",
+    "error": "new row violates row-level security policy"
+  }
+]

@@ -1,0 +1,297 @@
+{
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "topBar": {
+    "top": 0,
+    "bottom": 52,
+    "h": 52,
+    "w": 390,
+    "x": 0,
+    "right": 390
+  },
+  "botSection": {
+    "top": 52,
+    "bottom": 82,
+    "h": 30,
+    "w": 390,
+    "x": 0,
+    "right": 390
+  },
+  "topChromeBottom": 82,
+  "chipsAmount": {
+    "top": 17,
+    "bottom": 36,
+    "h": 19,
+    "w": 41,
+    "x": 23,
+    "right": 64
+  },
+  "board0": {
+    "top": 86,
+    "bottom": 190,
+    "h": 104,
+    "w": 378,
+    "x": 6,
+    "right": 384
+  },
+  "board0Community": {
+    "top": 108,
+    "bottom": 152,
+    "h": 44,
+    "w": 366,
+    "x": 12,
+    "right": 378
+  },
+  "board0Slots": {
+    "top": 108,
+    "bottom": 152,
+    "h": 44,
+    "w": 366,
+    "x": 12,
+    "right": 378
+  },
+  "board1": {
+    "top": 194,
+    "bottom": 298,
+    "h": 104,
+    "w": 378,
+    "x": 6,
+    "right": 384
+  },
+  "board1Community": {
+    "top": 216,
+    "bottom": 260,
+    "h": 44,
+    "w": 366,
+    "x": 12,
+    "right": 378
+  },
+  "board1Slots": {
+    "top": 216,
+    "bottom": 260,
+    "h": 44,
+    "w": 366,
+    "x": 12,
+    "right": 378
+  },
+  "board2": {
+    "top": 302,
+    "bottom": 406,
+    "h": 104,
+    "w": 378,
+    "x": 6,
+    "right": 384
+  },
+  "board2Community": {
+    "top": 324,
+    "bottom": 368,
+    "h": 44,
+    "w": 366,
+    "x": 12,
+    "right": 378
+  },
+  "board2Slots": {
+    "top": 324,
+    "bottom": 368,
+    "h": 44,
+    "w": 366,
+    "x": 12,
+    "right": 378
+  },
+  "outerHandZone": {
+    "top": 424,
+    "bottom": 764,
+    "h": 340,
+    "w": 374,
+    "x": 8,
+    "right": 382
+  },
+  "innerHandZone": {
+    "top": 425,
+    "bottom": 593,
+    "h": 168,
+    "w": 374,
+    "x": 8,
+    "right": 382
+  },
+  "handLabel": {
+    "top": 432,
+    "bottom": 446,
+    "h": 14,
+    "w": 45,
+    "x": 337,
+    "right": 382
+  },
+  "handGrid": {
+    "top": 452,
+    "bottom": 590,
+    "h": 138,
+    "w": 374,
+    "x": 8,
+    "right": 382
+  },
+  "handRow0": {
+    "top": 452,
+    "bottom": 520,
+    "h": 68,
+    "w": 358,
+    "x": 16,
+    "right": 374
+  },
+  "handRow1": {
+    "top": 522,
+    "bottom": 590,
+    "h": 68,
+    "w": 358,
+    "x": 16,
+    "right": 374
+  },
+  "handRow2": null,
+  "handRowCount": 2,
+  "handCardCount": 12,
+  "handCardRects": [
+    {
+      "top": 456,
+      "bottom": 518,
+      "left": 322,
+      "right": 366,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 456,
+      "bottom": 518,
+      "left": 263,
+      "right": 307,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 456,
+      "bottom": 518,
+      "left": 204,
+      "right": 248,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 456,
+      "bottom": 518,
+      "left": 145,
+      "right": 189,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 456,
+      "bottom": 518,
+      "left": 86,
+      "right": 130,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 456,
+      "bottom": 518,
+      "left": 27,
+      "right": 71,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 526,
+      "bottom": 588,
+      "left": 322,
+      "right": 366,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 526,
+      "bottom": 588,
+      "left": 263,
+      "right": 307,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 526,
+      "bottom": 588,
+      "left": 204,
+      "right": 248,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 526,
+      "bottom": 588,
+      "left": 145,
+      "right": 189,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 526,
+      "bottom": 588,
+      "left": 86,
+      "right": 130,
+      "w": 44,
+      "h": 62
+    },
+    {
+      "top": 526,
+      "bottom": 588,
+      "left": 27,
+      "right": 71,
+      "w": 44,
+      "h": 62
+    }
+  ],
+  "autoBtn": {
+    "top": 93,
+    "bottom": 103,
+    "h": 10,
+    "w": 54,
+    "x": 17,
+    "right": 71
+  },
+  "autoIntersect": {
+    "board0": true,
+    "board1": false,
+    "board2": false
+  },
+  "actionBar": {
+    "top": 773,
+    "bottom": 844,
+    "h": 71,
+    "w": 390,
+    "x": 0,
+    "right": 390
+  },
+  "cancelBtn": {
+    "top": 800,
+    "bottom": 821,
+    "h": 21,
+    "w": 43,
+    "x": 264,
+    "right": 306
+  },
+  "confirmBtn": {
+    "top": 800,
+    "bottom": 821,
+    "h": 21,
+    "w": 47,
+    "x": 81,
+    "right": 127
+  },
+  "chipsNaN": false,
+  "topChromeTextSample": "✕\nסדר 12 קלפים\n💰\n9,925\n🤖\nבוטים 0/2\n…",
+  "label": "3p-before",
+  "ready": true,
+  "consoleErrors": [
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-08\\spacing\\3p-before.png"
+}

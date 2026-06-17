@@ -1,0 +1,93 @@
+{
+  "boardCount": 3,
+  "boards": [
+    {
+      "index": 0,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 86,
+      "boardBottom": 250,
+      "boardWidth": 378,
+      "boardHeight": 164,
+      "borderWidth": 2,
+      "topClearance": 27,
+      "bottomClearance": -1,
+      "topMostCardTop": 115,
+      "bottomMostCardBottom": 249,
+      "rectsInBoard": 9,
+      "overflowsBoard": true,
+      "notes": []
+    },
+    {
+      "index": 1,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 254,
+      "boardBottom": 418,
+      "boardWidth": 378,
+      "boardHeight": 164,
+      "borderWidth": 2,
+      "topClearance": 27,
+      "bottomClearance": -1,
+      "topMostCardTop": 283,
+      "bottomMostCardBottom": 417,
+      "rectsInBoard": 9,
+      "overflowsBoard": true,
+      "notes": []
+    },
+    {
+      "index": 2,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 422,
+      "boardBottom": 586,
+      "boardWidth": 378,
+      "boardHeight": 164,
+      "borderWidth": 2,
+      "topClearance": 27,
+      "bottomClearance": -1,
+      "topMostCardTop": 451,
+      "bottomMostCardBottom": 585,
+      "rectsInBoard": 9,
+      "overflowsBoard": true,
+      "notes": []
+    }
+  ],
+  "worst_top_clearance": 27,
+  "worst_bottom_clearance": -1,
+  "any_overflow": true,
+  "notes": [
+    "board_candidates=3 expected=3"
+  ],
+  "hand_card_count": 12,
+  "autoPlace_vs_BoardLabel_overlap": true,
+  "autoPlace_count": 6,
+  "boardLabel_count": 6,
+  "chips_has_NaN": false,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "passDetail": {
+    "topClearancePass": true,
+    "bottomClearancePass": false,
+    "noOverflowPass": false,
+    "handCount12": true,
+    "autoPlaceNoOverlap": false,
+    "chipsNoNaN": true,
+    "safetyDp": 6
+  },
+  "pass": false,
+  "state": "placement",
+  "numberOfPlayers": 3,
+  "expectedBoards": 3,
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-08\\spacing\\3p-placement.png",
+  "elapsedMs": 9568,
+  "handCountWaited": 54
+}

@@ -1,0 +1,168 @@
+{
+  "commit": "c5c24aa",
+  "chipsTextObserved": "9,900",
+  "allTopTexts": [
+    {
+      "text": "✕",
+      "top": 16,
+      "left": 349,
+      "right": 363
+    },
+    {
+      "text": "סדר 16 קלפים",
+      "top": 13,
+      "left": 155,
+      "right": 277
+    },
+    {
+      "text": "💰",
+      "top": 17,
+      "left": 68,
+      "right": 87
+    },
+    {
+      "text": "9,900",
+      "top": 17,
+      "left": 23,
+      "right": 64
+    },
+    {
+      "text": "🤖",
+      "top": 58,
+      "left": 234,
+      "right": 253
+    },
+    {
+      "text": "בוט 1",
+      "top": 60,
+      "left": 196,
+      "right": 226
+    },
+    {
+      "text": "✓ מוכן",
+      "top": 60,
+      "left": 146,
+      "right": 179
+    },
+    {
+      "text": "לוח 1",
+      "top": 90,
+      "left": 339,
+      "right": 378
+    },
+    {
+      "text": "לוח 2",
+      "top": 90,
+      "left": 146,
+      "right": 187
+    },
+    {
+      "text": "You need to enable JavaScript to run this app.",
+      "top": 0,
+      "left": 0,
+      "right": 0
+    }
+  ],
+  "nanInChrome": false,
+  "boardLabels": [
+    {
+      "text": "לוח 1",
+      "top": 90,
+      "left": 338.5,
+      "right": 378,
+      "bottom": 106,
+      "w": 39.5,
+      "h": 16
+    },
+    {
+      "text": "לוח 2",
+      "top": 90,
+      "left": 146.3,
+      "right": 187,
+      "bottom": 106,
+      "w": 40.7,
+      "h": 16
+    },
+    {
+      "text": "לוח 3",
+      "top": 257,
+      "left": 337.3,
+      "right": 378,
+      "bottom": 273,
+      "w": 40.7,
+      "h": 16
+    },
+    {
+      "text": "לוח 4",
+      "top": 257,
+      "left": 146.1,
+      "right": 187,
+      "bottom": 273,
+      "w": 40.9,
+      "h": 16
+    }
+  ],
+  "autoBtns": [],
+  "overlapPerBoard": {
+    "לוח 1": false,
+    "לוח 2": false,
+    "לוח 3": false,
+    "לוח 4": false
+  },
+  "allOverlapsFalse": true,
+  "handLayout": {
+    "handCardCount": 16,
+    "handRows": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "handBottom": 770,
+    "actionBarTop": 773,
+    "handClipDp": -3
+  },
+  "cardCount": 168,
+  "consoleErrorCount": 5,
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\shrink-fix\\2p.png",
+  "autoBtnReprobe": {
+    "autoBtnTextNodeCount": 4,
+    "autoBtns": [
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 117,
+        "left": 309,
+        "right": 373,
+        "bottom": 128
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 117,
+        "left": 118,
+        "right": 182,
+        "bottom": 128
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 284,
+        "left": 309,
+        "right": 373,
+        "bottom": 295
+      },
+      {
+        "text": "⚡ מיקום אוטומטי",
+        "top": 284,
+        "left": 118,
+        "right": 182,
+        "bottom": 295
+      }
+    ],
+    "overlapPerBoardCorrected": {
+      "לוח 1": false,
+      "לוח 2": false,
+      "לוח 3": false,
+      "לוח 4": false
+    },
+    "allOverlapsFalseCorrected": true
+  }
+}

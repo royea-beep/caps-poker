@@ -1,0 +1,42 @@
+{
+  "summary": "PR-O HAND_ZONE_HEIGHT unification verify on 390x844 returning-player 2P",
+  "handCardCount": 16,
+  "handCardCount_raw_dedup": 36,
+  "handCardCount_note": "Raw dedup counts nested card elements per card; visual confirms 16 cards (4x4 grid). Row analysis: 4 distinct row bands (y=411,480,555,615) each with 4 cards.",
+  "gap_boards_to_hand": 28,
+  "gap_boards_to_hand_note": "boards.bottom=383, hand.top=411. Target <20dp slightly exceeded by 8dp but well under previous 211dp dead-gap regression.",
+  "overlap_hand_pill": 0,
+  "overlap_hand_pill_note": "hand.bottom=689, pill.top=757, clearance=68dp",
+  "overlap_hand_actionBar": 0,
+  "overlap_hand_actionBar_note": "hand.bottom=689, actionBar.top=744, clearance=55dp",
+  "rows_below_viewport": 0,
+  "row4_y_range": { "top": 615, "bottom": 689 },
+  "row4_y_range_note": "row4 bottom=689 < viewport 844 (155dp headroom)",
+  "badgeFound": true,
+  "pillPresent": true,
+  "pillText": "סדר 16 קלפים",
+  "topChrome": { "top": 0, "bottom": 52, "left": 0, "right": 390, "width": 390, "height": 52 },
+  "boards": { "top": 82, "bottom": 383, "left": 0, "right": 390, "height": 301 },
+  "hand": { "top": 411, "bottom": 689, "left": 79, "right": 312, "height": 278 },
+  "handLabel": { "top": 391, "bottom": 405 },
+  "pillRect": { "top": 757, "bottom": 774, "left": 161, "right": 229, "width": 69, "height": 17 },
+  "actionBar": { "top": 744, "bottom": 844 },
+  "handCardRows_coalesced": [
+    { "row": 1, "y": 411, "n": 4, "bottom": 479 },
+    { "row": 2, "y": 480, "n": 4, "bottom": 549 },
+    { "row": 3, "y": 555, "n": 4, "bottom": 619 },
+    { "row": 4, "y": 615, "n": 4, "bottom": 689 }
+  ],
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first."
+  ],
+  "screenshotPath": "C:\\projects\\POKER\\Caps\\caps-ux-audit\\2026-06-06\\pr_o_verify\\390_2b.png",
+  "viewport": { "width": 390, "height": 844 },
+  "players": 2,
+  "boardsCount": 4,
+  "guardPassed": true,
+  "verdict": "PASS",
+  "verdict_caveats": [
+    "gap_boards_to_hand=28dp slightly exceeds target <20dp by 8dp (still well under prior 211dp regression)"
+  ]
+}

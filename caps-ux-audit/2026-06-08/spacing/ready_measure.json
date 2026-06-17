@@ -1,0 +1,80 @@
+{
+  "readyMeasure": {
+    "viewport": {
+      "W": 390,
+      "H": 844
+    },
+    "actionBarTop": 784,
+    "actionBarRect": {
+      "top": 784,
+      "bottom": 836,
+      "left": 20,
+      "right": 190
+    },
+    "handZone": {
+      "top": 364.328125,
+      "bottom": 515,
+      "count": 27
+    },
+    "cardLikes": 27,
+    "boardRows": [],
+    "handBottomRaw": 515,
+    "handTopRaw": 364.328125,
+    "cardLikeCountAll": 27
+  },
+  "placedTotal": 42,
+  "handLeft": 0,
+  "boardsAfter": [
+    {
+      "quadrant": "tl",
+      "cx": 100,
+      "cy": 185.4921875,
+      "bottomRowY": 225.97734375,
+      "rightSlotX": 173,
+      "top": 127.65625,
+      "bottom": 243.328125,
+      "left": 7,
+      "right": 193,
+      "cardCount": 28
+    },
+    {
+      "quadrant": "tr",
+      "cx": 291,
+      "cy": 185.4921875,
+      "bottomRowY": 225.97734375,
+      "rightSlotX": 364,
+      "top": 127.65625,
+      "bottom": 243.328125,
+      "left": 198,
+      "right": 384,
+      "cardCount": 28
+    },
+    {
+      "quadrant": "bl",
+      "cx": 100,
+      "cy": 369.4921875,
+      "bottomRowY": 409.97734375,
+      "rightSlotX": 173,
+      "top": 311.65625,
+      "bottom": 427.328125,
+      "left": 7,
+      "right": 193,
+      "cardCount": 28
+    },
+    {
+      "quadrant": "br",
+      "cx": 290.5,
+      "cy": 369.4921875,
+      "bottomRowY": 409.97734375,
+      "rightSlotX": 361,
+      "top": 311.65625,
+      "bottom": 427.328125,
+      "left": 200,
+      "right": 381,
+      "cardCount": 27
+    }
+  ],
+  "consoleErrors": [
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ]
+}

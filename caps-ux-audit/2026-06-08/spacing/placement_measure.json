@@ -1,0 +1,46 @@
+{
+  "placementMeasure": {
+    "viewport": {
+      "W": 390,
+      "H": 844
+    },
+    "actionBarTop": 784,
+    "actionBarRect": {
+      "top": 784,
+      "bottom": 836,
+      "left": 20,
+      "right": 190
+    },
+    "handZone": {
+      "top": 447,
+      "bottom": 765,
+      "count": 70
+    },
+    "cardLikes": 86,
+    "boardRows": [
+      {
+        "quadrant": "bl",
+        "top": 369,
+        "bottom": 424,
+        "left": 15,
+        "right": 184,
+        "count": 8
+      },
+      {
+        "quadrant": "br",
+        "top": 369,
+        "bottom": 424,
+        "left": 206,
+        "right": 375,
+        "count": 8
+      }
+    ],
+    "handBottomRaw": 765,
+    "handTopRaw": 369,
+    "cardLikeCountAll": 86
+  },
+  "handCount": 48,
+  "consoleErrors": [
+    "pageerror:play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ]
+}

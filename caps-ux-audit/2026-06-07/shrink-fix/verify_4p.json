@@ -1,0 +1,216 @@
+{
+  "boardCount": 2,
+  "boards": [
+    {
+      "index": 0,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 86,
+      "boardBottom": 257,
+      "boardWidth": 378,
+      "boardHeight": 171,
+      "borderWidth": 2,
+      "leftClearance": 39.5,
+      "rightClearance": 39.5,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 109,
+      "cardRowsBottom": 261,
+      "cardHeight": 74,
+      "emptyMaroonBelowDp": -6,
+      "cardRects": [
+        {
+          "left": 47.5,
+          "right": 100.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 103.5,
+          "right": 156.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 177.5,
+          "right": 230.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 233.5,
+          "right": 286.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 289.5,
+          "right": 342.5,
+          "width": 53,
+          "height": 74
+        }
+      ],
+      "notes": []
+    },
+    {
+      "index": 1,
+      "boardLeft": 6,
+      "boardRight": 384,
+      "boardTop": 261,
+      "boardBottom": 432,
+      "boardWidth": 378,
+      "boardHeight": 171,
+      "borderWidth": 2,
+      "leftClearance": 39.5,
+      "rightClearance": 39.5,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 284,
+      "cardRowsBottom": 436,
+      "cardHeight": 74,
+      "emptyMaroonBelowDp": -6,
+      "cardRects": [
+        {
+          "left": 47.5,
+          "right": 100.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 103.5,
+          "right": 156.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 177.5,
+          "right": 230.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 233.5,
+          "right": 286.5,
+          "width": 53,
+          "height": 74
+        },
+        {
+          "left": 289.5,
+          "right": 342.5,
+          "width": 53,
+          "height": 74
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "worst_left_clearance": 39.5,
+  "worst_right_clearance": 39.5,
+  "worst_maroon_below_dp": -6,
+  "hand_clip_dp": -146,
+  "notes": [
+    "board_candidates=2 expected=2"
+  ],
+  "action_bar_top_y": 773,
+  "hand_bottom_y": 627,
+  "hand_card_count": 8,
+  "global_max_board_bottom": 432,
+  "hand_card_rects": [
+    {
+      "left": 78.5,
+      "right": 134.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 137.5,
+      "right": 193.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 196.5,
+      "right": 252.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 255.5,
+      "right": 311.5,
+      "top": 489,
+      "bottom": 557,
+      "width": 56
+    },
+    {
+      "left": 78.5,
+      "right": 134.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 137.5,
+      "right": 193.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 196.5,
+      "right": 252.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    },
+    {
+      "left": 255.5,
+      "right": 311.5,
+      "top": 559,
+      "bottom": 627,
+      "width": 56
+    }
+  ],
+  "viewport_innerWidth": 390,
+  "hand_rows": 2,
+  "hand_cols": 4,
+  "top_chrome_has_nan": true,
+  "top_chrome_nan_samples": [
+    "✕\nסדר 8 קלפים\n💰\nNaN\n🤖\nבוטים 3/3\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n7\n♥\n♥\n♦\nA\n♣\n♣\n♦\n2\n♥\n♥\n♦\n4\n♥\n♥\n♦\nJ\n♣",
+    "✕\nסדר 8 קלפים\n💰\nNaN\n🤖\nבוטים 3/3\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n7\n♥\n♥\n♦\nA\n♣\n♣\n♦\n2\n♥\n♥\n♦\n4\n♥\n♥\n♦\nJ\n♣",
+    "✕\nסדר 8 קלפים\n💰\nNaN\n🤖\nבוטים 3/3\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n7\n♥\n♥\n♦\nA\n♣\n♣\n♦\n2\n♥\n♥\n♦\n4\n♥\n♥\n♦\nJ\n♣",
+    "✕\nסדר 8 קלפים\n💰\nNaN\n🤖\nבוטים 3/3\n✓ מוכן\nלוח 1\n⚡ מיקום אוטומטי\n♦\n7\n♥\n♥\n♦\nA\n♣\n♣\n♦\n2\n♥\n♥\n♦\n4\n♥\n♥\n♦\nJ\n♣"
+  ],
+  "hand_left_clip_dp": 0,
+  "hand_right_clip_dp": 0,
+  "allBoardsClean": true,
+  "passDetail": {
+    "clearancePass": true,
+    "maroonPass": true,
+    "handPass": true,
+    "handHClipPass": true,
+    "cardHeightForMaroonLimit": 74,
+    "maroonLimitDp": 74
+  },
+  "label": "4p",
+  "numberOfPlayers": 4,
+  "expectedBoards": 2,
+  "gridMode": "2x1",
+  "expectedHandRows": 2,
+  "expectedHandCols": 4,
+  "expectedHandCards": 8,
+  "handGridPass": true,
+  "pass": false,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "cardWaitFinalCount": 84,
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\shrink-fix\\4p.png",
+  "elapsedMs": 10037
+}

@@ -1,0 +1,372 @@
+{
+  "boardCount": 4,
+  "boards": [
+    {
+      "index": 0,
+      "boardLeft": 6,
+      "boardRight": 193,
+      "boardTop": 86,
+      "boardBottom": 249,
+      "boardWidth": 187,
+      "boardHeight": 163,
+      "borderWidth": 2,
+      "leftClearance": 9,
+      "rightClearance": 9,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 122,
+      "cardRowsBottom": 231,
+      "cardHeight": 38,
+      "emptyMaroonBelowDp": 16,
+      "cardRects": [
+        {
+          "left": 17,
+          "right": 44,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 47,
+          "right": 74,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 95,
+          "right": 122,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 125,
+          "right": 152,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 155,
+          "right": 182,
+          "width": 27,
+          "height": 38
+        }
+      ],
+      "notes": []
+    },
+    {
+      "index": 1,
+      "boardLeft": 197,
+      "boardRight": 384,
+      "boardTop": 86,
+      "boardBottom": 249,
+      "boardWidth": 187,
+      "boardHeight": 163,
+      "borderWidth": 2,
+      "leftClearance": 9,
+      "rightClearance": 9,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 122,
+      "cardRowsBottom": 231,
+      "cardHeight": 38,
+      "emptyMaroonBelowDp": 16,
+      "cardRects": [
+        {
+          "left": 208,
+          "right": 235,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 238,
+          "right": 265,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 286,
+          "right": 313,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 316,
+          "right": 343,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 346,
+          "right": 373,
+          "width": 27,
+          "height": 38
+        }
+      ],
+      "notes": []
+    },
+    {
+      "index": 2,
+      "boardLeft": 6,
+      "boardRight": 193,
+      "boardTop": 253,
+      "boardBottom": 416,
+      "boardWidth": 187,
+      "boardHeight": 163,
+      "borderWidth": 2,
+      "leftClearance": 9,
+      "rightClearance": 9,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 289,
+      "cardRowsBottom": 398,
+      "cardHeight": 38,
+      "emptyMaroonBelowDp": 16,
+      "cardRects": [
+        {
+          "left": 17,
+          "right": 44,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 47,
+          "right": 74,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 95,
+          "right": 122,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 125,
+          "right": 152,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 155,
+          "right": 182,
+          "width": 27,
+          "height": 38
+        }
+      ],
+      "notes": []
+    },
+    {
+      "index": 3,
+      "boardLeft": 197,
+      "boardRight": 384,
+      "boardTop": 253,
+      "boardBottom": 416,
+      "boardWidth": 187,
+      "boardHeight": 163,
+      "borderWidth": 2,
+      "leftClearance": 9,
+      "rightClearance": 9,
+      "cardCount": 5,
+      "cardRows": 2,
+      "cardRowsTop": 289,
+      "cardRowsBottom": 398,
+      "cardHeight": 38,
+      "emptyMaroonBelowDp": 16,
+      "cardRects": [
+        {
+          "left": 208,
+          "right": 235,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 238,
+          "right": 265,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 286,
+          "right": 313,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 316,
+          "right": 343,
+          "width": 27,
+          "height": 38
+        },
+        {
+          "left": 346,
+          "right": 373,
+          "width": 27,
+          "height": 38
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "worst_left_clearance": 9,
+  "worst_right_clearance": 9,
+  "worst_maroon_below_dp": 16,
+  "hand_clip_dp": -3,
+  "notes": [
+    "board_candidates=4 expected=4"
+  ],
+  "action_bar_top_y": 773,
+  "hand_bottom_y": 770,
+  "hand_card_count": 16,
+  "hand_row_count": 4,
+  "hand_row_counts": [
+    4,
+    4,
+    4,
+    4
+  ],
+  "global_max_board_bottom": 416,
+  "hand_card_rects": [
+    {
+      "left": 62.5,
+      "right": 126.5,
+      "top": 452,
+      "bottom": 530,
+      "width": 64
+    },
+    {
+      "left": 129.5,
+      "right": 193.5,
+      "top": 452,
+      "bottom": 530,
+      "width": 64
+    },
+    {
+      "left": 196.5,
+      "right": 260.5,
+      "top": 452,
+      "bottom": 530,
+      "width": 64
+    },
+    {
+      "left": 263.5,
+      "right": 327.5,
+      "top": 452,
+      "bottom": 530,
+      "width": 64
+    },
+    {
+      "left": 62.5,
+      "right": 126.5,
+      "top": 532,
+      "bottom": 610,
+      "width": 64
+    },
+    {
+      "left": 129.5,
+      "right": 193.5,
+      "top": 532,
+      "bottom": 610,
+      "width": 64
+    },
+    {
+      "left": 196.5,
+      "right": 260.5,
+      "top": 532,
+      "bottom": 610,
+      "width": 64
+    },
+    {
+      "left": 263.5,
+      "right": 327.5,
+      "top": 532,
+      "bottom": 610,
+      "width": 64
+    },
+    {
+      "left": 62.5,
+      "right": 126.5,
+      "top": 612,
+      "bottom": 690,
+      "width": 64
+    },
+    {
+      "left": 129.5,
+      "right": 193.5,
+      "top": 612,
+      "bottom": 690,
+      "width": 64
+    },
+    {
+      "left": 196.5,
+      "right": 260.5,
+      "top": 612,
+      "bottom": 690,
+      "width": 64
+    },
+    {
+      "left": 263.5,
+      "right": 327.5,
+      "top": 612,
+      "bottom": 690,
+      "width": 64
+    },
+    {
+      "left": 62.5,
+      "right": 126.5,
+      "top": 692,
+      "bottom": 770,
+      "width": 64
+    },
+    {
+      "left": 129.5,
+      "right": 193.5,
+      "top": 692,
+      "bottom": 770,
+      "width": 64
+    },
+    {
+      "left": 196.5,
+      "right": 260.5,
+      "top": 692,
+      "bottom": 770,
+      "width": 64
+    },
+    {
+      "left": 263.5,
+      "right": 327.5,
+      "top": 692,
+      "bottom": 770,
+      "width": 64
+    }
+  ],
+  "viewport_innerWidth": 390,
+  "hand_left_clip_dp": 0,
+  "hand_right_clip_dp": 0,
+  "allBoardsClean": true,
+  "passDetail": {
+    "clearancePass": true,
+    "maroonPass": true,
+    "handPass": true,
+    "handHClipPass": true,
+    "cardHeightForMaroonLimit": 38,
+    "maroonLimitDp": 38
+  },
+  "label": "2p",
+  "numberOfPlayers": 2,
+  "expectedBoards": 4,
+  "gridMode": "2x2",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "cardWaitFinalCount": 174,
+  "consoleErrors": [
+    "[warning] [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.",
+    "[log] [SCREEN-REC] captureScreen loaded, type: function",
+    "[warning] expo-file-system is not supported on web",
+    "[warning] expo-file-system is not supported on web",
+    "[warning] Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle ex",
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "screenshotPath": "C:\\Projects\\POKER\\Caps\\caps-ux-audit\\2026-06-07\\shrink-fix\\2p.png",
+  "elapsedMs": 10058
+}

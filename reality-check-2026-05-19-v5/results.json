@@ -1,0 +1,72 @@
+[
+  {
+    "name": "home",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\home.png",
+    "size": 125409
+  },
+  {
+    "name": "game",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\game.png",
+    "size": 388639
+  },
+  {
+    "name": "settings",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\settings.png",
+    "size": 139443
+  },
+  {
+    "name": "leaderboard",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\leaderboard.png",
+    "size": 204197
+  },
+  {
+    "name": "profile",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\profile.png",
+    "size": 102215
+  },
+  {
+    "name": "play",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\play.png",
+    "size": 121175
+  },
+  {
+    "name": "friends",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\friends.png",
+    "size": 115944
+  },
+  {
+    "name": "cups",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\cups.png",
+    "size": 142502
+  },
+  {
+    "name": "shop",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\shop.png",
+    "size": 160843
+  },
+  {
+    "name": "chip-store",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\chip-store.png",
+    "size": 181876
+  },
+  {
+    "name": "host",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\host.png",
+    "size": 114307
+  },
+  {
+    "name": "join",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\join.png",
+    "size": 42758
+  },
+  {
+    "name": "rank",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\rank.png",
+    "size": 32885
+  },
+  {
+    "name": "hand-history",
+    "local": "C:\\projects\\POKER\\Caps\\reality-check-2026-05-19-v5\\hand-history.png",
+    "size": 61612
+  }
+]

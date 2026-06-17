@@ -1,0 +1,90 @@
+[
+  {
+    "tag": "home_fresh_viewport",
+    "route": "/",
+    "onboarded": false,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/home_fresh_viewport.png",
+    "bodyPreview": "♠ ♥ ♦ ♣ CAPS POKER 5 Boards. 4 Cards. Your Strategy. ♠ Place your cards across multiple poker boards ♥ Each board is a separate hand — yours vs the dealer ♦ Win the majority of boards to earn chips PL"
+  },
+  {
+    "tag": "home_fresh_fullpage",
+    "route": "/",
+    "onboarded": false,
+    "full": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/home_fresh_fullpage.png",
+    "bodyPreview": "♠ ♥ ♦ ♣ CAPS POKER 5 Boards. 4 Cards. Your Strategy. ♠ Place your cards across multiple poker boards ♥ Each board is a separate hand — yours vs the dealer ♦ Win the majority of boards to earn chips PL"
+  },
+  {
+    "tag": "home_onboarded_viewport",
+    "route": "/",
+    "onboarded": true,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/home_onboarded_viewport.png",
+    "bodyPreview": "♠ ♥ ♦ ♣ CAPS POKER 5 Boards. 4 Cards. Your Strategy. ♠ Place your cards across multiple poker boards ♥ Each board is a separate hand — yours vs the dealer ♦ Win the majority of boards to earn chips PL"
+  },
+  {
+    "tag": "home_onboarded_fullpage",
+    "route": "/",
+    "onboarded": true,
+    "full": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/home_onboarded_fullpage.png",
+    "bodyPreview": "♠ ♥ ♦ ♣ CAPS POKER 5 Boards. 4 Cards. Your Strategy. ♠ Place your cards across multiple poker boards ♥ Each board is a separate hand — yours vs the dealer ♦ Win the majority of boards to earn chips PL"
+  },
+  {
+    "tag": "play_tab",
+    "route": "/play",
+    "onboarded": true,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/play_tab.png",
+    "bodyPreview": "PLAY Choose your game mode ⚡ Quick Poker 200 💰 · Fast-paced Omaha 🎯 Sit & Go 100 💰 · Tournament format 🏆 Tournament Multi-round competition 🌐 Online / Local WiFi Host or join a game 🏠 🏠 Home ♠️"
+  },
+  {
+    "tag": "cups_tab",
+    "route": "/cups",
+    "onboarded": true,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/cups_tab.png",
+    "bodyPreview": "CUPS / כוסות 0/5 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד. 🏆 🔒 כוס הארד 1 🏆 🔒 כוס הכסף 2 🏆 🔒 כוס הזהב 3 🏆 🔒 כוס הפלטינה 4 🏆 🔒 כוס היהלום 5 🏠 🏠 Home ♠️ ♠️ Play 👥 👥 Friends 🏆 🏆 Cups 👤"
+  },
+  {
+    "tag": "profile_tab",
+    "route": "/profile",
+    "onboarded": true,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/profile_tab.png",
+    "bodyPreview": "PROFILE Player 0 HANDS 0% WIN RATE 0 STREAK 1,050 CHIPS 💰 🥇 Achievements › 📋 Daily Missions › 📖 Hand History › 📊 Detailed Stats › 🏆 Leaderboard › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👥 👥 Friend"
+  },
+  {
+    "tag": "friends_tab",
+    "route": "/friends",
+    "onboarded": true,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/friends_tab.png",
+    "bodyPreview": "FRIENDS Challenge · Invite · Compete 🎁 Invite Friends Share your code · +100 💰 per friend 📊 Leaderboard See where you rank globally 🌐 Host Online Game Create a room for friends to join 🎮 Join Gam"
+  },
+  {
+    "tag": "game_screen",
+    "route": "/game",
+    "onboarded": true,
+    "full": false,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/game_screen.png",
+    "bodyPreview": "✕ PLACE 16 CARDS 💰 950 🤖 BOT 1 ✓ READY BOARD 1 קהילה ♦ 9 ♥ 9 ♥ 9 ♥ ♦ 5 ♣ 5 ♣ 5 ♣ ♦ K ♠ K ♠ K ♠ ♦ J ♥ J ♥ J ♥ ♦ 7 ♦ 7 ♦ 7 ♦ ⚡ Auto-Place BOARD 2 קהילה ♦ 6 ♦ 6 ♦ 6 ♦ ♦ A ♣ A ♣ A ♣ ♦ K ♥ K ♥ K ♥ ♦ K ♦ "
+  },
+  {
+    "tag": "settings_full",
+    "route": "/settings",
+    "onboarded": true,
+    "full": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/settings_full.png",
+    "bodyPreview": "← Back SETTINGS 🎨 VISUAL STYLE ♠ CLASSIC Timeless ✓ ♠ FIVE-O Arcade 📱 ORIENTATION 📱 Portrait ✓ 🖥️ Widescreen 🖼️ BACKGROUND THEME None No bg ✓ Sofa Central Perk Logo C. Perk sign Fountain NYC foun"
+  },
+  {
+    "tag": "leaderboard_full",
+    "route": "/leaderboard",
+    "onboarded": true,
+    "full": true,
+    "url": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-latest-design/leaderboard_full.png",
+    "bodyPreview": "← Back LEADERBOARD 🪙 Chips % Win Rate # Player Chips 🥇 AceKing 244h 24,339🪙 63% win 🥈 BluffMaster 232h 24,113🪙 67% win 🥉 AllInRoni 262h 22,007🪙 52% win #4 RiverRat 249h 21,976🪙 60% win #5 CAPS"
+  }
+]

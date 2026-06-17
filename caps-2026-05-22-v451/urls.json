@@ -1,0 +1,54 @@
+[
+  {
+    "tag": "home_fresh",
+    "url": "https://caps.ftable.co.il/",
+    "publicUrl": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-v451/home_fresh.png",
+    "bodyPreview": "♠ ♥ ♦ ♣\nCAPS POKER\n5 Boards. 4 Cards. Your Strategy.\n♠ Place your cards across multiple poker boards\n♥ Each board is a separate hand — yours vs the dealer\n♦ Win the majority of boards to earn chips\nPLAY NOW\n📱 Best experience on mobile — available on TestFlight\n♠\n♦\n♣\n♥\n♠\n♦\n♥\n♣\n♠\n♦\n♥\n♣\n♠\n♥\n♦\nדלג\n♦\nA\n",
+    "pageErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "tag": "home",
+    "url": "https://caps.ftable.co.il/",
+    "publicUrl": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-v451/home.png",
+    "bodyPreview": "♠ ♥ ♦ ♣\nCAPS POKER\n5 Boards. 4 Cards. Your Strategy.\n♠ Place your cards across multiple poker boards\n♥ Each board is a separate hand — yours vs the dealer\n♦ Win the majority of boards to earn chips\nPLAY NOW\n📱 Best experience on mobile — available on TestFlight\n♠\n♦\n♣\n♥\n♠\n♦\n♥\n♣\n♠\n♦\n♥\n♣\n♠\n♥\n♦\nSKIP\n♦\nA",
+    "pageErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "tag": "settings",
+    "url": "https://caps.ftable.co.il/settings",
+    "publicUrl": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-v451/settings.png",
+    "bodyPreview": "← Back\nSETTINGS\n🎨 VISUAL STYLE\n♠\nCLASSIC\nTimeless\n✓\n♠\nFIVE-O\nArcade\n📱 ORIENTATION\n📱\nPortrait\n✓\n🖥️\nWidescreen\n🖼️ BACKGROUND THEME\nNone\nNo bg\n✓\nSofa\nCentral Perk\nLogo\nC. Perk sign\nFountain\nNYC fountain\nPROFILE\n👤\nPlayer\nShown on leaderboard · Tap to edit\nEDIT\nGAMEPLAY\nPlayers\n2 Players (vs 1 Bot)",
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  {
+    "tag": "game",
+    "url": "https://caps.ftable.co.il/game",
+    "publicUrl": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-v451/game.png",
+    "bodyPreview": "✕\nPLACE 16 CARDS\n💰\n1,000\n🤖\nBOT 1\n✓ READY\nBOARD 1\nקהילה\n♦\n9\n♥\n9\n♥\n9\n♥\n♦\n5\n♥\n5\n♥\n5\n♥\n♦\nA\n♣\nA\n♣\nA\n♣\n♦\n2\n♥\n2\n♥\n2\n♥\n♦\nK\n♠\nK\n♠\nK\n♠\n⚡ Auto-Place\nBOARD 2\nקהילה\n♦\nK\n♦\nK\n♦\nK\n♦\n♦\n7\n♥\n7\n♥\n7\n♥\n♦\nQ\n♥\nQ\n♥\nQ\n♥\n♦\n7\n♦\n7\n♦\n7\n♦\n♦\n5\n♣\n5\n♣\n5\n♣\n⚡ Auto-Place\nBOARD 3\nקהילה\n♦\nJ\n♥\nJ\n♥\nJ\n♥\n♦\n4\n♦\n4\n♦\n4\n♦\n♦\n3\n♦\n3\n♦\n3\n♦\n♦\n4\n♥\n4",
+    "pageErrors": [
+      "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+      "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+      "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+    ],
+    "consoleErrors": []
+  },
+  {
+    "tag": "leaderboard",
+    "url": "https://caps.ftable.co.il/leaderboard",
+    "publicUrl": "https://gxrpunvhjcrzqnitbqah.supabase.co/storage/v1/object/public/screenshots/caps-2026-05-22-v451/leaderboard.png",
+    "bodyPreview": "← Back\nLEADERBOARD\n🪙 Chips\n% Win Rate\n#\nPlayer\nChips\n🥇\nAceKing\n244h\n24,339🪙\n63% win\n🥈\nBluffMaster\n232h\n24,113🪙\n67% win\n🥉\nAllInRoni\n262h\n22,007🪙\n52% win\n#4\nRiverRat\n249h\n21,976🪙\n60% win\n#5\nCAPS-78CB\n11h\n20,650🪙\n55% win\n#6\nPokerFace\n265h\n20,146🪙\n60% win\n#7\nCheckRaise\n122h\n14,806🪙\n59% win\n#8",
+    "pageErrors": [],
+    "consoleErrors": []
+  }
+]

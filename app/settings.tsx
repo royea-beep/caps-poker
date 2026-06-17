@@ -1072,11 +1072,9 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <VisualThemePicker />
-        <Text style={styles.sectionTitle} accessibilityRole="header">
-          <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📱 </Text>
-          ORIENTATION
-        </Text>
-        <OrientationPicker />
+        {/* VAMOS-POLISH 2026-06-17 — ORIENTATION section removed. The app is
+            portrait-only (Iron Rule #2); the prior section offered Portrait /
+            Widescreen which violated the rule. */}
 
         <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="BACKGROUND THEME">🖼️ BACKGROUND THEME</Text>
         <FriendsBgPicker />
@@ -1086,7 +1084,10 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle} accessibilityRole="header">GAMEPLAY</Text>
         <PlayerCountSelector />
-        <BotDifficultySelector />
+        {/* VAMOS-POLISH 2026-06-17 — BotDifficultySelector hidden. Bot uses
+            random placement only (Iron Rule #5); the Easy/Medium/Hard selector
+            was dead UI. The botDifficulty config field stays in the store for
+            analytics/telemetry compatibility but is no longer user-facing. */}
         <RevealSpeedSelector />
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />

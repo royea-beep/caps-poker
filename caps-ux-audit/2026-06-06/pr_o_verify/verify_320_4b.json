@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "gridDirection": "row",
+  "boardCells": 4,
+  "handCardsVisible": 47,
+  "pillInActionRow": true,
+  "modeMatch": true,
+  "expectedDir": "row",
+  "notes": [
+    "arrangement:row",
+    "pill:ביטול\nסדר 16 קלפים\nאישור|סדר 16 קלפים"
+  ],
+  "consoleErrors": [
+    "pageerror:NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "Failed to load resource: the server responded with a status of 429 ()"
+  ],
+  "screenshotPath": "C:\\projects\\POKER\\Caps\\caps-ux-audit\\2026-06-06\\pr_o_verify\\320_4b.png"
+}

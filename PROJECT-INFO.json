@@ -1,0 +1,29 @@
+{
+  "name": "CAPS Poker",
+  "slug": "caps-poker",
+  "status": "active",
+  "tier": "mobile-app",
+  "created": "2024-01-01",
+  "last_verified": "2026-04-18",
+  "db": {
+    "provider": "supabase",
+    "id": "gxrpunvhjcrzqnitbqah",
+    "region": "eu-central-1",
+    "shared_with": []
+  },
+  "mobile": {
+    "bundle_id": "com.royea.capspoker",
+    "apple_id": null,
+    "platform": "ios",
+    "build_pipeline": "github-actions",
+    "current_version": "2.6.0",
+    "current_build": 457
+  },
+  "web": null,
+  "repo": "royea-beep/caps-poker",
+  "telegram_bot": "@caps_poker_bot",
+  "critical_dates": [],
+  "dependencies": [],
+  "health_rpc": "health_check",
+  "hands_off": false
+}
