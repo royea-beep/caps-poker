@@ -22,6 +22,10 @@ interface PlayerHandProps {
   handZoneH?: number;
   // Optional cap so hand cards never exceed board card height (boards-first rule).
   maxCardH?: number;
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — universal CARD_W from game.tsx; identical
+  // to the board flop cards. When supplied, this is the hard authority for cardW
+  // and the layout uses 6-per-row wrapping (bc=4 → 3 rows; bc=2/3 → 2 rows).
+  universalCardW?: number;
 }
 
 // Per-card animated slot — each mounts with its own deal animation
@@ -72,7 +76,7 @@ function AnimatedCardSlot({
   );
 }
 
-export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH }: PlayerHandProps) {
+export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH, universalCardW }: PlayerHandProps) {
   // C-fix 2026-05-22: lock to module-level SCREEN_W (computed once in responsive.ts).
   // Was useWindowDimensions() — re-fired on every focus/keyboard/resize event,
   // causing the 2-row hand layout to shift while the player was placing cards.
@@ -184,6 +188,13 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
     cardWFinal = Math.max(14, Math.round(cardH * 0.72));
     cardWFinalSource = 'backDerivedFromMaxCardH';
   }
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — when game.tsx supplies a universal CARD_W
+  // (driven by the 6-per-row hand constraint at bc=4), it is the HARD authority.
+  // Overrides all derived sizing. Card.tsx aspect (0.72) computes height.
+  if (universalCardW && universalCardW > 14) {
+    cardWFinal = universalCardW;
+    cardH = Math.max(20, Math.round(universalCardW / 0.72));
+  }
 
   const rowSize = useQuadRows ? 4 : Math.ceil(safeCards.length / 2);
   const topRow = safeCards.slice(0, rowSize);
@@ -248,7 +259,15 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
             }
           }}
         >
-          {useTwoRows ? (
+          {universalCardW ? (
+            // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — natural flex-wrap path at the
+            // universal CARD_W. Cards self-organize into N rows of 6 (or 4 etc.)
+            // based on rowW. bc=2 (8 cards) → 2 rows; bc=3 (12) → 2 rows; bc=4
+            // (16) → 3 rows. Centered horizontally; vertical row gap via container.
+            <View style={[styles.unifiedRow, { gap: CARD_GAP_DP }]}>
+              {safeCards.map((card, i) => renderCard(card, i))}
+            </View>
+          ) : useTwoRows ? (
             <>
               <View
                 style={[styles.row, { gap: CARD_GAP_DP }]}
@@ -332,6 +351,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
+    gap: rs(3),
+  },
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — natural flex-wrap layout for cards at the
+  // universal CARD_W. The gap prop on the container handles BOTH inter-card and
+  // inter-row spacing in RN. `rowGap` falls back to `gap` on older RN.
+  unifiedRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
     gap: rs(3),
   },
   webRow: {

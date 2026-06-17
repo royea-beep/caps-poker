@@ -204,13 +204,41 @@ function GameScreenInner() {
   // hand (8x2). Lower hand height pushes the freed vertical room into the boards
   // zone. rh(125) gives â¥5dp margin at 320 (worst case: hand cardH 23 + chrome
   // 31 = 54 content vs 83 zone) and accommodates the 2x8 layout up to 430 width.
-  const PLAYER_HAND_H = boardCount === 2
-    ? rh(170)
-    : boardCount === 3
-      ? rh(162)
-      : boardCount === 4
-        ? rh(125)
-        : Math.min(PRD.zone.handMinH, PRD.zone.handMaxH);
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — one CARD_W for boards AND hand. Driven
+  // by the HAND constraint at bc=4 (6 per row fits screenW with minimal chrome);
+  // the board's 5-card flop fits easily at this CARD_W with side void absorbed
+  // by Board's row-centering. cardsPerRow = 6 → bc=4 = 3 rows (16/6 = ceil 3),
+  // bc=3 = 2 rows (12/6 = 2), bc=2 = 2 rows (8/4 = 2 since 8 ≤ 6×2). Cards-big
+  // look + aspect [0.62, 0.85] preserved on the board side via the prop override
+  // in Board.tsx (universalCardW takes precedence over fitToBox when provided).
+  const _UNIVERSAL_HAND_CARDS_PER_ROW = 6;
+  const _UNIVERSAL_HAND_GAP = rs(2);
+  const _UNIVERSAL_HAND_INSET = 16; // matches PlayerHand HAND_HORIZ_INSET
+  const _UNIVERSAL_HAND_SAFETY = rs(8); // matches PlayerHand SAFETY_INSIDE_GRID*2
+  const _UNIVERSAL_HAND_WRAPPER = rs(4); // tight per-card wrapper overhead (down from 12)
+  const UNIVERSAL_CARD_W = Math.max(
+    rs(40),
+    Math.floor(
+      (screenW
+        - 2 * _UNIVERSAL_HAND_INSET
+        - _UNIVERSAL_HAND_SAFETY
+        - (_UNIVERSAL_HAND_CARDS_PER_ROW - 1) * _UNIVERSAL_HAND_GAP
+        - _UNIVERSAL_HAND_CARDS_PER_ROW * _UNIVERSAL_HAND_WRAPPER
+      ) / _UNIVERSAL_HAND_CARDS_PER_ROW
+    )
+  );
+  const UNIVERSAL_CARD_H = Math.round(UNIVERSAL_CARD_W / 0.72);
+  // Hand zone height: rows × cardH + inter-row gap + label + container vertical padding.
+  const _handSize = CARDS_PER_BOARD * boardCount; // 4 × bc = 8/12/16
+  const _handRows = Math.max(1, Math.ceil(_handSize / _UNIVERSAL_HAND_CARDS_PER_ROW));
+  const _HAND_ROW_GAP_V = rs(4);
+  const _HAND_LABEL_H = rs(22);
+  const _HAND_CONTAINER_PADV = rs(6);
+  const PLAYER_HAND_H =
+    _handRows * UNIVERSAL_CARD_H
+    + (_handRows - 1) * _HAND_ROW_GAP_V
+    + _HAND_LABEL_H
+    + _HAND_CONTAINER_PADV * 2;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -1493,6 +1521,7 @@ function GameScreenInner() {
         use2x2Grid={_use2x2}
         handZoneH={_handZoneActualH}
         maxHandCardH={_handCardCap}
+        universalCardW={UNIVERSAL_CARD_W}
       />
       </Animated.View>
       {showSafeReveal && (

@@ -84,6 +84,10 @@ interface BoardProps {
   // can raise the card cap at bc=2/3 (tall boards = vertical room to use). bc=4 path
   // unchanged.
   boardCount?: number;
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — when present, this CARD_W is the hard
+  // authority for commW (5 community cards) AND slotW (4 placed cards). Identical
+  // to the hand's cardW. Cards-big aspect derives commH/slotH from cardW/0.72.
+  universalCardW?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -177,6 +181,7 @@ export default function Board({
   cellHeight,
   contentSafetyPad,
   boardCount,
+  universalCardW,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
@@ -316,6 +321,18 @@ export default function Board({
     commH = _comm.h;
     slotW = _slot.w;
     slotH = _slot.h;
+    // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — when game.tsx supplies a universal
+    // CARD_W (driven by the hand's 6-per-row constraint), use it as the hard
+    // authority for BOTH community and slot cards. Aspect ratio applied
+    // identically (CARD_H = CARD_W/0.72), preserving Cards-big look. Falls back
+    // to the fitToBox math when not provided (legacy callers).
+    if (universalCardW && universalCardW > 14) {
+      const _uH = Math.round(universalCardW / CARD_ASPECT);
+      commW = universalCardW;
+      commH = _uH;
+      slotW = universalCardW;
+      slotH = _uH;
+    }
     ch = slotH;
     cw = slotW;
     // VAMOS-OTA-VERIFY 2026-06-16 — diagnostic: confirm the LIVE path executes at

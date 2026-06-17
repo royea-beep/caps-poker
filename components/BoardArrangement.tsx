@@ -75,6 +75,10 @@ export interface BoardArrangementProps {
   handZoneH?: number;
   // FIT-ALL-BOARDS 2026-06-09 — cap so hand cards never exceed the board card height.
   maxHandCardH?: number;
+  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — single CARD_W used by both board cards
+  // and hand cards. When provided, Board uses it directly for commW/slotW; the
+  // PlayerHand uses it for hand cardW. Strict size-unity instead of count-based.
+  universalCardW?: number;
 }
 
 export function BoardArrangement({
@@ -114,6 +118,7 @@ export function BoardArrangement({
   use2x2Grid,
   handZoneH,
   maxHandCardH,
+  universalCardW,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
@@ -220,6 +225,8 @@ export function BoardArrangement({
                   contentSafetyPad={false}
                   /* VAMOS-BOARD-FILL-2 — plumb boardCount so Board can raise the card cap at bc=2/3 */
                   boardCount={boardCount}
+                  /* VAMOS-UNIFY-CARD-SIZE 2026-06-17 — universal CARD_W from game.tsx */
+                  universalCardW={universalCardW}
                 />
               </Animated.View>
             </View>
@@ -256,6 +263,7 @@ export function BoardArrangement({
             onSelectCard={onSelectCard}
             handZoneH={handZoneH ?? HAND_ZONE_HEIGHT}
             maxCardH={maxHandCardH}
+            universalCardW={universalCardW}
           />
         </View>
       )}
