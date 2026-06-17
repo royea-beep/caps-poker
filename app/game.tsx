@@ -322,17 +322,7 @@ function GameScreenInner() {
     + rs(2)             // rowGap
     + (boardCount === 3 || boardCount === 4 ? rs(12) : 0) // bc=3/4 outer chrome that the prop subtraction will reclaim
     + rs(4);            // safety
-  // VAMOS-SCROLL-BOARDS 2026-06-17 — every board uses a FIXED "good" cellH
-  // (≈ half the boards-zone height, regardless of boardCount). At bc=2 both
-  // boards fit; at bc=3/4 the BoardArrangement wraps the boards in a vertical
-  // ScrollView, so all boards stay the same readable size and you scroll to
-  // reach boards 3-4. Was: cellH = floor(_boardsZoneH / N) — crammed N boards
-  // into the zone, shrinking each per N (the 4-board stack problem).
-  const _goodCellH = Math.max(rh(160), Math.floor(_boardsZoneH / 2) - rs(8));
-  const _cellH = _goodCellH;
-  // _packedCellH/_idealCellH retained above for any callers still computing
-  // ratios; the new fixed-size scrollable layout supersedes them visually.
-  void _packedCellH; void _idealCellH;
+  const _cellH = Math.min(_packedCellH, _idealCellH);
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
   const _handCardCap = _boardCardH;
   const mobileWebCardH = Math.min(
