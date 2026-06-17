@@ -228,6 +228,11 @@ export default function Board({
   // compact header strip fit INSIDE the cell. Otherwise fall back to legacy PRD
   // tokens so results/BoardReveal callers stay pixel-identical.
   const CARD_ASPECT = 0.72; // w/h — narrow playing card
+  // VAMOS-REDESIGN-CORE 2026-06-17 — STUB_W and sepMarginH lifted to outer scope
+  // so the JSX (which renders outside the cellWidth/cellHeight live-path block)
+  // can use the same constants as the sizing math.
+  const STUB_W = rs(28);
+  const sepMarginHOuter = rs(2);
   let commW: number;
   let commH: number;
   let cw: number;
@@ -268,24 +273,35 @@ export default function Board({
     // Now: cardH_byHeight = (innerH - rowGap)/2, cardW_fromHeight = h*0.72.
     // Final commW = min(commWByWidth, cardW_fromHeight) preserves aspect AND
     // lets contentCenter justifyContent:'space-evenly' distribute any slack.
-    // VAMOS-LEVER1-BC4 2026-06-16 — at bc=4 ONLY, split innerH 62/38 in favor of
-    // the community row so flop/turn/river cards grow toward the width-cap. Slot
-    // row gets the remainder (placed cards render smaller). STATIC — does NOT
-    // resize when slots fill, to avoid jarring mid-placement layout shift. Tap
-    // target is the whole board (Pressable at L474), so smaller slots do NOT
-    // reduce tap usability. bc=2/3 keep the existing symmetric 50/50 split.
+    // VAMOS-REDESIGN-CORE 2026-06-17 — during ARRANGEMENT the slot row collapses
+    // to a fixed compact DEAL-LANE band (LANE_H ≈ 28pt) instead of 4 full-size
+    // empty card boxes. Community claims everything else → flop cards grow
+    // dramatically at every bc. Lever 1's bc=4 62/38 split is superseded by this
+    // (community ratio is now ~75/25). Outside arrangement (reveal/results) the
+    // prior Lever 1 split is preserved so the reveal flow renders unchanged.
     const _rowsBudget = innerH - rowGap;
-    const _commBudgetH = boardCount === 4
-      ? Math.max(20, Math.floor(_rowsBudget * 0.62))
-      : Math.max(20, Math.floor(_rowsBudget / 2));
-    const _slotBudgetH = boardCount === 4
-      ? Math.max(20, _rowsBudget - _commBudgetH)
-      : _commBudgetH;
-    // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
+    const LANE_H = rs(28);
+    const _commBudgetH = isArrangement
+      ? Math.max(20, _rowsBudget - LANE_H)
+      : boardCount === 4
+        ? Math.max(20, Math.floor(_rowsBudget * 0.62))
+        : Math.max(20, Math.floor(_rowsBudget / 2));
+    const _slotBudgetH = isArrangement
+      ? Math.max(20, LANE_H)
+      : boardCount === 4
+        ? Math.max(20, _rowsBudget - _commBudgetH)
+        : _commBudgetH;
+    // Community row: 5 cards + 4 gaps + separator + 2*sepMargin (REVEAL/results),
+    // or 3 flop cards + 2 gaps + DECK-STUB + 2*stubMargin (ARRANGEMENT) where the
+    // stub replaces the separator + 2 face-down boxes that the player can't read
+    // anyway. Stub footprint ~rs(28) so the 3 flop cards inherit ~76pt of freed
+    // horizontal — flop grows from a 5-card budget to a 3-card budget.
     const sepW = PRD.board.flopSeparatorW;
     const sepMarginH = isLowBoard ? rs(2) : rs(2);
     const commGap = isLowBoard ? rs(3) : PRD.card.gap;
-    const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
+    const commWByWidth = isArrangement
+      ? Math.max(14, Math.floor((innerW - 2 * commGap - STUB_W - 2 * sepMarginH) / 3))
+      : Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
     // VAMOS-CARDS-BIG 2026-06-16 — relaxed strict 0.72 aspect to bounded portrait
     // range [ASPECT_MIN=0.62, ASPECT_MAX=0.85] so cards GROW into whichever budget
@@ -645,31 +661,49 @@ export default function Board({
               dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
             />
           ))}
-          {/* VAMOS-VISUAL-C — separator now MINT (cohesive inner detail), no longer per-board identity */}
-          <View style={[styles.communitySeparator, { backgroundColor: OBSIDIAN.mint }]} />
-          {(closedCards ?? []).map((c, i) => (
-            <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
-              <CardComponent
-                card={c}
-                faceDown={!revealed}
-                cardWidth={commW}
-                cardHeight={commH}
-                isCommunityCard
-                highlighted={revealed && boardHighlightIds.includes(c.id)}
-                dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
-                flipDuration={flipDuration}
-              />
-              {false && (
-                <Text style={styles.cardLabel}>{i === 0 ? 'Turn' : 'River'}</Text>
-              )}
+          {/* VAMOS-REDESIGN-CORE 2026-06-17 — during arrangement the 2 face-down
+              turn/river cards collapse to a single compact deck-stub pictogram
+              (placeholder for "2 cards coming"). On reveal, this branch is no
+              longer taken and the full closedCards render face-down → flip to
+              face-up via the existing CardComponent flip animation. The reveal
+              path is unchanged. */}
+          {isArrangement && !revealed ? (
+            <View style={[styles.deckStub, { height: commH, width: STUB_W, marginHorizontal: sepMarginHOuter }]} accessibilityLabel="Turn and River — revealed after Ready">
+              <View style={[styles.deckStubBack, styles.deckStubBackRear]} />
+              <View style={[styles.deckStubBack, styles.deckStubBackFront]} />
             </View>
-          ))}
+          ) : (
+            <>
+              {/* VAMOS-VISUAL-C — separator now MINT (cohesive inner detail) */}
+              <View style={[styles.communitySeparator, { backgroundColor: OBSIDIAN.mint }]} />
+              {(closedCards ?? []).map((c) => (
+                <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
+                  <CardComponent
+                    card={c}
+                    faceDown={!revealed}
+                    cardWidth={commW}
+                    cardHeight={commH}
+                    isCommunityCard
+                    highlighted={revealed && boardHighlightIds.includes(c.id)}
+                    dimmed={revealed && !boardHighlightIds.includes(c.id) && boardHighlightIds.length > 0}
+                    flipDuration={flipDuration}
+                  />
+                </View>
+              ))}
+            </>
+          )}
         </View>
 
         {/* PR-E AUTO button hoisted above the contentCenter wrapper (PR-L Task B) */}
 
-        {/* Player cards */}
-        <View style={styles.cardRow} testID={`slot-row-${index}`}>
+        {/* VAMOS-REDESIGN-CORE 2026-06-17 — during arrangement, the slot row is
+            a compact DEAL-LANE band (fixed LANE_H ≈ 28pt). Empty positions
+            render as subtle tick marks instead of 4 full-size empty boxes.
+            Placed cards render at LANE_H height (small) — flop stays the hero.
+            Tap-target is the whole board (Pressable at L474), so tap usability
+            is unaffected. After reveal (isArrangement=false), the band collapses
+            back to the legacy slot-row rendering for visual continuity. */}
+        <View style={[styles.cardRow, isArrangement && styles.dealLane]} testID={`slot-row-${index}`}>
           {playerCards.length > 0 ? (
             playerCards.map((c) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
@@ -688,6 +722,11 @@ export default function Board({
                 />
               </Pressable>
             ))
+          ) : isArrangement ? (
+            // Deal-lane: 4 tick-mark dots evenly spaced, no card boxes.
+            Array.from({ length: 4 }).map((_, i) => (
+              <View key={`tick-${i}`} style={styles.dealLaneTick} />
+            ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
               <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
@@ -695,7 +734,7 @@ export default function Board({
           )}
           {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
             Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
+              <View key={`tick-fill-${i}`} style={styles.dealLaneTick} />
             ))
           }
           {/* PR-N 2026-06-02 — hand-strength hint suppressed during arrangement.
@@ -932,6 +971,53 @@ const styles = StyleSheet.create({
     gap: PRD.card.gap,
     paddingVertical: 0,
     paddingHorizontal: rs(6),
+  },
+  // VAMOS-REDESIGN-CORE 2026-06-17 — compact deck-stub pictogram for turn/river
+  // during arrangement (replaces 2 full-size face-down cards + separator). Two
+  // offset mint-tinted shapes inside hint at "cards within."
+  deckStub: {
+    borderRadius: rs(4),
+    borderWidth: 1.5,
+    borderColor: OBSIDIAN.mint,
+    backgroundColor: OBSIDIAN.backBottom,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deckStubBack: {
+    position: 'absolute',
+    width: '60%',
+    height: '70%',
+    backgroundColor: OBSIDIAN.mint,
+    borderRadius: 2,
+  },
+  deckStubBackRear: {
+    opacity: 0.22,
+    transform: [{ rotate: '-7deg' }],
+    top: '15%',
+    left: '12%',
+  },
+  deckStubBackFront: {
+    opacity: 0.4,
+    transform: [{ rotate: '6deg' }],
+    top: '15%',
+    left: '28%',
+  },
+  // VAMOS-REDESIGN-CORE 2026-06-17 — deal-lane row treatment + tick marks
+  // (replaces 4 full-size empty card slots). Subtle mint hairline above hints
+  // at the table-edge feel; tick marks are quiet drop-position indicators.
+  dealLane: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(79, 214, 168, 0.18)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    paddingVertical: rs(4),
+    gap: rs(20),
+  },
+  dealLaneTick: {
+    width: rs(8),
+    height: rs(2),
+    borderRadius: 1,
+    backgroundColor: 'rgba(79, 214, 168, 0.5)',
   },
   communitySeparator: {
     // VAMOS-BOARD-FILL 2026-06-15 — strengthened: 1.5 → 2 width, 0.68 → 0.80 opacity,
