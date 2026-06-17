@@ -204,46 +204,54 @@ function GameScreenInner() {
   // hand (8x2). Lower hand height pushes the freed vertical room into the boards
   // zone. rh(125) gives â¥5dp margin at 320 (worst case: hand cardH 23 + chrome
   // 31 = 54 content vs 83 zone) and accommodates the 2x8 layout up to 430 width.
-  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — one CARD_W for boards AND hand. Driven
-  // by the HAND constraint at bc=4 (6 per row fits screenW with minimal chrome);
-  // the board's 5-card flop fits easily at this CARD_W with side void absorbed
-  // by Board's row-centering. cardsPerRow = 6 → bc=4 = 3 rows (16/6 = ceil 3),
-  // bc=3 = 2 rows (12/6 = 2), bc=2 = 2 rows (8/4 = 2 since 8 ≤ 6×2). Cards-big
-  // look + aspect [0.62, 0.85] preserved on the board side via the prop override
-  // in Board.tsx (universalCardW takes precedence over fitToBox when provided).
-  const _UNIVERSAL_HAND_CARDS_PER_ROW = 6;
-  const _UNIVERSAL_HAND_GAP = rs(2);
-  const _UNIVERSAL_HAND_INSET = 16; // matches PlayerHand HAND_HORIZ_INSET
-  // VAMOS-UNIFY-CARD-SIZE 2026-06-17 — in unified mode PlayerHand renders each
-  // card WITHOUT the legacy cardWrapper (no paddingH, no border), so the only
-  // chrome per card is the gap. SAFETY accounts for the outer hand container
-  // margins (handZone marginHorizontal ≈ rs(12) each side) on top of the
-  // PlayerHand grid's own paddingHorizontal:16 — total ~24pt unobservable
-  // chrome we can't measure here. rs(20) end safety lands us at the observed
-  // usable inner width with margin to spare.
-  const _UNIVERSAL_HAND_END_SAFETY = rs(20);
-  const UNIVERSAL_CARD_W = Math.max(
-    rs(40),
-    Math.floor(
-      (screenW
-        - 2 * _UNIVERSAL_HAND_INSET
-        - _UNIVERSAL_HAND_END_SAFETY
-        - (_UNIVERSAL_HAND_CARDS_PER_ROW - 1) * _UNIVERSAL_HAND_GAP
-      ) / _UNIVERSAL_HAND_CARDS_PER_ROW
-    )
-  );
-  const UNIVERSAL_CARD_H = Math.round(UNIVERSAL_CARD_W / 0.72);
-  // Hand zone height: rows × cardH + inter-row gap + label + container vertical padding.
-  const _handSize = CARDS_PER_BOARD * boardCount; // 4 × bc = 8/12/16
-  const _handRows = Math.max(1, Math.ceil(_handSize / _UNIVERSAL_HAND_CARDS_PER_ROW));
+  // VAMOS-FILL-PER-MODE 2026-06-17 — per-mode card width. Each mode (bc=2/3/4)
+  // gets the LARGEST W where total content (N boards + hand rows) fits the
+  // available screen height. If even W=MIN_W overflows (bc=4 with 4 boards +
+  // 16-card hand), W stays at MIN_W and BOARDS_SCROLL=true (only that mode
+  // scrolls). Board card == hand card within each mode (the unification we
+  // shipped earlier). NO dead gap in non-scroll modes because W is chosen so
+  // content fills available height.
+  const _HAND_INSET = 16;
+  const _HAND_END_SAFETY = rs(20);
+  const _HAND_GAP = rs(2);
   const _HAND_ROW_GAP_V = rs(4);
   const _HAND_LABEL_H = rs(22);
   const _HAND_CONTAINER_PADV = rs(6);
-  const PLAYER_HAND_H =
-    _handRows * UNIVERSAL_CARD_H
-    + (_handRows - 1) * _HAND_ROW_GAP_V
-    + _HAND_LABEL_H
-    + _HAND_CONTAINER_PADV * 2;
+  const _BOARD_CHROME_V = rs(30); // header strip + paddings + rowGap inside a cell
+  const _BOARD_INTER_GAP = rs(4);
+  const _MIN_CARD_W = rs(55); // readable floor
+  const _MAX_CARD_W = Math.floor((screenW - 2 * _HAND_INSET - _HAND_END_SAFETY) / 2); // soft cap
+  const _availTotal = (SCREEN_H - insets.top - insets.bottom)
+    - TOP_BAR_H - BOT_STATUS_H - FLOATING_ACTIONS_H - HINT_H - rs(8);
+  const _handSize = CARDS_PER_BOARD * boardCount; // 8 / 12 / 16
+  const _evalFit = (W: number) => {
+    const cardH = Math.round(W / 0.72);
+    const perRow = Math.max(1, Math.floor(
+      (screenW - 2 * _HAND_INSET - _HAND_END_SAFETY + _HAND_GAP) / (W + _HAND_GAP)
+    ));
+    const handRows = Math.max(1, Math.ceil(_handSize / perRow));
+    const handZoneH = handRows * cardH + (handRows - 1) * _HAND_ROW_GAP_V
+      + _HAND_LABEL_H + 2 * _HAND_CONTAINER_PADV;
+    const cellH = 2 * cardH + _BOARD_CHROME_V;
+    const boardsContent = boardCount * cellH + (boardCount - 1) * _BOARD_INTER_GAP;
+    return { cardH, perRow, handRows, handZoneH, cellH, boardsContent };
+  };
+  let _chosenW = _MIN_CARD_W;
+  let _BOARDS_SCROLL = false;
+  for (let W = _MAX_CARD_W; W >= _MIN_CARD_W; W--) {
+    const f = _evalFit(W);
+    if (f.handZoneH + f.boardsContent <= _availTotal) { _chosenW = W; break; }
+  }
+  if (_chosenW === _MIN_CARD_W) {
+    const f = _evalFit(_MIN_CARD_W);
+    if (f.handZoneH + f.boardsContent > _availTotal) _BOARDS_SCROLL = true;
+  }
+  const _fit = _evalFit(_chosenW);
+  const UNIVERSAL_CARD_W = _chosenW;
+  const UNIVERSAL_CARD_H = _fit.cardH;
+  const PLAYER_HAND_H = _fit.handZoneH;
+  const _MODE_CELL_H = _fit.cellH;
+  const _MODE_BOARDS_CONTENT = _fit.boardsContent;
 
   const safeH = SCREEN_H - insets.top - insets.bottom;
   const BOARD_GAPS = (boardCount - 1) * 4;
@@ -321,6 +329,13 @@ function GameScreenInner() {
   let _boardsZoneH = _availForBoardsAndHand - PLAYER_HAND_H;
   // Step 2: if boards-zone fell below the minimum, give boards priority — shrink hand.
   if (_boardsZoneH < _minBoardsZoneH) _boardsZoneH = _minBoardsZoneH;
+  // VAMOS-FILL-PER-MODE 2026-06-17 — in non-scroll modes (bc=2/3 fit), cap the
+  // boards-zone at the actual content height so we DON'T render an empty band
+  // above/below the boards (the dead gap). In scroll mode (bc=4), keep the
+  // computed viewport so the ScrollView has bounded space for the scroll.
+  if (!_BOARDS_SCROLL) {
+    _boardsZoneH = Math.min(_boardsZoneH, _MODE_BOARDS_CONTENT);
+  }
   // Step 3: the hand zone is whatever remains.
   const _handZoneActualH = Math.max(rh(80), _availForBoardsAndHand - _boardsZoneH);
 
@@ -364,7 +379,10 @@ function GameScreenInner() {
   const _bc3CellH = Math.floor(_boardsZoneH / 3);
   const _goodCellH = Math.max(rh(140), Math.floor(_bc3CellH * 1.05));
   const _legacyCellH = Math.min(_packedCellH, _idealCellH);
-  const _cellH = _goodCellH;
+  // VAMOS-FILL-PER-MODE 2026-06-17 — cellH derived from per-mode CARD_W so each
+  // cell is exactly the size needed to render 2 card rows + chrome. This is the
+  // sizing that pairs with the per-mode fill logic above.
+  const _cellH = _MODE_CELL_H;
   void _legacyCellH;
   const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
   const _handCardCap = _boardCardH;
