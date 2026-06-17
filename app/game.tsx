@@ -247,15 +247,22 @@ function GameScreenInner() {
     const boardsContent = boardCount * cellH + (boardCount - 1) * _BOARD_INTER_GAP;
     return { cardH, perRow, handRows, handZoneH, cellH, boardsContent };
   };
+  // VAMOS-FIX-BC3-OVERLAP 2026-06-17 — SAFETY margin on the scroll classification.
+  // A mode is non-scroll only if content + SAFETY ≤ available. A 2pt math margin
+  // gets eaten by inset/measurement variance on real device → bc=3 was marked
+  // non-scroll on paper but overflowed by ~35px on real render → board 3 hidden
+  // behind hand zone. rs(24) safety covers the variance — bc=3 now correctly
+  // scrolls.
+  const _FIT_SAFETY = rs(24);
   let _chosenW = _MIN_CARD_W;
   let _BOARDS_SCROLL = false;
   for (let W = _MAX_CARD_W; W >= _MIN_CARD_W; W--) {
     const f = _evalFit(W);
-    if (f.handZoneH + f.boardsContent <= _availTotal) { _chosenW = W; break; }
+    if (f.handZoneH + f.boardsContent + _FIT_SAFETY <= _availTotal) { _chosenW = W; break; }
   }
   if (_chosenW === _MIN_CARD_W) {
     const f = _evalFit(_MIN_CARD_W);
-    if (f.handZoneH + f.boardsContent > _availTotal) _BOARDS_SCROLL = true;
+    if (f.handZoneH + f.boardsContent + _FIT_SAFETY > _availTotal) _BOARDS_SCROLL = true;
   }
   const _fit = _evalFit(_chosenW);
   const UNIVERSAL_CARD_W = _chosenW;
