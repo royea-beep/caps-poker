@@ -83,14 +83,8 @@ function getEfficiencyHint(boards: Array<{ playerCards: any[]; openCards: any[];
   return bestImprovement > 0 ? bestHint : '';
 }
 
-async function logResultsStep(step: string, extra?: string) {
-  debugLog(`[RESULTS-STEP] ${step}${extra ? ` — ${extra}` : ''}`);
-  try {
-    const sb = getSupabase();
-    if (!sb) return;
-    await sb.from('bug_reports').insert({ title: `[CRASH-STEP] results/${step}`, description: extra ?? null, url: 'results/mount', report_type: 'text' });
-  } catch {}
-}
+// VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — removed bug_reports breadcrumb insert
+// (was firing 400s per mount; from a past crash investigation, no longer needed).
 
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
@@ -199,7 +193,6 @@ export default function ResultsScreen() {
   useEffect(() => {
     debugLog('R1 results.tsx mounted');
     debugLog(`R2 revealData: ${revealData ? `boards=${revealData.boards.length} isComplete=${revealData.isComplete}` : 'NULL'}`);
-    void logResultsStep('H:results_mounted', revealData ? `boards=${revealData.boards.length}` : 'NULL');
     return () => { void clearGameActive(); };
   }, []);
 
@@ -472,10 +465,15 @@ export default function ResultsScreen() {
       } catch {}
     })();
 
-    // Post-game efficiency hint — find best card swap across boards
-    try {
-      setEfficiencyHint(getEfficiencyHint(revealData.boards));
-    } catch {}
+    // VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — defer the efficiency hint
+    // calculation to AFTER first paint. getEfficiencyHint runs O(N² × M² ×
+    // evaluateOmahaHand) — heavy enough on device to block the JS thread for
+    // hundreds of ms during results mount, perceived as "stuck before report."
+    const effTimer = setTimeout(() => {
+      try {
+        setEfficiencyHint(getEfficiencyHint(revealData.boards));
+      } catch {}
+    }, 0);
 
     // Analytics — hand completed
     const bWonCount = revealData.boards.filter((b) => b.winner === 'player').length;
@@ -491,6 +489,8 @@ export default function ResultsScreen() {
       won: bWonCount > revealData.boards.length - bWonCount,
       net_chips: revealData.netChips,
     }, 'results');
+
+    return () => { clearTimeout(effTimer); };
   }, []);
 
   // B3: result_viewed_duration — track how long player spends on results screen

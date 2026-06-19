@@ -28,16 +28,12 @@ export async function initAnalytics(): Promise<void> {
   } catch {}
 }
 
-export function track(event: string, properties?: Record<string, unknown>, screen?: string): void {
-  if (!supabaseRef || !cachedDeviceId) return;
-  supabaseRef.rpc('track_event', {
-    p_event: event,
-    p_user_id: cachedUserId,
-    p_device_id: cachedDeviceId,
-    p_session_id: cachedSessionId,
-    p_data: properties ?? {},
-    p_screen: screen ?? null,
-  }).then(() => {}).catch(() => {});
+// VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — no-op until the track_event RPC
+// is provisioned on Supabase. It was 404ing on every call (~6 per game) and
+// adding network noise to the trace. The function signature is preserved so
+// callsites stay unchanged; restoring tracking is a one-line revert.
+export function track(_event: string, _properties?: Record<string, unknown>, _screen?: string): void {
+  // intentionally a no-op
 }
 
 export function trackPushOpen(templateType: string): void {

@@ -67,20 +67,10 @@ const TIPS = [
   () => TIP('All set! Tap READY to reveal.', 'הכל מוכן! לחץ READY כדי להציג.'),
 ];
 
-// Log crash steps to Supabase so we know which step ran last before native kill
-async function logStep(step: string, extra?: string) {
-  debugLog(`[STEP] ${step}${extra ? ` — ${extra}` : ''}`);
-  try {
-    const sb = getSupabase();
-    if (!sb) return;
-    await sb.from('bug_reports').insert({
-      title: `[CRASH-STEP] ${step}`,
-      description: extra ?? null,
-      url: 'game/navigateToReveal',
-      report_type: 'text',
-    });
-  } catch { /* silent — never block game flow */ }
-}
+// VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — removed bug_reports breadcrumb
+// logger ('logStep'). It was firing ~9 inserts per game (all 400s due to
+// schema/RLS), originally added for a past native-crash investigation that
+// no longer requires per-step tracking.
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -813,7 +803,6 @@ function GameScreenInner() {
     debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
 
-    void logStep('doNavigate_start');
 
     debugLog('3 clearing countdown interval');
     if (countdownRef.current) {
@@ -822,7 +811,6 @@ function GameScreenInner() {
     }
 
     debugLog('4 calculateHandResultsMulti START');
-    void logStep('A:start_calculate');
 
     let results;
     try {
@@ -836,13 +824,11 @@ function GameScreenInner() {
       }
     } catch (e) {
       debugLog(`4E calculateHandResultsMulti CRASHED: ${String(e)}`, 'error');
-      void logStep('CRASH:A', String(e));
       router.replace('/');
       return;
     }
 
     debugLog(`5 calculate DONE: won=${results.playerChipsWon} isComplete=${results.isComplete}`);
-    void logStep('B:calculate_done', `boards=${currentBoards.length} won=${results.playerChipsWon}`);
 
     debugLog('6 building revealBoards');
     const revealBoards: RevealBoardData[] = currentBoards.map((board, i) => {
@@ -868,13 +854,11 @@ function GameScreenInner() {
     });
 
     debugLog(`7 revealBoards done: ${revealBoards.length} boards`);
-    void logStep('C:revealBoards_built');
 
     debugLog(`8 addChips: ${results.playerChipsWon}`);
     addChips(results.playerChipsWon);
     void scheduleReengagement(); // re-engagement notification after each game
     debugLog('9 addChips done');
-    void logStep('D:addChips_done');
 
     debugLog('10 setRevealData START');
     setRevealData({
@@ -892,7 +876,6 @@ function GameScreenInner() {
       boardCount,
     });
     debugLog('11 setRevealData DONE');
-    void logStep('E:setRevealData_done');
 
     // A3: track last COMPLETE for home screen share banner
     if (results.isComplete) {
@@ -940,11 +923,9 @@ function GameScreenInner() {
     }
 
     debugLog('14 router.replace /results START');
-    void logStep('F:before_router_replace');
     try {
       router.replace('/results' as any);
       debugLog('15 router.replace DONE');
-      void logStep('G:router_replace_called');
     } catch (e) {
       debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
@@ -960,7 +941,6 @@ function GameScreenInner() {
     setShowSafeReveal(false);
     setPendingRevealBoards([]);
     debugLog('16 navigating to results');
-    void logStep('F:before_router_replace');
     // S111 bug#477: always navigate immediately — never block with Alert
     // daily reward is surfaced on results screen (streak badge) and index on next visit
     try {
@@ -1156,7 +1136,6 @@ function GameScreenInner() {
     debugLog('H1 handleReady called');
     if (!allBoardsFull) { isDealingRef.current = false; debugLog('H1.1 NOT allBoardsFull — abort'); return; }
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
-    void logStep('handleReady_pressed');
     debugLog('H3 hapticNotify');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     debugLog('H4 playSound');
