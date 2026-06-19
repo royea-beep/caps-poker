@@ -3,7 +3,7 @@
  * ZERO Reanimated — JS thread only (iron rule: results screen = no Reanimated).
  */
 import { useRef, useState, useEffect } from 'react';
-import { Animated } from 'react-native';
+import { Animated, InteractionManager } from 'react-native';
 import { useGameStore } from '../store/gameStore';
 
 const CHIP_COUNT = 6;
@@ -29,6 +29,7 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
   const boardTranslates = useRef<Animated.Value[]>([]);
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const animIntervals = useRef<ReturnType<typeof setInterval>[]>([]);
+  const boardsInteractionRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
 
   // COMPLETE celebration — RN Animated only
   const completeFlashOpacity = useRef(new Animated.Value(0)).current;
@@ -48,18 +49,26 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
     // Full screen fade-in
     Animated.timing(screenOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
 
-    // Board stagger — pure state + per-board slide-up
-    for (let i = 0; i < boardLen; i++) {
-      if (!boardTranslates.current[i]) {
-        boardTranslates.current[i] = new Animated.Value(30);
+    // VAMOS-FIX-RESULTS-RENDER-2 2026-06-17 — board stagger is deferred to
+    // AFTER first paint via InteractionManager.runAfterInteractions. The header
+    // / score / DEAL ME IN / HOME mount immediately; the heavy 36-card board
+    // breakdown follows on the next idle window. Per-board delay widened to
+    // 180ms (was 80ms) so each board has time to mount on a mid phone under
+    // CPU throttle without piling up on the JS thread.
+    const ih = InteractionManager.runAfterInteractions(() => {
+      for (let i = 0; i < boardLen; i++) {
+        if (!boardTranslates.current[i]) {
+          boardTranslates.current[i] = new Animated.Value(30);
+        }
+        const slideVal = boardTranslates.current[i];
+        const t = setTimeout(() => {
+          setVisibleBoardCount(i + 1);
+          Animated.timing(slideVal, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+        }, i * 180);
+        animTimers.current.push(t);
       }
-      const slideVal = boardTranslates.current[i];
-      const t = setTimeout(() => {
-        setVisibleBoardCount(i + 1);
-        Animated.timing(slideVal, { toValue: 0, duration: 250, useNativeDriver: true }).start();
-      }, 200 + i * 80);
-      animTimers.current.push(t);
-    }
+    });
+    boardsInteractionRef.current = ih;
 
     // Chip roll-up
     const chipTarget = useGameStore.getState().chips;
@@ -156,6 +165,8 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
     }, dealDelay));
 
     return () => {
+      boardsInteractionRef.current?.cancel();
+      boardsInteractionRef.current = null;
       animTimers.current.forEach(clearTimeout);
       animIntervals.current.forEach(clearInterval);
       screenOpacity.stopAnimation();

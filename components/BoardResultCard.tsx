@@ -4,7 +4,11 @@
  */
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, Animated, ActionSheetIOS, Alert } from 'react-native';
-import CardComponent from './Card';
+// VAMOS-FIX-RESULTS-RENDER-2 2026-06-17 — StaticCard skips Animated init
+// (flip + glow), interpolations, and the back face. Cards on the results
+// screen are always revealed and never animate — saves ~1s of mount time
+// for 36 cards on a mid phone (6× CPU throttle).
+import StaticCard from './StaticCard';
 import { Badge } from './Badge';
 import { SingleBoardShareCard, StoryShareCard } from './ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
@@ -165,10 +169,9 @@ export const BoardResultCard = React.memo(function BoardResultCard({
               </Text>
               <View style={styles.cardsRow}>
                 {botCards.map((c: any) => (
-                  <CardComponent
+                  <StaticCard
                     key={c.id}
                     card={c}
-                    faceDown={false}
                     cardWidth={bW}
                     cardHeight={bH}
                     highlighted={botIdx === 0 && (board.botHighlightIds ?? []).includes(c.id)}
@@ -186,14 +189,14 @@ export const BoardResultCard = React.memo(function BoardResultCard({
         {/* Community cards */}
         <View style={styles.cardsRow}>
           {(board.openCards ?? []).map((c: any) => (
-            <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cW} cardHeight={cH}
+            <StaticCard key={c.id} card={c} cardWidth={cW} cardHeight={cH}
               highlighted={(board.boardHighlightIds ?? []).includes(c.id)}
               dimmed={!(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
             />
           ))}
           <View style={styles.cardSeparator} />
           {(board.closedCards ?? []).map((c: any) => (
-            <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cW} cardHeight={cH}
+            <StaticCard key={c.id} card={c} cardWidth={cW} cardHeight={cH}
               highlighted={(board.boardHighlightIds ?? []).includes(c.id)}
               dimmed={!(board.boardHighlightIds ?? []).includes(c.id) && (board.boardHighlightIds ?? []).length > 0}
             />
@@ -205,7 +208,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
           <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>YOU</Text>
           <View style={styles.cardsRow}>
             {(board.playerCards ?? []).map((c: any) => (
-              <CardComponent key={c.id} card={c} faceDown={false} cardWidth={cardW} cardHeight={cardH}
+              <StaticCard key={c.id} card={c} cardWidth={cardW} cardHeight={cardH}
                 highlighted={(board.playerHighlightIds ?? []).includes(c.id)}
                 dimmed={!(board.playerHighlightIds ?? []).includes(c.id) && (board.playerHighlightIds ?? []).length > 0}
               />
