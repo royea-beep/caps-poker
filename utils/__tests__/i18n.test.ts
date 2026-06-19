@@ -26,12 +26,12 @@ describe('i18n — getLanguage', () => {
     expect(getLanguage()).toBe('en');
   });
 
-  it('returns "he" when device language is Hebrew', () => {
+  it('returns "en" even when device language is Hebrew (English-only after VAMOS-HAND-LABELS-ENGLISH)', () => {
     jest.mock('expo-localization', () => ({
       getLocales: () => [{ languageCode: 'he' }],
     }), { virtual: true });
     const { getLanguage } = loadFresh();
-    expect(getLanguage()).toBe('he');
+    expect(getLanguage()).toBe('en');
   });
 
   it('returns "en" for any non-Hebrew locale (e.g. fr)', () => {
@@ -53,13 +53,13 @@ describe('i18n — t()', () => {
     expect(t().ready).toBe('READY');
   });
 
-  it('t().ready returns Hebrew string when language is Hebrew', () => {
+  it('t().ready returns English "READY" even when device is Hebrew (English-only)', () => {
     jest.resetModules();
     jest.mock('expo-localization', () => ({
       getLocales: () => [{ languageCode: 'he' }],
     }), { virtual: true });
     const { t } = loadFresh();
-    expect(t().ready).toBe('מוכן');
+    expect(t().ready).toBe('READY');
   });
 
   it('t().placeN(5) returns correct English string', () => {
@@ -100,13 +100,13 @@ describe('i18n — t()', () => {
 });
 
 describe('i18n — isRTL()', () => {
-  it('isRTL() returns true for Hebrew', () => {
+  it('isRTL() returns false even with Hebrew locale (English-only forces LTR)', () => {
     jest.resetModules();
     jest.mock('expo-localization', () => ({
       getLocales: () => [{ languageCode: 'he' }],
     }), { virtual: true });
     const { isRTL } = loadFresh();
-    expect(isRTL()).toBe(true);
+    expect(isRTL()).toBe(false);
   });
 
   it('isRTL() returns false for English', () => {
@@ -186,17 +186,16 @@ describe('i18n — S92 new keys', () => {
     expect(freshEn().t().language).toBeTruthy();
   });
 
-  it('setLanguage changes the active language', () => {
+  it('setLanguage is a no-op after VAMOS-HAND-LABELS-ENGLISH (stays English)', () => {
     jest.resetModules();
     jest.mock('expo-localization', () => ({ getLocales: () => [{ languageCode: 'en' }] }), { virtual: true });
-    // Mock the store to avoid circular dep issues in test
     jest.mock('../../store/gameStore', () => ({
       useGameStore: { getState: () => ({ bumpLanguageVersion: () => {} }) },
     }), { virtual: true });
     const { getLanguage, setLanguage } = loadFresh();
     expect(getLanguage()).toBe('en');
     setLanguage('he');
-    expect(getLanguage()).toBe('he');
+    expect(getLanguage()).toBe('en');
   });
 
   it('all 16 new S92 keys are non-empty strings in Hebrew', () => {

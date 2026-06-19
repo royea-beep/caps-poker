@@ -49,24 +49,18 @@ if (typeof queueMicrotask !== 'undefined') {
   setTimeout(() => { try { applyHtmlLocale(); } catch {} }, 0);
 }
 
+// VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — English-only. The Hebrew translation
+// table is intentionally retained for now (smaller diff, allows easy rollback),
+// but every consumer of getLanguage() is forced to 'en'. Hebrew device locales
+// will see the English UI. setLanguage() is now a no-op for the same reason.
 export function getLanguage(): Language {
-  if (!_lang) {
-    const code = detectLanguageCode();
-    _lang = code === 'he' ? 'he' : 'en';
-  }
-  return _lang;
+  _lang = 'en';
+  return 'en';
 }
 
-export function setLanguage(lang: Language): void {
-  _lang = lang;
-  // PR-I: keep <html lang/dir> in sync with the active locale (web only).
+export function setLanguage(_lang: Language): void {
+  // no-op — see comment on getLanguage()
   applyHtmlLocale();
-  // Notify store to bump version (lazy import to avoid circular dep)
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { useGameStore } = require('../store/gameStore');
-    useGameStore.getState().bumpLanguageVersion?.();
-  } catch {}
 }
 
 /**
@@ -394,7 +388,10 @@ const en: Translations = {
   allPlaced: 'All cards placed!',
   timeBank: '+15s',
   winAll: (n) => `WIN ALL → +${n} 🟡`,
-  bot: 'בוט',
+  // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — was 'בוט' (Hebrew) in the en
+  // translation table; rendered as the bot's display name even with English
+  // locale, which is what the user was seeing in a full game.
+  bot: 'Bot',
   yourCards: 'YOUR CARDS',
   boardN: (n, total) => `BOARD ${n} OF ${total}`,
   tapForNextBoard: '▶ TAP FOR NEXT BOARD',
