@@ -340,7 +340,7 @@ export default function HandHistoryScreen() {
         ) : filtered.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>{filter === 'wins' ? '🏆' : '😔'}</Text>
-            <Text style={styles.emptyText}>אין {filter === 'wins' ? 'ניצחונות' : 'הפסדים'} עדיין</Text>
+            <Text style={styles.emptyText}>No {filter === 'wins' ? 'wins' : 'losses'} yet</Text>
           </View>
         ) : (
           <>

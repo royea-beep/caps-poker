@@ -234,10 +234,10 @@ function SuccessView({ chips }: { chips: string }) {
     <View style={styles.successContainer}>
       <Text style={styles.successEmoji}>🏆</Text>
       <Text style={[styles.successTitle, styles.rtlText]}>
-        {chips} צ׳יפים שלך!
+        {chips} chips are yours!
       </Text>
       <Text style={[styles.successSub, styles.rtlText]}>
-        בהצלחה במשחק 🃏
+        Good luck at the tables 🃏
       </Text>
     </View>
   );
@@ -256,21 +256,21 @@ function OfferView({ chips, price, days, buying, onBuy, onDismiss }: OfferViewPr
   return (
     <>
       <View style={styles.badge}>
-        <Text style={styles.badgeText}>פעם אחת בלבד</Text>
+        <Text style={styles.badgeText}>One time only</Text>
       </View>
 
-      <Text style={[styles.title, styles.rtlText]}>מבצע פתיחה! 🎉</Text>
+      <Text style={[styles.title, styles.rtlText]}>Starter Offer! 🎉</Text>
 
       <Text style={[styles.body, styles.rtlText]}>
-        {chips} צ׳יפים ב-${price} בלבד
+        {chips} chips for only ${price}
       </Text>
 
       <Text style={[styles.urgency, styles.rtlText]}>
-        ⏳ נגמר בעוד {days} ימים
+        ⏳ Ends in {days} days
       </Text>
 
       <Text style={[styles.comparison, styles.rtlText]}>
-        בדרך כלל: 5,000 צ׳יפים  ·  עכשיו: {chips} צ׳יפים ✨
+        Normally: 5,000 chips  ·  Now: {chips} chips ✨
       </Text>
 
       <Pressable
@@ -281,12 +281,12 @@ function OfferView({ chips, price, days, buying, onBuy, onDismiss }: OfferViewPr
         {buying ? (
           <ActivityIndicator color="#161922" />
         ) : (
-          <Text style={styles.ctaText}>קחו אותו! 🃏</Text>
+          <Text style={styles.ctaText}>Grab it! 🃏</Text>
         )}
       </Pressable>
 
       <Pressable style={styles.dismissBtn} onPress={onDismiss}>
-        <Text style={styles.dismissText}>אולי אחר כך</Text>
+        <Text style={styles.dismissText}>Maybe later</Text>
       </Pressable>
     </>
   );

@@ -196,14 +196,14 @@ export default function RankScreen() {
               <View style={styles.statDivider} />
               <View style={styles.statBox}>
                 <Text style={styles.statValue}>{data.wins}</Text>
-                <Text style={styles.statLabel}>ניצחונות</Text>
+                <Text style={styles.statLabel}>Wins</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statBox}>
                 <Text style={[styles.statValue, { color: winRate >= 50 ? '#4CAF50' : COLORS.textSecondary }]}>
                   {winRate}%
                 </Text>
-                <Text style={styles.statLabel}>אחוז ניצחון</Text>
+                <Text style={styles.statLabel}>Win rate</Text>
               </View>
             </View>
 

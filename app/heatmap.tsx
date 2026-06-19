@@ -28,19 +28,19 @@ const ACCENT = '#c96a1a';
 const BORDER = '#3d2a1a';
 const TEXT   = '#f5e6d3';
 
-// Friendly Hebrew screen name map
+// Friendly screen name map
 const SCREEN_LABELS: Record<string, string> = {
-  home:          'בית',
-  game:          'משחק',
-  achievements:  'הישגים',
-  missions:      'משימות',
+  home:          'Home',
+  game:          'Game',
+  achievements:  'Achievements',
+  missions:      'Missions',
   sit_and_go:    'Sit & Go',
-  referral:      'הזמנת חברים',
-  leaderboard:   'טבלת מובילים',
-  settings:      'הגדרות',
-  shop:          'חנות',
-  stats:         'סטטיסטיקות',
-  play_of_day:   'צעד היום',
+  referral:      'Invite Friends',
+  leaderboard:   'Leaderboard',
+  settings:      'Settings',
+  shop:          'Shop',
+  stats:         'Stats',
+  play_of_day:   'Play of the Day',
 };
 
 function screenLabel(s: string) {
@@ -232,20 +232,20 @@ export default function HeatmapScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Text style={styles.backArrow}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>מפת הפעילות שלי</Text>
+        <Text style={styles.headerTitle}>My Activity Map</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={ACCENT} size="large" />
-          <Text style={styles.loadingText}>טוען נתונים...</Text>
+          <Text style={styles.loadingText}>Loading data...</Text>
         </View>
       ) : totalTaps === 0 ? (
         <View style={styles.center}>
           <Text style={styles.emptyEmoji}>📊</Text>
-          <Text style={styles.emptyTitle}>אין נתונים עדיין</Text>
-          <Text style={styles.emptySub}>שחקו קצת ואז חיזרו לראות!</Text>
+          <Text style={styles.emptyTitle}>No data yet</Text>
+          <Text style={styles.emptySub}>Play a bit and come back to see your stats!</Text>
         </View>
       ) : (
         <ScrollView
@@ -256,15 +256,15 @@ export default function HeatmapScreen() {
           <View style={styles.summaryRow}>
             <View style={styles.summaryBox}>
               <Text style={styles.summaryNum}>{(totalTaps ?? 0).toLocaleString()}</Text>
-              <Text style={styles.summaryLabel}>סה״כ לחיצות</Text>
+              <Text style={styles.summaryLabel}>Total taps</Text>
             </View>
             <View style={[styles.summaryBox, styles.summaryBorder]}>
               <Text style={styles.summaryNum}>{activeDays}</Text>
-              <Text style={styles.summaryLabel}>ימים פעילים</Text>
+              <Text style={styles.summaryLabel}>Active days</Text>
             </View>
             <View style={[styles.summaryBox, styles.summaryBorder]}>
               <Text style={styles.summaryNum}>{screenStats.length}</Text>
-              <Text style={styles.summaryLabel}>מסכים שונים</Text>
+              <Text style={styles.summaryLabel}>Different screens</Text>
             </View>
           </View>
 
@@ -273,14 +273,14 @@ export default function HeatmapScreen() {
             <View style={styles.topBadge}>
               <Text style={styles.topBadgeEmoji}>🔥</Text>
               <Text style={styles.topBadgeText}>
-                הכי פעיל: {screenLabel(topElement.split(':')[0])}{' '}
+                Most active: {screenLabel(topElement.split(':')[0])}{' '}
                 {topElement.split(':')[1] ? `› ${topElement.split(':')[1]}` : ''}
               </Text>
             </View>
           )}
 
           {/* Screen activity */}
-          <SectionCard title="📱 מסכים הכי פופולריים">
+          <SectionCard title="📱 Most popular screens">
             {screenStats.map(s => (
               <HeatBar
                 key={s.screen}
@@ -292,11 +292,11 @@ export default function HeatmapScreen() {
           </SectionCard>
 
           {/* Daily activity heatmap (14-day bar chart) */}
-          <SectionCard title="📅 פעילות יומית — 14 ימים אחרונים">
+          <SectionCard title="📅 Daily activity — last 14 days">
             <View style={styles.dayGrid}>
               {dailyStats.map(d => {
                 const heightPct = Math.max(8, Math.round((d.totalTaps / maxDay) * 100));
-                const dayLabel  = new Date(d.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+                const dayLabel  = new Date(d.date).toLocaleDateString('en-US', { day: 'numeric', month: 'numeric' });
                 return (
                   <View key={d.date} style={styles.dayCol}>
                     <View style={[styles.dayBar, { height: `${heightPct}%` as any }]} />

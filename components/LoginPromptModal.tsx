@@ -35,17 +35,17 @@ export default function LoginPromptModal({ visible, onClose, onLoginSuccess }: P
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <Text style={styles.title}>שמור את ההתקדמות שלך</Text>
+          <Text style={styles.title}>Save your progress</Text>
           <Text style={styles.subtitle}>
-            התחבר עם Google כדי לשמור את הצ'יפים, הרצף והכוסות שלך לנצח
+            Sign in with Google to keep your chips, streak, and cups forever
           </Text>
 
           <Pressable style={styles.googleBtn} onPress={handleGoogle}>
-            <Text style={styles.googleText}>התחבר עם Google</Text>
+            <Text style={styles.googleText}>Sign in with Google</Text>
           </Pressable>
 
           <Pressable style={styles.laterBtn} onPress={handleDismiss}>
-            <Text style={styles.laterText}>אולי אחר כך</Text>
+            <Text style={styles.laterText}>Maybe later</Text>
           </Pressable>
         </View>
       </View>

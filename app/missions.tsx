@@ -137,7 +137,7 @@ function MissionCard({ mission, onClaim, claiming }: MissionCardProps) {
       {/* Difficulty pill — top-right */}
       <View style={[styles.diffPill, { backgroundColor: diffColor + '33', borderColor: diffColor }]}>
         <Text style={[styles.diffPillText, { color: diffColor }]}>
-          {({ easy: 'קל', normal: 'בינוני', hard: 'קשה' }[mission.difficulty] ?? mission.difficulty.toUpperCase())}
+          {({ easy: 'EASY', normal: 'NORMAL', hard: 'HARD' }[mission.difficulty] ?? mission.difficulty.toUpperCase())}
         </Text>
       </View>
 
@@ -158,7 +158,7 @@ function MissionCard({ mission, onClaim, claiming }: MissionCardProps) {
         <View style={styles.rewardBadge}>
           <Text style={styles.rewardIcon}>💰</Text>
           <Text style={styles.rewardValue}>{(mission.chips_reward ?? 0).toLocaleString()}</Text>
-          <Text style={styles.rewardUnit}> ז'טונים</Text>
+          <Text style={styles.rewardUnit}> chips</Text>
         </View>
         <View style={styles.rewardBadge}>
           <Text style={styles.rewardIcon}>⚡</Text>
@@ -176,14 +176,14 @@ function MissionCard({ mission, onClaim, claiming }: MissionCardProps) {
             ]}
           >
             <Text style={styles.claimBtnText}>
-              {claiming ? 'טוען...' : 'קבלו'}
+              {claiming ? 'Loading...' : 'Claim'}
             </Text>
           </Pressable>
         )}
 
         {mission.is_complete && (
           <View style={styles.completedBadge}>
-            <Text style={styles.completedBadgeText}>✓ נלקח</Text>
+            <Text style={styles.completedBadgeText}>✓ Claimed</Text>
           </View>
         )}
       </View>
@@ -281,12 +281,12 @@ export default function MissionsScreen() {
           hitSlop={8}
         >
           <Text style={styles.backArrow}>{'→'}</Text>
-          <Text style={styles.backLabel}>חזרה</Text>
+          <Text style={styles.backLabel}>Back</Text>
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>משימות יומיות</Text>
-          <Text style={styles.headerCountdown}>מתאפס בעוד {formatCountdown(countdown)}</Text>
+          <Text style={styles.headerTitle}>Daily Missions</Text>
+          <Text style={styles.headerCountdown}>Resets in {formatCountdown(countdown)}</Text>
         </View>
 
         {/* Spacer mirrors back-button so title stays centred */}
@@ -300,13 +300,13 @@ export default function MissionsScreen() {
       >
         {loading && (
           <View style={styles.centeredRow}>
-            <Text style={styles.mutedText}>טוען משימות...</Text>
+            <Text style={styles.mutedText}>Loading missions...</Text>
           </View>
         )}
 
         {!loading && missions.length === 0 && (
           <View style={styles.centeredRow}>
-            <Text style={styles.mutedText}>אין משימות זמינות כרגע.</Text>
+            <Text style={styles.mutedText}>No missions available right now.</Text>
           </View>
         )}
 
@@ -324,9 +324,9 @@ export default function MissionsScreen() {
         {allComplete && (
           <View style={styles.allCompleteBanner}>
             <Text style={styles.allCompleteIcon}>★</Text>
-            <Text style={styles.allCompleteText}>כל המשימות הושלמו!</Text>
+            <Text style={styles.allCompleteText}>All missions completed!</Text>
             <Text style={styles.allCompleteSubtext}>
-              חיזרו מחר למשימות חדשות.
+              Come back tomorrow for new missions.
             </Text>
           </View>
         )}

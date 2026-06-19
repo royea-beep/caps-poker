@@ -166,11 +166,11 @@ export default function InternetHostScreen() {
   }, [roomCode]);
 
   const shareToWhatsApp = useCallback(() => {
-    const message = `היי! בוא תנסה את CAPS Poker 🂣
-קוד חדר: ${roomCode}
-להורדה: https://caps.ftable.co.il`;
+    const message = `Hey! Try CAPS Poker 🂣
+Room code: ${roomCode}
+Download: https://caps.ftable.co.il`;
     Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`).catch(() => {
-      Alert.alert('WhatsApp לא זמין', 'אנא וודא ש-WhatsApp מותקן');
+      Alert.alert('WhatsApp unavailable', 'Please make sure WhatsApp is installed');
     });
   }, [roomCode]);
 
@@ -207,7 +207,7 @@ export default function InternetHostScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Button
-          title="ביטול"
+          title="Cancel"
           variant="ghost"
           onPress={handleCancel}
           style={{ paddingVertical: 6 }}
@@ -229,7 +229,7 @@ export default function InternetHostScreen() {
             <Text style={styles.codeActionText}>📤 SHARE</Text>
           </Pressable>
           <Pressable onPress={shareToWhatsApp} style={[styles.codeActionBtn, styles.whatsappBtn]}>
-            <Text style={styles.whatsappBtnText}>💬 שתף בווטסאפ</Text>
+            <Text style={styles.whatsappBtnText}>💬 Share to WhatsApp</Text>
           </Pressable>
         </View>
 

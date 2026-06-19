@@ -59,12 +59,12 @@ interface AchievementItem {
 // ─── Category Tab Bar ────────────────────────────────────────────────────
 
 const CATEGORIES: { key: Category; label: string }[] = [
-  { key: 'all',        label: 'הכל'     },
-  { key: 'skill',      label: 'כישורים' },
-  { key: 'streak',     label: 'רצף'     },
-  { key: 'milestone',  label: 'אבן דרך' },
-  { key: 'social',     label: 'חברתי'   },
-  { key: 'collection', label: 'אוסף'    },
+  { key: 'all',        label: 'All'        },
+  { key: 'skill',      label: 'Skill'      },
+  { key: 'streak',     label: 'Streak'     },
+  { key: 'milestone',  label: 'Milestone'  },
+  { key: 'social',     label: 'Social'     },
+  { key: 'collection', label: 'Collection' },
 ];
 
 function CategoryTabs({
@@ -252,7 +252,7 @@ function DetailModal({
             ]}
           >
             <Text style={styles.modalStatusText}>
-              {item.is_earned ? '✓ פותח' : '🔒 נעול'}
+              {item.is_earned ? '✓ Unlocked' : '🔒 Locked'}
             </Text>
           </View>
 
@@ -267,7 +267,7 @@ function DetailModal({
             {item.chips_reward > 0 && (
               <View style={styles.modalRewardPill}>
                 <Text style={styles.modalRewardText}>
-                  {'🟡 ' + (item.chips_reward ?? 0).toLocaleString() + " ז'טונים"}
+                  {'🟡 ' + (item.chips_reward ?? 0).toLocaleString() + " chips"}
                 </Text>
               </View>
             )}
@@ -300,7 +300,7 @@ function DetailModal({
           {/* Earned date */}
           {item.is_earned && item.earned_at ? (
             <Text style={styles.modalEarnedAt}>
-              {'פותח ב-' + new Date(item.earned_at).toLocaleDateString('he-IL')}
+              {'Unlocked on ' + new Date(item.earned_at).toLocaleDateString('en-US')}
             </Text>
           ) : null}
 
@@ -312,7 +312,7 @@ function DetailModal({
               pressed && { opacity: 0.75 },
             ]}
           >
-            <Text style={styles.modalCloseBtnText}>סגור</Text>
+            <Text style={styles.modalCloseBtnText}>Close</Text>
           </Pressable>
         </Animated.View>
       </Animated.View>
@@ -404,13 +404,13 @@ export default function AchievementsScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-            <Text style={styles.backText}>{'חזרה ←'}</Text>
+            <Text style={styles.backText}>{'← Back'}</Text>
           </Pressable>
-          <Text style={styles.title}>הישגים</Text>
+          <Text style={styles.title}>Achievements</Text>
           <View style={styles.backBtn} />
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{'טוען...'}</Text>
+          <Text style={styles.loadingText}>{'Loading...'}</Text>
         </View>
       </SafeAreaView>
     );
@@ -422,17 +422,17 @@ export default function AchievementsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <Text style={styles.backText}>{'חזרה ←'}</Text>
+          <Text style={styles.backText}>{'← Back'}</Text>
         </Pressable>
-        <Text style={styles.title}>הישגים</Text>
+        <Text style={styles.title}>Achievements</Text>
         <View style={styles.backBtn} />
       </View>
 
       {/* Counter subtitle */}
       <Text style={styles.subtitle}>
         {totalCount > 0
-          ? (earnedCount + '/' + totalCount + ' פותחו')
-          : 'אין הישגים עדיין'}
+          ? (earnedCount + '/' + totalCount + ' unlocked')
+          : 'No achievements yet'}
       </Text>
 
       {/* Category tabs */}
@@ -445,10 +445,10 @@ export default function AchievementsScreen() {
             <Text style={styles.emptyIcon}>{'🏆'}</Text>
             <Text style={styles.emptyTitle}>
               {activeCategory === 'all'
-                ? 'לא נמצאו הישגים'
-                : ('אין הישגים בקטגוריה ' + activeCategory)}
+                ? 'No achievements found'
+                : ('No achievements in ' + activeCategory)}
             </Text>
-            <Text style={styles.emptySubtitle}>המשיכו לשחק כדי לפתוח פרסים</Text>
+            <Text style={styles.emptySubtitle}>Keep playing to unlock rewards</Text>
           </View>
         ) : (
           <FlatList

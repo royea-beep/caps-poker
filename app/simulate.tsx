@@ -397,8 +397,8 @@ export default function SimulateScreen() {
 
       {mode === 'cards' && (
         <ScrollView style={styles.resultsScroll} contentContainerStyle={styles.cardPickerContent}>
-          <Text style={styles.cardPickerTitle}>{'\uD83C\uDCCF'} בחר עיצוב קלף</Text>
-          <Text style={styles.cardPickerSub}>הבחירה נשמרת ומשפיעה על כל הקלפים במשחק</Text>
+          <Text style={styles.cardPickerTitle}>{'\uD83C\uDCCF'} Choose card design</Text>
+          <Text style={styles.cardPickerSub}>Your choice is saved and affects every card in the game</Text>
 
           {(['v1', 'v2', 'v3'] as CardThemeId[]).map((themeId) => {
             const t = CARD_THEMES[themeId];

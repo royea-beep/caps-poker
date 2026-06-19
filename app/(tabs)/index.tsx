@@ -1644,8 +1644,8 @@ export default function HomeScreen() {
 
         {/* Online player count — hidden in beta until real data available */}
         {!isBeta && (
-          <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }} accessibilityLanguage="he">
-            32 שחקנים אונליין
+          <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
+            32 players online
           </Text>
         )}
 
@@ -1674,7 +1674,7 @@ export default function HomeScreen() {
                 accessibilityLabel="Play"
               >
                 <View style={styles.playBtnHighlight} pointerEvents="none" />
-                <Text style={styles.playBtnText} accessibilityLanguage="he">שחק!</Text>
+                <Text style={styles.playBtnText}>Play!</Text>
               </Pressable>
             </AnimatedRN.View>
           </View>
@@ -1689,8 +1689,8 @@ export default function HomeScreen() {
         {/* New player welcome message */}
         {stage === 'new' && (
           <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
-            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }} accessibilityLanguage="he" accessibilityLabel="ברוך הבא ל-CAPS Poker!">ברוך הבא ל-CAPS Poker! 🃏</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }} accessibilityLanguage="he">לחץ שחק כדי להתחיל את המשחק הראשון שלך</Text>
+            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }} accessibilityLabel="Welcome to CAPS Poker!">Welcome to CAPS Poker! 🃏</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>Tap Play to start your first game</Text>
           </View>
         )}
 
@@ -1704,10 +1704,10 @@ export default function HomeScreen() {
             }}
             onPress={handleFriendChallenge}
             accessibilityRole="button"
-            accessibilityLabel="אתגר חבר"
+            accessibilityLabel="Challenge a Friend"
           >
-            <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }} accessibilityLanguage="he">אתגר חבר</Text>
-            <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }} accessibilityLanguage="he">שלח אתגר פוקר לחבר</Text>
+            <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>Challenge a Friend</Text>
+            <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>Send a poker challenge to a friend</Text>
           </Pressable>
         )}
 
@@ -1726,8 +1726,8 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
-            <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#A5D6A7' }} accessibilityLanguage="he">
-              {cupData.earned}/{cupData.total} כוסות
+            <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#A5D6A7' }}>
+              {cupData.earned}/{cupData.total} cups
             </Text>
           </>
         )}
@@ -1755,13 +1755,13 @@ export default function HomeScreen() {
             <Pressable
               onPress={handleClaimDailyReward}
               accessibilityRole="button"
-              accessibilityLabel="תבע בונוס יומי"
+              accessibilityLabel="Claim daily bonus"
               style={[styles.dailyPill, styles.dailyPillClaim]}
             >
               {dailyRewardStreak >= 6 ? (
-                <Text style={styles.dailyPillText} accessibilityLanguage="he">🔥 יום {dailyRewardStreak + 1} ברצף! +500 צ׳יפים!</Text>
+                <Text style={styles.dailyPillText}>🔥 Day {dailyRewardStreak + 1} streak! +500 chips!</Text>
               ) : (
-                <Text style={styles.dailyPillText} accessibilityLanguage="he">🎁 תבע בונוס יומי · יום {dailyRewardStreak + 1}</Text>
+                <Text style={styles.dailyPillText}>🎁 Claim daily bonus · Day {dailyRewardStreak + 1}</Text>
               )}
             </Pressable>
           </AnimatedRN.View>
@@ -1771,10 +1771,10 @@ export default function HomeScreen() {
               const nextStreak = dailyRewardStreak + 1;
               const nextReward = calculateDailyReward(nextStreak);
               const isMilestone = nextStreak === 7 || nextStreak === 30;
-              const milestoneLabel = nextStreak === 30 ? ' (בונוס חודשי!)' : nextStreak === 7 ? ' (בונוס שבועי!)' : '';
+              const milestoneLabel = nextStreak === 30 ? ' (Monthly bonus!)' : nextStreak === 7 ? ' (Weekly bonus!)' : '';
               return (
-                <Text style={styles.dailyStreakInfoText} accessibilityLanguage="he" accessibilityLabel={`יום ${dailyRewardStreak} ברצף! מחר: +${nextReward} צ׳יפים${milestoneLabel}`}>
-                  {`🔥 יום ${dailyRewardStreak} ברצף! מחר: +${nextReward} צ׳יפים${milestoneLabel}`}
+                <Text style={styles.dailyStreakInfoText} accessibilityLabel={`Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}>
+                  {`🔥 Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}
                 </Text>
               );
             })()}
@@ -1784,9 +1784,9 @@ export default function HomeScreen() {
         {/* Win streak — beginner+ only */}
         {show_streak && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
-            <Text style={styles.homeStreakText} accessibilityLanguage="he" accessibilityLabel={`${currentWinStreak} ניצחונות ברצף`}>🔥 {currentWinStreak} ניצחונות ברצף</Text>
+            <Text style={styles.homeStreakText} accessibilityLabel={`${currentWinStreak} wins in a row`}>🔥 {currentWinStreak} win streak</Text>
             {bestWinStreak > currentWinStreak && (
-              <Text style={styles.homeStreakBest} accessibilityLanguage="he"> · שיא: {bestWinStreak}</Text>
+              <Text style={styles.homeStreakBest}> · Best: {bestWinStreak}</Text>
             )}
           </View>
         )}
@@ -1794,11 +1794,11 @@ export default function HomeScreen() {
         {/* Play of the Day card (D10) — only shown when player name is known */}
         {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
-            <Text style={styles.potdTitle} accessibilityRole="header" accessibilityLanguage="he" accessibilityLabel="מהלך היום">🏆 מהלך היום</Text>
-            <Text style={styles.potdPlayer} numberOfLines={1} accessibilityLanguage="he">
-              {potd.player} · {potd.data.hand_name ?? 'יד מנצחת'}
+            <Text style={styles.potdTitle} accessibilityRole="header" accessibilityLabel="Play of the Day">🏆 Play of the Day</Text>
+            <Text style={styles.potdPlayer} numberOfLines={1}>
+              {potd.player} · {potd.data.hand_name ?? 'Winning hand'}
             </Text>
-            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLanguage="he" accessibilityLabel={`סיר: ${(potd.data.pot_won ?? 0).toLocaleString()} chips`}>סיר: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLabel={`Pot: ${(potd.data.pot_won ?? 0).toLocaleString()} chips`}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
           </View>
         )}
 
@@ -1812,19 +1812,19 @@ export default function HomeScreen() {
                 router.push('/sit-and-go' as any);
               }}
               accessibilityRole="button"
-              accessibilityLabel="סיט אנד גו, 100 צ׳יפים"
+              accessibilityLabel="Sit and Go, 100 chips"
             >
               <Text style={[styles.modeBtnIcon]}>🎯</Text>
-              <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]} accessibilityLanguage="he">סיט אנד גו (100 💰)</Text>
+              <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>Sit and Go (100 💰)</Text>
             </Pressable>
             <Pressable
               style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
               onPress={() => router.push('/quick-poker' as any)}
               accessibilityRole="button"
-              accessibilityLabel="פוקר מהיר, 200 צ׳יפים"
+              accessibilityLabel="Quick Poker, 200 chips"
             >
               <Text style={styles.modeBtnIcon}>⚡</Text>
-              <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]} accessibilityLanguage="he">פוקר מהיר (200 💰)</Text>
+              <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>Quick Poker (200 💰)</Text>
             </Pressable>
           </View>
         )}
@@ -1834,11 +1834,11 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/hand-history' as any)}
             accessibilityRole="button"
-            accessibilityLabel={`היסטוריית ידיים, ${totalHandCount} ידיים שוחקו`}
+            accessibilityLabel={`Hand history, ${totalHandCount} hands played`}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.statsBtn}
           >
-            <Text style={styles.statsBtnText} accessibilityLanguage="he">📊 {totalHandCount} ידיים שוחקו</Text>
+            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands played</Text>
           </Pressable>
         )}
 
@@ -1850,22 +1850,22 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push('/achievements' as any)}
               accessibilityRole="button"
-              accessibilityLabel="ההתקדמות שלי"
+              accessibilityLabel="My Progress"
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label} accessibilityLanguage="he">ההתקדמות שלי</Text>
+              <Text style={homeDataCardStyles.label}>My Progress</Text>
               <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
-              <Text style={homeDataCardStyles.sub} accessibilityLanguage="he">הישגים · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} ניצחונות</Text>
+              <Text style={homeDataCardStyles.sub}>Achievements · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} win rate</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push('/missions' as any)}
               accessibilityRole="button"
-              accessibilityLabel="תחרות"
+              accessibilityLabel="Competition"
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label} accessibilityLanguage="he">תחרות</Text>
+              <Text style={homeDataCardStyles.label}>Competition</Text>
               <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
-              <Text style={homeDataCardStyles.sub} accessibilityLanguage="he">משימות · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} דירוג` : 'שחק כדי לדרג'}</Text>
+              <Text style={homeDataCardStyles.sub}>Missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} Rank` : 'Play to be ranked'}</Text>
             </Pressable>
           </View>
         )}
@@ -1873,18 +1873,18 @@ export default function HomeScreen() {
         {/* Activity Feed + Recent Hands — veteran only */}
         {show_veteran && (
           <View style={styles.feedSection}>
-            <Text style={styles.feedTitle} accessibilityRole="header" accessibilityLanguage="he" accessibilityLabel="ניצחונות אחרונים">🏆 ניצחונות אחרונים</Text>
+            <Text style={styles.feedTitle} accessibilityRole="header" accessibilityLabel="Recent wins">🏆 Recent Wins</Text>
             {activityFeed.length === 0 ? (
-              <Text style={styles.feedEmpty} accessibilityLanguage="he">שחק סיט אנד גו כדי לראות את ההיסטוריה שלך</Text>
+              <Text style={styles.feedEmpty}>Play Sit and Go to see your history</Text>
             ) : (
               activityFeed.map((item, i) => {
                 const won = item.winner_id === item.player_id;
                 return (
                   <View key={i} style={styles.feedItem}>
-                    <Text style={styles.feedItemText} accessibilityLanguage="he" accessibilityLabel={won ? `ניצחת סיט אנד גו — +${item.chips_won ?? 0} chips` : `סיט אנד גו — בפעם הבאה`}>
+                    <Text style={styles.feedItemText} accessibilityLabel={won ? `You won Sit and Go — +${item.chips_won ?? 0} chips` : `Sit and Go — next time`}>
                       {won
-                        ? `✅ ניצחת סיט אנד גו — +${item.chips_won ?? 0} 💰`
-                        : `❌ סיט אנד גו — בפעם הבאה`}
+                        ? `✅ Won Sit and Go — +${item.chips_won ?? 0} 💰`
+                        : `❌ Sit and Go — next time`}
                     </Text>
                     <Text style={styles.feedItemTime}>
                       {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}
@@ -1899,7 +1899,7 @@ export default function HomeScreen() {
         {/* Recent Hands — veteran only */}
         {show_veteran && recentHands.length > 0 && (
           <View style={{ width: '100%', marginTop: 4 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }} accessibilityLanguage="he">ידיים אחרונות</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Recent Hands</Text>
             {recentHands.map((hand, i) => {
               const boardsWon = hand.boards.filter(b => b.winner === 'player').length;
               const effPct = Math.round(boardsWon / hand.boardCount * 100);
@@ -1910,12 +1910,12 @@ export default function HomeScreen() {
                   key={hand.id}
                   onPress={() => router.push(`/hand-history?handId=${hand.id}` as any)}
                   accessibilityRole="button"
-                  accessibilityLabel="צפה בהיסטוריית היד"
+                  accessibilityLabel="View hand history"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
                 >
-                  <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }} accessibilityLanguage="he">
-                    {boardsWon}/{hand.boardCount} לוחות
+                  <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
+                    {boardsWon}/{hand.boardCount} boards
                   </Text>
                   <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rs(12) }}>{effPct}% eff</Text>
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11) }}>{timeStr}</Text>
@@ -1956,10 +1956,10 @@ export default function HomeScreen() {
             <Pressable
               onPress={handleInviteFriends}
               accessibilityRole="button"
-              accessibilityLabel="הזמן חברים"
+              accessibilityLabel="Invite friends"
               style={styles.inviteBtn}
             >
-              <Text style={styles.inviteBtnText} accessibilityLanguage="he">הזמן חברים 🎁</Text>
+              <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
             </Pressable>
           )}
           {gamesPlayed < 3 && (
@@ -1980,8 +1980,8 @@ export default function HomeScreen() {
           textAlign: 'center',
           marginTop: 24,
           marginBottom: 8,
-        }} accessibilityLanguage="he">
-          {"משחק חינמי | צ'יפים וירטואליים בלבד | אין הימורים בכסף אמיתי | גילאי 17+"}
+        }}>
+          {"Free play | Virtual chips only | No real-money gambling | 17+"}
         </Text>
 
       </View>
@@ -2030,8 +2030,8 @@ export default function HomeScreen() {
               onSubmitEditing={handleRedeemCode}
             />
             {/* S89: 6-char counter clarifies what the 6 means */}
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: -4 }} accessibilityLanguage="he">
-              {referralCodeInput.length}/6 תווים
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: -4 }}>
+              {referralCodeInput.length}/6 characters
             </Text>
             <Pressable
               style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}

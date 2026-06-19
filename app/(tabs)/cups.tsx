@@ -7,7 +7,7 @@ import { CapsSystem, CupItem } from '../../hooks/useCapsSystem';
 import { getDeviceId } from '../../utils/leaderboard';
 
 const TIER_LABELS: Record<string, string> = {
-  bronze: 'ברונזה', silver: 'כסף', gold: 'זהב', platinum: 'פלטינה', diamond: 'יהלום',
+  bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum', diamond: 'Diamond',
 };
 
 export default function CupsScreen() {

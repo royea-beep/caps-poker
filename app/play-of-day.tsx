@@ -201,10 +201,10 @@ export default function PlayOfTheDayScreen() {
 
   const handleShare = useCallback(async () => {
     if (!potd?.data) return;
-    const handName  = potd.data.hand_name ?? 'שילוב מנצח';
-    const player    = potd.player ?? 'שחקן אנונימי';
+    const handName  = potd.data.hand_name ?? 'Winning hand';
+    const player    = potd.player ?? 'Anonymous player';
     const pot       = (potd.data.pot_won ?? 0).toLocaleString();
-    const message   = `🏆 צעד היום ב-CAPS Poker!\n👤 ${player}\n🃏 ${handName}\n💰 סיר: ${pot} מטבעות\n\nצפו ב-CAPS Poker!`;
+    const message   = `🏆 Play of the Day on CAPS Poker!\n👤 ${player}\n🃏 ${handName}\n💰 Pot: ${pot} chips\n\nCheck out CAPS Poker!`;
     try {
       await Share.share({ message });
     } catch {
@@ -222,27 +222,27 @@ export default function PlayOfTheDayScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Text style={styles.backArrow}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>צעד היום</Text>
+        <Text style={styles.headerTitle}>Play of the Day</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       {loading ? (
         <View style={styles.center}>
           <Text style={styles.loadingEmoji}>🃏</Text>
-          <Text style={styles.loadingText}>טוען...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : !potd?.available || !potd.data ? (
         <View style={styles.center}>
           <Text style={styles.emptyEmoji}>🎴</Text>
-          <Text style={styles.emptyTitle}>אין צעד היום עדיין</Text>
-          <Text style={styles.emptySub}>בדקו שוב מאוחר יותר!</Text>
+          <Text style={styles.emptyTitle}>No play of the day yet</Text>
+          <Text style={styles.emptySub}>Check back later!</Text>
         </View>
       ) : (
         <View style={styles.content}>
           {/* Trophy banner */}
           <Animated.View style={[styles.trophyBanner, { opacity: headerOpacity }]}>
             <Text style={styles.trophyEmoji}>🏆</Text>
-            <Text style={styles.trophyText}>הצעד הטוב ביותר היום</Text>
+            <Text style={styles.trophyText}>Best play of the day</Text>
           </Animated.View>
 
           {/* Card replay */}
@@ -258,19 +258,19 @@ export default function PlayOfTheDayScreen() {
           <View style={styles.detailCard}>
             {potd.player && potd.player !== 'Anonymous' && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>שחקן</Text>
+                <Text style={styles.detailLabel}>Player</Text>
                 <Text style={styles.detailValue} numberOfLines={1}>{potd.player}</Text>
               </View>
             )}
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>שילוב</Text>
+              <Text style={styles.detailLabel}>Hand</Text>
               <Text style={[styles.detailValue, { color: GOLD }]}>
-                {potd.data.hand_name ?? 'שילוב מנצח'}
+                {potd.data.hand_name ?? 'Winning hand'}
               </Text>
             </View>
             {(potd.data.pot_won ?? 0) > 0 && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>סיר</Text>
+                <Text style={styles.detailLabel}>Pot</Text>
                 <Text style={[styles.detailValue, { color: ACCENT }]}>
                   {(potd.data.pot_won ?? 0).toLocaleString()} 💰
                 </Text>
@@ -278,7 +278,7 @@ export default function PlayOfTheDayScreen() {
             )}
             {(potd.views ?? 0) > 0 && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>צפיות</Text>
+                <Text style={styles.detailLabel}>Views</Text>
                 <Text style={styles.detailValue}>{(potd.views ?? 0).toLocaleString()} 👁</Text>
               </View>
             )}
@@ -286,18 +286,18 @@ export default function PlayOfTheDayScreen() {
 
           {/* Voting */}
           <View style={styles.voteSection}>
-            <Text style={styles.voteTitle}>מה דעתכם על הצעד הזה?</Text>
+            <Text style={styles.voteTitle}>What do you think of this play?</Text>
             <View style={styles.voteRow}>
               <VoteBtn
                 emoji="👎"
-                label="לא מרשים"
+                label="Not impressed"
                 count={downVotes}
                 selected={myVote === 'down'}
                 onPress={() => handleVote('down')}
               />
               <VoteBtn
                 emoji="👍"
-                label="מדהים!"
+                label="Amazing!"
                 count={upVotes}
                 selected={myVote === 'up'}
                 onPress={() => handleVote('up')}
@@ -310,7 +310,7 @@ export default function PlayOfTheDayScreen() {
             style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}
             onPress={handleShare}
           >
-            <Text style={styles.shareBtnText}>שתפו ב-WhatsApp 💬</Text>
+            <Text style={styles.shareBtnText}>Share to WhatsApp 💬</Text>
           </Pressable>
         </View>
       )}

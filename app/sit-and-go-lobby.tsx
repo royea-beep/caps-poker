@@ -51,7 +51,7 @@ function Toast({ message, visible }: { message: string; visible: boolean }) {
 // ─── Main ────────────────────────────────────────────────────
 export default function SitAndGoLobby() {
   const router      = useRouter();
-  const playerName  = useGameStore(st => st.playerName) || 'שחקן';
+  const playerName  = useGameStore(st => st.playerName) || 'Player';
   const chips       = useGameStore(st => st.chips);
   const startChips  = useGameStore(st => (st.config as any)?.startingChips ?? 1000);
   const setRoomCode = useGameStore(st => st.setRoomCode);
@@ -95,7 +95,7 @@ export default function SitAndGoLobby() {
     try {
       setRooms(await listWaitingRooms());
     } catch {
-      showToast('שגיאה בטעינת שולחנות');
+      showToast('Failed to load tables');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -110,14 +110,14 @@ export default function SitAndGoLobby() {
   // ── Join existing room ───────────────────────────────────
   const handleJoin = useCallback(async (room: SessionRow) => {
     if (joiningId) return;
-    if (chips < startChips) { showToast("אין מספיק ז'טונים"); return; }
+    if (chips < startChips) { showToast("Not enough chips"); return; }
     setJoiningId(room.id);
     try {
       const result = await joinRoom(room.room_code, playerName, startChips);
       setRoomCode(result.roomCode);
       router.push('/sit-and-go' as any);
     } catch (err: any) {
-      showToast(err?.message ?? 'ההצטרפות נכשלה');
+      showToast(err?.message ?? 'Failed to join');
     } finally {
       setJoiningId(null);
     }
@@ -126,14 +126,14 @@ export default function SitAndGoLobby() {
   // ── Create new room ──────────────────────────────────────
   const handleCreate = useCallback(async () => {
     if (creating) return;
-    if (chips < startChips) { showToast("אין מספיק ז'טונים"); return; }
+    if (chips < startChips) { showToast("Not enough chips"); return; }
     setCreating(true);
     try {
       const result = await createRoom(playerName, { startingChips: startChips, numberOfPlayers: 6 } as any);
       setRoomCode(result.roomCode);
       router.push('/sit-and-go' as any);
     } catch (err: any) {
-      showToast(err?.message ?? 'יצירת שולחן נכשלה');
+      showToast(err?.message ?? 'Failed to create table');
     } finally {
       setCreating(false);
     }
@@ -152,11 +152,11 @@ export default function SitAndGoLobby() {
             {'👥 '}{room.current_players}/{room.max_players}
             {'  '}
             <Text style={isFull ? s.full : s.spots}>
-              {isFull ? 'מלא' : spots + ' מקומות פנויים'}
+              {isFull ? 'Full' : spots + ' spots open'}
             </Text>
           </Text>
           <Text style={s.roomPrize}>
-            {'💰 פרס: '}{((startChips ?? 0) * (room.current_players ?? 0)).toLocaleString()}{" ז'טונים"}
+            {'💰 Prize: '}{((startChips ?? 0) * (room.current_players ?? 0)).toLocaleString()}{" chips"}
           </Text>
         </View>
         <Pressable
@@ -171,7 +171,7 @@ export default function SitAndGoLobby() {
           {isJoining
             ? <ActivityIndicator size="small" color={TEXT} />
             : <Text style={[s.joinBtnText, isFull && s.joinBtnTextDisabled]}>
-                {isFull ? 'מלא' : 'הצטרף'}
+                {isFull ? 'Full' : 'Join'}
               </Text>
           }
         </Pressable>
@@ -205,27 +205,27 @@ export default function SitAndGoLobby() {
           {/* Active session banner */}
           {activeCode != null && (
             <View style={s.activeBanner}>
-              <Text style={s.activeBannerText}>{'🟢 שולחן פעיל: '}{activeCode}</Text>
+              <Text style={s.activeBannerText}>{'🟢 Active table: '}{activeCode}</Text>
               <Pressable
                 onPress={() => { setRoomCode(activeCode); router.push('/sit-and-go' as any); }}
                 style={s.resumeBtn}
               >
-                <Text style={s.resumeBtnText}>חזור למשחק</Text>
+                <Text style={s.resumeBtnText}>Resume</Text>
               </Pressable>
             </View>
           )}
 
           {/* Available tables */}
           <View style={s.section}>
-            <Text style={s.sectionTitle}>שולחנות פתוחים</Text>
+            <Text style={s.sectionTitle}>Open Tables</Text>
             {loading
               ? <ActivityIndicator size="large" color={ACCENT} style={{ marginTop: rv(24) }} />
               : rooms.length === 0
                 ? (
                   <View style={s.emptyBox}>
                     <Text style={s.emptyIcon}>🃏</Text>
-                    <Text style={s.emptyText}>אין שולחנות פתוחים כרגע</Text>
-                    <Text style={s.emptyHint}>צור שולחן חדש ואחרים יצטרפו</Text>
+                    <Text style={s.emptyText}>No open tables right now</Text>
+                    <Text style={s.emptyHint}>Create a new table and others will join</Text>
                   </View>
                 )
                 : rooms.map(renderRoom)
@@ -234,7 +234,7 @@ export default function SitAndGoLobby() {
 
           {/* Create table */}
           <View style={s.section}>
-            <Text style={s.sectionTitle}>צור שולחן חדש</Text>
+            <Text style={s.sectionTitle}>Create a new table</Text>
             <Pressable
               onPress={handleCreate}
               disabled={creating}
@@ -242,15 +242,15 @@ export default function SitAndGoLobby() {
             >
               {creating
                 ? <ActivityIndicator size="small" color={TEXT} />
-                : <Text style={s.createBtnText}>{'+ צור שולחן (6 שחקנים)'}</Text>
+                : <Text style={s.createBtnText}>{'+ Create table (6 players)'}</Text>
               }
             </Pressable>
           </View>
 
           {/* Balance */}
           <View style={s.balanceRow}>
-            <Text style={s.balanceLabel}>היתרה שלך</Text>
-            <Text style={s.balanceValue}>{'💰 '}{(chips ?? 0).toLocaleString()}{" ז'טונים"}</Text>
+            <Text style={s.balanceLabel}>Your balance</Text>
+            <Text style={s.balanceValue}>{'💰 '}{(chips ?? 0).toLocaleString()}{" chips"}</Text>
           </View>
 
         </ScrollView>

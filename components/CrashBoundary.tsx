@@ -90,7 +90,7 @@ export class CrashBoundary extends React.Component<{ children: React.ReactNode }
               }}
             >
               <Text style={s.btnText}>
-                {copied ? '✅ הועתק! Paste to Claude Bot' : '📋 Copy Fix Prompt for Claude Bot'}
+                {copied ? '✅ Copied! Paste to Claude Bot' : '📋 Copy Fix Prompt for Claude Bot'}
               </Text>
             </TouchableOpacity>
             <ScrollView style={s.promptPreview}>

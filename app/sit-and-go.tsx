@@ -557,7 +557,7 @@ export default function SitAndGoScreen() {
 
           {!canAfford && (
             <Text style={{ color: COLORS.danger, fontSize: 13, textAlign: 'center' }}>
-              אין מספיק צ&apos;יפים — שחק כדי להרוויח
+              Not enough chips — play to earn more
             </Text>
           )}
 

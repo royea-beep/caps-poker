@@ -967,28 +967,28 @@ export default function SettingsScreen() {
   const handleDeleteAccount = async () => {
     track('account_deletion_pressed', {}, 'settings');
     const firstConfirm = Platform.OS === 'web'
-      ? window.confirm('האם אתה בטוח שברצונך למחוק את החשבון? כל הנתונים יימחקו לצמיתות.')
+      ? window.confirm('Are you sure you want to delete your account? All data will be permanently erased.')
       : await new Promise<boolean>((resolve) => {
           Alert.alert(
-            'מחיקת חשבון',
-            'האם אתה בטוח? כל הנתונים שלך יימחקו לצמיתות:\n\n• צ׳יפים ורצף יומי\n• היסטוריית ידיים\n• הישגים וכוסות\n• פרופיל ודירוג',
+            'Delete Account',
+            'Are you sure? All your data will be permanently erased:\n\n• Chips and daily streak\n• Hand history\n• Achievements and cups\n• Profile and rank',
             [
-              { text: 'ביטול', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'כן, מחק הכל', style: 'destructive', onPress: () => resolve(true) },
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Yes, delete everything', style: 'destructive', onPress: () => resolve(true) },
             ],
           );
         });
     if (!firstConfirm) { track('account_deletion_cancelled', {}, 'settings'); return; }
 
     const secondConfirm = Platform.OS === 'web'
-      ? window.confirm('פעולה זו בלתי הפיכה. למחוק?')
+      ? window.confirm('This action is irreversible. Delete?')
       : await new Promise<boolean>((resolve) => {
           Alert.alert(
-            'אישור סופי',
-            'פעולה זו בלתי הפיכה. כל הנתונים יימחקו ולא ניתן לשחזר אותם.',
+            'Final confirmation',
+            'This action is irreversible. All data will be erased and cannot be recovered.',
             [
-              { text: 'ביטול', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'מחק לצמיתות', style: 'destructive', onPress: () => resolve(true) },
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Delete permanently', style: 'destructive', onPress: () => resolve(true) },
             ],
           );
         });
@@ -1004,7 +1004,7 @@ export default function SettingsScreen() {
         p_user_id: authState.userId,
       });
       if (error) {
-        Alert.alert('שגיאה', 'לא הצלחנו למחוק את החשבון. נסה שוב מאוחר יותר.');
+        Alert.alert('Error', 'We could not delete your account. Please try again later.');
         track('account_deletion_failed', { error: error.message }, 'settings');
         return;
       }
@@ -1017,7 +1017,7 @@ export default function SettingsScreen() {
         router.replace('/');
       }
     } catch (e: any) {
-      Alert.alert('שגיאה', 'משהו השתבש. נסה שוב.');
+      Alert.alert('Error', 'Something went wrong. Please try again.');
       track('account_deletion_error', { error: e?.message }, 'settings');
     }
   };
@@ -1102,7 +1102,7 @@ export default function SettingsScreen() {
         </Text>
         <ButtonStylePicker />
 
-        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage="he" accessibilityLabel="עיצוב קלפים">🃏 עיצוב קלפים</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="Card design">🃏 CARD DESIGN</Text>
         <CardThemePicker />
         <FourColorSuitsToggle />
         <ColorblindToggle />
@@ -1234,18 +1234,18 @@ export default function SettingsScreen() {
 
         {isBeta && (
           <View>
-            <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage="he">מצב טסט</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">BETA MODE</Text>
             <View style={styles.row}>
-              <Text style={styles.rowLabel} accessibilityLanguage="he">גרסה</Text>
+              <Text style={styles.rowLabel}>Version</Text>
               <Text style={styles.rowHint}>{Constants.expoConfig?.version ?? '—'} (EAS {Constants.expoConfig?.extra?.buildNumber ?? '—'})</Text>
             </View>
             <Button
-              title="🔄 אפס התקדמות (טסט)"
+              title="🔄 Reset Progress (beta)"
               variant="secondary"
               onPress={() => {
-                Alert.alert('אפס התקדמות', 'לאפס את כל ההתקדמות?', [
-                  { text: 'ביטול', style: 'cancel' },
-                  { text: 'אפס', style: 'destructive', onPress: async () => {
+                Alert.alert('Reset Progress', 'Reset all progress?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Reset', style: 'destructive', onPress: async () => {
                     await AsyncStorage.clear().catch(() => {});
                     useGameStore.getState().addChips(1000 - useGameStore.getState().chips);
                     router.replace('/');
@@ -1255,7 +1255,7 @@ export default function SettingsScreen() {
               style={{ marginBottom: 12 }}
             />
             <View style={styles.row}>
-              <Text style={styles.rowLabel} accessibilityLanguage="he">השתק ציטוטים</Text>
+              <Text style={styles.rowLabel}>Mute quotes</Text>
               <Switch
                 value={muteQuotes}
                 onValueChange={(v) => {
@@ -1266,7 +1266,7 @@ export default function SettingsScreen() {
               />
             </View>
             <View style={styles.row}>
-              <Text style={styles.rowLabel} accessibilityLanguage="he">השתק צלילים</Text>
+              <Text style={styles.rowLabel}>Mute sounds</Text>
               <Switch
                 value={muteSounds}
                 onValueChange={(v) => {
@@ -1312,24 +1312,24 @@ export default function SettingsScreen() {
 
         {/* Gambling disclaimer + legal links (Apple requirement) */}
         <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
-          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }} accessibilityLanguage="he">
-            {"CAPS Poker הוא משחק חינמי עם צ'יפים וירטואליים בלבד.\nאין הימורים בכסף אמיתי.\nמיועד לגילאי 17+."}
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
+            {"CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 17+."}
           </Text>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
-            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage="he">מדיניות פרטיות</Text>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Privacy Policy</Text>
           </Pressable>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }} accessibilityRole="link" accessibilityLabel="Terms of use">
-            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage="he">תנאי שימוש</Text>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Terms of Use</Text>
           </Pressable>
         </View>
 
         {/* Danger zone — account deletion (Apple/Google requirement) */}
         <View style={{ marginTop: 40, paddingTop: 20, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.1)' }}>
           <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Delete account">
-            <Text style={{ color: '#ef4444', fontSize: rf(14) }} accessibilityLanguage="he">מחק חשבון</Text>
+            <Text style={{ color: '#ef4444', fontSize: rf(14) }}>Delete Account</Text>
           </Pressable>
-          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', marginTop: 4 }} accessibilityLanguage="he">
-            פעולה זו תמחק את כל הנתונים שלך לצמיתות
+          <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>
+            This will permanently delete all your data
           </Text>
         </View>
 

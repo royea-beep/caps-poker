@@ -116,7 +116,7 @@ export default function ReferralScreen() {
   // Share via native share sheet (WhatsApp picks it up)
   const handleShare = useCallback(async () => {
     if (!myCode) return;
-    const message = `🃏 בואו לשחק CAPS איתי!\nהזינו קוד ${myCode} וקבלו ${rewardPerReferral} 💰 בונוס!\nhttps://caps.app/invite/${myCode}`;
+    const message = `🃏 Come play CAPS with me!\nUse code ${myCode} to get a ${rewardPerReferral} 💰 bonus!\nhttps://caps.app/invite/${myCode}`;
     try {
       await Share.share({ message });
     } catch {
@@ -128,7 +128,7 @@ export default function ReferralScreen() {
   const handleRedeem = useCallback(async () => {
     const code = redeemInput.trim().toUpperCase();
     if (code.length !== 6) {
-      showToast('הזינו קוד בן 6 תווים.');
+      showToast('Enter a 6-character code.');
       return;
     }
     Keyboard.dismiss();
@@ -142,13 +142,13 @@ export default function ReferralScreen() {
         p_code: code,
       });
       if (error || !data?.success) {
-        showToast(data?.message ?? 'קוד לא תקין או כבר נוצל.');
+        showToast(data?.message ?? 'Invalid code or already used.');
       } else {
-        showToast(`+${rewardPerReferral} 💰 התקבל!`);
+        showToast(`+${rewardPerReferral} 💰 received!`);
         setRedeemInput('');
       }
     } catch {
-      showToast('משהו השתבש. נסו שוב.');
+      showToast('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -163,7 +163,7 @@ export default function ReferralScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Text style={styles.backArrow}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>הזמנת חברים</Text>
+        <Text style={styles.headerTitle}>Invite Friends</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -175,15 +175,15 @@ export default function ReferralScreen() {
         {/* Hero */}
         <View style={styles.heroCard}>
           <Text style={styles.heroEmoji}>🎁</Text>
-          <Text style={styles.heroTitle}>הזמינו חברים</Text>
+          <Text style={styles.heroTitle}>Invite friends</Text>
           <Text style={styles.heroCopy}>
-            שניכם מקבלים {rewardPerReferral} 💰 כשהם מצטרפים!
+            You both get {rewardPerReferral} 💰 when they join!
           </Text>
         </View>
 
         {/* Code card */}
         <View style={styles.codeCard}>
-          <Text style={styles.codeLabel}>הקוד שלך</Text>
+          <Text style={styles.codeLabel}>Your code</Text>
           {loading ? (
             <ActivityIndicator color={ACCENT} style={{ marginVertical: rv(12) }} />
           ) : (
@@ -196,7 +196,7 @@ export default function ReferralScreen() {
             onPress={handleShare}
             disabled={!myCode}
           >
-            <Text style={styles.shareBtnText}>שתפו ב-WhatsApp 💬</Text>
+            <Text style={styles.shareBtnText}>Share to WhatsApp 💬</Text>
           </Pressable>
         </View>
 
@@ -204,18 +204,18 @@ export default function ReferralScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statNumber}>{friendsJoined}</Text>
-            <Text style={styles.statLabel}>חברים הצטרפו</Text>
+            <Text style={styles.statLabel}>Friends joined</Text>
           </View>
           <View style={[styles.statBox, styles.statBoxBorder]}>
             <Text style={styles.statNumber}>{(chipsEarned ?? 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>מטבעות הרווחתם</Text>
+            <Text style={styles.statLabel}>Chips earned</Text>
           </View>
         </View>
 
         {/* Redeem section */}
         <View style={styles.redeemCard}>
-          <Text style={styles.redeemTitle}>יש לכם קוד של חבר?</Text>
-          <Text style={styles.redeemSub}>הזינו אותו כאן וקבלו {rewardPerReferral} 💰</Text>
+          <Text style={styles.redeemTitle}>Got a friend's code?</Text>
+          <Text style={styles.redeemSub}>Enter it here and get {rewardPerReferral} 💰</Text>
           <View style={styles.redeemRow}>
             <TextInput
               style={styles.redeemInput}
@@ -240,7 +240,7 @@ export default function ReferralScreen() {
             >
               {submitting
                 ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.redeemBtnText}>מימוש</Text>
+                : <Text style={styles.redeemBtnText}>Redeem</Text>
               }
             </Pressable>
           </View>
@@ -248,11 +248,11 @@ export default function ReferralScreen() {
 
         {/* How it works */}
         <View style={styles.howCard}>
-          <Text style={styles.howTitle}>איך זה עובד?</Text>
+          <Text style={styles.howTitle}>How it works</Text>
           {[
-            { emoji: '1️⃣', text: 'שתפו את הקוד שלכם עם חבר' },
-            { emoji: '2️⃣', text: 'החבר מוריד את CAPS ומזין את הקוד' },
-            { emoji: '3️⃣', text: `שניכם מקבלים ${rewardPerReferral} 💰 מיד!` },
+            { emoji: '1️⃣', text: 'Share your code with a friend' },
+            { emoji: '2️⃣', text: 'Your friend downloads CAPS and enters the code' },
+            { emoji: '3️⃣', text: `You both get ${rewardPerReferral} 💰 instantly!` },
           ].map((step, i) => (
             <View key={i} style={styles.howRow}>
               <Text style={styles.howEmoji}>{step.emoji}</Text>

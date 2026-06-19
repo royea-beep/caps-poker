@@ -416,7 +416,7 @@ export default function DebugScreen() {
           disabled={simRunning}
         >
           <Text style={styles.simBtnText}>
-            {simRunning ? '⏳ מריץ סימולציה...' : '🎮 Simulate 10 Players (2 crash)'}
+            {simRunning ? '⏳ Running simulation...' : '🎮 Simulate 10 Players (2 crash)'}
           </Text>
         </TouchableOpacity>
       </View>
