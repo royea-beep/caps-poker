@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(18),
     fontWeight: '700',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   headerSpacer: { minWidth: rs(44) },
   content: {
@@ -351,10 +351,10 @@ const styles = StyleSheet.create({
     gap: rs(10),
   },
   loadingEmoji: { fontSize: rf(44) },
-  loadingText:  { color: '#888', fontSize: rf(15), writingDirection: 'rtl' } as any,
+  loadingText:  { color: '#888', fontSize: rf(15), writingDirection: 'ltr' } as any,
   emptyEmoji:   { fontSize: rf(52) },
-  emptyTitle:   { color: TEXT, fontSize: rf(18), fontWeight: '700', writingDirection: 'rtl' } as any,
-  emptySub:     { color: '#888', fontSize: rf(14), writingDirection: 'rtl' } as any,
+  emptyTitle:   { color: TEXT, fontSize: rf(18), fontWeight: '700', writingDirection: 'ltr' } as any,
+  emptySub:     { color: '#888', fontSize: rf(14), writingDirection: 'ltr' } as any,
   // Trophy
   trophyBanner: {
     flexDirection: 'row-reverse',
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     color: GOLD,
     fontSize: rf(20),
     fontWeight: '800',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   // Replay
   replaySection: {
@@ -397,13 +397,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     color: '#888',
     fontSize: rf(13),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   detailValue: {
     color: TEXT,
     fontSize: rf(15),
     fontWeight: '600',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
     maxWidth: '65%',
     textAlign: 'left',
   } as any,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: '600',
     textAlign: 'center',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
     marginBottom: rv(12),
   } as any,
   voteRow: {
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   voteLabel: {
     color: '#888',
     fontSize: rf(12),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   voteLabelSelected: { color: ACCENT },
   voteCount: {
@@ -467,6 +467,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: rf(15),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
 });

@@ -92,8 +92,8 @@ const barStyles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(13),
     width: rs(90),
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
   } as any,
   track: {
     flex: 1,
@@ -110,7 +110,7 @@ const barStyles = StyleSheet.create({
     color: '#888',
     fontSize: rf(12),
     width: rs(28),
-    textAlign: 'right',
+    textAlign: 'left',
   },
 });
 
@@ -137,8 +137,8 @@ const cardStyles = StyleSheet.create({
     color: ACCENT,
     fontSize: rf(15),
     fontWeight: '700',
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
     marginBottom: rv(12),
   } as any,
 });
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(18),
     fontWeight: '700',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   headerSpacer: { minWidth: rs(44) },
   scroll: { flex: 1 },
@@ -343,10 +343,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: rs(10),
   },
-  loadingText: { color: '#888', fontSize: rf(14), writingDirection: 'rtl' } as any,
+  loadingText: { color: '#888', fontSize: rf(14), writingDirection: 'ltr' } as any,
   emptyEmoji: { fontSize: rf(52) },
-  emptyTitle: { color: TEXT, fontSize: rf(18), fontWeight: '700', writingDirection: 'rtl' } as any,
-  emptySub:   { color: '#888', fontSize: rf(14), writingDirection: 'rtl' } as any,
+  emptyTitle: { color: TEXT, fontSize: rf(18), fontWeight: '700', writingDirection: 'ltr' } as any,
+  emptySub:   { color: '#888', fontSize: rf(14), writingDirection: 'ltr' } as any,
   // Summary
   summaryRow: {
     flexDirection: 'row',
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
   summaryBorder: { borderColor: 'rgba(201,106,26,0.35)' },
   summaryNum:    { color: ACCENT, fontSize: rf(22), fontWeight: '800' },
-  summaryLabel:  { color: '#888', fontSize: rf(11), marginTop: rv(2), writingDirection: 'rtl' } as any,
+  summaryLabel:  { color: '#888', fontSize: rf(11), marginTop: rv(2), writingDirection: 'ltr' } as any,
   // Top badge
   topBadge: {
     flexDirection: 'row-reverse',
@@ -383,8 +383,8 @@ const styles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(13),
     flex: 1,
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
   } as any,
   // Day chart
   dayGrid: {
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     color: '#555',
     fontSize: rf(8),
     marginTop: rv(2),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
     textAlign: 'center',
   } as any,
 });

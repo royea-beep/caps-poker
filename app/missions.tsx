@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     color: TEXT_SEC,
     fontSize: rf(11),
     minWidth: rs(40),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   rewardsRow: {
     flexDirection: 'row',

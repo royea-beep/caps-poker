@@ -103,7 +103,7 @@ const allocStyles = StyleSheet.create({
     fontSize: rf(10),
     fontWeight: '600',
     width: rs(70),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   winBadge: {
     fontSize: rf(9),

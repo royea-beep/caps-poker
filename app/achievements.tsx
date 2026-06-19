@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
   modalProgressLabel: {
     color: 'rgba(245,230,211,0.45)',
     fontSize: rf(11),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   modalEarnedAt: {
     color: 'rgba(245,230,211,0.35)',
