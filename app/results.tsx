@@ -51,37 +51,12 @@ import XPBar from '../components/XPBar';
 
 const SUIT_SYM: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 
-function getEfficiencyHint(boards: Array<{ playerCards: any[]; openCards: any[]; closedCards: any[] }>): string {
-  let bestImprovement = 0;
-  let bestHint = '';
-  for (let i = 0; i < boards.length; i++) {
-    for (let j = i + 1; j < boards.length; j++) {
-      const communityI = [...(boards[i].openCards ?? []), ...(boards[i].closedCards ?? [])];
-      const communityJ = [...(boards[j].openCards ?? []), ...(boards[j].closedCards ?? [])];
-      const cardsI: any[] = boards[i].playerCards ?? [];
-      const cardsJ: any[] = boards[j].playerCards ?? [];
-      if (cardsI.length === 0 || cardsJ.length === 0) continue;
-      const baseI = evaluateOmahaHand(cardsI, communityI).rank;
-      const baseJ = evaluateOmahaHand(cardsJ, communityJ).rank;
-      for (const cardI of cardsI) {
-        for (const cardJ of cardsJ) {
-          const newCardsI = cardsI.map((c: any) => c.id === cardI.id ? cardJ : c);
-          const newCardsJ = cardsJ.map((c: any) => c.id === cardJ.id ? cardI : c);
-          const newI = evaluateOmahaHand(newCardsI, communityI).rank;
-          const newJ = evaluateOmahaHand(newCardsJ, communityJ).rank;
-          const improvement = (newI + newJ) - (baseI + baseJ);
-          if (improvement > bestImprovement) {
-            bestImprovement = improvement;
-            const sym = SUIT_SYM[cardI.suit] ?? cardI.suit;
-            const pct = Math.min(99, Math.round(improvement * 11));
-            bestHint = `Moving ${cardI.rank}${sym} from Board ${i + 1} to Board ${j + 1} would improve by ${pct}%`;
-          }
-        }
-      }
-    }
-  }
-  return bestImprovement > 0 ? bestHint : '';
-}
+// VAMOS-FIX-RESULTS-FREEZE 2026-06-17 — getEfficiencyHint was a nested 4-loop
+// (O(N²M² × evaluateOmahaHand) ≈ 192 hand evals for bc=2) and produced a single
+// 1.34s main-thread freeze on device under 6× CPU throttle, after the screen
+// painted. The hint itself is non-essential ("Moving X♥ from Board 1 → 2 would
+// improve by N%"). Dropped entirely. EfficiencyCard (line ~931) is unrelated
+// and stays. Restore the hint only as a chunked / lazy-on-tap computation.
 
 // VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — removed bug_reports breadcrumb insert
 // (was firing 400s per mount; from a past crash investigation, no longer needed).
@@ -139,7 +114,6 @@ export default function ResultsScreen() {
   // Win celebration overlay (FIX 3)
   const [showWinOverlay, setShowWinOverlay] = useState(false);
 
-  const [efficiencyHint, setEfficiencyHint] = useState<string | null>(null);
 
   // S108: Floating chip delta animation
   const [showFloatingChips, setShowFloatingChips] = useState(false);
@@ -465,16 +439,6 @@ export default function ResultsScreen() {
       } catch {}
     })();
 
-    // VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — defer the efficiency hint
-    // calculation to AFTER first paint. getEfficiencyHint runs O(N² × M² ×
-    // evaluateOmahaHand) — heavy enough on device to block the JS thread for
-    // hundreds of ms during results mount, perceived as "stuck before report."
-    const effTimer = setTimeout(() => {
-      try {
-        setEfficiencyHint(getEfficiencyHint(revealData.boards));
-      } catch {}
-    }, 0);
-
     // Analytics — hand completed
     const bWonCount = revealData.boards.filter((b) => b.winner === 'player').length;
     track('hand_completed', {
@@ -490,7 +454,6 @@ export default function ResultsScreen() {
       net_chips: revealData.netChips,
     }, 'results');
 
-    return () => { clearTimeout(effTimer); };
   }, []);
 
   // B3: result_viewed_duration — track how long player spends on results screen
@@ -929,15 +892,6 @@ export default function ResultsScreen() {
 
           {/* Placement efficiency */}
           <EfficiencyCard boards={boards as any} screenW={SCREEN_W} />
-
-          {/* Efficiency hint — simple 1-liner swap suggestion */}
-          {efficiencyHint !== null && (
-            <View style={styles.hintRow}>
-              <Text style={styles.hintText} accessibilityLabel={efficiencyHint ? `Tip: ${efficiencyHint}` : 'Perfect placement! No improvement possible.'}>
-                {efficiencyHint ? `💡 Tip: ${efficiencyHint}` : '⭐ Perfect placement! No improvement possible.'}
-              </Text>
-            </View>
-          )}
 
           {/* Best hand highlight */}
           {bestName ? (
