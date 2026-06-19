@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   emptySub:     { color: '#888', fontSize: rf(14), writingDirection: 'ltr' } as any,
   // Trophy
   trophyBanner: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: rs(8),
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     paddingVertical: rv(8),
   },
   cardRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     gap: rs(10),
     justifyContent: 'center',
   },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     gap: rs(10),
   },
   detailRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },

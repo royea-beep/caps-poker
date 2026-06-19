@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: '700',
     width: rs(38),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   boardSummary: {
     color: 'rgba(255,255,255,0.3)',
@@ -691,13 +691,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.45)',
     fontSize: rf(10),
     width: rs(30),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   handCount: {
     color: 'rgba(255,255,255,0.3)',
     fontSize: rf(10),
     width: rs(24),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   // Streaks
   streakRow: {

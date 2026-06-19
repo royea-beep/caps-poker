@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   totalXP: {
     color: TEXT_SECONDARY,
     fontSize: rf(10),
-    textAlign: 'right',
+    textAlign: 'left',
     letterSpacing: 0.3,
   },
 });

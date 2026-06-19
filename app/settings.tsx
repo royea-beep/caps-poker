@@ -1581,7 +1581,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: rs(4),
     minWidth: rs(30),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   // S116: Privacy Policy
   privacyLink: {

@@ -312,13 +312,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     width: 28,
-    textAlign: 'right',
+    textAlign: 'left',
   },
   compactResult: {
     fontSize: 12,
     fontWeight: '800',
     width: 56,
-    textAlign: 'right',
+    textAlign: 'left',
   },
 });
 
@@ -593,12 +593,12 @@ const storyStyles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     width: 26,
-    textAlign: 'right',
+    textAlign: 'left',
   },
   storyResult: {
     fontSize: 12,
     fontWeight: '800',
     width: 58,
-    textAlign: 'right',
+    textAlign: 'left',
   },
 });

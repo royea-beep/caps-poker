@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     color: MUTED,
     fontSize: rf(11),
     fontWeight: '500',
-    textAlign: 'right' as any,
+    textAlign: 'left' as any,
   },
   shareBtn: {
     backgroundColor: ACCENT,

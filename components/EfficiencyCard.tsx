@@ -106,5 +106,5 @@ const styles = StyleSheet.create({
   optimalBoardLabel: { color: '#c8a84b', fontSize: rf(11), fontWeight: '800', width: 22 },
   optimalCards: { flexDirection: 'row', gap: rs(4) },
   optimalCardText: { fontSize: rf(12), fontWeight: '700' },
-  optimalHandName: { color: COLORS.textMuted, fontSize: rf(10), fontWeight: '600', flex: 1, textAlign: 'right' },
+  optimalHandName: { color: COLORS.textMuted, fontSize: rf(10), fontWeight: '600', flex: 1, textAlign: 'left' },
 });

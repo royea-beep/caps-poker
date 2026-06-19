@@ -271,12 +271,12 @@ const s = StyleSheet.create({
   scroll:  { paddingBottom: rv(40) },
 
   activeBanner:     { margin: rs(16), borderRadius: rs(12), backgroundColor: 'rgba(39,174,96,0.12)', borderWidth: 1, borderColor: 'rgba(39,174,96,0.4)', padding: rs(14), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  activeBannerText: { color: GREEN, fontSize: rf(13), fontWeight: '700', flex: 1, textAlign: 'right' },
+  activeBannerText: { color: GREEN, fontSize: rf(13), fontWeight: '700', flex: 1, textAlign: 'left' },
   resumeBtn:        { backgroundColor: GREEN, borderRadius: rs(8), paddingHorizontal: rs(14), paddingVertical: rs(8), marginRight: rs(8), minHeight: rs(36), alignItems: 'center', justifyContent: 'center' },
   resumeBtnText:    { color: '#fff', fontSize: rf(13), fontWeight: '800' },
 
   section:      { paddingHorizontal: rs(16), marginTop: rv(20) },
-  sectionTitle: { color: ACCENT, fontSize: rf(14), fontWeight: '800', marginBottom: rs(10), textAlign: 'right' },
+  sectionTitle: { color: ACCENT, fontSize: rf(14), fontWeight: '800', marginBottom: rs(10), textAlign: 'left' },
 
   roomRow:      { backgroundColor: SURFACE, borderRadius: rs(12), borderWidth: 1, borderColor: BORDER, padding: rs(14), marginBottom: rs(10), flexDirection: 'row', alignItems: 'center' },
   roomInfo:     { flex: 1, alignItems: 'flex-end' },

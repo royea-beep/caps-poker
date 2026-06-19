@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   placementCount: {
     color: COLORS.textMuted,
     fontSize: rf(12),
-    textAlign: 'right',
+    textAlign: 'left',
     fontWeight: '600',
   },
   statsRow: {

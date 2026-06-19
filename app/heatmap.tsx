@@ -83,7 +83,7 @@ function HeatBar({ label, value, max, color = ACCENT }: {
 
 const barStyles = StyleSheet.create({
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: rv(8),
     gap: rs(6),
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   summaryLabel:  { color: '#888', fontSize: rf(11), marginTop: rv(2), writingDirection: 'ltr' } as any,
   // Top badge
   topBadge: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: rs(8),
     backgroundColor: 'rgba(201,106,26,0.12)',

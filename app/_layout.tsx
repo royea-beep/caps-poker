@@ -10,7 +10,16 @@ import { initLogBuffer } from '../utils/logBuffer';
 import { addBreadcrumb, getBreadcrumbs } from '../utils/breadcrumbs';
 // Initialize log buffer immediately at module load — before any component renders
 initLogBuffer();
-import { View, Text, Platform, StyleSheet } from 'react-native';
+import { View, Text, Platform, StyleSheet, I18nManager } from 'react-native';
+
+// VAMOS-RTL-GLOBAL-KILL 2026-06-19 — app is now English-only; force LTR
+// app-wide so layout/flex direction can never be RTL even if the device
+// locale is Hebrew/Arabic. Native needs a reload for forceRTL changes to
+// apply, but baking the call here ensures the next build is born LTR.
+if (Platform.OS !== 'web') {
+  try { I18nManager.allowRTL(false); } catch {}
+  try { I18nManager.forceRTL(false); } catch {}
+}
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { useSharedValue, withTiming, withSequence, withDelay, useAnimatedStyle } from 'react-native-reanimated';
 import * as Linking from 'expo-linking';

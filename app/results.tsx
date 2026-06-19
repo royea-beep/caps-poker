@@ -1416,7 +1416,7 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: '700',
     minWidth: rs(55),
-    textAlign: 'right',
+    textAlign: 'left',
   },
   // S115: hand history link
   historyLink: {

@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(18),
     fontWeight: '700',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   headerSpacer: { minWidth: rs(44) },
   scroll: { flex: 1 },
@@ -316,14 +316,14 @@ const styles = StyleSheet.create({
     color: ACCENT,
     fontSize: rf(22),
     fontWeight: '800',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   heroCopy: {
     color: TEXT,
     fontSize: rf(14),
     marginTop: rv(6),
     textAlign: 'center',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
     opacity: 0.85,
   } as any,
   // Code
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: rf(13),
     marginBottom: rv(6),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   codeValue: {
     color: ACCENT,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: rf(15),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   // Stats
   statsRow: {
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: rf(12),
     marginTop: rv(3),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   // Redeem
   redeemCard: {
@@ -404,15 +404,15 @@ const styles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(15),
     fontWeight: '700',
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
     marginBottom: rv(4),
   } as any,
   redeemSub: {
     color: '#888',
     fontSize: rf(13),
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
     marginBottom: rv(12),
   } as any,
   redeemRow: {
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: rf(14),
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
   // How it works
   howCard: {
@@ -462,12 +462,12 @@ const styles = StyleSheet.create({
     color: TEXT,
     fontSize: rf(15),
     fontWeight: '700',
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
     marginBottom: rv(10),
   } as any,
   howRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: rs(10),
     marginBottom: rv(8),
@@ -477,8 +477,8 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: rf(13),
     flex: 1,
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
   } as any,
   // Toast
   toast: {
@@ -495,6 +495,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: rf(14),
     fontWeight: '600',
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
   } as any,
 });
