@@ -406,23 +406,37 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       }
     }, t(4100)));
 
+    // VAMOS-FIX-PREREPORT-DELAY 2026-06-17 — the LAST board's auto-advance
+    // used to fire at t(14000) like every other board, leaving ~9.9s of
+    // dead wait after the result was visible (at t(4100)) before the
+    // results screen rendered. User perceived "stuck after last board."
+    // Per-board pacing for non-last boards is intentional (read result,
+    // tap or wait). For the LAST board we collapse the wait — result is
+    // visible at t(4100), then onDone fires ~1.5s later. The user sees the
+    // result, the COMPLETE flash if any, then the report.
+    const isLastBoard = currentIdxRef.current === boards.length - 1;
+    const advanceMs = isLastBoard ? t(5600) : t(14000);
+    const progressMs = advanceMs - t(4100);
+
     // S114: Progress bar — starts with result at t(4100), depletes over remaining time to auto-advance
     timers.current.push(setTimeout(() => {
       setShowProgressBar(true);
       const progressAnim = AnimatedRN.timing(advanceProgress, {
         toValue: 0,
-        duration: t(14000) - t(4100),
+        duration: progressMs,
         useNativeDriver: false,
       });
       anims.current.push(progressAnim);
       progressAnim.start();
     }, t(4100)));
 
-    // t(4500) — Board Score Intermission overlay (shows for 1.5s)
-    timers.current.push(setTimeout(() => {
-      setShowIntermission(true);
-      timers.current.push(setTimeout(() => setShowIntermission(false), t(1500)));
-    }, t(4500)));
+    // t(4500) — Board Score Intermission overlay (shows for 1.5s) — skip on last board (no next board to preview)
+    if (!isLastBoard) {
+      timers.current.push(setTimeout(() => {
+        setShowIntermission(true);
+        timers.current.push(setTimeout(() => setShowIntermission(false), t(1500)));
+      }, t(4500)));
+    }
 
     // FloatingChips — 800ms after result reveal
     timers.current.push(setTimeout(() => {
@@ -432,11 +446,13 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       }
     }, t(4900)));
 
-    // Auto-advance at 14s
-    timers.current.push(setTimeout(doAdvance, t(14000)));
+    // Auto-advance — 14s for normal boards, ~5.6s for the last board (see comment above)
+    timers.current.push(setTimeout(doAdvance, advanceMs));
 
-    // Show 'Tap to continue' hint after intermission clears
-    timers.current.push(setTimeout(() => { setShowTapHint(true); }, t(6200)));
+    // Show 'Tap to continue' hint after intermission clears — only when there's room before auto-advance
+    if (!isLastBoard) {
+      timers.current.push(setTimeout(() => { setShowTapHint(true); }, t(6200)));
+    }
 
     // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
     if (isFirstGame && currentIdxRef.current === 0) {
