@@ -128,8 +128,12 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const chipFadeIn = useRef(new AnimatedRN.Value(0)).current;
   // Screen flash — gold overlay on COMPLETE (useNativeDriver:true)
   const screenFlashAnim = useRef(new AnimatedRN.Value(0)).current;
-  // Board slide — translateX for dramatic board-to-board transition (useNativeDriver:true)
-  const boardSlideX = useRef(new AnimatedRN.Value(0)).current;
+  // VAMOS-FIX-REVEAL-TRANSITION 2026-06-17 — was a translateX slide that took
+  // the outgoing board fully OFF screen (toValue: -screenW, 260ms) before the
+  // incoming board sprang in from +screenW → entire screen was empty/black
+  // mid-transition. Replaced with a crossfade in place. Content swap happens
+  // at opacity≈0, total ~360ms, never empty for more than a single frame.
+  const boardOpacity = useRef(new AnimatedRN.Value(1)).current;
 
   // Pre-flip pulse — group scale on bot cards before they flip (iterations:2)
   const botPulseScale = useRef(new AnimatedRN.Value(1)).current;
@@ -173,20 +177,22 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       return;
     }
     playSound('boardTransition');
-    // Slide current board out to the left, then snap new board in from right
-    const slideOut = AnimatedRN.timing(boardSlideX, {
-      toValue: -screenW,
-      duration: 260,
+    // VAMOS-FIX-REVEAL-TRANSITION — CROSSFADE in place (was off-screen slide
+    // that left the viewport empty/black mid-transition). Fade out 180ms →
+    // swap content → fade in 180ms. Total 360ms; screen never empty for more
+    // than a single frame at opacity 0.
+    const fadeOut = AnimatedRN.timing(boardOpacity, {
+      toValue: 0,
+      duration: 180,
       easing: Easing.in(Easing.cubic),
       useNativeDriver: true,
     });
-    slideOut.start(() => {
+    fadeOut.start(() => {
       setCurrentIdx(prev => prev + 1);
-      boardSlideX.setValue(screenW);
-      AnimatedRN.spring(boardSlideX, {
-        toValue: 0,
-        tension: 100,
-        friction: 12,
+      AnimatedRN.timing(boardOpacity, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
     });
@@ -201,7 +207,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setFlopFaceDown(false);
     setTurnFaceDown(false);
     setRiverFaceDown(false);
-    boardSlideX.setValue(0);
+    boardOpacity.setValue(1);
     // S86: botFaceDown is always [false,false,false,false] — no setter needed
     setShowHandNames(true);
     setShowResult(true);
@@ -534,7 +540,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           onPress={() => (showResult ? doAdvance() : handleSkip())}
         >
           {/* S110: Animated content wrapper — slides on board transition */}
-          <AnimatedRN.View style={[styles.boardContent, { transform: [{ translateX: boardSlideX }] }]}>
+          <AnimatedRN.View style={[styles.boardContent, { opacity: boardOpacity }]}>
 
           {/* Header — board number (BIG) + score indicator + smart dots */}
           <View style={styles.header}>
