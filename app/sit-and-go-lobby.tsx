@@ -186,7 +186,7 @@ export default function SitAndGoLobby() {
         {/* Header */}
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Text style={s.backText}>{'→'}</Text>
+            <Text style={s.backText}>{'←'}</Text>
           </Pressable>
           <Text style={s.title}>{'🎰 Sit & Go'}</Text>
           <View style={{ width: rs(44) }} />

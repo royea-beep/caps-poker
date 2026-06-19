@@ -1400,8 +1400,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
+  // VAMOS-QA-VISUAL-FIX 2026-06-19 — minWidth + paddingRight keep the label
+  // column readable when the right-side input + long suffix (× N boards = M)
+  // would otherwise eat the row and break the label onto multiple letters
+  // ("Pot" → P/o/t).
   rowLeft: {
     flex: 1,
+    minWidth: rs(110),
+    paddingRight: rs(8),
   },
   // Profile section
   profileRow: {
@@ -1495,9 +1501,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: rs(6),
   },
+  // VAMOS-QA-VISUAL-FIX 2026-06-19 — was a hard width: rv(40); "Cinematic"
+  // (9 chars) overflowed and read as "Normainematic" alongside "Normal".
+  // Now sized by content via paddingHorizontal; minWidth keeps Off/On etc.
+  // tappable.
   selectorBtn: {
-    width: rv(40),
     height: rb(36),
+    paddingHorizontal: rs(10),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: rv(6),

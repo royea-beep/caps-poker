@@ -303,7 +303,8 @@ export default function MissionsScreen() {
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           hitSlop={8}
         >
-          <Text style={styles.backArrow}>{'→'}</Text>
+          {/* VAMOS-QA-VISUAL-FIX 2026-06-19 — back arrow flipped from → to ← for LTR/English. */}
+          <Text style={styles.backArrow}>{'←'}</Text>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
 

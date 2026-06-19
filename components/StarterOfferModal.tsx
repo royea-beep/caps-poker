@@ -377,8 +377,11 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: rf(13),
   },
+  // VAMOS-QA-VISUAL-FIX 2026-06-19 — was writingDirection:'rtl' for Hebrew
+  // copy; reversed punctuation/number order on English ("🎉 !Starter Offer",
+  // "chips for only $2.99 10,000"). LTR now; textAlign:'center' kept.
   rtlText: {
-    writingDirection: 'rtl',
+    writingDirection: 'ltr',
     textAlign: 'center',
   },
   successContainer: {
