@@ -139,7 +139,9 @@ export default function ResultsScreen() {
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-continue timer (FIX 2)
-  const AUTO_CONTINUE_SECS = 20;
+  // VAMOS-FIX-RESULTS-TIMING 2026-06-17 — was 20s, read as "stuck/broken" on
+  // the results screen. Reduced to 5s; DEAL ME IN / HOME still advance instantly.
+  const AUTO_CONTINUE_SECS = 5;
   const [autoContinueCountdown, setAutoContinueCountdown] = useState(AUTO_CONTINUE_SECS);
   const [autoContinueActive, setAutoContinueActive] = useState(false);
   const autoContinueRef = useRef<ReturnType<typeof setInterval> | null>(null);
