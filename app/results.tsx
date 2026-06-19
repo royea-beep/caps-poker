@@ -138,14 +138,9 @@ export default function ResultsScreen() {
   const scrollRef = useRef<any>(null);
   const waitingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-continue timer (FIX 2)
-  // VAMOS-FIX-RESULTS-TIMING 2026-06-17 — was 20s, read as "stuck/broken" on
-  // the results screen. Reduced to 5s; DEAL ME IN / HOME still advance instantly.
-  const AUTO_CONTINUE_SECS = 5;
-  const [autoContinueCountdown, setAutoContinueCountdown] = useState(AUTO_CONTINUE_SECS);
-  const [autoContinueActive, setAutoContinueActive] = useState(false);
-  const autoContinueRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const autoContinueMountedRef = useRef(true);
+  // VAMOS-FIX-REVEAL-TIMING-FULL 2026-06-17 — auto-continue countdown removed.
+  // The results screen must NOT auto-dismiss; it stays until the user taps
+  // DEAL ME IN or HOME. (Was: 20s → 5s → now gone entirely.)
 
   // Win celebration overlay (FIX 3)
   const [showWinOverlay, setShowWinOverlay] = useState(false);
@@ -515,46 +510,6 @@ export default function ResultsScreen() {
     };
   }, []);
 
-  // Auto-continue countdown (FIX 2) — starts 1.5s after mount to let animations settle
-  useEffect(() => {
-    if (!revealData || isMultiplayer || autoSim === 'true') return;
-    autoContinueMountedRef.current = true;
-    const startDelay = setTimeout(() => {
-      if (!autoContinueMountedRef.current) return;
-      setAutoContinueActive(true);
-      setAutoContinueCountdown(AUTO_CONTINUE_SECS);
-      autoContinueRef.current = setInterval(() => {
-        if (!autoContinueMountedRef.current) {
-          if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
-          return;
-        }
-        setAutoContinueCountdown((prev) => {
-          if (prev <= 1) {
-            if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, 1500);
-    return () => {
-      autoContinueMountedRef.current = false;
-      clearTimeout(startDelay);
-      if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
-    };
-  }, []);
-
-  // When countdown hits 0 — auto-advance
-  useEffect(() => {
-    if (autoContinueActive && autoContinueCountdown === 0) {
-      // Re-use the same navigation logic as handleNextHand (defined below) via ref
-      autoContinueTriggerRef.current?.();
-    }
-  }, [autoContinueActive, autoContinueCountdown]);
-
-  // Ref so the countdown effect can call handleNextHand without capturing stale closure
-  const autoContinueTriggerRef = useRef<(() => void) | null>(null);
-
   // Win celebration overlay (FIX 3) — shown for 3s when player wins chips
   useEffect(() => {
     if (!revealData || revealData.netChips <= 0) return;
@@ -666,17 +621,10 @@ export default function ResultsScreen() {
   }, [revealData, chips, config, clearRevealData, router, isMultiplayer, mpServer, mpClient, connectedPlayers]);
 
   const handleHome = useCallback(() => {
-    // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — parity with handleRematch: cancel the
-    // auto-continue interval BEFORE navigating, so the countdown can't fire
-    // handleNextHand 19s later and re-route the user away from Home.
-    if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
-    setAutoContinueActive(false);
     clearRevealData();
     router.replace('/');
   }, [clearRevealData, router]);
   const handleRematch = useCallback(() => {
-    if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
-    setAutoContinueActive(false);
     clearRevealData();
     router.replace('/game');
   }, [clearRevealData, router]);
@@ -698,15 +646,6 @@ export default function ResultsScreen() {
       }
     } catch {}
   }, [revealData, autoShareUrl]);
-
-  // Wire auto-continue trigger to handleNextHand (must be after handleNextHand is defined)
-  autoContinueTriggerRef.current = handleNextHand;
-
-  // Cancel auto-continue when user taps any action manually
-  const cancelAutoContinue = useCallback(() => {
-    if (autoContinueRef.current) { clearInterval(autoContinueRef.current); autoContinueRef.current = null; }
-    setAutoContinueActive(false);
-  }, []);
 
   if (!revealData) {
     return (
@@ -858,7 +797,6 @@ export default function ResultsScreen() {
           ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          onScroll={() => { if (autoContinueActive) cancelAutoContinue(); }}
           scrollEventThrottle={200}
         >
 
@@ -1174,23 +1112,6 @@ export default function ResultsScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Auto-continue countdown (FIX 2) */}
-          {autoContinueActive && !isMultiplayer && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Cancel auto-continue"
-              accessibilityLiveRegion="polite"
-              style={styles.autoContinueBar}
-              onPress={cancelAutoContinue}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.autoContinueText}>
-                Auto-continuing in {autoContinueCountdown}s · tap to stay
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* Action buttons (without DealMeIn — moved to sticky bottom) */}
           <View style={styles.buttons}>
             {waitingForNextHand ? (
@@ -1217,19 +1138,18 @@ export default function ResultsScreen() {
                   </View>
                 )}
                 <View style={styles.rematchRow}>
-                  {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { cancelAutoContinue(); handleRematch(); }} style={{ flex: 1 }} />}
+                  {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { handleRematch(); }} style={{ flex: 1 }} />}
                   {isMultiplayer && isMpHost && (
                     <Button
                       title="⚡ REMATCH"
                       variant="secondary"
                       onPress={() => {
-                        cancelAutoContinue();
                         router.replace({ pathname: '/lobby/internet-host', params: { rematch: 'true', roomCode: storeRoomCode ?? '' } } as any);
                       }}
                       style={{ flex: 1 }}
                     />
                   )}
-                  <Button title="HOME" variant="secondary" onPress={() => { cancelAutoContinue(); handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
+                  <Button title="HOME" variant="secondary" onPress={() => { handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
                 </View>
               </>
             )}
@@ -1244,7 +1164,7 @@ export default function ResultsScreen() {
           <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }], width: '75%' }}>
             <DealMeInButton
               label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}
-              onPress={() => { cancelAutoContinue(); handleNextHand(); }}
+              onPress={() => { handleNextHand(); }}
             />
           </Animated.View>
         </View>
