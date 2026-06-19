@@ -10,7 +10,6 @@ import { CompleteBanner } from '../components/CompleteBanner';
 import CompleteOverlay from '../components/CompleteOverlay';
 import { ShareSection } from '../components/ShareSection';
 import { EfficiencyCard } from '../components/EfficiencyCard';
-import { evaluateOmahaHand } from '../utils/handEvaluator';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { FriendsBg } from '../components/FriendsBg';
 import { useResultsAnimations } from '../hooks/useResultsAnimations';

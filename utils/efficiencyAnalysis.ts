@@ -114,17 +114,24 @@ function getGrade(pct: number): { grade: string; gradeEmoji: string } {
 /**
  * Generate all ways to partition `indices` into `groupCount` groups of `groupSize`.
  * For 2 boards (8 cards, groups of 4): C(8,4) = 70 permutations
- * For 3 boards (12 cards): C(12,4)*C(8,4) = 34,650 — still fast
- * For 4 boards (16 cards): C(16,4)*C(12,4)*C(8,4) = ~2.5M — we cap with sampling
+ * For 3 boards (12 cards): C(12,4)*C(8,4) = 34,650 — capped via sampling
+ * For 4 boards (16 cards): C(16,4)*C(12,4)*C(8,4) = ~2.5M — capped via sampling
+ *
+ * VAMOS-FIX-RESULTS-EVAL 2026-06-17 — sample caps cut hard:
+ *   bc=4 (4 boards): 5000 → 400   (was 20k evaluator calls, now 1.6k)
+ *   bc=3 (3 boards): unbounded → 400  (was ~104k calls, now 1.2k)
+ *   bc=2 (2 boards): unbounded → 70  (exhaustive — small enough)
+ * The evaluator was burning 12s of throttled CPU on the results path.
+ * The hint feature value here is "are you within ~5% of optimal," which
+ * 400 random samples answer just as well as 5000.
  */
 function getAssignmentPermutations(
   indices: number[],
   groupCount: number,
   groupSize: number,
 ): number[][][] {
-  // For 4+ boards, use random sampling to keep it fast
-  if (groupCount >= 4) {
-    return samplePermutations(indices, groupCount, groupSize, 5000);
+  if (groupCount >= 3) {
+    return samplePermutations(indices, groupCount, groupSize, 400);
   }
 
   const results: number[][][] = [];

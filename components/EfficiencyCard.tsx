@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, InteractionManager } from 'react-native';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
-import { analyzeEfficiency } from '../utils/efficiencyAnalysis';
+import { analyzeEfficiency, EfficiencyResult } from '../utils/efficiencyAnalysis';
 
 interface BoardData {
   playerCards: any[];
@@ -16,16 +16,31 @@ interface EfficiencyCardProps {
 }
 
 export function EfficiencyCard({ boards, screenW }: EfficiencyCardProps) {
-  const efficiency = useMemo(() => {
-    if (boards.length === 0) return null;
-    try {
-      return analyzeEfficiency(
-        boards.map((b) => b.playerCards),
-        boards.map((b) => ({ openCards: b.openCards, closedCards: b.closedCards })),
-      );
-    } catch {
-      return null;
+  // VAMOS-FIX-RESULTS-EVAL 2026-06-17 — analyzeEfficiency calls evaluateOmahaHand
+  // hundreds-to-thousands of times per game (was 20k for bc=2 = 4 boards). Even
+  // with useMemo it ran SYNCHRONOUSLY on first mount and blocked the JS thread
+  // ~12s on a throttled CPU. Defer via InteractionManager so the rest of the
+  // results screen paints first; the efficiency card hydrates a moment later.
+  const [efficiency, setEfficiency] = useState<EfficiencyResult | null>(null);
+  useEffect(() => {
+    if (boards.length === 0) {
+      setEfficiency(null);
+      return;
     }
+    let cancelled = false;
+    const ih = InteractionManager.runAfterInteractions(() => {
+      if (cancelled) return;
+      try {
+        const result = analyzeEfficiency(
+          boards.map((b) => b.playerCards),
+          boards.map((b) => ({ openCards: b.openCards, closedCards: b.closedCards })),
+        );
+        if (!cancelled) setEfficiency(result);
+      } catch {
+        if (!cancelled) setEfficiency(null);
+      }
+    });
+    return () => { cancelled = true; ih.cancel(); };
   }, [boards]);
 
   if (!efficiency) return null;
