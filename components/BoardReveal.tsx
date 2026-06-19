@@ -177,25 +177,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       return;
     }
     playSound('boardTransition');
-    // VAMOS-FIX-REVEAL-TRANSITION — CROSSFADE in place (was off-screen slide
-    // that left the viewport empty/black mid-transition). Fade out 180ms →
-    // swap content → fade in 180ms. Total 360ms; screen never empty for more
-    // than a single frame at opacity 0.
-    const fadeOut = AnimatedRN.timing(boardOpacity, {
-      toValue: 0,
-      duration: 180,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    });
-    fadeOut.start(() => {
-      setCurrentIdx(prev => prev + 1);
-      AnimatedRN.timing(boardOpacity, {
-        toValue: 1,
-        duration: 180,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    });
+    // VAMOS-FIX-REVEAL-TRANSITION-V2 2026-06-17 — INSTANT swap (option B).
+    // The prior crossfade still passed through opacity 0 → user perceived
+    // a blank/black flash. No animation = no possible blank frame. Board
+    // header text alone signals the change. boardOpacity stays at 1 always.
+    setCurrentIdx(prev => prev + 1);
   }, [boards.length, screenW]);
 
   const handleSkip = useCallback(() => {
