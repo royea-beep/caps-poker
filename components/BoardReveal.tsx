@@ -488,7 +488,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       chipCounterAnim.stopAnimation();
       chipFadeIn.stopAnimation();
       screenFlashAnim.stopAnimation();
-      boardSlideX.stopAnimation();
+      boardOpacity.stopAnimation();
       botPulseScale.stopAnimation();
       communitySpotlightOpacities.forEach(s => s.stopAnimation());
       playerSpotlightOpacities.forEach(s => s.stopAnimation());
