@@ -47,6 +47,13 @@ export interface RevealBoardData {
   botHighlightIds: string[];
   boardHighlightIds: string[];
   potAmount: number;
+  // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — precomputed best-5 cards per side
+  // so the reveal/results screens can derive rank-specific labels
+  // ("Pair of Kings", "Ace-High Flush") WITHOUT re-running evaluateOmahaHand.
+  // Sourced from result.playerResult.playerCardsUsed + boardCardsUsed in
+  // game.tsx, captured ONCE per hand during the navigation calc.
+  playerBestCards?: Card[];
+  botBestCards?: Card[];
 }
 
 export interface RevealData {

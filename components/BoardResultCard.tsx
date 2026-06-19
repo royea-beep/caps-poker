@@ -14,8 +14,8 @@ import { SingleBoardShareCard, StoryShareCard } from './ShareCard';
 import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboard, ShareData } from '../utils/shareHand';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
-import { getHandName, getComparisonText } from '../utils/handNames';
-import { getLanguage } from '../utils/i18n';
+import { getSpecificHandName, getComparisonText } from '../utils/handNames';
+import type { Card } from '../constants/gameConfig';
 
 export interface BoardRevealResult {
   winner: 'player' | 'bot' | 'tie';
@@ -30,6 +30,8 @@ export interface BoardRevealResult {
   botHighlightIds: string[];
   boardHighlightIds: string[];
   allBotHandNames?: string[];
+  playerBestCards?: Card[];
+  botBestCards?: Card[];
 }
 
 interface BoardResultCardProps {
@@ -72,10 +74,14 @@ export const BoardResultCard = React.memo(function BoardResultCard({
   const chipResult = board.winner === 'player' ? `+${pot}` : board.winner === 'bot' ? `-${pot}` : '\u00b10';
   const chipColor = board.winner === 'player' ? COLORS.neonGreen : board.winner === 'bot' ? COLORS.neonRed : COLORS.textDim;
   const multiBot = (board.allBotCards ?? []).length > 1;
-  const lang = getLanguage() === 'he' ? 'he' : 'en';
-  const comparisonText = getComparisonText(board.playerHandName, board.botHandName, board.winner, lang);
-  const playerHandDisplay = getHandName(board.playerHandName, lang);
-  const botHandDisplay = getHandName(board.botHandName, lang);
+  // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 \u2014 rank-specific English labels
+  // derived from precomputed best-5 cards; no evaluator on the render path.
+  const comparisonText = getComparisonText(
+    board.playerHandName, board.botHandName, board.winner,
+    'en', board.playerBestCards, board.botBestCards,
+  );
+  const playerHandDisplay = getSpecificHandName(board.playerHandName, board.playerBestCards);
+  const botHandDisplay = getSpecificHandName(board.botHandName, board.botBestCards);
 
   const doShare = async (ref: React.RefObject<any>) => {
     setSharing(true);
@@ -179,7 +185,9 @@ export const BoardResultCard = React.memo(function BoardResultCard({
                   />
                 ))}
                 <Text style={[styles.handName, board.winner === 'bot' && styles.handNameWin]}>
-                  {getHandName((board.allBotHandNames ?? [])[botIdx] || board.botHandName, lang)}
+                  {botIdx === 0
+                    ? botHandDisplay
+                    : ((board.allBotHandNames ?? [])[botIdx] || board.botHandName)}
                 </Text>
               </View>
             </View>
@@ -229,7 +237,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
           </Text>
           {(board.playerHighlightIds ?? []).length > 0 && (
             <Text style={styles.bestSelectedLabel}>
-              {lang === 'he' ? '★ היד הטובה מ-9 קלפים' : '★ Best hand from 9 cards'}
+              ★ Best hand from 9 cards
             </Text>
           )}
         </View>

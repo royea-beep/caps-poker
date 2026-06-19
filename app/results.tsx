@@ -353,7 +353,7 @@ export default function ResultsScreen() {
               if (streakResult?.chips_earned) {
                 gs.addChips(streakResult.chips_earned);
                 gs.trackChipsEarned(streakResult.chips_earned);
-                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 💰 5 ניצחונות ברצף!`), 1800);
+                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 💰 5-win streak!`), 1800);
               }
             }
           }
@@ -433,7 +433,7 @@ export default function ResultsScreen() {
         if (!sb) return;
         const { data: cupResult } = await sb.rpc('check_cups', { p_device_id: deviceId });
         if (cupResult?.awarded?.length > 0) {
-          Alert.alert('🏆 כוס חדשה!', `פתחת: ${cupResult.awarded[0]}`, [{ text: 'מגניב!' }]);
+          Alert.alert('🏆 New Cup!', `Unlocked: ${cupResult.awarded[0]}`, [{ text: 'Nice!' }]);
         }
       } catch {}
     })();
@@ -779,8 +779,8 @@ export default function ResultsScreen() {
               <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
             </Text>
             {playerWins === botWins && netChips > 0 && (
-              <Text style={styles.tieBonusText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
-                {getLanguage() === 'he' ? `בונוס תיקו: +${netChips} ג'טונים` : `Tie bonus: +${netChips} chips`}
+              <Text style={styles.tieBonusText}>
+                {`Tie bonus: +${netChips} chips`}
               </Text>
             )}
           </View>
@@ -977,10 +977,8 @@ export default function ResultsScreen() {
           {/* First game: upgrade nudge — "Try 4 boards next!" */}
           {showUpgradeNudge && (
             <View style={styles.upgradeNudge}>
-              <Text style={styles.upgradeNudgeText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
-                {getLanguage() === 'he'
-                  ? 'מוכן לאתגר המלא? נסה 4 בורדים!'
-                  : 'Ready for the full challenge? Try 4 boards next!'}
+              <Text style={styles.upgradeNudgeText}>
+                Ready for the full challenge? Try 4 boards next!
               </Text>
               <View style={styles.upgradeNudgeRow}>
                 <Pressable

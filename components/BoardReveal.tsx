@@ -22,7 +22,7 @@ import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
-import { getHandName } from '../utils/handNames';
+import { getHandName, getSpecificHandName } from '../utils/handNames';
 import { useGameStore } from '../store/gameStore';
 import { useGameColors } from '../utils/useGameColors';
 import { getTheme } from '../constants/visualThemes';
@@ -48,6 +48,8 @@ interface RevealBoard {
   playerHighlightIds: string[];
   botHighlightIds: string[];
   boardHighlightIds: string[];
+  playerBestCards?: Card[];
+  botBestCards?: Card[];
 }
 
 const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
@@ -56,11 +58,11 @@ const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
   cinematic: 1.8,
 };
 
-const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
+// VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — English-only.
 const REVEAL_TIPS = [
-  () => TIP('Now see what your opponent has on each board.', 'עכשיו רואים מה יש ליריב על כל בורד.'),
-  () => TIP('Each card changes the winning hand!', 'כל קלף יכול לשנות את התוצאה!'),
-  () => TIP('Green = win, Red = loss. Watch for COMPLETE bonus!', 'ירוק = ניצחון, אדום = הפסד.'),
+  () => 'Now see what your opponent has on each board.',
+  () => 'Each card changes the winning hand!',
+  () => 'Green = win, Red = loss. Watch for COMPLETE bonus!',
 ];
 
 function getScoreText(pWins: number, bWins: number, idx: number, total: number): string {
@@ -685,11 +687,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
               )}
               {board.winner === 'player' && board.playerHandName && board.botHandName && (
                 <Text style={styles.handComparison}>
-                  {getHandName(board.playerHandName, lang)} beats {getHandName(board.botHandName, lang)}
+                  {getSpecificHandName(board.playerHandName, board.playerBestCards)} beats {getSpecificHandName(board.botHandName, board.botBestCards)}
                 </Text>
               )}
               {isNarrowLoss && (
-                <Text style={styles.soClose}>כמעט! 😬</Text>
+                <Text style={styles.soClose}>So close! 😬</Text>
               )}
               {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
                 <View style={styles.completeBanner}>
@@ -720,7 +722,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             </AnimatedRN.Text>
           ) : showTapHint ? (
             <Text style={[styles.hint, styles.hintContinue]}>
-              {currentIdx + 1 < totalBoards ? (getLanguage() === 'he' ? 'לחץ להמשך →' : 'Tap to continue →') : (getLanguage() === 'he' ? 'לחץ לתוצאות →' : '▶ TAP FOR RESULTS')}
+              {currentIdx + 1 < totalBoards ? 'Tap to continue →' : '▶ TAP FOR RESULTS'}
             </Text>
           ) : (
             <Text style={styles.hint}>{' '}</Text>

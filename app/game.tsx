@@ -849,6 +849,15 @@ function GameScreenInner() {
           ...result.playerResult.boardCardsUsed.map((c) => c.id),
           ...result.botResult.boardCardsUsed.map((c) => c.id),
         ] : [],
+        // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — precomputed best-5 for both
+        // sides so reveal/results can render rank-specific labels with no
+        // re-evaluation. Captured here where evaluation already happened.
+        playerBestCards: result
+          ? [...result.playerResult.playerCardsUsed, ...result.playerResult.boardCardsUsed]
+          : undefined,
+        botBestCards: result
+          ? [...result.botResult.playerCardsUsed, ...result.botResult.boardCardsUsed]
+          : undefined,
         potAmount: config.potPerBoard * numberOfPlayers,
       };
     });
