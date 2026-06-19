@@ -34,13 +34,13 @@ export default function CupsScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: rs(40) }} showsVerticalScrollIndicator={false}>
           {cups.map(cup => (
-            <View key={cup.id} style={[styles.cupRow, !cup.earned && styles.cupRowLocked]} accessibilityState={{ disabled: !cup.earned }} accessible={true} accessibilityLabel={`Trophy, ${cup.name_he || TIER_LABELS[cup.tier] || cup.tier}${!cup.earned ? ', locked' : ', earned'}, tier ${cup.tier}, progress ${cup.progress}%`}>
+            <View key={cup.id} style={[styles.cupRow, !cup.earned && styles.cupRowLocked]} accessibilityState={{ disabled: !cup.earned }} accessible={true} accessibilityLabel={`Trophy, ${TIER_LABELS[cup.tier] || cup.name_he || cup.tier}${!cup.earned ? ', locked' : ', earned'}, tier ${cup.tier}, progress ${cup.progress}%`}>
               <View style={[styles.cupIcon, { backgroundColor: cup.earned ? cup.color : 'rgba(255,255,255,0.08)' }]}>
                 <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }} accessibilityLabel="Trophy">🏆</Text>
               </View>
               <View style={styles.cupInfo}>
                 <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]} accessibilityLanguage="he">
-                  {!cup.earned ? '🔒 ' : ''}{cup.name_he || TIER_LABELS[cup.tier] || cup.tier}
+                  {!cup.earned ? '🔒 ' : ''}{TIER_LABELS[cup.tier] || cup.name_he || cup.tier}
                 </Text>
                 <Text style={styles.cupTier}>{String(cup.tier ?? "").toUpperCase()}</Text>
                 {!cup.earned && (
