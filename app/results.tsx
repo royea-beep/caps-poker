@@ -624,13 +624,19 @@ export default function ResultsScreen() {
   const isPerfectGame = playerWins === boards.length && boards.length > 0;
   const potPerBoardTotal = revealData.potPerBoard * numberOfPlayers;
 
-  const shareData: ShareData = {
+  // VAMOS-FIX-RESULTS-RENDER 2026-06-17 — useMemo so BoardResultCard React.memo
+  // can bail on parent re-renders (chip roll-up, achievement toasts, login prompt).
+  // Without these, every parent state change would trash the memo cache.
+  const shareData = React.useMemo<ShareData>(() => ({
     boards, netChips, isComplete, completeBonusAmount,
     boardsWon: playerWins, totalBoards: boards.length,
     potPerBoard: revealData.potPerBoard, numberOfPlayers,
-  };
+  }), [boards, netChips, isComplete, completeBonusAmount, playerWins, revealData.potPerBoard, numberOfPlayers]);
 
-  const winBorderColor = glowAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(76,175,80,0.3)', 'rgba(76,175,80,0.9)'] });
+  const winBorderColor = React.useMemo(
+    () => glowAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(76,175,80,0.3)', 'rgba(76,175,80,0.9)'] }),
+    [glowAnim],
+  );
 
   const HAND_ORDER = ['Royal Flush', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'One Pair', 'High Card'];
   let bestRank = 99; let bestName = ''; let bestBoard = 0;

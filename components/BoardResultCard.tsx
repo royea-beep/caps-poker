@@ -47,7 +47,11 @@ interface BoardResultCardProps {
   completeBonusAmount: number;
 }
 
-export function BoardResultCard({
+// VAMOS-FIX-RESULTS-RENDER 2026-06-17 — memo'd. Renders up to 9 cards per
+// board × N boards. Was re-rendering on every parent state change (chip
+// roll-up = 20 ticks, achievement toasts, login prompt). Memo bails out
+// when props haven't changed; parent must pass stable shareData/winBorderColor.
+export const BoardResultCard = React.memo(function BoardResultCard({
   board, boardIndex, pot, cardW, cardH, translateY,
   commCardW, commCardH, botCardW, botCardH,
   winBorderColor, winBadgeAnim, shareData, autoShareUrl,
@@ -239,7 +243,7 @@ export function BoardResultCard({
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   boardCard: {

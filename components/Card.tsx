@@ -58,7 +58,7 @@ const SUIT_COLORS_4_FIVEO: Record<string, string> = {
   clubs:    '#006644',
 };
 
-export default function CardComponent({
+function CardComponent({
   card,
   faceDown = false,
   small,
@@ -395,6 +395,11 @@ export default function CardComponent({
     </View>
   );
 }
+
+// VAMOS-FIX-RESULTS-RENDER 2026-06-17 — memo'd so 36 cards on the results
+// screen don't re-render on every parent state update (chip roll-up, board
+// stagger, achievement toasts).
+export default React.memo(CardComponent);
 
 const styles = StyleSheet.create({
   card: {
