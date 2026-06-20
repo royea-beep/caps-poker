@@ -13,6 +13,8 @@ import { captureAndShare, generateShareText, ShareData } from '../utils/shareHan
 import { RevealBoardData } from '../types/gameTypes';
 import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
 import { HandBadge } from '../components/HandBadge';
+import { EmptyState } from '../components/EmptyState';
+import { HandHistoryPreview } from '../components/EmptyStatePreviews';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -329,19 +331,20 @@ export default function HandHistoryScreen() {
         {loading ? (
           <Text style={[styles.emptyText, { marginTop: rs(40) }]}>Loading...</Text>
         ) : history.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🃏</Text>
-            <Text style={styles.emptyText}>{t().historyEmptyTitle}</Text>
-            <Text style={styles.emptySubtext}>{t().historyEmptySub}</Text>
-            <TouchableOpacity style={styles.emptyPlayBtn} onPress={() => router.replace('/' as any)}>
-              <Text style={styles.emptyPlayBtnText}>{t().playNow}</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="🃏"
+            title="No hands yet"
+            subtitle="Your past hands will show here"
+            ctaLabel="Play Now"
+            onCta={() => router.replace('/game' as any)}
+            preview={<HandHistoryPreview />}
+          />
         ) : filtered.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>{filter === 'wins' ? '🏆' : '😔'}</Text>
-            <Text style={styles.emptyText}>No {filter === 'wins' ? 'wins' : 'losses'} yet</Text>
-          </View>
+          <EmptyState
+            icon={filter === 'wins' ? '🏆' : '😔'}
+            title={`No ${filter === 'wins' ? 'wins' : 'losses'} yet`}
+            subtitle={filter === 'wins' ? 'Win a hand to see it here.' : 'A loss-free streak — keep going!'}
+          />
         ) : (
           <>
             {Object.entries(grouped).map(([date, hands]) => {

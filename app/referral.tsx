@@ -415,13 +415,20 @@ const styles = StyleSheet.create({
     writingDirection: 'ltr',
     marginBottom: rv(12),
   } as any,
+  // VAMOS-VISUAL-PASS-1 2026-06-19 — was a row with flex:1 input + button at
+  // its natural width; on 320pt the button slid past the card edge and clipped
+  // the "Redeem" label. Input now flexShrink:1 + a smaller flex value so the
+  // button keeps its minWidth at the right edge of the card.
   redeemRow: {
     flexDirection: 'row',
     gap: rs(8),
     alignItems: 'center',
+    width: '100%',
   },
   redeemInput: {
     flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
     backgroundColor: '#1a0e06',
     borderRadius: rs(10),
     borderWidth: 1,
@@ -435,13 +442,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   redeemBtn: {
+    flexShrink: 0,
     backgroundColor: ACCENT,
     borderRadius: rs(10),
     paddingHorizontal: rs(18),
     height: rs(44),
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: rs(80),
+    minWidth: rs(96),
   },
   redeemBtnDisabled: { opacity: 0.45 },
   redeemBtnText: {

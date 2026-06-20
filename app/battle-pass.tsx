@@ -246,7 +246,11 @@ export default function BattlePassScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <Stack.Screen options={{ title: '⚔️ Battle Pass', headerShown: true }} />
+      {/* VAMOS-VISUAL-PASS-1 2026-06-19 — was headerShown: true with the
+          native Stack header rendering a stray white bar behind the in-screen
+          season header. The screen has its own custom <View style={styles.header}>
+          (Season Name + countdown), so the native header is just visual noise. */}
+      <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
         style={styles.scroll}

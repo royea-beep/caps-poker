@@ -18,6 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getHand, getHandHistory, HandRecord } from '../utils/handHistory';
+import { EmptyState } from '../components/EmptyState';
+import { CoachingTipPreview } from '../components/EmptyStatePreviews';
 import { computeOptimalAllocation, CoachingResult, BoardAllocation } from '../utils/coachingEngine';
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -235,12 +237,14 @@ export default function CoachingScreen() {
   if (!hand || !result) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No hand data available</Text>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>← BACK</Text>
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="💡"
+          title="No coaching yet"
+          subtitle="Play hands to get personalized tips"
+          ctaLabel="Play Now"
+          onCta={() => router.push('/game' as any)}
+          preview={<CoachingTipPreview />}
+        />
       </SafeAreaView>
     );
   }

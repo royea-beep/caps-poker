@@ -17,6 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getHandHistory } from '../utils/handHistory';
 import { computeStats, HAND_RANK_ORDER, PlayerStats } from '../utils/statsEngine';
+import { EmptyState } from '../components/EmptyState';
+import { StatsCardsPreview } from '../components/EmptyStatePreviews';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
@@ -232,18 +235,15 @@ export default function StatsScreen() {
   if (allHands.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-            <Text style={styles.backText}>← BACK</Text>
-          </Pressable>
-          <Text style={styles.title}>STATS</Text>
-          <View style={styles.backBtn} />
-        </View>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={styles.emptyTitle}>No hands yet</Text>
-          <Text style={styles.emptySubtitle}>Play a few hands to see your statistics</Text>
-        </View>
+        <ScreenHeader title="STATS" />
+        <EmptyState
+          icon="📊"
+          title="No stats yet"
+          subtitle="Play a few hands and your stats appear here"
+          ctaLabel="Play Now"
+          onCta={() => router.push('/game' as any)}
+          preview={<StatsCardsPreview />}
+        />
       </SafeAreaView>
     );
   }
@@ -251,19 +251,14 @@ export default function StatsScreen() {
   if (!stats || stats.handsPlayed === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-            <Text style={styles.backText}>← BACK</Text>
-          </Pressable>
-          <Text style={styles.title}>STATS</Text>
-          <View style={styles.backBtn} />
-        </View>
+        <ScreenHeader title="STATS" />
         {filterBar}
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={styles.emptyTitle}>No hands played in this period</Text>
-          <Text style={styles.emptySubtitle}>Try "All time" to see your full history</Text>
-        </View>
+        <EmptyState
+          icon="📊"
+          title="No hands in this period"
+          subtitle='Try "All time" to see your full history'
+          preview={<StatsCardsPreview />}
+        />
       </SafeAreaView>
     );
   }

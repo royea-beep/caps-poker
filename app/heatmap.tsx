@@ -19,6 +19,9 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
+import { EmptyState } from '../components/EmptyState';
+import { HeatmapGridPreview } from '../components/EmptyStatePreviews';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 void COLORS;
 
@@ -227,14 +230,7 @@ export default function HeatmapScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Text style={styles.backArrow}>‹</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>My Activity Map</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <ScreenHeader title="My Activity Map" />
 
       {loading ? (
         <View style={styles.center}>
@@ -242,11 +238,14 @@ export default function HeatmapScreen() {
           <Text style={styles.loadingText}>Loading data...</Text>
         </View>
       ) : totalTaps === 0 ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyEmoji}>📊</Text>
-          <Text style={styles.emptyTitle}>No data yet</Text>
-          <Text style={styles.emptySub}>Play a bit and come back to see your stats!</Text>
-        </View>
+        <EmptyState
+          icon="🗓️"
+          title="No activity yet"
+          subtitle="Play to build your activity map"
+          ctaLabel="Play Now"
+          onCta={() => router.push('/game' as any)}
+          preview={<HeatmapGridPreview />}
+        />
       ) : (
         <ScrollView
           style={styles.scroll}

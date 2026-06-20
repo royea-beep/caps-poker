@@ -14,6 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Button } from '../components/Button';
+import { EmptyState } from '../components/EmptyState';
+import { RankLadderPreview } from '../components/EmptyStatePreviews';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
@@ -133,9 +135,14 @@ export default function RankScreen() {
             <Text style={styles.mutedText}>Loading...</Text>
           </View>
         ) : !data ? (
-          <View style={styles.loadingBox}>
-            <Text style={styles.mutedText}>Play a game to see your rank!</Text>
-          </View>
+          <EmptyState
+            icon="🏆"
+            title="No rank yet"
+            subtitle="Play a game to claim your spot on the ladder"
+            ctaLabel="Play Now"
+            onCta={() => router.push('/game' as any)}
+            preview={<RankLadderPreview />}
+          />
         ) : (
           <Animated.View style={{ opacity: fadeAnim, gap: rs(16) }}>
             {/* Main rank card */}
