@@ -23,6 +23,7 @@ import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
 import { useGameStore } from '../store/gameStore';
 import { listWaitingRooms, joinRoom, createRoom, SessionRow } from '../utils/matchmaking';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 void COLORS;
 
@@ -184,13 +185,7 @@ export default function SitAndGoLobby() {
       <View style={s.root}>
 
         {/* Header */}
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Text style={s.backText}>{'←'}</Text>
-          </Pressable>
-          <Text style={s.title}>{'🎰 Sit & Go'}</Text>
-          <View style={{ width: rs(44) }} />
-        </View>
+        <ScreenHeader title="🎰 Sit & Go" />
 
         <ScrollView
           contentContainerStyle={s.scroll}
@@ -264,10 +259,6 @@ export default function SitAndGoLobby() {
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: BG },
   root:    { flex: 1, backgroundColor: BG },
-  header:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: rs(12), borderBottomWidth: 1, borderBottomColor: BORDER },
-  backBtn: { width: rs(44), height: rs(44), alignItems: 'center', justifyContent: 'center' },
-  backText:{ color: TEXT2, fontSize: rf(20) },
-  title:   { color: TEXT, fontSize: rf(18), fontWeight: '800', textAlign: 'center' },
   scroll:  { paddingBottom: rv(40) },
 
   activeBanner:     { margin: rs(16), borderRadius: rs(12), backgroundColor: 'rgba(39,174,96,0.12)', borderWidth: 1, borderColor: 'rgba(39,174,96,0.4)', padding: rs(14), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

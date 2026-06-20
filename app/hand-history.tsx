@@ -15,6 +15,7 @@ import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
 import { HandBadge } from '../components/HandBadge';
 import { EmptyState } from '../components/EmptyState';
 import { HandHistoryPreview } from '../components/EmptyStatePreviews';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -306,11 +307,7 @@ export default function HandHistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerBar}>
-        <Button title="← Back" variant="ghost" onPress={() => router.back()} style={{ paddingVertical: 6 }} />
-        <Text style={styles.title}>HAND HISTORY</Text>
-        <View style={{ width: 60 }} />
-      </View>
+      <ScreenHeader title="HAND HISTORY" />
 
       {/* Filter tabs */}
       <View style={styles.filterRow}>
@@ -385,21 +382,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.boardBorder,
-  },
-  title: {
-    fontSize: rf(18),
-    fontWeight: '900',
-    color: COLORS.mintBright,
-    letterSpacing: 4,
   },
   filterRow: {
     flexDirection: 'row',

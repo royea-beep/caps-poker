@@ -24,6 +24,7 @@ import { getDeviceId } from '../utils/leaderboard';
 import { fetchPokerShop, spendChips, ShopItem, ShopData, callRPC } from '../utils/supabaseEconomy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabase } from '../utils/supabase';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 // Lazy-load RevenueCat (native only)
 let Purchases: typeof import('react-native-purchases').default | null = null;
@@ -160,15 +161,14 @@ export default function ShopScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-        <Text style={styles.headerTitle} accessibilityRole="header" accessibilityLabel="Chip Shop">🎰 Chip Shop</Text>
-        <View style={styles.balancePill} accessibilityLabel={`Balance: ${(chips ?? 0).toLocaleString()} chips`}>
-          <Text style={styles.balanceText} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">💰 {(chips ?? 0).toLocaleString()}</Text>
-        </View>
-      </View>
+      <ScreenHeader
+        title="🎰 Chip Shop"
+        right={
+          <View style={styles.balancePill} accessibilityLabel={`Balance: ${(chips ?? 0).toLocaleString()} chips`}>
+            <Text style={styles.balanceText} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">💰 {(chips ?? 0).toLocaleString()}</Text>
+          </View>
+        }
+      />
 
       {/* Toast */}
       {toast && (
@@ -307,30 +307,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  backBtn: {
-    paddingVertical: rs(4),
-    paddingRight: rs(12),
-  },
-  backText: {
-    color: COLORS.mint,
-    fontSize: rf(15),
-    fontWeight: '600',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: rf(18),
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   balancePill: {
     backgroundColor: 'rgba(79,214,168,0.15)',

@@ -16,6 +16,7 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, Card, CARDS_PER_BOARD, getBoardCount } from '../constants/gameConfig';
+import { rf, rs, rv } from '../utils/responsive';
 import {
   BoardState,
   initializeGameMulti,
@@ -840,58 +841,76 @@ export default function TournamentScreen() {
 
   // ─── Render helper: Bracket visualization ──────────────────────────────
 
+  // VAMOS-VISUAL-PASS-2 2026-06-19 \u2014 bracket redesigned. Was 3 horizontal
+  // columns at ~115pt each, names at fontSize 11, overlapping when no SF/F
+  // had advanced. Now a vertical stack of round sections with clear labels
+  // (Quarterfinal / Semifinal / Final), full-width per-match rows, the
+  // human's slot pinned in mint, and explicit "TBD" placeholders so empty
+  // rounds read as anticipation, not as broken layout.
   function renderBracket() {
-    const renderMatchCard = (m: BracketMatch, extraStyle?: object) => (
-      <View key={m.id} style={[styles.bracketMatch, extraStyle, m.winner && styles.bracketMatchDone]}>
-        <Text style={[
-          styles.bracketPlayer,
-          m.winner?.id === m.player1?.id && styles.bracketWinner,
-          m.player1?.isHuman && styles.bracketHuman,
-          m.winner && m.winner.id !== m.player1?.id && styles.bracketLoser,
-        ]}>
-          {m.winner?.id === m.player1?.id ? '\u2713 ' : ''}{m.player1?.name || '?'}
-        </Text>
-        <Text style={styles.bracketVs}>{m.winner ? `${m.score1} - ${m.score2}` : 'vs'}</Text>
-        <Text style={[
-          styles.bracketPlayer,
-          m.winner?.id === m.player2?.id && styles.bracketWinner,
-          m.player2?.isHuman && styles.bracketHuman,
-          m.winner && m.winner.id !== m.player2?.id && styles.bracketLoser,
-        ]}>
-          {m.winner?.id === m.player2?.id ? '\u2713 ' : ''}{m.player2?.name || '?'}
-        </Text>
+    const renderMatchRow = (m: BracketMatch, isFinal = false) => {
+      const score = m.winner ? `${m.score1}\u2013${m.score2}` : 'vs';
+      const renderSide = (p: typeof m.player1, scoreShown: number, isLeft: boolean) => {
+        const isWinner = !!m.winner && m.winner.id === p?.id;
+        const isLoser = !!m.winner && m.winner.id !== p?.id;
+        return (
+          <View style={[styles.bMatchSide, isLeft ? styles.bMatchSideLeft : styles.bMatchSideRight]}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.bPlayer,
+                p?.isHuman && styles.bPlayerHuman,
+                isWinner && styles.bPlayerWinner,
+                isLoser && styles.bPlayerLoser,
+                !isLeft && { textAlign: 'right' as const },
+              ]}
+            >
+              {isWinner ? '\u2713 ' : ''}{p?.name ?? '?'}
+            </Text>
+          </View>
+        );
+      };
+      return (
+        <View
+          key={m.id}
+          style={[
+            styles.bMatchRow,
+            isFinal && styles.bMatchRowFinal,
+            !!m.winner && styles.bMatchRowDone,
+            (m.player1?.isHuman || m.player2?.isHuman) && styles.bMatchRowHuman,
+          ]}
+        >
+          {renderSide(m.player1, m.score1, true)}
+          <View style={[styles.bScoreBox, isFinal && styles.bScoreBoxFinal]}>
+            <Text style={[styles.bScoreText, !!m.winner && styles.bScoreTextDone]}>{score}</Text>
+          </View>
+          {renderSide(m.player2, m.score2, false)}
+        </View>
+      );
+    };
+
+    const renderRoundSection = (label: string, matches: BracketMatch[], expectedCount: number, isFinal = false) => (
+      <View style={styles.bRoundSection}>
+        <View style={styles.bRoundHeader}>
+          <Text style={styles.bRoundLabel}>{label}</Text>
+          <View style={styles.bRoundHairline} />
+        </View>
+        {matches.length > 0
+          ? matches.map((m) => renderMatchRow(m, isFinal))
+          : Array.from({ length: expectedCount }).map((_, i) => (
+              <View key={`tbd-${i}`} style={[styles.bMatchRow, styles.bMatchRowTBD, isFinal && styles.bMatchRowFinal]}>
+                <Text style={styles.bTBDText}>To be determined</Text>
+              </View>
+            ))
+        }
       </View>
     );
 
     return (
-      <View style={styles.bracketContainer}>
-        {/* Quarter-finals */}
-        <View style={styles.bracketColumn}>
-          <Text style={styles.bracketRoundLabel}>QF</Text>
-          {quarterFinals.map((m) => renderMatchCard(m))}
-        </View>
-
-        {/* Semi-finals */}
-        <View style={styles.bracketColumn}>
-          <Text style={styles.bracketRoundLabel}>SF</Text>
-          {semiFinals.length > 0 ? semiFinals.map((m) =>
-            renderMatchCard(m, styles.bracketMatchLarge)
-          ) : (
-            <View style={styles.bracketMatchEmpty}>
-              <Text style={styles.bracketEmptyText}>TBD</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Final */}
-        <View style={styles.bracketColumn}>
-          <Text style={styles.bracketRoundLabel}>F</Text>
-          {final ? renderMatchCard(final, styles.bracketMatchFinal) : (
-            <View style={styles.bracketMatchEmpty}>
-              <Text style={styles.bracketEmptyText}>TBD</Text>
-            </View>
-          )}
-        </View>
+      <View style={styles.bRoot}>
+        {renderRoundSection('Quarterfinal', quarterFinals, 4)}
+        {renderRoundSection('Semifinal', semiFinals, 2)}
+        {renderRoundSection('Final', final ? [final] : [], 1, true)}
       </View>
     );
   }
@@ -1011,77 +1030,120 @@ const styles = StyleSheet.create({
   },
 
   // Bracket
-  bracketContainer: {
+  // ─── VAMOS-VISUAL-PASS-2 2026-06-19 — readable vertical bracket ────────────
+  bRoot: {
+    width: '100%',
+    paddingVertical: rs(8),
+    gap: rs(16),
+  },
+  bRoundSection: {
+    width: '100%',
+    gap: rs(6),
+  },
+  bRoundHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    width: '100%',
-    paddingVertical: 16,
-  },
-  bracketColumn: {
-    flex: 1,
-    gap: 8,
     alignItems: 'center',
+    gap: rs(8),
+    marginBottom: rs(4),
   },
-  bracketRoundLabel: {
-    fontSize: 12,
-    fontWeight: '800',
+  bRoundLabel: {
     color: COLORS.mint,
+    fontSize: rf(12),
+    fontWeight: '800',
     letterSpacing: 2,
-    marginBottom: 4,
+    textTransform: 'uppercase',
   },
-  bracketMatch: {
-    backgroundColor: COLORS.feltLight,
-    borderRadius: 8,
-    padding: 8,
-    width: '100%',
+  bRoundHairline: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  bMatchRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: COLORS.feltLight,
+    borderRadius: rv(10),
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
-    gap: 2,
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(10),
+    gap: rs(8),
+    minHeight: rs(48),
   },
-  bracketMatchLarge: {
-    paddingVertical: 12,
-    marginVertical: 16,
+  bMatchRowDone: {
+    opacity: 0.95,
   },
-  bracketMatchFinal: {
-    paddingVertical: 16,
+  bMatchRowHuman: {
+    borderColor: COLORS.mint,
+    backgroundColor: 'rgba(79,214,168,0.06)',
+  },
+  bMatchRowFinal: {
     borderColor: COLORS.mint,
     borderWidth: 2,
-    marginVertical: 24,
+    backgroundColor: 'rgba(79,214,168,0.08)',
+    minHeight: rs(56),
+    paddingVertical: rs(12),
   },
-  bracketMatchEmpty: {
-    backgroundColor: COLORS.feltLight,
-    borderRadius: 8,
-    padding: 16,
-    width: '100%',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
-    opacity: 0.4,
-    marginVertical: 16,
+  bMatchRowTBD: {
+    opacity: 0.5,
+    justifyContent: 'center',
   },
-  bracketEmptyText: {
-    color: COLORS.textDim,
-    fontSize: 12,
+  bMatchSide: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  bMatchSideLeft: { alignItems: 'flex-start' },
+  bMatchSideRight: { alignItems: 'flex-end' },
+  bPlayer: {
+    color: COLORS.textPrimary,
+    fontSize: rf(13),
     fontWeight: '600',
   },
-  bracketPlayer: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  bracketVs: {
-    fontSize: 9,
-    fontWeight: '400',
-    color: COLORS.textDim,
-  },
-  bracketWinner: {
+  bPlayerHuman: {
     color: COLORS.mint,
     fontWeight: '800',
   },
-  bracketHuman: {
-    color: COLORS.mintLight,
+  bPlayerWinner: {
+    color: COLORS.mint,
+    fontWeight: '800',
+  },
+  bPlayerLoser: {
+    color: COLORS.textDim,
+    textDecorationLine: 'line-through',
+  },
+  bScoreBox: {
+    minWidth: rs(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: rs(6),
+    paddingVertical: rs(2),
+    backgroundColor: COLORS.background,
+    borderRadius: rv(6),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  bScoreBoxFinal: {
+    minWidth: rs(56),
+    paddingVertical: rs(4),
+  },
+  bScoreText: {
+    color: COLORS.textMuted,
+    fontSize: rf(11),
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.5,
+  },
+  bScoreTextDone: {
+    color: COLORS.textPrimary,
+    fontWeight: '800',
+  },
+  bTBDText: {
+    color: COLORS.textDim,
+    fontSize: rf(12),
+    fontWeight: '600',
+    letterSpacing: 1,
+    textAlign: 'center',
+    width: '100%',
   },
 
   // Game area

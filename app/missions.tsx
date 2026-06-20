@@ -20,6 +20,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 // Suppress unused-import lint warning — COLORS used by pattern convention
 void COLORS;
@@ -297,25 +298,8 @@ export default function MissionsScreen() {
     <SafeAreaView style={styles.safeArea}>
 
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
-          hitSlop={8}
-        >
-          {/* VAMOS-QA-VISUAL-FIX 2026-06-19 — back arrow flipped from → to ← for LTR/English. */}
-          <Text style={styles.backArrow}>{'←'}</Text>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Daily Missions</Text>
-          <Text style={styles.headerCountdown}>Resets in {formatCountdown(countdown)}</Text>
-        </View>
-
-        {/* Spacer mirrors back-button so title stays centred */}
-        <View style={styles.headerSpacer} />
-      </View>
+      <ScreenHeader title="Daily Missions" />
+      <Text style={styles.headerCountdown}>Resets in {formatCountdown(countdown)}</Text>
 
       <ScrollView
         style={styles.scroll}
@@ -369,44 +353,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rv(12),
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(4),
-    minWidth: rs(70),
-  },
-  backButtonPressed: { opacity: 0.5 },
-  backArrow: {
-    color: TEXT_PRI,
-    fontSize: rf(20),
-  },
-  backLabel: {
-    color: TEXT_PRI,
-    fontSize: rf(14),
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: TEXT_PRI,
-    fontSize: rf(18),
-    fontWeight: '700',
-  },
   headerCountdown: {
     color: TEXT_SEC,
     fontSize: rf(12),
-    marginTop: rv(2),
+    textAlign: 'center',
+    paddingVertical: rv(6),
   },
-  headerSpacer: { minWidth: rs(70) },
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: rs(16),

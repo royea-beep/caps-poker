@@ -22,6 +22,7 @@ import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useGameStore } from '../store/gameStore';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
@@ -525,9 +526,7 @@ export default function SitAndGoScreen() {
     const canAfford = chips >= ENTRY_FEE;
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.topBar}>
-          <Button title="BACK" variant="ghost" onPress={() => router.replace('/')} style={{ paddingVertical: 8, paddingHorizontal: 12 }} />
-        </View>
+        <ScreenHeader title="SIT & GO" onBack={() => router.replace('/')} />
         <View style={styles.centered}>
           <Text style={styles.trophyEmoji}>🃏</Text>
           <Text style={styles.heading}>SIT & GO</Text>
@@ -801,15 +800,17 @@ export default function SitAndGoScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <Button title="BACK" variant="ghost" onPress={handleBack} style={{ paddingVertical: 8, paddingHorizontal: 12 }} />
-        <Text style={styles.roundLabel}>ROUND {round} / {TOTAL_ROUNDS}</Text>
-        {countdownActive && (
-          <Text style={[styles.timerText, { color: timerColor }]}>
-            0:{countdown.toString().padStart(2, '0')}
-          </Text>
-        )}
-      </View>
+      <ScreenHeader
+        title={`ROUND ${round} / ${TOTAL_ROUNDS}`}
+        onBack={handleBack}
+        right={
+          countdownActive ? (
+            <Text style={[styles.timerText, { color: timerColor }]}>
+              0:{countdown.toString().padStart(2, '0')}
+            </Text>
+          ) : null
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.gameArea}>
         {boards.map((board, i) => (

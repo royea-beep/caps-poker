@@ -19,6 +19,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 void COLORS;
 
@@ -218,13 +219,7 @@ export default function PlayOfTheDayScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Text style={styles.backArrow}>‹</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Play of the Day</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <ScreenHeader title="Play of the Day" />
 
       {loading ? (
         <View style={styles.center}>
@@ -321,23 +316,6 @@ export default function PlayOfTheDayScreen() {
 // ─── Styles ──────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: BG },
-  header:  {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rv(12),
-  },
-  backBtn: { minWidth: rs(44), minHeight: rs(44), justifyContent: 'center' },
-  backArrow: { color: ACCENT, fontSize: rf(28), fontWeight: '700' },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: TEXT,
-    fontSize: rf(18),
-    fontWeight: '700',
-    writingDirection: 'ltr',
-  } as any,
-  headerSpacer: { minWidth: rs(44) },
   content: {
     flex: 1,
     paddingHorizontal: rs(16),

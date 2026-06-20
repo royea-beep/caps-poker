@@ -23,6 +23,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -402,13 +403,7 @@ export default function AchievementsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-            <Text style={styles.backText}>{'← Back'}</Text>
-          </Pressable>
-          <Text style={styles.title}>Achievements</Text>
-          <View style={styles.backBtn} />
-        </View>
+        <ScreenHeader title="Achievements" />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{'Loading...'}</Text>
         </View>
@@ -420,13 +415,7 @@ export default function AchievementsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <Text style={styles.backText}>{'← Back'}</Text>
-        </Pressable>
-        <Text style={styles.title}>Achievements</Text>
-        <View style={styles.backBtn} />
-      </View>
+      <ScreenHeader title="Achievements" />
 
       {/* Counter subtitle */}
       <Text style={styles.subtitle}>
@@ -476,32 +465,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: BG,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: rs(16),
-    paddingTop: rs(8),
-    paddingBottom: rs(4),
-  },
-  backBtn: {
-    minWidth: rs(60),
-  },
-  backText: {
-    color: COLORS.mint,
-    fontSize: rf(13),
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  title: {
-    color: COLORS.mintLight,
-    fontSize: rf(20),
-    fontWeight: '900',
-    letterSpacing: 3,
-    textAlign: 'center',
   },
 
   // Subtitle counter

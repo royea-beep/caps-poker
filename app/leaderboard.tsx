@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, To
 import { rf, rs, rv } from '../utils/responsive';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '../components/Button';
 import { COLORS } from '../constants/gameConfig';
 import { getLeaderboard, getDeviceId, LeaderboardEntry, isLeaderboardAvailable } from '../utils/leaderboard';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 type SortMode = 'chips' | 'winRate';
 
@@ -138,11 +138,7 @@ export default function LeaderboardScreen() {
   if (!isLeaderboardAvailable()) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Button title={'\u2190 Back'} variant="ghost" onPress={() => router.back()} style={{ paddingVertical: 6, paddingHorizontal: 0, minHeight: 44 }} />
-          <Text accessibilityRole="header" style={styles.title}>LEADERBOARD</Text>
-          <View style={{ width: 60 }} />
-        </View>
+        <ScreenHeader title="LEADERBOARD" />
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Leaderboard requires Supabase configuration.</Text>
         </View>
@@ -154,11 +150,7 @@ export default function LeaderboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Button title={'\u2190 Back'} variant="ghost" onPress={() => router.back()} style={{ paddingVertical: 6, paddingHorizontal: 0, minHeight: 44 }} />
-        <Text accessibilityRole="header" style={styles.title}>LEADERBOARD</Text>
-        <View style={{ width: 60 }} />
-      </View>
+      <ScreenHeader title="LEADERBOARD" />
 
       {/* Sort toggle */}
       <View style={styles.sortRow} accessibilityRole="tablist" accessibilityLabel="Sort leaderboard by">
@@ -229,21 +221,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.boardBorder,
-  },
-  title: {
-    color: COLORS.mintBright,
-    fontSize: rf(18),
-    fontWeight: '900',
-    letterSpacing: 4,
   },
   sortRow: {
     flexDirection: 'row',

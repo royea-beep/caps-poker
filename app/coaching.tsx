@@ -20,6 +20,7 @@ import { rf, rs, rv } from '../utils/responsive';
 import { getHand, getHandHistory, HandRecord } from '../utils/handHistory';
 import { EmptyState } from '../components/EmptyState';
 import { CoachingTipPreview } from '../components/EmptyStatePreviews';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { computeOptimalAllocation, CoachingResult, BoardAllocation } from '../utils/coachingEngine';
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -260,12 +261,8 @@ export default function CoachingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={({ pressed }) => [styles.headerBack, pressed && { opacity: 0.7 }]}>
-          <Text style={styles.headerBackText}>← COACHING</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Hand #{handNumber}</Text>
-        <View style={styles.headerRight} />
+      <Animated.View style={{ opacity: headerOpacity }}>
+        <ScreenHeader title={`Hand #${handNumber}`} />
       </Animated.View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -352,32 +349,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerBack: {
-    flex: 1,
-  },
-  headerBackText: {
-    color: COLORS.gold,
-    fontSize: rf(13),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  headerTitle: {
-    color: COLORS.textPrimary,
-    fontSize: rf(16),
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  headerRight: {
-    flex: 1,
   },
   content: {
     padding: rs(16),

@@ -24,6 +24,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 // Suppress unused-import lint warning — COLORS used by pattern convention
 void COLORS;
@@ -159,13 +160,7 @@ export default function ReferralScreen() {
       <Toast message={toastMsg} visible={toastVis} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Text style={styles.backArrow}>‹</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Invite Friends</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <ScreenHeader title="Invite Friends" />
 
       <ScrollView
         style={styles.scroll}
@@ -271,31 +266,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rv(12),
-  },
-  backBtn: {
-    minWidth: rs(44),
-    minHeight: rs(44),
-    justifyContent: 'center',
-  },
-  backArrow: {
-    color: ACCENT,
-    fontSize: rf(28),
-    fontWeight: '700',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: TEXT,
-    fontSize: rf(18),
-    fontWeight: '700',
-    writingDirection: 'ltr',
-  } as any,
-  headerSpacer: { minWidth: rs(44) },
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: rs(16),

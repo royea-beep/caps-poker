@@ -13,9 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { RankLadderPreview } from '../components/EmptyStatePreviews';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
@@ -118,16 +118,7 @@ export default function RankScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Button
-          title="← Back"
-          variant="ghost"
-          onPress={() => router.back()}
-          style={{ paddingVertical: 6 }}
-        />
-        <Text style={styles.title}>YOUR RANK</Text>
-        <View style={{ width: 60 }} />
-      </View>
+      <ScreenHeader title="YOUR RANK" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? (
@@ -251,21 +242,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.boardBorder,
-  },
-  title: {
-    color: COLORS.goldBright,
-    fontSize: rf(18),
-    fontWeight: '900',
-    letterSpacing: 4,
   },
   content: {
     padding: rs(16),
