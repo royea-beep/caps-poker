@@ -215,8 +215,12 @@ export default function ResultsScreen() {
     } else if (revealData.netChips < 0) {
       setTimeout(() => { void playSound('lose'); }, 500);
     }
-    // Complete sound
-    if (revealData.isComplete && revealData.completeBonusAmount > 0) {
+    // Complete sound — VAMOS-COMPLETE-ON-LOSS 2026-06-21: only when the LOCAL player
+    // swept every board (isComplete is true for EITHER player's sweep). Previously the
+    // celebratory 'complete' sound + bonus hook fired even when the opponent swept (a loss).
+    const localSwept = revealData.isComplete && revealData.boards.length > 0
+      && revealData.boards.every((b) => b.winner === 'player');
+    if (localSwept && revealData.completeBonusAmount > 0) {
       setTimeout(() => { void playSound('complete'); }, 800);
     }
 
@@ -228,7 +232,7 @@ export default function ResultsScreen() {
     }).catch(() => {});
 
     revealData.boards.forEach((board, i) => CapsHooks.boardCompleted(i, board.playerHandName, board.winner === 'player'));
-    if (revealData.isComplete && revealData.completeBonusAmount > 0) CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
+    if (localSwept && revealData.completeBonusAmount > 0) CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
 
     const store = useGameStore.getState();
     submitScore(store.playerName || 'Player', store.chips, store.handsPlayed, store.handsWon, store.biggestWin).catch(() => {});
@@ -285,7 +289,9 @@ export default function ResultsScreen() {
     const autoShareData: ShareData = {
       boards: revealData.boards,
       netChips: revealData.netChips,
-      isComplete: revealData.isComplete,
+      // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — share text must not claim COMPLETE on a
+      // loss; localSwept is true only when the LOCAL player won every board.
+      isComplete: localSwept,
       completeBonusAmount: revealData.completeBonusAmount,
       boardsWon: revealData.boards.filter((b) => b.winner === 'player').length,
       totalBoards: revealData.boards.length,
@@ -367,17 +373,20 @@ export default function ResultsScreen() {
     try {
       const boardsWonByPlayer = revealData.boards.filter((b) => b.winner === 'player').length;
       const isWinner = revealData.netChips > 0;
-      const isComplete = revealData.isComplete;
+      // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — complete XP/mission credit only when the
+      // LOCAL player swept every board. revealData.isComplete is true for EITHER
+      // player's sweep, which previously awarded the player complete-XP for LOSING.
+      const localComplete = revealData.isComplete && boardsWonByPlayer === revealData.boards.length && revealData.boards.length > 0;
       const earned = BATTLE_PASS_CONFIG.xpPerGame
         + (boardsWonByPlayer * BATTLE_PASS_CONFIG.xpPerBoardWin)
         + (isWinner ? BATTLE_PASS_CONFIG.xpPerGameWin : 0)
-        + (isComplete ? BATTLE_PASS_CONFIG.xpPerComplete : 0);
+        + (localComplete ? BATTLE_PASS_CONFIG.xpPerComplete : 0);
       const bpStore = useBattlePassStore.getState();
       bpStore.addXP(earned);
       bpStore.trackMissionProgress('games_played', 1);
       bpStore.trackMissionProgress('boards_won', boardsWonByPlayer);
       if (isWinner) bpStore.trackMissionProgress('games_won', 1);
-      if (isComplete) bpStore.trackMissionProgress('complete', 1);
+      if (localComplete) bpStore.trackMissionProgress('complete', 1);
       setXpGained(earned);
     } catch {}
 
@@ -621,16 +630,25 @@ export default function ResultsScreen() {
   const playerWins = boards.filter((b) => b.winner === 'player').length;
   const botWins = boards.filter((b) => b.winner === 'bot').length;
   const isPerfectGame = playerWins === boards.length && boards.length > 0;
+  // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — the COMPLETE celebration must gate on the
+  // LOCAL player completing (won every board), NOT on isComplete. isComplete is
+  // true whenever EITHER player sweeps (gameLogic computes completeWinner but
+  // RevealBoardData drops it), so an opponent sweep used to wrongly show the
+  // winner celebration + "+bonus chips" + "Share COMPLETE!" on the losing screen.
+  const localComplete = isComplete && isPerfectGame;
+  const opponentComplete = isComplete && !isPerfectGame;
   const potPerBoardTotal = revealData.potPerBoard * numberOfPlayers;
 
   // VAMOS-FIX-RESULTS-RENDER 2026-06-17 — useMemo so BoardResultCard React.memo
   // can bail on parent re-renders (chip roll-up, achievement toasts, login prompt).
   // Without these, every parent state change would trash the memo cache.
   const shareData = React.useMemo<ShareData>(() => ({
-    boards, netChips, isComplete, completeBonusAmount,
+    // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — ShareData.isComplete means "the LOCAL player
+    // completed" for share text/cards; localComplete, not the either-player isComplete.
+    boards, netChips, isComplete: localComplete, completeBonusAmount,
     boardsWon: playerWins, totalBoards: boards.length,
     potPerBoard: revealData.potPerBoard, numberOfPlayers,
-  }), [boards, netChips, isComplete, completeBonusAmount, playerWins, revealData.potPerBoard, numberOfPlayers]);
+  }), [boards, netChips, localComplete, completeBonusAmount, playerWins, revealData.potPerBoard, numberOfPlayers]);
 
   const winBorderColor = React.useMemo(
     () => glowAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(76,175,80,0.3)', 'rgba(76,175,80,0.9)'] }),
@@ -662,8 +680,8 @@ export default function ResultsScreen() {
         />
       )}
 
-      {/* COMPLETE celebration overlay — screen flash + chip shower */}
-      {showCompleteOverlay && isComplete && !completeOverlayDone && (
+      {/* COMPLETE celebration overlay — screen flash + chip shower (LOCAL complete only) */}
+      {showCompleteOverlay && localComplete && !completeOverlayDone && (
         <CompleteOverlay
           winner="player"
           bonusAmount={completeBonusAmount}
@@ -671,7 +689,7 @@ export default function ResultsScreen() {
           onDone={() => setCompleteOverlayDone(true)}
         />
       )}
-      {showCompleteOverlay && isComplete && (
+      {showCompleteOverlay && localComplete && (
         <>
           {/* Gold screen flash */}
           <Animated.View
@@ -827,7 +845,7 @@ export default function ResultsScreen() {
                   {'Game: ' + BATTLE_PASS_CONFIG.xpPerGame}
                   {boardsWonForBanner > 0 ? (' | Boards: +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
                   {isWinnerForBanner ? (' | Win: +' + BATTLE_PASS_CONFIG.xpPerGameWin) : ''}
-                  {isComplete ? (' | Complete: +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
+                  {localComplete ? (' | Complete: +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
                 </Text>
                 <XPBar
                   currentXP={bpCurrentXP}
@@ -862,7 +880,7 @@ export default function ResultsScreen() {
                 winBadgeAnim={winBadgeAnim}
                 shareData={shareData}
                 autoShareUrl={autoShareUrl}
-                isComplete={isComplete}
+                isComplete={localComplete}
                 completeBonusAmount={completeBonusAmount}
               />
             );
@@ -874,7 +892,7 @@ export default function ResultsScreen() {
             autoShareUrl={autoShareUrl}
             boards={boards}
             netChips={netChips}
-            isComplete={isComplete}
+            isComplete={localComplete}
             completeBonusAmount={completeBonusAmount}
             potPerBoard={revealData.potPerBoard}
             numberOfPlayers={numberOfPlayers}
@@ -914,8 +932,8 @@ export default function ResultsScreen() {
             <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
           </View>
 
-          {/* COMPLETE celebration title — scale pop */}
-          {isComplete && (
+          {/* COMPLETE celebration title — scale pop (LOCAL complete only) */}
+          {localComplete && (
             <Animated.Text
               accessibilityLiveRegion="assertive"
               style={[styles.completeCelebTitle, { transform: [{ scale: completeTitleScale }] }]}
@@ -924,8 +942,15 @@ export default function ResultsScreen() {
             </Animated.Text>
           )}
 
-          {/* Complete bonus banner */}
-          <CompleteBanner visible={isComplete} bonusChips={completeBonusAmount} scale={completeScale} />
+          {/* Opponent swept all boards — loss framing, never a celebration */}
+          {opponentComplete && (
+            <Text accessibilityLiveRegion="assertive" style={styles.opponentSweptText}>
+              Opponent swept all boards
+            </Text>
+          )}
+
+          {/* Complete bonus banner (LOCAL complete only) */}
+          <CompleteBanner visible={localComplete} bonusChips={completeBonusAmount} scale={completeScale} />
 
           {/* Net result */}
           <View style={styles.netSection}>
@@ -951,8 +976,8 @@ export default function ResultsScreen() {
             );
           })()}
 
-          {/* F1: Share COMPLETE button */}
-          {isComplete && (
+          {/* F1: Share COMPLETE button (LOCAL complete only) */}
+          {localComplete && (
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Share COMPLETE"
@@ -1191,6 +1216,15 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(255,215,0,0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 20,
+  },
+  // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — opponent swept all boards (loss framing)
+  opponentSweptText: {
+    color: COLORS.neonRed,
+    fontSize: rf(18),
+    fontWeight: '800',
+    letterSpacing: 1,
+    textAlign: 'center',
+    opacity: 0.9,
   },
   // Auto-continue countdown (FIX 2)
   autoContinueBar: {
