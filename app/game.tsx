@@ -208,9 +208,19 @@ function GameScreenInner() {
   const _HAND_INSET = 16;
   const _HAND_END_SAFETY = rs(20);
   const _HAND_GAP = rs(2);
-  const _HAND_ROW_GAP_V = rs(4);
-  const _HAND_LABEL_H = rs(22);
-  const _HAND_CONTAINER_PADV = rs(6);
+  // VAMOS-CARDS-NOSCROLL-V2 2026-06-21 — trimmed hand-zone chrome so 3 and 4
+  // boards fit on 390x844 / 393x852 WITHOUT scroll. The constants drive both
+  // the fit-search predicate (handZoneH = handRows*cardH + (handRows-1)*ROW_GAP
+  // + LABEL_H + 2*PADV) AND the maxHeight cap that BoardArrangement applies to
+  // the hand container — so trimming them lets the search pick a wider card
+  // AND physically reserves less space for the hand. Total savings vs prior:
+  //   bc=2 (handRows=3): -rs(20) ≈ -20px  (closes the 24px gap at 390x844)
+  //   bc=3/bc=4 (handRows=2): -rs(18) ≈ -18px (closes 18px / 16px / 9px gaps)
+  // PlayerHand's inner ScrollView (V2) handles any genuinely-clipped row on
+  // small screens so the bottom row is never lost.
+  const _HAND_ROW_GAP_V = rs(2);  // was rs(4)
+  const _HAND_LABEL_H = rs(14);   // was rs(22)
+  const _HAND_CONTAINER_PADV = rs(2); // was rs(6)
   const _BOARD_CHROME_V = rs(18); // header strip + paddings + rowGap inside a cell (rs(20) was still 4pt over bc=3's edge; rs(18) lands bc=3 at 708 ≤ 710 → non-scroll)
   const _BOARD_INTER_GAP = rs(4);
   // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — lowered floor from rs(55) to rs(40)
