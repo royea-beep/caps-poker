@@ -213,7 +213,12 @@ function GameScreenInner() {
   const _HAND_CONTAINER_PADV = rs(6);
   const _BOARD_CHROME_V = rs(18); // header strip + paddings + rowGap inside a cell (rs(20) was still 4pt over bc=3's edge; rs(18) lands bc=3 at 708 ≤ 710 → non-scroll)
   const _BOARD_INTER_GAP = rs(4);
-  const _MIN_CARD_W = rs(55); // readable floor
+  // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — lowered floor from rs(55) to rs(40)
+  // so 4 boards (2P) + the 16-card hand fit on a 390x844 phone WITHOUT
+  // scrolling. Rank+suit are still legible at rs(40)≈40dp width. Scroll
+  // fallback from V1/V2 still protects smaller screens (375x667 / 320x568)
+  // where even rs(40) can't fit everything.
+  const _MIN_CARD_W = rs(40); // readable floor (was rs(55) before LOBBY-MENU-CARDS-V1)
   // VAMOS-FILL-FIX-WIDTHCAP 2026-06-17 — HARD cap by the board's flop-row fit
   // so cards can never grow wider than (boardInnerW - chrome) / 5. Without this
   // the bc=2 vertical-fill grew W to 75pt and the leftmost flop card clipped

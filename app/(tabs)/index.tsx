@@ -2148,7 +2148,11 @@ const styles = StyleSheet.create({
     }),
   },
 
-  // Top bar
+  // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — removed zIndex:10 (was masking an
+  // overlap, not preventing it) and gave topBar an explicit minHeight + a real
+  // bottom margin so the promo header below it sits cleanly inside its own
+  // box. The flex column under SafeAreaView is what actually keeps the two
+  // sections separate; the zIndex was a band-aid.
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2156,7 +2160,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(16),
     paddingTop: rs(8),
     paddingBottom: rs(4),
-    zIndex: 10,
+    minHeight: rs(52),
+    marginBottom: rs(4),
   },
   hamburgerBtn: {
     padding: rs(4),
@@ -2238,13 +2243,18 @@ const styles = StyleSheet.create({
   },
 
   // Main content — centered vertically
+  // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — justifyContent flex-start so the
+  // promo header sits BELOW the top bar instead of being vertically centered
+  // (which on tall screens crept upward into the top bar area). Light
+  // de-clutter: extra paddingTop reads as breathing room without changing
+  // the spacing between sections (gap already controls that).
   content: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: rs(20),
+    paddingTop: rs(8),
     gap: rs(16),
-    zIndex: 1,
   },
 
   // Title

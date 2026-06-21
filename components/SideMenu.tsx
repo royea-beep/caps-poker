@@ -45,7 +45,10 @@ export default function SideMenu({
   const { width: screenW } = useWindowDimensions();
   const menuW = Math.round(screenW * 0.75);
 
-  const translateX = useRef(new Animated.Value(-menuW)).current;
+  // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — drawer slides from the RIGHT to
+  // match its trigger (avatar in the top-RIGHT of the lobby). Was a leftover
+  // from the old RTL build that slid from the left.
+  const translateX = useRef(new Animated.Value(menuW)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
@@ -73,7 +76,7 @@ export default function SideMenu({
     } else {
       Animated.parallel([
         Animated.timing(translateX, {
-          toValue: -menuW,
+          toValue: menuW,
           duration: 200,
           easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
@@ -238,11 +241,11 @@ const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    right: 0,
     bottom: 0,
     backgroundColor: '#190408',
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(201,168,76,0.18)',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(201,168,76,0.18)',
   },
   menuScroll: {
     flex: 1,
