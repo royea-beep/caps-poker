@@ -43,7 +43,7 @@ export async function onGameEnd() {
   await stopRecording(); // discard — no crash
 }
 
-export async function onCrashDetected(error?: Error) {
+export async function onCrashDetected(error?: Error, componentStack?: string) {
   const logs = getGlobalLogs().map(l => `${l.time} ${l.message}`);
   const lastLine = logs[logs.length - 1] ?? 'unknown';
   debugLog(`💀 CRASH: ${error?.message ?? 'unknown'}`, 'error');
@@ -61,6 +61,7 @@ export async function onCrashDetected(error?: Error) {
     build, version, device,
     lastStep: lastLine,
     crashError: error?.message,
+    componentStack,
   }).then((videoUrl) => {
     sendCrashAlert(videoUrl, videoUrl, lastLine, logs, { build, version, device }).catch(() => {});
   }).catch(() => {});
