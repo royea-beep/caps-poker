@@ -13,6 +13,7 @@ export interface CrashMeta {
   device: string;
   lastStep: string;
   crashError?: string;
+  componentStack?: string;
 }
 
 export async function uploadCrashReport(

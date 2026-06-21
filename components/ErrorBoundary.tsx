@@ -25,13 +25,29 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // VAMOS-HOOKS-CRASH-FIX 2026-06-21 — this boundary is the NEAREST ancestor of
+    // the game tree (it wraps <GameScreenInner/> in app/game.tsx, BELOW expo-router's
+    // internal Try), so for render-phase crashes like "Rendered fewer hooks than
+    // expected" it catches FIRST with a populated info.componentStack. The previous
+    // version dropped that stack and only fed the bug_reports pipeline, leaving
+    // crash_reports.component_stack NULL. Route the stack to BOTH pipelines.
+    const componentStack = info.componentStack ?? undefined;
     console.error('[ErrorBoundary] caught:', error.message);
     console.error('[ErrorBoundary] stack:', error.stack?.slice(0, 500));
+    // TASK 3 self-check (temporary): confirm a real stack reached this boundary.
+    console.log('[ErrorBoundary] componentStack length:', componentStack?.length ?? 0);
     this.props.onError?.(error);
-    // Trigger full crash detection pipeline (video stop + upload + WhatsApp)
+    // Pipeline A (crash_reports.component_stack) — names the offending component chain.
+    try {
+      const { generateCrashReport } = require('../utils/crash-evidence');
+      generateCrashReport({ message: error.message, stack: error.stack, componentStack }).catch(
+        () => {},
+      );
+    } catch {}
+    // Pipeline B (video stop + upload + WhatsApp alert) — forward the stack too.
     try {
       const { onCrashDetected } = require('../utils/crashDetector');
-      onCrashDetected(error);
+      onCrashDetected(error, componentStack);
     } catch {}
   }
 
