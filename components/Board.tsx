@@ -321,12 +321,25 @@ export default function Board({
     // authority for BOTH community and slot cards. Aspect ratio applied
     // identically (CARD_H = CARD_W/0.72), preserving Cards-big look. Falls back
     // to the fitToBox math when not provided (legacy callers).
+    // VAMOS-PLACED-CARD-CLIP-FIX 2026-06-21 — was: commH = slotH = round(W /
+    // CARD_ASPECT), derived from width ONLY. On tight cells (bc=3 / bc=4 after
+    // CARDS-NOSCROLL-V2's hand-zone trim) HEADER_H + 2*_uH + rowGap + 2*PAD_V
+    // exceeded cellHeight, so the bottom row (the placed cards) overflowed a
+    // cell with overflow:'hidden' and CLIPPED at the bottom on device.
+    // Now: budget-aware clamp (Task A2). Honor the existing _commBudgetH /
+    // _slotBudgetH (which encodes bc=4's Lever-1 62/38 community-bias) so the
+    // placed row never exceeds its allotted vertical share. cardW is then
+    // re-derived from the clamped height + CARD_ASPECT so the card stays
+    // portrait — never wider than universalCardW (which would distort).
     if (universalCardW && universalCardW > 14) {
       const _uH = Math.round(universalCardW / CARD_ASPECT);
-      commW = universalCardW;
-      commH = _uH;
-      slotW = universalCardW;
-      slotH = _uH;
+      const _commHClamped = Math.min(_uH, _commBudgetH);
+      const _slotHClamped = Math.min(_uH, _slotBudgetH);
+      commH = _commHClamped;
+      slotH = _slotHClamped;
+      // Keep within universalCardW so the row-width budget is respected too.
+      commW = Math.min(universalCardW, Math.max(14, Math.floor(commH * ASPECT_MAX)));
+      slotW = Math.min(universalCardW, Math.max(14, Math.floor(slotH * ASPECT_MAX)));
     }
     ch = slotH;
     cw = slotW;
