@@ -152,16 +152,30 @@ export function BoardArrangement({
           top-aligned, no dead gap above the hand. The old comment claimed
           flex:1 collapses the ScrollView — that was only true when the parent had
           no measured height; here the wrapping flex parent gives it one. */}
-      <View style={{ flex: 1, alignSelf: 'stretch' }}>
+      {/* VAMOS-LAYOUT-MEASURE-V2 2026-06-21 — minHeight floor protects the boards
+          region on SHORT screens (iPhone SE 2022 = 375x667, the older 320x568).
+          V1 inverted the V0 failure: boards got `flex: 1` and were starved when
+          the hand's fixed height ate most of the viewport. The minHeight here
+          guarantees a usable scroll viewport (~2 board cells) on every device;
+          on tall screens flex: 1 still lets the region grow. Sized from the
+          live cellH so it tracks the same readability math, not a hardcoded px. */}
+      <View style={{ flex: 1, alignSelf: 'stretch', minHeight: Math.round(2 * cellH + rs(4)) }}>
         <ScrollView
           style={{ flex: 1 }}
           // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — clean column-stack contentContainer
           // with NO flex, NO flexWrap, NO overflow (inheriting baStyles.boardsGrid
           // would have collapsed boards 3/4 into a hidden second column).
+          // VAMOS-LAYOUT-MEASURE-V2 2026-06-21 — flexGrow:1 + justifyContent:center
+          // so on TALL screens with few boards (e.g. bc=2 on 932dp) the stack
+          // centers in the viewport instead of pinning to the top with a dead
+          // gap above the hand. When content overflows the viewport, flex layout
+          // stacks from the top naturally and scroll still works.
           contentContainerStyle={[
             {
+              flexGrow: 1,
               flexDirection: 'column',
               alignItems: 'stretch',
+              justifyContent: 'center',
               paddingHorizontal: PRD.board.cellPadH,
               paddingVertical: PRD.board.cellPadV,
             },
@@ -254,16 +268,42 @@ export function BoardArrangement({
           overlap of hand row 4 into the action bar came from this mismatch.
           Bumped to rs(72) + rs(4) safety so the hand container's bottom
           sits cleanly above the action bar top. */}
+      {/* VAMOS-LAYOUT-MEASURE-V2 2026-06-21 — hand zone YIELDS on short screens.
+          Was a hard `height: handZoneH` which won the flex column fight on
+          short screens (375x667 / 320x568) and starved the boards region to
+          ~135px / ~0px. Now `maxHeight: handZoneH` + flexShrink: 1 + minHeight: 0
+          lets the boards' minHeight floor be honored. If the hand would clip
+          (more cards than the shrunken zone can show), PlayerHand's internal
+          ScrollView (inside PlayerHand) handles overflow so the bottom row is
+          never clipped. On tall screens nothing changes — the hand fits at
+          its preferred height. */}
       {isArranging && (
-        <View style={[baStyles.handZone, { height: handZoneH ?? HAND_ZONE_HEIGHT, marginBottom: (rs(72) + insets.bottom + rs(8)) }]}>
-          <PlayerHand
-            cards={playerHand}
-            selectedCardIds={selectedCardIds}
-            onSelectCard={onSelectCard}
-            handZoneH={handZoneH ?? HAND_ZONE_HEIGHT}
-            maxCardH={maxHandCardH}
-            universalCardW={universalCardW}
-          />
+        <View
+          style={[
+            baStyles.handZone,
+            {
+              maxHeight: handZoneH ?? HAND_ZONE_HEIGHT,
+              flexShrink: 1,
+              minHeight: 0,
+              marginBottom: (rs(72) + insets.bottom + rs(8)),
+            },
+          ]}
+        >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            <PlayerHand
+              cards={playerHand}
+              selectedCardIds={selectedCardIds}
+              onSelectCard={onSelectCard}
+              handZoneH={handZoneH ?? HAND_ZONE_HEIGHT}
+              maxCardH={maxHandCardH}
+              universalCardW={universalCardW}
+            />
+          </ScrollView>
         </View>
       )}
 
