@@ -1,6 +1,6 @@
 # CAPS Current Build (auto-generated)
 
-**Last refresh:** 2026-05-22T08:48:30.509Z
+**Last refresh:** 2026-06-21T15:46:50.936Z
 
 | Field | Value |
 |-------|-------|
@@ -9,8 +9,8 @@
 | iOS build runtime | 2.0.0 |
 | Android versionCode | ? |
 | Runtime version | 2.7.0 |
-| Latest OTA hash | `c97944fd-6028-42e5-a5e5-837765fd618f` |
-| Latest OTA message | "v2.0.2: Smart Defaults + i18n fix + WCAG 0 critical + axe-core + BackstopJS" (1 day ago by royea) |
+| Latest OTA hash | `1871bb75-2fe5-4dcb-a425-f2e44b333d75` |
+| Latest OTA message | "crash: persist componentStack + keep_fnames" (2 hours ago by royea) |
 | OTA runtime | 2.7.0 |
 | OTA reaches latest build? | ❌ NO — runtime mismatch (OTA reaches no one) |
 | OTA created at | ? |
