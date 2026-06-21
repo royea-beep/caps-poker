@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, AppState } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, AppState, useWindowDimensions } from 'react-native';
 import { SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -102,11 +102,15 @@ const BOARD_CHROME = 28;                            // per-board chrome budget (
 function GameScreenInner() {
   const router = useRouter();
   const { autoSim, autoSimCount, currentSimHand, demo } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string }>();
-  // C-fix 2026-05-22: lock dimensions at module load (responsive.ts) instead of
-  // useWindowDimensions(). Game is portrait-locked, so live-resize subscription is
-  // not needed and was the source of card-size jitter during keyboard/focus events.
-  const SCREEN_H = MODULE_SCREEN_H;
-  const screenW = MODULE_SCREEN_W;
+  // VAMOS-LAYOUT-MEASURE-V1 2026-06-21 — live window dimensions instead of the
+  // module-snapshot SCREEN_H/W. The snapshot was captured at module load with a
+  // hardcoded fallback of 852dp, so on phones whose real chrome differed from
+  // the assumed estimates the chrome-subtraction math under-allocated the
+  // boards zone (boards 2-4 unreachable + dead band above the action bar).
+  // The boards region is now flex-measured anyway, so live dimensions are the
+  // safer choice and remove a class of per-device drift.
+  const { height: SCREEN_H, width: SCREEN_W } = useWindowDimensions();
+  const screenW = SCREEN_W;
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);

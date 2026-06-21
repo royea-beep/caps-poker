@@ -141,36 +141,36 @@ export function BoardArrangement({
 
         Leaving the row+wrap StyleSheet intact so native benefits.
       */}
-      {/* VAMOS-SCROLL-V2 2026-06-17 — boards wrapped in a vertical ScrollView with
-          BOUNDED height = boardsZoneH (the existing fixed zone). Every board uses
-          the same bc=3-quality cellH. At bc=4 the content height
-          (4 × (cellH + gap)) > viewport → real scroll. At bc=2/3 content fits.
-          flex:1 is NOT used on the ScrollView — that would collapse it. The
-          contentContainer holds the column stack; alignSelf:'stretch' keeps it
-          full-width inside the wrapping flex parent. The 2×2 grid path is
-          retired (proven smaller cards Jun 9). */}
-      <ScrollView
-        style={{ height: boardsZoneH, alignSelf: 'stretch' }}
-        // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — FRESH contentContainerStyle. Was
-        // inheriting baStyles.boardsGrid which carries flex:1 + flexWrap:'wrap' +
-        // overflow:'hidden' — those THREE together caused boards 3/4 to wrap to a
-        // hidden second column at the same Y as boards 1/2 (this is plain flexbox
-        // behavior, NOT RNW-specific — affected native iOS too). The fix is to
-        // stop inheriting and write a clean column-stack contentContainer with NO
-        // flex, NO flexWrap, NO overflow.
-        contentContainerStyle={[
-          {
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            paddingHorizontal: PRD.board.cellPadH,
-            paddingVertical: PRD.board.cellPadV,
-          },
-          !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
-        ]}
-        showsVerticalScrollIndicator={true}
-        scrollEnabled={true}
-        bounces={true}
-      >
+      {/* VAMOS-LAYOUT-MEASURE-V1 2026-06-21 — boards region is now flex-measured.
+          Was a fixed-height ScrollView pegged to boardsZoneH computed from a stale
+          SCREEN_H snapshot minus ~10 estimated chrome constants — wrong on any
+          device where the real chrome differed from the estimates (boards 2-4
+          unreachable + dead band above action bar). The boards region now lives
+          inside a `flex: 1` View, the ScrollView itself is `flex: 1`, so it fills
+          whatever the parent flex column leaves between top bar / bot status /
+          hand zone. Content taller than the region → scrolls; content shorter →
+          top-aligned, no dead gap above the hand. The old comment claimed
+          flex:1 collapses the ScrollView — that was only true when the parent had
+          no measured height; here the wrapping flex parent gives it one. */}
+      <View style={{ flex: 1, alignSelf: 'stretch' }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — clean column-stack contentContainer
+          // with NO flex, NO flexWrap, NO overflow (inheriting baStyles.boardsGrid
+          // would have collapsed boards 3/4 into a hidden second column).
+          contentContainerStyle={[
+            {
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              paddingHorizontal: PRD.board.cellPadH,
+              paddingVertical: PRD.board.cellPadV,
+            },
+            !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
+          ]}
+          showsVerticalScrollIndicator={true}
+          scrollEnabled={true}
+          bounces={true}
+        >
         {boards.map((board, i) => {
           // PR-M 2026-05-29 — STRICT cell sizing. Replace flex:1 expansion (which
           // pushed board 3 off-screen in 3p mode) with deterministic height: cellH
@@ -230,7 +230,8 @@ export function BoardArrangement({
             </View>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
       {playerReady && allBotsReady && showContinueButton && (
