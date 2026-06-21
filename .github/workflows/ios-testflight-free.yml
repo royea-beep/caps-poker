@@ -129,7 +129,7 @@ jobs:
           VALIDATE_RC=${PIPESTATUS[0]}
           set -e
           if [ "$VALIDATE_RC" -ne 0 ] \
-             || grep -qE "VERIFY FAILED|Validation failed|ERROR ITMS|409|Upload limit reached" "$VALIDATE_LOG"; then
+             || grep -qE "VERIFY FAILED|Validation failed|ERROR ITMS|Upload limit reached|ITMS-409|HTTP[ /]+409" "$VALIDATE_LOG"; then
             echo "::error::altool VALIDATE failed (rc=$VALIDATE_RC). See log above."
             exit 1
           fi
@@ -145,7 +145,7 @@ jobs:
           UPLOAD_RC=${PIPESTATUS[0]}
           set -e
           if [ "$UPLOAD_RC" -ne 0 ] \
-             || grep -qE "UPLOAD FAILED|VERIFY FAILED|Validation failed|ERROR ITMS|409|Upload limit reached" "$UPLOAD_LOG" \
+             || grep -qE "UPLOAD FAILED|VERIFY FAILED|Validation failed|ERROR ITMS|Upload limit reached|ITMS-409|HTTP[ /]+409" "$UPLOAD_LOG" \
              || ! grep -qE "UPLOAD SUCCEEDED" "$UPLOAD_LOG"; then
             echo "::error::altool UPLOAD failed (rc=$UPLOAD_RC) or no 'UPLOAD SUCCEEDED' marker. See log above."
             exit 1
