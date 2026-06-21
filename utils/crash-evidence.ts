@@ -418,12 +418,16 @@ async function saveToDB(report: CrashReport): Promise<void> {
   const supabase = getSupabase()
   if (!supabase) return
   try {
+    // VAMOS-HOOKS-CRASH-FIX 2026-06-21 — persist componentStack so render-phase
+    // crashes (e.g. "Rendered fewer hooks than expected") name the offending
+    // component chain. error.stack only carries React-internal frames for these.
     await supabase.from('crash_reports').insert({
       crash_code: report.crashCode,
       project: report.project,
       version: report.version,
       error_message: report.error.message,
       error_stack: report.error.stack ?? null,
+      component_stack: report.error.componentStack ?? null,
       last_screen: report.lastScreen,
       last_action: report.lastAction,
       step_log: report.stepLog,
