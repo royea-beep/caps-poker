@@ -194,23 +194,29 @@ export function BoardArrangement({
           //   boardCount=4 (2p): 2 rows x 2 cols
           const _widthPct = use2x2Grid ? '50%' : '100%';
           return (
+            // VAMOS-BOARD-NOCLIP-ROBUST 2026-06-21 — was `height: cellH` +
+            // `overflow: 'hidden'`: deliberately clipped any board content that
+            // rendered taller than the model predicted. Web QA never reproduced
+            // it but two device reports confirmed placed cards still got cut on
+            // real iOS. The fix can't rely on more web-verified clamps that the
+            // device beats. Switched to `minHeight: cellH` + removed overflow so
+            // the cell GROWS to fit whatever Board actually renders. Boards are
+            // stacked in a flex column with `marginBottom` gap, so a grown cell
+            // pushes the next board down (never overlap). If the total stack
+            // exceeds the boards region the V2 ScrollView scrolls; clipping is
+            // impossible by construction.
             <View
               key={i}
               style={{
                 width: _widthPct as any,
-                height: cellH,
+                minHeight: cellH,
                 maxWidth: _widthPct as any,
                 paddingHorizontal: rs(2),
                 paddingVertical: rs(2),
-                // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — explicit inter-board gap
-                // (was relying on baStyles.boardsGrid `justifyContent:space-evenly`,
-                // which doesn't apply now that we use flex-start packing inside the
-                // ScrollView contentContainer for deterministic stacking).
                 marginBottom: i < boards.length - 1 ? rs(4) : 0,
-                overflow: 'hidden',
               }}
             >
-              <Animated.View style={[{ flex: 1, width: '100%', height: '100%' }, boardShakeStyles[i]]}>
+              <Animated.View style={[{ width: '100%' }, boardShakeStyles[i]]}>
                 <Board
                   index={i}
                   openCards={board.openCards}
