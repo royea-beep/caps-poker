@@ -16,6 +16,7 @@ import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
 import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
+import { getSpecificHandName } from '../utils/handNames';
 import { COLORS } from '../constants/gameConfig';
 import { getTheme } from '../constants/visualThemes';
 import { CardsDealtPayload } from '../constants/networkConfig';
@@ -1073,8 +1074,16 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               {boards.map((board, i) => {
                 const playerWon = board.winner === 'player';
                 const chipChange = playerWon ? potPerBoardTotal : -potPerBoardTotal;
+                // VAMOS-BESTCARDS-RENDER 2026-06-22 — the board-by-board breakdown is the
+                // surface the user actually reads. Show the SPECIFIC hand (e.g. "Pair of
+                // Kings", "Ace High") for BOTH sides on EVERY outcome, via the shared
+                // getSpecificHandName helper (same source of truth as BoardReveal), so the
+                // user can see which hand each side held and why a board was won/lost/tied.
+                // Was: generic type ("One Pair") + "vs {type}" only on a loss.
+                const pHand = getSpecificHandName(board.playerHandName, board.playerBestCards) || '—';
+                const bHand = board.botHandName ? getSpecificHandName(board.botHandName, board.botBestCards) : '';
                 return (
-                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${board.playerHandName || '—'}${!playerWon && board.botHandName ? ` vs ${board.botHandName}` : ''}, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}>
+                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${pHand}${bHand ? ` vs ${bHand}` : ''}, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}>
                     <View style={styles.breakdownLeft}>
                       <Text style={styles.breakdownNum}>Board {i + 1}</Text>
                       <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
@@ -1082,9 +1091,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                       </Text>
                     </View>
                     <View style={styles.breakdownMid}>
-                      <Text style={styles.breakdownHand}>{board.playerHandName || '—'}</Text>
-                      {!playerWon && board.botHandName ? (
-                        <Text style={styles.breakdownVs}>vs {board.botHandName}</Text>
+                      <Text style={styles.breakdownHand}>{pHand}</Text>
+                      {bHand ? (
+                        <Text style={styles.breakdownVs}>vs {bHand}</Text>
                       ) : null}
                     </View>
                     <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}>
