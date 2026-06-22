@@ -108,10 +108,11 @@ describe('Full Game Simulation', () => {
     // Run hands until we find a complete (or verify formula)
     const potPerBoard = DEFAULT_CONFIG.potPerBoard;
     const boardCount = getBoardCount(2);
-    const buyIn = potPerBoard * boardCount; // 100
+    // VAMOS-BUILD-506 — bonus is now % of TOTAL POT (both buy-ins), not one buy-in.
+    const totalPot = potPerBoard * boardCount * 2; // 200 (2-player)
     const expectedBonus = Math.floor(
-      (buyIn * DEFAULT_CONFIG.completeBonusPercent / 100) * (2 - 1)
-    ); // 50
+      (totalPot * DEFAULT_CONFIG.completeBonusPercent) / 100
+    ); // 100
 
     let foundComplete = false;
     for (let i = 0; i < 300; i++) {
@@ -126,11 +127,11 @@ describe('Full Game Simulation', () => {
     }
 
     // Even if not found statistically, verify the formula
-    expect(expectedBonus).toBe(50);
+    expect(expectedBonus).toBe(100);
     // Complete should occur at least once in 300 hands (very high probability)
     if (!foundComplete) {
-      // Formula verification fallback
-      expect(Math.floor((buyIn * 50 / 100) * 1)).toBe(50);
+      // Formula verification fallback (pot-based: 50% of 200 total pot = 100)
+      expect(Math.floor((totalPot * 50) / 100)).toBe(100);
     }
   });
 

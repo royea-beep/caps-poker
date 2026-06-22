@@ -240,7 +240,8 @@ describe('QA Stress Tests', () => {
     const boardCount = getBoardCount(2);
     const buyIn = potPerBoard * boardCount; // 100
     const totalBoardPot = potPerBoard * 2; // 50 per board
-    const expectedBonusAmount = Math.floor((buyIn * DEFAULT_CONFIG.completeBonusPercent / 100) * (2 - 1)); // 50
+    // VAMOS-BUILD-506 — bonus is % of TOTAL POT (both buy-ins = buyIn * 2), not one buy-in.
+    const expectedBonusAmount = Math.floor((buyIn * 2 * DEFAULT_CONFIG.completeBonusPercent) / 100); // 100
 
     // Run hands until we find a COMPLETE
     let foundComplete = false;

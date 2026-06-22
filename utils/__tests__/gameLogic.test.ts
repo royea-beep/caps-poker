@@ -169,15 +169,14 @@ describe('calculateHandResults', () => {
     }
   });
 
-  it('complete bonus is 50% of buy-in (not total pot)', () => {
-    // Create a rigged scenario: all boards have same cards so we can test bonus calc
-    // Instead, just verify the formula directly
+  it('complete bonus is 50% of total pot (not buy-in)', () => {
+    // VAMOS-BUILD-506 — bonus is now % of the TOTAL POT (both players' buy-ins across boards).
     const potPerBoard = 25;
     const numBoards = 4;
-    const buyIn = potPerBoard * numBoards; // 100
+    const totalPot = potPerBoard * numBoards * 2; // 200 (2-player: both buy-ins)
     const bonusPercent = 50;
-    const expectedBonus = Math.floor((buyIn * bonusPercent) / 100); // 50
-    expect(expectedBonus).toBe(50); // 50% of 100 buy-in = 50, NOT 50% of 200 total pot
+    const expectedBonus = Math.floor((totalPot * bonusPercent) / 100); // 100
+    expect(expectedBonus).toBe(100); // 50% of 200 total pot = 100 (was 50 = 50% of one buy-in)
 
     // Run multiple games until we get a complete
     let foundComplete = false;
@@ -187,7 +186,7 @@ describe('calculateHandResults', () => {
       const { boards } = autoFillPlayerCards(gameState.playerHand, withBot);
       const results = calculateHandResults(boards, potPerBoard, bonusPercent);
       if (results.isComplete) {
-        expect(results.completeBonusAmount).toBe(50);
+        expect(results.completeBonusAmount).toBe(100);
         foundComplete = true;
         break;
       }
@@ -195,8 +194,8 @@ describe('calculateHandResults', () => {
     // It's statistically unlikely to never get a complete in 200 tries,
     // but if not, just verify the formula
     if (!foundComplete) {
-      // Verify directly: buyIn * percent / 100
-      expect(Math.floor((buyIn * bonusPercent) / 100)).toBe(50);
+      // Verify directly: totalPot * percent / 100
+      expect(Math.floor((totalPot * bonusPercent) / 100)).toBe(100);
     }
   });
 
