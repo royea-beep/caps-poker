@@ -2,6 +2,7 @@
 // Strategist live QA reported ~92% tie rate on SAME-type boards ("a pair doesn't beat
 // a pair"). These tests pin down whether the comparator walks the full kicker vector.
 import { evaluate5Cards, evaluateOmahaHand, compareHands } from '../handEvaluator';
+import { getComparisonText, getSpecificHandName } from '../handNames';
 import type { Card, Rank, Suit } from '../../constants/gameConfig';
 
 const c = (rank: Rank, suit: Suit): Card => ({ rank, suit, id: `${rank}-${suit}` });
@@ -73,5 +74,62 @@ describe('VAMOS-HAND-TIEBREAK — real Omaha path (evaluateOmahaHand + compareHa
     const a = evaluateOmahaHand(aHole, board);
     const b = evaluateOmahaHand(bHole, board);
     expect(compareHands(a, b)).toBe(0);
+  });
+});
+
+// TASK C — rule out a chip-award bug behind same-type ties. The board WINNER and the
+// chip payout both derive from the score; a board can be ±0 ONLY when the two 5-card
+// rank vectors are exactly equal (score tie). A real hand difference must pay a winner.
+describe('VAMOS-HAND-TIEBREAK — chip-award genuineness (no "winner shown but ±0")', () => {
+  const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const;
+  const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'] as const;
+  const deck = () => { const d: any[] = []; for (const s of SUITS) for (const r of RANKS) d.push({ rank: r, suit: s, id: `${r}-${s}` }); return d; };
+  const shuffle = (d: any[]) => { for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d; };
+
+  it('over 3000 boards: score-differs <=> non-tie, and equal-score boards are genuinely identical', () => {
+    let decided = 0, ties = 0, violations = 0, fakeTies = 0;
+    for (let i = 0; i < 3000; i++) {
+      const d = shuffle(deck());
+      const board = d.slice(0, 5);
+      const a = evaluateOmahaHand(d.slice(5, 9), board);
+      const b = evaluateOmahaHand(d.slice(9, 13), board);
+      const cmp = compareHands(a, b);
+      const scoreEqual = a.score === b.score;
+      if (cmp === 0) {
+        ties++;
+        // an equal compare MUST mean identical scores (genuine tie -> ±0 chips is correct)
+        if (!scoreEqual) fakeTies++;
+      } else {
+        decided++;
+        // a real winner (cmp != 0) MUST come from a score difference (=> pot paid, never ±0)
+        if (scoreEqual) violations++;
+      }
+    }
+    // No board may show a winner while scores are equal, and no ±0/tie may hide a real difference.
+    expect(violations).toBe(0);
+    expect(fakeTies).toBe(0);
+    expect(decided).toBeGreaterThan(0);
+    expect(ties).toBeGreaterThan(0);
+  });
+});
+
+// Data-path: the reveal board is built (game.tsx) as bestCards = [...playerCardsUsed, ...boardCardsUsed].
+// Confirm that shape feeds getComparisonText to specific names for EVERY category incl High Card.
+describe('VAMOS-HAND-TIEBREAK — reveal data path yields specific names (not generic)', () => {
+  // helper mirroring game.tsx:874 — bestCards = used hole + used board cards
+  const omahaBest = (hole: Card[], board: Card[]) => {
+    const r = evaluateOmahaHand(hole, board);
+    return { name: r.name, best: [...r.playerCardsUsed, ...r.boardCardsUsed] };
+  };
+  it('High Card board shows "X High beats Y High", never "High Card vs High Card"', () => {
+    // Board with no pairs/flush/straight; both players miss -> high-card battle.
+    const board = [c('A', S), c('9', H), c('5', C), c('3', D), c('2', H)];
+    const p = omahaBest([c('K', D), c('7', C), c('4', S), c('Q', H)], board); // A,Q/K... high
+    const b = omahaBest([c('J', C), c('8', D), c('6', S), c('Q', C)], board);
+    const winner = (() => { const cmp = evaluateOmahaHand([c('K', D), c('7', C), c('4', S), c('Q', H)], board).score - evaluateOmahaHand([c('J', C), c('8', D), c('6', S), c('Q', C)], board).score; return cmp > 0 ? 'player' : cmp < 0 ? 'bot' : 'tie'; })() as 'player'|'bot'|'tie';
+    const text = getComparisonText(p.name, b.name, winner, 'en', p.best, b.best);
+    expect(text).toMatch(/High/);
+    expect(text).not.toBe('High Card vs High Card');
+    expect(getSpecificHandName(p.name, p.best)).toMatch(/High$/);
   });
 });
