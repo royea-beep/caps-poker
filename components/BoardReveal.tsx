@@ -22,7 +22,7 @@ import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
-import { getHandName, getSpecificHandName } from '../utils/handNames';
+import { getHandName, getSpecificHandName, getComparisonText } from '../utils/handNames';
 import { useGameStore } from '../store/gameStore';
 import { useGameColors } from '../utils/useGameColors';
 import { getTheme } from '../constants/visualThemes';
@@ -685,9 +685,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                   </AnimatedRN.Text>
                 </AnimatedRN.View>
               )}
-              {board.winner === 'player' && board.playerHandName && board.botHandName && (
+              {/* VAMOS-HAND-TIEBREAK 2026-06-22 — show the SPECIFIC hand matchup on EVERY
+                  board outcome (win/loss/tie), not just player wins. The reveal previously
+                  showed only the generic TYPE badge ("ONE PAIR") for both sides, so the user
+                  could not tell which pair each player held or why a board resolved
+                  ("a pair doesn't beat a pair"). The board WINNER logic is correct (verified:
+                  same-type boards are 95.8% decided by kicker) — this was purely a display gap. */}
+              {board.playerHandName && board.botHandName && (
                 <Text style={styles.handComparison}>
-                  {getSpecificHandName(board.playerHandName, board.playerBestCards)} beats {getSpecificHandName(board.botHandName, board.botBestCards)}
+                  {getComparisonText(board.playerHandName, board.botHandName, board.winner, 'en', board.playerBestCards, board.botBestCards)}
                 </Text>
               )}
               {isNarrowLoss && (
