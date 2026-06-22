@@ -143,25 +143,36 @@ export default function ChipStoreScreen() {
           </View>
         )}
 
-        {/* Package cards */}
-        {packages.map((pkg, idx) => (
-          <PackageCard
-            key={pkg.id}
-            pkg={pkg}
-            buyersToday={socialProof.current[idx] ?? 75}
-            onBuy={handleBuy}
-          />
-        ))}
+        {/* VAMOS-HIDE-IAP-506 — no price-bearing purchase buttons while IAP is disabled
+            (products not configured in App Store Connect; Apple rejects non-functional IAP).
+            Same iap_enabled source of truth; reversible by flipping the flag. */}
+        {require('../utils/iapEnabled').isIapEnabled() ? (
+          <>
+            {/* Package cards */}
+            {packages.map((pkg, idx) => (
+              <PackageCard
+                key={pkg.id}
+                pkg={pkg}
+                buyersToday={socialProof.current[idx] ?? 75}
+                onBuy={handleBuy}
+              />
+            ))}
 
-        {/* Restore purchases */}
-        <Pressable
-          onPress={handleRestorePurchases}
-          style={({ pressed }) => [styles.restoreButton, pressed && { opacity: 0.6 }]}
-          accessibilityRole="button"
-          accessibilityLabel="Restore previous purchases"
-        >
-          <Text style={styles.restoreText}>Restore Purchases</Text>
-        </Pressable>
+            {/* Restore purchases */}
+            <Pressable
+              onPress={handleRestorePurchases}
+              style={({ pressed }) => [styles.restoreButton, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Restore previous purchases"
+            >
+              <Text style={styles.restoreText}>Restore Purchases</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Text style={[styles.restoreText, { textAlign: 'center', marginTop: 24 }]}>
+            💎 Chip packs are coming soon!
+          </Text>
+        )}
 
         <View style={styles.bottomPad} />
       </ScrollView>

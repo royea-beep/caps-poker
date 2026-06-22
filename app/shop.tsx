@@ -22,6 +22,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
 import { fetchPokerShop, spendChips, ShopItem, ShopData, callRPC } from '../utils/supabaseEconomy';
+import { isIapEnabled } from '../utils/iapEnabled';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabase } from '../utils/supabase';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -196,7 +197,9 @@ export default function ShopScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* ─── IAP Section ─────────────────────────────────────── */}
-          {Platform.OS !== 'web' && (
+          {/* VAMOS-HIDE-IAP-506 — hidden until remote iap_enabled flag is true (products not
+              configured in App Store Connect / RevenueCat; Apple rejects non-functional IAP). */}
+          {Platform.OS !== 'web' && isIapEnabled() && (
             <View style={styles.iapSection}>
               <Text style={styles.sectionTitle} accessibilityRole="header">Premium</Text>
               {/* Starter Pack */}
