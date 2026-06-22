@@ -1137,6 +1137,31 @@ function GameScreenInner() {
     [isArranging, boards, isCardOnAnyBoard]
   );
 
+  // VAMOS-BESTCARDS-RENDER 2026-06-22 — fill ALL boards in ONE batched update for
+  // autoSim/demo. The previous `for (i) handleAutoFill(i)` loop read the stale closure
+  // `boards` on every iteration (React state can't update mid-loop), so only board 0 was
+  // filled; boards 1+ stayed empty → evaluateOmahaHand returned DEFAULT_HAND_RESULT
+  // (High Card, EMPTY bestCards) → headless QA saw "Tie — High Card" on every board with
+  // null bestCards (and a fake ~92% tie rate). Uses refs (current, not stale) and
+  // distributes the hand deterministically across boards. Real play is unaffected (users
+  // tap auto-fill per board with re-renders between calls).
+  const autoFillAllBoards = useCallback(() => {
+    const hand = [...playerHandRef.current];
+    const cur = boardsRef.current;
+    let idx = 0;
+    const placed = new Set<string>();
+    const updated = cur.map((b) => {
+      if (b.playerCards.length >= CARDS_PER_BOARD) return b;
+      const need = CARDS_PER_BOARD - b.playerCards.length;
+      const take = hand.slice(idx, idx + need);
+      idx += need;
+      take.forEach((c) => placed.add(c.id));
+      return take.length ? { ...b, playerCards: [...b.playerCards, ...take] } : b;
+    });
+    setBoards(updated);
+    setPlayerHand((h) => h.filter((c) => !placed.has(c.id)));
+  }, []);
+
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
@@ -1211,7 +1236,7 @@ function GameScreenInner() {
     if (demo !== '1') return;
     debugLog('demo deep-link: auto-fill in 2s, ready in 4s');
     const t1 = setTimeout(() => {
-      for (let i = 0; i < boardCount; i++) handleAutoFill(i);
+      autoFillAllBoards();
     }, 2000);
     const t2 = setTimeout(() => { handleReady(); }, 4000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -1225,7 +1250,7 @@ function GameScreenInner() {
     debugLog(`🤖 AUTO-SIM: hand ${currentHand}/${simCount} — auto-fill in 1.5s`);
     const t1 = setTimeout(() => {
       debugLog('🤖 AUTO-SIM: filling all boards');
-      for (let i = 0; i < boardCount; i++) handleAutoFill(i);
+      autoFillAllBoards();
     }, 1500);
     const t2 = setTimeout(() => {
       debugLog('🤖 AUTO-SIM: pressing READY');

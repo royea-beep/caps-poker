@@ -64,7 +64,8 @@ const BOARD_COMBO_IDX: Record<number, [number, number, number][]> = {
   5: [[0,1,2],[0,1,3],[0,1,4],[0,2,3],[0,2,4],[0,3,4],[1,2,3],[1,2,4],[1,3,4],[2,3,4]],
 };
 
-function evaluate5Cards(cards: Card[]): { rank: HandRank; score: number } {
+// Exported for targeted comparator tests (VAMOS-HAND-TIEBREAK 2026-06-22).
+export function evaluate5Cards(cards: Card[]): { rank: HandRank; score: number } {
   const values = cards.map((c) => RANK_VALUES[c.rank]).sort((a, b) => b - a);
   const suits = cards.map((c) => c.suit);
 
