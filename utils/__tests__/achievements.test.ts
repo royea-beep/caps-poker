@@ -61,9 +61,35 @@ describe('checkAchievements', () => {
     expect(result).not.toContain('first_win');
   });
 
-  it('unlocks complete_master on isComplete', () => {
-    const result = checkAchievements(makeCtx({ revealData: makeReveal({ isComplete: true }) }));
+  it('unlocks complete_master when the LOCAL player sweeps all boards', () => {
+    // Arrange — isComplete AND every board won by the player (a real local sweep)
+    const sweep = makeReveal({
+      isComplete: true,
+      boards: [
+        { winner: 'player', playerHandName: 'One Pair', botHandName: 'High Card', openCards: [], closedCards: [], playerCards: [], allBotCards: [], allBotHandNames: [], playerHighlightIds: [], botHighlightIds: [], boardHighlightIds: [], potAmount: 100 },
+        { winner: 'player', playerHandName: 'Two Pair', botHandName: 'High Card', openCards: [], closedCards: [], playerCards: [], allBotCards: [], allBotHandNames: [], playerHighlightIds: [], botHighlightIds: [], boardHighlightIds: [], potAmount: 100 },
+      ],
+    });
+    // Act
+    const result = checkAchievements(makeCtx({ revealData: sweep }));
+    // Assert
     expect(result).toContain('complete_master');
+  });
+
+  it('does NOT unlock complete_master when the OPPONENT swept (local loss)', () => {
+    // Arrange — isComplete is true but the LOCAL player won zero boards (opponent swept)
+    const opponentSweep = makeReveal({
+      isComplete: true,
+      netChips: -150,
+      boards: [
+        { winner: 'bot', playerHandName: 'High Card', botHandName: 'One Pair', openCards: [], closedCards: [], playerCards: [], allBotCards: [], allBotHandNames: [], playerHighlightIds: [], botHighlightIds: [], boardHighlightIds: [], potAmount: 100 },
+        { winner: 'bot', playerHandName: 'High Card', botHandName: 'Two Pair', openCards: [], closedCards: [], playerCards: [], allBotCards: [], allBotHandNames: [], playerHighlightIds: [], botHighlightIds: [], boardHighlightIds: [], potAmount: 100 },
+      ],
+    });
+    // Act
+    const result = checkAchievements(makeCtx({ revealData: opponentSweep }));
+    // Assert — the COMPLETE!+500 reward must NOT unlock for the loser
+    expect(result).not.toContain('complete_master');
   });
 
   it('unlocks streak_3 at streak >= 3', () => {
