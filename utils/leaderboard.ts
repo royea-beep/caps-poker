@@ -81,20 +81,18 @@ export async function submitScore(
 
     const deviceId = await getDeviceId();
 
-    const { error } = await supabase
-      .from('leaderboard')
-      .upsert(
-        {
-          device_id: deviceId,
-          player_name: playerName || ('Player' + deviceId.slice(-4).toUpperCase()),
-          total_chips: totalChips,
-          hands_played: handsPlayed,
-          hands_won: handsWon,
-          biggest_win: biggestWin,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'device_id' }
-      );
+    // VAMOS-PRE506-INSERT 2026-06-22 — route through the server-authoritative submit_score
+    // RPC (SECURITY DEFINER) instead of a direct table upsert. The RPC clamps the value
+    // server-side so a client cannot forge an inflated total, and lets us later lock the
+    // leaderboard INSERT policy to service_role (sequenced: only after this OTA adopts).
+    const { error } = await supabase.rpc('submit_score', {
+      p_device_id: deviceId,
+      p_player_name: playerName || ('Player' + deviceId.slice(-4).toUpperCase()),
+      p_total_chips: totalChips,
+      p_hands_played: handsPlayed,
+      p_hands_won: handsWon,
+      p_biggest_win: biggestWin,
+    });
 
     return !error;
   } catch {
