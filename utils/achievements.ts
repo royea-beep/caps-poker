@@ -6,6 +6,7 @@
 
 import { RevealData } from '../types/gameTypes';
 import { GameConfig } from '../constants/gameConfig';
+import { isLocalComplete } from './resultsGating';
 
 export interface Achievement {
   id: string;
@@ -62,7 +63,10 @@ export function checkAchievements(ctx: AchievementCheckContext): string[] {
     const difficulty = (config as any).botDifficulty ?? 'easy';
 
     check('first_win',       handsWon >= 1);
-    check('complete_master', revealData.isComplete);
+    // VAMOS-COMPLETE-ON-LOSS 2026-06-22 — "Win all boards in one game" must require the
+    // LOCAL player to sweep. revealData.isComplete is true for EITHER player's sweep, so
+    // the opponent completing used to unlock COMPLETE!+500 for the LOSER. Shared predicate.
+    check('complete_master', isLocalComplete(revealData.isComplete, boardsWon, revealData.boards.length));
     check('streak_3',        currentWinStreak >= 3);
     check('streak_7',        currentWinStreak >= 7);
     check('play_10',         handsPlayed >= 10);
