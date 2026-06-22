@@ -1463,8 +1463,13 @@ export default function HomeScreen() {
             against the clean URL and return false, dropping the user back to the
             marketing landing. Web users now stay in the lobby after tutorial.
           PR-G Bug 3: tutorial waits for StarterOfferModal to resolve so the two
-            don't stack. */}
-      {showInteractiveTutorial && offerResolved && (
+            don't stack.
+          VAMOS-NEW-USER-FIRSTRUN 2026-06-22: (a) the offer is deferred to 5 games
+            (see StarterOfferModal mount below), so for new users the tutorial no
+            longer waits on it — `gamesPlayed < 5` proceeds immediately. (b) `!showOnboarding`
+            makes the interactive tutorial mutually exclusive with the OnboardingOverlay
+            so exactly ONE onboarding layer ever renders (was doubled/ghosted). */}
+      {showInteractiveTutorial && (offerResolved || gamesPlayed < 5) && !showOnboarding && (
         <InteractiveTutorial onDone={() => {
           setShowInteractiveTutorial(false);
           if (!isWeb) router.push('/game' as any);
@@ -2070,7 +2075,7 @@ export default function HomeScreen() {
       {/* Welcome toast after sign-in */}
       {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
 
-      {showOnboarding && offerResolved && <OnboardingOverlay onDone={handleOnboardingDone} />}
+      {showOnboarding && (offerResolved || gamesPlayed < 5) && <OnboardingOverlay onDone={handleOnboardingDone} />}
       {showStreakPopup && streakData && (
         <StreakPopup
           streak={streakData.current_streak}
@@ -2082,10 +2087,16 @@ export default function HomeScreen() {
       )}
       <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
       <WeeklyRecapModal visible={showWeeklyRecap} onDismiss={() => setShowWeeklyRecap(false)} />
-      <StarterOfferModal onResolved={() => {
-        debugLog('[starter_offer] parent onResolved -> opening tutorial gate', 'info');
-        setOfferResolved(true);
-      }} />
+      {/* VAMOS-NEW-USER-FIRSTRUN 2026-06-22: the $2.99 Starter Offer must NOT be the
+          first thing a brand-new user sees (it overlaid PLAY on first launch). Defer it
+          until the user has played 5 games. When deferred, the tutorials proceed via
+          the `gamesPlayed < 5` bypass above, so nothing waits on an offer that never mounts. */}
+      {gamesPlayed >= 5 && (
+        <StarterOfferModal onResolved={() => {
+          debugLog('[starter_offer] parent onResolved -> opening tutorial gate', 'info');
+          setOfferResolved(true);
+        }} />
+      )}
       </SafeAreaView>
   );
 }
