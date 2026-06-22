@@ -14,6 +14,8 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import { FriendsBg } from '../components/FriendsBg';
 import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
+import { RevealData } from '../types/gameTypes';
+import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
 import { COLORS } from '../constants/gameConfig';
 import { getTheme } from '../constants/visualThemes';
 import { CardsDealtPayload } from '../constants/networkConfig';
@@ -63,7 +65,26 @@ const SUIT_SYM: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs
 let Haptics: any = null;
 try { Haptics = require('expo-haptics'); } catch {}
 
+// VAMOS-COMPLETE-ON-LOSS / hooks-fix 2026-06-22 — the loading gate lives in this thin
+// outer component with NO hooks after the early return. All of ResultsContent's hooks run
+// unconditionally because revealData is a guaranteed-non-null prop. This removes the
+// pre-existing Rules-of-Hooks violation (early return used to sit before two useMemos),
+// a real "Rendered fewer hooks than expected" source when revealData flipped to null.
 export default function ResultsScreen() {
+  const revealData = useGameStore((s) => s.revealData);
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  if (!revealData) {
+    const theme = getTheme(visualTheme);
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.loadingContainer} accessibilityLiveRegion="polite"><Text style={styles.loadingText}>Loading...</Text></View>
+      </SafeAreaView>
+    );
+  }
+  return <ResultsContent revealData={revealData} />;
+}
+
+function ResultsContent({ revealData }: { revealData: RevealData }) {
   const router = useRouter();
   const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
   const { width: rawW } = useWindowDimensions();
@@ -73,7 +94,6 @@ export default function ResultsScreen() {
   const theme = getTheme(visualTheme);
   const chips = useGameStore((s) => s.chips);
   const config = useGameStore((s) => s.config);
-  const revealData = useGameStore((s) => s.revealData);
   const clearRevealData = useGameStore((s) => s.clearRevealData);
   const incrementHandsPlayed = useGameStore((s) => s.incrementHandsPlayed);
   const incrementHandsWon = useGameStore((s) => s.incrementHandsWon);
@@ -218,8 +238,11 @@ export default function ResultsScreen() {
     // Complete sound — VAMOS-COMPLETE-ON-LOSS 2026-06-21: only when the LOCAL player
     // swept every board (isComplete is true for EITHER player's sweep). Previously the
     // celebratory 'complete' sound + bonus hook fired even when the opponent swept (a loss).
-    const localSwept = revealData.isComplete && revealData.boards.length > 0
-      && revealData.boards.every((b) => b.winner === 'player');
+    const localSwept = isLocalComplete(
+      revealData.isComplete,
+      revealData.boards.filter((b) => b.winner === 'player').length,
+      revealData.boards.length,
+    );
     if (localSwept && revealData.completeBonusAmount > 0) {
       setTimeout(() => { void playSound('complete'); }, 800);
     }
@@ -376,7 +399,7 @@ export default function ResultsScreen() {
       // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — complete XP/mission credit only when the
       // LOCAL player swept every board. revealData.isComplete is true for EITHER
       // player's sweep, which previously awarded the player complete-XP for LOSING.
-      const localComplete = revealData.isComplete && boardsWonByPlayer === revealData.boards.length && revealData.boards.length > 0;
+      const localComplete = isLocalComplete(revealData.isComplete, boardsWonByPlayer, revealData.boards.length);
       const earned = BATTLE_PASS_CONFIG.xpPerGame
         + (boardsWonByPlayer * BATTLE_PASS_CONFIG.xpPerBoardWin)
         + (isWinner ? BATTLE_PASS_CONFIG.xpPerGameWin : 0)
@@ -618,14 +641,6 @@ export default function ResultsScreen() {
     } catch {}
   }, [revealData, autoShareUrl]);
 
-  if (!revealData) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={styles.loadingContainer} accessibilityLiveRegion="polite"><Text style={styles.loadingText}>Loading...</Text></View>
-      </SafeAreaView>
-    );
-  }
-
   const { boards, netChips, isComplete, completeBonusAmount, numberOfPlayers, boardCount } = revealData;
   const playerWins = boards.filter((b) => b.winner === 'player').length;
   const botWins = boards.filter((b) => b.winner === 'bot').length;
@@ -635,8 +650,8 @@ export default function ResultsScreen() {
   // true whenever EITHER player sweeps (gameLogic computes completeWinner but
   // RevealBoardData drops it), so an opponent sweep used to wrongly show the
   // winner celebration + "+bonus chips" + "Share COMPLETE!" on the losing screen.
-  const localComplete = isComplete && isPerfectGame;
-  const opponentComplete = isComplete && !isPerfectGame;
+  const localComplete = isLocalComplete(isComplete, playerWins, boards.length);
+  const opponentComplete = isOpponentComplete(isComplete, playerWins, boards.length);
   const potPerBoardTotal = revealData.potPerBoard * numberOfPlayers;
 
   // VAMOS-FIX-RESULTS-RENDER 2026-06-17 — useMemo so BoardResultCard React.memo
