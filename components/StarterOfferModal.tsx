@@ -82,6 +82,15 @@ export function StarterOfferModal({ onResolved }: StarterOfferModalProps = {}) {
     }
     inFlightRef.current = true;
 
+    // VAMOS-HIDE-IAP-506 — never show the paid offer while IAP is globally disabled
+    // (products not configured in App Store Connect / RevenueCat; Apple rejects dead IAP).
+    // Resolve the gate so the tutorial flow still proceeds. Reversible via remote iap_enabled.
+    try {
+      const { loadIapEnabled, isIapEnabled } = require('../utils/iapEnabled');
+      await loadIapEnabled();
+      if (!isIapEnabled()) { resolve('iap_disabled'); return; }
+    } catch {}
+
     // Show only once per session
     try {
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
