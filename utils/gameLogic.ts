@@ -158,14 +158,15 @@ export function calculateHandResults(
     }
   }
 
-  // Complete bonus: % of the player's own buy-in (not total pot)
-  const buyIn = potPerBoard * NUM_BOARDS; // single player's buy-in per hand
+  // VAMOS-BUILD-506 2026-06-22 — COMPLETE bonus = % of the TOTAL POT (both players' buy-ins
+  // across all boards), not one player's buy-in. NOTE: this 2-player function is legacy — the
+  // LIVE path is calculateHandResultsMulti -> calculateChipDeltas — kept in sync for safety.
+  const totalPot = potPerBoard * NUM_BOARDS * 2; // 2-player total pot, all boards
   const isComplete = playerWins === NUM_BOARDS || botWins === NUM_BOARDS;
   let completeBonusAmount = 0;
 
   if (isComplete) {
-    // Winner receives (buyIn * bonusPercent/100) per opponent (1 opponent in 2-player)
-    completeBonusAmount = Math.floor((buyIn * completeBonusPercent) / 100);
+    completeBonusAmount = Math.floor((totalPot * completeBonusPercent) / 100);
     if (playerWins === NUM_BOARDS) {
       playerChipsWon += completeBonusAmount;
     } else {
@@ -404,14 +405,14 @@ export function calculateChipDeltas(
     }
   }
 
-  // Complete bonus: % of each player's buy-in, collected from each opponent
-  const buyIn = potPerBoard * boardCount; // single player's buy-in
+  // VAMOS-BUILD-506 2026-06-22 — COMPLETE bonus = % of the TOTAL POT (sum across ALL
+  // boards and ALL players), not one player's buy-in. Heads-up this is ~2x the old value
+  // (total pot = both players' buy-ins). The cost is distributed across the losers below
+  // (zero-sum), so the winner effectively takes the bonus "from the opponent(s)".
+  const totalPot = potPerBoard * boardCount * playerCount; // full pot: all boards × all players
   let completeBonusAmount = 0;
   if (completeWinner !== null) {
-    // Winner receives (buyIn * bonusPercent/100) per opponent
-    completeBonusAmount = Math.floor(
-      (buyIn * config.completeBonusPercent / 100) * (playerCount - 1)
-    );
+    completeBonusAmount = Math.floor((totalPot * config.completeBonusPercent) / 100);
     chipDeltas[completeWinner] += completeBonusAmount;
     // Distribute bonus cost to losers (zero-sum)
     const losers = playerCount - 1;
