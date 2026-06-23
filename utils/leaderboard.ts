@@ -109,6 +109,10 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     const { data, error } = await supabase
       .from('leaderboard')
       .select('*')
+      // VAMOS-CAPS-LEADERBOARD-HIDE-BOTS: exclude seed bot rows (device_id 'bot_%').
+      // In-game opponents come from local constants/gameLogic, never this table, so
+      // hiding these rows is display-only and does not affect gameplay.
+      .not('device_id', 'like', 'bot_%')
       .order('total_chips', { ascending: false })
       .limit(20);
 
