@@ -132,23 +132,26 @@ export default function ShopScreen() {
       import('../utils/heatmap').then(({ trackEvent }) => {
         trackEvent('shop', 'buy_' + item.event_type, deviceId);
       }).catch(() => {});
-      const result = await spendChips(deviceId, item.event_type);
+      // VAMOS-CAPS-QA-ECONOMY-GATED: pass the real cost (the server otherwise
+      // charges a flat 50) and tolerate a missing new_balance (the live RPC does
+      // not return one) by deriving it from the known shop balance minus the spend.
+      const result = await spendChips(deviceId, item.event_type, item.cost);
       if (result?.success) {
         // Update local chip balance
         addChips(-result.chips_spent);
         trackChipsSpent(result.chips_spent);
         // Update shop balance + re-evaluate can_afford
-        setShopData((prev) =>
-          prev
-            ? {
-                balance: result.new_balance,
-                items: prev.items.map((i) => ({
-                  ...i,
-                  can_afford: result.new_balance >= i.cost,
-                })),
-              }
-            : prev
-        );
+        setShopData((prev) => {
+          if (!prev) return prev;
+          const newBalance = result.new_balance ?? Math.max(0, prev.balance - result.chips_spent);
+          return {
+            balance: newBalance,
+            items: prev.items.map((i) => ({
+              ...i,
+              can_afford: newBalance >= i.cost,
+            })),
+          };
+        });
         showToast(`-${result.chips_spent} 🎰`);
       }
       // Insufficient balance handled inside callRPC (Alert shown there)

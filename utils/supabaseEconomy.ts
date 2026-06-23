@@ -52,22 +52,36 @@ export type EarnEvent =
 
 export interface EarnResult {
   chips_earned: number;
-  new_balance: number;
+  new_balance?: number;
   success: boolean;
 }
 
 /**
- * Call earn_chips RPC. Returns { chips_earned, new_balance } or null on failure.
+ * Call earn_chips RPC and NORMALIZE the response.
+ *
+ * VAMOS-CAPS-QA-ECONOMY-GATED: the live earn_chips RPC returns
+ * `{ ok: true, chips_earned }` (no `success`, no `new_balance`); a fixed/older
+ * server returns `{ success, chips_earned, new_balance }`. We coerce `success`
+ * from either `success===true` OR `ok===true` so callers that gate on `.success`
+ * (e.g. quick-poker win) credit chips instead of silently dropping them.
+ * Optional `amount` is forwarded as p_amount so the credit matches the intended
+ * value instead of the server's flat default.
  * deviceId — pass result of getDeviceId().
  */
 export async function earnChips(
   deviceId: string,
   event: EarnEvent,
+  amount?: number,
 ): Promise<EarnResult | null> {
-  return callRPC<EarnResult>('earn_chips', {
-    p_device_id: deviceId,
-    p_event_type: event,
-  });
+  const params: Record<string, unknown> = { p_device_id: deviceId, p_event_type: event };
+  if (typeof amount === 'number') params.p_amount = amount;
+  const raw = await callRPC<any>('earn_chips', params);
+  if (!raw) return null;
+  return {
+    success: raw.success === true || raw.ok === true,
+    chips_earned: raw.chips_earned ?? raw.earned ?? (typeof amount === 'number' ? amount : 0),
+    new_balance: raw.new_balance,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,17 +150,43 @@ export async function fetchPokerShop(deviceId: string): Promise<ShopData | null>
 export interface SpendResult {
   success: boolean;
   chips_spent: number;
-  new_balance: number;
+  new_balance?: number;
   error_code?: string;
   balance?: number;
 }
 
+/**
+ * Call spend_chips RPC and NORMALIZE the response.
+ *
+ * VAMOS-CAPS-QA-ECONOMY-GATED — root cause of the two economy-gated failures:
+ * the live spend_chips(text,text,int DEFAULT 50) RPC returns
+ * `{ ok: true, chips_spent }` (NO `success`, NO `new_balance`) and, when called
+ * with only 2 args, charges a flat 50 regardless of the real cost. The client
+ * gated entry/purchase on `result.success` — always undefined — so a buy-in that
+ * the server actually charged was shown as "Couldn't enter the game" and a shop
+ * purchase silently no-op'd (balance unchanged, no toast).
+ *
+ * Fix here (forward + backward compatible):
+ *  - forward the real `amount` as p_amount so the charge is correct (200 / cost),
+ *  - coerce `success` from `success===true` OR `ok===true`,
+ *  - pass through new_balance/error_code/balance when present.
+ * A matching server-side fix (returns success+new_balance, looks up cost, checks
+ * balance) is the LIVE remediation — see VAMOS report — and is owner-applied.
+ */
 export async function spendChips(
   deviceId: string,
   eventType: string,
+  amount?: number,
 ): Promise<SpendResult | null> {
-  return callRPC<SpendResult>('spend_chips', {
-    p_device_id: deviceId,
-    p_event_type: eventType,
-  });
+  const params: Record<string, unknown> = { p_device_id: deviceId, p_event_type: eventType };
+  if (typeof amount === 'number') params.p_amount = amount;
+  const raw = await callRPC<any>('spend_chips', params);
+  if (!raw) return null;
+  return {
+    success: raw.success === true || raw.ok === true,
+    chips_spent: raw.chips_spent ?? raw.spent ?? (typeof amount === 'number' ? amount : 0),
+    new_balance: raw.new_balance,
+    error_code: raw.error_code,
+    balance: raw.balance,
+  };
 }
