@@ -94,7 +94,7 @@ export default function QuickPokerScreen() {
         const id = await getDeviceId();
         if (cancelled) return;
         setDeviceId(id);
-        const result = await spendChips(id, 'quick_poker_buy_in');
+        const result = await spendChips(id, 'quick_poker_buy_in', BUY_IN);
         if (cancelled) return;
         // PR-G Bug 2: surface the real error reason. Pre-PR-G this hardcoded
         // 'Not enough chips (200 required)' for ANY failure mode (network, RLS,
@@ -137,7 +137,7 @@ export default function QuickPokerScreen() {
       playSound('chipsWin');
       try {
         const id = deviceId || await getDeviceId();
-        const earnResult = await earnChips(id, 'quick_poker_win' as any);
+        const earnResult = await earnChips(id, 'quick_poker_win' as any, WIN_CHIPS);
         if (earnResult?.success) {
           chipsEarned = earnResult.chips_earned ?? WIN_CHIPS;
           setTotalChipsEarned((prev) => prev + chipsEarned);
@@ -163,7 +163,7 @@ export default function QuickPokerScreen() {
     (async () => {
       try {
         const id = deviceId || await getDeviceId();
-        const result = await spendChips(id, 'quick_poker_buy_in');
+        const result = await spendChips(id, 'quick_poker_buy_in', BUY_IN);
         if (!result || !result.success) { setLoadError(formatBuyInError(result, BUY_IN)); return; }
         if (result.new_balance != null) setChips?.(result.new_balance);
         setPhase('playing');
