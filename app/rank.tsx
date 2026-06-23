@@ -64,14 +64,19 @@ export default function RankScreen() {
         .eq('device_id', deviceId)
         .maybeSingle();
 
+      // VAMOS-CAPS-LEADERBOARD-HIDE-BOTS: exclude seed bot rows so rank position
+      // and total-player counts reflect real players only (bots are not opponents
+      // sourced from this table — see utils/gameLogic + BOT_NAMES constants).
       const { count } = await sb
         .from('leaderboard')
         .select('*', { count: 'exact', head: true })
+        .not('device_id', 'like', 'bot_%')
         .gte('elo', row?.elo ?? 1000);
 
       const { count: total } = await sb
         .from('leaderboard')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .not('device_id', 'like', 'bot_%');
 
       if (row) {
         setData({

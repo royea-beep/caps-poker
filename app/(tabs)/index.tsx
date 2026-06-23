@@ -1190,11 +1190,19 @@ export default function HomeScreen() {
         if (!sb) return;
         const { data: lb } = await sb.rpc('get_leaderboard', { p_device_id: deviceId });
         if (lb) {
-          const entries = Array.isArray(lb) ? lb : (lb.entries ?? []);
+          const raw = Array.isArray(lb) ? lb : (lb.entries ?? []);
+          // VAMOS-CAPS-LEADERBOARD-HIDE-BOTS: drop seed bot rows so the home rank
+          // widget counts real players only. Recompute position from the filtered,
+          // chip-sorted order (the server rank includes bots until the DB cleanup runs).
+          const entries = raw.filter((e: any) => !String(e.device_id ?? '').startsWith('bot_'));
           const myEntry = entries.find((e: any) => e.is_me || e.device_id === deviceId);
-          const rank = myEntry?.rank ?? myEntry?.position ?? null;
-          const total = entries.length || (lb.total ?? 0);
-          if (rank) setLeaderboardData({ rank: Number(rank), total: Number(total) });
+          if (myEntry) {
+            const sorted = [...entries].sort((a: any, b: any) => (b.total_chips ?? 0) - (a.total_chips ?? 0));
+            const idx = sorted.findIndex((e: any) => e.is_me || e.device_id === deviceId);
+            const rank = idx >= 0 ? idx + 1 : (myEntry.rank ?? myEntry.position ?? null);
+            const total = entries.length || (lb.total ?? 0);
+            if (rank) setLeaderboardData({ rank: Number(rank), total: Number(total) });
+          }
         }
       } catch {}
     })();
