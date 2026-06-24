@@ -20,7 +20,7 @@
  * owned by the game screen, so unmount does NOT tear it down.
  */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Platform, Share } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGameStore } from '../../store/gameStore';
@@ -116,9 +116,10 @@ export default function TableRoomScreen() {
       if (ECONOMY_FLAGS.matchCostEnabled) {
         const cost = getMatchCost(config.potPerBoard, getBoardCount(maxPlayers));
         if (!canAffordMatch(useGameStore.getState().chips, cost)) {
-          Alert.alert('Not Enough Chips', `You need ${cost} chips to start this table.`, [
-            { text: 'Leave', onPress: bailOut },
-          ]);
+          // Surface via the error screen (not Alert.alert — it silently no-ops on web,
+          // which would leave the host stuck in 'waiting'). Its "Back to Lobby" button
+          // bails out, freeing the DB seat + tearing down realtime on unmount.
+          if (mountedRef.current) { setStatus('error'); setErrorMsg(`Not enough chips — you need ${cost} to start this table.`); }
           return;
         }
       }
@@ -168,18 +169,29 @@ export default function TableRoomScreen() {
         }
       });
 
+      const onStartFail = () => {
+        // Tear down the subscribed channel so it doesn't leak (resetMultiplayer can't —
+        // the server was never put in the store on this path).
+        try { server.stop(); } catch {}
+        serverRef.current = null;
+        if (mountedRef.current) { setStatus('error'); setErrorMsg('Could not open the table.'); }
+      };
       server.start(roomCode, playerName).then((ok) => {
         if (cancelled) return;
         if (ok) {
           setMpServer(server);
           setMultiplayerMode('host');
           setRoomCode(roomCode);
+          // If the host's channel drops while waiting, surface it instead of hanging.
+          server.updateCallbacks({
+            onDisconnected: () => { if (mountedRef.current && !launchedRef.current) { setStatus('error'); setErrorMsg('Connection to the table was lost.'); } },
+          });
           if (mountedRef.current && !startedRef.current) setStatus('waiting');
         } else {
-          if (mountedRef.current) { setStatus('error'); setErrorMsg('Could not open the table.'); }
+          onStartFail();
         }
       }).catch(() => {
-        if (!cancelled && mountedRef.current) { setStatus('error'); setErrorMsg('Could not open the table.'); }
+        if (!cancelled) onStartFail();
       });
     } else {
       // --- GUEST: join the realtime room, navigate when the host deals ---
