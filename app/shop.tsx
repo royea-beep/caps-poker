@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { t, getLanguage } from '../utils/i18n';
+import { track } from '../utils/analytics';
 import {
   View,
   Text,
@@ -152,6 +153,7 @@ export default function ShopScreen() {
             })),
           };
         });
+        track('purchase', { item: item.event_type, cost: result.chips_spent }, 'shop');
         showToast(`-${result.chips_spent} 🎰`);
       }
       // Insufficient balance handled inside callRPC (Alert shown there)

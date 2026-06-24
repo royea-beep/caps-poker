@@ -466,6 +466,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         if (!sb) return;
         const { data: cupResult } = await sb.rpc('check_cups', { p_device_id: deviceId });
         if (cupResult?.awarded?.length > 0) {
+          // VAMOS-PRE-FRIENDS telemetry: record each newly-earned cup.
+          for (const cup of cupResult.awarded) track('cup_earned', { cup }, 'results');
           Alert.alert('🏆 New Cup!', `Unlocked: ${cupResult.awarded[0]}`, [{ text: 'Nice!' }]);
         }
       } catch {}

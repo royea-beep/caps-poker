@@ -1244,6 +1244,7 @@ export default function HomeScreen() {
     }
     trackAction('play_pressed');
     track('play_button_tapped', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
+    track('mode_start', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
     track('game_started', { player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
