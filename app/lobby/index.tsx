@@ -1,11 +1,12 @@
 /**
- * Multiplayer Lobby — VAMOS-CAPS-MP-LOBBY Phase 2.
+ * Multiplayer Lobby — VAMOS-CAPS-MP-LOBBY Phase 2 + TASK 3C (game-wiring).
  *
  * Open tables grouped by the 3 types (2P/3P/4P), 2+ per type. Join / Create /
- * invite-by-code. A table auto-starts server-side when it fills (join_table sets
- * status='playing'); the joiner then launches the UNIFIED /game with that config.
- * NOTE: in-game realtime sync + the placement-timer soft-lock fix are TASK 3 — this
- * screen builds the lobby itself (list/create/join/code) and launches /game.
+ * invite-by-code. Creating or joining hands off to the Table Room (app/lobby/table),
+ * which opens the realtime channel and auto-starts a REAL synced multiplayer game when
+ * the table fills — host-authoritative over utils/realtimeMultiplayer + multiplayer-game.
+ * This screen owns DISCOVERY only (list/create/join/code); the table room owns the
+ * realtime session and the DB seat from that point on.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, RefreshControl, Alert, Platform } from 'react-native';
@@ -16,7 +17,7 @@ import { getSupabase } from '../../utils/supabase';
 import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
-import { listOpenTables, createTable, joinTable, leaveTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
+import { listOpenTables, createTable, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -28,7 +29,6 @@ const POLL_MS = 5000;
 
 export default function MultiplayerLobby() {
   const router = useRouter();
-  const updateConfig = useGameStore((s) => s.updateConfig);
   const playerName = useGameStore((s) => s.playerName);
 
   const [tables, setTables] = useState<OpenTable[]>([]);
@@ -36,12 +36,8 @@ export default function MultiplayerLobby() {
   const [refreshing, setRefreshing] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
-  const [myCode, setMyCode] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
-  // the table this client is seated in but NOT yet playing — left on unmount/back so it
-  // doesn't linger as a ghost (host-leave abandons it; joiner-leave frees the seat).
-  const seatedRoomRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const rows = await listOpenTables();
@@ -56,22 +52,16 @@ export default function MultiplayerLobby() {
     getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
     void load();
     const id = setInterval(() => { void load(); }, POLL_MS);
-    return () => {
-      clearInterval(id);
-      // left the lobby while seated-but-waiting -> free the seat / abandon the table
-      if (seatedRoomRef.current) {
-        void leaveTable(seatedRoomRef.current, userIdRef.current, deviceIdRef.current);
-        seatedRoomRef.current = null;
-      }
-    };
+    return () => { clearInterval(id); };
   }, [load]);
 
-  const launchGame = useCallback((n: PlayerCount) => {
-    seatedRoomRef.current = null; // playing now — don't leave the table on unmount
-    updateConfig({ numberOfPlayers: n });
-    track('mp_game_started', { player_count: n }, 'lobby');
-    router.push('/game' as any);
-  }, [router, updateConfig]);
+  // Hand off to the Table Room — it owns the realtime session and the DB seat from here.
+  const enterTableRoom = useCallback((roomCode: string, n: PlayerCount, asHost: boolean) => {
+    router.push({
+      pathname: '/lobby/table',
+      params: { roomCode, playerCount: String(n), isHost: asHost ? 'true' : 'false' },
+    } as any);
+  }, [router]);
 
   const handleCreate = useCallback(async (n: PlayerCount) => {
     if (busy) return;
@@ -80,16 +70,14 @@ export default function MultiplayerLobby() {
       const res = await createTable(n, userIdRef.current, playerName || 'Player', deviceIdRef.current);
       if (res?.ok && res.room_code) {
         track('table_created', { player_count: n, room_code: res.room_code }, 'lobby');
-        setMyCode(res.room_code);
-        seatedRoomRef.current = res.room_code; // host seated, waiting — leave on exit if it never fills
-        await load();
+        enterTableRoom(res.room_code, n, true);
       } else {
         Alert.alert('Could not create table', 'Please try again.');
       }
     } finally {
       setBusy(false);
     }
-  }, [busy, playerName, load]);
+  }, [busy, playerName, enterTableRoom]);
 
   const handleJoin = useCallback(async (roomCode: string, n?: PlayerCount) => {
     if (busy || !roomCode.trim()) return;
@@ -101,13 +89,10 @@ export default function MultiplayerLobby() {
         track('table_joined', { player_count: count, room_code: res.room_code }, 'lobby');
         if (res.autostarted) {
           track('table_autostarted', { player_count: count, room_code: res.room_code }, 'lobby');
-          launchGame(count); // table filled -> into the unified game
-        } else {
-          // seated but waiting for more players — stay in the lobby; leave on exit
-          seatedRoomRef.current = res.room_code ?? roomCode.trim().toUpperCase();
-          setMyCode(res.room_code ?? null);
-          await load();
         }
+        // Whether the seat-claim auto-started the table or not, enter the table room as a
+        // guest; the host's realtime presence fill triggers the actual deal.
+        enterTableRoom(res.room_code ?? roomCode.trim().toUpperCase(), count, false);
       } else {
         Alert.alert('Table unavailable', 'That table is full or no longer open.');
         await load();
@@ -115,7 +100,7 @@ export default function MultiplayerLobby() {
     } finally {
       setBusy(false);
     }
-  }, [busy, launchGame, load]);
+  }, [busy, enterTableRoom, load]);
 
   const grouped = groupTablesByType(tables);
 
@@ -145,13 +130,6 @@ export default function MultiplayerLobby() {
           <Text style={styles.codeBtnText}>Join</Text>
         </Pressable>
       </View>
-      {myCode && (
-        <View style={styles.myCode}>
-          <Text style={styles.myCodeLabel}>YOUR TABLE CODE — share it</Text>
-          <Text style={styles.myCodeVal} accessibilityLabel={`Your table code is ${myCode.split('').join(' ')}`}>{myCode}</Text>
-        </View>
-      )}
-
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#4FD6A8" /></View>
       ) : (
@@ -214,9 +192,6 @@ const styles = StyleSheet.create({
   codeInput: { flex: 1, backgroundColor: '#0d0f15', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: rv(10), color: '#fff', paddingHorizontal: rs(12), paddingVertical: rv(10), fontSize: rf(15), letterSpacing: 2 },
   codeBtn: { backgroundColor: 'rgba(79,214,168,0.15)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.35)', borderRadius: rv(10), paddingHorizontal: rs(18), justifyContent: 'center' },
   codeBtnText: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(14) },
-  myCode: { marginHorizontal: rs(16), marginVertical: rv(6), backgroundColor: 'rgba(79,214,168,0.1)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.3)', borderRadius: rv(12), paddingVertical: rv(8), alignItems: 'center' },
-  myCodeLabel: { color: 'rgba(255,255,255,0.6)', fontSize: rf(9), letterSpacing: 1, textTransform: 'uppercase' },
-  myCodeVal: { color: '#4FD6A8', fontSize: rf(22), fontWeight: '900', letterSpacing: 4 },
   section: { marginBottom: rv(18) },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(6) },
   sectionTitle: { color: '#fff', fontSize: rf(13), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },

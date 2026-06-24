@@ -16,6 +16,7 @@ import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMu
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
+import { track } from '../utils/analytics';
 import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
@@ -479,12 +480,21 @@ export default function MultiplayerGameScreen() {
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
+    track('mp_game_ended', {
+      role: 'host',
+      room_code: storeRoomCode,
+      player_count: clientArray.length,
+      board_count: boardCount,
+      net_chips: myDelta,
+      won: myDelta > 0,
+      is_complete: handResult.completeWinner !== null,
+    }, 'multiplayer-game');
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router]);
+  }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router, storeRoomCode]);
 
   // Guest: build RevealData from BOARD_REVEAL + HAND_COMPLETE payloads
   const buildGuestRevealDataAndNavigate = useCallback((result: HandCompletePayload) => {
@@ -567,12 +577,21 @@ export default function MultiplayerGameScreen() {
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
+    track('mp_game_ended', {
+      role: 'guest',
+      room_code: storeRoomCode,
+      player_count: playerCount,
+      board_count: boardCount,
+      net_chips: myDelta,
+      won: myDelta > 0,
+      is_complete: result.isComplete,
+    }, 'multiplayer-game');
     // Store opponentName for results screen "You beat {name}!" header
     const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
     if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers]);
+  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers, storeRoomCode]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
