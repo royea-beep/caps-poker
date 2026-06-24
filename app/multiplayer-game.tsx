@@ -126,6 +126,9 @@ export default function MultiplayerGameScreen() {
   const [freeTimeLeft, setFreeTimeLeft] = useState(FREE_TIME_SECS);
   const [readyEnabled, setReadyEnabled] = useState(false);
   const countdownStartedRef = useRef(false);
+  // Guards the ready broadcast against double-send (timeout auto-fill vs manual ready,
+  // and React updater double-invoke). One hand per screen mount, so no reset needed.
+  const readySentRef = useRef(false);
   const freeTimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Chat (internet MP only) ---
@@ -629,31 +632,39 @@ export default function MultiplayerGameScreen() {
     }
   }, [timeBankUsed, timer, myPlayerName, isHost, mpServer, mpClient, isInternetMP]);
 
-  // Auto-fill remaining cards and send ready
+  // Auto-fill remaining cards and send ready (placement-timer expiry / idle player).
+  // VAMOS-MP-LOBBY 3D soft-lock fix: compute from REFS and BROADCAST OUTSIDE the
+  // setState updater. The previous version did setHostReady/sendReady (a realtime
+  // broadcast) AND side effects INSIDE a setBoards(prev => {...}) updater — React can
+  // double-invoke that updater, firing the ready broadcast twice / from a transient
+  // state. That double-invoke is the autoSim fill-race + the MP soft-lock. A
+  // readySentRef makes the send idempotent so it can't race handleReady either.
   const autoFillAndReady = useCallback(() => {
-    setBoards((currentBoards) => {
-      const remaining = [...playerHandRef.current];
-      const updated = currentBoards.map((board) => {
-        const needed = CARDS_PER_BOARD - board.playerCards.length;
-        if (needed > 0) {
-          const toAdd = remaining.splice(0, needed);
-          return { ...board, playerCards: [...board.playerCards, ...toAdd] };
-        }
-        return board;
-      });
-      setPlayerHand([]);
-      setSelectedCardId(null);
-      setPhase('waiting');
-      timer.stop();
-
-      const assignments = updated.map((b) => b.playerCards);
-      if (isHost && mpServer) {
-        mpServer.setHostReady(assignments);
-      } else if (!isHost && mpClient) {
-        mpClient.sendReady(assignments);
+    if (readySentRef.current) return;
+    readySentRef.current = true;
+    const remaining = [...playerHandRef.current];
+    const updated = boardsRef.current.map((board) => {
+      const needed = CARDS_PER_BOARD - board.playerCards.length;
+      if (needed > 0) {
+        const toAdd = remaining.splice(0, needed);
+        return { ...board, playerCards: [...board.playerCards, ...toAdd] };
       }
-      return updated;
+      return board;
     });
+    // pure state updates (no side effects / broadcasts inside an updater)
+    setBoards(updated);
+    boardsRef.current = updated;
+    setPlayerHand([]);
+    setSelectedCardId(null);
+    setPhase('waiting');
+    timer.stop();
+    // broadcast exactly once, outside any updater
+    const assignments = updated.map((b) => b.playerCards);
+    if (isHost && mpServer) {
+      mpServer.setHostReady(assignments);
+    } else if (!isHost && mpClient) {
+      mpClient.sendReady(assignments);
+    }
   }, [timer, isHost, mpServer, mpClient]);
 
   // Card selection (same UX as game.tsx)
@@ -711,6 +722,8 @@ export default function MultiplayerGameScreen() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
+    if (readySentRef.current) return; // idempotent: don't double-send (race with auto-fill timeout)
+    readySentRef.current = true;
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
     setSelectedCardId(null);
