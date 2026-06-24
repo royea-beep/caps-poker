@@ -1244,6 +1244,7 @@ export default function HomeScreen() {
     }
     trackAction('play_pressed');
     track('play_button_tapped', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
+    track('mode_start', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
     track('game_started', { player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
@@ -1543,7 +1544,10 @@ export default function HomeScreen() {
                 ]}>🪙 {(chips ?? 0).toLocaleString()}</Text>
               </Pressable>
             )}
-            <AnimatedRN.Text style={[
+            {/* VAMOS-PRE-FRIENDS-QA: decorative floating "+chips" text is absolutely
+                positioned OVER the chip-shop button; without pointerEvents:none it
+                intercepts taps (even at opacity 0) and the shop button is dead on web. */}
+            <AnimatedRN.Text pointerEvents="none" style={[
               styles.chipFloatText,
               { opacity: chipFloatOpacity, transform: [{ translateY: chipFloatY }] },
             ]}>{chipFloatText}</AnimatedRN.Text>

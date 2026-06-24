@@ -1,12 +1,23 @@
 /**
  * Supabase-based analytics. Uses track_event RPC — no external SDK.
  * Fire-and-forget: never blocks UI, never throws.
+ *
+ * VAMOS-CAPS-PRE-FRIENDS-READINESS 2026-06-24 — RE-ACTIVATED.
+ * track() was a no-op since 2026-06-17 because the track_event RPC 404'd. That RPC
+ * now exists (track_event(p_event, p_user_id, p_device_id, p_data, p_screen) ->
+ * analytics_events), so tracking is restored: every screen_view / mode_start /
+ * game_start / game_end / purchase / cup_earned / error callsite across the app
+ * lights up again. session_id + app_version ride along in properties (the RPC has
+ * no dedicated session_id arg), and every event also feeds a per-session breadcrumb
+ * trail that the crash/error reporters attach so a bug arrives with its last steps.
  */
 import { getDeviceId } from './leaderboard';
+import { addBreadcrumb } from './breadcrumbs';
 
 let cachedDeviceId: string | null = null;
 let cachedUserId: string | null = null;
 let cachedSessionId: string | null = null;
+let cachedAppVersion = 'unknown';
 let supabaseRef: any = null;
 
 function generateSessionId(): string {
@@ -17,10 +28,21 @@ function generateSessionId(): string {
   });
 }
 
+export function getSessionId(): string | null {
+  return cachedSessionId;
+}
+
+export function getAppVersion(): string {
+  return cachedAppVersion;
+}
+
 export async function initAnalytics(): Promise<void> {
   try {
     cachedDeviceId = await getDeviceId();
     cachedSessionId = generateSessionId();
+    try {
+      cachedAppVersion = require('expo-constants').default?.expoConfig?.version ?? 'unknown';
+    } catch {}
     const { getSupabase } = require('./supabase');
     supabaseRef = getSupabase();
     const { data } = await supabaseRef.auth.getUser();
@@ -28,12 +50,32 @@ export async function initAnalytics(): Promise<void> {
   } catch {}
 }
 
-// VAMOS-FIX-RESULTS-TRANSITION 2026-06-17 — no-op until the track_event RPC
-// is provisioned on Supabase. It was 404ing on every call (~6 per game) and
-// adding network noise to the trace. The function signature is preserved so
-// callsites stay unchanged; restoring tracking is a one-line revert.
-export function track(_event: string, _properties?: Record<string, unknown>, _screen?: string): void {
-  // intentionally a no-op
+/**
+ * Fire an analytics event (fire-and-forget). Writes to analytics_events via the
+ * track_event RPC and records a breadcrumb. Never throws, never blocks the UI.
+ */
+export function track(event: string, properties?: Record<string, unknown>, screen?: string): void {
+  // Feed the shared breadcrumb trail (utils/breadcrumbs) that crash/bug reports
+  // already attach — record even if the network call below later fails.
+  addBreadcrumb(screen ? `${event} @${screen}` : event);
+  try {
+    const sb = supabaseRef ?? (() => { try { return require('./supabase').getSupabase(); } catch { return null; } })();
+    if (!sb) return;
+    sb.rpc('track_event', {
+      p_event: event,
+      p_user_id: cachedUserId,
+      p_device_id: cachedDeviceId,
+      p_data: {
+        ...(properties ?? {}),
+        // session_id/app_version travel in properties: the RPC has no dedicated args.
+        session_id: cachedSessionId,
+        app_version: cachedAppVersion,
+      },
+      p_screen: screen ?? null,
+    }).then(() => {}).catch(() => {});
+  } catch {
+    // never throw from analytics
+  }
 }
 
 export function trackPushOpen(templateType: string): void {

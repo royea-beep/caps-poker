@@ -47,6 +47,7 @@ import { checkPreviousCrash } from '../utils/dirtyShutdown';
 import { sendCrashAlert } from '../utils/crashAlert';
 import { getLastCrashScreenshots, clearCrashScreenshots } from '../utils/screenRecorder';
 import { startCrashRecording, setCurrentScreen, initCrashSession, markCleanExit, flushCrashSessionNow, checkDirtyShutdown } from '../utils/crash-evidence';
+import { initWebErrorReporter } from '../utils/webErrorReporter';
 import { initDebugger } from '@caps/debugger';
 import { sendCrashToWhatsApp } from '../utils/debug-whatsapp';
 import { CrashBoundary } from '../components/CrashBoundary';
@@ -288,8 +289,9 @@ export default function RootLayout() {
   // checkDirtyShutdown's reads → reads see the NEW values → false positive every open.
   useEffect(() => {
     if (Platform.OS === 'web') {
-      // Web: just init session, no crash detection
-      try { initCrashSession(); startCrashRecording(); setCurrentScreen('Splash'); } catch {}
+      // Web: no native dashcam; install the web global error reporter so uncaught
+      // JS errors + promise rejections land in crash_reports with breadcrumbs.
+      try { initCrashSession(); startCrashRecording(); setCurrentScreen('Splash'); initWebErrorReporter(); } catch {}
       return;
     }
     const initSequence = async () => {
