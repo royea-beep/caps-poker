@@ -15,7 +15,8 @@ import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
 import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
-import { listOpenTables, createTable, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
+import { getDeviceId } from '../../utils/leaderboard';
+import { listOpenTables, createTable, joinTable, leaveTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -37,6 +38,10 @@ export default function MultiplayerLobby() {
   const [busy, setBusy] = useState(false);
   const [myCode, setMyCode] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const deviceIdRef = useRef<string | null>(null);
+  // the table this client is seated in but NOT yet playing — left on unmount/back so it
+  // doesn't linger as a ghost (host-leave abandons it; joiner-leave frees the seat).
+  const seatedRoomRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const rows = await listOpenTables();
@@ -48,12 +53,21 @@ export default function MultiplayerLobby() {
   useEffect(() => {
     track('lobby_opened', {}, 'lobby');
     getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
+    getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
     void load();
     const id = setInterval(() => { void load(); }, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      // left the lobby while seated-but-waiting -> free the seat / abandon the table
+      if (seatedRoomRef.current) {
+        void leaveTable(seatedRoomRef.current, userIdRef.current, deviceIdRef.current);
+        seatedRoomRef.current = null;
+      }
+    };
   }, [load]);
 
   const launchGame = useCallback((n: PlayerCount) => {
+    seatedRoomRef.current = null; // playing now — don't leave the table on unmount
     updateConfig({ numberOfPlayers: n });
     track('mp_game_started', { player_count: n }, 'lobby');
     router.push('/game' as any);
@@ -63,10 +77,11 @@ export default function MultiplayerLobby() {
     if (busy) return;
     setBusy(true);
     try {
-      const res = await createTable(n, userIdRef.current, playerName || 'Player');
+      const res = await createTable(n, userIdRef.current, playerName || 'Player', deviceIdRef.current);
       if (res?.ok && res.room_code) {
         track('table_created', { player_count: n, room_code: res.room_code }, 'lobby');
         setMyCode(res.room_code);
+        seatedRoomRef.current = res.room_code; // host seated, waiting — leave on exit if it never fills
         await load();
       } else {
         Alert.alert('Could not create table', 'Please try again.');
@@ -80,12 +95,19 @@ export default function MultiplayerLobby() {
     if (busy || !roomCode.trim()) return;
     setBusy(true);
     try {
-      const res = await joinTable(roomCode, userIdRef.current);
+      const res = await joinTable(roomCode, userIdRef.current, playerName || 'Player', deviceIdRef.current);
       if (res?.ok) {
         const count = (res.game_config?.numberOfPlayers ?? res.max_players ?? n ?? 2) as PlayerCount;
         track('table_joined', { player_count: count, room_code: res.room_code }, 'lobby');
-        if (res.autostarted) track('table_autostarted', { player_count: count, room_code: res.room_code }, 'lobby');
-        launchGame(count);
+        if (res.autostarted) {
+          track('table_autostarted', { player_count: count, room_code: res.room_code }, 'lobby');
+          launchGame(count); // table filled -> into the unified game
+        } else {
+          // seated but waiting for more players — stay in the lobby; leave on exit
+          seatedRoomRef.current = res.room_code ?? roomCode.trim().toUpperCase();
+          setMyCode(res.room_code ?? null);
+          await load();
+        }
       } else {
         Alert.alert('Table unavailable', 'That table is full or no longer open.');
         await load();

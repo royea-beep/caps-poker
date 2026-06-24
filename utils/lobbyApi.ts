@@ -58,8 +58,8 @@ export async function listOpenTables(): Promise<OpenTable[]> {
   }
 }
 
-/** Open a new table of the given size; the caller is seated as host (1/N). */
-export async function createTable(playerCount: PlayerCount, hostId?: string | null, hostName?: string): Promise<CreateResult | null> {
+/** Open a new table of the given size; the caller is seated as host (roster seat 0). */
+export async function createTable(playerCount: PlayerCount, hostId?: string | null, hostName?: string, deviceId?: string | null): Promise<CreateResult | null> {
   try {
     const sb = getSupabase();
     if (!sb) return null;
@@ -67,6 +67,7 @@ export async function createTable(playerCount: PlayerCount, hostId?: string | nu
       p_player_count: playerCount,
       p_host_id: hostId ?? null,
       p_host_name: hostName ?? 'Player',
+      p_device_id: deviceId ?? null,
     });
     if (error) return null;
     return data as CreateResult;
@@ -75,19 +76,36 @@ export async function createTable(playerCount: PlayerCount, hostId?: string | nu
   }
 }
 
-/** Claim a seat at a table by code. Auto-starts (status='playing') when it fills. */
-export async function joinTable(roomCode: string, playerId?: string | null): Promise<JoinResult | null> {
+/** Claim a seat (adds a room_players roster row; idempotent per player). Auto-starts when full. */
+export async function joinTable(roomCode: string, playerId?: string | null, displayName?: string, deviceId?: string | null): Promise<JoinResult | null> {
   try {
     const sb = getSupabase();
     if (!sb) return null;
     const { data, error } = await sb.rpc('join_table', {
       p_room_code: roomCode.trim().toUpperCase(),
       p_player_id: playerId ?? null,
+      p_display_name: displayName ?? 'Player',
+      p_device_id: deviceId ?? null,
     });
     if (error) return null;
     return data as JoinResult;
   } catch {
     return null;
+  }
+}
+
+/** Leave a table (removes the roster row, frees the seat). Host leaving a waiting table abandons it. */
+export async function leaveTable(roomCode: string, playerId?: string | null, deviceId?: string | null): Promise<void> {
+  try {
+    const sb = getSupabase();
+    if (!sb) return;
+    await sb.rpc('leave_table', {
+      p_room_code: roomCode.trim().toUpperCase(),
+      p_player_id: playerId ?? null,
+      p_device_id: deviceId ?? null,
+    });
+  } catch {
+    /* fire-and-forget */
   }
 }
 
