@@ -1544,7 +1544,10 @@ export default function HomeScreen() {
                 ]}>🪙 {(chips ?? 0).toLocaleString()}</Text>
               </Pressable>
             )}
-            <AnimatedRN.Text style={[
+            {/* VAMOS-PRE-FRIENDS-QA: decorative floating "+chips" text is absolutely
+                positioned OVER the chip-shop button; without pointerEvents:none it
+                intercepts taps (even at opacity 0) and the shop button is dead on web. */}
+            <AnimatedRN.Text pointerEvents="none" style={[
               styles.chipFloatText,
               { opacity: chipFloatOpacity, transform: [{ translateY: chipFloatY }] },
             ]}>{chipFloatText}</AnimatedRN.Text>

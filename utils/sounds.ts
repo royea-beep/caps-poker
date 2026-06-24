@@ -113,7 +113,11 @@ export async function playSound(name: SoundName): Promise<void> {
     const vol = (config.soundVolume ?? 1) * (VOLUME_MAP[name as SoundName] ?? 0.3);
     try { player.volume = Math.min(1, vol); } catch {}
     try { player.seekTo(0); } catch {}
-    player.play();
+    // play() returns a promise on web (expo-audio -> HTMLAudioElement). Before a user
+    // gesture the browser rejects it with NotAllowedError; unhandled, that surfaces as
+    // an unhandledrejection -> console noise + a crash_reports entry once telemetry is
+    // live. Swallow it — audio is non-essential.
+    try { const r = player.play(); if (r && typeof r.catch === 'function') r.catch(() => {}); } catch {}
   } catch {
     // Silently ignore all audio errors
   }
@@ -139,7 +143,7 @@ export async function startAmbient(): Promise<void> {
     ambientPlayer = createAudioPlayer!(ambientFile);
     ambientPlayer.loop = true;
     ambientPlayer.volume = 0.15;
-    ambientPlayer.play();
+    try { const r = ambientPlayer.play(); if (r && typeof r.catch === 'function') r.catch(() => {}); } catch {}
     ambientPlaying = true;
   } catch {}
 }
