@@ -445,7 +445,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
   // ── Pill Show ──────────────────────────────────────────────────────────────
 
-  const isGameScreen = ['/game', '/multiplayer-game', '/sit-and-go', '/tournament', '/orientation-pick'].includes(path) || path.startsWith('/lobby');
+  const isGameScreen = ['/game', '/multiplayer-game', '/orientation-pick'].includes(path) || path.startsWith('/lobby');
   const fabBottom = pathname === '/' ? insets.bottom + 60 : insets.bottom + 16;
 
   const openReporter = useCallback(async () => {

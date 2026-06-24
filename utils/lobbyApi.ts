@@ -109,6 +109,21 @@ export async function leaveTable(roomCode: string, playerId?: string | null, dev
   }
 }
 
+/**
+ * Mark a table finished + clear its roster at game end (host only). Fixes the 'playing'
+ * leak: join_table autostart left rooms 'playing' forever. Idempotent + fire-safe; a
+ * no-op for codes not in game_rooms (e.g. legacy 6-digit internet rooms).
+ */
+export async function finishTable(roomCode: string): Promise<void> {
+  try {
+    const sb = getSupabase();
+    if (!sb || !roomCode) return;
+    await sb.rpc('finish_table', { p_room_code: roomCode.trim().toUpperCase() });
+  } catch {
+    /* fire-and-forget */
+  }
+}
+
 /** Group tables by their size (2/3/4) for the lobby's three sections. */
 export function groupTablesByType(tables: OpenTable[]): Record<PlayerCount, OpenTable[]> {
   const out: Record<PlayerCount, OpenTable[]> = { 2: [], 3: [], 4: [] };

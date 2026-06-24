@@ -17,6 +17,7 @@ import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { track } from '../utils/analytics';
+import { finishTable } from '../utils/lobbyApi';
 import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
@@ -489,6 +490,9 @@ export default function MultiplayerGameScreen() {
       won: myDelta > 0,
       is_complete: handResult.completeWinner !== null,
     }, 'multiplayer-game');
+    // Host owns the lobby room — mark it finished + clear its roster (kills the 'playing'
+    // leak). No-op for legacy internet rooms (code not in game_rooms).
+    if (storeRoomCode) void finishTable(storeRoomCode);
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
@@ -767,6 +771,8 @@ export default function MultiplayerGameScreen() {
 
   const handleBack = useCallback(() => {
     const leave = () => {
+      // Host abandoning a live table — finish it so it doesn't leak as 'playing'.
+      if (isHost && storeRoomCode) void finishTable(storeRoomCode);
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -786,7 +792,7 @@ export default function MultiplayerGameScreen() {
     } else {
       leave();
     }
-  }, [phase, router]);
+  }, [phase, router, isHost, storeRoomCode]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

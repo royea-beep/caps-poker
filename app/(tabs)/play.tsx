@@ -1,61 +1,64 @@
-import { useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useEffect, useCallback } from 'react';
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rs, rv } from '../../utils/responsive';
 import { t, getLanguage } from '../../utils/i18n';
+import { useGameStore } from '../../store/gameStore';
+import { getBoardCount } from '../../constants/gameConfig';
+import { ECONOMY_FLAGS } from '../../constants/economyConfig';
+import { getMatchCost, canAffordMatch } from '../../utils/economy';
+import { track } from '../../utils/analytics';
 
+/**
+ * PLAY surface — VAMOS GAME-MODES-OVERHAUL Phase 3.
+ *
+ * Two options only (approved mockup docs/mockups/play-lobby-mockup): Single Player vs
+ * bots (the unified /game) and the Multiplayer Lobby. Quick Poker / Sit&Go / Tournament
+ * / local-WiFi were retired here — single player lives on Home + this card; online play
+ * is the lobby.
+ */
 export default function PlayScreen() {
   const router = useRouter();
+  const config = useGameStore((s) => s.config);
+  const chips = useGameStore((s) => s.chips);
+
   useEffect(() => { import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'play')).catch(() => {}); }, []);
+
+  const playSinglePlayer = useCallback(() => {
+    // Same affordability gate as Home's PLAY NOW so the two solo entries behave alike.
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
+      if (!canAffordMatch(chips, cost)) {
+        Alert.alert('Not Enough Chips', `You need ${cost} chips to play.`);
+        return;
+      }
+    }
+    track('mode_start', { mode: 'single_player', player_count: config.numberOfPlayers }, 'play');
+    track('game_started', { player_count: config.numberOfPlayers }, 'play');
+    router.push('/game' as any);
+  }, [config, chips, router]);
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">PLAY</Text>
       <Text style={styles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playChooseMode}</Text>
 
-      {/* VAMOS-CAPS-MP-LOBBY Phase 2 — the multiplayer lobby (open tables / invite by code) */}
+      {/* Single Player vs bots — the unified game screen (Home has the player-count picker) */}
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Single Player. Practice vs bots" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#F5B546' }]} onPress={playSinglePlayer}>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🤖</Text>
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle}>Single Player</Text>
+          <Text style={styles.cardSub}>Practice vs bots · {getBoardCount(config.numberOfPlayers)} boards</Text>
+        </View>
+      </Pressable>
+
+      {/* Multiplayer lobby (open tables / invite by code) */}
       <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open table or invite friends by code" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
-        <View>
+        <View style={styles.cardBody}>
           <Text style={styles.cardTitle}>Multiplayer Lobby</Text>
           <Text style={styles.cardSub}>Join an open table · invite friends by code</Text>
-        </View>
-      </Pressable>
-
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Quick Poker. 200 · Fast-paced Omaha" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚡</Text>
-        <Text style={styles.cardTitle}>Quick Poker</Text>
-        <Text style={styles.cardSub} accessibilityLabel="200 · Fast-paced Omaha">200 💰 · Fast-paced Omaha</Text>
-      </Pressable>
-
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Sit & Go. 100 · Tournament format" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#3b82f6' }]} onPress={() => router.push('/sit-and-go' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎯</Text>
-        <Text style={styles.cardTitle}>Sit &amp; Go</Text>
-        <Text style={styles.cardSub} accessibilityLabel="100 · Tournament format">100 💰 · Tournament format</Text>
-      </Pressable>
-
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Tournament. Multi-round competition" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#8b5cf6' }]} onPress={() => router.push('/tournament' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text>
-        <Text style={styles.cardTitle}>Tournament</Text>
-        <Text style={styles.cardSub}>Multi-round competition</Text>
-      </Pressable>
-
-      {/* PR-I — was a single card titled "Online / Local WiFi" whose onPress
-          routed to /settings (a lie surfaced by the 2026-05-28 audit). Split
-          into two honest cards now that /lobby/host and /lobby/join exist. */}
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={`${t().hostGame}. ${t().hostLocalGameSub}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/host' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📡</Text>
-        <View>
-          <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostGame}</Text>
-          <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostLocalGameSub}</Text>
-        </View>
-      </Pressable>
-
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={`${t().joinGame}. ${t().joinLocalGameSub}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#a78bfa' }]} onPress={() => router.push('/lobby/join' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔗</Text>
-        <View>
-          <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinGame}</Text>
-          <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinLocalGameSub}</Text>
         </View>
       </Pressable>
     </SafeAreaView>
@@ -68,6 +71,7 @@ const styles = StyleSheet.create({
   title: { color: '#4FD6A8', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginBottom: rs(4) },
   sub: { color: 'rgba(255,255,255,0.85)', fontSize: rf(12), textAlign: 'center', marginBottom: rs(24) },
   card: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderRadius: rv(14), padding: rs(18), marginBottom: rs(12), flexDirection: 'row', alignItems: 'center', gap: rs(14) },
+  cardBody: { flex: 1 },
   cardEmoji: { fontSize: rf(28) },
   cardTitle: { color: '#ffffff', fontSize: rf(16), fontWeight: '700' },
   cardSub: { color: 'rgba(255,255,255,0.85)', fontSize: rf(12), marginTop: rs(2) },
