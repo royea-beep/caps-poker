@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPS — Play / Lobby Mockup (VAMOS GAME-MODES-OVERHAUL Phase 2)</title>
+<style>
+  :root{
+    --bg:#161922; --surface:rgba(255,255,255,0.04); --surface-2:rgba(255,255,255,0.07);
+    --line:rgba(255,255,255,0.10); --mint:#4FD6A8; --mint-dim:rgba(79,214,168,0.15);
+    --text:#fff; --muted:rgba(255,255,255,0.6); --seat:#2a2f3a; --seat-on:#4FD6A8;
+    --warn:#FFD700;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#0d0f15;font-family:var(--font);color:var(--text);
+    display:flex;gap:28px;flex-wrap:wrap;justify-content:center;padding:32px 16px}
+  .phone{width:360px;background:var(--bg);border-radius:30px;border:1px solid var(--line);
+    padding:22px 18px 28px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .scr-title{color:var(--mint);font-size:26px;font-weight:900;letter-spacing:4px;text-align:center;margin:4px 0 2px}
+  .scr-sub{color:var(--muted);font-size:11px;text-align:center;margin-bottom:20px}
+  .caption{width:360px;text-align:center;color:var(--muted);font-size:12px;margin-top:10px;flex-basis:360px}
+
+  /* Play surface — TWO options only */
+  .opt{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 18px;
+    margin-bottom:14px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
+  .opt:after{content:"";position:absolute;inset:0 auto 0 0;width:4px}
+  .opt.single:after{background:#c96a1a}
+  .opt.multi:after{background:var(--mint)}
+  .opt .emoji{font-size:34px}
+  .opt h3{margin:0;font-size:18px;font-weight:800}
+  .opt p{margin:3px 0 0;color:var(--muted);font-size:12px}
+
+  /* Lobby */
+  .type-head{display:flex;align-items:baseline;justify-content:space-between;margin:18px 2px 8px}
+  .type-head h4{margin:0;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .type-head .meta{color:var(--muted);font-size:10px}
+  .table{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;
+    display:flex;align-items:center;gap:12px}
+  .seats{display:flex;gap:5px}
+  .seat{width:14px;height:14px;border-radius:50%;background:var(--seat)}
+  .seat.on{background:var(--seat-on)}
+  .table .info{flex:1}
+  .table .info .cnt{font-size:13px;font-weight:700}
+  .table .info .lbl{color:var(--muted);font-size:10px}
+  .join{background:var(--mint);color:#08130f;font-weight:800;font-size:12px;border:none;border-radius:10px;
+    padding:9px 16px;cursor:pointer}
+  .join.full{background:var(--surface-2);color:var(--muted);font-weight:700}
+  .barrow{display:flex;gap:10px;margin-top:14px}
+  .ghost{flex:1;background:transparent;border:1.5px solid var(--mint);color:var(--mint);font-weight:800;
+    border-radius:12px;padding:12px;cursor:pointer;font-size:13px}
+  .code{flex:1;background:var(--mint-dim);border:1px solid rgba(79,214,168,.35);border-radius:12px;padding:12px;
+    text-align:center}
+  .code .lbl{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:1px}
+  .code .val{color:var(--mint);font-size:20px;font-weight:900;letter-spacing:3px}
+  .invite{margin-top:12px;background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:12px;
+    display:flex;gap:8px;align-items:center}
+  .invite input{flex:1;background:#0d0f15;border:1px solid var(--line);border-radius:8px;color:#fff;padding:9px 10px;font-size:13px}
+  .invite button{background:var(--surface-2);border:1px solid var(--line);color:#fff;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}
+  .auto{color:var(--warn);font-size:10px;margin:2px 2px 0}
+</style>
+</head>
+<body>
+
+  <!-- SCREEN 1 — PLAY (two options only) -->
+  <div class="phone">
+    <div class="scr-title">PLAY</div>
+    <div class="scr-sub">Choose how to play</div>
+
+    <div class="opt single">
+      <div class="emoji">🤖</div>
+      <div><h3>Single Player</h3><p>Practice vs bots · the game screen you know</p></div>
+    </div>
+
+    <div class="opt multi">
+      <div class="emoji">🌐</div>
+      <div><h3>Multiplayer Lobby</h3><p>Join an open table or invite friends by code</p></div>
+    </div>
+
+    <div class="auto" style="margin-top:18px">Everything else (Quick Poker · Tournament · Local WiFi) removed in Phase 3.</div>
+  </div>
+
+  <!-- SCREEN 2 — MULTIPLAYER LOBBY -->
+  <div class="phone">
+    <div class="scr-title">LOBBY</div>
+    <div class="scr-sub">Open tables · auto-start when full</div>
+
+    <!-- 2-PLAYER -->
+    <div class="type-head"><h4>Heads-Up</h4><span class="meta">2 players · 4 boards</span></div>
+    <div class="table">
+      <div class="seats"><span class="seat on"></span><span class="seat"></span></div>
+      <div class="info"><div class="cnt">1 / 2</div><div class="lbl">Table #A1 · waiting</div></div>
+      <button class="join">Join</button>
+    </div>
+    <div class="table">
+      <div class="seats"><span class="seat on"></span><span class="seat on"></span></div>
+      <div class="info"><div class="cnt">2 / 2</div><div class="lbl">Table #A2 · starting…</div></div>
+      <button class="join full">Full</button>
+    </div>
+
+    <!-- 3-PLAYER -->
+    <div class="type-head"><h4>3-Player</h4><span class="meta">3 players · 3 boards</span></div>
+    <div class="table">
+      <div class="seats"><span class="seat on"></span><span class="seat on"></span><span class="seat"></span></div>
+      <div class="info"><div class="cnt">2 / 3</div><div class="lbl">Table #B1 · waiting</div></div>
+      <button class="join">Join</button>
+    </div>
+    <div class="table">
+      <div class="seats"><span class="seat on"></span><span class="seat"></span><span class="seat"></span></div>
+      <div class="info"><div class="cnt">1 / 3</div><div class="lbl">Table #B2 · waiting</div></div>
+      <button class="join">Join</button>
+    </div>
+
+    <!-- 4-PLAYER -->
+    <div class="type-head"><h4>4-Player</h4><span class="meta">4 players · 2 boards</span></div>
+    <div class="table">
+      <div class="seats"><span class="seat on"></span><span class="seat on"></span><span class="seat on"></span><span class="seat"></span></div>
+      <div class="info"><div class="cnt">3 / 4</div><div class="lbl">Table #C1 · waiting</div></div>
+      <button class="join">Join</button>
+    </div>
+    <div class="table">
+      <div class="seats"><span class="seat on"></span><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+      <div class="info"><div class="cnt">1 / 4</div><div class="lbl">Table #C2 · waiting</div></div>
+      <button class="join">Join</button>
+    </div>
+
+    <div class="barrow">
+      <button class="ghost">+ Create table</button>
+    </div>
+
+    <!-- invite by code -->
+    <div class="code" style="margin-top:12px">
+      <div class="lbl">Your table code</div>
+      <div class="val">K7Q2</div>
+    </div>
+    <div class="invite">
+      <input placeholder="Enter a friend's code" value="" />
+      <button>Join</button>
+    </div>
+    <div class="auto">A table auto-starts the moment it fills · launches the same /game screen.</div>
+  </div>
+
+  <div class="caption">
+    CAPS — Play / Lobby mockup · VAMOS GAME-MODES-OVERHAUL Phase 2 (for approval before code).
+    6 open tables = 3 types (2P/3P/4P) × 2. Each table launches the unified <code>/game</code> screen.
+  </div>
+
+</body>
+</html>
