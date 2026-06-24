@@ -13,6 +13,15 @@ export default function PlayScreen() {
       <Text style={styles.title} accessibilityRole="header">PLAY</Text>
       <Text style={styles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playChooseMode}</Text>
 
+      {/* VAMOS-CAPS-MP-LOBBY Phase 2 — the multiplayer lobby (open tables / invite by code) */}
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open table or invite friends by code" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
+        <View>
+          <Text style={styles.cardTitle}>Multiplayer Lobby</Text>
+          <Text style={styles.cardSub}>Join an open table · invite friends by code</Text>
+        </View>
+      </Pressable>
+
       <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Quick Poker. 200 · Fast-paced Omaha" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#c96a1a' }]} onPress={() => router.push('/quick-poker' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚡</Text>
         <Text style={styles.cardTitle}>Quick Poker</Text>
