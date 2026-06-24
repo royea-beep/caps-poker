@@ -865,7 +865,6 @@ export default function HomeScreen() {
   const show_streak = stage !== 'new';
   const show_friend_challenge = stage !== 'new';
   const show_cups = stage === 'active' || stage === 'veteran';
-  const show_sng = stage === 'active' || stage === 'veteran';
   const show_stats = stage === 'active' || stage === 'veteran';
   const show_veteran = stage === 'veteran';
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
@@ -1819,32 +1818,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Mode buttons — active+ only */}
-        {show_sng && (
-          <View style={styles.modeButtonRow}>
-            <Pressable
-              style={[styles.modeBtn, styles.modeBtnBlue]}
-              onPress={() => {
-                getDeviceId().then(id => trackEvent('home', 'sit_n_go_button', id)).catch(() => {});
-                router.push('/sit-and-go' as any);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Sit and Go, 100 chips"
-            >
-              <Text style={[styles.modeBtnIcon]}>🎯</Text>
-              <Text style={[styles.modeBtnLabel, styles.modeBtnLabelBlue]}>Sit and Go (100 💰)</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.modeBtn, { backgroundColor: '#3d1a0e' }]}
-              onPress={() => router.push('/quick-poker' as any)}
-              accessibilityRole="button"
-              accessibilityLabel="Quick Poker, 200 chips"
-            >
-              <Text style={styles.modeBtnIcon}>⚡</Text>
-              <Text style={[styles.modeBtnLabel, { color: '#c96a1a' }]}>Quick Poker (200 💰)</Text>
-            </Pressable>
-          </View>
-        )}
+        {/* Quick Poker / Sit&Go mode row removed — Phase 3 (Play = Single Player + Multiplayer Lobby) */}
 
         {/* 📊 Stats — active+ only */}
         {show_stats && totalHandCount > 0 && (

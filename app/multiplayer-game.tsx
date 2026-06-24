@@ -16,6 +16,8 @@ import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMu
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
+import { track } from '../utils/analytics';
+import { finishTable } from '../utils/lobbyApi';
 import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
@@ -126,6 +128,9 @@ export default function MultiplayerGameScreen() {
   const [freeTimeLeft, setFreeTimeLeft] = useState(FREE_TIME_SECS);
   const [readyEnabled, setReadyEnabled] = useState(false);
   const countdownStartedRef = useRef(false);
+  // Guards the ready broadcast against double-send (timeout auto-fill vs manual ready,
+  // and React updater double-invoke). One hand per screen mount, so no reset needed.
+  const readySentRef = useRef(false);
   const freeTimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Chat (internet MP only) ---
@@ -476,12 +481,24 @@ export default function MultiplayerGameScreen() {
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
+    track('mp_game_ended', {
+      role: 'host',
+      room_code: storeRoomCode,
+      player_count: clientArray.length,
+      board_count: boardCount,
+      net_chips: myDelta,
+      won: myDelta > 0,
+      is_complete: handResult.completeWinner !== null,
+    }, 'multiplayer-game');
+    // Host owns the lobby room — mark it finished + clear its roster (kills the 'playing'
+    // leak). No-op for legacy internet rooms (code not in game_rooms).
+    if (storeRoomCode) void finishTable(storeRoomCode);
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router]);
+  }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router, storeRoomCode]);
 
   // Guest: build RevealData from BOARD_REVEAL + HAND_COMPLETE payloads
   const buildGuestRevealDataAndNavigate = useCallback((result: HandCompletePayload) => {
@@ -564,12 +581,21 @@ export default function MultiplayerGameScreen() {
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
+    track('mp_game_ended', {
+      role: 'guest',
+      room_code: storeRoomCode,
+      player_count: playerCount,
+      board_count: boardCount,
+      net_chips: myDelta,
+      won: myDelta > 0,
+      is_complete: result.isComplete,
+    }, 'multiplayer-game');
     // Store opponentName for results screen "You beat {name}!" header
     const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
     if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);
     setPhase('navigating');
     router.replace('/results');
-  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers]);
+  }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers, storeRoomCode]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
@@ -629,31 +655,39 @@ export default function MultiplayerGameScreen() {
     }
   }, [timeBankUsed, timer, myPlayerName, isHost, mpServer, mpClient, isInternetMP]);
 
-  // Auto-fill remaining cards and send ready
+  // Auto-fill remaining cards and send ready (placement-timer expiry / idle player).
+  // VAMOS-MP-LOBBY 3D soft-lock fix: compute from REFS and BROADCAST OUTSIDE the
+  // setState updater. The previous version did setHostReady/sendReady (a realtime
+  // broadcast) AND side effects INSIDE a setBoards(prev => {...}) updater — React can
+  // double-invoke that updater, firing the ready broadcast twice / from a transient
+  // state. That double-invoke is the autoSim fill-race + the MP soft-lock. A
+  // readySentRef makes the send idempotent so it can't race handleReady either.
   const autoFillAndReady = useCallback(() => {
-    setBoards((currentBoards) => {
-      const remaining = [...playerHandRef.current];
-      const updated = currentBoards.map((board) => {
-        const needed = CARDS_PER_BOARD - board.playerCards.length;
-        if (needed > 0) {
-          const toAdd = remaining.splice(0, needed);
-          return { ...board, playerCards: [...board.playerCards, ...toAdd] };
-        }
-        return board;
-      });
-      setPlayerHand([]);
-      setSelectedCardId(null);
-      setPhase('waiting');
-      timer.stop();
-
-      const assignments = updated.map((b) => b.playerCards);
-      if (isHost && mpServer) {
-        mpServer.setHostReady(assignments);
-      } else if (!isHost && mpClient) {
-        mpClient.sendReady(assignments);
+    if (readySentRef.current) return;
+    readySentRef.current = true;
+    const remaining = [...playerHandRef.current];
+    const updated = boardsRef.current.map((board) => {
+      const needed = CARDS_PER_BOARD - board.playerCards.length;
+      if (needed > 0) {
+        const toAdd = remaining.splice(0, needed);
+        return { ...board, playerCards: [...board.playerCards, ...toAdd] };
       }
-      return updated;
+      return board;
     });
+    // pure state updates (no side effects / broadcasts inside an updater)
+    setBoards(updated);
+    boardsRef.current = updated;
+    setPlayerHand([]);
+    setSelectedCardId(null);
+    setPhase('waiting');
+    timer.stop();
+    // broadcast exactly once, outside any updater
+    const assignments = updated.map((b) => b.playerCards);
+    if (isHost && mpServer) {
+      mpServer.setHostReady(assignments);
+    } else if (!isHost && mpClient) {
+      mpClient.sendReady(assignments);
+    }
   }, [timer, isHost, mpServer, mpClient]);
 
   // Card selection (same UX as game.tsx)
@@ -711,6 +745,8 @@ export default function MultiplayerGameScreen() {
 
   const handleReady = useCallback(() => {
     if (!allBoardsFull) return;
+    if (readySentRef.current) return; // idempotent: don't double-send (race with auto-fill timeout)
+    readySentRef.current = true;
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
     setSelectedCardId(null);
@@ -735,6 +771,8 @@ export default function MultiplayerGameScreen() {
 
   const handleBack = useCallback(() => {
     const leave = () => {
+      // Host abandoning a live table — finish it so it doesn't leak as 'playing'.
+      if (isHost && storeRoomCode) void finishTable(storeRoomCode);
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -754,7 +792,7 @@ export default function MultiplayerGameScreen() {
     } else {
       leave();
     }
-  }, [phase, router]);
+  }, [phase, router, isHost, storeRoomCode]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

@@ -347,7 +347,7 @@ export default function RootLayout() {
       // Dirty-shutdown triggered by force-close on Splash/Home with few steps = not a real crash.
       const crumbs = getBreadcrumbs();
       const lastScreen = crumbs.length > 0 ? crumbs[crumbs.length - 1].screen : '/';
-      const GAME_SCREENS = ['/game', '/multiplayer-game', '/results', '/lobby', '/sit-and-go', '/tournament', '/coaching', '/replay'];
+      const GAME_SCREENS = ['/game', '/multiplayer-game', '/results', '/lobby', '/coaching', '/replay'];
       const wasOnGameScreen = GAME_SCREENS.some(s => lastScreen.startsWith(s));
       if (!wasOnGameScreen && crumbs.length <= 3) {
         const { getGameLogs } = require('../utils/logBuffer');
@@ -559,19 +559,15 @@ export default function RootLayout() {
             <Stack.Screen name="replay" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="coaching" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="spectate" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="tournament" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="leaderboard" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="orientation-pick" options={{ animation: 'fade' }} />
             <Stack.Screen name="theme-pick" options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="quick-poker" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="chip-store" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="missions" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="achievements" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="referral" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="heatmap" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="play-of-day" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="sit-and-go-lobby" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="sit-and-go" options={{ animation: 'slide_from_bottom' }} />
           </Stack>
         </WebContainer>
       </BugReporter>
