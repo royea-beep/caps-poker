@@ -24,14 +24,10 @@ export default function FriendsScreen() {
         <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCard}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCardSub}</Text></View>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel={`${t().hostOnlineGame} · ${t().hostOnlineGameSub}`} style={[styles.card, { borderColor: '#60a5fa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/internet-host' as any)}>
+      {/* Dedupe: the two old online host/join cards collapsed into the single Multiplayer Lobby (/lobby). */}
+      <Pressable accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open table or invite friends by code" style={[styles.card, { borderColor: '#60a5fa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
-        <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostOnlineGame}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().hostOnlineGameSub}</Text></View>
-      </Pressable>
-
-      <Pressable accessibilityRole="button" accessibilityLabel={`${t().joinGame} · ${t().joinOnlineGameSub}`} style={[styles.card, { borderColor: '#a78bfa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/internet-join' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎮</Text>
-        <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinGame}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().joinOnlineGameSub}</Text></View>
+        <View><Text style={styles.cardTitle}>Multiplayer Lobby</Text><Text style={styles.cardSub}>Join an open table · invite friends by code</Text></View>
       </Pressable>
     </SafeAreaView>
   );

@@ -320,9 +320,9 @@ export default function MultiplayerGameScreen() {
   useEffect(() => {
     if (isHost || !mpClient) return;
     const navigateToRejoin = () => {
-      const code = storeRoomCode;
+      // Unified: rejoin returns to the Multiplayer Lobby (single MP system).
       useGameStore.getState().resetMultiplayer();
-      router.replace({ pathname: '/lobby/internet-join', params: code ? { prefillCode: code } : {} } as any);
+      router.replace('/lobby' as any);
     };
 
     const startReconnectWindow = (bannerMsg: string, onExpire: () => void) => {
@@ -405,9 +405,8 @@ export default function MultiplayerGameScreen() {
       ];
       if (!isHost && storeRoomCode) {
         buttons.push({ text: 'Rejoin', onPress: () => {
-          const code = storeRoomCode;
           useGameStore.getState().resetMultiplayer();
-          router.replace({ pathname: '/lobby/internet-join', params: { prefillCode: code } } as any);
+          router.replace('/lobby' as any);
         }});
       }
       Alert.alert('Waiting Timed Out', 'No response from other players. The game may have ended.', buttons);

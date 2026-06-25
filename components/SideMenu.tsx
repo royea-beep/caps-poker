@@ -137,8 +137,8 @@ export default function SideMenu({
 
           <View style={styles.divider} />
 
-          {/* Online / Multiplayer — Tournament + local-WiFi host/join retired in Phase 3 */}
-          <MenuItem icon="🎮" label={t().playOnline} onPress={() => navigate('/lobby/internet-host')} />
+          {/* Online / Multiplayer — single entry: the Multiplayer Lobby (/lobby). */}
+          <MenuItem icon="🎮" label={t().playOnline} onPress={() => navigate('/lobby')} />
 
           <View style={styles.divider} />
 
@@ -148,7 +148,7 @@ export default function SideMenu({
           <MenuItem icon="📜" label={t().handHistory} onPress={() => navigate('/hand-history')} />
           <MenuItem icon="🎓" label={t().coaching} onPress={() => navigate('/coaching')} />
           <MenuItem icon="👁" label={t().spectator} onPress={() => navigate('/spectate')} />
-          <MenuItem icon="🏅" label={t().leaderboard} onPress={() => navigate('/leaderboard')} />
+          {/* Dedupe: leaderboard canonical in Friends tab — removed here + from Profile. */}
 
           <View style={styles.divider} />
 

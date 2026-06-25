@@ -43,9 +43,7 @@ export default function ProfileScreen() {
         <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuDetailedStats} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuDetailedStats}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => router.push('/leaderboard' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuLeaderboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuLeaderboard}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
-        </Pressable>
+        {/* Dedupe: leaderboard lives canonically in the Friends tab (removed from Profile + Side Menu). */}
         <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuSettings} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚙️</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuSettings}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>

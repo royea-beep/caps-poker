@@ -6,7 +6,7 @@ import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
 import { t } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TUTORIAL_SEEN_KEY } from '../components/Tutorial';
+import { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
 import { PRO_QUOTES_ENABLED_KEY, PRO_VOICES_ENABLED_KEY } from '../components/ProQuoteBanner';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
@@ -1125,20 +1125,14 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle} accessibilityRole="header">TOOLS</Text>
         <ProQuotesToggle />
+        {/* DEDUPE-QA: a single replay for the one onboarding (InteractiveTutorial). The old
+            "show tutorial" (static Tutorial) + "How to Play (Onboarding)" (OnboardingOverlay)
+            buttons were removed along with those flows. */}
         <Button
           title={`📖 ${t().showTutorial}`}
           variant="secondary"
-          onPress={() => {
-            AsyncStorage.removeItem(TUTORIAL_SEEN_KEY).catch(() => {});
-            Alert.alert('Tutorial Reset', 'Tutorial will show on next app launch.');
-          }}
-          style={{ marginBottom: 12 }}
-        />
-        <Button
-          title="🃏 How to Play (Onboarding)"
-          variant="secondary"
           onPress={async () => {
-            await AsyncStorage.removeItem('hasSeenOnboarding').catch(() => {});
+            await AsyncStorage.removeItem(INTERACTIVE_TUTORIAL_KEY).catch(() => {});
             router.replace('/');
           }}
           style={{ marginBottom: 12 }}
