@@ -272,12 +272,17 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
       goToStep(step + 1);
     } else {
       AsyncStorage.setItem(INTERACTIVE_TUTORIAL_KEY, 'true').catch(() => {});
+      // DEDUPE-QA: this is now the single onboarding — emit the funnel-completion events that
+      // used to come from the separate OnboardingOverlay / WelcomeModal flows.
+      track('tutorial_completed', {}, 'onboarding');
+      track('onboarding_completed', {}, 'onboarding');
       onDone();
     }
   };
 
   const handleSkip = () => {
     track('tutorial_skipped', { at_step: step + 1 });
+    track('onboarding_skipped', { at_step: step + 1 }, 'onboarding');
     AsyncStorage.setItem(INTERACTIVE_TUTORIAL_KEY, 'true').catch(() => {});
     onDone();
   };

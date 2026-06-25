@@ -600,7 +600,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             const code = storeRoomCode;
             Alert.alert('Connection Lost', 'Lost connection to the game room. You can try to rejoin.', [
               { text: 'Leave', style: 'cancel', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } },
-              { text: 'Rejoin', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace({ pathname: '/lobby/internet-join', params: code ? { prefillCode: code } : {} } as any); } },
+              { text: 'Rejoin', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/lobby' as any); } },
             ]);
           },
         });
@@ -1152,7 +1152,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                       title="⚡ REMATCH"
                       variant="secondary"
                       onPress={() => {
-                        router.replace({ pathname: '/lobby/internet-host', params: { rematch: 'true', roomCode: storeRoomCode ?? '' } } as any);
+                        // Unified: rematch returns to the Multiplayer Lobby to start a fresh table.
+                        useGameStore.getState().resetMultiplayer();
+                        clearRevealData();
+                        router.replace('/lobby' as any);
                       }}
                       style={{ flex: 1 }}
                     />

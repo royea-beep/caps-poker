@@ -11,7 +11,7 @@
  *
  * This screen is a thin orchestrator: it reuses the shipped, hardened internet-MP
  * engine (utils/realtimeMultiplayer.ts) and game screen (app/multiplayer-game.tsx)
- * verbatim — same pattern as internet-host.tsx / internet-join.tsx, just unified and
+ * verbatim — the realtime host/guest pattern, unified into the lobby and
  * auto-starting. The placement-timer soft-lock fix (TASK 3D, broadcast OUTSIDE the
  * setState updater) lives in multiplayer-game.tsx and is exercised by this flow.
  *

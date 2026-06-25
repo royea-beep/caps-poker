@@ -52,7 +52,6 @@ import {
 import { CapsHooks } from '../../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../../utils/auth';
 import { FriendsBg } from '../../components/FriendsBg';
-import Tutorial, { TUTORIAL_SEEN_KEY } from '../../components/Tutorial';
 import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../../components/InteractiveTutorial';
 import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
@@ -83,7 +82,6 @@ import { WeeklyRecapModal } from '../../components/WeeklyRecapModal';
 import { StarterOfferModal } from '../../components/StarterOfferModal';
 import { debugLog } from '../../components/DebugOverlay';
 import { StreakPopup } from '../../components/StreakPopup';
-import { OnboardingOverlay, ONBOARDING_SEEN_KEY } from '../../components/OnboardingOverlay';
 import { getHandHistory, HandRecord } from '../../utils/handHistory';
 import { ACHIEVEMENTS } from '../../utils/achievements';
 import { track } from '../../utils/analytics';
@@ -96,109 +94,6 @@ const DAILY_REWARD_POPUP_SESSION_KEY = 'caps_daily_reward_popup_shown';
 const STREAK_POPUP_SESSION_KEY = 'caps_streak_popup_shown';
 
 const isWeb = Platform.OS === 'web';
-
-// ─── Web landing page — shown on first web visit before game ─────────────────
-function WebLandingHero({ onPlay }: { onPlay: () => void }) {
-  return (
-    <View style={webLandingStyles.overlay}>
-      <View style={webLandingStyles.hero}>
-        <Text style={webLandingStyles.suitRow} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">♠ ♥ ♦ ♣</Text>
-        <Text style={webLandingStyles.title}>CAPS POKER</Text>
-        <Text style={webLandingStyles.tagline}>Up to 4 Boards. 4 Cards. Your Strategy.</Text>
-
-        <View style={webLandingStyles.howToPlay}>
-          <Text style={webLandingStyles.step} accessibilityLabel="Place your cards across multiple poker boards">♠ Place your cards across multiple poker boards</Text>
-          <Text style={webLandingStyles.step} accessibilityLabel="Each board is a separate hand — yours vs the dealer">♥ Each board is a separate hand — yours vs the dealer</Text>
-          <Text style={webLandingStyles.step} accessibilityLabel="Win the majority of boards to earn chips">♦ Win the majority of boards to earn chips</Text>
-        </View>
-
-        <Pressable
-          style={webLandingStyles.playButton}
-          onPress={onPlay}
-          accessibilityRole="button"
-          accessibilityLabel="Play now"
-        >
-          <Text style={webLandingStyles.playButtonText}>PLAY NOW</Text>
-        </Pressable>
-
-        <Text style={webLandingStyles.mobileNote} accessibilityLabel="Best experience on mobile — available on TestFlight">
-          📱 Best experience on mobile — available on TestFlight
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-const webLandingStyles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject as object,
-    zIndex: 1000,
-    backgroundColor: '#161922',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hero: {
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    maxWidth: 480,
-    width: '100%',
-  },
-  suitRow: {
-    color: 'rgba(201,168,76,0.35)',
-    fontSize: 22,
-    letterSpacing: 10,
-    marginBottom: 12,
-  },
-  title: {
-    // VAMOS-THEME-SWEEP — was '#8B6914' gold-brown; now mint
-    fontSize: 42,
-    fontWeight: '800' as const,
-    color: '#4FD6A8',
-    letterSpacing: 6,
-    marginBottom: 8,
-    ...Platform.select({ web: { fontFamily: 'Playfair Display, Georgia, serif' } as any, default: {} }),
-  },
-  tagline: {
-    // VAMOS-THEME-SWEEP — was '#c9a84c' gold; now mint at slightly reduced sat
-    fontSize: 18,
-    color: 'rgba(79,214,168,0.85)',
-    marginBottom: 36,
-    textAlign: 'center' as const,
-    letterSpacing: 0.5,
-  },
-  howToPlay: {
-    marginBottom: 36,
-    gap: 14,
-    width: '100%',
-  },
-  step: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.75)',
-    textAlign: 'center' as const,
-    lineHeight: 22,
-  },
-  playButton: {
-    // VAMOS-THEME-SWEEP — PLAY NOW: maroon #161922 + gold-brown border → obsidian + mint border
-    backgroundColor: '#161922',
-    paddingHorizontal: 52,
-    paddingVertical: 18,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#4FD6A8',
-    marginBottom: 24,
-  },
-  playButtonText: {
-    fontSize: 20,
-    fontWeight: '900' as const,
-    color: '#ffffff',
-    letterSpacing: 3,
-  },
-  mobileNote: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    textAlign: 'center' as const,
-  },
-});
 
 // ─── Floating suit particles ──────────────────────────────────────────────────
 // PR-C: phases are delay/PARTICLE_DRIVER_PERIOD_MS, precomputed once.
@@ -619,179 +514,6 @@ const TUTORIAL_SLIDES_EN = [
   { icon: '♠️', title: 'Omaha Rules', text: 'Each player gets 4 cards per board.\nYou must use exactly 2 of your cards\n+ 3 community cards.' },
 ];
 
-function WelcomeModal({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
-  const isHE = getLanguage() === 'he';
-  const slides = isHE ? TUTORIAL_SLIDES_HE : TUTORIAL_SLIDES_EN;
-  const [slide, setSlide] = useState(0);
-  const opacity = useRef(new AnimatedRN.Value(0)).current;
-  const slideOpacity = useRef(new AnimatedRN.Value(1)).current;
-
-  useEffect(() => {
-    AnimatedRN.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }).start();
-  }, []);
-
-  const goToSlide = (next: number) => {
-    AnimatedRN.sequence([
-      AnimatedRN.timing(slideOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
-      AnimatedRN.timing(slideOpacity, { toValue: 1, duration: 120, useNativeDriver: true }),
-    ]).start();
-    setSlide(next);
-  };
-
-  const isLast = slide === slides.length - 1;
-  const current = slides[slide];
-
-  return (
-    <AnimatedRN.View
-      style={[welcomeStyles.overlay, { opacity }]}
-      accessibilityViewIsModal={true}
-      accessibilityRole="alert"
-    >
-      <Pressable
-        style={StyleSheet.absoluteFillObject}
-        onPress={onSkip}
-        accessibilityRole="button"
-        accessibilityLabel="Close dialog"
-      />
-      <View style={welcomeStyles.card}>
-        {/* Dots */}
-        <View style={welcomeStyles.dots}>
-          {slides.map((_, i) => (
-            <View key={i} style={[welcomeStyles.dot, i === slide && welcomeStyles.dotActive]} />
-          ))}
-        </View>
-
-        <AnimatedRN.View style={[{ alignItems: 'center', gap: rs(8), width: '100%' }, { opacity: slideOpacity }]}>
-          <Text style={welcomeStyles.slideIcon} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{current.icon}</Text>
-          <Text style={welcomeStyles.title}>{current.title}</Text>
-          <Text style={welcomeStyles.slideText}>{current.text}</Text>
-        </AnimatedRN.View>
-
-        {isLast ? (
-          <Pressable
-            onPress={() => { track('tutorial_completed', {}, 'home'); onStart(); }}
-            accessibilityRole="button"
-            accessibilityLabel={isHE ? 'יאללה!' : "Let's play"}
-            style={welcomeStyles.startBtn}
-          >
-            <Text style={welcomeStyles.startBtnText} accessibilityLanguage="he">{isHE ? 'יאללה!' : "LET'S PLAY!"}</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => goToSlide(slide + 1)}
-            accessibilityRole="button"
-            accessibilityLabel={isHE ? 'הבא' : 'Next'}
-            style={welcomeStyles.startBtn}
-          >
-            <Text style={welcomeStyles.startBtnText} accessibilityLanguage="he">{isHE ? 'הבא ›' : 'Next ›'}</Text>
-          </Pressable>
-        )}
-
-        <Pressable
-          onPress={() => { track('tutorial_skipped', { slide_index: slide }, 'home'); onSkip(); }}
-          accessibilityRole="button"
-          accessibilityLabel={isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={welcomeStyles.skipText} accessibilityLanguage="he">{isHE ? 'דלג על ההדרכה' : 'Skip tutorial'}</Text>
-        </Pressable>
-      </View>
-    </AnimatedRN.View>
-  );
-}
-
-const welcomeStyles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject as any,
-    backgroundColor: 'rgba(0,0,0,0.82)',
-    zIndex: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: rs(24),
-  },
-  card: {
-    backgroundColor: '#161922',
-    borderRadius: rv(16),
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.35)',
-    padding: rs(28),
-    alignItems: 'center',
-    gap: rs(6),
-    maxWidth: 360,
-    width: '100%',
-  },
-  title: {
-    color: '#c9a84c',
-    fontSize: rf(22),
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: rs(8),
-    textAlign: 'center',
-  },
-  line: {
-    color: '#ffffff',
-    fontSize: rf(15),
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: rf(22),
-  },
-  sub: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: rf(13),
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: rf(19),
-    marginTop: rs(4),
-    marginBottom: rs(4),
-  },
-  startBtn: {
-    backgroundColor: '#22C55E',
-    borderRadius: rv(12),
-    paddingVertical: rs(14),
-    paddingHorizontal: rs(40),
-    marginTop: rs(12),
-    width: '100%',
-    alignItems: 'center',
-  },
-  startBtnText: {
-    color: '#ffffff',
-    fontSize: rf(18),
-    fontWeight: '900',
-    letterSpacing: 3,
-  },
-  skipText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: rf(12),
-    fontWeight: '400',
-    marginTop: rs(10),
-    textDecorationLine: 'underline',
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: rs(6),
-    marginBottom: rs(16),
-  },
-  dot: {
-    width: rs(7),
-    height: rs(7),
-    borderRadius: rs(4),
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  dotActive: {
-    backgroundColor: '#c9a84c',
-  },
-  slideIcon: {
-    fontSize: rf(36),
-    marginBottom: rs(4),
-  },
-  slideText: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: rf(14),
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: rf(21),
-  },
-});
 
 const isBeta = Constants.expoConfig?.extra?.isBeta === true;
 
@@ -814,26 +536,14 @@ export default function HomeScreen() {
   const user = useAuthUser();
   const prevUserRef = useRef<typeof user>(undefined);
   const playerName = useGameStore((s) => s.playerName) || 'Player';
-  // Web shows marketing landing first; bypass for visual QA via ?play=1
-  // or EXPO_PUBLIC_WEB_PLAYABLE=1 at build time. Native always starts in-game.
-  const [hasStartedGame, setHasStartedGame] = useState(() => {
-    if (!isWeb) return true;
-    if (process.env.EXPO_PUBLIC_WEB_PLAYABLE === '1') return true;
-    if (typeof window !== 'undefined' && window.location?.search) {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('play') === '1') return true;
-    }
-    return false;
-  });
+  // (DEDUPE-QA) hasStartedGame + WebLandingHero removed — web lands straight in the app.
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveTutorial, setShowInteractiveTutorial] = useState(false);
   // Bug 3 (PR-G): offer modal must resolve before tutorial can show.
   // StarterOfferModal calls onResolved() when its check completes
   // (eligible+dismissed, or ineligible). Tutorial waits.
   const [offerResolved, setOfferResolved] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
   const [showNudge, setShowNudge] = useState(false);
   // mpMode moved to Settings (PLAY ONLINE section consolidated)
@@ -846,7 +556,6 @@ export default function HomeScreen() {
   // Supabase streak popup + onboarding
   const [showStreakPopup, setShowStreakPopup] = useState(false);
   const [streakData, setStreakData] = useState<{ current_streak: number; reward: number; next_reward: number; milestones?: unknown } | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const pendingStreakRef = useRef(false);
 
   // Home data cards — missions + leaderboard
@@ -1082,17 +791,13 @@ export default function HomeScreen() {
       } catch {}
     })();
 
-    // Interactive tutorial (S98) — shown if not yet seen (independent of old tutorial key)
+    // Interactive tutorial (S98) — THE single first-run onboarding, shown if not yet seen.
     // CI guard: when EXPO_PUBLIC_CAPS_CI=1 (sim auto-tour build), never show the tutorial.
     if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
       AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY).then(val => {
         if (!val) setShowInteractiveTutorial(true);
       }).catch(() => {});
     }
-    // Old static tutorial — kept for Settings "replay tutorial" flow
-    AsyncStorage.getItem(TUTORIAL_SEEN_KEY).then(val => {
-      if (!val) setShowTutorial(false); // superseded by interactive tutorial
-    }).catch(() => {});
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
       AsyncStorage.getItem(NUDGE_DISMISSED_KEY),
@@ -1121,12 +826,7 @@ export default function HomeScreen() {
       }
     }).catch(() => { setGamesPlayed(0); });
 
-    // Onboarding — show once for first-time users (skipped in CI auto-tour)
-    if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
-      void AsyncStorage.getItem(ONBOARDING_SEEN_KEY).then(seen => {
-        if (!seen) setShowOnboarding(true);
-      }).catch(() => {});
-    }
+    // (DEDUPE-QA) OnboardingOverlay removed — the InteractiveTutorial above is the single onboarding.
 
     // Supabase daily streak — claim_daily_streak RPC
     void (async () => {
@@ -1145,7 +845,9 @@ export default function HomeScreen() {
           track('streak_claimed', { day: data.current_streak }, 'home');
           setStreakData(data);
           await AsyncStorage.setItem(STREAK_POPUP_SESSION_KEY, '1').catch(() => {});
-          const seenOnboarding = await AsyncStorage.getItem(ONBOARDING_SEEN_KEY);
+          // Defer the streak popup behind the onboarding if it's about to show (InteractiveTutorial),
+          // else show it now. The InteractiveTutorial onDone fires the deferred popup.
+          const seenOnboarding = await AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY);
           if (seenOnboarding) {
             setShowStreakPopup(true);
           } else {
@@ -1247,25 +949,15 @@ export default function HomeScreen() {
     track('game_started', { player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
+    // First game: default to 3 players (3 boards, 12 cards) + guided mode — easier for beginners.
+    // (DEDUPE-QA) The WelcomeModal that used to gate this was removed; the InteractiveTutorial is the
+    // single onboarding, so the first PLAY tap goes straight into the beginner-defaulted game.
     if (gamesPlayed === 0) {
-      setShowWelcome(true);
-      return;
+      updateConfig({ numberOfPlayers: 3 });
+      AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
     }
     router.push('/game' as any);
-  }, [chips, config, router, gamesPlayed]);
-
-  const handleWelcomeStart = useCallback(async () => {
-    setShowWelcome(false);
-    // First game: default to 3 players (3 boards, 12 cards) — easier for beginners
-    updateConfig({ numberOfPlayers: 3 });
-    await AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
-    router.push('/game' as any);
-  }, [router, updateConfig]);
-
-  const handleWelcomeSkip = useCallback(() => {
-    setShowWelcome(false);
-    router.push('/game' as any);
-  }, [router]);
+  }, [chips, config, router, gamesPlayed, updateConfig]);
 
   const handleClaimDailyReward = useCallback(() => {
     const now = new Date();
@@ -1297,14 +989,6 @@ export default function HomeScreen() {
     CapsHooks.dailyRewardClaimed(pendingDailyStreak, pendingDailyReward);
     void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
   }, [pendingDailyReward, pendingDailyStreak]);
-
-  const handleOnboardingDone = useCallback(() => {
-    setShowOnboarding(false);
-    if (pendingStreakRef.current && streakData) {
-      pendingStreakRef.current = false;
-      setShowStreakPopup(true);
-    }
-  }, [streakData]);
 
   const handleGoogleSignIn = useCallback(async () => {
     setShowNudge(false);
@@ -1440,9 +1124,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Web landing page — shown on first web visit (native: never shown) */}
-      {isWeb && !hasStartedGame && <WebLandingHero onPlay={() => setHasStartedGame(true)} />}
-
+      {/* WebLandingHero removed (DEDUPE-QA) — web users land straight in the app + the one onboarding. */}
       <FriendsBg />
 
       {/* Floating suit particles — decorative background (PR-C: 1 driver SV + phase) */}
@@ -1464,31 +1146,21 @@ export default function HomeScreen() {
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
 
-      {/* Interactive Tutorial (S98) — 3 steps with real cards, first-launch.
-          PR-G Bug 1: only navigate to /game on native. On web, the
-            router.push fired on web too — /game would bounce back to / without
-            the ?play=1 param, the hasStartedGame lazy initializer would re-run
-            against the clean URL and return false, dropping the user back to the
-            marketing landing. Web users now stay in the lobby after tutorial.
-          PR-G Bug 3: tutorial waits for StarterOfferModal to resolve so the two
-            don't stack.
-          VAMOS-NEW-USER-FIRSTRUN 2026-06-22: (a) the offer is deferred to 5 games
-            (see StarterOfferModal mount below), so for new users the tutorial no
-            longer waits on it — `gamesPlayed < 5` proceeds immediately. (b) `!showOnboarding`
-            makes the interactive tutorial mutually exclusive with the OnboardingOverlay
-            so exactly ONE onboarding layer ever renders (was doubled/ghosted). */}
-      {showInteractiveTutorial && (offerResolved || gamesPlayed < 5) && !showOnboarding && (
+      {/* Interactive Tutorial (S98) — THE single first-run onboarding (DEDUPE-QA: OnboardingOverlay,
+          WelcomeModal and the static Tutorial were removed). 3 steps with real cards; waits for the
+          StarterOfferModal (or proceeds immediately for new users at gamesPlayed < 5). On native it
+          pushes into /game when done; on web it stays on the home/lobby. */}
+      {showInteractiveTutorial && (offerResolved || gamesPlayed < 5) && (
         <InteractiveTutorial onDone={() => {
           setShowInteractiveTutorial(false);
+          // Chain the deferred daily-streak popup (previously fired from OnboardingOverlay's onDone).
+          if (pendingStreakRef.current && streakData) {
+            pendingStreakRef.current = false;
+            setShowStreakPopup(true);
+          }
           if (!isWeb) router.push('/game' as any);
         }} />
       )}
-
-      {/* Tutorial overlay — 5-slide static tutorial (Settings replay only) */}
-      {showTutorial && !showInteractiveTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
-
-      {/* Welcome modal — shown before first game or tutorial replay */}
-      {showWelcome && <WelcomeModal onStart={handleWelcomeStart} onSkip={handleWelcomeSkip} />}
 
       {/* Daily reward popup — auto-shown on app open if claimable, once per session */}
       {showDailyRewardPopup && (
@@ -1505,8 +1177,10 @@ export default function HomeScreen() {
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         onShowTutorial={() => {
+          // Replay the single onboarding (InteractiveTutorial).
           setMenuOpen(false);
-          setTimeout(() => setShowWelcome(true), 60);
+          AsyncStorage.removeItem(INTERACTIVE_TUTORIAL_KEY).catch(() => {});
+          setTimeout(() => setShowInteractiveTutorial(true), 60);
         }}
         chips={chips}
         user={user}
@@ -2061,7 +1735,7 @@ export default function HomeScreen() {
       {/* Welcome toast after sign-in */}
       {showWelcomeToast && <WelcomeToast name={welcomeToastName} />}
 
-      {showOnboarding && (offerResolved || gamesPlayed < 5) && <OnboardingOverlay onDone={handleOnboardingDone} />}
+      {/* OnboardingOverlay removed (DEDUPE-QA) — InteractiveTutorial is the single onboarding. */}
       {showStreakPopup && streakData && (
         <StreakPopup
           streak={streakData.current_streak}
