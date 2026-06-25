@@ -86,26 +86,27 @@ export default function ReferralScreen() {
         const { data: codeData } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
         if (codeData?.code) setMyCode(codeData.code as string);
 
-        // Referral stats from referral_links table
-        const { data: links } = await sb
-          .from('referral_links')
-          .select('id, chips_awarded, is_redeemed')
-          .eq('device_id', deviceId);
-
-        if (links) {
-          const redeemed = links.filter((l: any) => l.is_redeemed);
-          setFriendsJoined(redeemed.length);
-          const earned = redeemed.reduce((sum: number, l: any) => sum + (l.chips_awarded ?? 0), 0);
-          setChipsEarned(earned);
-        }
-
-        // Reward amount from app_config
+        // Reward amount from app_config (fetched first so we can derive chips earned).
         const { data: cfg } = await sb
           .from('app_config')
           .select('value')
           .eq('key', 'referral_both_get_chips')
           .single();
-        if (cfg?.value) setRewardPerReferral(Number(cfg.value) || 500);
+        const reward = cfg?.value ? (Number(cfg.value) || 500) : 500;
+        setRewardPerReferral(reward);
+
+        // Referral stats from referral_links (real schema: per-link `conversions` count).
+        // Was selecting non-existent chips_awarded/is_redeemed -> HTTP 400 (FIX-REFERRAL-PLAYOFDAY).
+        const { data: links } = await sb
+          .from('referral_links')
+          .select('id, conversions')
+          .eq('device_id', deviceId);
+
+        if (links) {
+          const joined = links.reduce((sum: number, l: any) => sum + (l.conversions ?? 0), 0);
+          setFriendsJoined(joined);
+          setChipsEarned(joined * reward);
+        }
       } catch {
         // silent
       } finally {
