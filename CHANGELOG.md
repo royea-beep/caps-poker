@@ -1,5 +1,37 @@
 # CAPS POKER — CHANGELOG
 
+## Web — v2.7.0 — 2026-06-25
+**Git (origin/main):** `e046314` · **Web bundle:** `index-f945e4e3` · **Deploy:** Vercel (caps.ftable.co.il)
+**Native parity:** ⚠️ NOT in TestFlight Build 506 (built from `aea77e1`). Everything below landed
+AFTER 506 and is **web-only** until an OTA (JS-only, runtimeVersion 2.7.0 matches 506) or a new build ships.
+
+### GAME-MODES-OVERHAUL (3-phase) — Play surface rebuilt around a real multiplayer lobby
+- **Phase 1** (`4a06f8f`): unified the game screen — Sit&Go now redirects to `/game`.
+- **Phase 2 lobby** (`3d98fce`): MP lobby on `game_rooms` — `list_open_tables`/`create_table`/`join_table`
+  SECURITY DEFINER RPCs (atomic seat-claim, autostart when full, invite-by-code) + lobby UI.
+- **3A/3B** (`99a2a0c`): `room_players` roster wiring + `leave_table` + presence-on-exit + cleanup cron.
+- **3D** (`0184448`): fixed the placement-timer soft-lock (broadcast OUTSIDE the setState updater).
+- **3C/3E** (`58ea013`, `362d1a9`): wired lobby tables to a REAL synced host-authoritative MP game
+  (`app/lobby/table.tsx` over the realtime engine) + `mp_game_started`/`mp_game_ended` telemetry;
+  fixed a guest-hang (mpClient must be in the store before connect). 2-client runtime-verified end-to-end.
+- **Phase 3** (`df38d64`): Play = **Single Player + Multiplayer Lobby** only (retired Quick Poker /
+  Tournament / local-WiFi / Sit&Go entry points + routes). Fixed the `game_rooms` **'playing' leak** —
+  new `finish_table` RPC (host marks room finished + clears roster at game end) + hardened
+  `cleanup_expired_rooms` (self-heals stale 'playing', purges terminal rooms). Live-verified:
+  room goes waiting→playing→finished with roster cleared.
+
+### Pre-overhaul fixes (also post-506, web-only)
+- **Telemetry re-activated** (`127a566`): `track()` was a no-op since 2026-06-17 (track_event RPC 404'd);
+  restored + breadcrumbs + web error capture. Web-QA fixes (`272144b`): chip-shop tappable, audio
+  autoplay-rejection swallowed.
+- **Economy spend contract** fix (branch, applied as live DB change): `spend_chips` returns
+  `{ok,chips_spent}` — Quick Poker entry / shop purchase were silently failing.
+- **Cups progression** fix (live): `check_cups` now handles win_streak (platinum winnable) + grants XP;
+  backfilled bronze tier.
+- **Leaderboard** : hide seed `bot_%` rows (client filter shipped; live `DELETE` is owner DB cleanup).
+
+---
+
 ## Build 237 — v1.9.4 — 2026-03-25
 **Git:** 7a906b6
 **OTAs in this build:**
