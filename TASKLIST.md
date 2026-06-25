@@ -17,7 +17,7 @@ See **PREPLAN.md** for the phase/north-star framing.
 
 | # | Task | Phase | Status | Notes |
 |---|------|-------|--------|-------|
-| P1-1 | **Lobby RPC reproducibility** — capture live defs as repo migrations | A | 🟡 | `supabase/migrations/20260625000000_mp_lobby_rpcs.sql` written. join_table/leave_table/finish_table/cleanup = verbatim; **create_table + list_open_tables were RECONSTRUCTED** (MCP was down) → reconcile verbatim against live `pg_get_functiondef` before trusting for a rebuild. |
+| P1-1 | **Lobby RPC reproducibility** — capture live defs as repo migrations | A | ✅ | `supabase/migrations/20260625000000_mp_lobby_rpcs.sql` — all six RPCs (list_open_tables, create_table, join_table, leave_table, finish_table, cleanup_expired_rooms) now VERBATIM from live `pg_get_functiondef`. Reproducibility gap closed. |
 | P1-2 | **Repoint REMATCH + "Play Online" → `/lobby`** | C/E | ⬜ | `results.tsx` REMATCH and SideMenu/friends "Play Online" still route to the OLD `/lobby/internet-host` (6-digit). Decide: unify onto the new lobby, or keep internet-host for friends. |
 | P1-3 | **MP hardening** — reconnection, 3P/4P real-world, presence-drop, spectator | E | 🟡 | Engine has reconnection/snapshot (CAPS 10/12); 3P verified to fill+start in test, not played to completion; 4P unverified. |
 | P1-4 | **Verify economy/cups/telemetry on native** (currently web-only) | A/C | ⬜ | Depends on P0-1. Confirm spend_chips deducts, cups award, track_event lands from the native binary. |

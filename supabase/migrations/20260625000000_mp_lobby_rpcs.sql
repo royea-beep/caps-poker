@@ -6,59 +6,59 @@
 -- Jun-24/25 sessions and were NOT previously captured as repo migrations — so a fresh
 -- DB rebuild would have lacked them. This file closes that gap.
 --
--- VERBATIM (pulled from live pg_get_functiondef): join_table, leave_table,
---   cleanup_expired_rooms (hardened), finish_table.
--- RECONSTRUCTED from the client contract (utils/lobbyApi.ts) + join_table's style
---   (the live MCP was unavailable when this file was written): create_table,
---   list_open_tables. ⚠️ Reconcile these two against live `pg_get_functiondef` before
---   relying on this file for a production-parity rebuild (see TASKLIST P2).
+-- All six functions are VERBATIM from live `pg_get_functiondef` (gxrpunvhjcrzqnitbqah):
+-- list_open_tables, create_table, join_table, leave_table, finish_table,
+-- cleanup_expired_rooms (hardened). Reproducibility gap closed.
 --
 -- Tables assumed to exist (created earlier): game_rooms, room_players. status check
 -- allows: waiting | starting | playing | finished | abandoned.
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
--- list_open_tables() — joinable tables (waiting + not expired). RECONSTRUCTED.
+-- list_open_tables() — joinable tables (waiting + not expired). VERBATIM from live.
+-- Returns a jsonb array shaped exactly to the client's OpenTable (player_count = max_players).
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.list_open_tables()
-RETURNS SETOF game_rooms
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO 'public'
+ RETURNS jsonb
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
 AS $function$
-  SELECT * FROM game_rooms
-  WHERE status = 'waiting' AND (expires_at IS NULL OR expires_at > now())
-  ORDER BY created_at DESC;
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'id', id, 'room_code', room_code, 'host_name', host_name, 'status', status,
+    'current_players', current_players, 'max_players', max_players,
+    'player_count', max_players, 'game_config', game_config, 'created_at', created_at
+  ) ORDER BY max_players, created_at), '[]'::jsonb)
+  FROM game_rooms
+  WHERE status='waiting' AND (expires_at IS NULL OR expires_at > now());
 $function$;
 
 -- ---------------------------------------------------------------------------
--- create_table(...) — open a waiting room, seat the host (roster seat 0). RECONSTRUCTED.
--- 4-char safe-charset code (excludes confusables 0/O/1/I/L), expires +30min,
--- game_config = {numberOfPlayers:N}.
+-- create_table(...) — open a waiting room, seat the host (roster seat 0). VERBATIM from live.
+-- 4-char code (charset ABCDEFGHJKLMNPQRSTUVWXYZ23456789), expires +30min, game_config={numberOfPlayers:N}.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.create_table(p_player_count int, p_host_id uuid DEFAULT NULL::uuid, p_host_name text DEFAULT 'Player'::text, p_device_id text DEFAULT NULL::text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
+CREATE OR REPLACE FUNCTION public.create_table(p_player_count integer, p_host_id uuid DEFAULT NULL::uuid, p_host_name text DEFAULT 'Player'::text, p_device_id text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
 AS $function$
-DECLARE v_code text; v_room game_rooms; v_chars text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; i int;
+DECLARE v_code text; v_row game_rooms; i int;
 BEGIN
-  IF p_player_count NOT IN (2, 3, 4) THEN RETURN jsonb_build_object('ok', false, 'error', 'bad_player_count'); END IF;
+  IF p_player_count NOT IN (2,3,4) THEN RETURN jsonb_build_object('ok',false,'error','bad_player_count'); END IF;
   LOOP
     v_code := '';
-    FOR i IN 1..4 LOOP v_code := v_code || substr(v_chars, 1 + floor(random() * length(v_chars))::int, 1); END LOOP;
-    EXIT WHEN NOT EXISTS (SELECT 1 FROM game_rooms WHERE room_code = v_code AND status IN ('waiting', 'starting', 'playing'));
+    FOR i IN 1..4 LOOP v_code := v_code || substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', floor(random()*32)::int + 1, 1); END LOOP;
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM game_rooms WHERE room_code=v_code AND status IN ('waiting','starting','playing'));
   END LOOP;
   INSERT INTO game_rooms (room_code, host_id, host_name, status, player_count, current_players, max_players, game_config, expires_at)
-  VALUES (v_code, p_host_id, COALESCE(NULLIF(p_host_name, ''), 'Player'), 'waiting', p_player_count, 1, p_player_count,
+  VALUES (v_code, p_host_id, COALESCE(NULLIF(p_host_name,''),'Player'), 'waiting', p_player_count, 1, p_player_count,
           jsonb_build_object('numberOfPlayers', p_player_count), now() + interval '30 minutes')
-  RETURNING * INTO v_room;
+  RETURNING * INTO v_row;
   INSERT INTO room_players (room_id, user_id, display_name, seat_index, is_host, device_id)
-  VALUES (v_room.id, p_host_id, COALESCE(NULLIF(p_host_name, ''), 'Player'), 0, true, p_device_id);
-  RETURN jsonb_build_object('ok', true, 'id', v_room.id, 'room_code', v_room.room_code, 'status', v_room.status,
-    'current_players', v_room.current_players, 'max_players', v_room.max_players, 'game_config', v_room.game_config);
+  VALUES (v_row.id, p_host_id, COALESCE(NULLIF(p_host_name,''),'Player'), 0, true, p_device_id);
+  RETURN jsonb_build_object('ok',true,'id',v_row.id,'room_code',v_row.room_code,'status',v_row.status,
+    'current_players',v_row.current_players,'max_players',v_row.max_players,'game_config',v_row.game_config);
 END; $function$;
 
 -- ---------------------------------------------------------------------------
