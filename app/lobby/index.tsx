@@ -1,23 +1,29 @@
 /**
- * Multiplayer Lobby — VAMOS-CAPS-MP-LOBBY Phase 2 + TASK 3C (game-wiring).
+ * Public Multiplayer Lobby — VAMOS-CAPS-LOBBY-V2-CLIENT (TASK A + B).
  *
- * Open tables grouped by the 3 types (2P/3P/4P), 2+ per type. Join / Create /
- * invite-by-code. Creating or joining hands off to the Table Room (app/lobby/table),
- * which opens the realtime channel and auto-starts a REAL synced multiplayer game when
- * the table fills — host-authoritative over utils/realtimeMultiplayer + multiplayer-game.
- * This screen owns DISCOVERY only (list/create/join/code); the table room owns the
- * realtime session and the DB seat from that point on.
+ * Browses the PERSISTENT public pool (list_public_tables): 2 hostless tables per
+ * type (2P/3P/4P) = 6 slots, always rendered. Tapping JOIN claims a seat via
+ * join_table — the FIRST joiner of a hostless table becomes the host (is_host:true)
+ * and the others are guests; the table fills → auto-starts → the pool replenishes.
+ * Host/guest is decided by join_table's response, NOT by who "created" the table.
+ *
+ * No invite-code field and no create button live here — that is the PRIVATE friends
+ * lobby (app/lobby/private). This screen also offers the solo fallback ("Play vs Bots")
+ * so a player with no one to play never hits a dead end.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, RefreshControl, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
+import { getBoardCount } from '../../constants/gameConfig';
+import { ECONOMY_FLAGS } from '../../constants/economyConfig';
+import { getMatchCost, canAffordMatch } from '../../utils/economy';
 import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
-import { listOpenTables, createTable, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
+import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -25,29 +31,34 @@ const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 4, label: '4-Player', boards: 2 },
 ];
 
+const TABLES_PER_TYPE = 2;
 const POLL_MS = 5000;
 
-export default function MultiplayerLobby() {
+/** A rendered slot: a real public table, or a placeholder while the pool replenishes. */
+type Slot = { key: string; table: OpenTable | null };
+
+export default function PublicLobby() {
   const router = useRouter();
   const playerName = useGameStore((s) => s.playerName);
+  const config = useGameStore((s) => s.config);
+  const chips = useGameStore((s) => s.chips);
 
   const [tables, setTables] = useState<OpenTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const userIdRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
-    const rows = await listOpenTables();
+    const rows = await listPublicTables();
     setTables(rows);
     setLoading(false);
     setRefreshing(false);
   }, []);
 
   useEffect(() => {
-    track('lobby_opened', {}, 'lobby');
+    track('lobby_opened', { table_kind: 'public' }, 'lobby');
     getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
     getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
     void load();
@@ -63,46 +74,53 @@ export default function MultiplayerLobby() {
     } as any);
   }, [router]);
 
-  const handleCreate = useCallback(async (n: PlayerCount) => {
+  const playSolo = useCallback(() => {
+    if (busy) return;
+    if (ECONOMY_FLAGS.matchCostEnabled) {
+      const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
+      if (!canAffordMatch(chips, cost)) {
+        Alert.alert('Not Enough Chips', `You need ${cost} chips to play.`);
+        return;
+      }
+    }
+    track('solo_fallback_tapped', { player_count: config.numberOfPlayers }, 'lobby');
+    track('mode_start', { mode: 'single_player', player_count: config.numberOfPlayers }, 'lobby');
+    router.push('/game' as any);
+  }, [busy, config, chips, router]);
+
+  const handleJoin = useCallback(async (tbl: OpenTable) => {
     if (busy) return;
     setBusy(true);
     try {
-      const res = await createTable(n, userIdRef.current, playerName || 'Player', deviceIdRef.current);
-      if (res?.ok && res.room_code) {
-        track('table_created', { player_count: n, room_code: res.room_code }, 'lobby');
-        enterTableRoom(res.room_code, n, true);
-      } else {
-        Alert.alert('Could not create table', 'Please try again.');
-      }
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, playerName, enterTableRoom]);
-
-  const handleJoin = useCallback(async (roomCode: string, n?: PlayerCount) => {
-    if (busy || !roomCode.trim()) return;
-    setBusy(true);
-    try {
-      const res = await joinTable(roomCode, userIdRef.current, playerName || 'Player', deviceIdRef.current);
+      const res = await joinTable(tbl.room_code, userIdRef.current, playerName || 'Player', deviceIdRef.current);
       if (res?.ok) {
-        const count = (res.game_config?.numberOfPlayers ?? res.max_players ?? n ?? 2) as PlayerCount;
-        track('table_joined', { player_count: count, room_code: res.room_code }, 'lobby');
+        const count = (res.game_config?.numberOfPlayers ?? res.max_players ?? tbl.player_count ?? 2) as PlayerCount;
+        const asHost = res.is_host === true;
+        track('table_joined', { table_kind: 'public', player_count: count, room_code: res.room_code, is_host: asHost }, 'lobby');
         if (res.autostarted) {
-          track('table_autostarted', { player_count: count, room_code: res.room_code }, 'lobby');
+          track('table_autostarted', { table_kind: 'public', player_count: count, room_code: res.room_code }, 'lobby');
         }
-        // Whether the seat-claim auto-started the table or not, enter the table room as a
-        // guest; the host's realtime presence fill triggers the actual deal.
-        enterTableRoom(res.room_code ?? roomCode.trim().toUpperCase(), count, false);
+        // is_host drives the realtime role: the first joiner of a hostless pool table
+        // runs the RealtimeServer; everyone else joins as a guest.
+        enterTableRoom(res.room_code ?? tbl.room_code, count, asHost);
       } else {
-        Alert.alert('Table unavailable', 'That table is full or no longer open.');
+        Alert.alert('Table unavailable', 'That table just filled — try another.');
         await load();
       }
     } finally {
       setBusy(false);
     }
-  }, [busy, enterTableRoom, load]);
+  }, [busy, playerName, enterTableRoom, load]);
 
   const grouped = groupTablesByType(tables);
+  // Always render TABLES_PER_TYPE slots per type; pad with placeholders if the pool is
+  // mid-replenish so the lobby never collapses to an empty/jumpy layout.
+  const slotsFor = (n: PlayerCount): Slot[] => {
+    const real = grouped[n].slice(0, TABLES_PER_TYPE);
+    const slots: Slot[] = real.map((t) => ({ key: t.id, table: t }));
+    while (slots.length < TABLES_PER_TYPE) slots.push({ key: `ph-${n}-${slots.length}`, table: null });
+    return slots;
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -113,23 +131,18 @@ export default function MultiplayerLobby() {
         <Text style={styles.title} accessibilityRole="header">LOBBY</Text>
         <View style={{ width: rs(40) }} />
       </View>
-      <Text style={styles.sub}>Open tables · auto-start when full</Text>
+      <Text style={styles.sub}>Public tables · auto-start when full</Text>
 
-      {/* invite-by-code */}
-      <View style={styles.codeRow}>
-        <TextInput
-          value={code}
-          onChangeText={(t) => setCode(t.toUpperCase().slice(0, 4))}
-          placeholder="Enter a friend's code"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          autoCapitalize="characters"
-          style={styles.codeInput}
-          accessibilityLabel="Enter a table code"
-        />
-        <Pressable style={[styles.codeBtn, (!code.trim() || busy) && styles.btnDisabled]} disabled={!code.trim() || busy} onPress={() => handleJoin(code)} accessibilityRole="button" accessibilityLabel="Join by code">
-          <Text style={styles.codeBtnText}>Join</Text>
-        </Pressable>
-      </View>
+      {/* Solo fallback — never leave a player without a way to play. */}
+      <Pressable style={[styles.soloBtn, busy && styles.btnDisabled]} disabled={busy} onPress={playSolo} accessibilityRole="button" accessibilityLabel="Play Solo versus bots">
+        <Text style={styles.soloEmoji}>🤖</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.soloTitle}>Play Solo vs Bots</Text>
+          <Text style={styles.soloSub}>Jump in now · {getBoardCount(config.numberOfPlayers)} boards</Text>
+        </View>
+        <Text style={styles.soloGo}>›</Text>
+      </Pressable>
+
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#4FD6A8" /></View>
       ) : (
@@ -144,11 +157,26 @@ export default function MultiplayerLobby() {
                 <Text style={styles.sectionTitle}>{label}</Text>
                 <Text style={styles.sectionMeta}>{n} players · {boards} boards</Text>
               </View>
-              {grouped[n].length === 0 && <Text style={styles.empty}>No open tables — create one</Text>}
-              {grouped[n].map((tbl) => {
+              {slotsFor(n).map((slot) => {
+                if (!slot.table) {
+                  return (
+                    <View key={slot.key} style={[styles.table, styles.tablePlaceholder]}>
+                      <View style={styles.seats}>
+                        {Array.from({ length: n }).map((_, i) => (<View key={i} style={styles.seat} />))}
+                      </View>
+                      <View style={styles.tableInfo}>
+                        <Text style={styles.tableCountMuted}>Opening a table…</Text>
+                      </View>
+                      <View style={[styles.joinBtn, styles.joinBtnFull]}>
+                        <Text style={styles.joinTextFull}>…</Text>
+                      </View>
+                    </View>
+                  );
+                }
+                const tbl = slot.table;
                 const full = tbl.current_players >= tbl.max_players;
                 return (
-                  <View key={tbl.id} style={styles.table}>
+                  <View key={slot.key} style={styles.table}>
                     <View style={styles.seats}>
                       {Array.from({ length: tbl.max_players }).map((_, i) => (
                         <View key={i} style={[styles.seat, i < tbl.current_players && styles.seatOn]} />
@@ -161,7 +189,7 @@ export default function MultiplayerLobby() {
                     <Pressable
                       style={[styles.joinBtn, (full || busy) && styles.joinBtnFull]}
                       disabled={full || busy}
-                      onPress={() => handleJoin(tbl.room_code, n)}
+                      onPress={() => handleJoin(tbl)}
                       accessibilityRole="button"
                       accessibilityLabel={full ? `Table ${tbl.room_code} full` : `Join table ${tbl.room_code}`}
                     >
@@ -170,9 +198,6 @@ export default function MultiplayerLobby() {
                   </View>
                 );
               })}
-              <Pressable style={[styles.createBtn, busy && styles.btnDisabled]} disabled={busy} onPress={() => handleCreate(n)} accessibilityRole="button" accessibilityLabel={`Create a ${n}-player table`}>
-                <Text style={styles.createText}>+ Create {label} table</Text>
-              </Pressable>
             </View>
           ))}
         </ScrollView>
@@ -188,27 +213,27 @@ const styles = StyleSheet.create({
   title: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900', letterSpacing: 3 },
   sub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(11), textAlign: 'center', marginTop: rv(2), marginBottom: rv(10) },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  codeRow: { flexDirection: 'row', gap: rs(8), paddingHorizontal: rs(16), marginBottom: rv(6) },
-  codeInput: { flex: 1, backgroundColor: '#0d0f15', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: rv(10), color: '#fff', paddingHorizontal: rs(12), paddingVertical: rv(10), fontSize: rf(15), letterSpacing: 2 },
-  codeBtn: { backgroundColor: 'rgba(79,214,168,0.15)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.35)', borderRadius: rv(10), paddingHorizontal: rs(18), justifyContent: 'center' },
-  codeBtnText: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(14) },
+  soloBtn: { flexDirection: 'row', alignItems: 'center', gap: rs(12), marginHorizontal: rs(16), marginBottom: rv(8), backgroundColor: 'rgba(245,181,70,0.12)', borderWidth: 1.5, borderColor: 'rgba(245,181,70,0.55)', borderRadius: rv(14), paddingVertical: rv(12), paddingHorizontal: rs(16) },
+  soloEmoji: { fontSize: rf(24) },
+  soloTitle: { color: '#F5B546', fontSize: rf(15), fontWeight: '800' },
+  soloSub: { color: 'rgba(255,255,255,0.7)', fontSize: rf(11), marginTop: rv(1) },
+  soloGo: { color: '#F5B546', fontSize: rf(26), fontWeight: '900' },
   section: { marginBottom: rv(18) },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(6) },
   sectionTitle: { color: '#fff', fontSize: rf(13), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   sectionMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10) },
-  empty: { color: 'rgba(255,255,255,0.4)', fontSize: rf(12), fontStyle: 'italic', paddingVertical: rv(8) },
   table: { flexDirection: 'row', alignItems: 'center', gap: rs(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: rv(12), padding: rs(12), marginBottom: rv(8) },
+  tablePlaceholder: { opacity: 0.5 },
   seats: { flexDirection: 'row', gap: rs(5) },
   seat: { width: rs(13), height: rs(13), borderRadius: rs(7), backgroundColor: '#2a2f3a' },
   seatOn: { backgroundColor: '#4FD6A8' },
   tableInfo: { flex: 1 },
   tableCount: { color: '#fff', fontSize: rf(14), fontWeight: '700' },
+  tableCountMuted: { color: 'rgba(255,255,255,0.5)', fontSize: rf(13), fontStyle: 'italic' },
   tableSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10) },
-  joinBtn: { backgroundColor: '#4FD6A8', borderRadius: rv(10), paddingHorizontal: rs(16), paddingVertical: rv(8) },
+  joinBtn: { backgroundColor: '#4FD6A8', borderRadius: rv(10), paddingHorizontal: rs(16), paddingVertical: rv(8), minWidth: rs(64), alignItems: 'center' },
   joinBtnFull: { backgroundColor: 'rgba(255,255,255,0.08)' },
   joinText: { color: '#08130f', fontWeight: '800', fontSize: rf(13) },
   joinTextFull: { color: 'rgba(255,255,255,0.6)' },
-  createBtn: { borderWidth: 1.5, borderColor: 'rgba(79,214,168,0.5)', borderRadius: rv(12), paddingVertical: rv(11), alignItems: 'center', marginTop: rv(2) },
-  createText: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(13) },
   btnDisabled: { opacity: 0.5 },
 });

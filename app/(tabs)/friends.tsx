@@ -24,10 +24,10 @@ export default function FriendsScreen() {
         <View><Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCard}</Text><Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCardSub}</Text></View>
       </Pressable>
 
-      {/* Dedupe: the two old online host/join cards collapsed into the single Multiplayer Lobby (/lobby). */}
-      <Pressable accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open table or invite friends by code" style={[styles.card, { borderColor: '#60a5fa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby' as any)}>
-        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
-        <View><Text style={styles.cardTitle}>Multiplayer Lobby</Text><Text style={styles.cardSub}>Join an open table · invite friends by code</Text></View>
+      {/* Private play with friends — create a table to share, or join by code (public pool lives on the Play tab). */}
+      <Pressable accessibilityRole="button" accessibilityLabel="Private Table. Create a table to share, or join a friend by code" style={[styles.card, { borderColor: '#60a5fa' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => router.push('/lobby/private' as any)}>
+        <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
+        <View><Text style={styles.cardTitle}>Private Table</Text><Text style={styles.cardSub}>Create a table to share · or join by code</Text></View>
       </Pressable>
     </SafeAreaView>
   );
