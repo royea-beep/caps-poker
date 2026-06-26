@@ -69,6 +69,8 @@ export interface ChatMsg {
   playerName: string;
   text: string;
   timestamp: number;
+  /** Sender's seat — stable identity for isMe (names collide: all anon players are "Player"). */
+  seat: number;
 }
 
 export interface RealtimeServerCallbacks {
@@ -390,7 +392,7 @@ export class RealtimeServer {
         break;
       }
       case 'CHAT': {
-        const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now() };
+        const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now(), seat: data?.seat ?? -1 };
         this.callbacks.onChat?.(msg);
         // Re-broadcast to all so everyone sees it
         this.broadcastToAll('CHAT', msg);
@@ -717,8 +719,8 @@ export class RealtimeServer {
   // =========================================================================
 
   /** Broadcast a message to all players in the room */
-  sendChat(text: string, playerName: string): void {
-    const msg: ChatMsg = { playerName, text, timestamp: Date.now() };
+  sendChat(text: string, playerName: string, seat: number = 0): void {
+    const msg: ChatMsg = { playerName, text, timestamp: Date.now(), seat };
     this.callbacks.onChat?.(msg);
     this.broadcastToAll('CHAT', msg);
   }
@@ -1090,7 +1092,7 @@ export class RealtimeClient {
         break;
       }
       case 'CHAT': {
-        const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now() };
+        const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now(), seat: data?.seat ?? -1 };
         this.callbacks.onChat?.(msg);
         break;
       }
@@ -1117,8 +1119,8 @@ export class RealtimeClient {
   }
 
   /** Send a chat message to the room (host will re-broadcast to all) */
-  sendChat(text: string, playerName: string): void {
-    this.send('CHAT', { playerName, text, timestamp: Date.now() });
+  sendChat(text: string, playerName: string, seat: number = -1): void {
+    this.send('CHAT', { playerName, text, timestamp: Date.now(), seat });
   }
 
   /** Request next hand from host */
