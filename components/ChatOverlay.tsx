@@ -98,12 +98,16 @@ export default function ChatBar({ myName, onSend }: BarProps) {
   );
 }
 
-/** Floating top toast layer for incoming/outgoing messages — never over the cards. */
+/**
+ * Incoming/outgoing message toasts. Rendered IN-FLOW inside a fixed-height dock the parent
+ * reserves between the header and the boards, so bubbles never reach the board frame
+ * (they overflow upward into the header band, never down onto cards).
+ */
 export function ChatBubbles({ messages }: { messages: ChatMessage[] }) {
   const visible = messages.slice(-3);
   if (visible.length === 0) return null;
   return (
-    <View style={styles.bubblesLayer} pointerEvents="none">
+    <View style={styles.bubblesInline} pointerEvents="none">
       {visible.map((msg) => (
         <FadingBubble key={msg.id} msg={msg} />
       ))}
@@ -175,16 +179,10 @@ const styles = StyleSheet.create({
   sendBtn: { backgroundColor: COLORS.gold, borderRadius: rv(8), paddingHorizontal: rs(14), paddingVertical: rs(9), justifyContent: 'center' },
   sendBtnText: { color: COLORS.background, fontSize: rf(12), fontWeight: '800', letterSpacing: 1 },
 
-  // Floating top toast layer — away from the boards + hand.
-  bubblesLayer: {
-    position: 'absolute',
-    top: rv(44),
-    left: 0,
-    right: 0,
-    paddingHorizontal: rs(12),
+  // In-flow toasts inside the parent's reserved dock — never reach the board frame.
+  bubblesInline: {
     gap: rs(4),
     alignItems: 'flex-start',
-    zIndex: 50,
   },
   bubble: {
     alignSelf: 'flex-start',

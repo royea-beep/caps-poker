@@ -173,15 +173,18 @@ export default function MultiplayerGameScreen() {
   }, []);
 
   const handleSendChat = useCallback((text: string, kind: SendKind = 'chat') => {
-    const msg: ChatMsg = { playerName: myPlayerName, text, timestamp: Date.now() };
+    // Echo locally (isMe). The broadcast carries our seat so receivers skip our own echo
+    // and label everyone else correctly — names collide (all anon players are "Player").
+    const msg: ChatMsg = { playerName: myPlayerName, text, timestamp: Date.now(), seat: playerIndex };
     addChatMessage(msg, true);
     if (isHost && (mpServer as any)?.sendChat) {
-      (mpServer as any).sendChat(text, myPlayerName);
+      (mpServer as any).sendChat(text, myPlayerName, playerIndex);
     } else if (!isHost && (mpClient as any)?.sendChat) {
-      (mpClient as any).sendChat(text, myPlayerName);
+      (mpClient as any).sendChat(text, myPlayerName, playerIndex);
     }
-    track(kind === 'emote' ? 'emote_sent' : 'chat_sent', { room_code: storeRoomCode, player_count: playerCount, role: isHost ? 'host' : 'guest' }, 'multiplayer-game');
-  }, [myPlayerName, isHost, mpServer, mpClient, addChatMessage, storeRoomCode, playerCount]);
+    // `kind` carries the actual emoji (so we can measure which emotes are used); chat is 'text'.
+    track(kind === 'emote' ? 'emote_sent' : 'chat_sent', { kind: kind === 'emote' ? text : 'text', room_code: storeRoomCode, player_count: playerCount, role: isHost ? 'host' : 'guest' }, 'multiplayer-game');
+  }, [myPlayerName, playerIndex, isHost, mpServer, mpClient, addChatMessage, storeRoomCode, playerCount]);
 
   // --- Time bank (1 use per hand) ---
   const [timeBankUsed, setTimeBankUsed] = useState(false);
@@ -239,16 +242,18 @@ export default function MultiplayerGameScreen() {
   }, [isHost, isInternetMP, mpServer, storeRoomCode, boardCount]);
 
   // --- Wire onChat for host ---
+  // Skip our OWN message (seat match) — it was already echoed locally; everyone else is
+  // not-me. Seat-based so it's correct even when all anon players share the name "Player".
   useEffect(() => {
     if (!isHost || !mpServer || !isInternetMP) return;
-    mpServer.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current) addChatMessage(msg, false); } });
-  }, [isHost, mpServer, isInternetMP, addChatMessage]);
+    mpServer.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current && msg.seat !== playerIndex) addChatMessage(msg, false); } });
+  }, [isHost, mpServer, isInternetMP, addChatMessage, playerIndex]);
 
   // --- Wire onChat for guest ---
   useEffect(() => {
     if (isHost || !mpClient || !isInternetMP) return;
-    mpClient.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current) addChatMessage(msg, msg.playerName === myPlayerName); } });
-  }, [isHost, mpClient, isInternetMP, addChatMessage, myPlayerName]);
+    mpClient.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current && msg.seat !== playerIndex) addChatMessage(msg, false); } });
+  }, [isHost, mpClient, isInternetMP, addChatMessage, playerIndex]);
 
   // --- Host: wire server callbacks on mount ---
   useEffect(() => {
@@ -902,8 +907,12 @@ export default function MultiplayerGameScreen() {
         )}
       </View>
 
-      {/* Chat bubbles — floating TOP toast layer (never over the boards/hand) */}
-      {isInternetMP && <ChatBubbles messages={chatMessages} />}
+      {/* Chat bubbles — reserved dock between header and boards (overflow up, never onto cards) */}
+      {isInternetMP && (
+        <View style={styles.bubbleDock} pointerEvents="box-none">
+          <ChatBubbles messages={chatMessages} />
+        </View>
+      )}
 
       {/* Boards — stacked vertically (same as game.tsx) */}
       <View style={styles.boardsColumn}>
@@ -1042,6 +1051,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  // Reserved band for chat toasts so they never reach the boards (overflow spills up).
+  bubbleDock: {
+    height: 34,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    overflow: 'visible',
   },
   boardsColumn: {
     flex: 1,
