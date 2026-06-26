@@ -54,11 +54,11 @@ export default function PlayScreen() {
       </Pressable>
 
       {/* Multiplayer lobby (open tables / invite by code) */}
-      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open table or invite friends by code" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
+      <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open public table" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
         <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
         <View style={styles.cardBody}>
           <Text style={styles.cardTitle}>Multiplayer Lobby</Text>
-          <Text style={styles.cardSub}>Join an open table · invite friends by code</Text>
+          <Text style={styles.cardSub}>Join an open public table · auto-start when full</Text>
         </View>
       </Pressable>
     </SafeAreaView>
