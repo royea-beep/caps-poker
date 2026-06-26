@@ -58,6 +58,8 @@ interface GameStore {
   // Multiplayer state (NOT persisted)
   multiplayerMode: 'none' | 'host' | 'guest';
   roomCode: string | null;
+  /** Set only for CLUB tables — drives record_club_result at game end (null otherwise). */
+  clubCode: string | null;
   hostIP: string | null;
   connectedPlayers: ConnectedPlayerInfo[];
   gameSession: GameSession | null;
@@ -109,6 +111,7 @@ interface GameStore {
   // Multiplayer actions
   setMultiplayerMode: (mode: 'none' | 'host' | 'guest') => void;
   setRoomCode: (code: string | null) => void;
+  setClubCode: (code: string | null) => void;
   setHostIP: (ip: string | null) => void;
   setConnectedPlayers: (players: ConnectedPlayerInfo[]) => void;
   updatePlayer: (id: string, updates: Partial<ConnectedPlayerInfo>) => void;
@@ -168,6 +171,7 @@ export const useGameStore = create<GameStore>()(
       // Multiplayer state (not persisted via partialize)
       multiplayerMode: 'none',
       roomCode: null,
+      clubCode: null,
       hostIP: null,
       connectedPlayers: [],
       gameSession: null,
@@ -256,6 +260,7 @@ export const useGameStore = create<GameStore>()(
       // Multiplayer actions
       setMultiplayerMode: (mode) => set({ multiplayerMode: mode }),
       setRoomCode: (code) => set({ roomCode: code }),
+      setClubCode: (code) => set({ clubCode: code }),
       setHostIP: (ip) => set({ hostIP: ip }),
       setConnectedPlayers: (players) => set({ connectedPlayers: players }),
       updatePlayer: (id, updates) =>
@@ -279,6 +284,7 @@ export const useGameStore = create<GameStore>()(
         set({
           multiplayerMode: 'none',
           roomCode: null,
+          clubCode: null,
           hostIP: null,
           connectedPlayers: [],
           gameSession: null,
