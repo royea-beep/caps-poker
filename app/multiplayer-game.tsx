@@ -21,7 +21,7 @@ import { finishTable } from '../utils/lobbyApi';
 import { recordClubResult } from '../utils/clubApi';
 import { getDeviceId } from '../utils/leaderboard';
 import { getSupabase } from '../utils/supabase';
-import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
+import ChatBar, { ChatBubbles, ChatMessage, SendKind } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
 import { OpponentHeader } from '../components/OpponentHeader';
@@ -172,7 +172,7 @@ export default function MultiplayerGameScreen() {
     setChatMessages((prev) => [...prev.slice(-20), newMsg]); // keep last 20 in memory
   }, []);
 
-  const handleSendChat = useCallback((text: string) => {
+  const handleSendChat = useCallback((text: string, kind: SendKind = 'chat') => {
     const msg: ChatMsg = { playerName: myPlayerName, text, timestamp: Date.now() };
     addChatMessage(msg, true);
     if (isHost && (mpServer as any)?.sendChat) {
@@ -180,7 +180,8 @@ export default function MultiplayerGameScreen() {
     } else if (!isHost && (mpClient as any)?.sendChat) {
       (mpClient as any).sendChat(text, myPlayerName);
     }
-  }, [myPlayerName, isHost, mpServer, mpClient, addChatMessage]);
+    track(kind === 'emote' ? 'emote_sent' : 'chat_sent', { room_code: storeRoomCode, player_count: playerCount, role: isHost ? 'host' : 'guest' }, 'multiplayer-game');
+  }, [myPlayerName, isHost, mpServer, mpClient, addChatMessage, storeRoomCode, playerCount]);
 
   // --- Time bank (1 use per hand) ---
   const [timeBankUsed, setTimeBankUsed] = useState(false);
@@ -901,6 +902,9 @@ export default function MultiplayerGameScreen() {
         )}
       </View>
 
+      {/* Chat bubbles — floating TOP toast layer (never over the boards/hand) */}
+      {isInternetMP && <ChatBubbles messages={chatMessages} />}
+
       {/* Boards — stacked vertically (same as game.tsx) */}
       <View style={styles.boardsColumn}>
         {boards.map((board, i) => (
@@ -960,11 +964,10 @@ export default function MultiplayerGameScreen() {
         </View>
       )}
 
-      {/* Chat overlay — internet MP only */}
+      {/* Emote/chat bar — dedicated IN-FLOW strip below the hand (never over cards) */}
       {isInternetMP && (
-        <ChatOverlay
+        <ChatBar
           myName={myPlayerName}
-          messages={chatMessages}
           onSend={handleSendChat}
         />
       )}

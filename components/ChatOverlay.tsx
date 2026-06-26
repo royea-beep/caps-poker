@@ -1,7 +1,13 @@
 /**
- * ChatOverlay — floating chat + emote bar for internet multiplayer.
+ * Chat + emote for internet multiplayer — VAMOS-CAPS-PLACEMENT-UI-FIX.
+ *
+ * Split into two non-overlapping pieces so neither covers the player's cards:
+ *  - ChatBar (default): an IN-FLOW dedicated strip (emote row + optional text input).
+ *    The parent docks it below the hand, so it never floats on top of cards (Issue A).
+ *    Uses space-between so the 6 emotes + chat toggle lay out cleanly 320–480px (Issue D).
+ *  - ChatBubbles: a floating TOP toast layer (pointerEvents none, auto-fading), away from
+ *    the boards and the hand — bubbles no longer render over Board 4 / cards (Issue B).
  * ZERO Reanimated — RN Animated only.
- * S60 sprint.
  */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -25,45 +31,34 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-interface Props {
-  myName: string;
-  onSend: (text: string) => void; // called when player sends a message or emote
-  messages: ChatMessage[];        // externally managed list (max 3 shown)
-}
+export type SendKind = 'emote' | 'chat';
 
-const EMOTES = ['😂', '💀', '🔥', '👏', '😤', '🤝'];
+export const EMOTES = ['😂', '💀', '🔥', '👏', '😤', '🤝'];
 const AUTO_DISMISS_MS = 4000;
 
-export default function ChatOverlay({ myName, onSend, messages }: Props) {
+interface BarProps {
+  myName: string;
+  onSend: (text: string, kind: SendKind) => void;
+}
+
+/** In-flow emote strip + optional text input. Docked below the hand by the parent. */
+export default function ChatBar({ myName, onSend }: BarProps) {
   const [inputText, setInputText] = useState('');
   const [showInput, setShowInput] = useState(false);
 
-  const handleEmote = useCallback((emote: string) => {
-    onSend(emote);
-  }, [onSend]);
+  const handleEmote = useCallback((emote: string) => { onSend(emote, 'emote'); }, [onSend]);
 
   const handleSend = useCallback(() => {
     const trimmed = inputText.trim();
     if (!trimmed) return;
-    onSend(trimmed);
+    onSend(trimmed, 'chat');
     setInputText('');
     setShowInput(false);
     Keyboard.dismiss();
   }, [inputText, onSend]);
 
-  // Show max 3 messages
-  const visible = messages.slice(-3);
-
   return (
-    <View style={styles.container} pointerEvents="box-none">
-      {/* Message bubbles — max 3, newest at bottom */}
-      <View style={styles.messagesArea} pointerEvents="none">
-        {visible.map((msg) => (
-          <FadingBubble key={msg.id} msg={msg} />
-        ))}
-      </View>
-
-      {/* Input row (when expanded) */}
+    <View style={styles.barRoot}>
       {showInput && (
         <View style={styles.inputRow}>
           <TextInput
@@ -76,27 +71,42 @@ export default function ChatOverlay({ myName, onSend, messages }: Props) {
             onSubmitEditing={handleSend}
             autoFocus
             maxLength={60}
+            accessibilityLabel="Chat message input"
           />
-          <Pressable style={styles.sendBtn} onPress={handleSend}>
+          <Pressable style={styles.sendBtn} onPress={handleSend} accessibilityRole="button" accessibilityLabel="Send message">
             <Text style={styles.sendBtnText}>SEND</Text>
           </Pressable>
         </View>
       )}
 
-      {/* Emote + chat toggle bar */}
       <View style={styles.emoteBar}>
         {EMOTES.map((emote) => (
-          <Pressable key={emote} style={styles.emoteBtn} onPress={() => handleEmote(emote)}>
+          <Pressable key={emote} style={styles.emoteBtn} onPress={() => handleEmote(emote)} accessibilityRole="button" accessibilityLabel={`Send ${emote} emote`}>
             <Text style={styles.emoteText}>{emote}</Text>
           </Pressable>
         ))}
         <Pressable
           style={[styles.emoteBtn, styles.chatToggleBtn]}
           onPress={() => setShowInput((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={showInput ? 'Close chat input' : 'Open chat input'}
         >
           <Text style={styles.chatToggleText}>{showInput ? '✕' : '💬'}</Text>
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+/** Floating top toast layer for incoming/outgoing messages — never over the cards. */
+export function ChatBubbles({ messages }: { messages: ChatMessage[] }) {
+  const visible = messages.slice(-3);
+  if (visible.length === 0) return null;
+  return (
+    <View style={styles.bubblesLayer} pointerEvents="none">
+      {visible.map((msg) => (
+        <FadingBubble key={msg.id} msg={msg} />
+      ))}
     </View>
   );
 }
@@ -107,11 +117,7 @@ function FadingBubble({ msg }: { msg: ChatMessage }) {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      AnimatedRN.timing(opacity, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
+      AnimatedRN.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
     }, AUTO_DISMISS_MS - 400);
     return () => clearTimeout(t);
   }, []);
@@ -125,56 +131,24 @@ function FadingBubble({ msg }: { msg: ChatMessage }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: rs(80),
-    left: 0,
-    right: 0,
-    paddingHorizontal: rs(12),
-    gap: rs(4),
-  },
-  messagesArea: {
-    gap: rs(4),
-    marginBottom: rs(4),
-  },
-  bubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    borderRadius: rv(10),
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: rs(10),
-    paddingVertical: rs(5),
-    maxWidth: '80%',
-    flexDirection: 'row',
-    gap: rs(6),
-    alignItems: 'center',
-  },
-  bubbleMe: {
-    alignSelf: 'flex-end',
-    borderColor: 'rgba(201,168,76,0.3)',
-    backgroundColor: 'rgba(201,168,76,0.12)',
-  },
-  bubbleSender: {
-    color: COLORS.goldBright,
-    fontSize: rf(10),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  bubbleText: {
-    color: COLORS.textPrimary,
-    fontSize: rf(13),
-    fontWeight: '500',
-    flexShrink: 1,
+  // In-flow dedicated strip — sits below the hand, never over cards.
+  barRoot: {
+    paddingHorizontal: rs(8),
+    paddingTop: rv(4),
+    paddingBottom: rv(2),
+    gap: rv(4),
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   emoteBar: {
     flexDirection: 'row',
-    gap: rs(4),
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   emoteBtn: {
-    width: rs(36),
-    height: rs(36),
+    width: rs(34),
+    height: rs(34),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.55)',
@@ -183,22 +157,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
     ...Platform.select({ web: { cursor: 'pointer' } as any }),
   },
-  emoteText: {
-    fontSize: rf(18),
-  },
-  chatToggleBtn: {
-    borderColor: 'rgba(201,168,76,0.4)',
-    backgroundColor: 'rgba(201,168,76,0.1)',
-    marginLeft: rs(4),
-  },
-  chatToggleText: {
-    fontSize: rf(16),
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: rs(6),
-    alignItems: 'center',
-  },
+  emoteText: { fontSize: rf(18) },
+  chatToggleBtn: { borderColor: 'rgba(201,168,76,0.4)', backgroundColor: 'rgba(201,168,76,0.1)' },
+  chatToggleText: { fontSize: rf(16) },
+  inputRow: { flexDirection: 'row', gap: rs(6), alignItems: 'center' },
   textInput: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -210,17 +172,34 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontSize: rf(14),
   },
-  sendBtn: {
-    backgroundColor: COLORS.gold,
-    borderRadius: rv(8),
-    paddingHorizontal: rs(14),
-    paddingVertical: rs(9),
-    justifyContent: 'center',
+  sendBtn: { backgroundColor: COLORS.gold, borderRadius: rv(8), paddingHorizontal: rs(14), paddingVertical: rs(9), justifyContent: 'center' },
+  sendBtnText: { color: COLORS.background, fontSize: rf(12), fontWeight: '800', letterSpacing: 1 },
+
+  // Floating top toast layer — away from the boards + hand.
+  bubblesLayer: {
+    position: 'absolute',
+    top: rv(44),
+    left: 0,
+    right: 0,
+    paddingHorizontal: rs(12),
+    gap: rs(4),
+    alignItems: 'flex-start',
+    zIndex: 50,
   },
-  sendBtnText: {
-    color: COLORS.background,
-    fontSize: rf(12),
-    fontWeight: '800',
-    letterSpacing: 1,
+  bubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    borderRadius: rv(10),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: rs(10),
+    paddingVertical: rs(5),
+    maxWidth: '80%',
+    flexDirection: 'row',
+    gap: rs(6),
+    alignItems: 'center',
   },
+  bubbleMe: { alignSelf: 'flex-end', borderColor: 'rgba(201,168,76,0.3)', backgroundColor: 'rgba(201,168,76,0.18)' },
+  bubbleSender: { color: COLORS.goldBright, fontSize: rf(10), fontWeight: '700', letterSpacing: 0.5 },
+  bubbleText: { color: COLORS.textPrimary, fontSize: rf(13), fontWeight: '500', flexShrink: 1 },
 });

@@ -28,8 +28,33 @@ function crashCode(): string {
   return `CRW-${s}`;
 }
 
+/**
+ * Non-actionable rejections that must NOT be logged as crashes. The browser autoplay
+ * policy rejects audio play() before a user gesture; expo-audio's web player.play()
+ * doesn't return the rejecting promise, so it can't be caught at the call site and always
+ * surfaces as an unhandledrejection (different wording per browser: Chrome "play() failed
+ * … didn't interact", iOS/Safari "not allowed by the user agent or the platform"). Audio
+ * is non-essential, so these are noise — they were flooding crash_reports from MP games.
+ */
+function isBenign(message: string, stack?: string): boolean {
+  const m = (message || '').toLowerCase();
+  const s = (stack || '').toLowerCase();
+  if (
+    m.includes('play() failed') ||
+    m.includes("didn't interact") ||
+    m.includes('the request is not allowed by the user agent') ||
+    m.includes('notallowederror') ||
+    s.includes('playsound') ||
+    s.includes('expo-audio')
+  ) return true;
+  // ResizeObserver loop notifications are benign browser messages, not errors.
+  if (m.includes('resizeobserver loop')) return true;
+  return false;
+}
+
 function report(message: string, stack?: string): void {
   if (!message) return;
+  if (isBenign(message, stack)) return;
   const now = Date.now();
   // De-dupe identical errors + cap frequency so a render loop can't flood the table.
   if (message === lastMessage && now - lastSentAt < THROTTLE_MS) return;
