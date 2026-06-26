@@ -18,6 +18,9 @@ import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { track } from '../utils/analytics';
 import { finishTable } from '../utils/lobbyApi';
+import { recordClubResult } from '../utils/clubApi';
+import { getDeviceId } from '../utils/leaderboard';
+import { getSupabase } from '../utils/supabase';
 import ChatOverlay, { ChatMessage } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
@@ -37,6 +40,24 @@ const haptic = (style: any) => {
 const hapticNotify = (type: any) => {
   Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
+
+/**
+ * If this was a CLUB table (store.clubCode set), record THIS client's result into the
+ * club mini-league. Each player records itself, so every member's stats update.
+ * Fire-and-forget; no-op for public/private tables (clubCode null).
+ */
+function maybeRecordClubResult(netChips: number) {
+  const clubCode = useGameStore.getState().clubCode;
+  if (!clubCode) return;
+  (async () => {
+    try {
+      const deviceId = await getDeviceId().catch(() => null);
+      const userId = (await getSupabase()?.auth.getUser().catch(() => null))?.data?.user?.id ?? null;
+      track('club_game_ended', { club_code: clubCode, net_chips: Math.round(netChips || 0), won: netChips > 0 }, 'multiplayer-game');
+      await recordClubResult(clubCode, deviceId, userId, netChips > 0, netChips);
+    } catch { /* fire-and-forget */ }
+  })();
+}
 
 const FREE_TIME_SECS = 30;
 const COUNTDOWN_SECS = 30;
@@ -492,6 +513,8 @@ export default function MultiplayerGameScreen() {
     // Host owns the lobby room — mark it finished + clear its roster (kills the 'playing'
     // leak). No-op for legacy internet rooms (code not in game_rooms).
     if (storeRoomCode) void finishTable(storeRoomCode);
+    // If this was a club table, record this player's result into the club mini-league.
+    maybeRecordClubResult(myDelta);
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
@@ -589,6 +612,8 @@ export default function MultiplayerGameScreen() {
       won: myDelta > 0,
       is_complete: result.isComplete,
     }, 'multiplayer-game');
+    // If this was a club table, record this player's result into the club mini-league.
+    maybeRecordClubResult(myDelta);
     // Store opponentName for results screen "You beat {name}!" header
     const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
     if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);

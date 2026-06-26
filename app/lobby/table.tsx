@@ -46,16 +46,18 @@ const TYPE_LABEL: Record<PlayerCount, string> = { 2: 'Heads-Up', 3: '3-Player', 
 
 export default function TableRoomScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ roomCode: string; playerCount: string; isHost: string }>();
+  const params = useLocalSearchParams<{ roomCode: string; playerCount: string; isHost: string; clubCode?: string }>();
   const roomCode = (params.roomCode || '').toUpperCase();
   const maxPlayers = Math.min(4, Math.max(2, parseInt(params.playerCount || '2', 10))) as PlayerCount;
   const isHost = params.isHost === 'true';
+  const clubCode = (params.clubCode || '').toUpperCase() || null;
 
   const playerName = useGameStore((s) => s.playerName) || (isHost ? 'Host' : 'Guest');
   const setMpServer = useGameStore((s) => s.setMpServer);
   const setMpClient = useGameStore((s) => s.setMpClient);
   const setMultiplayerMode = useGameStore((s) => s.setMultiplayerMode);
   const setRoomCode = useGameStore((s) => s.setRoomCode);
+  const setClubCode = useGameStore((s) => s.setClubCode);
   const setConnectedPlayers = useGameStore((s) => s.setConnectedPlayers);
   const updateConfig = useGameStore((s) => s.updateConfig);
 
@@ -97,6 +99,9 @@ export default function TableRoomScreen() {
       setErrorMsg('Online multiplayer is unavailable right now.');
       return;
     }
+
+    // Carry the club code (if this is a club table) so record_club_result fires at game end.
+    setClubCode(clubCode);
 
     // Capture ids used to free the DB seat on bail-out.
     getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
