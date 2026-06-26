@@ -182,7 +182,8 @@ export default function MultiplayerGameScreen() {
     } else if (!isHost && (mpClient as any)?.sendChat) {
       (mpClient as any).sendChat(text, myPlayerName, playerIndex);
     }
-    track(kind === 'emote' ? 'emote_sent' : 'chat_sent', { room_code: storeRoomCode, player_count: playerCount, role: isHost ? 'host' : 'guest' }, 'multiplayer-game');
+    // `kind` carries the actual emoji (so we can measure which emotes are used); chat is 'text'.
+    track(kind === 'emote' ? 'emote_sent' : 'chat_sent', { kind: kind === 'emote' ? text : 'text', room_code: storeRoomCode, player_count: playerCount, role: isHost ? 'host' : 'guest' }, 'multiplayer-game');
   }, [myPlayerName, playerIndex, isHost, mpServer, mpClient, addChatMessage, storeRoomCode, playerCount]);
 
   // --- Time bank (1 use per hand) ---
