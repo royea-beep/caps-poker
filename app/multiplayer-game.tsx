@@ -18,9 +18,7 @@ import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { track } from '../utils/analytics';
 import { finishTable } from '../utils/lobbyApi';
-import { recordClubResult } from '../utils/clubApi';
-import { getDeviceId } from '../utils/leaderboard';
-import { getSupabase } from '../utils/supabase';
+import { recordClubGame, ClubGameResult } from '../utils/clubApi';
 import ChatBar, { ChatBubbles, ChatMessage, SendKind } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
@@ -42,19 +40,22 @@ const hapticNotify = (type: any) => {
 };
 
 /**
- * If this was a CLUB table (store.clubCode set), record THIS client's result into the
- * club mini-league. Each player records itself, so every member's stats update.
- * Fire-and-forget; no-op for public/private tables (clubCode null).
+ * If this was a CLUB table (store.clubCode set), submit the FULL roster of this room
+ * to the club mini-league (BUG 4 fix). ANY alive client may call this with the same
+ * roster — the server applies it exactly once via club_game_results(room_code PK), so
+ * the league counts each room one time even with disconnects.
+ *
+ * The roster identifies each player by their realtime-presence device_id (which is
+ * the same id touch_room_player / room_players use). Fire-and-forget; no-op for
+ * public/private tables (clubCode null) or empty rosters.
  */
-function maybeRecordClubResult(netChips: number) {
-  const clubCode = useGameStore.getState().clubCode;
-  if (!clubCode) return;
+function maybeRecordClubGame(roster: ClubGameResult[]) {
+  const { clubCode, roomCode } = useGameStore.getState();
+  if (!clubCode || !roomCode || roster.length === 0) return;
   (async () => {
     try {
-      const deviceId = await getDeviceId().catch(() => null);
-      const userId = (await getSupabase()?.auth.getUser().catch(() => null))?.data?.user?.id ?? null;
-      track('club_game_ended', { club_code: clubCode, net_chips: Math.round(netChips || 0), won: netChips > 0 }, 'multiplayer-game');
-      await recordClubResult(clubCode, deviceId, userId, netChips > 0, netChips);
+      track('club_game_ended', { club_code: clubCode, room_code: roomCode, roster_size: roster.length }, 'multiplayer-game');
+      await recordClubGame(clubCode, roomCode, roster);
     } catch { /* fire-and-forget */ }
   })();
 }
@@ -519,8 +520,16 @@ export default function MultiplayerGameScreen() {
     // Host owns the lobby room — mark it finished + clear its roster (kills the 'playing'
     // leak). No-op for legacy internet rooms (code not in game_rooms).
     if (storeRoomCode) void finishTable(storeRoomCode);
-    // If this was a club table, record this player's result into the club mini-league.
-    maybeRecordClubResult(myDelta);
+    // If this was a club table, submit the FULL roster to the club mini-league. We
+    // identify each player by their realtime-presence id, which IS the device_id used
+    // by room_players / touch_room_player. record_club_game is idempotent per room.
+    const hostRoster: ClubGameResult[] = clientArray.map((c: any, i: number) => ({
+      device_id: typeof c.id === 'string' ? c.id : null,
+      user_id: null,
+      won: (handResult.chipDeltas[i] ?? 0) > 0,
+      net_chips: handResult.chipDeltas[i] ?? 0,
+    }));
+    maybeRecordClubGame(hostRoster);
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
@@ -618,8 +627,24 @@ export default function MultiplayerGameScreen() {
       won: myDelta > 0,
       is_complete: result.isComplete,
     }, 'multiplayer-game');
-    // If this was a club table, record this player's result into the club mini-league.
-    maybeRecordClubResult(myDelta);
+    // If this was a club table, submit the FULL roster. Guest builds it from the
+    // store's connectedPlayers (id = realtime presence key = device_id), seat-sorted,
+    // then indexes chipDeltas by SORTED POSITION — same convention the host uses for
+    // playerResults/clientArray. Realtime seats are contiguous in practice (the host
+    // never removes disconnected clients from its Map), so position == seat number
+    // today; using position keeps this correct even if that changes. Submitting from
+    // every client is safe — record_club_game is idempotent on room_code.
+    const seatOrdered = [...connectedPlayers].sort((a, b) => a.seat - b.seat);
+    const guestRoster: ClubGameResult[] = seatOrdered.map((p, i) => {
+      const net = result.chipDeltas[i] ?? 0;
+      return {
+        device_id: typeof p.id === 'string' ? p.id : null,
+        user_id: null,
+        won: net > 0,
+        net_chips: net,
+      };
+    });
+    maybeRecordClubGame(guestRoster);
     // Store opponentName for results screen "You beat {name}!" header
     const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
     if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);

@@ -102,9 +102,48 @@ export async function clubLeaderboard(clubCode: string): Promise<ClubMember[]> {
   }
 }
 
+/** One player's outcome in a club game. device_id is the realtime presence key. */
+export interface ClubGameResult {
+  device_id?: string | null;
+  user_id?: string | null;
+  won: boolean;
+  net_chips: number;
+}
+
 /**
- * Record one member's result into the club mini-league after a club game. Each client
- * calls this for ITSELF at game end (won + net chips for this player). Fire-and-forget.
+ * Record the FULL roster of a finished club game into the mini-league (BUG 4 fix).
+ *
+ * Authoritative: ANY alive client submits the full roster for the room and the server
+ * applies it exactly once via the club_game_results(room_code PK) idempotency ledger.
+ * The first caller wins; later callers get {already_recorded:true}. This replaces the
+ * per-client recordClubResult path that left the mini-league asymmetric whenever a
+ * client disconnected before submitting its own row.
+ *
+ * Fire-and-forget; net_chips is rounded to int8.
+ */
+export async function recordClubGame(clubCode: string, roomCode: string, results: ClubGameResult[]): Promise<void> {
+  try {
+    const sb = getSupabase();
+    if (!sb || !clubCode || !roomCode || !Array.isArray(results) || results.length === 0) return;
+    const sanitized = results.map((r) => ({
+      device_id: r.device_id ?? null,
+      user_id: r.user_id ?? null,
+      won: !!r.won,
+      net_chips: Math.round(r.net_chips || 0),
+    }));
+    await sb.rpc('record_club_game', {
+      p_club_code: clubCode.trim().toUpperCase(),
+      p_room_code: roomCode.trim().toUpperCase(),
+      p_results: sanitized,
+    });
+  } catch {
+    /* fire-and-forget */
+  }
+}
+
+/**
+ * @deprecated since BUG 4 fix — use recordClubGame with the full roster instead.
+ * Kept for backward compat with native builds shipped before the new RPC.
  */
 export async function recordClubResult(clubCode: string, deviceId: string | null, userId: string | null, won: boolean, netChips: number): Promise<void> {
   try {

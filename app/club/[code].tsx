@@ -100,6 +100,12 @@ export default function ClubDetail() {
         const count = (res.game_config?.numberOfPlayers ?? res.max_players ?? tbl.player_count ?? 2) as PlayerCount;
         track('table_joined', { table_kind: 'club', club_code: clubCode, player_count: count, room_code: res.room_code, is_host: res.is_host === true }, 'club');
         enterTableRoom(res.room_code ?? tbl.room_code, count, res.is_host === true);
+      } else if (res?.error === 'not_a_member') {
+        // Defensive: list_club_tables is member-gated, but a stale list could still
+        // surface a table after a membership change. Server-side join_table enforces.
+        track('table_join_rejected', { table_kind: 'club', reason: 'not_a_member', club_code: clubCode, room_code: tbl.room_code }, 'club');
+        Alert.alert('Members only', 'You are no longer a member of this club.');
+        await load();
       } else {
         Alert.alert('Table unavailable', 'That table just filled — try another.');
         await load();
