@@ -628,12 +628,15 @@ export default function MultiplayerGameScreen() {
       is_complete: result.isComplete,
     }, 'multiplayer-game');
     // If this was a club table, submit the FULL roster. Guest builds it from the
-    // store's connectedPlayers (id = realtime presence key = device_id) + the
-    // chipDeltas array in the HAND_COMPLETE payload (indexed by seat). Submitting
-    // from every client is safe — record_club_game is idempotent on room_code.
+    // store's connectedPlayers (id = realtime presence key = device_id), seat-sorted,
+    // then indexes chipDeltas by SORTED POSITION — same convention the host uses for
+    // playerResults/clientArray. Realtime seats are contiguous in practice (the host
+    // never removes disconnected clients from its Map), so position == seat number
+    // today; using position keeps this correct even if that changes. Submitting from
+    // every client is safe — record_club_game is idempotent on room_code.
     const seatOrdered = [...connectedPlayers].sort((a, b) => a.seat - b.seat);
-    const guestRoster: ClubGameResult[] = seatOrdered.map((p) => {
-      const net = result.chipDeltas[p.seat] ?? 0;
+    const guestRoster: ClubGameResult[] = seatOrdered.map((p, i) => {
+      const net = result.chipDeltas[i] ?? 0;
       return {
         device_id: typeof p.id === 'string' ? p.id : null,
         user_id: null,
