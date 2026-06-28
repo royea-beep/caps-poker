@@ -47,8 +47,14 @@ export default function PublicLobby() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // VAMOS-UNIFY-FINAL 2026-06-28 — visible join error. Alert.alert is a silent
+  // no-op on web, so a failed join used to leave the user with zero feedback
+  // (the bug we saw in 2-client verify: first click silently failed because
+  // deviceIdRef hadn't populated yet; second click worked).
+  const [joinError, setJoinError] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
+  const [refsReady, setRefsReady] = useState(false);
 
   const load = useCallback(async () => {
     const rows = await listPublicTables();
@@ -59,8 +65,11 @@ export default function PublicLobby() {
 
   useEffect(() => {
     track('lobby_opened', { table_kind: 'public' }, 'lobby');
-    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
-    getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
+    // Track readiness of both async refs so Join can't fire before they settle.
+    let gotUser = false, gotDevice = false;
+    const settle = () => { if (gotUser && gotDevice) setRefsReady(true); };
+    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; gotUser = true; settle(); }).catch(() => { gotUser = true; settle(); });
+    getDeviceId().then((d) => { deviceIdRef.current = d; gotDevice = true; settle(); }).catch(() => { gotDevice = true; settle(); });
     void load();
     const id = setInterval(() => { void load(); }, POLL_MS);
     return () => { clearInterval(id); };
@@ -90,6 +99,14 @@ export default function PublicLobby() {
 
   const handleJoin = useCallback(async (tbl: OpenTable) => {
     if (busy) return;
+    setJoinError(null);
+    // Hold the Join until anon-auth + device_id refs settle. Before this
+    // guard, an early click hit the RPC with null device_id; Alert.alert is
+    // silent on web → user saw nothing. Now we ask them to wait briefly.
+    if (!refsReady || !deviceIdRef.current) {
+      setJoinError('Loading… tap Join again in a moment.');
+      return;
+    }
     setBusy(true);
     try {
       const res = await joinTable(tbl.room_code, userIdRef.current, playerName || 'Player', deviceIdRef.current);
@@ -100,23 +117,21 @@ export default function PublicLobby() {
         if (res.autostarted) {
           track('table_autostarted', { table_kind: 'public', player_count: count, room_code: res.room_code }, 'lobby');
         }
-        // is_host drives the realtime role: the first joiner of a hostless pool table
-        // runs the RealtimeServer; everyone else joins as a guest.
         enterTableRoom(res.room_code ?? tbl.room_code, count, asHost);
       } else if (res?.error === 'not_a_member') {
-        // Public pool tables don't carry club_id, so this is defensive only — a
-        // race where the pool RPC stitched in a club row. Treat as unavailable.
         track('table_join_rejected', { table_kind: 'public', reason: 'not_a_member', room_code: tbl.room_code }, 'lobby');
-        Alert.alert('Members only', 'That table belongs to a club.');
+        setJoinError('That table belongs to a club — members only.');
         await load();
       } else {
-        Alert.alert('Table unavailable', 'That table just filled — try another.');
+        // res is null (RPC error) or {ok:false}. Inline surface, not Alert.alert
+        // (silent on web). This is the visible feedback the silent-fail lacked.
+        setJoinError('Table unavailable — try another.');
         await load();
       }
     } finally {
       setBusy(false);
     }
-  }, [busy, playerName, enterTableRoom, load]);
+  }, [busy, refsReady, playerName, enterTableRoom, load]);
 
   const grouped = groupTablesByType(tables);
   // Always render TABLES_PER_TYPE slots per type; pad with placeholders if the pool is
@@ -138,6 +153,13 @@ export default function PublicLobby() {
         <View style={{ width: rs(40) }} />
       </View>
       <Text style={styles.sub}>Public tables · auto-start when full</Text>
+
+      {/* Inline join feedback — replaces the silent-on-web Alert.alert. */}
+      {joinError && (
+        <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+          <Text style={styles.errorBannerText}>{joinError}</Text>
+        </View>
+      )}
 
       {/* Solo fallback — never leave a player without a way to play. */}
       <Pressable style={[styles.soloBtn, busy && styles.btnDisabled]} disabled={busy} onPress={playSolo} accessibilityRole="button" accessibilityLabel="Play Solo versus bots">
@@ -242,4 +264,15 @@ const styles = StyleSheet.create({
   joinText: { color: '#08130f', fontWeight: '800', fontSize: rf(13) },
   joinTextFull: { color: 'rgba(255,255,255,0.6)' },
   btnDisabled: { opacity: 0.5 },
+  errorBanner: {
+    marginHorizontal: rs(16),
+    marginBottom: rv(8),
+    paddingVertical: rv(8),
+    paddingHorizontal: rs(12),
+    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.45)',
+    borderRadius: rv(10),
+  },
+  errorBannerText: { color: '#ef4444', fontSize: rf(12), fontWeight: '700', textAlign: 'center' },
 });

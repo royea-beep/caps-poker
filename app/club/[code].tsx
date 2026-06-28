@@ -40,6 +40,11 @@ export default function ClubDetail() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // VAMOS-UNIFY-FINAL 2026-06-28 — visible join/start error. Alert.alert is a
+  // silent no-op on web, so a failed click used to leave the user with zero
+  // feedback. Same fix shape as app/lobby/{index,private}.tsx.
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [refsReady, setRefsReady] = useState(false);
   const userIdRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
 
@@ -55,8 +60,11 @@ export default function ClubDetail() {
   }, [clubCode]);
 
   useEffect(() => {
-    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
-    getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
+    // Hold both join + start clicks until anon-auth + device_id refs settle.
+    let gotUser = false, gotDevice = false;
+    const settle = () => { if (gotUser && gotDevice) setRefsReady(true); };
+    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; gotUser = true; settle(); }).catch(() => { gotUser = true; settle(); });
+    getDeviceId().then((d) => { deviceIdRef.current = d; gotDevice = true; settle(); }).catch(() => { gotDevice = true; settle(); });
     void load();
     const id = setInterval(() => { void load(); }, POLL_MS);
     return () => { clearInterval(id); };
@@ -77,22 +85,36 @@ export default function ClubDetail() {
 
   const handleStart = useCallback(async (n: PlayerCount) => {
     if (busy) return;
+    setJoinError(null);
+    if (!refsReady || !deviceIdRef.current) {
+      setJoinError('Loading… tap Start again in a moment.');
+      return;
+    }
     setBusy(true);
     try {
       const res = await createClubTable(clubCode, n, deviceIdRef.current, userIdRef.current, playerName || 'Player');
       if (res?.ok && res.room_code) {
         track('club_table_started', { club_code: clubCode, player_count: n, room_code: res.room_code }, 'club');
         enterTableRoom(res.room_code, n, true);
+      } else if (res?.error === 'not_a_member') {
+        setJoinError('You are not a member of this club.');
       } else {
-        Alert.alert('Could not start table', res?.error === 'not_a_member' ? 'You are not a member of this club.' : 'Please try again.');
+        // res is null (RPC error) or {ok:false}. Inline surface, not Alert.alert
+        // (silent on web). Visible feedback the silent-fail lacked.
+        setJoinError('Could not start the table — please try again.');
       }
     } finally {
       setBusy(false);
     }
-  }, [busy, clubCode, playerName, enterTableRoom]);
+  }, [busy, refsReady, clubCode, playerName, enterTableRoom]);
 
   const handleJoin = useCallback(async (tbl: OpenTable) => {
     if (busy) return;
+    setJoinError(null);
+    if (!refsReady || !deviceIdRef.current) {
+      setJoinError('Loading… tap Join again in a moment.');
+      return;
+    }
     setBusy(true);
     try {
       const res = await joinTable(tbl.room_code, userIdRef.current, playerName || 'Player', deviceIdRef.current);
@@ -104,16 +126,16 @@ export default function ClubDetail() {
         // Defensive: list_club_tables is member-gated, but a stale list could still
         // surface a table after a membership change. Server-side join_table enforces.
         track('table_join_rejected', { table_kind: 'club', reason: 'not_a_member', club_code: clubCode, room_code: tbl.room_code }, 'club');
-        Alert.alert('Members only', 'You are no longer a member of this club.');
+        setJoinError('You are no longer a member of this club.');
         await load();
       } else {
-        Alert.alert('Table unavailable', 'That table just filled — try another.');
+        setJoinError('Table unavailable — it may have just filled. Try another.');
         await load();
       }
     } finally {
       setBusy(false);
     }
-  }, [busy, clubCode, playerName, enterTableRoom, load]);
+  }, [busy, refsReady, clubCode, playerName, enterTableRoom, load]);
 
   return (
     <SafeAreaView style={styles.root}>
@@ -130,6 +152,12 @@ export default function ClubDetail() {
         <Text style={styles.codeChipValue}>{clubCode}</Text>
         <Text style={styles.codeChipShare}>📤 Share</Text>
       </Pressable>
+
+      {joinError && (
+        <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+          <Text style={styles.errorBannerText}>{joinError}</Text>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#4FD6A8" /></View>
@@ -229,4 +257,6 @@ const styles = StyleSheet.create({
   net_pos: { color: '#4FD6A8' },
   net_neg: { color: '#ff6b6b' },
   leagueWl: { color: 'rgba(255,255,255,0.45)', fontSize: rf(10) },
+  errorBanner: { marginHorizontal: rs(16), marginBottom: rv(6), paddingVertical: rv(8), paddingHorizontal: rs(12), backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.45)', borderRadius: rv(10) },
+  errorBannerText: { color: '#ef4444', fontSize: rf(12), fontWeight: '700', textAlign: 'center' },
 });

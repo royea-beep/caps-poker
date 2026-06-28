@@ -324,18 +324,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     };
     saveHandForWebReplay(autoShareData).then((url) => { if (url) setAutoShareUrl(url); }).catch(() => {});
 
-    // "Try 4 boards" nudge — shown after first game (3-board intro)
-    AsyncStorage.getItem('caps_games_played').then((val) => {
-      const played = parseInt(val ?? '0', 10);
-      if (played === 1 && revealData.boardCount === 3) setShowUpgradeNudge(true);
-    }).catch(() => {});
-
-    // Login prompt — increment game counter, show modal between game 3-20
+    // VAMOS-UNIFY-FINAL 2026-06-28 — "Try 4 boards" upgrade nudge + login prompt
+    // removed. We still increment the total-games counter so other code reading
+    // it (analytics, future gating) keeps working.
     void (async () => {
       try {
         const prev = parseInt((await AsyncStorage.getItem('caps_total_games')) ?? '0', 10);
         await AsyncStorage.setItem('caps_total_games', String(prev + 1));
-        if (await shouldPromptLogin()) setShowLoginPrompt(true);
       } catch {}
     })();
 
@@ -355,35 +350,35 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     });
 
     if (newlyUnlocked.length > 0) {
-      const toasts = newlyUnlocked
+      // VAMOS-UNIFY-FINAL 2026-06-28 — achievements are still unlocked + the
+      // reward chips still credited; the in-app AchievementToast is gone.
+      // Players see unlocks on the Achievements screen.
+      const unlocked = newlyUnlocked
         .map((id) => getAchievement(id))
         .filter((a): a is Achievement => a !== undefined);
-      toasts.forEach((a) => {
+      unlocked.forEach((a) => {
         gs.unlockAchievement(a.id);
         gs.addChips(a.reward);
         gs.trackChipsEarned(a.reward);
       });
-      setPendingAchievements(toasts);
     }
 
-    // Economy: earn_chips via Supabase RPC — fire-and-forget, never block UI
+    // Economy: earn_chips via Supabase RPC — fire-and-forget, never block UI.
+    // VAMOS-UNIFY-FINAL 2026-06-28 — the floating "+N 💰" earn toast is gone;
+    // chips are still awarded silently (they appear in the chip counter).
     void (async () => {
       try {
         const deviceId = await getDeviceId();
         if (revealData.netChips > 0) {
-          // hand_won: +25 chips
           const wonResult = await earnChips(deviceId, 'hand_won');
           if (wonResult?.chips_earned) {
             gs.addChips(wonResult.chips_earned);
             gs.trackChipsEarned(wonResult.chips_earned);
-            showEarnToast(`+${wonResult.chips_earned} 💰`);
-            // streak_5_wins: +100 chips if player just hit 5 win streak
             if (gs.currentWinStreak === 5) {
               const streakResult = await earnChips(deviceId, 'streak_5_wins');
               if (streakResult?.chips_earned) {
                 gs.addChips(streakResult.chips_earned);
                 gs.trackChipsEarned(streakResult.chips_earned);
-                setTimeout(() => showEarnToast(`+${streakResult.chips_earned} 💰 5-win streak!`), 1800);
               }
             }
           }
@@ -732,20 +727,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         </>
       )}
 
-      {/* Login prompt — shown after game 3-20 for anonymous users */}
-      <LoginPromptModal
-        visible={showLoginPrompt}
-        onClose={() => setShowLoginPrompt(false)}
-        onLoginSuccess={() => setShowLoginPrompt(false)}
-      />
-
-      {/* Achievement toasts — shown one at a time */}
-      {pendingAchievements.length > 0 && (
-        <AchievementToast
-          achievement={pendingAchievements[0]}
-          onDone={() => setPendingAchievements((prev) => prev.slice(1))}
-        />
-      )}
+      {/* VAMOS-UNIFY-FINAL 2026-06-28 — LoginPromptModal + AchievementToast
+          removed per "no in-app popups". Sign-in moved to a settings-only
+          flow; achievement unlocks are visible on the Achievements screen. */}
 
       {/* Economy earn-chips floating toast */}
       {earnToast && (
@@ -1017,28 +1001,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* Current balance */}
           <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
 
-          {/* First game: upgrade nudge — "Try 4 boards next!" */}
-          {showUpgradeNudge && (
-            <View style={styles.upgradeNudge}>
-              <Text style={styles.upgradeNudgeText}>
-                Ready for the full challenge? Try 4 boards next!
-              </Text>
-              <View style={styles.upgradeNudgeRow}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Try 4 boards"
-                  style={styles.upgradeNudgeBtn}
-                  onPress={() => { updateConfig({ numberOfPlayers: 2 }); setShowUpgradeNudge(false); }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={styles.upgradeNudgeBtnText}>4 BOARDS →</Text>
-                </Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel="Later" onPress={() => setShowUpgradeNudge(false)} style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.upgradeNudgeDismiss}>Later</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
+          {/* VAMOS-UNIFY-FINAL 2026-06-28 — "Try 4 boards" upgrade nudge removed. */}
 
           {/* S118: Multiplayer result header */}
           {isMultiplayer && storeOpponentName ? (

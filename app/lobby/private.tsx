@@ -30,13 +30,18 @@ export default function PrivateLobby() {
 
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  // VAMOS-UNIFY-FINAL — inline feedback (Alert.alert silent on web).
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [refsReady, setRefsReady] = useState(false);
   const userIdRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     track('lobby_opened', { table_kind: 'private' }, 'lobby-private');
-    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
-    getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
+    let gotUser = false, gotDevice = false;
+    const settle = () => { if (gotUser && gotDevice) setRefsReady(true); };
+    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; gotUser = true; settle(); }).catch(() => { gotUser = true; settle(); });
+    getDeviceId().then((d) => { deviceIdRef.current = d; gotDevice = true; settle(); }).catch(() => { gotDevice = true; settle(); });
   }, []);
 
   const enterTableRoom = useCallback((roomCode: string, n: PlayerCount, asHost: boolean) => {
@@ -66,28 +71,32 @@ export default function PrivateLobby() {
   const handleJoinByCode = useCallback(async () => {
     const roomCode = code.trim().toUpperCase();
     if (busy || !roomCode) return;
+    setJoinError(null);
+    if (!refsReady || !deviceIdRef.current) {
+      setJoinError('Loading… tap Join again in a moment.');
+      return;
+    }
     setBusy(true);
     try {
       const res = await joinTable(roomCode, userIdRef.current, playerName || 'Player', deviceIdRef.current);
       if (res?.ok) {
         const count = (res.game_config?.numberOfPlayers ?? res.max_players ?? 2) as PlayerCount;
-        const asHost = res.is_host === true; // private tables already have a host → false
+        const asHost = res.is_host === true;
         track('table_joined', { table_kind: 'private', player_count: count, room_code: res.room_code, is_host: asHost }, 'lobby-private');
         if (res.autostarted) {
           track('table_autostarted', { table_kind: 'private', player_count: count, room_code: res.room_code }, 'lobby-private');
         }
         enterTableRoom(res.room_code ?? roomCode, count, asHost);
       } else if (res?.error === 'not_a_member') {
-        // The code belongs to a CLUB table; only club members can join it.
         track('table_join_rejected', { table_kind: 'private', reason: 'not_a_member', room_code: roomCode }, 'lobby-private');
-        Alert.alert('Members only', 'That table belongs to a club. Join the club to play there.');
+        setJoinError('Members only — that table belongs to a club. Join the club to play there.');
       } else {
-        Alert.alert('Table unavailable', 'That code is wrong, full, or no longer open.');
+        setJoinError('That code is wrong, full, or no longer open.');
       }
     } finally {
       setBusy(false);
     }
-  }, [busy, code, playerName, enterTableRoom]);
+  }, [busy, refsReady, code, playerName, enterTableRoom]);
 
   return (
     <SafeAreaView style={styles.root}>
@@ -99,6 +108,12 @@ export default function PrivateLobby() {
         <View style={{ width: rs(40) }} />
       </View>
       <Text style={styles.sub}>Play your friends with a shared code</Text>
+
+      {joinError && (
+        <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+          <Text style={styles.errorBannerText}>{joinError}</Text>
+        </View>
+      )}
 
       {/* Join by code */}
       <View style={styles.block}>
@@ -153,4 +168,6 @@ const styles = StyleSheet.create({
   createSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(11), marginTop: rv(1) },
   createGo: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(14) },
   btnDisabled: { opacity: 0.5 },
+  errorBanner: { marginHorizontal: rs(16), marginBottom: rv(8), paddingVertical: rv(8), paddingHorizontal: rs(12), backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.45)', borderRadius: rv(10) },
+  errorBannerText: { color: '#ef4444', fontSize: rf(12), fontWeight: '700', textAlign: 'center' },
 });

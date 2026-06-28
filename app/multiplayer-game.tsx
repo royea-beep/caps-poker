@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
-import ChipsDisplay from '../components/ChipsDisplay';
-import { Button } from '../components/Button';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { FriendsBg } from '../components/FriendsBg';
 import { useGameStore } from '../store/gameStore';
-import { COLORS, Card, CARDS_PER_BOARD } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getCardDimensions } from '../constants/gameConfig';
+import { getTheme } from '../constants/visualThemes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
 import { RevealBoardData } from '../types/gameTypes';
@@ -23,6 +25,11 @@ import ChatBar, { ChatBubbles, ChatMessage, SendKind } from '../components/ChatO
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
 import { OpponentHeader } from '../components/OpponentHeader';
+import { TimerController, TimerBar } from '../components/TimerController';
+import BoardReveal from '../components/BoardReveal';
+import { PRD } from '../utils/prdTokens';
+import { rf, rh, rs, rv } from '../utils/responsive';
+import { t } from '../utils/i18n';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -63,12 +70,19 @@ function maybeRecordClubGame(roster: ClubGameResult[]) {
 const FREE_TIME_SECS = 30;
 const COUNTDOWN_SECS = 30;
 
-// Layout constants
-const TOP_BAR_H = 44;
-const MODE_BADGE_H = 24;
-const FLOATING_ACTIONS_H = 68; // paddingVertical:10×2 + button paddingVertical:12×2 + text ≈ 68px
-const HINT_H = 26;             // selectionHint / boardError bar
-const BOARD_CHROME = 28;       // per-board non-card overhead: header + inner padding + row gaps
+// MP-RENDER-PARITY 2026-06-28 — match SOLO's PR-M layout budget. The hardcoded
+// 44/24/68/26 constants here were the pre-unification budget that made boards +
+// cards look noticeably different from /game. Now derived from the same PRD
+// design tokens so a chrome retune on SOLO automatically lands on MP.
+const TOP_CHROME_H = PRD.zone.topChromeH;                       // rh(56)
+const TOP_BAR_H = Math.round(TOP_CHROME_H * 36 / 56);           // ~36/56 = top button row
+const BOT_STATUS_H = Math.round(TOP_CHROME_H * 20 / 56);        // ~20/56 = opponent pill row
+const FLOATING_ACTIONS_H = PRD.zone.actionBarH;                 // rs(56) — PR-M
+const HINT_H = 22;                                              // selectionHint / boardError bar
+const BOARD_CHROME = 28;                                        // per-board non-card overhead
+
+// Timer pill size (matches SOLO's countdownSection)
+const TIMER_SIZE = rs(40);
 
 interface BoardDisplay {
   openCards: Card[];
@@ -77,10 +91,14 @@ interface BoardDisplay {
   revealed: boolean;
 }
 
-export default function MultiplayerGameScreen() {
+function MultiplayerGameScreenInner() {
   const router = useRouter();
-  const { height: SCREEN_H } = useWindowDimensions();
+  const { height: SCREEN_H, width: SCREEN_W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  // MP-RENDER-PARITY — use the same theme the SOLO screen uses, so MP picks up
+  // FriendsBg + the visualTheme the player chose in settings (classic vs fiveo).
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const theme = getTheme(visualTheme);
 
   const params = useLocalSearchParams<{
     isHost: string;
@@ -113,12 +131,19 @@ export default function MultiplayerGameScreen() {
 
   const boardCount = boardsParam.length;
 
-  // Dynamic card sizing (same formula as game.tsx)
-  const PLAYER_HAND_H = SCREEN_H < 700 ? 115 : SCREEN_H < 800 ? 128 : 140;
-  const safeH = SCREEN_H - insets.top - insets.bottom;
-  const BOARD_GAPS = (boardCount - 1) * 4;
-  const boardSpace = (safeH - TOP_BAR_H - MODE_BADGE_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  const BOARD_CARD_H = Math.max(28, Math.min(82, Math.floor(boardSpace / 2)));
+  // MP-RENDER-PARITY — card sizing now driven by SOLO's getCardDimensions(screenW,
+  // playerCount) — the SAME design-system formula. The previous ad-hoc
+  // max(28,min(82,boardSpace/2)) produced visibly different cards from SOLO at
+  // the same screen size + player count. Hand height: 2 rows for 2P/3P (8/12
+  // cards), 1 row for 4P (8 cards) — covers the same player counts as SOLO.
+  const _safePlayers = (playerCount === 2 || playerCount === 3 || playerCount === 4 ? playerCount : 2) as 2 | 3 | 4;
+  const _cardDims = getCardDimensions(SCREEN_W, _safePlayers);
+  const BOARD_CARD_H = _cardDims.cardHeight;
+  const _handRows = _safePlayers === 4 ? 1 : 2;
+  const PLAYER_HAND_H = _handRows * _cardDims.cardHeight + (_handRows - 1) * rs(4) + rs(30); // label + container padding
+  // Kept for the boards-zone budget invariant — exact math is owned by Board.tsx
+  // when arranged via Boards stacked; we just feed it the cardHeight.
+  void SCREEN_H; void insets; void TOP_BAR_H; void BOT_STATUS_H; void FLOATING_ACTIONS_H; void HINT_H; void BOARD_CHROME; void boardCount; void PLAYER_HAND_H;
 
   // State
   const [boards, setBoards] = useState<BoardDisplay[]>(() =>
@@ -134,6 +159,25 @@ export default function MultiplayerGameScreen() {
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   const boardsRef = useRef(boards);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
+
+  // MP-BOARDREVEAL 2026-06-28 — gated reveal state. When config.mpBoardReveal is on,
+  // both host and guest play the same <BoardReveal> SOLO uses before /results.
+  const [showSafeReveal, setShowSafeReveal] = useState(false);
+  const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
+    winner: 'player' | 'bot' | 'tie';
+    playerHandName: string;
+    botHandName: string;
+    allBotHandNames: string[];
+    openCards: Card[];
+    closedCards: Card[];
+    playerCards: Card[];
+    botCards: Card[];
+    allBotCards: Card[][];
+    potAmount: number;
+    playerHighlightIds: string[];
+    botHighlightIds: string[];
+    boardHighlightIds: string[];
+  }>>([]);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   // If rejoining after disconnect and already auto-readied, start in waiting (CAPS 12)
@@ -533,6 +577,15 @@ export default function MultiplayerGameScreen() {
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
+
+    // MP-BOARDREVEAL — if the flag is on, play the same <BoardReveal> SOLO plays,
+    // THEN navigate to /results in onRevealDone. Otherwise keep the jump-to-results
+    // behavior so we can flip off live if 2-player desync feels weird.
+    if (config.mpBoardReveal) {
+      setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
+      setShowSafeReveal(true);
+      return;
+    }
     setPhase('navigating');
     router.replace('/results');
   }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router, storeRoomCode]);
@@ -648,9 +701,46 @@ export default function MultiplayerGameScreen() {
     // Store opponentName for results screen "You beat {name}!" header
     const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
     if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);
+
+    // MP-BOARDREVEAL — guest plays the reveal locally too (BOARD_REVEAL payloads
+    // already arrived; boardRevealsRef is populated). Slight finish-time diff
+    // between host and guest is fine — both land on the (static) /results.
+    if (config.mpBoardReveal) {
+      setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
+      setShowSafeReveal(true);
+      return;
+    }
     setPhase('navigating');
     router.replace('/results');
   }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers, storeRoomCode]);
+
+  // MP-BOARDREVEAL — adapter for the <BoardReveal> Modal. RevealBoardData has
+  // allBotCards: Card[][] (per-opponent); BoardReveal expects botCards: Card[]
+  // (the primary opponent) + optional allBotCards. We pass the first opponent
+  // as botCards so the reveal renders correctly in 2P, and forward the full
+  // multi-opponent list for 3P/4P.
+  const adaptRevealBoardsForReveal = useCallback((src: RevealBoardData[]) => src.map((b) => ({
+    winner: b.winner,
+    playerHandName: b.playerHandName,
+    botHandName: b.botHandName,
+    allBotHandNames: b.allBotHandNames,
+    openCards: b.openCards,
+    closedCards: b.closedCards,
+    playerCards: b.playerCards,
+    botCards: b.allBotCards?.[0] ?? [],
+    allBotCards: b.allBotCards,
+    potAmount: b.potAmount,
+    playerHighlightIds: b.playerHighlightIds,
+    botHighlightIds: b.botHighlightIds,
+    boardHighlightIds: b.boardHighlightIds,
+  })), []);
+
+  const onRevealDone = useCallback(() => {
+    setShowSafeReveal(false);
+    setPendingRevealBoards([]);
+    setPhase('navigating');
+    router.replace('/results');
+  }, [router]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
@@ -864,34 +954,50 @@ export default function MultiplayerGameScreen() {
 
   const cardsRemaining = playerHand.length;
 
+  const cardsToPlaceN = boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0);
+  const otherPlayersN = Math.max(1, playerCount - 1);
+  void formatTime; // legacy mm:ss formatter no longer rendered inline; TimerController owns it
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top bar */}
+    <SafeAreaView style={[
+      styles.container,
+      { backgroundColor: theme.background },
+      Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any,
+    ]}>
+      <FriendsBg />
+      <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
+      {/* Top bar \u2014 matches SOLO: \u00d7 | center status (instruction pill / circular timer / waiting text) | inline chips */}
       <View style={styles.topBar}>
-        <Pressable onPress={handleBack} style={styles.backButton}>
+        <Pressable
+          onPress={handleBack}
+          style={[styles.backButton, { minHeight: 44, minWidth: 44 }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Leave game"
+        >
           <Text style={styles.backText}>{'\u2715'}</Text>
         </Pressable>
-        <View style={styles.topInfo}>
+        <View style={styles.topCenter}>
           {isArranging && !timer.isRunning && freeTimeLeft > 0 && (
-            <View style={[styles.timerContainer, { borderColor: COLORS.success }]}>
-              <Text style={[styles.timerText, { color: COLORS.success }]}>
-                Free {freeTimeLeft}s
-              </Text>
-            </View>
+            <Text style={styles.freePlayLabel} accessibilityLiveRegion="polite">
+              {cardsRemaining === 0 ? t().allPlaced : t().arrangeCards(cardsRemaining)}
+            </Text>
           )}
           {isArranging && timer.isRunning && (
-            <View style={[
-              styles.timerContainer,
-              { borderColor: timerColor },
-              displayTimeLeft <= 15 && styles.timerUrgent,
-            ]}>
-              <Text style={[styles.timerText, { color: timerColor }]}>
-                {formatTime(displayTimeLeft)}
-              </Text>
+            <View style={styles.countdownSection} accessibilityLiveRegion="polite">
+              <TimerController
+                countdown={displayTimeLeft}
+                total={COUNTDOWN_SECS}
+                isActive={true}
+                firstFinisher={null}
+                timerSize={TIMER_SIZE}
+                timerColor={timerColor}
+                timerPulsing={displayTimeLeft <= 10}
+              />
             </View>
           )}
           {phase === 'waiting' && (
-            <Text style={styles.statusText}>WAITING...</Text>
+            <Text style={styles.waitingHeaderText} accessibilityLiveRegion="polite">{t().waitingForOthers(otherPlayersN)}</Text>
           )}
         </View>
         <View style={styles.topRight}>
@@ -899,7 +1005,10 @@ export default function MultiplayerGameScreen() {
             <Text style={styles.spectatorBadge}>👁 {spectatorCount}</Text>
           )}
           <ConnectionStatus connected={isConnected} />
-          <ChipsDisplay amount={chips} />
+          <View style={styles.headerChips}>
+            <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
+            <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
+          </View>
         </View>
       </View>
 
@@ -914,11 +1023,11 @@ export default function MultiplayerGameScreen() {
         </View>
       )}
 
-      {/* Mode badge: opponent header (internet MP) or plain text (WiFi) */}
-      <View style={styles.modeBadge}>
+      {/* Opponent row — same height + bg treatment as SOLO's botSection so the chrome stack feels uniform. */}
+      <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]} accessibilityLiveRegion="polite">
         {isInternetMP && opponentName !== 'Opponent' ? (
           <View style={styles.opponentRow}>
-            <Text style={styles.vsLabel}>vs</Text>
+            <Text style={[styles.vsLabel, { color: theme.textMuted }]}>vs</Text>
             <OpponentHeader
               name={opponentName}
               isOnline={opponentConnected}
@@ -926,11 +1035,16 @@ export default function MultiplayerGameScreen() {
             />
           </View>
         ) : (
-          <Text style={styles.modeText}>
-            {playerCount}P {isHost ? 'HOST' : 'GUEST'} | {playerNames[playerIndex] || `Seat ${playerIndex + 1}`}
+          <Text style={[styles.modeText, { color: theme.textSecondary }]}>
+            {playerCount}P {isHost ? 'HOST' : 'GUEST'} · {playerNames[playerIndex] || `Seat ${playerIndex + 1}`}
           </Text>
         )}
       </View>
+
+      {/* Timer progress bar — thin bar below opponent row, only during countdown (matches SOLO). */}
+      {isArranging && timer.isRunning && (
+        <TimerBar countdown={displayTimeLeft} total={COUNTDOWN_SECS} color={timerColor} />
+      )}
 
       {/* Chat bubbles — reserved dock between header and boards (overflow up, never onto cards) */}
       {isInternetMP && (
@@ -972,28 +1086,37 @@ export default function MultiplayerGameScreen() {
 
       {/* Time bank button — visible when countdown running and < 20s left */}
       {isArranging && timer.isRunning && displayTimeLeft < 20 && !timeBankUsed && (
-        <Pressable style={styles.timeBankBtn} onPress={handleTimeBank}>
-          <Text style={styles.timeBankText}>⏱ +15s</Text>
+        <Pressable style={styles.timeBankBtn} onPress={handleTimeBank} accessibilityRole="button" accessibilityLabel={t().timeBank}>
+          <Text style={styles.timeBankText}>⏱ {t().timeBank}</Text>
         </Pressable>
       )}
 
-      {/* Ready button — only after free time ends */}
+      {/* Ready button — only after free time ends; inline Pressable matches SOLO's PR-M styling. */}
       {isArranging && readyEnabled && (
         <View style={styles.readySection}>
-          <Button
-            title={allBoardsFull ? 'READY' : `Place ${boards.reduce((sum, b) => sum + (CARDS_PER_BOARD - b.playerCards.length), 0)} more cards`}
-            variant="gold"
-            disabled={!allBoardsFull}
+          <Pressable
             onPress={handleReady}
-          />
+            disabled={!allBoardsFull}
+            style={[
+              styles.readyBtn,
+              { backgroundColor: theme.primaryBtn, borderRadius: theme.primaryBtnRadius },
+              !allBoardsFull && styles.readyBtnDisabled,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={allBoardsFull ? t().ready : t().arrangeCards(cardsToPlaceN)}
+          >
+            <Text style={[styles.readyBtnText, { color: theme.primaryBtnText }]}>
+              {allBoardsFull ? t().ready : t().arrangeCards(cardsToPlaceN)}
+            </Text>
+          </Pressable>
         </View>
       )}
 
       {/* Waiting overlay */}
       {phase === 'waiting' && (
         <View style={styles.waitingOverlay}>
-          <View style={styles.waitingBox}>
-            <Text style={styles.waitingText}>Waiting for other players...</Text>
+          <View style={[styles.waitingBox, { backgroundColor: theme.surface, borderColor: theme.boardBorder }]}>
+            <Text style={[styles.waitingText, { color: theme.textSecondary }]}>{t().waitingForOthers(otherPlayersN)}</Text>
           </View>
         </View>
       )}
@@ -1005,156 +1128,223 @@ export default function MultiplayerGameScreen() {
           onSend={handleSendChat}
         />
       )}
+      </Animated.View>
+      {/* MP-BOARDREVEAL — full-screen Modal reveal before /results (gated). */}
+      {showSafeReveal && (
+        <BoardReveal
+          boards={pendingRevealBoards}
+          onDone={onRevealDone}
+          revealSpeed={config.revealSpeed}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
+/**
+ * MP-RENDER-PARITY 2026-06-28 — ErrorBoundary wrap matches SOLO's pattern (game.tsx
+ * line 2020). Crashes in placement/wait UI now hit the boundary instead of tearing
+ * down the realtime/lobby chain above.
+ */
+export default function MultiplayerGameScreen() {
+  return (
+    <ErrorBoundary>
+      <MultiplayerGameScreenInner />
+    </ErrorBoundary>
+  );
+}
+
+// MP-RENDER-PARITY 2026-06-28 — styles now mirror SOLO's PR-M tokens (rs/rv/rf,
+// PRD.zone, themed bot/opponent strip, inline headerChips, mint READY button).
+// Background, surface, and border colors are applied INLINE via the theme prop
+// so visualTheme changes light up MP without a re-style here.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor applied inline via theme.background
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(4),
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: rs(36),
+    height: rs(36),
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: rv(8),
   },
   backText: {
     color: COLORS.textSecondary,
-    fontSize: 18,
+    fontSize: rf(16),
+    fontWeight: '600',
   },
-  topInfo: {
+  topCenter: {
     alignItems: 'center',
+  },
+  countdownSection: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  // Mint instruction pill — mirrors SOLO's freePlayLabel ("PLACE N CARDS").
+  freePlayLabel: {
+    color: COLORS.mint,
+    fontSize: rf(12),
+    fontWeight: '800',
+    letterSpacing: 1,
+    backgroundColor: 'rgba(79,214,168,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.45)',
+    paddingHorizontal: rs(10),
+    paddingVertical: 3,
+    borderRadius: rv(10),
+    overflow: 'hidden',
+    textTransform: 'uppercase' as any,
+  },
+  waitingHeaderText: {
+    color: COLORS.textSecondary,
+    fontSize: rf(14),
+    fontWeight: '600',
   },
   topRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: rs(8),
   },
   spectatorBadge: {
     color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '600',
   },
-  timerContainer: {
-    backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.boardBorder,
-  },
-  timerUrgent: {
-    borderColor: COLORS.danger,
-    backgroundColor: COLORS.neonRed + '26',
-  },
-  timerText: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  statusText: {
-    color: COLORS.gold,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 4,
-  },
-  modeBadge: {
+  // Inline chips pill (matches SOLO's headerChips: mint bg/border).
+  headerChips: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 2,
+    gap: rs(4),
+    backgroundColor: 'rgba(79,214,168,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.45)',
+    paddingHorizontal: rs(8),
+    paddingVertical: 3,
+    borderRadius: rv(10),
+  },
+  headerChipsEmoji: {
+    fontSize: rf(14),
+    lineHeight: rf(18),
+  },
+  headerChipsAmount: {
+    color: COLORS.mint,
+    fontSize: rf(14),
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  // Opponent strip — same vertical budget + bg/border treatment as SOLO's botSection.
+  botSection: {
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
+    zIndex: 10,
   },
   modeText: {
-    color: COLORS.textSecondary,
-    fontSize: 11,
+    fontSize: rf(11),
     fontWeight: '700',
     letterSpacing: 1,
   },
   // Reserved band for chat toasts so they never reach the boards (overflow spills up).
   bubbleDock: {
-    height: 34,
+    height: rh(34),
     justifyContent: 'flex-end',
-    paddingHorizontal: 12,
+    paddingHorizontal: rs(12),
     overflow: 'visible',
   },
   boardsColumn: {
     flex: 1,
     flexDirection: 'column',
-    paddingHorizontal: 16,
-    gap: 4,
+    paddingHorizontal: rs(16),
+    gap: rs(4),
   },
   timeBankBtn: {
     alignSelf: 'center',
-    marginBottom: 4,
+    marginBottom: rs(4),
     backgroundColor: 'rgba(0,0,0,0.6)',
     borderWidth: 1,
     borderColor: COLORS.gold,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    borderRadius: rv(16),
+    paddingHorizontal: rs(16),
+    paddingVertical: rs(6),
   },
   timeBankText: {
     color: COLORS.gold,
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '800',
     letterSpacing: 1,
   },
+  // Inline READY button — themed, replaces the imported <Button variant="gold">.
   readySection: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: rs(12),
+    paddingVertical: rs(6),
+  },
+  readyBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(24),
+  },
+  readyBtnDisabled: {
+    opacity: 0.4,
+  },
+  readyBtnText: {
+    fontSize: rf(16),
+    fontWeight: '800',
+    letterSpacing: 2,
+    textTransform: 'uppercase' as any,
   },
   waitingOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: rs(20),
     alignItems: 'center',
-    backgroundColor: COLORS.background + 'CC',
+    backgroundColor: 'rgba(0,0,0,0.65)',
   },
   waitingBox: {
-    backgroundColor: COLORS.feltLight,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
+    // backgroundColor + borderColor applied inline via theme
+    paddingHorizontal: rs(24),
+    paddingVertical: rs(12),
+    borderRadius: rv(10),
     borderWidth: 1,
-    borderColor: COLORS.boardBorder,
   },
   waitingText: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
   },
   disconnectBanner: {
     backgroundColor: COLORS.neonRed + '33',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: rs(6),
+    paddingHorizontal: rs(12),
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.neonRed,
   },
   disconnectText: {
     color: COLORS.neonRed,
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '700',
     letterSpacing: 1,
   },
   opponentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    gap: rs(8),
+    paddingHorizontal: rs(8),
   },
   vsLabel: {
-    color: COLORS.textMuted,
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: '700',
     letterSpacing: 1,
   },

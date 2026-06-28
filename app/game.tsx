@@ -54,15 +54,18 @@ const GUIDED_FORCED_KEY = 'guidedModeForced';
 
 // Tooltip text — inline EN/HE
 const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
+// VAMOS-UNIFY-FINAL 2026-06-28 — first-game tooltips tightened. The longest one
+// (the 2+3 Omaha-rule explainer) collapsed from a wall of text to one sentence;
+// the rest are already short.
 const TIPS = [
   () => TIP('These are your cards. Place 4 on each board.', 'אלה הקלפים שלך. תשים 4 על כל לוח.'),
   () => TIP('Tap a card, then tap an empty slot.', 'לחץ על קלף, ואז על מקום ריק.'),
   () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הלוח הזה.'),
   () => TIP('Hand strength shown here. Better hands win more!', 'עוצמת היד מוצגת כאן. ידיים טובות יותר מנצחות יותר!'),
-  // Tip 5 (index 4) — 2-of-4 rule explainer. autoDismissMs=6000 in JSX.
+  // Tip 5 (index 4): Omaha hand selection — the game picks the best 2+3 automatically.
   () => TIP(
-    'The game picks your BEST 2 cards + 3 from the board automatically. You don\'t choose — the strongest combination wins!',
-    'המשחק בוחר אוטומטית 2 קלפים הכי טובים שלך + 3 מהלוח. אתה לא צריך לבחור — השילוב הכי חזק מנצח!'
+    'The game picks your best hand automatically. Just place 4 cards.',
+    'המשחק בוחר את היד הטובה אוטומטית. רק תניח 4 קלפים.'
   ),
   () => TIP('All set! Tap READY to reveal.', 'הכל מוכן! לחץ READY כדי להציג.'),
 ];

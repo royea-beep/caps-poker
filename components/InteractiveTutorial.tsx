@@ -234,26 +234,31 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const tx = t();
   const isHE = getLanguage() === 'he';
 
+  // VAMOS-UNIFY-FINAL 2026-06-28 — onboarding copy tightened to the three
+  // things a brand-new player actually needs: the goal, how to place, and
+  // that boards are separate Omaha hands. The Omaha 2+3 rule is applied
+  // automatically by the game evaluator — players don't pick — so we don't
+  // teach it here. The COMPLETE bonus stays because it changes strategy.
   const STEPS = [
     {
-      title: isHE ? 'יש לך 4 קלפים בכל בורד' : 'You have 4 cards per board',
+      title: isHE ? 'נצח בורדים על ידי הנחת קלפים' : 'Win boards by placing your cards',
       body: isHE
-        ? 'ב-Caps Poker קיבלת 4 קלפי יד לכל בורד — לא 2 כמו ב-Hold\'em!'
-        : 'In Caps Poker you get 4 hole cards per board — not 2 like Hold\'em!',
+        ? 'כל בורד הוא יד אומאהה נפרדת.'
+        : 'Each board is its own Omaha hand.',
       Visual: () => <Step1Visual />,
     },
     {
-      title: isHE ? 'לחץ קלף כדי לשחק!' : 'Tap a card to place it!',
+      title: isHE ? 'הקש קלף, ואז בורד' : 'Tap a card, then a board',
       body: isHE
-        ? 'חייב להשתמש בדיוק ב-2 קלפים שלך ו-3 קלפי קהילה — כלל Omaha!'
-        : 'Use exactly 2 of your cards + 3 community cards — Omaha rule!',
+        ? 'מקם 4 קלפים על כל בורד.'
+        : 'Place 4 cards on every board.',
       Visual: () => <Step2Visual onCardPlace={() => setStep2CardPlaced(true)} />,
     },
     {
-      title: isHE ? 'נצח בכל הבורדים = COMPLETE' : 'Win ALL boards = COMPLETE',
+      title: isHE ? 'נצח את כולם = COMPLETE' : 'Sweep all boards = COMPLETE',
       body: isHE
-        ? 'נצח בכל 4 הבורדים וקבל בונוס +50% על הסיר!'
-        : 'Win all boards and get a +50% pot bonus!',
+        ? 'נצח בכל הבורדים — בונוס 50% על הסיר.'
+        : 'Win every board for a +50% pot bonus.',
       Visual: () => <Step3Visual />,
     },
   ];
