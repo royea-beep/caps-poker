@@ -26,6 +26,7 @@ import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
 import { OpponentHeader } from '../components/OpponentHeader';
 import { TimerController, TimerBar } from '../components/TimerController';
+import BoardReveal from '../components/BoardReveal';
 import { PRD } from '../utils/prdTokens';
 import { rf, rh, rs, rv } from '../utils/responsive';
 import { t } from '../utils/i18n';
@@ -158,6 +159,25 @@ function MultiplayerGameScreenInner() {
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   const boardsRef = useRef(boards);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
+
+  // MP-BOARDREVEAL 2026-06-28 — gated reveal state. When config.mpBoardReveal is on,
+  // both host and guest play the same <BoardReveal> SOLO uses before /results.
+  const [showSafeReveal, setShowSafeReveal] = useState(false);
+  const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
+    winner: 'player' | 'bot' | 'tie';
+    playerHandName: string;
+    botHandName: string;
+    allBotHandNames: string[];
+    openCards: Card[];
+    closedCards: Card[];
+    playerCards: Card[];
+    botCards: Card[];
+    allBotCards: Card[][];
+    potAmount: number;
+    playerHighlightIds: string[];
+    botHighlightIds: string[];
+    boardHighlightIds: string[];
+  }>>([]);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   // If rejoining after disconnect and already auto-readied, start in waiting (CAPS 12)
@@ -557,6 +577,15 @@ function MultiplayerGameScreenInner() {
     // Store opponentName for results screen "You beat {name}!" header
     const oppName = clientArray.find((c: any) => c.seat !== playerIndex)?.name ?? '';
     if (oppName) useGameStore.getState().setOpponentName(oppName);
+
+    // MP-BOARDREVEAL — if the flag is on, play the same <BoardReveal> SOLO plays,
+    // THEN navigate to /results in onRevealDone. Otherwise keep the jump-to-results
+    // behavior so we can flip off live if 2-player desync feels weird.
+    if (config.mpBoardReveal) {
+      setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
+      setShowSafeReveal(true);
+      return;
+    }
     setPhase('navigating');
     router.replace('/results');
   }, [playerIndex, config, boardCount, addChips, trackChipsSpent, setRevealData, router, storeRoomCode]);
@@ -672,9 +701,46 @@ function MultiplayerGameScreenInner() {
     // Store opponentName for results screen "You beat {name}!" header
     const guestOppName = connectedPlayers.find(p => p.seat !== playerIndex)?.name ?? '';
     if (guestOppName) useGameStore.getState().setOpponentName(guestOppName);
+
+    // MP-BOARDREVEAL — guest plays the reveal locally too (BOARD_REVEAL payloads
+    // already arrived; boardRevealsRef is populated). Slight finish-time diff
+    // between host and guest is fine — both land on the (static) /results.
+    if (config.mpBoardReveal) {
+      setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
+      setShowSafeReveal(true);
+      return;
+    }
     setPhase('navigating');
     router.replace('/results');
   }, [playerIndex, playerCount, config, boardCount, addChips, trackChipsSpent, setRevealData, router, connectedPlayers, storeRoomCode]);
+
+  // MP-BOARDREVEAL — adapter for the <BoardReveal> Modal. RevealBoardData has
+  // allBotCards: Card[][] (per-opponent); BoardReveal expects botCards: Card[]
+  // (the primary opponent) + optional allBotCards. We pass the first opponent
+  // as botCards so the reveal renders correctly in 2P, and forward the full
+  // multi-opponent list for 3P/4P.
+  const adaptRevealBoardsForReveal = useCallback((src: RevealBoardData[]) => src.map((b) => ({
+    winner: b.winner,
+    playerHandName: b.playerHandName,
+    botHandName: b.botHandName,
+    allBotHandNames: b.allBotHandNames,
+    openCards: b.openCards,
+    closedCards: b.closedCards,
+    playerCards: b.playerCards,
+    botCards: b.allBotCards?.[0] ?? [],
+    allBotCards: b.allBotCards,
+    potAmount: b.potAmount,
+    playerHighlightIds: b.playerHighlightIds,
+    botHighlightIds: b.botHighlightIds,
+    boardHighlightIds: b.boardHighlightIds,
+  })), []);
+
+  const onRevealDone = useCallback(() => {
+    setShowSafeReveal(false);
+    setPendingRevealBoards([]);
+    setPhase('navigating');
+    router.replace('/results');
+  }, [router]);
 
   // Timer
   const handleTimerExpire = useCallback(() => {
@@ -1063,6 +1129,14 @@ function MultiplayerGameScreenInner() {
         />
       )}
       </Animated.View>
+      {/* MP-BOARDREVEAL — full-screen Modal reveal before /results (gated). */}
+      {showSafeReveal && (
+        <BoardReveal
+          boards={pendingRevealBoards}
+          onDone={onRevealDone}
+          revealSpeed={config.revealSpeed}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -543,7 +543,9 @@ export default function HomeScreen() {
   // Bug 3 (PR-G): offer modal must resolve before tutorial can show.
   // StarterOfferModal calls onResolved() when its check completes
   // (eligible+dismissed, or ineligible). Tutorial waits.
-  const [offerResolved, setOfferResolved] = useState(false);
+  // VAMOS-UNIFY-FINAL — StarterOfferModal removed; the tutorial gate that used
+  // to wait for the offer to resolve now opens immediately.
+  const [offerResolved, _setOfferResolved] = useState(true); void _setOfferResolved;
   const [gamesPlayed, setGamesPlayed] = useState(99); // default 99 = not first game until loaded
   const [showNudge, setShowNudge] = useState(false);
   // mpMode moved to Settings (PLAY ONLINE section consolidated)
@@ -805,30 +807,20 @@ export default function HomeScreen() {
     ]).then(([gamesVal, dismissedVal, popupShownVal]) => {
       const played = gamesVal ? parseInt(gamesVal, 10) || 0 : 0;
       setGamesPlayed(played);
-      // Show nudge if: guest + nudge point + not recently dismissed
-      const dismissedAt = dismissedVal ? parseInt(dismissedVal, 10) || 0 : 0;
-      if (!user && NUDGE_AT_GAMES.includes(played) && played > dismissedAt) {
-        setShowNudge(true);
-      }
-      // Show daily reward popup if claimable, not yet shown this session, and past first game
-      if (ECONOMY_FLAGS.dailyRewardEnabled && !popupShownVal && played > 0) {
-        const store = useGameStore.getState();
-        const now = new Date();
-        if (canClaimDailyReward(store.lastDailyRewardClaim, now)) {
-          const nextStreak = getNextStreak(store.lastDailyRewardClaim, store.dailyRewardStreak, now);
-          const reward = calculateDailyReward(nextStreak);
-          setPendingDailyReward(reward);
-          setPendingDailyStreak(nextStreak);
-          setShowDailyRewardPopup(true);
-          // Mark as shown for this session
-          AsyncStorage.setItem(DAILY_REWARD_POPUP_SESSION_KEY, '1').catch(() => {});
-        }
-      }
+      // VAMOS-UNIFY-FINAL 2026-06-28 — sign-in nudge banner + daily-reward popup
+      // removed. Reading dismissedVal / popupShownVal preserved so AsyncStorage
+      // keys are quiet; the actual surfacing is gone. Daily-reward chips can
+      // still be claimed via the explicit handler (handleClaimDailyReward).
+      void dismissedVal; void popupShownVal;
     }).catch(() => { setGamesPlayed(0); });
 
     // (DEDUPE-QA) OnboardingOverlay removed — the InteractiveTutorial above is the single onboarding.
 
-    // Supabase daily streak — claim_daily_streak RPC
+    // VAMOS-UNIFY-FINAL 2026-06-28 — streak popup + Weekly Recap modal removed.
+    // The daily-streak chips are still awarded by the RPC; we just don't surface
+    // a modal anymore. The RPC call is kept so the streak counter advances on
+    // first visit each day (and to populate streakData for non-popup UI like
+    // the home-row badge).
     void (async () => {
       try {
         const shownThisSession = await AsyncStorage.getItem(STREAK_POPUP_SESSION_KEY);
@@ -845,30 +837,11 @@ export default function HomeScreen() {
           track('streak_claimed', { day: data.current_streak }, 'home');
           setStreakData(data);
           await AsyncStorage.setItem(STREAK_POPUP_SESSION_KEY, '1').catch(() => {});
-          // Defer the streak popup behind the onboarding if it's about to show (InteractiveTutorial),
-          // else show it now. The InteractiveTutorial onDone fires the deferred popup.
-          const seenOnboarding = await AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY);
-          if (seenOnboarding) {
-            setShowStreakPopup(true);
-          } else {
-            pendingStreakRef.current = true;
-          }
         } else if (data.already_claimed) {
           setStreakData(data);
         }
       } catch {}
     })();
-
-    // Weekly Recap — show on Sunday (skipped in CI auto-tour)
-    if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
-      const today = new Date();
-      if (today.getDay() === 0) { // Sunday = 0
-        const weekKey = `recap_${today.getFullYear()}_${Math.ceil(today.getDate() / 7)}`;
-        AsyncStorage.getItem('recap_week').then(stored => {
-          if (stored !== weekKey) setShowWeeklyRecap(true);
-        });
-      }
-    }
 
     // Home data cards — missions + leaderboard
     void (async () => {
@@ -919,16 +892,11 @@ export default function HomeScreen() {
     const prev = prevUserRef.current;
     prevUserRef.current = user;
     if (!prev && user) {
-      // Just signed in — migrate and show toast
+      // VAMOS-UNIFY-FINAL — welcome toast removed. The migration still runs;
+      // we just don't surface a transient banner after sign-in.
       const displayName = String(user.user_metadata?.full_name ?? playerName).slice(0, 30);
       useGameStore.getState().setPlayerName(displayName);
-      migrateGuestToUser(user.id, displayName).then((migrated) => {
-        if (migrated) {
-          setWelcomeToastName(displayName.split(' ')[0]);
-          setShowWelcomeToast(true);
-          setTimeout(() => setShowWelcomeToast(false), 3500);
-        }
-      }).catch(() => {});
+      migrateGuestToUser(user.id, displayName).catch(() => {});
     } else if (user?.user_metadata?.full_name && !prev) {
       // Already signed in on mount — just update name
       useGameStore.getState().setPlayerName(String(user.user_metadata.full_name).slice(0, 20));
@@ -1091,12 +1059,10 @@ export default function HomeScreen() {
 
   // A3: Show share banner if last game was COMPLETE
   useFocusEffect(useCallback(() => {
+    // VAMOS-UNIFY-FINAL — share-COMPLETE banner removed. The 'last_was_complete'
+    // flag is still cleared so it doesn't pile up in AsyncStorage.
     AsyncStorage.getItem('last_was_complete').then(val => {
-      if (val === 'true') {
-        AsyncStorage.removeItem('last_was_complete').catch(() => {});
-        setShowCompleteBanner(true);
-        setTimeout(() => setShowCompleteBanner(false), 8000);
-      }
+      if (val === 'true') AsyncStorage.removeItem('last_was_complete').catch(() => {});
     }).catch(() => {});
   }, []));
 
@@ -1745,18 +1711,9 @@ export default function HomeScreen() {
           onCollect={() => setShowStreakPopup(false)}
         />
       )}
-      <LevelUpModal visible={showLevelUp} newLevel={levelUpTo} onClose={() => setShowLevelUp(false)} />
-      <WeeklyRecapModal visible={showWeeklyRecap} onDismiss={() => setShowWeeklyRecap(false)} />
-      {/* VAMOS-NEW-USER-FIRSTRUN 2026-06-22: the $2.99 Starter Offer must NOT be the
-          first thing a brand-new user sees (it overlaid PLAY on first launch). Defer it
-          until the user has played 5 games. When deferred, the tutorials proceed via
-          the `gamesPlayed < 5` bypass above, so nothing waits on an offer that never mounts. */}
-      {gamesPlayed >= 5 && (
-        <StarterOfferModal onResolved={() => {
-          debugLog('[starter_offer] parent onResolved -> opening tutorial gate', 'info');
-          setOfferResolved(true);
-        }} />
-      )}
+      {/* VAMOS-UNIFY-FINAL 2026-06-28 — LevelUpModal, WeeklyRecapModal, and the
+          StarterOfferModal removed per "no in-app popups". Tutorial gate now
+          resolves immediately so a new user heads straight into onboarding. */}
       </SafeAreaView>
   );
 }
