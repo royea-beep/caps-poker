@@ -17,11 +17,13 @@ export const DEFAULT_CONFIG = {
   botDifficulty: 'easy' as 'easy' | 'medium' | 'hard',
   /**
    * MP-RENDER-PARITY 2026-06-28 — when true, MP plays the same <BoardReveal>
-   * animation SOLO plays before navigating to /results. Flip to false to
-   * fall back to the old "jump straight to results" behavior if 2-player
-   * reveal desync feels off in live testing.
+   * animation SOLO plays before navigating to /results. DEFAULT FALSE: shipping
+   * with the jump-to-results behavior (zero change vs main) until we prove the
+   * 2-client reveal renders + finishes cleanly on both clients. The code path
+   * stays in tree, dormant; flip to true via Settings / a 1-line follow-up
+   * after live verification.
    */
-  mpBoardReveal: true,
+  mpBoardReveal: false,
 };
 
 export type GameConfig = typeof DEFAULT_CONFIG;
