@@ -103,6 +103,12 @@ export default function PublicLobby() {
         // is_host drives the realtime role: the first joiner of a hostless pool table
         // runs the RealtimeServer; everyone else joins as a guest.
         enterTableRoom(res.room_code ?? tbl.room_code, count, asHost);
+      } else if (res?.error === 'not_a_member') {
+        // Public pool tables don't carry club_id, so this is defensive only — a
+        // race where the pool RPC stitched in a club row. Treat as unavailable.
+        track('table_join_rejected', { table_kind: 'public', reason: 'not_a_member', room_code: tbl.room_code }, 'lobby');
+        Alert.alert('Members only', 'That table belongs to a club.');
+        await load();
       } else {
         Alert.alert('Table unavailable', 'That table just filled — try another.');
         await load();

@@ -35,7 +35,7 @@ import {
 } from '../../utils/realtimeMultiplayer';
 import { CapsHooks } from '../../utils/learning';
 import { track } from '../../utils/analytics';
-import { leaveTable } from '../../utils/lobbyApi';
+import { leaveTable, touchRoomPlayer } from '../../utils/lobbyApi';
 import { getDeviceId } from '../../utils/leaderboard';
 import { getSupabase } from '../../utils/supabase';
 import { rf, rs, rv } from '../../utils/responsive';
@@ -67,6 +67,7 @@ export default function TableRoomScreen() {
 
   const serverRef = useRef<RealtimeServer | null>(null);
   const clientRef = useRef<RealtimeClient | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef(false); // host: deal already fired
   const dealScheduledRef = useRef(false); // host: a deal is queued (settle delay)
   const launchedRef = useRef(false); // navigated into the game — keep the connection alive
@@ -103,8 +104,24 @@ export default function TableRoomScreen() {
     // Carry the club code (if this is a club table) so record_club_result fires at game end.
     setClubCode(clubCode);
 
-    // Capture ids used to free the DB seat on bail-out.
-    getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
+    // Capture ids used to free the DB seat on bail-out + heartbeat the seat.
+    // The device_id is the SAME id the realtime channel uses as its presence key
+    // (utils/realtimeMultiplayer → getDeviceId()), so touch_room_player updates the
+    // exact roster row that backs this seat.
+    getDeviceId().then((d) => {
+      deviceIdRef.current = d;
+      // Once we have a device_id, prime the seat immediately, then heartbeat every
+      // 25s. evict_ghost_seats considers a seat stale at >90s, so 25s leaves ~3
+      // beats of headroom before reaping. We stop the interval the moment we leave
+      // the waiting room (launched into the game OR bailed out / unmounted).
+      if (!d || !roomCode) return;
+      void touchRoomPlayer(roomCode, d, userIdRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      heartbeatRef.current = setInterval(() => {
+        if (!mountedRef.current || launchedRef.current) return;
+        void touchRoomPlayer(roomCode, deviceIdRef.current, userIdRef.current);
+      }, 25_000);
+    }).catch(() => {});
     getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
 
     let cancelled = false;
@@ -282,6 +299,7 @@ export default function TableRoomScreen() {
     return () => {
       cancelled = true;
       mountedRef.current = false;
+      if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; }
       // If we launched into the game, the game screen owns the realtime connection.
       // Otherwise free the DB seat and tear down realtime so no ghost table lingers.
       if (!launchedRef.current) {

@@ -77,6 +77,10 @@ export default function PrivateLobby() {
           track('table_autostarted', { table_kind: 'private', player_count: count, room_code: res.room_code }, 'lobby-private');
         }
         enterTableRoom(res.room_code ?? roomCode, count, asHost);
+      } else if (res?.error === 'not_a_member') {
+        // The code belongs to a CLUB table; only club members can join it.
+        track('table_join_rejected', { table_kind: 'private', reason: 'not_a_member', room_code: roomCode }, 'lobby-private');
+        Alert.alert('Members only', 'That table belongs to a club. Join the club to play there.');
       } else {
         Alert.alert('Table unavailable', 'That code is wrong, full, or no longer open.');
       }

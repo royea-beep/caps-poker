@@ -42,6 +42,13 @@ export interface JoinResult {
   is_host?: boolean;
   /** True when the caller was already seated at this table (idempotent re-join). */
   already_joined?: boolean;
+  /**
+   * Seat (0-indexed) the server assigned this joiner. join_table now picks the
+   * smallest FREE seat in [0, max_players), so mid-waiting leaves no longer leak a
+   * unique-constraint collision. Clients should trust this — never recompute it
+   * from join order or current_players.
+   */
+  seat_index?: number;
   game_config?: { numberOfPlayers?: number } | null;
 }
 
@@ -148,6 +155,29 @@ export async function leaveTable(roomCode: string, playerId?: string | null, dev
       p_room_code: roomCode.trim().toUpperCase(),
       p_player_id: playerId ?? null,
       p_device_id: deviceId ?? null,
+    });
+  } catch {
+    /* fire-and-forget */
+  }
+}
+
+/**
+ * Heartbeat a seated player's presence (bumps room_players.last_seen). Used to keep
+ * seats in the PUBLIC pool from being reaped by evict_ghost_seats(>90s stale) while
+ * the player is actually waiting. Fire-and-forget; no-op for non-existent rooms.
+ *
+ * Identity: the device_id passed here MUST match the realtime presence key
+ * (utils/realtimeMultiplayer uses getDeviceId() as the presence key on both host and
+ * client), so a row identified by (room_code, device_id) is the same physical seat.
+ */
+export async function touchRoomPlayer(roomCode: string, deviceId: string | null, userId: string | null): Promise<void> {
+  try {
+    const sb = getSupabase();
+    if (!sb || !roomCode) return;
+    await sb.rpc('touch_room_player', {
+      p_room_code: roomCode.trim().toUpperCase(),
+      p_device_id: deviceId ?? null,
+      p_user_id: userId ?? null,
     });
   } catch {
     /* fire-and-forget */
