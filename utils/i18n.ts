@@ -182,6 +182,8 @@ interface Translations {
   community: string;
   hintTexts: [string, string, string];
   waitingForBots: (count: number) => string;
+  /** MP analog of waitingForBots: shown while waiting for human opponents to lock in. */
+  waitingForOthers: (count: number) => string;
   tapToContinue: string;
 
   // Hand history (S-LOCALE-FIX)
@@ -326,6 +328,7 @@ const he: Translations = {
     '💡 טיפ: הקש על קלף שהונח כדי להסיר אותו ולנסות בורד אחר',
   ],
   waitingForBots: (n) => n > 1 ? 'ממתין לבוטים...' : 'ממתין לבוט...',
+  waitingForOthers: (n) => n > 1 ? 'ממתין לשחקנים האחרים...' : 'ממתין ליריב...',
   tapToContinue: 'הקש להמשך →',
   // Hand history
   historyAll: (n) => `הכל (${n})`,
@@ -467,6 +470,7 @@ const en: Translations = {
     '💡 Tip: Tap a placed card to remove it and try a different board',
   ],
   waitingForBots: (n) => n > 1 ? 'Waiting for bots...' : 'Waiting for bot...',
+  waitingForOthers: (n) => n > 1 ? 'Waiting for the other players...' : 'Waiting for opponent...',
   tapToContinue: 'TAP TO CONTINUE →',
   // Hand history
   historyAll: (n) => `All (${n})`,
