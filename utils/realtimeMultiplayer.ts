@@ -483,6 +483,23 @@ export class RealtimeServer {
     }
   }
 
+  /**
+   * MP-LEAVE-RECOVERY 2026-06-29 — host-authoritative backstop. Force the current hand to
+   * complete by marking every CONNECTED client ready, then running the normal all-ready path.
+   * Not-ready clients keep boardAssignments=null, which runRevealSequence() auto-fills from
+   * their dealt hand. No-op once the hand is already resolving/over. Called by the host
+   * deal-clock when a peer leaves/idles without readying and presence never dropped to
+   * auto-resolve it — so a hand can never wedge in 'playing' forever.
+   */
+  forceReadyAllConnected(): void {
+    if (this.gamePhase === 'complete' || this.gamePhase === 'lobby') return;
+    for (const client of this.clients.values()) {
+      if (client.connected) client.isReady = true;
+    }
+    rtLog('SERVER', 'Deal-clock backstop: force-readying all connected clients');
+    this.checkAllReady();
+  }
+
   private checkNextHandReady(): void {
     const connected = Array.from(this.clients.values()).filter(
       (c) => c.connected

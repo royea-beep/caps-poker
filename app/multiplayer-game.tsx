@@ -19,8 +19,10 @@ import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
 import { track } from '../utils/analytics';
-import { finishTable } from '../utils/lobbyApi';
+import { finishTable, touchRoomPlayer } from '../utils/lobbyApi';
 import { recordClubGame, ClubGameResult } from '../utils/clubApi';
+import { getDeviceId } from '../utils/leaderboard';
+import { getSupabase } from '../utils/supabase';
 import ChatBar, { ChatBubbles, ChatMessage, SendKind } from '../components/ChatOverlay';
 import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
@@ -69,6 +71,16 @@ function maybeRecordClubGame(roster: ClubGameResult[]) {
 
 const FREE_TIME_SECS = 30;
 const COUNTDOWN_SECS = 30;
+// MP-LEAVE-RECOVERY 2026-06-29 — host-authoritative backstop. A 2P hand can legitimately
+// take FREE_TIME_SECS (30) + COUNTDOWN_SECS (30) = 60s when both players play to the wire,
+// so the host deal-clock must sit ABOVE that. On expiry the host force-completes the hand
+// (auto-fills every not-ready CONNECTED client) so a wedged hand can never sit forever —
+// the safety net for the case where presence never drops (e.g. an unclean disconnect).
+const DEAL_CLOCK_MS = 90000;
+// Keep the seat's room_players.last_seen fresh DURING the game (the waiting-room heartbeat
+// in lobby/table stops at game start). Gives the server-side reaper a per-seat signal so a
+// player who leaves goes stale within ~2 beats and a wedged 'playing' room can be reaped.
+const INGAME_HEARTBEAT_MS = 20000;
 
 // MP-RENDER-PARITY 2026-06-28 — match SOLO's PR-M layout budget. The hardcoded
 // 44/24/68/26 constants here were the pre-unification budget that made boards +
@@ -237,6 +249,16 @@ function MultiplayerGameScreenInner() {
   // Collected reveal data for guest
   const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
   const mountedRef = useRef(true);
+  // MP-LEAVE-RECOVERY — completedRef is set the moment a NORMAL completion begins
+  // (host/guest reveal navigate, or reveal-modal done). The unmount handler uses it to
+  // tell "the hand finished, keep the realtime session for /results + rematch" apart from
+  // "the player bailed (back/home/route change), tear the session down so the OTHER player
+  // sees the presence leave and is freed immediately".
+  const completedRef = useRef(false);
+  const deviceIdRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dealClockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     CapsHooks.gameStarted('online');
@@ -493,6 +515,7 @@ function MultiplayerGameScreenInner() {
     serverBoards: any[],
     clientArray: any[]
   ) => {
+    completedRef.current = true; // normal completion — keep the session alive for /results + rematch
     const myIdx = playerIndex;
 
     const revealBoards: RevealBoardData[] = boardResults.map((br: any, bi: number) => {
@@ -592,6 +615,7 @@ function MultiplayerGameScreenInner() {
 
   // Guest: build RevealData from BOARD_REVEAL + HAND_COMPLETE payloads
   const buildGuestRevealDataAndNavigate = useCallback((result: HandCompletePayload) => {
+    completedRef.current = true; // normal completion — keep the session alive for /results + rematch
     const currentBoards = boardsRef.current;
     const reveals = boardRevealsRef.current;
 
@@ -834,6 +858,57 @@ function MultiplayerGameScreenInner() {
       mpClient.sendReady(assignments);
     }
   }, [timer, isHost, mpServer, mpClient]);
+
+  // MP-LEAVE-RECOVERY — let the deal-clock call the latest autoFillAndReady without
+  // listing it as an effect dep (which would restart the timer every render).
+  const autoFillReadyRef = useRef(autoFillAndReady);
+  useEffect(() => { autoFillReadyRef.current = autoFillAndReady; }, [autoFillAndReady]);
+
+  // MP-LEAVE-RECOVERY — per-mount: (1) in-game heartbeat so the seat's last_seen stays fresh
+  // while playing (the lobby/table heartbeat stops at game start), giving the server reaper a
+  // signal; (2) HOST deal-clock that force-completes a hand that would otherwise wedge.
+  useEffect(() => {
+    const roomCode = storeRoomCode || null;
+    let cancelled = false;
+    (async () => {
+      try {
+        deviceIdRef.current = await getDeviceId().catch(() => null);
+        try { userIdRef.current = (await getSupabase()?.auth.getUser())?.data?.user?.id ?? null; }
+        catch { userIdRef.current = null; }
+        if (cancelled) return;
+        const beat = () => { if (roomCode) void touchRoomPlayer(roomCode, deviceIdRef.current, userIdRef.current); };
+        beat(); // prime immediately
+        heartbeatRef.current = setInterval(beat, INGAME_HEARTBEAT_MS);
+      } catch { /* heartbeat is best-effort */ }
+    })();
+
+    if (isHost && mpServer) {
+      dealClockRef.current = setTimeout(() => {
+        if (!mountedRef.current || completedRef.current) return;
+        try { autoFillReadyRef.current?.(); } catch { /* ready host's own hand */ }
+        try { (mpServer as any)?.forceReadyAllConnected?.(); } catch { /* force-complete the rest */ }
+      }, DEAL_CLOCK_MS);
+    }
+
+    return () => {
+      cancelled = true;
+      if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; }
+      if (dealClockRef.current) { clearTimeout(dealClockRef.current); dealClockRef.current = null; }
+    };
+  }, [isHost, mpServer, storeRoomCode]);
+
+  // MP-LEAVE-RECOVERY — BAIL detection (empty deps → cleanup runs ONLY on true unmount).
+  // If the player leaves the game screen WITHOUT a normal completion (back / home / route
+  // change / tab nav), tear the realtime session down so the OTHER player's host sees the
+  // presence leave and is freed immediately. On a normal finish (completedRef) we keep
+  // mpServer/mpClient alive so /results + rematch still work.
+  useEffect(() => {
+    return () => {
+      if (!completedRef.current) {
+        try { useGameStore.getState().resetMultiplayer(); } catch { /* best-effort teardown */ }
+      }
+    };
+  }, []);
 
   // Card selection (same UX as game.tsx)
   const handleSelectCard = useCallback((card: Card) => {
