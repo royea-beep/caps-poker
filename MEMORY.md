@@ -2,6 +2,26 @@
 
 
 - THEME (done 2026-06-15): app-wide obsidian `#161922` / mint `#4FD6A8` (tokens mint, mintLight `#7FE3C2`, mintBright `#A7EED6`, mintDim). Gold = SEMANTIC ONLY: winner highlight (Card.tsx inline literal `#c9a84c`, locked), medals, cup tiers, currency amounts. See docs/GEMS.md → "Headless Visual-QA Loop".
+
+### 2026-06-28 — UNIFY-FINAL state of truth
+📎 Docs: docs/RECAP_2026-06-28.md (cycle narrative + 3-layer QA method) · docs/MIGRATION_HYGIENE.md (qa_* junk migrations vs real ones)
+
+LIVE: web prod = main `16e278f`, bundle `index-62234e03…` (verified, 0 console errors). Native = TestFlight 506 (`aea77e1`) + OTA group `cc58fc53` (UNIFY-FINAL, runtime 2.7.0). DB = gxrpunvhjcrzqnitbqah.
+
+SHIPPED THIS CYCLE: public lobby (always-open 6-table pool, first-joiner-host, self-healing cron) · Friends Clubs (closed groups + member-gated tables + private mini-league) · MP↔SOLO render parity (unified UI) · all 12 in-app popups removed (only first-run onboarding kept) · tightened onboarding copy · 4 deep bugs fixed (below).
+
+4 BUGS FIXED (found by DB simulation, all LIVE):
+1. seat_index collision — join_table set seat_index=current_players → collided after a mid-waiting leave → next join threw a unique-constraint 500 (players couldn't join; likely part of the ~40% MP "abandonment"). FIX: smallest-free-seat in [0,max), returns seat_index. Migration fix_join_table_seat_collision_and_club_gate.
+2. Club tables not member-gated at JOIN (non-member with code could join). FIX: same migration, join_table rejects non-members of a club_id table with not_a_member.
+3. Ghost seats — public waiting tables never expired + no heartbeat. FIX: room_players.last_seen + touch_room_player() (client beats 25s) + evict_ghost_seats(90) on cron caps_evict_ghost_seats (60s). Migrations bug3_heartbeat_and_ghost_eviction + schedule_evict_ghost_seats_cron.
+4. Mini-league drift — record_club_result per-client → asymmetric on disconnect. FIX: ledger club_game_results(room_code PK) + record_club_game() idempotent (any alive client submits full roster). Migration bug4_club_game_ledger_idempotent_record.
+
+NEW DB OBJECTS: tables clubs, club_members, club_game_results; columns game_rooms.is_public, game_rooms.club_id, room_players.last_seen. RPCs: ensure_public_lobby, list_public_tables, touch_room_player, evict_ghost_seats, create_club, join_club, my_clubs, club_leaderboard, create_club_table, list_club_tables, record_club_game (record_club_result @deprecated). join_table now does smallest-free-seat + club gate + returns seat_index. Crons: lobby_v2_ensure_public_pool (*/2), caps_evict_ghost_seats (* * * * *), caps_cleanup_expired_rooms (*/2).
+
+CLEAN RESET (for friends): all 739 accounts → 2000 chips, all lifetime stats zeroed, leaderboard emptied, club leagues zeroed. One real club kept (RARP).
+
+PENDING: BoardReveal in MP (flag mpBoardReveal=false, dormant — code wired but NOT verified 2-client; prove via Option B then flip on) · QA pipeline branch feat/qa-pipeline @ 8b73f17 (Layer 1 db-sim + Layer 2 web-e2e scaffolded, NOT run; Layer 3 Maestro chosen not built; run Layer 1 against a Supabase BRANCH not prod) · native E2E (Maestro) = the open corner.
+
 ## Iron Rules (NEVER change without explicit "UNLOCK [rule]" from user)
 - Rule 1: React Native + Expo only — no bare workflow, no Capacitor
 - Rule 2: iOS portrait only — no landscape, no tablet
@@ -11,6 +31,10 @@
 - Rule 6: No backend for single-player — local storage only
 - Rule 7: Local multiplayer via react-native-tcp-socket (host as WebSocket server) — LOCKED
 - Rule 8: Internet multiplayer via Supabase Realtime (Phase 2, future sprint) — LOCKED
+- Rule 9 (2026-06-28): DB ground-truth beats any bot/agent report — re-run the simulation, read the tables.
+- Rule 10 (2026-06-28): Never claim a layer works without watching it run end-to-end.
+- Rule 11 (2026-06-28): QA simulations run against a Supabase BRANCH, never the live shared project.
+- Rule 12 (2026-06-28): ~15 qa_* migrations in history are throwaway test sims (see docs/MIGRATION_HYGIENE.md) — don't let them replay on a branch.
 
 ## Tech Stack
 - React Native + Expo SDK 55 (React 19, RN 0.83)
