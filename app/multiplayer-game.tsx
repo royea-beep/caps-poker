@@ -32,6 +32,9 @@ import BoardReveal from '../components/BoardReveal';
 import { PRD } from '../utils/prdTokens';
 import { rf, rh, rs, rv } from '../utils/responsive';
 import { t } from '../utils/i18n';
+import { useGameLayout } from '../hooks/useGameLayout';
+import { GameView } from '../components/GameView';
+import { BoardState } from '../utils/gameLogic';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -143,19 +146,15 @@ function MultiplayerGameScreenInner() {
 
   const boardCount = boardsParam.length;
 
-  // MP-RENDER-PARITY — card sizing now driven by SOLO's getCardDimensions(screenW,
-  // playerCount) — the SAME design-system formula. The previous ad-hoc
-  // max(28,min(82,boardSpace/2)) produced visibly different cards from SOLO at
-  // the same screen size + player count. Hand height: 2 rows for 2P/3P (8/12
-  // cards), 1 row for 4P (8 cards) — covers the same player counts as SOLO.
+  // VAMOS-UNIFY-GAMEVIEW 2026-06-29 — MP now uses the EXACT SOLO fit-search sizing
+  // via useGameLayout (the same hook game.tsx uses), then renders the shared
+  // <GameView/> + <BoardArrangement/>. This replaces MP's prior ad-hoc
+  // getCardDimensions sizing + its hand-duplicated <Board> map / <PlayerHand>.
   const _safePlayers = (playerCount === 2 || playerCount === 3 || playerCount === 4 ? playerCount : 2) as 2 | 3 | 4;
-  const _cardDims = getCardDimensions(SCREEN_W, _safePlayers);
-  const BOARD_CARD_H = _cardDims.cardHeight;
-  const _handRows = _safePlayers === 4 ? 1 : 2;
-  const PLAYER_HAND_H = _handRows * _cardDims.cardHeight + (_handRows - 1) * rs(4) + rs(30); // label + container padding
-  // Kept for the boards-zone budget invariant — exact math is owned by Board.tsx
-  // when arranged via Boards stacked; we just feed it the cardHeight.
-  void SCREEN_H; void insets; void TOP_BAR_H; void BOT_STATUS_H; void FLOATING_ACTIONS_H; void HINT_H; void BOARD_CHROME; void boardCount; void PLAYER_HAND_H;
+  const _L = useGameLayout({ screenW: SCREEN_W, screenH: SCREEN_H, insets, boardCount, numberOfPlayers: _safePlayers });
+  // The legacy module-level chrome constants are no longer part of MP's sizing math
+  // (useGameLayout owns it now), but keep the references silenced for the lint pass.
+  void TOP_BAR_H; void BOT_STATUS_H; void FLOATING_ACTIONS_H; void HINT_H; void BOARD_CHROME;
 
   // State
   const [boards, setBoards] = useState<BoardDisplay[]>(() =>
@@ -961,6 +960,33 @@ function MultiplayerGameScreenInner() {
     setPlayerHand((prev) => [...prev, card]);
   }, [isArranging]);
 
+  // Auto-place this board's empty slots from the player's hand (LOCAL ONLY — no
+  // broadcast; MP only syncs the final assignments on Ready). Mirrors SOLO's
+  // per-board Auto-Place. MP removes placed cards from the hand on placement, so a
+  // card can never already be on another board — no cross-board re-validation needed.
+  const handleAutoFillBoard = useCallback((boardIndex: number) => {
+    if (!isArranging) return;
+    const currentHand = playerHandRef.current;
+    if (currentHand.length === 0) return;
+    const board = boardsRef.current[boardIndex];
+    if (!board || board.playerCards.length > 0) return;
+    const slots = CARDS_PER_BOARD - board.playerCards.length;
+    const cardsToPlace = currentHand.slice(0, slots);
+    if (cardsToPlace.length === 0) return;
+    haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+    playSound('cardPlace');
+    const placedIds = new Set(cardsToPlace.map((c) => c.id));
+    setBoards((prev) => {
+      const prevBoard = prev[boardIndex];
+      if (!prevBoard || prevBoard.playerCards.length > 0) return prev;
+      const updated = [...prev];
+      updated[boardIndex] = { ...prevBoard, playerCards: [...prevBoard.playerCards, ...cardsToPlace] };
+      return updated;
+    });
+    setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+    setSelectedCardId(null);
+  }, [isArranging]);
+
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
@@ -1033,26 +1059,59 @@ function MultiplayerGameScreenInner() {
   const otherPlayersN = Math.max(1, playerCount - 1);
   void formatTime; // legacy mm:ss formatter no longer rendered inline; TimerController owns it
 
+  // VAMOS-UNIFY-GAMEVIEW 2026-06-29 — map MP's BoardDisplay rows into the BoardState
+  // shape BoardArrangement expects (it reads board.allBotCards[0] || board.botCards).
+  // During arrangement these are empty; the player-facing slots are all that render.
+  const _baBoards: BoardState[] = boards.map((b) => ({
+    openCards: b.openCards,
+    closedCards: b.closedCards,
+    playerCards: b.playerCards,
+    botCards: [],
+    allBotCards: [[]],
+    revealed: b.revealed,
+  }));
+
   return (
-    <SafeAreaView style={[
-      styles.container,
-      { backgroundColor: theme.background },
-      Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any,
-    ]}>
-      <FriendsBg />
-      <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
-      {/* Top bar \u2014 matches SOLO: \u00d7 | center status (instruction pill / circular timer / waiting text) | inline chips */}
-      <View style={styles.topBar}>
-        <Pressable
-          onPress={handleBack}
-          style={[styles.backButton, { minHeight: 44, minWidth: 44 }]}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Leave game"
-        >
-          <Text style={styles.backText}>{'\u2715'}</Text>
-        </Pressable>
-        <View style={styles.topCenter}>
+    <GameView
+      theme={theme}
+      visualTheme={visualTheme}
+      onBack={handleBack}
+      chips={chips}
+      screenW={SCREEN_W}
+      layout={_L}
+      boards={_baBoards}
+      boardShakeStyles={[]}
+      playerHand={playerHand}
+      selectedCardIds={selectedCardId ? [selectedCardId] : []}
+      isArranging={isArranging}
+      allBoardsFull={allBoardsFull}
+      cardsRemaining={cardsRemaining}
+      boardError={null}
+      boardCount={boardCount}
+      numberOfPlayers={_safePlayers}
+      potPerBoard={config.potPerBoard * playerCount}
+      countdownActive={timer.isRunning}
+      countdown={displayTimeLeft}
+      timeBankUsed={timeBankUsed}
+      gamesPlayed={0}
+      playerReady={false}
+      allBotsReady={false}
+      showContinueButton={false}
+      showTimerBar={isArranging && timer.isRunning}
+      timerBarCountdown={displayTimeLeft}
+      timerBarTotal={COUNTDOWN_SECS}
+      timerBarColor={timerColor}
+      onSelectCard={handleSelectCard}
+      onBoardPress={handleBoardPress}
+      onRemoveCard={handleRemoveCardFromBoard}
+      onAutoFill={handleAutoFillBoard}
+      onUndo={() => {}}
+      onReady={handleReady}
+      onTimeBank={handleTimeBank}
+      onContinue={() => {}}
+      reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed } : null}
+      topCenter={
+        <>
           {isArranging && !timer.isRunning && freeTimeLeft > 0 && (
             <Text style={styles.freePlayLabel} accessibilityLiveRegion="polite">
               {cardsRemaining === 0 ? t().allPlaced : t().arrangeCards(cardsRemaining)}
@@ -1074,7 +1133,9 @@ function MultiplayerGameScreenInner() {
           {phase === 'waiting' && (
             <Text style={styles.waitingHeaderText} accessibilityLiveRegion="polite">{t().waitingForOthers(otherPlayersN)}</Text>
           )}
-        </View>
+        </>
+      }
+      topRight={
         <View style={styles.topRight}>
           {isHost && isInternetMP && spectatorCount > 0 && (
             <Text style={styles.spectatorBadge}>👁 {spectatorCount}</Text>
@@ -1085,22 +1146,20 @@ function MultiplayerGameScreenInner() {
             <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
           </View>
         </View>
-      </View>
-
-      {/* Disconnect / reconnect banner */}
-      {disconnectBanner && (
-        <View style={styles.disconnectBanner}>
-          <Text style={styles.disconnectText}>
-            {reconnectCountdown !== null
-              ? `⚠️ ${disconnectBanner} ${reconnectCountdown}s...`
-              : `⚠️ ${disconnectBanner}`}
-          </Text>
-        </View>
-      )}
-
-      {/* Opponent row — same height + bg treatment as SOLO's botSection so the chrome stack feels uniform. */}
-      <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]} accessibilityLiveRegion="polite">
-        {isInternetMP && opponentName !== 'Opponent' ? (
+      }
+      belowTopBar={
+        disconnectBanner ? (
+          <View style={styles.disconnectBanner}>
+            <Text style={styles.disconnectText}>
+              {reconnectCountdown !== null
+                ? `⚠️ ${disconnectBanner} ${reconnectCountdown}s...`
+                : `⚠️ ${disconnectBanner}`}
+            </Text>
+          </View>
+        ) : null
+      }
+      header={
+        isInternetMP && opponentName !== 'Opponent' ? (
           <View style={styles.opponentRow}>
             <Text style={[styles.vsLabel, { color: theme.textMuted }]}>vs</Text>
             <OpponentHeader
@@ -1113,106 +1172,36 @@ function MultiplayerGameScreenInner() {
           <Text style={[styles.modeText, { color: theme.textSecondary }]}>
             {playerCount}P {isHost ? 'HOST' : 'GUEST'} · {playerNames[playerIndex] || `Seat ${playerIndex + 1}`}
           </Text>
-        )}
-      </View>
+        )
+      }
+      chrome={
+        <>
+          {/* Chat bubbles — overflow up, never onto cards */}
+          {isInternetMP && (
+            <View style={styles.bubbleDock} pointerEvents="box-none">
+              <ChatBubbles messages={chatMessages} />
+            </View>
+          )}
 
-      {/* Timer progress bar — thin bar below opponent row, only during countdown (matches SOLO). */}
-      {isArranging && timer.isRunning && (
-        <TimerBar countdown={displayTimeLeft} total={COUNTDOWN_SECS} color={timerColor} />
-      )}
+          {/* Waiting overlay */}
+          {phase === 'waiting' && (
+            <View style={styles.waitingOverlay}>
+              <View style={[styles.waitingBox, { backgroundColor: theme.surface, borderColor: theme.boardBorder }]}>
+                <Text style={[styles.waitingText, { color: theme.textSecondary }]}>{t().waitingForOthers(otherPlayersN)}</Text>
+              </View>
+            </View>
+          )}
 
-      {/* Chat bubbles — reserved dock between header and boards (overflow up, never onto cards) */}
-      {isInternetMP && (
-        <View style={styles.bubbleDock} pointerEvents="box-none">
-          <ChatBubbles messages={chatMessages} />
-        </View>
-      )}
-
-      {/* Boards — stacked vertically (same as game.tsx) */}
-      <View style={styles.boardsColumn}>
-        {boards.map((board, i) => (
-          <Board
-            key={i}
-            index={i}
-            openCards={board.openCards}
-            closedCards={board.closedCards}
-            playerCards={board.playerCards}
-            botCards={[]}
-            revealed={board.revealed}
-            active={false}
-            potAmount={config.potPerBoard * playerCount}
-            onPress={() => handleBoardPress(i)}
-            onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
-            isArrangement={isArranging}
-            selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-            cardHeight={BOARD_CARD_H}
-          />
-        ))}
-      </View>
-
-      {/* Player hand — face-up at bottom */}
-      {isArranging && (
-        <PlayerHand
-          cards={playerHand}
-          selectedCardIds={selectedCardId ? [selectedCardId] : []}
-          onSelectCard={handleSelectCard}
-        />
-      )}
-
-      {/* Time bank button — visible when countdown running and < 20s left */}
-      {isArranging && timer.isRunning && displayTimeLeft < 20 && !timeBankUsed && (
-        <Pressable style={styles.timeBankBtn} onPress={handleTimeBank} accessibilityRole="button" accessibilityLabel={t().timeBank}>
-          <Text style={styles.timeBankText}>⏱ {t().timeBank}</Text>
-        </Pressable>
-      )}
-
-      {/* Ready button — only after free time ends; inline Pressable matches SOLO's PR-M styling. */}
-      {isArranging && readyEnabled && (
-        <View style={styles.readySection}>
-          <Pressable
-            onPress={handleReady}
-            disabled={!allBoardsFull}
-            style={[
-              styles.readyBtn,
-              { backgroundColor: theme.primaryBtn, borderRadius: theme.primaryBtnRadius },
-              !allBoardsFull && styles.readyBtnDisabled,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={allBoardsFull ? t().ready : t().arrangeCards(cardsToPlaceN)}
-          >
-            <Text style={[styles.readyBtnText, { color: theme.primaryBtnText }]}>
-              {allBoardsFull ? t().ready : t().arrangeCards(cardsToPlaceN)}
-            </Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* Waiting overlay */}
-      {phase === 'waiting' && (
-        <View style={styles.waitingOverlay}>
-          <View style={[styles.waitingBox, { backgroundColor: theme.surface, borderColor: theme.boardBorder }]}>
-            <Text style={[styles.waitingText, { color: theme.textSecondary }]}>{t().waitingForOthers(otherPlayersN)}</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Emote/chat bar — dedicated IN-FLOW strip below the hand (never over cards) */}
-      {isInternetMP && (
-        <ChatBar
-          myName={myPlayerName}
-          onSend={handleSendChat}
-        />
-      )}
-      </Animated.View>
-      {/* MP-BOARDREVEAL — full-screen Modal reveal before /results (gated). */}
-      {showSafeReveal && (
-        <BoardReveal
-          boards={pendingRevealBoards}
-          onDone={onRevealDone}
-          revealSpeed={config.revealSpeed}
-        />
-      )}
-    </SafeAreaView>
+          {/* Emote/chat bar — dedicated IN-FLOW strip below the hand (never over cards) */}
+          {isInternetMP && (
+            <ChatBar
+              myName={myPlayerName}
+              onSend={handleSendChat}
+            />
+          )}
+        </>
+      }
+    />
   );
 }
 
