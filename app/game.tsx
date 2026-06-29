@@ -48,6 +48,8 @@ import GuidedTooltip from '../components/GuidedTooltip';
 import { TimerController, TimerBar } from '../components/TimerController';
 import { BoardArrangement } from '../components/BoardArrangement';
 import { useLevelStore } from '../stores/levelStore';
+import { useGameLayout } from '../hooks/useGameLayout';
+import { GameView } from '../components/GameView';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -133,314 +135,26 @@ function GameScreenInner() {
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
-  // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
-  // Persisted in AsyncStorage under 'max_board_card_h_dp'. Default rh(70) gives
-  // ~70dp on the iPhone 15/16 base viewport (852pt height). User can adjust in
-  // Settings within the [50, 100] range (dp at base). Re-checked on AppState
-  // changes so toggling the setting mid-session takes effect without a restart.
-  const BOARD_CARD_CAP_DEFAULT = rh(70);
-  const BOARD_CARD_CAP_MIN = rh(50);
-  const BOARD_CARD_CAP_MAX = rh(100);
-  const [boardCardCapDp, setBoardCardCapDp] = useState<number>(BOARD_CARD_CAP_DEFAULT);
-  useEffect(() => {
-    let alive = true;
-    const recheck = () => {
-      AsyncStorage.getItem('max_board_card_h_dp')
-        .then((v) => {
-          if (!alive) return;
-          const n = v ? parseFloat(v) : NaN;
-          if (Number.isFinite(n) && n >= BOARD_CARD_CAP_MIN && n <= BOARD_CARD_CAP_MAX) {
-            setBoardCardCapDp(n);
-          } else {
-            setBoardCardCapDp(BOARD_CARD_CAP_DEFAULT);
-          }
-        })
-        .catch(() => {});
-    };
-    recheck();
-    const sub = AppState.addEventListener('change', recheck);
-    const t1 = setTimeout(recheck, 1500);
-    const t2 = setTimeout(recheck, 4000);
-    return () => { alive = false; sub.remove(); clearTimeout(t1); clearTimeout(t2); };
-  }, [BOARD_CARD_CAP_DEFAULT, BOARD_CARD_CAP_MIN, BOARD_CARD_CAP_MAX]);
-
-  // Player hand: 2 rows of cards + label. Card height ≈ round(min(36,max(28,availW/8)) * 1.4)
-  // Approximate by screen height bracket: smaller phones Â smaller cards Â shorter hand section
-  // PR-K v9 — web reserves more so hand has its 2-row footprint; boards get the rest.
-  // PR-N 2026-06-02 — anchor PLAYER_HAND_H to PRD.zone.handMinH directly so the JS
-  // boards-zone math matches what BoardArrangement actually renders for the handZone.
-  // Previous mismatch (game.tsx 120, BoardArrangement 187) was the silent under-allocation
-  // that pushed Board 3 placement slots off-screen on build 459. handMinH is now
-  // max(rh(100), 0.16*SCREEN_H) and capped above by handMaxH = 0.28*SCREEN_H.
-  // 2026-06-08 Fix — per-boardCount hand-zone height.
-  // Previously PLAYER_HAND_H = global PRD.zone.handMinH (337dp on 844 viewport),
-  // sized for the 2p worst case (16-card 4×4 grid). 4p mode only has 8 cards
-  // (2 rows × 4 cols, ~168dp content) — leaving 172dp of dead space inside the
-  // outer hand zone. Roye device review of build 465 flagged this dead band
-  // below the hand.
-  //
-  // Fix: shrink hand zone per-boardCount.
-  // - boardCount === 2 (4p): 8 cards, 2 rows × 4 cols, ~168dp content → 170dp.
-  // - boardCount === 3 (3p): 12 cards, 2 rows × 6 cols, ~168dp content → 175dp
-  //   (slight extra for 2x6 wrapping; freed ~162dp moves to boards).
-  // - boardCount === 4 (2p): keeps existing 4×4 worst case until next pass.
-  // 3-board placed-card clearance pass: lower 3p hand from 175 -> 162 so
-  // boards-zone grows ~13dp. Each cell ends up ~164dp tall. Then BoardArrangement
-  // hints Board with cellHeight - 12 (safety pad), Board math sizes cards into
-  // 152dp inner so placed cards have ~6dp clearance above + below the gold border.
-  // 4-board (boardCount===4 / 2-player / 2×2 grid + 4×4 hand) — 290dp was 7dp
-  // SHORT (initial math missed cardWrapper.borderWidth 2*2=4dp/row × 4 rows = 16dp
-  // and grid.gap 2dp × 3 = 6dp). Real minimum: 4*62 + 18(label) + 3(label-mb) +
-  // 6(container-padV) + 6(row gaps) + 16(cardWrapper borders) = 297dp.
-  // Bumped to 305dp (8dp buffer). Boards-zone shrinks 15dp → cell h drops
-  // from ~188 to ~181 (still 25dp+ clearance, well above 6dp target).
-  // Wrap each tuned literal (designed against 844-height viewport) in rh() so
-  // it scales proportionally on shorter (568/667) and taller (932) screens.
-  // BC4-STACK-REBALANCE 2026-06-09 — bc=4 (2-player) was rh(305) for the 16-card
-  // 4x4 hand grid. New design switches bc=4 to 1x4 vertical board stack + 2-row
-  // hand (8x2). Lower hand height pushes the freed vertical room into the boards
-  // zone. rh(125) gives â¥5dp margin at 320 (worst case: hand cardH 23 + chrome
-  // 31 = 54 content vs 83 zone) and accommodates the 2x8 layout up to 430 width.
-  // VAMOS-FILL-PER-MODE 2026-06-17 — per-mode card width. Each mode (bc=2/3/4)
-  // gets the LARGEST W where total content (N boards + hand rows) fits the
-  // available screen height. If even W=MIN_W overflows (bc=4 with 4 boards +
-  // 16-card hand), W stays at MIN_W and BOARDS_SCROLL=true (only that mode
-  // scrolls). Board card == hand card within each mode (the unification we
-  // shipped earlier). NO dead gap in non-scroll modes because W is chosen so
-  // content fills available height.
-  const _HAND_INSET = 16;
-  const _HAND_END_SAFETY = rs(20);
-  const _HAND_GAP = rs(2);
-  // VAMOS-CARDS-NOSCROLL-V2 2026-06-21 — trimmed hand-zone chrome so 3 and 4
-  // boards fit on 390x844 / 393x852 WITHOUT scroll. The constants drive both
-  // the fit-search predicate (handZoneH = handRows*cardH + (handRows-1)*ROW_GAP
-  // + LABEL_H + 2*PADV) AND the maxHeight cap that BoardArrangement applies to
-  // the hand container — so trimming them lets the search pick a wider card
-  // AND physically reserves less space for the hand. Total savings vs prior:
-  //   bc=2 (handRows=3): -rs(20) ≈ -20px  (closes the 24px gap at 390x844)
-  //   bc=3/bc=4 (handRows=2): -rs(18) ≈ -18px (closes 18px / 16px / 9px gaps)
-  // PlayerHand's inner ScrollView (V2) handles any genuinely-clipped row on
-  // small screens so the bottom row is never lost.
-  const _HAND_ROW_GAP_V = rs(2);  // was rs(4)
-  const _HAND_LABEL_H = rs(14);   // was rs(22)
-  const _HAND_CONTAINER_PADV = rs(2); // was rs(6)
-  const _BOARD_CHROME_V = rs(18); // header strip + paddings + rowGap inside a cell (rs(20) was still 4pt over bc=3's edge; rs(18) lands bc=3 at 708 ≤ 710 → non-scroll)
-  const _BOARD_INTER_GAP = rs(4);
-  // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — lowered floor from rs(55) to rs(40)
-  // so 4 boards (2P) + the 16-card hand fit on a 390x844 phone WITHOUT
-  // scrolling. Rank+suit are still legible at rs(40)≈40dp width. Scroll
-  // fallback from V1/V2 still protects smaller screens (375x667 / 320x568)
-  // where even rs(40) can't fit everything.
-  const _MIN_CARD_W = rs(40); // readable floor (was rs(55) before LOBBY-MENU-CARDS-V1)
-  // VAMOS-FILL-FIX-WIDTHCAP 2026-06-17 — HARD cap by the board's flop-row fit
-  // so cards can never grow wider than (boardInnerW - chrome) / 5. Without this
-  // the bc=2 vertical-fill grew W to 75pt and the leftmost flop card clipped
-  // outside the board frame. Conservative chrome estimates: outer cell margin
-  // ~rs(28), inter-card gaps + separator + sepMargins ~rs(24).
-  const _modeCellW = Math.max(rs(80), screenW - rs(12)); // gridCols=1 fixed
-  const _modeInnerW = _modeCellW - rs(28);
-  const _W_HORIZONTAL_FIT = Math.max(_MIN_CARD_W, Math.floor((_modeInnerW - rs(24)) / 5));
-  const _MAX_CARD_W = Math.min(
-    Math.floor((screenW - 2 * _HAND_INSET - _HAND_END_SAFETY) / 2),
-    _W_HORIZONTAL_FIT
-  );
-  const _availTotal = (SCREEN_H - insets.top - insets.bottom)
-    - TOP_BAR_H - BOT_STATUS_H - FLOATING_ACTIONS_H - HINT_H - rs(8);
-  const _handSize = CARDS_PER_BOARD * boardCount; // 8 / 12 / 16
-  const _evalFit = (W: number) => {
-    const cardH = Math.round(W / 0.72);
-    const perRow = Math.max(1, Math.floor(
-      (screenW - 2 * _HAND_INSET - _HAND_END_SAFETY + _HAND_GAP) / (W + _HAND_GAP)
-    ));
-    const handRows = Math.max(1, Math.ceil(_handSize / perRow));
-    const handZoneH = handRows * cardH + (handRows - 1) * _HAND_ROW_GAP_V
-      + _HAND_LABEL_H + 2 * _HAND_CONTAINER_PADV;
-    const cellH = 2 * cardH + _BOARD_CHROME_V;
-    const boardsContent = boardCount * cellH + (boardCount - 1) * _BOARD_INTER_GAP;
-    return { cardH, perRow, handRows, handZoneH, cellH, boardsContent };
-  };
-  // VAMOS-FIX-BC3-OVERLAP 2026-06-17 — SAFETY margin on the scroll classification.
-  // A mode is non-scroll only if content + SAFETY ≤ available. A 2pt math margin
-  // gets eaten by inset/measurement variance on real device → bc=3 was marked
-  // non-scroll on paper but overflowed by ~35px on real render → board 3 hidden
-  // behind hand zone. rs(24) safety covers the variance — bc=3 now correctly
-  // scrolls.
-  const _FIT_SAFETY = rs(24);
-  let _chosenW = _MIN_CARD_W;
-  let _BOARDS_SCROLL = false;
-  for (let W = _MAX_CARD_W; W >= _MIN_CARD_W; W--) {
-    const f = _evalFit(W);
-    if (f.handZoneH + f.boardsContent + _FIT_SAFETY <= _availTotal) { _chosenW = W; break; }
-  }
-  if (_chosenW === _MIN_CARD_W) {
-    const f = _evalFit(_MIN_CARD_W);
-    if (f.handZoneH + f.boardsContent + _FIT_SAFETY > _availTotal) _BOARDS_SCROLL = true;
-  }
-  const _fit = _evalFit(_chosenW);
-  const UNIVERSAL_CARD_W = _chosenW;
-  const UNIVERSAL_CARD_H = _fit.cardH;
-  const PLAYER_HAND_H = _fit.handZoneH;
-  const _MODE_CELL_H = _fit.cellH;
-  const _MODE_BOARDS_CONTENT = _fit.boardsContent;
-
-  const safeH = SCREEN_H - insets.top - insets.bottom;
-  const BOARD_GAPS = (boardCount - 1) * 4;
-  const boardSpace = (safeH - TOP_BAR_H - BOT_STATUS_H - PLAYER_HAND_H - FLOATING_ACTIONS_H - HINT_H - BOARD_GAPS) / boardCount - BOARD_CHROME;
-  // Mobile web card height scales with board count — more boards = tighter = needs clarity boost
-  // Mobile web card height: width-aware so 5 community cards fit in 2-column board grid.
-  // Board column overhead (reduced padding in BoardArrangement + Board) approx 26px.
-  // cardRow: 5 cards + 4 gaps(6) + separator(7) = 31px overhead inside card row.
-  const _boardColW = Math.max(80, Math.floor(screenW / 2) - 26);
-  const _maxMobileWebCw = Math.max(18, Math.floor((_boardColW - 31) / 5));
-  const _maxMobileWebCh = Math.round(_maxMobileWebCw / 0.72);
-  // PR-K — 2x2 layout means each cell only gets half the vertical space.
-  // Tighten the per-card height when 4 boards share a 2x2 grid so the
-  // community-cards row + 4 player-slot rows still fit inside the smaller cell.
-  // Compute the available cell height from SCREEN_H and shrink BOARD_CARD_H to
-  // (cellH - board-chrome) / (communityScale + 4 * slotRatio + padding).
-  // slotRatio ≈ 0.7 (Board renders 4 player slots vertically per board).
-  // Fall back to the existing width-driven cap when the height calc would be larger.
-  // PR-M 2026-05-29 — per-boardCount grid math anchored to ACTUAL chrome cost.
-  //   boardCount=2 (4p): 2 rows x 1 col
-  //   boardCount=3 (3p): 3 rows x 1 col
-  //   boardCount=4 (2p): 2 rows x 2 cols
-  //
-  // Previous formula subtracted FLOATING_ACTIONS_H AND used a tight chrome
-  // estimate that did not match the rendered topBar/botSection padding +
-  // borders + the handZone marginBottom (which reserves the action bar
-  // overlay). Web verification at 320x3p showed board 3 clipping ~40px
-  // because of the gap. New formula: action bar is reserved by hand
-  // marginBottom (rs(76)), and we add a conservative rs(28) safety buffer
-  // for invisible chrome (border lines, Animated.View entering wrappers).
-  // PR-N 2026-06-02 — 4-board (2P) 2x2 grid only when the projected per-cell
-  // width is wide enough for the 4-slot placement row (Card.tsx 44pt floor
-  // for non-community cards). 4 slots * 44 + 3 gaps * 3 + 8 cell padding = 193.
-  // Below that, drop to 4-row vertical stack so slots never clip.
-  // Wrap layout literals in rs() so the grid math scales with viewport width.
-  // The breakpoint (>= 180) is a logical-pixel slot-floor threshold, not a token.
-  const _gridGap = rs(4);
-  const _gridSidePadIfWide = rs(8);
-  const _projectedCellW2x2 = Math.floor((screenW - _gridSidePadIfWide - _gridGap) / 2);
-  // BC4-STACK-REBALANCE 2026-06-09 — bc=4 now uses the 1x4 full-width stack like
-  // bc=2/3, matching the user-requested visual consistency. _use2x2 retained for
-  // type-stability but always false; PR-N's half-width 2x2 path is retired.
-  const _use2x2 = false;
-  const _gridRows = boardCount;
-  const _gridCols = 1;
-  void _projectedCellW2x2; // referenced only for the retired 2x2 size gate; keep computed for potential reinstatement
-  // FIT-ALL-BOARDS 2026-06-09 — _handMarginB was rs(60) but BoardArrangement.tsx:219
-  // actually applies `(rs(72) + insets.bottom + rs(8)) + (bc=4 ? rs(40) : 0)` —
-  // ~54–94dp larger than the estimate. The discrepancy made _boardsZoneH believe
-  // it had ~94dp more room than the real boardsGrid container, causing cellH to
-  // overflow and `boardsGrid overflow:'hidden'` to silently clip boards 3/4 on bc=4
-  // and the bottom of board 3 on bc=3. Re-align with the actual literal:
-  // BC4-STACK-REBALANCE 2026-06-09 — the bc=4 +rs(40) extra was added when bc=4
-  // used a 4x4 hand grid that needed to be pushed above the action bar. The new
-  // 2x8 hand is short enough not to need it; drop the special case.
-  const _handMarginB = rs(72) + insets.bottom + rs(8);
-  const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
-  const _gridSidePad = _gridSidePadIfWide;
-
-  // FIT-ALL-BOARDS 2026-06-09 — boards-first allocation. Compute the minimum
-  // boards-zone height needed to fit `_gridRows` board cells, each carrying:
-  //   chrome per cell (header + paddings + borders + cell wrapper padV) ≈ rs(34)
-  //   + 2 card rows of MIN_BOARD_CARD_H (so the smallest readable layout fits)
-  //   + rowGap rs(2)
-  // If the boards-zone derived from PLAYER_HAND_H is below this floor, REDUCE the
-  // hand zone instead of clamping the boards-zone (the old Math.max(rh(180), …)
-  // floor faked extra boards-zone height that the parent flex container did NOT
-  // actually have, leading to clipped boards). Boards have priority.
-  const MIN_BOARD_CARD_H = rh(22); // tight readable minimum (~22dp@852, scales)
-  const CELL_CHROME_V = rs(34);    // HEADER_H rs(16) + 2*PAD_V rs(4) + container border rs(4) + cell wrapper padV rs(4) + pressableInner padV rs(4) + rowGap rs(2)
-  const _minCellH = 2 * MIN_BOARD_CARD_H + CELL_CHROME_V;
-  const _minBoardsZoneH = _gridRows * _minCellH + (_gridRows - 1) * _gridGap + rs(8); // +rs(8) safety
-  const _availForBoardsAndHand = safeH - TOP_BAR_H - BOT_STATUS_H - _handMarginB - HINT_H - _chromeSafety;
-  // Step 1: tentative boards-zone using the preferred PLAYER_HAND_H.
-  // VAMOS-FIX-HAND-CLIP 2026-06-17 — HAND gets full reservation FIRST; boards
-  // take what remains and scroll if needed. Was: boards had floor _minBoardsZoneH
-  // and could STEAL from the hand (bc=4 3-row hand clipped the bottom row on
-  // device). Hand can NEVER be clipped now; boards just scroll a bit more.
-  const _handZoneActualH = PLAYER_HAND_H;
-  let _boardsZoneH = _availForBoardsAndHand - _handZoneActualH;
-  // In non-scroll modes, cap boards at content (no dead band above hand).
-  if (!_BOARDS_SCROLL) {
-    _boardsZoneH = Math.min(_boardsZoneH, _MODE_BOARDS_CONTENT);
-  }
-  // Floor: boards viewport should be at least ~1 board tall. If somehow we go
-  // below, the hand still wins — boards just scroll inside a tighter viewport.
-  _boardsZoneH = Math.max(_boardsZoneH, rh(120));
-
-  // Packed cellH — what each cell would get if cells filled the full boards zone.
-  const _packedCellH = Math.max(rh(48), Math.floor((_boardsZoneH - (_gridRows - 1) * _gridGap) / _gridRows) - rs(4));
-  const _cellW = Math.max(rs(80), Math.floor((screenW - _gridSidePad - (_gridCols - 1) * _gridGap) / _gridCols));
-  const _boardChromeH = rh(32); // board label + flop separator + intra-row padding
-  const _rowsPerBoard = 1 + 0.7 * 4; // 1 community row scaled + 4 slot rows scaled
-
-  // VISUAL-POLISH 2026-06-09 — board card height + SNUG cell height.
-  // Step 1: derive the board card height the packed cell could hold, clamped by
-  // the Settings cap (`max_board_card_h_dp`, default rh(70), range [rh(50), rh(100)]).
-  // Step 2: idealCellH = chrome + 2*boardCardH (what the cell actually needs to
-  // render the two card rows with snug chrome). When cap binds (bc=2 on most
-  // devices), idealCellH < packedCellH and the cell SHRINKS — the leftover
-  // becomes inter-board spacing via boardsGrid's justifyContent:'space-evenly'
-  // (no more 8-10dp internal dead band above/below cards).
-  const _maxBoardCardSetting = boardCardCapDp;
-  const _cellHeightPropForPacked =
-    boardCount === 3 || boardCount === 4
-      ? Math.max(rs(48), _packedCellH - rs(12))
-      : _packedCellH;
-  const _packedInnerH = Math.max(40, _cellHeightPropForPacked - rs(16) - 2 * rs(2));
-  const _fitBoardCardH = Math.max(rh(22), Math.floor((_packedInnerH - rs(2)) / 2));
-  const _boardCardH = Math.min(_fitBoardCardH, _maxBoardCardSetting);
-  // Ideal cellH that snugly fits exactly 2*_boardCardH + chrome. The bc=3/4 path
-  // accounts for the rs(12) outer chrome compensated by BoardArrangement.tsx:188.
-  const _idealCellH =
-    2 * _boardCardH
-    + rs(16)            // HEADER_H
-    + 2 * rs(2)         // PAD_V
-    + rs(2)             // rowGap
-    + (boardCount === 3 || boardCount === 4 ? rs(12) : 0) // bc=3/4 outer chrome that the prop subtraction will reclaim
-    + rs(4);            // safety
-  // VAMOS-SCROLL-V2 2026-06-17 — every board uses a FIXED cellH equal to the
-  // bc=3 "good" size (boardsZoneH / 3) +5% breathing — NOT the bc=2 size (that
-  // was the exaggerated previous attempt). At bc=2 both boards fit with slack;
-  // at bc=3 all three fit; at bc=4 content overflows the viewport and the
-  // BoardArrangement ScrollView scrolls to reach board 4. Cards-big sizing math
-  // (aspect [0.62, 0.85], top-anchor, Lever 1, measured HEADER_H) is untouched.
-  const _bc3CellH = Math.floor(_boardsZoneH / 3);
-  const _goodCellH = Math.max(rh(140), Math.floor(_bc3CellH * 1.05));
-  const _legacyCellH = Math.min(_packedCellH, _idealCellH);
-  // VAMOS-FILL-PER-MODE 2026-06-17 — cellH derived from per-mode CARD_W so each
-  // cell is exactly the size needed to render 2 card rows + chrome. This is the
-  // sizing that pairs with the per-mode fill logic above.
-  const _cellH = _MODE_CELL_H;
-  void _legacyCellH;
-  const _maxCellCardH = Math.max(18, Math.floor((_cellH - _boardChromeH) / _rowsPerBoard));
-  const _handCardCap = _boardCardH;
-  const mobileWebCardH = Math.min(
-    CARD_SCALE[numberOfPlayers]?.cardHeight ?? 60,
-    _maxMobileWebCh,
-    boardCount >= 4 ? _maxCellCardH : 9999,
-  );
-  const nativeCardDims = getCardDimensions(screenW, numberOfPlayers);
-  const communityScale = nativeCardDims.communityScale;
-  // Cap native card height so both card rows (community + player/slots) fit in boardSpace.
-  // During arrangement: commH = ch*communityScale, slotH = ch*0.7, plus 4pt cardRow padding.
-  // ch*(communityScale + 0.7) + 4 <= boardSpace Â maxCh = floor((boardSpace-4)/(communityScale+0.7))
-  // Landscape uses a 2-column grid with more height per row — no cap needed there.
-  const CARD_ROW_PAD = 4;
-  const maxNativeCardH = Math.max(28, Math.floor((boardSpace - CARD_ROW_PAD) / (communityScale + 0.7)));
-  const nativeCardH = isLandscape
-    ? nativeCardDims.cardHeight
-    : Math.min(nativeCardDims.cardHeight, maxNativeCardH);
-  const BOARD_CARD_H = rvOld(
-    screenW,
-    mobileWebCardH,              // mobile web (iPhone Safari) — board-count aware
-    72,                          // tablet web
-    100,                         // desktop web
-    nativeCardH,                 // native — height-capped so AUTO button is always visible
-  );
-  const isWeb = Platform.OS === 'web';
+  // VAMOS-UNIFY-GAMEVIEW 2026-06-29 — the SOLO placement-screen "fit-search" sizing
+  // math (formerly inline here, lines 136-443) now lives in useGameLayout so MP can
+  // share the EXACT same math. The locals below are re-aliased verbatim so the rest
+  // of this file (render + layout-debug readout) is unchanged.
+  const _L = useGameLayout({ screenW, screenH: SCREEN_H, insets, boardCount, numberOfPlayers });
+  const UNIVERSAL_CARD_W = _L.UNIVERSAL_CARD_W;
+  const PLAYER_HAND_H = _L.PLAYER_HAND_H;
+  const _cellW = _L.cellW;
+  const _cellH = _L.cellH;
+  const _boardsZoneH = _L.boardsZoneH;
+  const _use2x2 = _L.use2x2;
+  const _handZoneActualH = _L.handZoneH;
+  const _handCardCap = _L.handCardCap;
+  const communityScale = _L.communityScale;
+  const BOARD_CARD_H = _L.BOARD_CARD_H;
+  const isWeb = _L.isWeb;
+  const _gridRows = _L.gridRows;
+  const _gridCols = _L.gridCols;
+  const _boardCardH = _L.boardCardH;
+  const boardCardCapDp = _L.boardCardCapDp;
 
   const [gamesPlayed, setGamesPlayed] = useState(99); // default high so hint is hidden until loaded
   const [isFirstGame, setIsFirstGame] = useState(false);
@@ -1447,47 +1161,95 @@ function GameScreenInner() {
   // ÂÂ End landscape layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any]}>
-      <FriendsBg />
-      {/* BUILD467-VERIFY layout debug readout — gated by AsyncStorage debug_overlay_enabled */}
-      {layoutDebugVisible && (
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: insets.top + 4,
-            right: 4,
-            zIndex: 99998,
-            backgroundColor: 'rgba(0,0,0,0.78)',
-            borderColor: 'rgba(0,255,0,0.45)',
-            borderWidth: 1,
-            borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 4,
-            maxWidth: 180,
-          }}
-        >
-          <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
-            {`B471 dim ${screenW}x${SCREEN_H}`}{'\n'}
-            {`bc=${boardCount} hand=${_handZoneActualH}/${PLAYER_HAND_H}`}{'\n'}
-            {`cell=${_cellW}x${_cellH} grid=${_gridCols}x${_gridRows}`}{'\n'}
-            {`bCardH=${_boardCardH} cap=${boardCardCapDp}`}
-          </Text>
-        </View>
-      )}
-      {/* watermark removed from game screen */}
-      {/* D1: auto-place trail flash overlay */}
-      <AnimatedRN.View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(201,168,76,0.18)', opacity: autoPlaceFlashAnim, zIndex: 99 }]}
-      />
-      <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
-      {/* Header bar */}
-      <View style={styles.topBar}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={[styles.backButton, { minHeight: 44, minWidth: 44 }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.backText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{'\u2715'}</Text>
-        </Pressable>
-        <View style={styles.topCenter}>
+    <GameView
+      theme={theme}
+      visualTheme={visualTheme}
+      onBack={handleBack}
+      chips={chips}
+      screenW={screenW}
+      layout={_L}
+      boards={boards}
+      boardShakeStyles={boardShakeStyles}
+      playerHand={playerHand}
+      selectedCardIds={selectedCardIds}
+      isArranging={isArranging}
+      allBoardsFull={allBoardsFull}
+      cardsRemaining={cardsRemaining}
+      boardError={boardError}
+      boardCount={boardCount}
+      numberOfPlayers={numberOfPlayers}
+      potPerBoard={config.potPerBoard}
+      countdownActive={countdownActive}
+      countdown={countdown}
+      timeBankUsed={timeBankUsed}
+      gamesPlayed={gamesPlayed}
+      playerReady={playerReady}
+      allBotsReady={allBotsReady}
+      showContinueButton={showContinueButton}
+      showTimerBar={countdownActive && isArranging}
+      timerBarCountdown={countdown}
+      timerBarTotal={COUNTDOWN_SECONDS}
+      timerBarColor={timerColor}
+      onSelectCard={handleSelectCard}
+      onBoardPress={handleBoardPress}
+      onRemoveCard={handleRemoveCardFromBoard}
+      onAutoFill={handleAutoFill}
+      onUndo={() => {
+        for (let i = boards.length - 1; i >= 0; i--) {
+          if (boards[i].playerCards.length > 0) {
+            const lastCard = boards[i].playerCards[boards[i].playerCards.length - 1];
+            handleRemoveCardFromBoard(i, lastCard);
+            break;
+          }
+        }
+      }}
+      onReady={handleReady}
+      onTimeBank={() => {
+        setTimeBankUsed(true);
+        setCountdown((prev) => prev + 15);
+      }}
+      onContinue={() => {
+        debugLog('[GAME] fallback button pressed — calling doNavigate manually');
+        doNavigateRef.current(boardsRef.current);
+      }}
+      reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed, isFirstGame } : null}
+      preChrome={
+        <>
+          {/* BUILD467-VERIFY layout debug readout -- gated by AsyncStorage debug_overlay_enabled */}
+          {layoutDebugVisible && (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                top: insets.top + 4,
+                right: 4,
+                zIndex: 99998,
+                backgroundColor: 'rgba(0,0,0,0.78)',
+                borderColor: 'rgba(0,255,0,0.45)',
+                borderWidth: 1,
+                borderRadius: 6,
+                paddingHorizontal: 6,
+                paddingVertical: 4,
+                maxWidth: 180,
+              }}
+            >
+              <Text style={{ color: '#00ff00', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                {`B471 dim ${screenW}x${SCREEN_H}`}{'\n'}
+                {`bc=${boardCount} hand=${_handZoneActualH}/${PLAYER_HAND_H}`}{'\n'}
+                {`cell=${_cellW}x${_cellH} grid=${_gridCols}x${_gridRows}`}{'\n'}
+                {`bCardH=${_boardCardH} cap=${boardCardCapDp}`}
+              </Text>
+            </View>
+          )}
+          {/* D1: auto-place trail flash overlay */}
+          <AnimatedRN.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(201,168,76,0.18)', opacity: autoPlaceFlashAnim, zIndex: 99 }]}
+          />
+        </>
+      }
+      topCenter={
+        <>
           {countdownActive && isArranging && (
             <View style={styles.countdownSection} accessibilityLiveRegion="polite">
               <TimerController
@@ -1515,15 +1277,9 @@ function GameScreenInner() {
           {playerReady && allBotsReady && !showContinueButton && !showSafeReveal && (
             <Text style={styles.calculatingText} accessibilityLiveRegion="polite">Calculating results...</Text>
           )}
-        </View>
-        <View style={styles.headerChips}>
-          <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
-          <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
-        </View>
-      </View>
-
-      {/* Bot status bar */}
-      <View style={[styles.botSection, { backgroundColor: theme.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.boardBorder }]} accessibilityLiveRegion="polite">
+        </>
+      }
+      header={
         <View style={styles.botStatusRow}>
           <Text style={styles.botEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🤖</Text>
           <Text style={styles.botNameLabel} accessibilityLanguage="he">
@@ -1540,111 +1296,46 @@ function GameScreenInner() {
             </Text>
           </View>
         </View>
-      </View>
+      }
+      chrome={
+        <>
+          {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
+          {/* Tutorial dim overlay -- steps 1-2 only, focuses attention, non-blocking */}
+          {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
+            <View
+              style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', zIndex: 40, alignItems: 'center', justifyContent: tooltipStep === 1 ? 'flex-end' : 'flex-start', paddingBottom: tooltipStep === 1 ? rs(200) : 0, paddingTop: tooltipStep === 2 ? rs(80) : 0 }}
+              pointerEvents="none"
+            >
+              <Text
+                style={{ color: '#c9a84c', fontSize: rs(32), opacity: 0.9 }}
+                accessibilityElementsHidden={true}
+                importantForAccessibility="no-hide-descendants"
+              >
+                {tooltipStep === 1 ? '↓' : '↑'}
+              </Text>
+            </View>
+          )}
 
-      {/* Timer progress bar — thin bar below bot section, only during countdown */}
-      {countdownActive && isArranging && (
-        <TimerBar countdown={countdown} total={COUNTDOWN_SECONDS} color={timerColor} />
-      )}
+          {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
+          {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
+            <GuidedTooltip
+              text={TIPS[tooltipStep - 1]?.() ?? ''}
+              visible={tooltipVisible}
+              onDismiss={advanceTooltip}
+              position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
+              autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
+            />
+          )}
 
-      <BoardArrangement
-        boards={boards}
-        boardShakeStyles={boardShakeStyles}
-        playerHand={playerHand}
-        selectedCardIds={selectedCardIds}
-        isArranging={isArranging}
-        allBoardsFull={allBoardsFull}
-        cardsRemaining={cardsRemaining}
-        boardError={boardError}
-        boardCount={boardCount}
-        numberOfPlayers={numberOfPlayers}
-        communityScale={communityScale}
-        BOARD_CARD_H={BOARD_CARD_H}
-        screenW={screenW}
-        isWeb={isWeb}
-        countdownActive={countdownActive}
-        countdown={countdown}
-        timeBankUsed={timeBankUsed}
-        gamesPlayed={gamesPlayed}
-        playerReady={playerReady}
-        allBotsReady={allBotsReady}
-        showContinueButton={showContinueButton}
-        onBoardPress={handleBoardPress}
-        onRemoveCard={handleRemoveCardFromBoard}
-        onAutoFill={handleAutoFill}
-        onSelectCard={handleSelectCard}
-        onUndo={() => {
-          for (let i = boards.length - 1; i >= 0; i--) {
-            if (boards[i].playerCards.length > 0) {
-              const lastCard = boards[i].playerCards[boards[i].playerCards.length - 1];
-              handleRemoveCardFromBoard(i, lastCard);
-              break;
-            }
-          }
-        }}
-        onReady={handleReady}
-        onTimeBank={() => {
-          setTimeBankUsed(true);
-          setCountdown((prev) => prev + 15);
-        }}
-        onContinue={() => {
-          debugLog('[GAME] fallback button pressed — calling doNavigate manually');
-          doNavigateRef.current(boardsRef.current);
-        }}
-        potPerBoard={config.potPerBoard}
-        boardsZoneH={_boardsZoneH}
-        cellW={_cellW}
-        cellH={_cellH}
-        use2x2Grid={_use2x2}
-        handZoneH={_handZoneActualH}
-        maxHandCardH={_handCardCap}
-        universalCardW={UNIVERSAL_CARD_W}
-      />
-      </Animated.View>
-      {showSafeReveal && (
-        <BoardReveal
-          boards={pendingRevealBoards}
-          onDone={onRevealDone}
-          revealSpeed={config.revealSpeed}
-          isFirstGame={isFirstGame}
-        />
-      )}
-
-      {/* Guided first-game tooltips (tips 1Â6) — non-blocking */}
-      {/* Tutorial dim overlay — steps 1-2 only, focuses attention, non-blocking */}
-      {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
-        <View
-          style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', zIndex: 40, alignItems: 'center', justifyContent: tooltipStep === 1 ? 'flex-end' : 'flex-start', paddingBottom: tooltipStep === 1 ? rs(200) : 0, paddingTop: tooltipStep === 2 ? rs(80) : 0 }}
-          pointerEvents="none"
-        >
-          <Text
-            style={{ color: '#c9a84c', fontSize: rs(32), opacity: 0.9 }}
-            accessibilityElementsHidden={true}
-            importantForAccessibility="no-hide-descendants"
-          >
-            {tooltipStep === 1 ? '↓' : '↑'}
-          </Text>
-        </View>
-      )}
-
-      {/* Guided first-game tooltips (tips 1–6) — non-blocking */}
-      {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
-        <GuidedTooltip
-          text={TIPS[tooltipStep - 1]?.() ?? ''}
-          visible={tooltipVisible}
-          onDismiss={advanceTooltip}
-          position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
-          autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
-        />
-      )}
-
-      {/* S113: Auto-place toast */}
-      {autoPlaceToastVisible && (
-        <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite">
-          <Text style={styles.autoPlaceToastText} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={t().timeUpAutoplaced.replace("⏱ ", "")}>{t().timeUpAutoplaced}</Text>
-        </View>
-      )}
-    </SafeAreaView>
+          {/* S113: Auto-place toast */}
+          {autoPlaceToastVisible && (
+            <View style={styles.autoPlaceToast} pointerEvents="none" accessibilityLiveRegion="polite">
+              <Text style={styles.autoPlaceToastText} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={t().timeUpAutoplaced.replace("⏱ ", "")}>{t().timeUpAutoplaced}</Text>
+            </View>
+          )}
+        </>
+      }
+    />
   );
 }
 
