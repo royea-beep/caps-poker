@@ -961,6 +961,34 @@ function MultiplayerGameScreenInner() {
     setPlayerHand((prev) => [...prev, card]);
   }, [isArranging]);
 
+  // MP-UX-FIX 2026-06-29 — per-board Auto-Place parity with SOLO. Fills an empty board's
+  // slots from the hand (purely local placement — no broadcast/ready, same as tapping).
+  // Wired to <Board onAutoFill>; Board.tsx renders the "⚡ Auto-Place" chip only on empty
+  // boards, mirroring SOLO's handleAutoFill. Previously MP passed no onAutoFill, so the
+  // button never appeared and the owner had no way to auto-place in multiplayer.
+  const handleAutoFillBoard = useCallback((boardIndex: number) => {
+    if (!isArranging) return;
+    const hand = playerHandRef.current;
+    if (hand.length === 0) return;
+    const board = boardsRef.current[boardIndex];
+    if (!board || board.playerCards.length >= CARDS_PER_BOARD) return;
+    const need = CARDS_PER_BOARD - board.playerCards.length;
+    const toPlace = hand.slice(0, need);
+    if (toPlace.length === 0) return;
+    const placedIds = new Set(toPlace.map((c) => c.id));
+    haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+    playSound('cardPlace');
+    setBoards((prev) => {
+      const b = prev[boardIndex];
+      if (!b || b.playerCards.length >= CARDS_PER_BOARD) return prev;
+      const updated = [...prev];
+      updated[boardIndex] = { ...b, playerCards: [...b.playerCards, ...toPlace] };
+      return updated;
+    });
+    setPlayerHand((h) => h.filter((c) => !placedIds.has(c.id)));
+    setSelectedCardId(null);
+  }, [isArranging]);
+
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
@@ -1142,6 +1170,7 @@ function MultiplayerGameScreenInner() {
             active={false}
             potAmount={config.potPerBoard * playerCount}
             onPress={() => handleBoardPress(i)}
+            onAutoFill={() => handleAutoFillBoard(i)}
             onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
             isArrangement={isArranging}
             selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
@@ -1156,6 +1185,7 @@ function MultiplayerGameScreenInner() {
           cards={playerHand}
           selectedCardIds={selectedCardId ? [selectedCardId] : []}
           onSelectCard={handleSelectCard}
+          universalCardW={_cardDims.cardWidth}
         />
       )}
 
