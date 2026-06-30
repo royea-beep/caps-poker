@@ -456,6 +456,12 @@ function MultiplayerGameScreenInner() {
       // behind an Alert button, since Alert.alert is a no-op on web (the banner is the message).
       startReconnectWindow('Opponent left — ending hand in', () => {
         if (!mountedRef.current || completedRef.current) return;
+        // Clear the WHOLE room roster, not just our own seat. The host that left would
+        // otherwise leave an orphaned room_players row (the non-host's own teardown only
+        // frees its own seat). finish_table sets status=finished AND deletes every roster
+        // row for the room — idempotent and non-host callable (SECURITY DEFINER, room-code
+        // only), so it also no-ops harmlessly if the server net already finished the room.
+        if (storeRoomCode) void finishTable(storeRoomCode);
         useGameStore.getState().resetMultiplayer();
         router.replace('/lobby' as any);
       }, HOST_LEFT_RESOLVE_GRACE_S);
