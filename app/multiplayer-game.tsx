@@ -85,6 +85,14 @@ const DEAL_CLOCK_MS = 90000;
 // player who leaves goes stale within ~2 beats and a wedged 'playing' room can be reaped.
 const INGAME_HEARTBEAT_MS = 20000;
 
+// MP-LEAVE-RECOVERY (Issue C) 2026-06-30 — the deal-clock that force-resolves a wedged hand is
+// HOST-only, so a non-host whose host vanishes had no resolve path and sat until the 120s server
+// reaper (~135s observed). After the realtime layer's 10s presence grace (HOST_LOST_GRACE_MS)
+// fires onHostLost, give the host this much additional time to return before cleanly cancelling
+// the hand. 40s here ≈ 50s total absence — above WiFi-flicker / a couple of missed 20s
+// heartbeats, comfortably under the 120s net. NOT instant: instant would reap live games.
+const HOST_LEFT_RESOLVE_GRACE_S = 40;
+
 // MP-RENDER-PARITY 2026-06-28 — match SOLO's PR-M layout budget. The hardcoded
 // 44/24/68/26 constants here were the pre-unification budget that made boards +
 // cards look noticeably different from /game. Now derived from the same PRD
@@ -418,13 +426,13 @@ function MultiplayerGameScreenInner() {
       router.replace('/lobby' as any);
     };
 
-    const startReconnectWindow = (bannerMsg: string, onExpire: () => void) => {
+    const startReconnectWindow = (bannerMsg: string, onExpire: () => void, seconds = 15) => {
       if (!mountedRef.current) return;
       if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
       if (reconnectAlertTimerRef.current) clearTimeout(reconnectAlertTimerRef.current);
-      setReconnectCountdown(15);
+      setReconnectCountdown(seconds);
       setDisconnectBanner(bannerMsg);
-      let secs = 15;
+      let secs = seconds;
       reconnectTimerRef.current = setInterval(() => {
         secs -= 1;
         if (!mountedRef.current) { clearInterval(reconnectTimerRef.current!); return; }
@@ -435,18 +443,22 @@ function MultiplayerGameScreenInner() {
           setReconnectCountdown(null);
         }
       }, 1000);
-      reconnectAlertTimerRef.current = setTimeout(onExpire, 15000);
+      reconnectAlertTimerRef.current = setTimeout(onExpire, seconds * 1000);
     };
 
     const handleHostLost = () => {
-      startReconnectWindow('Host disconnected — leaving in', () => {
-        if (!mountedRef.current) return;
-        Alert.alert(
-          'Host Disconnected',
-          'The host has left the game.',
-          [{ text: 'Leave', onPress: () => { useGameStore.getState().resetMultiplayer(); router.replace('/'); } }]
-        );
-      });
+      // MP-LEAVE-RECOVERY (Issue C) — the deal-clock that force-resolves a hand is HOST-only, so
+      // before this fix a non-host whose host vanished sat until the 120s server reaper (~135s).
+      // Give the host HOST_LEFT_RESOLVE_GRACE_S to return (the banner counts it down); if it
+      // doesn't, resolve the hand cleanly. There is NO server-authoritative outcome — game_rooms
+      // has no winner/board columns and the reaper settles no chips — so we must NOT fabricate a
+      // result. Cancel with no chip change and return to the lobby. Navigate directly rather than
+      // behind an Alert button, since Alert.alert is a no-op on web (the banner is the message).
+      startReconnectWindow('Opponent left — ending hand in', () => {
+        if (!mountedRef.current || completedRef.current) return;
+        useGameStore.getState().resetMultiplayer();
+        router.replace('/lobby' as any);
+      }, HOST_LEFT_RESOLVE_GRACE_S);
     };
     const handleDisconnected = () => {
       startReconnectWindow('Connection lost — rejoining?', () => {

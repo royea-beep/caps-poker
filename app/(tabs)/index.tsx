@@ -903,6 +903,24 @@ export default function HomeScreen() {
     }
   }, [user?.id]);
 
+  // VAMOS QA-BATCH (Issue B) — apply the first-run beginner default (3P / 3 boards / 12 cards)
+  // ONCE on mount, not at Play-tap. Previously handleNewHand force-set 3P when gamesPlayed===0,
+  // silently overriding the 2P the player still saw selected (the selector reads config directly,
+  // so it showed ✓2P while the dealt game used 3P). Setting it here lets the selector show ✓3P up
+  // front and keeps the Play-tap from changing the dealt config underfoot. The GUIDED_FORCED_KEY
+  // guard keeps it to the very first run (game.tsx consumes the key to force guided mode).
+  useEffect(() => {
+    if (gamesPlayed !== 0) return;
+    let cancelled = false;
+    AsyncStorage.getItem(GUIDED_FORCED_KEY).then((forced) => {
+      if (cancelled || forced) return;
+      updateConfig({ numberOfPlayers: 3 });
+      AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleNewHand = useCallback(() => {
     if (ECONOMY_FLAGS.matchCostEnabled) {
       const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
@@ -917,15 +935,11 @@ export default function HomeScreen() {
     track('game_started', { player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
-    // First game: default to 3 players (3 boards, 12 cards) + guided mode — easier for beginners.
-    // (DEDUPE-QA) The WelcomeModal that used to gate this was removed; the InteractiveTutorial is the
-    // single onboarding, so the first PLAY tap goes straight into the beginner-defaulted game.
-    if (gamesPlayed === 0) {
-      updateConfig({ numberOfPlayers: 3 });
-      AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
-    }
+    // First-run beginner default (3P / guided) is applied ONCE on mount via the GUIDED_FORCED_KEY
+    // effect above — not here — so the selector reflects it up front and this tap doesn't change
+    // the dealt config underfoot (VAMOS QA-BATCH Issue B).
     router.push('/game' as any);
-  }, [chips, config, router, gamesPlayed, updateConfig]);
+  }, [chips, config, router]);
 
   const handleClaimDailyReward = useCallback(() => {
     const now = new Date();

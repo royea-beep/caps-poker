@@ -32,7 +32,7 @@
 - 56 tables, 127 RPCs, 16 Edge Functions
 - Visual: maroon felt #5C1818, warm cards #FFFEF8, red/black suits
 - 5 tabs: בית/שחק/חברים/כוסות/פרופיל
-- 100% Hebrew UI
+- UI language: English (hand labels English-only since 2026-06-17; caps_language pref currently not applied)
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs
