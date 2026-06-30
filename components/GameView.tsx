@@ -109,6 +109,7 @@ export interface GameViewProps {
   onBoardPress: (boardIndex: number) => void;
   onRemoveCard: (boardIndex: number, card: Card) => void;
   onAutoFill: (boardIndex: number) => void;
+  onAutoFillAll?: () => void;
   onUndo: () => void;
   onReady: () => void;
   onTimeBank: () => void;
@@ -157,6 +158,7 @@ export function GameView({
   onBoardPress,
   onRemoveCard,
   onAutoFill,
+  onAutoFillAll,
   onUndo,
   onReady,
   onTimeBank,
@@ -238,6 +240,7 @@ export function GameView({
           onBoardPress={onBoardPress}
           onRemoveCard={onRemoveCard}
           onAutoFill={onAutoFill}
+          onAutoFillAll={onAutoFillAll}
           onSelectCard={onSelectCard}
           onUndo={onUndo}
           onReady={onReady}

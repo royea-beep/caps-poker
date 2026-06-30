@@ -24,6 +24,7 @@ import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
+import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -55,6 +56,9 @@ export default function PublicLobby() {
   const userIdRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
   const [refsReady, setRefsReady] = useState(false);
+  // Item 3 — real-time liveness so the lobby never looks like a graveyard. Counts live
+  // humans currently on the lobby via Supabase presence (always ≥1 once synced — you count).
+  const onlineCount = useLobbyPresence();
 
   const load = useCallback(async () => {
     const rows = await listPublicTables();
@@ -153,6 +157,12 @@ export default function PublicLobby() {
         <View style={{ width: rs(40) }} />
       </View>
       <Text style={styles.sub}>Public tables · auto-start when full</Text>
+      {onlineCount > 0 && (
+        <View style={styles.liveRow} accessibilityRole="text" accessibilityLabel={`${onlineCount} players online now`}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>{onlineCount} {onlineCount === 1 ? 'player' : 'players'} online now</Text>
+        </View>
+      )}
 
       {/* Inline join feedback — replaces the silent-on-web Alert.alert. */}
       {joinError && (
@@ -240,6 +250,9 @@ const styles = StyleSheet.create({
   back: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '600', width: rs(60) },
   title: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900', letterSpacing: 3 },
   sub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(11), textAlign: 'center', marginTop: rv(2), marginBottom: rv(10) },
+  liveRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(6), marginTop: rv(-4), marginBottom: rv(10) },
+  liveDot: { width: rs(8), height: rs(8), borderRadius: rs(4), backgroundColor: '#3DDC84' },
+  liveText: { color: '#3DDC84', fontSize: rf(11), fontWeight: '700', letterSpacing: 0.3 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   soloBtn: { flexDirection: 'row', alignItems: 'center', gap: rs(12), marginHorizontal: rs(16), marginBottom: rv(8), backgroundColor: 'rgba(245,181,70,0.12)', borderWidth: 1.5, borderColor: 'rgba(245,181,70,0.55)', borderRadius: rv(14), paddingVertical: rv(12), paddingHorizontal: rs(16) },
   soloEmoji: { fontSize: rf(24) },

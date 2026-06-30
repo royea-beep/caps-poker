@@ -1005,6 +1005,31 @@ function MultiplayerGameScreenInner() {
     setSelectedCardId(null);
   }, [isArranging]);
 
+  // Auto-place ALL empty boards from the hand in ONE batched update (no ready broadcast —
+  // MP only syncs the final assignments on Ready). Mirrors SOLO's autoFillAllBoards and uses
+  // refs so it never reads a stale closure mid-loop (a per-board loop would only fill board 0).
+  const autoFillAllBoards = useCallback(() => {
+    if (!isArranging) return;
+    const hand = [...playerHandRef.current];
+    if (hand.length === 0) return;
+    let idx = 0;
+    const placed = new Set<string>();
+    const updated = boardsRef.current.map((b) => {
+      const need = CARDS_PER_BOARD - b.playerCards.length;
+      if (need <= 0) return b;
+      const take = hand.slice(idx, idx + need);
+      idx += need;
+      take.forEach((c) => placed.add(c.id));
+      return take.length ? { ...b, playerCards: [...b.playerCards, ...take] } : b;
+    });
+    if (placed.size === 0) return;
+    haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+    playSound('cardPlace');
+    setBoards(updated);
+    setPlayerHand((h) => h.filter((c) => !placed.has(c.id)));
+    setSelectedCardId(null);
+  }, [isArranging]);
+
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
 
   const handleReady = useCallback(() => {
@@ -1123,6 +1148,7 @@ function MultiplayerGameScreenInner() {
       onBoardPress={handleBoardPress}
       onRemoveCard={handleRemoveCardFromBoard}
       onAutoFill={handleAutoFillBoard}
+      onAutoFillAll={autoFillAllBoards}
       onUndo={() => {}}
       onReady={handleReady}
       onTimeBank={handleTimeBank}
