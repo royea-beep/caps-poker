@@ -918,8 +918,11 @@ export default function HomeScreen() {
       AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
     }).catch(() => {});
     return () => { cancelled = true; };
+    // gamesPlayed starts at the sentinel 99 ("not loaded") and resolves to 0 on first run via
+    // the async AsyncStorage load below — depend on it so this fires once it actually resolves
+    // to 0, not on the pre-load sentinel (empty deps would capture 99 and skip the default).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gamesPlayed]);
 
   const handleNewHand = useCallback(() => {
     if (ECONOMY_FLAGS.matchCostEnabled) {
