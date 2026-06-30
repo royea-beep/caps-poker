@@ -54,6 +54,7 @@ export interface BoardArrangementProps {
   onBoardPress: (boardIndex: number) => void;
   onRemoveCard: (boardIndex: number, card: Card) => void;
   onAutoFill: (boardIndex: number) => void;
+  onAutoFillAll?: () => void;
   onSelectCard: (card: Card) => void;
   onUndo: () => void;
   onReady: () => void;
@@ -104,6 +105,7 @@ export function BoardArrangement({
   onBoardPress,
   onRemoveCard,
   onAutoFill,
+  onAutoFillAll,
   onSelectCard,
   onUndo,
   onReady,
@@ -365,6 +367,26 @@ export function BoardArrangement({
         </View>
       )}
 
+      {/* Auto-Place ALL — one-tap fill of every empty board. The per-board ⚡ chips on each
+          Board header stay; this is an additive convenience. Sits in the winAllBanner slot
+          (above the action bar), shown only while boards still have empty slots. */}
+      {isArranging && !allBoardsFull && onAutoFillAll && (
+        <View
+          style={[baStyles.autoAllBar, { bottom: insets.bottom + PRD.zone.actionBarH + rs(4) }]}
+          pointerEvents="box-none"
+        >
+          <Pressable
+            onPress={onAutoFillAll}
+            hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Auto-place all boards"
+            style={({ pressed }) => [baStyles.autoAllBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+          >
+            <Text style={baStyles.autoAllText}><Text style={baStyles.autoAllBolt}>⚡</Text> Auto-Place ALL</Text>
+          </Pressable>
+        </View>
+      )}
+
       {/* Floating action buttons */}
       {isArranging && (
         <View style={[baStyles.floatingActions, { bottom: insets.bottom, paddingBottom: insets.bottom > 0 ? 0 : rs(8) }]}>
@@ -598,6 +620,33 @@ const baStyles = StyleSheet.create({
   },
   floatingBtnDisabled: {
     opacity: 0.4,
+  },
+  autoAllBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 101,
+  },
+  autoAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79,214,168,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.45)',
+    borderRadius: rs(20),
+    paddingVertical: rs(7),
+    paddingHorizontal: rs(16),
+  },
+  autoAllText: {
+    color: COLORS.mint,
+    fontSize: rf(13),
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  autoAllBolt: {
+    color: COLORS.mint,
+    fontSize: rf(13),
   },
   undoBtnText: {
     // VAMOS-PLACEMENT-POLISH-2 FIX 2 — gold #F5C842 → mint

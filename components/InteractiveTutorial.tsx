@@ -250,8 +250,8 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
     {
       title: isHE ? 'הקש קלף, ואז בורד' : 'Tap a card, then a board',
       body: isHE
-        ? 'מקם 4 קלפים על כל בורד.'
-        : 'Place 4 cards on every board.',
+        ? 'מקם 4 קלפים על כל בורד. כל יד משתמשת בדיוק ב-2 מתוך 4 הקלפים שלך + 3 קלפי קהילה.'
+        : 'Place 4 cards on every board. Each hand uses exactly 2 of your 4 cards + 3 community cards.',
       Visual: () => <Step2Visual onCardPlace={() => setStep2CardPlaced(true)} />,
     },
     {

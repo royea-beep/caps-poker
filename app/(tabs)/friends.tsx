@@ -31,15 +31,26 @@ export default function FriendsScreen() {
   const deviceIdRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
-    const rows = await myClubs(deviceIdRef.current, userIdRef.current);
+    // Resolve the ids INLINE before querying — never depend on the refs being pre-populated.
+    // This was the bug: the mount effect kicked off the async getDeviceId()/getUser() but
+    // called load() synchronously before their .then() set the refs, so the FIRST load ran
+    // myClubs(null, null) → [] → an existing member saw "You're not in a club yet". It only
+    // self-healed on a later focus once the refs had settled. (Same mount-hydration race as
+    // the home-selector B fix.) Resolving here guarantees the first load has the real ids.
+    const deviceId = deviceIdRef.current ?? (await getDeviceId().catch(() => null));
+    deviceIdRef.current = deviceId;
+    let userId = userIdRef.current;
+    if (userId == null) {
+      try { userId = (await getSupabase()?.auth.getUser())?.data?.user?.id ?? null; } catch { userId = null; }
+      userIdRef.current = userId;
+    }
+    const rows = await myClubs(deviceId, userId);
     setClubs(rows);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     import('../../utils/analytics').then(({ track }) => track('screen_view', {}, 'friends')).catch(() => {});
-    getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
-    getDeviceId().then((d) => { deviceIdRef.current = d; }).catch(() => {});
     void load();
   }, [load]);
 

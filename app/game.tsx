@@ -1194,6 +1194,7 @@ function GameScreenInner() {
       onBoardPress={handleBoardPress}
       onRemoveCard={handleRemoveCardFromBoard}
       onAutoFill={handleAutoFill}
+      onAutoFillAll={autoFillAllBoards}
       onUndo={() => {
         for (let i = boards.length - 1; i >= 0; i--) {
           if (boards[i].playerCards.length > 0) {
