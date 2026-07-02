@@ -1,5 +1,10 @@
 # CAPS POKER — Project Memory
 
+## 2026-07-02 — earn_chips incident
+- `earnChips('daily_login')` on every Home mount credited **+50/open** — `earn_chips` had NO server gate (unconditional ledger + leaderboard UPDATE, `p_amount DEFAULT 50`). Damage: **110,850 chips leaked across 1,130 devices**. Client call removed (hotfix `e34baea`, OTA `c3253f4f`); server hardened: `daily_login`=no-op, event-type whitelist, amount clamp **[-500,+1500]** on BOTH earn_chips overloads (migration `harden_earn_chips_server_gate`).
+- The daily bonus itself is now server-gated end-to-end: `claim_daily_reward` (DB once-per-day gate + `daily_rewards` ledger row as proof) is the only claim path; no local reward math, no client-wins submitScore push.
+- **Residual risk:** the clamp is a ceiling, not event validation — a client can still send an inflated amount within the clamp for a legit event. Full fix = server-computed amounts per event (like claim_daily_reward). Planned, not built — see TODO below.
+
 ## 2026-07-02 — state of truth
 - **Live:** main `f704607`, web bundle `index-2fc1cfd5`, OTA group `eb67b693-5d51-40d4-9e4f-1733c1a410a7`, runtime 2.7.0, build 506. Web = caps.ftable.co.il via Vercel (GH Action deploys on push to main).
 - **Vercel:** project RENAMED `dist` → **`caps-poker-web`** (same projectId `prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP`, domain unaffected). Why: on 7/1 a Wingman CLI deploy (branch test/core-loop-smoke) landed on the then-named "dist" project and the caps.ftable.co.il alias auto-followed it — the live site served the Wingman dating app until restored via `vercel promote` of the CAPS deploy. Cleanup done: stray `web-dist/.vercel` link deleted; stale unused `caps-poker` Vercel project deleted. **LESSON: never deploy to a Vercel project you didn't verify by projectId; a production custom domain follows the NEWEST production deploy.**
@@ -43,6 +48,10 @@ PENDING: BoardReveal in MP (flag mpBoardReveal=false, dormant — code wired but
 - Rule 11 (2026-06-28): QA simulations run against a Supabase BRANCH, never the live shared project.
 - Rule 12 (2026-06-28): ~15 qa_* migrations in history are throwaway test sims (see docs/MIGRATION_HYGIENE.md) — don't let them replay on a branch.
 - Rule 13 (2026-07-02): Stale docs are hazards — MEMORY.md's dated sections are the only trusted state. Verify any claim older than the newest dated section before acting on it.
+- Rule 14 (2026-07-02): A code comment is a claim, not evidence — verify against the actual implementation (the "idempotent — safe every open" comment shipped the earn_chips leak).
+
+## TODO
+- **Server-computed earn amounts refactor:** move all chip-amount logic into the RPCs per event type (as claim_daily_reward already does) — the client sends only the event, never an amount; earn_chips's `p_amount` parameter goes away, and each event's value lives server-side in one place (chip_config or per-event RPC). Kills the residual clamp-window risk from the earn_chips incident. Requires a coordinated client+server change: one batch + OTA.
 
 ## Tech Stack
 - React Native + Expo SDK 55 (React 19, RN 0.83)
