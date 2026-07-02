@@ -737,6 +737,14 @@ export default function HomeScreen() {
     prevChipsRef.current = chips;
   }, [chips]);
 
+  // VAMOS UX-BATCH-2 (Item 3) — QUIET daily bonus state: inline strip acknowledgment
+  // (one-shot glow, no overlay). The claim itself runs inside the sequenced wallet
+  // bootstrap below (adopt server balance → claim → push), never against the
+  // pre-hydration local default.
+  const [justClaimed, setJustClaimed] = useState<{ reward: number; streak: number } | null>(null);
+  const ackAnim = useRef(new AnimatedRN.Value(0)).current;
+  const autoClaimedRef = useRef(false);
+
   useEffect(() => {
     setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
@@ -746,12 +754,17 @@ export default function HomeScreen() {
       platform: Platform.OS,
     }, 'home');
 
-    // PR-G Bug 2: sync server-side chip balance into Zustand so all screens
-    // read one source of truth. Before this, Zustand defaulted to 1,050 chips
-    // while the server-side balance was different (e.g. 1,000 for anon web
-    // sessions). Profile/Sit&Go displayed the Zustand value, Chip Shop showed
-    // the server value, and Quick Poker's spend_chips RPC failed against the
-    // server balance with a misleading 'Not enough chips' message.
+    // PR-G Bug 2 + VAMOS UX-BATCH-2b — ONE sequenced wallet bootstrap. Order matters:
+    // (1) ADOPT the server-authoritative balance. get_poker_shop reads/creates the
+    //     leaderboard row (column default 2000 for fresh devices), so the FIRST sync
+    //     is server-wins by construction — the local default is never pushed over it.
+    // (2) After zustand persist hydration (claim eligibility lives in persisted state),
+    //     auto-claim the daily bonus ON TOP of the adopted balance (quiet, inline ack).
+    // (3) Push adopted+reward back via submitScore so wallet, header, and
+    //     leaderboard.total_chips agree on ONE number (fresh device: 2000+50=2050).
+    // The first UX-BATCH-2 cut ran the claim as its own hydration-gated effect, which
+    // raced AHEAD of adoption and pushed localDefault+50 (e.g. 1050) over the server
+    // 2000 baseline via submit_score's client-wins upsert.
     void (async () => {
       try {
         const deviceId = await getDeviceId();
@@ -759,7 +772,44 @@ export default function HomeScreen() {
         if (shop && typeof shop.balance === 'number') {
           useGameStore.getState().setChips(shop.balance);
         }
-      } catch { /* non-blocking */ }
+      } catch { /* non-blocking — worst case we claim on top of the local wallet */ }
+
+      // (2) wait for persisted state before deciding claim eligibility
+      try {
+        const persistApi: any = (useGameStore as any).persist;
+        if (!persistApi?.hasHydrated?.()) {
+          await new Promise<void>((resolve) => {
+            const unsub = persistApi?.onFinishHydration?.(() => { try { (unsub as any)?.(); } catch { /* noop */ } resolve(); });
+            if (!unsub) resolve();
+          });
+        }
+      } catch { /* best-effort */ }
+
+      if (!ECONOMY_FLAGS.dailyRewardEnabled || autoClaimedRef.current) return;
+      const store = useGameStore.getState();
+      const now = new Date();
+      if (!canClaimDailyReward(store.lastDailyRewardClaim, now)) return;
+      autoClaimedRef.current = true;
+      const nextStreak = getNextStreak(store.lastDailyRewardClaim, store.dailyRewardStreak, now);
+      const reward = calculateDailyReward(nextStreak);
+      store.addChips(reward);
+      store.trackChipsEarned(reward);
+      store.setLastDailyRewardClaim(now.toISOString());
+      store.setDailyRewardStreak(nextStreak);
+      CapsHooks.dailyRewardClaimed(nextStreak, reward);
+      track('daily_bonus_auto_claimed', { reward, streak: nextStreak }, 'home');
+      setJustClaimed({ reward, streak: nextStreak });
+      AnimatedRN.sequence([
+        AnimatedRN.timing(ackAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+        AnimatedRN.timing(ackAnim, { toValue: 0.85, duration: 900, useNativeDriver: true }),
+        AnimatedRN.timing(ackAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ]).start();
+      void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
+      // (3) push adopted+reward to the read-path table
+      const s = useGameStore.getState();
+      import('../../utils/leaderboard').then(({ submitScore }) =>
+        submitScore(s.playerName || 'Player', s.chips, s.handsPlayed, s.handsWon, s.biggestWin)
+      ).catch(() => {});
     })();
 
     // Economy: daily_login earn_chips (idempotent — safe every open)
@@ -1422,8 +1472,15 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Daily reward — prominent pill when claimable, streak info otherwise */}
-        {canClaim ? (
+        {/* Daily reward — quiet auto-claim acknowledgment (Item 3), else prominent
+            pill when claimable (fallback if auto-claim was gated), streak info otherwise */}
+        {justClaimed ? (
+          <AnimatedRN.View style={{ opacity: ackAnim }} accessibilityLiveRegion="polite" testID="daily-claimed-ack">
+            <View style={[styles.dailyPill, styles.dailyPillClaim]}>
+              <Text style={styles.dailyPillText}>✅ +{justClaimed.reward} claimed · Day {justClaimed.streak} streak</Text>
+            </View>
+          </AnimatedRN.View>
+        ) : canClaim ? (
           <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
             <Pressable
               onPress={handleClaimDailyReward}

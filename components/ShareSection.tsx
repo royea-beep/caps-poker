@@ -1,6 +1,12 @@
 /**
  * ShareSection — game-wide share buttons + offscreen FullGameShareCard.
- * ZERO Reanimated. Renders null on web (no native share API).
+ * ZERO Reanimated.
+ *
+ * VAMOS UX-BATCH-2 (Item 2) — surfaced everywhere:
+ * - Web no longer renders null: it shows a "Share this hand" CTA that copies the
+ *   replay link with an INLINE confirmation (Alert.alert is a no-op on web).
+ * - `bigMoment` (COMPLETE / 3+ board sweep / big chip win) renders the CTA
+ *   prominently; otherwise the quiet row.
  */
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ActionSheetIOS, Alert } from 'react-native';
@@ -17,19 +23,47 @@ interface ShareSectionProps {
   completeBonusAmount: number;
   potPerBoard: number;
   numberOfPlayers: number;
+  /** Render the CTA prominently (COMPLETE / sweep / big win). */
+  bigMoment?: boolean;
   /** Called after a successful share action so callers can award earn_chips */
   onShareComplete?: () => void;
 }
 
 export function ShareSection({
   shareData, autoShareUrl, boards, netChips, isComplete,
-  completeBonusAmount, potPerBoard, numberOfPlayers, onShareComplete,
+  completeBonusAmount, potPerBoard, numberOfPlayers, bigMoment, onShareComplete,
 }: ShareSectionProps) {
   const gameShareRef = useRef<any>(null);
   const gameStoryRef = useRef<any>(null);
   const [sharingGame, setSharingGame] = useState(false);
+  const [webCopied, setWebCopied] = useState(false);
 
-  if (Platform.OS === 'web') return null;
+  if (Platform.OS === 'web') {
+    // Web fallback: copy the replay link + inline confirmation (no native share sheet,
+    // and Alert.alert silently no-ops on web — so the confirmation must be inline).
+    const doWebCopy = async () => {
+      const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null));
+      if (!url) return;
+      await copyToClipboard(url);
+      setWebCopied(true);
+      onShareComplete?.();
+    };
+    return (
+      <View style={{ width: '100%', gap: 8 }}>
+        <Pressable
+          onPress={doWebCopy}
+          accessibilityRole="button"
+          accessibilityLabel="Share this hand — copy replay link"
+          style={bigMoment ? styles.bigShareBtn : styles.copyLinkBtn}
+          testID="share-hand-cta"
+        >
+          <Text style={bigMoment ? styles.bigShareText : styles.copyLinkText}>
+            {webCopied ? '✓ Link copied — paste it anywhere' : bigMoment ? '🎉 Share this hand!' : '🔗 Share this hand'}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   const doShareGame = async (ref: React.RefObject<any>) => {
     setSharingGame(true);
@@ -68,11 +102,25 @@ export function ShareSection({
 
   return (
     <View style={{ width: '100%', gap: 8 }}>
+      {/* Big-moment hero CTA (COMPLETE / sweep / big win) sits above the quiet row */}
+      {bigMoment && (
+        <Pressable
+          onPress={handleShare}
+          style={[styles.bigShareBtn, sharingGame && styles.shareBtnLoading]}
+          disabled={sharingGame}
+          accessibilityRole="button"
+          accessibilityLabel="Share this hand"
+          testID="share-hand-cta"
+        >
+          <Text style={styles.bigShareText}>{sharingGame ? 'Generating…' : '🎉 Share this hand!'}</Text>
+        </Pressable>
+      )}
       <View style={styles.shareGameRow}>
         <Pressable
           onPress={handleShare}
           style={[styles.shareGameBtn, sharingGame && styles.shareBtnLoading]}
           disabled={sharingGame}
+          testID={bigMoment ? undefined : 'share-hand-cta'}
         >
           <Text style={styles.shareGameBtnText}>{sharingGame ? 'Generating...' : '📸 Share Game'}</Text>
         </Pressable>
@@ -97,5 +145,8 @@ const styles = StyleSheet.create({
   shareGameBtnText: { color: '#FFD700', fontSize: rf(14), fontWeight: '700' },
   copyLinkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: rv(10), paddingVertical: rs(10), alignItems: 'center' },
   copyLinkText: { color: 'rgba(255,255,255,0.6)', fontSize: rf(14), fontWeight: '600' },
+  // VAMOS UX-BATCH-2 (Item 2) — prominent big-moment CTA (mint, matches action accents)
+  bigShareBtn: { width: '100%', backgroundColor: 'rgba(79,214,168,0.16)', borderWidth: 1.5, borderColor: '#4FD6A8', borderRadius: rv(12), paddingVertical: rs(13), alignItems: 'center' },
+  bigShareText: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '900', letterSpacing: 0.3 },
   offscreen: { position: 'absolute', left: -9999, top: 0, opacity: 0, zIndex: -1 },
 });
