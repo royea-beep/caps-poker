@@ -461,6 +461,50 @@ function OrientationPicker() {
   );
 }
 
+/**
+ * VAMOS S-BATCH — "Skip board-by-board reveal" (instant results). Unlocked after 3
+ * completed games (reveal stays the default teaching flow for new players); OFF by default.
+ */
+function SkipRevealToggle() {
+  const skip = useGameStore((s) => s.skipBoardReveal);
+  const setSkip = useGameStore((s) => s.setSkipBoardReveal);
+  const [unlocked, setUnlocked] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('caps_games_played')
+      .then((v) => { if (parseInt(v ?? '0', 10) >= 3) setUnlocked(true); })
+      .catch(() => {});
+  }, []);
+  if (!unlocked) return null;
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Skip board-by-board reveal</Text>
+        <Text style={styles.rowHint}>{skip ? 'Instant results summary' : 'Reveal each board (default)'}</Text>
+      </View>
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Skip board reveal">
+        <Pressable
+          onPress={() => { hapticLight(); setSkip(false); }}
+          style={[styles.selectorBtn, !skip && styles.selectorBtnActive]}
+          accessibilityRole="radio"
+          accessibilityLabel="Reveal each board"
+          accessibilityState={{ checked: !skip }} aria-checked={!skip}
+        >
+          <Text style={[styles.selectorText, !skip && styles.selectorTextActive]}>OFF</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { hapticLight(); setSkip(true); }}
+          style={[styles.selectorBtn, skip && styles.selectorBtnActive]}
+          accessibilityRole="radio"
+          accessibilityLabel="Skip to instant results"
+          accessibilityState={{ checked: skip }} aria-checked={skip}
+        >
+          <Text style={[styles.selectorText, skip && styles.selectorTextActive]}>ON</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function FourColorSuitsToggle() {
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const setFourColorSuits = useGameStore((s) => s.setFourColorSuits);
@@ -1125,6 +1169,7 @@ export default function SettingsScreen() {
             was dead UI. The botDifficulty config field stays in the store for
             analytics/telemetry compatibility but is no longer user-facing. */}
         <RevealSpeedSelector />
+        <SkipRevealToggle />
         <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />

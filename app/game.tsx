@@ -644,9 +644,11 @@ function GameScreenInner() {
     debugLog('🎮 setting game active flag (dirty shutdown detector)');
     void markGameActive();
 
-    // Show safe reveal overlay before navigating (skip in auto-sim to avoid delays)
+    // Show safe reveal overlay before navigating (skip in auto-sim to avoid delays).
+    // VAMOS S-BATCH — also skipped when the player enabled "Skip board-by-board reveal"
+    // (Settings, unlocked after 3 games): straight to the one-screen results summary.
     debugLog('14 showSafeReveal path — setting overlay');
-    if (autoSim !== 'true') {
+    if (autoSim !== 'true' && !useGameStore.getState().skipBoardReveal) {
       const revealSummary = revealBoards.map((b) => ({
         winner: b.winner ?? 'tie' as const,
         playerHandName: b.playerHandName ?? '',

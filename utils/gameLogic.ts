@@ -1,4 +1,4 @@
-import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig, getBoardCount } from '../constants/gameConfig';
+import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig, getBoardCount, getCompleteBonusPercent } from '../constants/gameConfig';
 import { dealCards, DealResult, dealCardsMultiplayer, MultiDealResult } from './deck';
 import { evaluateOmahaHand, compareHands, HandResult } from './handEvaluator';
 import { Player, MultiBoardState } from '../types/gameTypes';
@@ -412,7 +412,9 @@ export function calculateChipDeltas(
   const totalPot = potPerBoard * boardCount * playerCount; // full pot: all boards × all players
   let completeBonusAmount = 0;
   if (completeWinner !== null) {
-    completeBonusAmount = Math.floor((totalPot * config.completeBonusPercent) / 100);
+    // VAMOS S-BATCH — bonus % scales with board count (app_config-driven; falls back
+    // to config.completeBonusPercent when no remote map is loaded).
+    completeBonusAmount = Math.floor((totalPot * getCompleteBonusPercent(boardCount, config.completeBonusPercent)) / 100);
     chipDeltas[completeWinner] += completeBonusAmount;
     // Distribute bonus cost to losers (zero-sum)
     const losers = playerCount - 1;
