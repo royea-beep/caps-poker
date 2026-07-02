@@ -5,7 +5,10 @@ export const DEFAULT_CONFIG = {
   boardRevealDuration: 5,
   turnRevealDelay: 800,
   completeBonusDisplay: 3,
-  startingChips: 1000,
+  // VAMOS UX-BATCH-2b 2026-07-02 — aligned to the server baseline (leaderboard.total_chips
+  // column default = 2000). The 1000-vs-2000 split made fresh devices push 1000+X over the
+  // server's 2000 via submit_score (client-wins upsert) before the first adoption ran.
+  startingChips: 2000,
   potPerBoard: 25,
   completeBonusPercent: 50,
   numberOfPlayers: 2,

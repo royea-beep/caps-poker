@@ -584,7 +584,8 @@ describe('getBoardCount / getCardsPerPlayer', () => {
 describe('best chips tracking', () => {
   it('bestChips defaults to startingChips', () => {
     const bestChips = DEFAULT_CONFIG.startingChips;
-    expect(bestChips).toBe(1000);
+    // VAMOS UX-BATCH-2b — baseline aligned to the server (leaderboard.total_chips default 2000)
+    expect(bestChips).toBe(2000);
   });
 
   it('bestChips updates when chips exceed previous best', () => {
