@@ -745,6 +745,65 @@ export default function HomeScreen() {
   const ackAnim = useRef(new AnimatedRN.Value(0)).current;
   const autoClaimedRef = useRef(false);
 
+  // HOTFIX 2026-07-02 (economy leak) — the ONLY daily-bonus claim path, shared by the
+  // bootstrap auto-claim and the manual pill. claim_daily_reward is the single
+  // authority: DB once-per-day gate + daily_rewards ledger row as proof of claim.
+  // On success the server-computed amount is credited server-side via the ledgered
+  // earn_chips (claim_daily_reward gates/ledgers but does not credit leaderboard
+  // itself), then the authoritative balance is RE-ADOPTED — no local reward math,
+  // no client-wins submitScore push, no earn_chips fallback on already_claimed.
+  // The previous cut computed the reward locally and pushed it via submitScore:
+  // no ledger row, re-armable by clearing storage, and it clobbered server credits.
+  const performServerClaim = useCallback(async (source: 'auto' | 'manual'): Promise<'claimed' | 'already' | 'error' | 'skipped'> => {
+    if (!ECONOMY_FLAGS.dailyRewardEnabled) return 'skipped';
+    if (source === 'auto' && autoClaimedRef.current) return 'skipped';
+    try {
+      const deviceId = await getDeviceId();
+      const sb = getSupabase();
+      if (!sb) return 'error';
+      const { data: claim } = await sb.rpc('claim_daily_reward', { p_device_id: deviceId });
+      const store = useGameStore.getState();
+      const now = new Date();
+      if (claim?.success) {
+        autoClaimedRef.current = true;
+        const reward = Number(claim.chips_earned) || 0;
+        const streak = Number(claim.streak) || 1;
+        if (reward > 0) await earnChips(deviceId, 'daily_reward', reward);
+        try {
+          const shop = await fetchPokerShop(deviceId);
+          if (shop && typeof shop.balance === 'number') store.setChips(shop.balance);
+          else store.addChips(reward);
+        } catch { store.addChips(reward); /* offline echo — server already ledgered */ }
+        store.trackChipsEarned(reward);
+        store.setLastDailyRewardClaim(now.toISOString());
+        store.setDailyRewardStreak(streak);
+        CapsHooks.dailyRewardClaimed(streak, reward);
+        track('daily_bonus_auto_claimed', { reward, streak, source, server_gated: true }, 'home');
+        setJustClaimed({ reward, streak });
+        AnimatedRN.sequence([
+          AnimatedRN.timing(ackAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+          AnimatedRN.timing(ackAnim, { toValue: 0.85, duration: 900, useNativeDriver: true }),
+          AnimatedRN.timing(ackAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        ]).start();
+        void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
+        return 'claimed';
+      }
+      if (claim?.error === 'already_claimed') {
+        autoClaimedRef.current = true;
+        // Sync local claim state so the fallback pill can't offer a claim the server
+        // would refuse (reinstall / cleared storage) — NOTHING is credited or shown.
+        if (canClaimDailyReward(store.lastDailyRewardClaim, now)) {
+          store.setLastDailyRewardClaim(now.toISOString());
+        }
+        return 'already';
+      }
+      return 'error';
+    } catch {
+      return 'error'; // offline — nothing credited; the pill fallback remains available
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ackAnim]);
+
   useEffect(() => {
     setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
@@ -760,8 +819,9 @@ export default function HomeScreen() {
     //     is server-wins by construction — the local default is never pushed over it.
     // (2) After zustand persist hydration (claim eligibility lives in persisted state),
     //     auto-claim the daily bonus ON TOP of the adopted balance (quiet, inline ack).
-    // (3) Push adopted+reward back via submitScore so wallet, header, and
-    //     leaderboard.total_chips agree on ONE number (fresh device: 2000+50=2050).
+    // (3) Claim server-side (claim_daily_reward gate + ledger, credited via the
+    //     ledgered earn_chips), then RE-ADOPT — wallet, header, and
+    //     leaderboard.total_chips agree on ONE number with no client-wins push.
     // The first UX-BATCH-2 cut ran the claim as its own hydration-gated effect, which
     // raced AHEAD of adoption and pushed localDefault+50 (e.g. 1050) over the server
     // 2000 baseline via submit_score's client-wins upsert.
@@ -785,45 +845,16 @@ export default function HomeScreen() {
         }
       } catch { /* best-effort */ }
 
-      if (!ECONOMY_FLAGS.dailyRewardEnabled || autoClaimedRef.current) return;
-      const store = useGameStore.getState();
-      const now = new Date();
-      if (!canClaimDailyReward(store.lastDailyRewardClaim, now)) return;
-      autoClaimedRef.current = true;
-      const nextStreak = getNextStreak(store.lastDailyRewardClaim, store.dailyRewardStreak, now);
-      const reward = calculateDailyReward(nextStreak);
-      store.addChips(reward);
-      store.trackChipsEarned(reward);
-      store.setLastDailyRewardClaim(now.toISOString());
-      store.setDailyRewardStreak(nextStreak);
-      CapsHooks.dailyRewardClaimed(nextStreak, reward);
-      track('daily_bonus_auto_claimed', { reward, streak: nextStreak }, 'home');
-      setJustClaimed({ reward, streak: nextStreak });
-      AnimatedRN.sequence([
-        AnimatedRN.timing(ackAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
-        AnimatedRN.timing(ackAnim, { toValue: 0.85, duration: 900, useNativeDriver: true }),
-        AnimatedRN.timing(ackAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-      ]).start();
-      void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
-      // (3) push adopted+reward to the read-path table
-      const s = useGameStore.getState();
-      import('../../utils/leaderboard').then(({ submitScore }) =>
-        submitScore(s.playerName || 'Player', s.chips, s.handsPlayed, s.handsWon, s.biggestWin)
-      ).catch(() => {});
+      // (3) HOTFIX 2026-07-02 — server-gated claim (claim_daily_reward RPC + ledger).
+      // Replaces the local reward math + client-wins submitScore push of the first cut.
+      await performServerClaim('auto');
     })();
 
-    // Economy: daily_login earn_chips (idempotent — safe every open)
-    void (async () => {
-      try {
-        const deviceId = await getDeviceId();
-        const result = await earnChips(deviceId, 'daily_login');
-        if (result?.chips_earned) {
-          const store = useGameStore.getState();
-          store.addChips(result.chips_earned);
-          store.trackChipsEarned(result.chips_earned);
-        }
-      } catch {}
-    })();
+    // HOTFIX 2026-07-02 (economy leak) — the daily_login earn_chips call REMOVED.
+    // Its old comment claimed "idempotent — safe every open", but earn_chips has NO
+    // dedup (it ledgers + credits leaderboard unconditionally, p_amount DEFAULT 50),
+    // so this was +50 per app open for every user. The daily bonus is now the ONLY
+    // daily login credit, server-gated via claim_daily_reward in the bootstrap above.
 
     // Fetch card display config from Supabase (once per session)
     void (async () => {
@@ -994,23 +1025,18 @@ export default function HomeScreen() {
     router.push('/game' as any);
   }, [chips, config, router]);
 
+  // HOTFIX 2026-07-02 — manual pill fallback routes through the SAME server-gated
+  // claim (no local reward math). The strip's inline ack is the success feedback;
+  // Alert only covers the native already-claimed edge (it's a no-op on web, where
+  // the pill disappears via the synced claim state anyway).
   const handleClaimDailyReward = useCallback(() => {
-    const now = new Date();
-    if (!canClaimDailyReward(lastDailyRewardClaim, now)) {
-      Alert.alert('Already Claimed', 'Come back tomorrow for your next reward!');
-      return;
-    }
-    const nextStreak = getNextStreak(lastDailyRewardClaim, dailyRewardStreak, now);
-    const reward = calculateDailyReward(nextStreak);
-    const store = useGameStore.getState();
-    store.addChips(reward);
-    store.trackChipsEarned(reward);
-    store.setLastDailyRewardClaim(now.toISOString());
-    store.setDailyRewardStreak(nextStreak);
-    CapsHooks.dailyRewardClaimed(nextStreak, reward);
-    Alert.alert('Daily Reward!', `+${reward} chips${nextStreak > 1 ? ` (${nextStreak}-day streak!)` : ''}`);
-    void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
-  }, [lastDailyRewardClaim, dailyRewardStreak]);
+    void (async () => {
+      const outcome = await performServerClaim('manual');
+      if (outcome === 'already') {
+        Alert.alert('Already Claimed', 'Come back tomorrow for your next reward!');
+      }
+    })();
+  }, [performServerClaim]);
 
   // Handler for claiming from the auto-popup (uses pre-computed reward values)
   const handlePopupClaim = useCallback(() => {
