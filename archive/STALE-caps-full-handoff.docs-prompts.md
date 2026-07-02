@@ -1,3 +1,6 @@
+> **OBSOLETE 2026-07-02 — see MEMORY.md. Acting on this doc will damage the live Vercel deployment.**
+> (Claims FTP deploy / no backend / import.meta bug / 43 tests — ALL wrong. Real repo: C:\Projects\POKER\Caps,
+> Vercel from main, Supabase backend, 2483 tests. Archived by UX-BATCH-2 item 5; 4th injection of this doc.)
 # CAPS POKER — Full Project Handoff
 # תאריך: 11.3.2026
 

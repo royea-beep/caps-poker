@@ -107,6 +107,42 @@ function SettingRow({ label, configKey, suffix, min = 1, max }: SettingRowProps)
   );
 }
 
+/**
+ * VAMOS UX-BATCH-2 (Item 1) — collapsed home for the raw dev-tuning knobs that used to
+ * sit on the Settings front page (TIMING + BOT sections). Default collapsed; Iron Rule 3
+ * stays satisfied — every parameter remains runtime-configurable, just one tap deeper.
+ */
+function AdvancedSection() {
+  const [open, setOpen] = useState(false);
+  return (
+    <View>
+      <Pressable
+        onPress={() => { hapticLight(); setOpen((o) => !o); }}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`Advanced tuning, ${open ? 'expanded' : 'collapsed'}`}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}
+      >
+        <Text style={styles.sectionTitle} accessibilityRole="header">⚙️ ADVANCED</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: rf(16), fontWeight: '700' }}>{open ? '▾' : '▸'}</Text>
+      </Pressable>
+      {open && (
+        <>
+          <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: rf(11), marginBottom: rs(8) }}>
+            Raw gameplay tuning — the defaults are right for normal play.
+          </Text>
+          <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />
+          <SettingRow label="Board Reveal Duration" configKey="boardRevealDuration" suffix="sec" min={1} />
+          <SettingRow label="Card Flip Speed" configKey="turnRevealDelay" suffix="ms" min={100} />
+          <SettingRow label="Complete Bonus Display" configKey="completeBonusDisplay" suffix="sec" min={1} />
+          <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
+          <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
+        </>
+      )}
+    </View>
+  );
+}
+
 function ProfileSection() {
   const playerName = useGameStore((s) => s.playerName);
   const playerAvatar = useGameStore((s) => s.playerAvatar);
@@ -1108,15 +1144,9 @@ export default function SettingsScreen() {
         <ColorblindToggle />
         <HandSortToggle />
 
-        <Text style={styles.sectionTitle} accessibilityRole="header">TIMING</Text>
-        <SettingRow label="Arrangement Time" configKey="arrangementTime" suffix="sec" min={10} />
-        <SettingRow label="Board Reveal Duration" configKey="boardRevealDuration" suffix="sec" min={1} />
-        <SettingRow label="Card Flip Speed" configKey="turnRevealDelay" suffix="ms" min={100} />
-        <SettingRow label="Complete Bonus Display" configKey="completeBonusDisplay" suffix="sec" min={1} />
-
-        <Text style={styles.sectionTitle} accessibilityRole="header">BOT</Text>
-        <SettingRow label="Bot Speed Min" configKey="botSpeedMin" suffix="ms" min={0} />
-        <SettingRow label="Bot Speed Max" configKey="botSpeedMax" suffix="ms" min={0} />
+        {/* VAMOS UX-BATCH-2 (Item 1) — TIMING + BOT raw tuning knobs moved into the
+            collapsed ADVANCED section at the bottom. Iron Rule 3 stays satisfied:
+            everything is still runtime-configurable, just not on the front page. */}
 
         <Text style={styles.sectionTitle} accessibilityRole="header">AUDIO & NOTIFICATIONS</Text>
         <SoundToggle />
@@ -1166,6 +1196,8 @@ export default function SettingsScreen() {
             />
           </>
         )}
+
+        <AdvancedSection />
 
         <Text style={styles.sectionTitle} accessibilityRole="header">DEVELOPER</Text>
         <View style={styles.row}>

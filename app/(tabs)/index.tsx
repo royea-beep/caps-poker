@@ -944,6 +944,52 @@ export default function HomeScreen() {
     router.push('/game' as any);
   }, [chips, config, router]);
 
+  // VAMOS UX-BATCH-2 (Item 3) — QUIET daily bonus: auto-claim silently on the first
+  // open of the day and acknowledge inline on the existing bonus strip (one-shot glow,
+  // no overlay, nothing to dismiss). UNIFY-FINAL removed all popups — this must NOT
+  // reintroduce one. State is read via getState() inside the callback and the claim is
+  // gated on persist hydration (the home-selector B bug was exactly an effect capturing
+  // pre-hydration state).
+  const [justClaimed, setJustClaimed] = useState<{ reward: number; streak: number } | null>(null);
+  const ackAnim = useRef(new AnimatedRN.Value(0)).current;
+  const autoClaimedRef = useRef(false);
+  useEffect(() => {
+    if (!ECONOMY_FLAGS.dailyRewardEnabled) return;
+    const claim = () => {
+      if (autoClaimedRef.current) return;
+      const store = useGameStore.getState();
+      const now = new Date();
+      if (!canClaimDailyReward(store.lastDailyRewardClaim, now)) return;
+      autoClaimedRef.current = true;
+      const nextStreak = getNextStreak(store.lastDailyRewardClaim, store.dailyRewardStreak, now);
+      const reward = calculateDailyReward(nextStreak);
+      store.addChips(reward);
+      store.trackChipsEarned(reward);
+      store.setLastDailyRewardClaim(now.toISOString());
+      store.setDailyRewardStreak(nextStreak);
+      CapsHooks.dailyRewardClaimed(nextStreak, reward);
+      track('daily_bonus_auto_claimed', { reward, streak: nextStreak }, 'home');
+      setJustClaimed({ reward, streak: nextStreak });
+      AnimatedRN.sequence([
+        AnimatedRN.timing(ackAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+        AnimatedRN.timing(ackAnim, { toValue: 0.85, duration: 900, useNativeDriver: true }),
+        AnimatedRN.timing(ackAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ]).start();
+      void scheduleLocal('Daily Reward Ready 🎁', 'Your daily reward is waiting! Open CAPS to claim.', 24 * 60 * 60, 'daily_reward');
+      // Push the new balance to the read-path table immediately — the client reads
+      // leaderboard.total_chips, and submitScore otherwise only runs after a game.
+      const s = useGameStore.getState();
+      import('../../utils/leaderboard').then(({ submitScore }) =>
+        submitScore(s.playerName || 'Player', s.chips, s.handsPlayed, s.handsWon, s.biggestWin)
+      ).catch(() => {});
+    };
+    const persistApi: any = (useGameStore as any).persist;
+    if (persistApi?.hasHydrated?.()) { claim(); return; }
+    const unsub = persistApi?.onFinishHydration?.(() => claim());
+    return () => { try { unsub?.(); } catch { /* best-effort */ } };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleClaimDailyReward = useCallback(() => {
     const now = new Date();
     if (!canClaimDailyReward(lastDailyRewardClaim, now)) {
@@ -1422,8 +1468,15 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Daily reward — prominent pill when claimable, streak info otherwise */}
-        {canClaim ? (
+        {/* Daily reward — quiet auto-claim acknowledgment (Item 3), else prominent
+            pill when claimable (fallback if auto-claim was gated), streak info otherwise */}
+        {justClaimed ? (
+          <AnimatedRN.View style={{ opacity: ackAnim }} accessibilityLiveRegion="polite" testID="daily-claimed-ack">
+            <View style={[styles.dailyPill, styles.dailyPillClaim]}>
+              <Text style={styles.dailyPillText}>✅ +{justClaimed.reward} claimed · Day {justClaimed.streak} streak</Text>
+            </View>
+          </AnimatedRN.View>
+        ) : canClaim ? (
           <AnimatedRN.View style={{ transform: [{ scale: dailyPulseAnim }] }}>
             <Pressable
               onPress={handleClaimDailyReward}

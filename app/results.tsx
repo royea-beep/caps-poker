@@ -898,6 +898,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             completeBonusAmount={completeBonusAmount}
             potPerBoard={revealData.potPerBoard}
             numberOfPlayers={numberOfPlayers}
+            // VAMOS UX-BATCH-2 (Item 2) — prominent CTA on big moments: COMPLETE,
+            // 3+ board sweep, or a big chip win; quiet row otherwise.
+            bigMoment={localComplete || playerWins >= 3 || netChips >= 150}
             onShareComplete={async () => {
               try {
                 const deviceId = await getDeviceId();
