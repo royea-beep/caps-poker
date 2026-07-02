@@ -1,5 +1,11 @@
 # CAPS POKER — Project Memory
 
+## 2026-07-02 — RECAP
+- **Live:** main `9bb4777`, web bundle `index-5112899a`, OTA `61746d4e-1079-4107-b024-c4ca09a5873a`, runtime 2.7.0.
+- **Shipped since 06-28:** unified GameView (MP===SOLO render) · MP leave-recovery (non-host fast-path, **52s measured** 2-client on prod) · QA batch A/B/C+rule · UX-BATCH-1 (clubs rehydration, Auto-Place ALL, lobby presence, Omaha rule copy) · UX-BATCH-2 (ADVANCED settings, share-hand CTA, quiet daily bonus, chips 2000 + server-first sync, js-yaml, stale-doc purge) · daily_login leak fixed + server-locked (whitelist+clamp) · Vercel incident (Wingman alias hijack) + project rename `dist`→`caps-poker-web` · Dependabot 12→0 · S-batch: COMPLETE bonus curve via app_config `complete_bonus_pct_by_boards` {2:25,3:50,4:75} + skip-reveal toggle (unlocks after 3 games).
+- **Economy state:** starting 2000 · curve live · daily_login=0 (retired) · last 7d: credits 67,270 / debits 0 = **NO SINK**.
+- **DECISION — flagship batch order:** (1) server-computed earn amounts refactor → (2) **5% house rake** (server-side, dilutes chips slowly, the real sink) → (3) Royalties → (4) improved SOLO bot (Iron Rule 5 UPDATED: heuristic allowed, no longer random-only).
+
 ## 2026-07-02 — earn_chips incident
 - `earnChips('daily_login')` on every Home mount credited **+50/open** — `earn_chips` had NO server gate (unconditional ledger + leaderboard UPDATE, `p_amount DEFAULT 50`). Damage: **110,850 chips leaked across 1,130 devices**. Client call removed (hotfix `e34baea`, OTA `c3253f4f`); server hardened: `daily_login`=no-op, event-type whitelist, amount clamp **[-500,+1500]** on BOTH earn_chips overloads (migration `harden_earn_chips_server_gate`).
 - The daily bonus itself is now server-gated end-to-end: `claim_daily_reward` (DB once-per-day gate + `daily_rewards` ledger row as proof) is the only claim path; no local reward math, no client-wins submitScore push.
@@ -39,7 +45,7 @@ PENDING: BoardReveal in MP (flag mpBoardReveal=false, dormant — code wired but
 - Rule 2: iOS portrait only — no landscape, no tablet
 - Rule 3: All game parameters must be runtime-configurable via Settings screen — never hardcoded
 - Rule 4: Hand evaluation uses full Omaha rules — exactly 2 player cards + 3 board cards
-- Rule 5: Bot is random only — no strategy, exists for testing purposes only
+- Rule 5: Bot may use heuristic strategy (was random-only; changed 2026-07-02 with owner unlock — improved SOLO bot is step 4 of the flagship batch)
 - Rule 6: No backend for single-player — local storage only
 - Rule 7: Local multiplayer via react-native-tcp-socket (host as WebSocket server) — LOCKED
 - Rule 8: Internet multiplayer via Supabase Realtime (Phase 2, future sprint) — LOCKED
