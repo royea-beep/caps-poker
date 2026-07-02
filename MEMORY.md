@@ -1,5 +1,11 @@
 # CAPS POKER — Project Memory
 
+## 2026-07-02 — state of truth
+- **Live:** main `f704607`, web bundle `index-2fc1cfd5`, OTA group `eb67b693-5d51-40d4-9e4f-1733c1a410a7`, runtime 2.7.0, build 506. Web = caps.ftable.co.il via Vercel (GH Action deploys on push to main).
+- **Vercel:** project RENAMED `dist` → **`caps-poker-web`** (same projectId `prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP`, domain unaffected). Why: on 7/1 a Wingman CLI deploy (branch test/core-loop-smoke) landed on the then-named "dist" project and the caps.ftable.co.il alias auto-followed it — the live site served the Wingman dating app until restored via `vercel promote` of the CAPS deploy. Cleanup done: stray `web-dist/.vercel` link deleted; stale unused `caps-poker` Vercel project deleted. **LESSON: never deploy to a Vercel project you didn't verify by projectId; a production custom domain follows the NEWEST production deploy.**
+- **Chips:** starting = **2000**. The CLIENT reads `leaderboard.total_chips` (default now 2000). `user_profiles.chips` is NOT the read path — never "reset chips" via user_profiles alone.
+- **Shipped since last update:** QA batch A/B/C + stale-rule (`d1de124`: English hand badges, first-run 3P selector on mount, non-host leave-recovery clean-cancel + full roster cleanup via finish_table); UX-BATCH-1 (`f704607`: clubs rehydration fix — resolve ids inline before my_clubs, Auto-Place ALL, lobby presence count, Omaha rule stated in onboarding card 2).
+- **WARNING:** any handoff doc dated 11.3.2026 is obsolete (claims FTP deploy / no backend / import.meta bug / 43 tests — ALL wrong). Trust only this file's dated sections.
 
 - THEME (done 2026-06-15): app-wide obsidian `#161922` / mint `#4FD6A8` (tokens mint, mintLight `#7FE3C2`, mintBright `#A7EED6`, mintDim). Gold = SEMANTIC ONLY: winner highlight (Card.tsx inline literal `#c9a84c`, locked), medals, cup tiers, currency amounts. See docs/GEMS.md → "Headless Visual-QA Loop".
 ## Iron Rules (NEVER change without explicit "UNLOCK [rule]" from user)
@@ -11,6 +17,7 @@
 - Rule 6: No backend for single-player — local storage only
 - Rule 7: Local multiplayer via react-native-tcp-socket (host as WebSocket server) — LOCKED
 - Rule 8: Internet multiplayer via Supabase Realtime (Phase 2, future sprint) — LOCKED
+- Rule 9: Stale docs are hazards — MEMORY.md's dated sections are the only trusted state. Verify any claim older than the newest dated section before acting on it.
 
 ## Tech Stack
 - React Native + Expo SDK 55 (React 19, RN 0.83)
