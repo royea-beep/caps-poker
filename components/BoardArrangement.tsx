@@ -6,7 +6,7 @@ import Board from './Board';
 import PlayerHand from './PlayerHand';
 import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
-import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
+import { Card, CARDS_PER_BOARD, COLORS, getCompleteBonusPercent } from '../constants/gameConfig';
 import { rf, rs, rb, rv } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
@@ -362,7 +362,12 @@ export function BoardArrangement({
           pointerEvents="none"
         >
           <Text style={baStyles.winAllHint}>
-            {t().winAll(potPerBoard * boardCount * numberOfPlayers + Math.round(potPerBoard * boardCount * 0.5))}
+            {/* VAMOS S-BATCH — bonus part now matches the live math: % of the TOTAL pot,
+                scaled by board count (was hardcoded 0.5 of ONE player's buy-in). */}
+            {t().winAll(
+              potPerBoard * boardCount * numberOfPlayers
+              + Math.floor((potPerBoard * boardCount * numberOfPlayers * getCompleteBonusPercent(boardCount, 50)) / 100)
+            )}
           </Text>
         </View>
       )}

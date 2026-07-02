@@ -1,5 +1,21 @@
 import { THEME } from './theme';
 
+// VAMOS S-BATCH 2026-07-02 — COMPLETE bonus % scaled by board count (2 boards is the
+// easiest sweep AND the biggest pot, so flat 50% over-rewarded 4P). Values come from
+// app_config key `complete_bonus_pct_by_boards` (e.g. {"2":25,"3":50,"4":75}), fetched
+// once per session in _layout. No remote map -> fallback to config.completeBonusPercent
+// (current flat 50) so offline/jest behavior is unchanged.
+let _remoteBonusPctByBoards: Record<string, number> | null = null;
+export function setCompleteBonusPctByBoards(map: unknown): void {
+  if (map && typeof map === 'object' && !Array.isArray(map)) {
+    _remoteBonusPctByBoards = map as Record<string, number>;
+  }
+}
+export function getCompleteBonusPercent(boardCount: number, fallbackPct: number): number {
+  const remote = _remoteBonusPctByBoards?.[String(boardCount)];
+  return typeof remote === 'number' && remote >= 0 ? remote : fallbackPct;
+}
+
 export const DEFAULT_CONFIG = {
   arrangementTime: 60,
   boardRevealDuration: 5,

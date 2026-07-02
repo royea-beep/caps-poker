@@ -28,7 +28,7 @@ import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { COLORS } from '../constants/gameConfig';
+import { COLORS, setCompleteBonusPctByBoards } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { setLanguage, Language, applyHtmlLocale } from '../utils/i18n';
 import * as Updates from 'expo-updates';
@@ -463,6 +463,23 @@ export default function RootLayout() {
       }
     };
     void initApp();
+  }, []);
+
+  // VAMOS S-BATCH — COMPLETE bonus curve by board count, remote-tunable. One fetch per
+  // session; on any failure the game falls back to the flat config.completeBonusPercent.
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data } = await supabase
+          .from('app_config')
+          .select('value')
+          .eq('key', 'complete_bonus_pct_by_boards')
+          .single();
+        if (data?.value) setCompleteBonusPctByBoards(data.value);
+      } catch { /* fallback: flat completeBonusPercent */ }
+    })();
   }, []);
 
   // Marathon auto-start — triggered via WhatsApp reply "4"
