@@ -51,6 +51,7 @@ PENDING: BoardReveal in MP (flag mpBoardReveal=false, dormant — code wired but
 - Rule 14 (2026-07-02): A code comment is a claim, not evidence — verify against the actual implementation (the "idempotent — safe every open" comment shipped the earn_chips leak).
 
 ## TODO
+- **Web audio NotAllowedError catch:** wrap web `playSound`/`startAmbient` in a NotAllowedError catch — browser autoplay policy logs 4 console exceptions when audio starts without a user gesture (e.g. after refresh). Benign/cosmetic; next batch.
 - **Server-computed earn amounts refactor:** move all chip-amount logic into the RPCs per event type (as claim_daily_reward already does) — the client sends only the event, never an amount; earn_chips's `p_amount` parameter goes away, and each event's value lives server-side in one place (chip_config or per-event RPC). Kills the residual clamp-window risk from the earn_chips incident. Requires a coordinated client+server change: one batch + OTA.
 
 ## Tech Stack
