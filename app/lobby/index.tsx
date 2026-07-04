@@ -141,18 +141,21 @@ export default function PublicLobby() {
   // (XP only, zero chips, no join_table); 👤 human tables = the real realtime multiplayer.
   // A bot row must never read as "the multiplayer" — telemetry showed a friend opening an
   // empty lobby 4x and bailing without understanding a human could join.
-  const botTables = tables.filter((t) => t.table_kind === 'bot_practice');
-  const humanTables = tables.filter((t) => t.table_kind !== 'bot_practice');
-  // Until the server migration seeds bot_practice rows, fall back to static entries —
-  // the practice route is fully client-side either way.
-  const botSizes: PlayerCount[] = botTables.length
-    ? (botTables
-        .map((t) => (t.player_count ?? t.max_players))
-        .filter((n): n is PlayerCount => n === 2 || n === 3 || n === 4))
-    : [2, 3, 4];
+  // DB-sourced only (LOBBY-BOT-WIRE): the strategist's migration seeds 3 bot_practice +
+  // 6 human rows; no static fallback. Discriminator: table_kind when the RPC returns it;
+  // host_name='CAPS Bot' as the interim tell (FLAGGED: list_public_tables still lacks the
+  // table_kind passthrough — strategist to apply; the seeded host_name is theirs too).
+  const isBotRow = (t: OpenTable) => t.table_kind === 'bot_practice' || t.host_name === 'CAPS Bot';
+  const botTables = tables.filter(isBotRow);
+  const humanTables = tables.filter((t) => !isBotRow(t));
+  const botSizes: PlayerCount[] = [...new Set(
+    botTables
+      .map((t) => (t.player_count ?? t.max_players))
+      .filter((n): n is PlayerCount => n === 2 || n === 3 || n === 4)
+  )].sort((a, b) => a - b);
   const playBot = useCallback((n: PlayerCount) => {
     track('bot_table_play', { player_count: n }, 'lobby');
-    router.push(`/game?practice=1&players=${n}` as any);
+    router.push(`/game?practice=true&players=${n}` as any);
   }, [router]);
 
   const grouped = groupTablesByType(humanTables);
@@ -189,9 +192,9 @@ export default function PublicLobby() {
         </View>
       )}
 
-      {/* 🤖 Bot practice — replaces the old single "Play Solo" fallback with one clearly
-          labeled instant table per size. Practice: XP only, no chips (economy-neutral). */}
-      <View style={styles.botSection}>
+      {/* 🤖 Bot practice — DB-seeded rows, one clearly labeled instant table per size.
+          Practice: XP only, no chips (economy-neutral). Hidden if the DB has none. */}
+      {botSizes.length > 0 && <View style={styles.botSection}>
         <View style={styles.botHead}>
           <Text style={styles.botTitle}>🤖 PLAY A BOT — INSTANT</Text>
           <Text style={styles.botMeta}>practice · XP only · no chips</Text>
@@ -214,7 +217,7 @@ export default function PublicLobby() {
             <View style={styles.botPlayBtn}><Text style={styles.botPlayText}>Play now</Text></View>
           </Pressable>
         ))}
-      </View>
+      </View>}
 
       {/* 👤 The real multiplayer — make human-ness unmissable */}
       <View style={styles.humanHead}>
