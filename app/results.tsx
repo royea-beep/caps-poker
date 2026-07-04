@@ -239,6 +239,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // Complete sound — VAMOS-COMPLETE-ON-LOSS 2026-06-21: only when the LOCAL player
     // swept every board (isComplete is true for EITHER player's sweep). Previously the
     // celebratory 'complete' sound + bonus hook fired even when the opponent swept (a loss).
+    // LOBBY-BOT-PRACTICE — practice games are chip-neutral: EVERY credit path below
+    // (submitScore, earn_chips, streak, achievement chips, history, share) is skipped.
+    // XP/battle-pass stays. leaderboard.total_chips must be byte-identical after a
+    // practice game (the economy is 300:1 faucet-to-sink — no new faucets).
+    const isPracticeGame = revealData.isPractice === true;
     const localSwept = isLocalComplete(
       revealData.isComplete,
       revealData.boards.filter((b) => b.winner === 'player').length,
@@ -259,7 +264,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     if (localSwept && revealData.completeBonusAmount > 0) CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
 
     const store = useGameStore.getState();
-    submitScore(store.playerName || 'Player', store.chips, store.handsPlayed, store.handsWon, store.biggestWin).catch(() => {});
+    if (!isPracticeGame) {
+      submitScore(store.playerName || 'Player', store.chips, store.handsPlayed, store.handsWon, store.biggestWin).catch(() => {});
+    }
 
     const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
       boardIndex: i,
@@ -281,12 +288,15 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       isComplete: revealData.isComplete,
       completeBonusAmount: revealData.completeBonusAmount,
     };
-    saveHandToHistory(handRecord).catch(() => {});
-    setSavedHandId(handRecord.id);
+    if (!isPracticeGame) {
+      saveHandToHistory(handRecord).catch(() => {});
+      setSavedHandId(handRecord.id);
+    }
 
     // Supabase hand_history sync — non-blocking backup (AsyncStorage is primary)
     void (async () => {
       try {
+        if (isPracticeGame) return; // practice games never touch server stats
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
@@ -322,7 +332,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       potPerBoard: revealData.potPerBoard,
       numberOfPlayers: revealData.numberOfPlayers,
     };
-    saveHandForWebReplay(autoShareData).then((url) => { if (url) setAutoShareUrl(url); }).catch(() => {});
+    if (!isPracticeGame) {
+      saveHandForWebReplay(autoShareData).then((url) => { if (url) setAutoShareUrl(url); }).catch(() => {});
+    }
 
     // VAMOS-UNIFY-FINAL 2026-06-28 — "Try 4 boards" upgrade nudge + login prompt
     // removed. We still increment the total-games counter so other code reading
@@ -337,9 +349,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // Achievement checks — run after stats are incremented
     const gs = useGameStore.getState();
     const newWin = revealData.netChips > 0;
-    if (newWin) gs.incrementWinStreak(); else gs.resetWinStreak();
+    if (!isPracticeGame) {
+      if (newWin) gs.incrementWinStreak(); else gs.resetWinStreak();
+    }
 
-    const newlyUnlocked = checkAchievements({
+    const newlyUnlocked = isPracticeGame ? [] : checkAchievements({
       revealData,
       config,
       handsPlayed: gs.handsPlayed,
@@ -368,6 +382,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // chips are still awarded silently (they appear in the chip counter).
     void (async () => {
       try {
+        if (isPracticeGame) return; // ZERO real chips from practice — no earn events
         const deviceId = await getDeviceId();
         if (revealData.netChips > 0) {
           const wonResult = await earnChips(deviceId, 'hand_won');
@@ -793,6 +808,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.mint }]}>
               {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
             </Text>
+            {revealData.isPractice && (
+              <View style={{ backgroundColor: 'rgba(245,181,70,0.14)', borderWidth: 1, borderColor: 'rgba(245,181,70,0.5)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14, marginTop: 6, alignSelf: 'center' }} accessibilityRole="text" testID="practice-banner">
+                <Text style={{ color: '#F5B546', fontWeight: '800', fontSize: 13 }}>🤖 Practice vs bot — XP only, no chips</Text>
+              </View>
+            )}
             <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
               <Text style={{ color: COLORS.neonGreen }}>{playerWins}</Text>
               <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
@@ -889,7 +909,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           })}
 
           {/* Game share section */}
-          <ShareSection
+          {/* Practice games: no share (share earns +50 real chips — practice is chip-neutral) */}
+          {!revealData.isPractice && <ShareSection
             shareData={shareData}
             autoShareUrl={autoShareUrl}
             boards={boards}
@@ -916,7 +937,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 }
               } catch {}
             }}
-          />
+          />}
 
           {/* Placement efficiency */}
           <EfficiencyCard boards={boards as any} screenW={SCREEN_W} />

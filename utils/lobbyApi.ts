@@ -27,6 +27,8 @@ export interface OpenTable {
   player_count: number; // == max_players (the "type")
   game_config: { numberOfPlayers?: number } | null;
   created_at: string;
+  /** 'bot_practice' rows are lobby advertisements for the local practice game (no join_table). Optional until the server migration lands. */
+  table_kind?: 'human' | 'bot_practice';
 }
 
 export interface JoinResult {

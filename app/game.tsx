@@ -106,7 +106,11 @@ const BOARD_CHROME = 28;                            // per-board chrome budget (
 
 function GameScreenInner() {
   const router = useRouter();
-  const { autoSim, autoSimCount, currentSimHand, demo } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string }>();
+  const { autoSim, autoSimCount, currentSimHand, demo, practice, players } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string }>();
+  // LOBBY-BOT-PRACTICE — practice mode (lobby bot tables): local SOLO vs the heuristic
+  // bot, XP only, ZERO real chips (no buy-in, no settle, results skips all credits).
+  const isPractice = practice === '1' || practice === 'true';
+  const practicePlayers = isPractice ? (parseInt(players ?? '', 10) as 2 | 3 | 4) : null;
   // VAMOS-LAYOUT-MEASURE-V1 2026-06-21 — live window dimensions instead of the
   // module-snapshot SCREEN_H/W. The snapshot was captured at module load with a
   // hardcoded fallback of 852dp, so on phones whose real chrome differed from
@@ -131,7 +135,8 @@ function GameScreenInner() {
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
 
-  const numberOfPlayers = config.numberOfPlayers as 2 | 3 | 4;
+  // Practice override is LOCAL only — never persisted, so the player's selector is untouched.
+  const numberOfPlayers = (practicePlayers && [2, 3, 4].includes(practicePlayers) ? practicePlayers : config.numberOfPlayers) as 2 | 3 | 4;
   const numberOfBots = numberOfPlayers - 1;
   const boardCount = getBoardCount(numberOfPlayers);
 
@@ -268,7 +273,8 @@ function GameScreenInner() {
     }
   }, [phase.type]);
   const botsReadyCountRef = useRef(0);
-  const adaptiveDifficultyRef = useRef<string>(config.botDifficulty ?? 'easy');
+  // Practice bots use the heuristic (Iron Rule 5 unlocked 2026-07-02) — non-boring practice.
+  const adaptiveDifficultyRef = useRef<string>(isPractice ? 'hard' : (config.botDifficulty ?? 'easy'));
 
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]); // no cleanup needed — sync ref update
   useEffect(() => { boardsRef.current = boards; }, [boards]); // no cleanup needed — sync ref update
@@ -500,11 +506,13 @@ function GameScreenInner() {
     CapsHooks.gameStarted('solo');
     track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount }, 'game');
 
-    // Deduct buy-in
+    // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
     const buyIn = getMatchCost(config.potPerBoard, boardCount);
-    addChips(-buyIn);
-    if (ECONOMY_FLAGS.matchCostEnabled) {
-      trackChipsSpent(buyIn);
+    if (!isPractice) {
+      addChips(-buyIn);
+      if (ECONOMY_FLAGS.matchCostEnabled) {
+        trackChipsSpent(buyIn);
+      }
     }
 
     // Bot timers — when first bot finishes, it triggers the countdown
@@ -600,14 +608,15 @@ function GameScreenInner() {
 
     debugLog(`7 revealBoards done: ${revealBoards.length} boards`);
 
-    debugLog(`8 addChips: ${results.playerChipsWon}`);
-    addChips(results.playerChipsWon);
+    debugLog(`8 addChips: ${results.playerChipsWon}${isPractice ? ' SKIPPED (practice)' : ''}`);
+    if (!isPractice) addChips(results.playerChipsWon);
     void scheduleReengagement(); // re-engagement notification after each game
     debugLog('9 addChips done');
 
     debugLog('10 setRevealData START');
     setRevealData({
       boards: revealBoards,
+      isPractice,
       netChips: results.playerChipsWon - config.potPerBoard * boardCount,
       playerChipsWon: results.playerChipsWon,
       isComplete: results.isComplete,
