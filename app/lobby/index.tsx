@@ -141,11 +141,10 @@ export default function PublicLobby() {
   // (XP only, zero chips, no join_table); 👤 human tables = the real realtime multiplayer.
   // A bot row must never read as "the multiplayer" — telemetry showed a friend opening an
   // empty lobby 4x and bailing without understanding a human could join.
-  // DB-sourced only (LOBBY-BOT-WIRE): the strategist's migration seeds 3 bot_practice +
-  // 6 human rows; no static fallback. Discriminator: table_kind when the RPC returns it;
-  // host_name='CAPS Bot' as the interim tell (FLAGGED: list_public_tables still lacks the
-  // table_kind passthrough — strategist to apply; the seeded host_name is theirs too).
-  const isBotRow = (t: OpenTable) => t.table_kind === 'bot_practice' || t.host_name === 'CAPS Bot';
+  // DB-sourced only (LOBBY-BOT-WIRE): 3 bot_practice + 6 human rows from
+  // list_public_tables. table_kind is AUTHORITATIVE (passthrough live 2026-07-04);
+  // the interim host_name='CAPS Bot' string-match is gone.
+  const isBotRow = (t: OpenTable) => t.table_kind === 'bot_practice';
   const botTables = tables.filter(isBotRow);
   const humanTables = tables.filter((t) => !isBotRow(t));
   const botSizes: PlayerCount[] = [...new Set(
