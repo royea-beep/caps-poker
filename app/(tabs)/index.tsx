@@ -514,8 +514,6 @@ const TUTORIAL_SLIDES_EN = [
 ];
 
 
-const isBeta = Constants.expoConfig?.extra?.isBeta === true;
-
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
@@ -1379,12 +1377,10 @@ export default function HomeScreen() {
         {/* HOME-DECLUTTER — removed the "N boards · Omaha · Best hand wins each" line under
             the selector; it near-duplicates the dynamic meta line under Play (kept). */}
 
-        {/* Online player count — hidden in beta until real data available */}
-        {!isBeta && (
-          <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
-            32 players online
-          </Text>
-        )}
+        {/* HOME-DECLUTTER 2026-07-05 — removed the hardcoded "32 players online" line.
+            It was fake (real presence ~2 now / 9 today) and deceptive: "32 online" → empty
+            lobby destroys trust in every number in the app. Restore a REAL presence count
+            when there's actual concurrency (do not surface a live "2 online" — reads dead). */}
 
         {/* PLAY button — always green, center stage. PR-C glow halo behind it. */}
         <View style={styles.playSection}>
