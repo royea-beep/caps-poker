@@ -4,14 +4,15 @@
  */
 
 /**
- * PRACTICE-TO-LIVE realtime jump. When FALSE (default): the lobby bot rows run pure LOCAL
- * practice — no join_table, no realtime seat-hold, no live=1, no countdown/jump. The Home
- * "Practice vs Bots" button fix and the practice session demo counter are INDEPENDENT of
- * this flag and stay active.
+ * PRACTICE-TO-LIVE realtime jump. When TRUE: the 2P (Heads-Up) bot row holds a REAL realtime
+ * seat while you practice, so a human can drop in and both jump into a live game. When false:
+ * pure LOCAL practice (no join_table, no seat-hold, no live=1, no countdown/jump). The Home
+ * "Practice vs Bots" button fix and the practice session demo counter are INDEPENDENT of this
+ * flag either way.
  *
- * Keep FALSE until a real 2-DEVICE pass verifies the cross-device 30s countdown sync + the
- * simultaneous cut-and-jump into /multiplayer-game + edges d/e live (a single client — or two
- * same-origin browser tabs — can't exercise these; the coordinator logic is unit-tested only).
- * See docs/PENDING_practice_to_live.md.
+ * ENABLED 2026-07-05 — owner verified the cross-device countdown + cut-and-jump on a real device.
+ * DB prerequisites confirmed by strategist: bot_practice seeds current_players=0 (no premature
+ * autostart), join_table stamps started_at on the 2nd-player join (drives the jump), ghost-reaper
+ * >90s (won't evict a practicer holding a seat). See docs/PENDING_practice_to_live.md.
  */
-export const PRACTICE_LIVE_ENABLED = false;
+export const PRACTICE_LIVE_ENABLED = true;
