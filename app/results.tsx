@@ -443,9 +443,14 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       } catch {} // Silent — never crash the game
     })();
 
-    // Update ELO in leaderboard table
+    // Update ELO in leaderboard table.
+    // PRACTICE = XP-only, zero chips → it must NOT touch the leaderboard. update_leaderboard_elo
+    // is the path that writes leaderboard.games_played (strategist-confirmed), so a practice
+    // hand was bumping games_played (and ELO) even though nothing real happened — a tester who
+    // only practices would climb the game count. Guard it out for practice.
     void (async () => {
       try {
+        if (isPracticeGame) return; // practice never touches ELO / leaderboard.games_played
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
