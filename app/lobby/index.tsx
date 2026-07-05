@@ -25,6 +25,7 @@ import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
 import { beginPracticeLive } from '../../utils/practiceLiveSession';
+import { PRACTICE_LIVE_ENABLED } from '../../constants/featureFlags';
 import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
@@ -159,7 +160,9 @@ export default function PublicLobby() {
     // practice, so a human can drop in and both jump into a live game. 3P/4P stay pure
     // local practice. If the seat-hold can't be established (realtime off, no room, join
     // fails), fall back cleanly to pure local practice — never block the practice tap.
-    if (n === 2) {
+    // GATED behind PRACTICE_LIVE_ENABLED: when off, we never call join_table (no seat is
+    // held) and every bot row is pure local practice — today's safe behavior.
+    if (PRACTICE_LIVE_ENABLED && n === 2) {
       const botTable = botTables.find((t) => (t.player_count ?? t.max_players) === 2);
       if (botTable?.room_code) {
         try {

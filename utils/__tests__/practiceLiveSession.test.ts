@@ -57,6 +57,10 @@ jest.mock('../../constants/economyConfig', () => ({ ECONOMY_FLAGS: { matchCostEn
 
 jest.mock('../analytics', () => ({ track: jest.fn() }));
 
+// Flag is FALSE in production (shipped dormant); force it ON here so these tests exercise
+// the coordinator logic that a 2-device pass will later verify end-to-end.
+jest.mock('../../constants/featureFlags', () => ({ PRACTICE_LIVE_ENABLED: true }));
+
 const mockStoreState: any = {
   config: { potPerBoard: 25, numberOfPlayers: 2 },
   chips: 5000,

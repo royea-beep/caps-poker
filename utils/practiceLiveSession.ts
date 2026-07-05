@@ -34,6 +34,7 @@ import { getSupabase } from './supabase';
 import { getMatchCost, canAffordMatch } from './economy';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { JUMP_COUNTDOWN_MS } from '../constants/networkConfig';
+import { PRACTICE_LIVE_ENABLED } from '../constants/featureFlags';
 import { getBoardCount } from '../constants/gameConfig';
 import { track } from './analytics';
 import { useGameStore } from '../store/gameStore';
@@ -120,6 +121,9 @@ export async function beginPracticeLive(opts: {
   isHost: boolean;
   playerName: string;
 }): Promise<boolean> {
+  // Dormant until a 2-device pass verifies cross-device sync — defensive guard so nothing
+  // holds a realtime seat even if a caller reaches here with the flag off.
+  if (!PRACTICE_LIVE_ENABLED) return false;
   if (!isOnlineMultiplayerAvailable() || !opts.roomCode) return false;
 
   // Tear down any prior session first (defensive — should already be idle).
