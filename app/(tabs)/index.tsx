@@ -1435,6 +1435,22 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        {/* HOME-MP-LINK — prominent multiplayer entry (owner asked twice). The lobby was
+            only reachable via the bottom tab; make MP discoverable from the first screen. */}
+        <Pressable
+          style={styles.playOnlineBtn}
+          onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
+          accessibilityRole="button"
+          accessibilityLabel="Play online, open the multiplayer lobby"
+        >
+          <Text style={styles.playOnlineEmoji}>🎮</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.playOnlineTitle}>Play Online</Text>
+            <Text style={styles.playOnlineSub}>Multiplayer lobby · real players & instant bot tables</Text>
+          </View>
+          <Text style={styles.playOnlineGo}>›</Text>
+        </Pressable>
+
         {/* New player welcome message */}
         {stage === 'new' && (
           <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
@@ -2088,6 +2104,24 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     textAlign: 'center',
   },
+  // HOME-MP-LINK — mint accent so it reads as a distinct primary path next to the green Play
+  playOnlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(12),
+    marginHorizontal: rs(16),
+    marginTop: rs(10),
+    paddingVertical: rs(13),
+    paddingHorizontal: rs(16),
+    borderRadius: rv(14),
+    borderWidth: 1.5,
+    borderColor: '#4FD6A8',
+    backgroundColor: 'rgba(79,214,168,0.12)',
+  },
+  playOnlineEmoji: { fontSize: rf(24) },
+  playOnlineTitle: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '900', letterSpacing: 0.5 },
+  playOnlineSub: { color: 'rgba(255,255,255,0.7)', fontSize: rf(11), marginTop: rs(1) },
+  playOnlineGo: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900' },
   stakesLabel: {
     fontSize: rf(11),
     fontWeight: '500',

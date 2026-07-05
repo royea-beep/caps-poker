@@ -87,8 +87,10 @@ function Step1Visual() {
 
 // ─── Step 2: interactive — player taps a card to "place" it ──────────────────
 
+// VAMOS HOME-ONBOARDING 2026-07-04 — the tap is now OPTIONAL delight, never a gate.
+// onCardPlace kept optional purely for telemetry; advancement no longer depends on it.
 interface Step2VisualProps {
-  onCardPlace: () => void;
+  onCardPlace?: () => void;
 }
 
 function Step2Visual({ onCardPlace }: Step2VisualProps) {
@@ -100,16 +102,16 @@ function Step2Visual({ onCardPlace }: Step2VisualProps) {
   const handleCardTap = (idx: number) => {
     if (placedIdx !== null) return; // already placed
     setPlacedIdx(idx);
-    onCardPlace();
+    onCardPlace?.();
     Animated.spring(checkScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }).start();
     track('tutorial_step2_card_placed', { cardIndex: idx });
   };
 
   return (
     <View style={vis.step2Wrap}>
-      {/* Player cards — tap to place */}
+      {/* Player cards — 2 of your 4 (tapping just highlights; not required) */}
       <View style={vis.cardGroup}>
-        <Text style={vis.groupLabel}>{isHE ? 'לחץ קלף!' : 'TAP A CARD!'}</Text>
+        <Text style={vis.groupLabel}>{isHE ? '2 שלך' : 'YOUR 2'}</Text>
         <View style={vis.cardRow}>
           {PLAYER_CARDS.slice(0, 2).map((card, i) => (
             <TouchableOpacity key={card.id} onPress={() => handleCardTap(i)} activeOpacity={0.75}>
@@ -135,7 +137,7 @@ function Step2Visual({ onCardPlace }: Step2VisualProps) {
 
       {/* Community cards — always shown */}
       <View style={vis.cardGroup}>
-        <Text style={vis.groupLabel}>{isHE ? 'קהילה' : 'COMMUNITY'}</Text>
+        <Text style={vis.groupLabel}>{isHE ? '3 קהילה' : '3 COMMUNITY'}</Text>
         <View style={vis.cardRow}>
           {COMMUNITY_CARDS.slice(0, 3).map((card) => (
             <CardComponent
@@ -228,37 +230,26 @@ const TOTAL_STEPS = 3;
 
 function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const [step, setStep] = useState(0);
-  const [step2CardPlaced, setStep2CardPlaced] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const rtl = isRTL();
   const tx = t();
   const isHE = getLanguage() === 'he';
 
-  // VAMOS-UNIFY-FINAL 2026-06-28 — onboarding copy tightened to the three
-  // things a brand-new player actually needs: the goal, how to place, and
-  // that boards are separate Omaha hands. The Omaha 2+3 rule is applied
-  // automatically by the game evaluator — players don't pick — so we don't
-  // teach it here. The COMPLETE bonus stays because it changes strategy.
+  // VAMOS HOME-ONBOARDING 2026-07-04 — cut to sharp. ONE punchy line per step, no forced
+  // tap gate, prominent Skip. Core message across the 3 steps a new player actually needs
+  // for non-standard multiboard Omaha: place 4 per board · use exactly 2 of 4 + 3
+  // community · sweep all boards = COMPLETE bonus.
   const STEPS = [
     {
-      title: isHE ? 'נצח בורדים על ידי הנחת קלפים' : 'Win boards by placing your cards',
-      body: isHE
-        ? 'כל בורד הוא יד אומאהה נפרדת.'
-        : 'Each board is its own Omaha hand.',
+      line: isHE ? 'הנח 4 קלפים על כל בורד' : 'Place 4 cards on each board',
       Visual: () => <Step1Visual />,
     },
     {
-      title: isHE ? 'הקש קלף, ואז בורד' : 'Tap a card, then a board',
-      body: isHE
-        ? 'מקם 4 קלפים על כל בורד. כל יד משתמשת בדיוק ב-2 מתוך 4 הקלפים שלך + 3 קלפי קהילה.'
-        : 'Place 4 cards on every board. Each hand uses exactly 2 of your 4 cards + 3 community cards.',
-      Visual: () => <Step2Visual onCardPlace={() => setStep2CardPlaced(true)} />,
+      line: isHE ? 'השתמש בדיוק ב-2 מ-4 שלך + 3 קלפי קהילה' : 'Use exactly 2 of your 4 + 3 community cards',
+      Visual: () => <Step2Visual />,
     },
     {
-      title: isHE ? 'נצח את כולם = COMPLETE' : 'Sweep all boards = COMPLETE',
-      body: isHE
-        ? 'נצח בכל הבורדים — בונוס 50% על הסיר.'
-        : 'Win every board for a +50% pot bonus.',
+      line: isHE ? 'נצח את כל הבורדים ← בונוס COMPLETE ‎+50%' : 'Win every board → +50% COMPLETE bonus',
       Visual: () => <Step3Visual />,
     },
   ];
@@ -266,7 +257,6 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const goToStep = (next: number) => {
     Animated.timing(fadeAnim, { toValue: 0, duration: 130, useNativeDriver: true }).start(() => {
       setStep(next);
-      setStep2CardPlaced(false);
       Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
     });
   };
@@ -295,7 +285,6 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const current = STEPS[step];
   const isLast = step === TOTAL_STEPS - 1;
   const Visual = current.Visual;
-  const nextDisabled = step === 1 && !step2CardPlaced;
 
   return (
     <View style={styles.overlay}>
@@ -304,7 +293,7 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
         onPress={handleSkip}
         hitSlop={12}
       >
-        <Text style={styles.skipText}>{tx.onboarding?.skip ?? (isHE ? 'דלג' : 'Skip')}</Text>
+        <Text style={styles.skipText}>{(tx.onboarding?.skip ?? (isHE ? 'דלג' : 'Skip'))} ✕</Text>
       </Pressable>
 
       <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
@@ -312,8 +301,7 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
           <Visual />
         </View>
 
-        <Text style={[styles.title, rtl && styles.textRTL]}>{current.title}</Text>
-        <Text style={[styles.body, rtl && styles.textRTL]}>{current.body}</Text>
+        <Text style={[styles.title, rtl && styles.textRTL]}>{current.line}</Text>
 
         {/* Progress dots */}
         <View style={styles.dots}>
@@ -324,16 +312,12 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
           ))}
         </View>
 
-        <Pressable
-          style={[styles.btn, isLast && styles.btnLast, nextDisabled && styles.btnDisabled]}
-          onPress={nextDisabled ? undefined : handleNext}
-        >
-          <Text style={[styles.btnText, nextDisabled && styles.btnTextDisabled]}>
+        {/* Normal Continue button — never gated (VAMOS HOME-ONBOARDING) */}
+        <Pressable style={[styles.btn, isLast && styles.btnLast]} onPress={handleNext}>
+          <Text style={styles.btnText}>
             {isLast
               ? (tx.onboarding?.letsPlay ?? (isHE ? 'בואו נשחק!' : "Let's play!"))
-              : nextDisabled
-              ? (isHE ? 'לחץ קלף ↑' : 'Tap a card ↑')
-              : (tx.onboarding?.next ?? (isHE ? 'הבא' : 'Next'))}
+              : (isHE ? 'המשך' : 'Continue')}
           </Text>
         </Pressable>
       </Animated.View>
@@ -350,18 +334,25 @@ const styles = StyleSheet.create({
     zIndex: 500,
     padding: rs(20),
   },
+  // VAMOS HOME-ONBOARDING — prominent Skip pill on every step (was a dim corner label);
+  // target: a new player skips in ONE obvious tap.
   skipBtn: {
     position: 'absolute',
-    top: rs(52),
-    padding: rs(10),
+    top: rs(50),
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(16),
+    borderRadius: rv(20),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     zIndex: 10,
   },
-  skipBtnRight: { right: rs(24) },
-  skipBtnLeft: { left: rs(24) },
+  skipBtnRight: { right: rs(20) },
+  skipBtnLeft: { left: rs(20) },
   skipText: {
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.9)',
     fontSize: rf(13),
-    fontWeight: '600',
+    fontWeight: '800',
     letterSpacing: 1,
   },
   card: {
