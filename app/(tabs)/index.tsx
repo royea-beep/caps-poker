@@ -706,6 +706,11 @@ export default function HomeScreen() {
 
   // PLAY button scale — RN Animated (not Reanimated)
   const playScale = useRef(new AnimatedRN.Value(1)).current;
+  // POLISH-1 (2) — Play Online lost its FIRST tap: with only onPress, react-native-web's press
+  // recognizer dropped the very first pointer press after load (the green Play button survives
+  // because its onPressIn grabs the responder on pointer-down). Give Play Online the same
+  // onPressIn/onPressOut so the first tap navigates.
+  const playOnlineScale = useRef(new AnimatedRN.Value(1)).current;
 
   // A2: Daily Reward pulse animation
   const dailyPulseAnim = useRef(new AnimatedRN.Value(1)).current;
@@ -1211,7 +1216,11 @@ export default function HomeScreen() {
             pendingStreakRef.current = false;
             setShowStreakPopup(true);
           }
-          if (!isWeb) router.push('/game' as any);
+          // POLISH-1 (1b) — finishing/skipping onboarding must drop the player straight into a
+          // dealt hand, NOT back onto a static Home where the primary CTA is hard to find (41%
+          // of new users were lost here). Go into a PRACTICE hand (zero chips, honest "vs bots")
+          // on BOTH web and native (the old !isWeb guard left web users stranded on Home).
+          router.push(`/game?practice=true&players=${config.numberOfPlayers}&fresh=1` as any);
         }} />
       )}
 
@@ -1420,19 +1429,27 @@ export default function HomeScreen() {
 
         {/* HOME-MP-LINK — prominent multiplayer entry (owner asked twice). The lobby was
             only reachable via the bottom tab; make MP discoverable from the first screen. */}
-        <Pressable
-          style={styles.playOnlineBtn}
-          onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
-          accessibilityRole="button"
-          accessibilityLabel="Play online, open the multiplayer lobby"
-        >
-          <Text style={styles.playOnlineEmoji}>🎮</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.playOnlineTitle}>Play Online</Text>
-            <Text style={styles.playOnlineSub}>Multiplayer lobby · real players & instant bot tables</Text>
-          </View>
-          <Text style={styles.playOnlineGo}>›</Text>
-        </Pressable>
+        <AnimatedRN.View style={{ transform: [{ scale: playOnlineScale }] }}>
+          <Pressable
+            style={styles.playOnlineBtn}
+            onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
+            onPressIn={() =>
+              AnimatedRN.timing(playOnlineScale, { toValue: 0.97, duration: 80, useNativeDriver: true }).start()
+            }
+            onPressOut={() =>
+              AnimatedRN.timing(playOnlineScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Play online, open the multiplayer lobby"
+          >
+            <Text style={styles.playOnlineEmoji}>🎮</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.playOnlineTitle}>Play Online</Text>
+              <Text style={styles.playOnlineSub}>Multiplayer lobby · real players & instant bot tables</Text>
+            </View>
+            <Text style={styles.playOnlineGo}>›</Text>
+          </Pressable>
+        </AnimatedRN.View>
 
         {/* HOME-DECLUTTER — "Welcome to CAPS Poker! Tap Play to start" card removed:
             redundant now that onboarding + the clear Play button + Play Online CTA exist. */}
@@ -1800,8 +1817,9 @@ export default function HomeScreen() {
       {/* VAMOS-UNIFY-FINAL 2026-06-28 — LevelUpModal, WeeklyRecapModal, and the
           StarterOfferModal removed per "no in-app popups". Tutorial gate now
           resolves immediately so a new user heads straight into onboarding. */}
-      {/* PRE-TESTER — discoverable floating "Report a bug" affordance (Settings has a row too). */}
-      <ReportBugButton variant="fab" />
+      {/* PRE-TESTER — discoverable floating "Report a bug" affordance (Settings has a row too).
+          POLISH-1 (1a) — hidden during onboarding so it doesn't poke through the tutorial overlay. */}
+      {!showInteractiveTutorial && <ReportBugButton variant="fab" />}
       </SafeAreaView>
   );
 }

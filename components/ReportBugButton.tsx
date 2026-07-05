@@ -178,7 +178,10 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
 
 const styles = StyleSheet.create({
   fab: {
-    position: 'absolute', right: rs(14), bottom: rs(96),
+    // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 17+").
+    // Drop it into the empty band below the disclaimer (still well clear of the tab bar) so it
+    // never overlaps that text, including on narrower screens where the disclaimer runs wider.
+    position: 'absolute', right: rs(14), bottom: rs(52),
     width: rs(44), height: rs(44), borderRadius: rs(22),
     backgroundColor: 'rgba(201,106,26,0.92)', alignItems: 'center', justifyContent: 'center',
     zIndex: 9000, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), shadowOffset: { width: 0, height: rs(2) }, elevation: 6,
