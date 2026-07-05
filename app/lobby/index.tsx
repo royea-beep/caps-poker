@@ -210,8 +210,8 @@ export default function PublicLobby() {
           >
             <View style={styles.botBadge}><Text style={styles.botBadgeText}>🤖 BOT</Text></View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.botRowTitle}>{n === 2 ? 'Heads-Up vs Bot' : `${n}-Player vs Bots`}</Text>
-              <Text style={styles.botRowSub}>{getBoardCount(n)} boards · starts instantly</Text>
+              <Text style={styles.botRowTitle}>Practice vs Bots</Text>
+              <Text style={styles.botRowSub}>{n} players · {getBoardCount(n)} boards · starts instantly</Text>
             </View>
             <View style={styles.botPlayBtn}><Text style={styles.botPlayText}>Play now</Text></View>
           </Pressable>

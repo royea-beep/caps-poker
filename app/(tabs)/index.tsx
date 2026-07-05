@@ -1407,7 +1407,9 @@ export default function HomeScreen() {
                 accessibilityLabel="Play"
               >
                 <View style={styles.playBtnHighlight} pointerEvents="none" />
-                <Text style={styles.playBtnText}>Play!</Text>
+                {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
+                    button is a solo game vs bots, so name it honestly. */}
+                <Text style={styles.playBtnText} numberOfLines={1} adjustsFontSizeToFit>🤖 Practice vs Bots</Text>
               </Pressable>
             </AnimatedRN.View>
           </View>
@@ -2064,9 +2066,10 @@ const styles = StyleSheet.create({
   },
   playBtnText: {
     color: '#ffffff',
-    fontSize: rf(28),
+    fontSize: rf(22),
     fontWeight: '900',
-    letterSpacing: 6,
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   playSubtext: {
     fontSize: rf(12),
