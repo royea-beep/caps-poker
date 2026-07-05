@@ -57,7 +57,6 @@ import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
-import { todaysQuote } from '../../constants/proQuotes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
 import { earnChips, fetchCardDisplayConfig, fetchPokerShop } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
@@ -1346,16 +1345,11 @@ export default function HomeScreen() {
           >
             {tagline}
           </Animated.Text>
-          <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(10.5), opacity: 0.9, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(14) }} numberOfLines={3} ellipsizeMode="tail">"{todaysQuote.text}"</Text>
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.85, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
         </View>
-
-        {/* CAPS brand wordmark — above player selector (Task 1) */}
-        <View style={{ alignItems: 'center', paddingVertical: rs(8) }}>
-          <Text style={{ fontSize: rf(22), fontWeight: '800', color: '#FFD700', letterSpacing: 6 }}>CAPS</Text>
-          <Text style={{ fontSize: rf(9), color: '#A5D6A7', letterSpacing: 2 }}>FOUR CARDS. FOUR BOARDS. ONE WINNER.</Text>
-        </View>
+        {/* HOME-DECLUTTER 2026-07-05 — removed the daily-quote block + divider, and the
+            redundant/false secondary "CAPS · FOUR CARDS. FOUR BOARDS. ONE WINNER." wordmark
+            (duplicated the title AND was wrong: only 2P has 4 boards; 3P=3, 4P=2). Kept:
+            title, ONE tagline, selector. */}
 
         {/* Player count selector — 2P / 3P / 4P */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
@@ -1382,14 +1376,8 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
-        {/* A1: Omaha hint under selector */}
-        <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.9)', textAlign: 'center', marginBottom: 4 }}>
-          {config.numberOfPlayers === 2
-            ? '4 boards · Omaha · Best hand wins each'
-            : config.numberOfPlayers === 3
-            ? '3 boards · Omaha · Best hand wins each'
-            : '2 boards · Omaha · Best hand wins each'}
-        </Text>
+        {/* HOME-DECLUTTER — removed the "N boards · Omaha · Best hand wins each" line under
+            the selector; it near-duplicates the dynamic meta line under Play (kept). */}
 
         {/* Online player count — hidden in beta until real data available */}
         {!isBeta && (
@@ -1451,13 +1439,8 @@ export default function HomeScreen() {
           <Text style={styles.playOnlineGo}>›</Text>
         </Pressable>
 
-        {/* New player welcome message */}
-        {stage === 'new' && (
-          <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
-            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }} accessibilityLabel="Welcome to CAPS Poker!">Welcome to CAPS Poker! 🃏</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>Tap Play to start your first game</Text>
-          </View>
-        )}
+        {/* HOME-DECLUTTER — "Welcome to CAPS Poker! Tap Play to start" card removed:
+            redundant now that onboarding + the clear Play button + Play Online CTA exist. */}
 
         {/* Challenge a Friend — beginner+ only */}
         {show_friend_challenge && (
@@ -1709,16 +1692,8 @@ export default function HomeScreen() {
               <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
             </Pressable>
           )}
-          {gamesPlayed < 3 && (
-            <Pressable
-              onPress={() => setShowReferralModal(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Got an invite code?"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.gotCodeLink}>Got an invite code?</Text>
-            </Pressable>
-          )}
+          {/* HOME-DECLUTTER — "Got an invite code?" removed so Home has ONE invite affordance
+              ("Invite Friends 🎁"). Full invite + redeem lives on /referral (Play tab). */}
         </View>
 
         <Text style={{
