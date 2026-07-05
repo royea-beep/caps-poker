@@ -22,6 +22,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReportBugButton from '../../components/ReportBugButton';
 import { KILL_HeroParticles, KILL_HeroFan, KILL_HeroGlow } from '../../utils/animationKill';
 import Animated, {
   useSharedValue,
@@ -1799,6 +1800,8 @@ export default function HomeScreen() {
       {/* VAMOS-UNIFY-FINAL 2026-06-28 — LevelUpModal, WeeklyRecapModal, and the
           StarterOfferModal removed per "no in-app popups". Tutorial gate now
           resolves immediately so a new user heads straight into onboarding. */}
+      {/* PRE-TESTER — discoverable floating "Report a bug" affordance (Settings has a row too). */}
+      <ReportBugButton variant="fab" />
       </SafeAreaView>
   );
 }

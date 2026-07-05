@@ -42,6 +42,7 @@ import { track } from '../utils/analytics';
 import { OrientationType, VisualTheme } from '../store/gameStore';
 import { getTheme, VISUAL_THEMES } from '../constants/visualThemes';
 import { VersionBadge } from '../components/VersionBadge';
+import ReportBugButton from '../components/ReportBugButton';
 
 // Lazy-load screen orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -1199,6 +1200,11 @@ export default function SettingsScreen() {
         <NotificationsToggle />
 
         <Text style={styles.sectionTitle} accessibilityRole="header">TOOLS</Text>
+        {/* Discoverable bug-report entry for testers — writes to bug_reports (AI triage +
+            Telegram/GitHub fire via the on_bug_report_inserted trigger). */}
+        <View style={{ marginBottom: 12 }}>
+          <ReportBugButton variant="row" />
+        </View>
         <ProQuotesToggle />
         {/* DEDUPE-QA: a single replay for the one onboarding (InteractiveTutorial). The old
             "show tutorial" (static Tutorial) + "How to Play (Onboarding)" (OnboardingOverlay)
