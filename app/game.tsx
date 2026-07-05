@@ -1343,8 +1343,14 @@ function GameScreenInner() {
         <>
           {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips) */}
           {isPractice && (
-            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={`Practice, this session ${practiceSessionNet >= 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)}`}>
-              <Text style={styles.practiceSessionText}>🤖 Practice · Session {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}</Text>
+            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? 'Practice, no chips at stake' : `Practice, this session ${practiceSessionNet > 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)} chips`}>
+              {/* "Session +0" is dev jargon — until the player has actually won/lost, just say
+                  what matters (no real chips). Show the running tally only once it's non-zero. */}
+              <Text style={styles.practiceSessionText}>
+                {practiceSessionNet === 0
+                  ? '🤖 Practice · no chips'
+                  : `🤖 Practice · ${practiceSessionNet > 0 ? '+' : ''}${practiceSessionNet} chips`}
+              </Text>
             </View>
           )}
           {/* PRACTICE-TO-LIVE — synced countdown when a real opponent joins; jumps at hand-end or deadline */}
