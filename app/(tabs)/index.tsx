@@ -57,7 +57,6 @@ import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
-import { todaysQuote } from '../../constants/proQuotes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
 import { earnChips, fetchCardDisplayConfig, fetchPokerShop } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
@@ -514,8 +513,6 @@ const TUTORIAL_SLIDES_EN = [
   { icon: '♠️', title: 'Omaha Rules', text: 'Each player gets 4 cards per board.\nYou must use exactly 2 of your cards\n+ 3 community cards.' },
 ];
 
-
-const isBeta = Constants.expoConfig?.extra?.isBeta === true;
 
 // ─── Home screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -1346,16 +1343,11 @@ export default function HomeScreen() {
           >
             {tagline}
           </Animated.Text>
-          <View style={[styles.titleDivider, { backgroundColor: theme.accent }]} />
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(10.5), opacity: 0.9, textAlign: "center", fontStyle: "italic", marginTop: 6, paddingHorizontal: 16, lineHeight: rf(14) }} numberOfLines={3} ellipsizeMode="tail">"{todaysQuote.text}"</Text>
-          <Text style={{ color: theme.subtitleColor, fontSize: rf(9.5), opacity: 0.85, textAlign: "center", fontStyle: "italic", marginTop: 2, paddingHorizontal: 16 }}>— {todaysQuote.author}</Text>
         </View>
-
-        {/* CAPS brand wordmark — above player selector (Task 1) */}
-        <View style={{ alignItems: 'center', paddingVertical: rs(8) }}>
-          <Text style={{ fontSize: rf(22), fontWeight: '800', color: '#FFD700', letterSpacing: 6 }}>CAPS</Text>
-          <Text style={{ fontSize: rf(9), color: '#A5D6A7', letterSpacing: 2 }}>FOUR CARDS. FOUR BOARDS. ONE WINNER.</Text>
-        </View>
+        {/* HOME-DECLUTTER 2026-07-05 — removed the daily-quote block + divider, and the
+            redundant/false secondary "CAPS · FOUR CARDS. FOUR BOARDS. ONE WINNER." wordmark
+            (duplicated the title AND was wrong: only 2P has 4 boards; 3P=3, 4P=2). Kept:
+            title, ONE tagline, selector. */}
 
         {/* Player count selector — 2P / 3P / 4P */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
@@ -1382,21 +1374,13 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
-        {/* A1: Omaha hint under selector */}
-        <Text style={{ fontSize: rf(11), color: 'rgba(201,168,76,0.9)', textAlign: 'center', marginBottom: 4 }}>
-          {config.numberOfPlayers === 2
-            ? '4 boards · Omaha · Best hand wins each'
-            : config.numberOfPlayers === 3
-            ? '3 boards · Omaha · Best hand wins each'
-            : '2 boards · Omaha · Best hand wins each'}
-        </Text>
+        {/* HOME-DECLUTTER — removed the "N boards · Omaha · Best hand wins each" line under
+            the selector; it near-duplicates the dynamic meta line under Play (kept). */}
 
-        {/* Online player count — hidden in beta until real data available */}
-        {!isBeta && (
-          <Text style={{ textAlign: 'center', fontSize: rf(11), color: '#81C784', marginBottom: rs(4) }}>
-            32 players online
-          </Text>
-        )}
+        {/* HOME-DECLUTTER 2026-07-05 — removed the hardcoded "32 players online" line.
+            It was fake (real presence ~2 now / 9 today) and deceptive: "32 online" → empty
+            lobby destroys trust in every number in the app. Restore a REAL presence count
+            when there's actual concurrency (do not surface a live "2 online" — reads dead). */}
 
         {/* PLAY button — always green, center stage. PR-C glow halo behind it. */}
         <View style={styles.playSection}>
@@ -1423,7 +1407,9 @@ export default function HomeScreen() {
                 accessibilityLabel="Play"
               >
                 <View style={styles.playBtnHighlight} pointerEvents="none" />
-                <Text style={styles.playBtnText}>Play!</Text>
+                {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
+                    button is a solo game vs bots, so name it honestly. */}
+                <Text style={styles.playBtnText} numberOfLines={1} adjustsFontSizeToFit>🤖 Practice vs Bots</Text>
               </Pressable>
             </AnimatedRN.View>
           </View>
@@ -1435,13 +1421,24 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* New player welcome message */}
-        {stage === 'new' && (
-          <View style={{ backgroundColor: 'rgba(201,168,76,0.1)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: rv(12), paddingVertical: rs(12), paddingHorizontal: rs(16), marginHorizontal: rs(16), marginTop: rs(8), alignItems: 'center' }}>
-            <Text style={{ color: '#c9a84c', fontSize: rf(15), fontWeight: '700', textAlign: 'center' }} accessibilityLabel="Welcome to CAPS Poker!">Welcome to CAPS Poker! 🃏</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rf(12), marginTop: rs(4), textAlign: 'center' }}>Tap Play to start your first game</Text>
+        {/* HOME-MP-LINK — prominent multiplayer entry (owner asked twice). The lobby was
+            only reachable via the bottom tab; make MP discoverable from the first screen. */}
+        <Pressable
+          style={styles.playOnlineBtn}
+          onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
+          accessibilityRole="button"
+          accessibilityLabel="Play online, open the multiplayer lobby"
+        >
+          <Text style={styles.playOnlineEmoji}>🎮</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.playOnlineTitle}>Play Online</Text>
+            <Text style={styles.playOnlineSub}>Multiplayer lobby · real players & instant bot tables</Text>
           </View>
-        )}
+          <Text style={styles.playOnlineGo}>›</Text>
+        </Pressable>
+
+        {/* HOME-DECLUTTER — "Welcome to CAPS Poker! Tap Play to start" card removed:
+            redundant now that onboarding + the clear Play button + Play Online CTA exist. */}
 
         {/* Challenge a Friend — beginner+ only */}
         {show_friend_challenge && (
@@ -1693,16 +1690,8 @@ export default function HomeScreen() {
               <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
             </Pressable>
           )}
-          {gamesPlayed < 3 && (
-            <Pressable
-              onPress={() => setShowReferralModal(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Got an invite code?"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.gotCodeLink}>Got an invite code?</Text>
-            </Pressable>
-          )}
+          {/* HOME-DECLUTTER — "Got an invite code?" removed so Home has ONE invite affordance
+              ("Invite Friends 🎁"). Full invite + redeem lives on /referral (Play tab). */}
         </View>
 
         <Text style={{
@@ -2077,9 +2066,10 @@ const styles = StyleSheet.create({
   },
   playBtnText: {
     color: '#ffffff',
-    fontSize: rf(28),
+    fontSize: rf(22),
     fontWeight: '900',
-    letterSpacing: 6,
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   playSubtext: {
     fontSize: rf(12),
@@ -2088,6 +2078,24 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     textAlign: 'center',
   },
+  // HOME-MP-LINK — mint accent so it reads as a distinct primary path next to the green Play
+  playOnlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(12),
+    marginHorizontal: rs(16),
+    marginTop: rs(10),
+    paddingVertical: rs(13),
+    paddingHorizontal: rs(16),
+    borderRadius: rv(14),
+    borderWidth: 1.5,
+    borderColor: '#4FD6A8',
+    backgroundColor: 'rgba(79,214,168,0.12)',
+  },
+  playOnlineEmoji: { fontSize: rf(24) },
+  playOnlineTitle: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '900', letterSpacing: 0.5 },
+  playOnlineSub: { color: 'rgba(255,255,255,0.7)', fontSize: rf(11), marginTop: rs(1) },
+  playOnlineGo: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900' },
   stakesLabel: {
     fontSize: rf(11),
     fontWeight: '500',

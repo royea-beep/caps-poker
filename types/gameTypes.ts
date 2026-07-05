@@ -58,6 +58,8 @@ export interface RevealBoardData {
 
 export interface RevealData {
   boards: RevealBoardData[];
+  /** LOBBY-BOT-PRACTICE — practice game vs bot: XP only, ZERO real chips (results.tsx skips every credit path) */
+  isPractice?: boolean;
   netChips: number;
   playerChipsWon: number;
   isComplete: boolean;

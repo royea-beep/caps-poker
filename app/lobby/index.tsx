@@ -137,7 +137,27 @@ export default function PublicLobby() {
     }
   }, [busy, refsReady, playerName, enterTableRoom, load]);
 
-  const grouped = groupTablesByType(tables);
+  // LOBBY-BOT-PRACTICE — two clearly separated kinds. 🤖 bot rows = instant LOCAL practice
+  // (XP only, zero chips, no join_table); 👤 human tables = the real realtime multiplayer.
+  // A bot row must never read as "the multiplayer" — telemetry showed a friend opening an
+  // empty lobby 4x and bailing without understanding a human could join.
+  // DB-sourced only (LOBBY-BOT-WIRE): 3 bot_practice + 6 human rows from
+  // list_public_tables. table_kind is AUTHORITATIVE (passthrough live 2026-07-04);
+  // the interim host_name='CAPS Bot' string-match is gone.
+  const isBotRow = (t: OpenTable) => t.table_kind === 'bot_practice';
+  const botTables = tables.filter(isBotRow);
+  const humanTables = tables.filter((t) => !isBotRow(t));
+  const botSizes: PlayerCount[] = [...new Set(
+    botTables
+      .map((t) => (t.player_count ?? t.max_players))
+      .filter((n): n is PlayerCount => n === 2 || n === 3 || n === 4)
+  )].sort((a, b) => a - b);
+  const playBot = useCallback((n: PlayerCount) => {
+    track('bot_table_play', { player_count: n }, 'lobby');
+    router.push(`/game?practice=true&players=${n}` as any);
+  }, [router]);
+
+  const grouped = groupTablesByType(humanTables);
   // Always render TABLES_PER_TYPE slots per type; pad with placeholders if the pool is
   // mid-replenish so the lobby never collapses to an empty/jumpy layout.
   const slotsFor = (n: PlayerCount): Slot[] => {
@@ -171,15 +191,38 @@ export default function PublicLobby() {
         </View>
       )}
 
-      {/* Solo fallback — never leave a player without a way to play. */}
-      <Pressable style={[styles.soloBtn, busy && styles.btnDisabled]} disabled={busy} onPress={playSolo} accessibilityRole="button" accessibilityLabel="Play Solo versus bots">
-        <Text style={styles.soloEmoji}>🤖</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.soloTitle}>Play Solo vs Bots</Text>
-          <Text style={styles.soloSub}>Jump in now · {getBoardCount(config.numberOfPlayers)} boards</Text>
+      {/* 🤖 Bot practice — DB-seeded rows, one clearly labeled instant table per size.
+          Practice: XP only, no chips (economy-neutral). Hidden if the DB has none. */}
+      {botSizes.length > 0 && <View style={styles.botSection}>
+        <View style={styles.botHead}>
+          <Text style={styles.botTitle}>🤖 PLAY A BOT — INSTANT</Text>
+          <Text style={styles.botMeta}>practice · XP only · no chips</Text>
         </View>
-        <Text style={styles.soloGo}>›</Text>
-      </Pressable>
+        {botSizes.map((n) => (
+          <Pressable
+            key={`bot-${n}`}
+            style={[styles.botRow, busy && styles.btnDisabled]}
+            disabled={busy}
+            onPress={() => playBot(n)}
+            accessibilityRole="button"
+            accessibilityLabel={`Practice game versus ${n === 2 ? 'a bot' : 'bots'}, ${n} players, starts instantly, no chips at stake`}
+            testID={`bot-table-${n}`}
+          >
+            <View style={styles.botBadge}><Text style={styles.botBadgeText}>🤖 BOT</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.botRowTitle}>Practice vs Bots</Text>
+              <Text style={styles.botRowSub}>{n} players · {getBoardCount(n)} boards · starts instantly</Text>
+            </View>
+            <View style={styles.botPlayBtn}><Text style={styles.botPlayText}>Play now</Text></View>
+          </Pressable>
+        ))}
+      </View>}
+
+      {/* 👤 The real multiplayer — make human-ness unmissable */}
+      <View style={styles.humanHead}>
+        <Text style={styles.humanTitle}>👤 REAL PLAYERS — TABLES FOR FRIENDS</Text>
+        <Text style={styles.humanSub}>A real person joins here · invite a friend or wait at a table</Text>
+      </View>
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#4FD6A8" /></View>
@@ -253,6 +296,21 @@ const styles = StyleSheet.create({
   liveRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(6), marginTop: rv(-4), marginBottom: rv(10) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: rs(4), backgroundColor: '#3DDC84' },
   liveText: { color: '#3DDC84', fontSize: rf(11), fontWeight: '700', letterSpacing: 0.3 },
+  // LOBBY-BOT-PRACTICE — amber bot palette, visually distinct from the mint human tables
+  botSection: { marginHorizontal: rs(16), marginBottom: rv(8) },
+  botHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(6) },
+  botTitle: { color: '#F5B546', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
+  botMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10) },
+  botRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), backgroundColor: 'rgba(245,181,70,0.08)', borderWidth: 1, borderColor: 'rgba(245,181,70,0.4)', borderRadius: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(12), marginBottom: rv(6) },
+  botBadge: { backgroundColor: 'rgba(245,181,70,0.18)', borderWidth: 1, borderColor: 'rgba(245,181,70,0.55)', borderRadius: rv(7), paddingHorizontal: rs(8), paddingVertical: rv(3) },
+  botBadgeText: { color: '#F5B546', fontSize: rf(10), fontWeight: '900', letterSpacing: 0.5 },
+  botRowTitle: { color: '#fff', fontSize: rf(14), fontWeight: '700' },
+  botRowSub: { color: 'rgba(255,255,255,0.55)', fontSize: rf(10), marginTop: rv(1) },
+  botPlayBtn: { backgroundColor: '#F5B546', borderRadius: rv(9), paddingHorizontal: rs(14), paddingVertical: rv(7) },
+  botPlayText: { color: '#161922', fontSize: rf(13), fontWeight: '900' },
+  humanHead: { marginHorizontal: rs(16), marginTop: rv(4), marginBottom: rv(2) },
+  humanTitle: { color: '#4FD6A8', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
+  humanSub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(10), marginTop: rv(2) },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   soloBtn: { flexDirection: 'row', alignItems: 'center', gap: rs(12), marginHorizontal: rs(16), marginBottom: rv(8), backgroundColor: 'rgba(245,181,70,0.12)', borderWidth: 1.5, borderColor: 'rgba(245,181,70,0.55)', borderRadius: rv(14), paddingVertical: rv(12), paddingHorizontal: rs(16) },
   soloEmoji: { fontSize: rf(24) },
