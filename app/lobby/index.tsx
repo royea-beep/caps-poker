@@ -154,7 +154,7 @@ export default function PublicLobby() {
   )].sort((a, b) => a - b);
   const playBot = useCallback((n: PlayerCount) => {
     track('bot_table_play', { player_count: n }, 'lobby');
-    router.push(`/game?practice=true&players=${n}` as any);
+    router.push(`/game?practice=true&players=${n}&fresh=1` as any); // fresh=1 resets the demo session counter
   }, [router]);
 
   const grouped = groupTablesByType(humanTables);

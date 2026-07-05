@@ -106,7 +106,7 @@ const BOARD_CHROME = 28;                            // per-board chrome budget (
 
 function GameScreenInner() {
   const router = useRouter();
-  const { autoSim, autoSimCount, currentSimHand, demo, practice, players } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string }>();
+  const { autoSim, autoSimCount, currentSimHand, demo, practice, players, fresh } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string; fresh?: string }>();
   // LOBBY-BOT-PRACTICE — practice mode (lobby bot tables): local SOLO vs the heuristic
   // bot, XP only, ZERO real chips (no buy-in, no settle, results skips all credits).
   const isPractice = practice === '1' || practice === 'true';
@@ -132,6 +132,16 @@ function GameScreenInner() {
   const theme = getTheme(visualTheme);
   const isLandscape = false; // S86: portrait-only — Iron Rule 2
   const addChips = useGameStore((s) => s.addChips);
+  // PRACTICE-TO-LIVE — session demo counter (separate from real chips).
+  const practiceSessionNet = useGameStore((s) => s.practiceSessionNet);
+  const addPracticeSessionNet = useGameStore((s) => s.addPracticeSessionNet);
+  const resetPracticeSessionNet = useGameStore((s) => s.resetPracticeSessionNet);
+  // Reset the demo counter ONLY when a fresh practice session starts from the lobby
+  // (?fresh=1). "Deal me in" re-enters practice WITHOUT fresh → the counter accumulates.
+  useEffect(() => {
+    if (isPractice && (fresh === '1' || fresh === 'true')) resetPracticeSessionNet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
 
@@ -610,6 +620,7 @@ function GameScreenInner() {
 
     debugLog(`8 addChips: ${results.playerChipsWon}${isPractice ? ' SKIPPED (practice)' : ''}`);
     if (!isPractice) addChips(results.playerChipsWon);
+    else addPracticeSessionNet(results.playerChipsWon - config.potPerBoard * boardCount); // demo counter only
     void scheduleReengagement(); // re-engagement notification after each game
     debugLog('9 addChips done');
 
@@ -1311,6 +1322,12 @@ function GameScreenInner() {
       }
       chrome={
         <>
+          {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips) */}
+          {isPractice && (
+            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={`Practice, this session ${practiceSessionNet >= 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)}`}>
+              <Text style={styles.practiceSessionText}>🤖 Practice · Session {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}</Text>
+            </View>
+          )}
           {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
           {/* Tutorial dim overlay -- steps 1-2 only, focuses attention, non-blocking */}
           {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
@@ -1463,6 +1480,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: rs(8),
+  },
+  // PRACTICE-TO-LIVE — on-screen demo session counter pill (top center, non-blocking)
+  practiceSessionPill: {
+    position: 'absolute',
+    top: rs(6),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(245,181,70,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,181,70,0.5)',
+    borderRadius: rv(14),
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
+    zIndex: 45,
+  },
+  practiceSessionText: {
+    color: '#F5B546',
+    fontSize: rf(12),
+    fontWeight: '800',
   },
   botEmoji: {
     fontSize: rf(14),

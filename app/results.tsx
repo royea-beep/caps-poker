@@ -94,6 +94,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
   const chips = useGameStore((s) => s.chips);
+  const practiceSessionNet = useGameStore((s) => s.practiceSessionNet);
   const config = useGameStore((s) => s.config);
   const clearRevealData = useGameStore((s) => s.clearRevealData);
   const incrementHandsPlayed = useGameStore((s) => s.incrementHandsPlayed);
@@ -620,6 +621,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     }
 
     clearRevealData();
+    // PRACTICE-TO-LIVE — "Deal me in" after a practice hand re-enters PRACTICE (no real
+    // buy-in, demo counter keeps accumulating — no ?fresh so it isn't reset). Previously
+    // it dropped into a real chip game.
+    if (revealData.isPractice) {
+      router.replace(`/game?practice=true&players=${revealData.numberOfPlayers}` as any);
+      return;
+    }
     if (canAffordMatch(chips, getMatchCost(config.potPerBoard, boardCount))) {
       router.replace('/game');
     } else {
@@ -811,6 +819,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             {revealData.isPractice && (
               <View style={{ backgroundColor: 'rgba(245,181,70,0.14)', borderWidth: 1, borderColor: 'rgba(245,181,70,0.5)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14, marginTop: 6, alignSelf: 'center' }} accessibilityRole="text" testID="practice-banner">
                 <Text style={{ color: '#F5B546', fontWeight: '800', fontSize: 13 }}>🤖 Practice vs bot — XP only, no chips</Text>
+                {/* PRACTICE-TO-LIVE — demo session counter (separate from real bankroll) */}
+                <Text style={{ color: '#F5B546', fontWeight: '900', fontSize: 14, textAlign: 'center', marginTop: 3 }} testID="practice-session-net">
+                  This session: {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}
+                </Text>
               </View>
             )}
             <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
