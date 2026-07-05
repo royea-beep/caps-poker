@@ -41,8 +41,6 @@ import { useGameStore } from '../../store/gameStore';
 import { COLORS, getBoardCount, Card } from '../../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import {
-  getMatchCost,
-  canAffordMatch,
   canClaimDailyReward,
   getNextStreak,
   calculateDailyReward,
@@ -1003,24 +1001,22 @@ export default function HomeScreen() {
   }, [gamesPlayed]);
 
   const handleNewHand = useCallback(() => {
-    if (ECONOMY_FLAGS.matchCostEnabled) {
-      const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
-      if (!canAffordMatch(chips, cost)) {
-        Alert.alert('Not Enough Chips', `You need ${cost} chips to play.`);
-        return;
-      }
-    }
+    // The primary Home button is labelled "Practice vs Bots" — so it MUST be practice:
+    // zero real chips, no buy-in gate. (Previously it ran the real-chip economy path, which
+    // charged a match cost / drained the bankroll on a button that says "practice" — deceptive.)
+    // Practice is economy-neutral via the isPractice guard in game.tsx + results.tsx; fresh=1
+    // resets the per-session demo counter so each Home-tap starts a clean "this session".
     trackAction('play_pressed');
-    track('play_button_tapped', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
-    track('mode_start', { mode: 'single_player', player_count: config.numberOfPlayers }, 'home');
-    track('game_started', { player_count: config.numberOfPlayers }, 'home');
+    track('play_button_tapped', { mode: 'practice', player_count: config.numberOfPlayers }, 'home');
+    track('mode_start', { mode: 'practice', player_count: config.numberOfPlayers }, 'home');
+    track('game_started', { mode: 'practice', player_count: config.numberOfPlayers }, 'home');
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
     // First-run beginner default (3P / guided) is applied ONCE on mount via the GUIDED_FORCED_KEY
     // effect above — not here — so the selector reflects it up front and this tap doesn't change
     // the dealt config underfoot (VAMOS QA-BATCH Issue B).
-    router.push('/game' as any);
-  }, [chips, config, router]);
+    router.push(`/game?practice=true&players=${config.numberOfPlayers}&fresh=1` as any);
+  }, [config, router]);
 
   // HOTFIX 2026-07-02 — manual pill fallback routes through the SAME server-gated
   // claim (no local reward math). The strip's inline ack is the success feedback;

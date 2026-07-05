@@ -13,6 +13,11 @@ export const NETWORK_CONFIG = {
   maxPlayerNameLength: 20,
 };
 
+// PRACTICE-TO-LIVE — when a 2nd real player joins a bot_practice table, the host stamps
+// deadline = now + JUMP_COUNTDOWN_MS and broadcasts it. Both peers keep running local
+// practice until min(current-hand-end, deadline), then cut and jump into the live MP game.
+export const JUMP_COUNTDOWN_MS = 30000;
+
 export type MessageType =
   | 'ROOM_JOIN'
   | 'ROOM_JOIN_ACK'

@@ -24,6 +24,7 @@ import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
+import { beginPracticeLive } from '../../utils/practiceLiveSession';
 import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
@@ -152,10 +153,29 @@ export default function PublicLobby() {
       .map((t) => (t.player_count ?? t.max_players))
       .filter((n): n is PlayerCount => n === 2 || n === 3 || n === 4)
   )].sort((a, b) => a - b);
-  const playBot = useCallback((n: PlayerCount) => {
+  const playBot = useCallback(async (n: PlayerCount) => {
     track('bot_table_play', { player_count: n }, 'lobby');
+    // PRACTICE-TO-LIVE — the 2P (Heads-Up) bot table holds a REAL realtime seat while you
+    // practice, so a human can drop in and both jump into a live game. 3P/4P stay pure
+    // local practice. If the seat-hold can't be established (realtime off, no room, join
+    // fails), fall back cleanly to pure local practice — never block the practice tap.
+    if (n === 2) {
+      const botTable = botTables.find((t) => (t.player_count ?? t.max_players) === 2);
+      if (botTable?.room_code) {
+        try {
+          const res = await joinTable(botTable.room_code, userIdRef.current, playerName || 'Player', deviceIdRef.current);
+          if (res?.room_code) {
+            const held = await beginPracticeLive({ roomCode: res.room_code, isHost: !!res.is_host, playerName: playerName || 'Player' });
+            if (held) {
+              router.push(`/game?practice=true&players=2&fresh=1&live=1` as any);
+              return;
+            }
+          }
+        } catch { /* fall through to local practice */ }
+      }
+    }
     router.push(`/game?practice=true&players=${n}&fresh=1` as any); // fresh=1 resets the demo session counter
-  }, [router]);
+  }, [router, botTables, playerName]);
 
   const grouped = groupTablesByType(humanTables);
   // Always render TABLES_PER_TYPE slots per type; pad with placeholders if the pool is

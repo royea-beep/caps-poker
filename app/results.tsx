@@ -50,6 +50,8 @@ import { BATTLE_PASS_CONFIG } from '../constants/battlePassConfig';
 import { getProgressToNextTier } from '../utils/battlePass';
 // @ts-ignore — parallel agent file, exists at deploy time
 import XPBar from '../components/XPBar';
+import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
+import { isPracticeLiveActive, endPracticeLive } from '../utils/practiceLiveSession';
 
 const SUIT_SYM: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 
@@ -623,9 +625,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     clearRevealData();
     // PRACTICE-TO-LIVE — "Deal me in" after a practice hand re-enters PRACTICE (no real
     // buy-in, demo counter keeps accumulating — no ?fresh so it isn't reset). Previously
-    // it dropped into a real chip game.
+    // it dropped into a real chip game. If a live seat-hold is active (a human could drop
+    // in), carry live=1 so the next practice hand keeps the countdown/jump wiring.
     if (revealData.isPractice) {
-      router.replace(`/game?practice=true&players=${revealData.numberOfPlayers}` as any);
+      const liveSuffix = isPracticeLiveActive() ? '&live=1' : '';
+      router.replace(`/game?practice=true&players=${revealData.numberOfPlayers}${liveSuffix}` as any);
       return;
     }
     if (canAffordMatch(chips, getMatchCost(config.potPerBoard, boardCount))) {
@@ -636,6 +640,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   }, [revealData, chips, config, clearRevealData, router, isMultiplayer, mpServer, mpClient, connectedPlayers]);
 
   const handleHome = useCallback(() => {
+    // PRACTICE-TO-LIVE — going home ends the practice session: free the held realtime seat.
+    if (isPracticeLiveActive()) void endPracticeLive('exit_practice');
     clearRevealData();
     router.replace('/');
   }, [clearRevealData, router]);
@@ -706,6 +712,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FriendsBg />
+
+      {/* PRACTICE-TO-LIVE — between hands: if a real opponent triggers the countdown, jump
+          immediately (no bot hand in flight to finish). Renders nothing unless a countdown fires. */}
+      <PracticeLiveOverlay jumpImmediately />
 
       {/* S108: Floating chip delta animation */}
       {revealData && (

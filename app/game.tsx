@@ -50,6 +50,8 @@ import { BoardArrangement } from '../components/BoardArrangement';
 import { useLevelStore } from '../stores/levelStore';
 import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
+import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
+import { getPracticeLiveState, requestPracticeLiveJumpNow, endPracticeLive } from '../utils/practiceLiveSession';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -106,7 +108,11 @@ const BOARD_CHROME = 28;                            // per-board chrome budget (
 
 function GameScreenInner() {
   const router = useRouter();
-  const { autoSim, autoSimCount, currentSimHand, demo, practice, players, fresh } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string; fresh?: string }>();
+  const { autoSim, autoSimCount, currentSimHand, demo, practice, players, fresh, live } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string; fresh?: string; live?: string }>();
+  // PRACTICE-TO-LIVE — this practice session is holding a real realtime seat; a human can
+  // drop in and trigger the jump to live MP. The seat-hold + countdown live in the
+  // practiceLiveSession singleton (survives game ⇄ results); this screen shows the overlay.
+  const liveMode = live === '1';
   // LOBBY-BOT-PRACTICE — practice mode (lobby bot tables): local SOLO vs the heuristic
   // bot, XP only, ZERO real chips (no buy-in, no settle, results skips all credits).
   const isPractice = practice === '1' || practice === 'true';
@@ -557,6 +563,16 @@ function GameScreenInner() {
     debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
 
+    // PRACTICE-TO-LIVE — if a real opponent is mid-countdown, this bot hand just reached its
+    // natural end: cut here and jump to the live game rather than waiting the full 30s. The
+    // host starts the live game (its phase flips to 'jumping' synchronously) and the overlay
+    // performs the navigation; the guest can't start, so it falls through to results and
+    // jumps when the host's deal arrives.
+    if (liveMode && getPracticeLiveState().phase === 'countdown') {
+      requestPracticeLiveJumpNow();
+      if (getPracticeLiveState().phase === 'jumping') { debugLog('2.1 practice-live host jump — cutting hand'); return; }
+    }
+
 
     debugLog('3 clearing countdown interval');
     if (countdownRef.current) {
@@ -697,7 +713,7 @@ function GameScreenInner() {
       debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
     }
-  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim]);
+  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim, liveMode]);
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
@@ -1000,6 +1016,9 @@ function GameScreenInner() {
 
   const handleBack = useCallback(() => {
     const leave = () => {
+      // PRACTICE-TO-LIVE — leaving practice for real: free the held realtime seat + tear
+      // down the coordinator (no-op if we already launched into a live game).
+      if (liveMode) void endPracticeLive('exit_practice');
       router.replace('/');
     };
 
@@ -1328,6 +1347,8 @@ function GameScreenInner() {
               <Text style={styles.practiceSessionText}>🤖 Practice · Session {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}</Text>
             </View>
           )}
+          {/* PRACTICE-TO-LIVE — synced countdown when a real opponent joins; jumps at hand-end or deadline */}
+          {liveMode && <PracticeLiveOverlay />}
           {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
           {/* Tutorial dim overlay -- steps 1-2 only, focuses attention, non-blocking */}
           {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
