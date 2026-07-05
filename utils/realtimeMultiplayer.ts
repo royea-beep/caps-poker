@@ -139,6 +139,10 @@ export interface RealtimeClientCallbacks {
   onError?: (error: Error) => void;
   onChat?: (msg: ChatMsg) => void;
   onReadyPressed?: (playerName: string) => void;
+  // PRACTICE-TO-LIVE — host broadcasts these while both peers run local practice as
+  // filler; the actual jump reuses the normal onCardsDealt path (host startGame()).
+  onJumpCountdown?: (deadline: number) => void;
+  onJumpCancelled?: () => void;
 }
 
 // ===========================================================================
@@ -1116,6 +1120,16 @@ export class RealtimeClient {
       case 'READY_PRESSED': {
         const playerName: string = data?.playerName ?? 'Opponent';
         this.callbacks.onReadyPressed?.(playerName);
+        break;
+      }
+      // PRACTICE-TO-LIVE — host is the single clock; guest renders the same deadline.
+      case 'JUMP_COUNTDOWN': {
+        const deadline = data?.deadline;
+        if (typeof deadline === 'number') this.callbacks.onJumpCountdown?.(deadline);
+        break;
+      }
+      case 'JUMP_CANCELLED': {
+        this.callbacks.onJumpCancelled?.();
         break;
       }
     }

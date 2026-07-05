@@ -50,6 +50,8 @@ import { BoardArrangement } from '../components/BoardArrangement';
 import { useLevelStore } from '../stores/levelStore';
 import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
+import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
+import { getPracticeLiveState, requestPracticeLiveJumpNow, endPracticeLive } from '../utils/practiceLiveSession';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -106,7 +108,11 @@ const BOARD_CHROME = 28;                            // per-board chrome budget (
 
 function GameScreenInner() {
   const router = useRouter();
-  const { autoSim, autoSimCount, currentSimHand, demo, practice, players } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string }>();
+  const { autoSim, autoSimCount, currentSimHand, demo, practice, players, fresh, live } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string; demo?: string; practice?: string; players?: string; fresh?: string; live?: string }>();
+  // PRACTICE-TO-LIVE — this practice session is holding a real realtime seat; a human can
+  // drop in and trigger the jump to live MP. The seat-hold + countdown live in the
+  // practiceLiveSession singleton (survives game ⇄ results); this screen shows the overlay.
+  const liveMode = live === '1';
   // LOBBY-BOT-PRACTICE — practice mode (lobby bot tables): local SOLO vs the heuristic
   // bot, XP only, ZERO real chips (no buy-in, no settle, results skips all credits).
   const isPractice = practice === '1' || practice === 'true';
@@ -132,6 +138,16 @@ function GameScreenInner() {
   const theme = getTheme(visualTheme);
   const isLandscape = false; // S86: portrait-only — Iron Rule 2
   const addChips = useGameStore((s) => s.addChips);
+  // PRACTICE-TO-LIVE — session demo counter (separate from real chips).
+  const practiceSessionNet = useGameStore((s) => s.practiceSessionNet);
+  const addPracticeSessionNet = useGameStore((s) => s.addPracticeSessionNet);
+  const resetPracticeSessionNet = useGameStore((s) => s.resetPracticeSessionNet);
+  // Reset the demo counter ONLY when a fresh practice session starts from the lobby
+  // (?fresh=1). "Deal me in" re-enters practice WITHOUT fresh → the counter accumulates.
+  useEffect(() => {
+    if (isPractice && (fresh === '1' || fresh === 'true')) resetPracticeSessionNet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const trackChipsSpent = useGameStore((s) => s.trackChipsSpent);
   const setRevealData = useGameStore((s) => s.setRevealData);
 
@@ -547,6 +563,16 @@ function GameScreenInner() {
     debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
 
+    // PRACTICE-TO-LIVE — if a real opponent is mid-countdown, this bot hand just reached its
+    // natural end: cut here and jump to the live game rather than waiting the full 30s. The
+    // host starts the live game (its phase flips to 'jumping' synchronously) and the overlay
+    // performs the navigation; the guest can't start, so it falls through to results and
+    // jumps when the host's deal arrives.
+    if (liveMode && getPracticeLiveState().phase === 'countdown') {
+      requestPracticeLiveJumpNow();
+      if (getPracticeLiveState().phase === 'jumping') { debugLog('2.1 practice-live host jump — cutting hand'); return; }
+    }
+
 
     debugLog('3 clearing countdown interval');
     if (countdownRef.current) {
@@ -610,6 +636,7 @@ function GameScreenInner() {
 
     debugLog(`8 addChips: ${results.playerChipsWon}${isPractice ? ' SKIPPED (practice)' : ''}`);
     if (!isPractice) addChips(results.playerChipsWon);
+    else addPracticeSessionNet(results.playerChipsWon - config.potPerBoard * boardCount); // demo counter only
     void scheduleReengagement(); // re-engagement notification after each game
     debugLog('9 addChips done');
 
@@ -686,7 +713,7 @@ function GameScreenInner() {
       debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
     }
-  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim]);
+  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim, liveMode]);
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
@@ -989,6 +1016,9 @@ function GameScreenInner() {
 
   const handleBack = useCallback(() => {
     const leave = () => {
+      // PRACTICE-TO-LIVE — leaving practice for real: free the held realtime seat + tear
+      // down the coordinator (no-op if we already launched into a live game).
+      if (liveMode) void endPracticeLive('exit_practice');
       router.replace('/');
     };
 
@@ -1311,6 +1341,14 @@ function GameScreenInner() {
       }
       chrome={
         <>
+          {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips) */}
+          {isPractice && (
+            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={`Practice, this session ${practiceSessionNet >= 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)}`}>
+              <Text style={styles.practiceSessionText}>🤖 Practice · Session {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}</Text>
+            </View>
+          )}
+          {/* PRACTICE-TO-LIVE — synced countdown when a real opponent joins; jumps at hand-end or deadline */}
+          {liveMode && <PracticeLiveOverlay />}
           {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
           {/* Tutorial dim overlay -- steps 1-2 only, focuses attention, non-blocking */}
           {isFirstGame && tooltipVisible && (tooltipStep === 1 || tooltipStep === 2) && (
@@ -1463,6 +1501,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: rs(8),
+  },
+  // PRACTICE-TO-LIVE — on-screen demo session counter pill (top center, non-blocking)
+  practiceSessionPill: {
+    position: 'absolute',
+    top: rs(6),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(245,181,70,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,181,70,0.5)',
+    borderRadius: rv(14),
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(12),
+    zIndex: 45,
+  },
+  practiceSessionText: {
+    color: '#F5B546',
+    fontSize: rf(12),
+    fontWeight: '800',
   },
   botEmoji: {
     fontSize: rf(14),

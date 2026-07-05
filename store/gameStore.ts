@@ -49,6 +49,9 @@ interface GameStore {
 
   // Transient session state (NOT persisted)
   sessionStartChips: number;
+  // PRACTICE-TO-LIVE — demo counter for practice-vs-bots ("this session: +X"). SEPARATE
+  // from the real bankroll (chips): practice never touches chips or leaderboard.total_chips.
+  practiceSessionNet: number;
 
   // Card display config from Supabase app_config (NOT persisted — fetched on start)
   cardConfig: CardDisplayConfig | null;
@@ -102,6 +105,8 @@ interface GameStore {
 
   // Session actions
   initSession: () => void;
+  addPracticeSessionNet: (delta: number) => void;
+  resetPracticeSessionNet: () => void;
 
   // Reveal actions
   setRevealData: (data: RevealData) => void;
@@ -162,6 +167,7 @@ export const useGameStore = create<GameStore>()(
 
       // Transient session state
       sessionStartChips: DEFAULT_CONFIG.startingChips,
+      practiceSessionNet: 0,
 
       // Card display config (not persisted)
       cardConfig: null,
@@ -211,6 +217,8 @@ export const useGameStore = create<GameStore>()(
       setOrientation: (v: OrientationType) => set({ orientation: v }),
       setVisualTheme: (v: VisualTheme) => set({ visualTheme: v }),
       initSession: () => set((state) => ({ sessionStartChips: state.chips })),
+      addPracticeSessionNet: (delta: number) => set((state) => ({ practiceSessionNet: state.practiceSessionNet + delta })),
+      resetPracticeSessionNet: () => set({ practiceSessionNet: 0 }),
       setCardConfig: (cfg: CardDisplayConfig) => set({ cardConfig: cfg }),
       updateConfig: (partial: Partial<GameConfig>) =>
         set((state) => {
