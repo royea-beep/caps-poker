@@ -18,6 +18,7 @@ import {
   Share,
   Modal,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
@@ -1336,8 +1337,23 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Center content */}
-      <View style={styles.content}>
+      {/* Center content.
+          RESPONSIVE-FIX 2026-07-06 — Home had NO scroll fallback: on a genuinely SHORT
+          device (iPhone SE 1st gen class, ~320x568), this whole stacked column (title,
+          Play button, Play Online, optional banners, disclaimer) can be TALLER than the
+          viewport. RN-web clips the root view at viewport height with no scroll, so the
+          tail of the content (disclaimer, and anything after it) silently renders BELOW
+          the visible fold — invisible and unreachable, not just "positioned oddly". This
+          is the same root-cause class as the game-screen board-cutoff fix (BoardArrangement
+          minHeight capped to boardsZoneH): a fixed/absolute layout with no escape hatch when
+          content exceeds the screen. Wrapping in a ScrollView means nothing here is ever
+          trapped below the fold, on any device — the FAB (a separate, always-on-top overlay)
+          simply floats above whatever is currently scrolled beneath it, same as any FAB. */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Title section */}
         <View style={styles.titleSection}>
@@ -1748,7 +1764,7 @@ export default function HomeScreen() {
           {"Free play | Virtual chips only | No real-money gambling | 17+"}
         </Text>
 
-      </View>
+      </ScrollView>
 
       {/* Referral toast (D6) */}
       {referralToast && (
@@ -2013,7 +2029,10 @@ const styles = StyleSheet.create({
   // de-clutter: extra paddingTop reads as breathing room without changing
   // the spacing between sections (gap already controls that).
   content: {
-    flex: 1,
+    // RESPONSIVE-FIX 2026-07-06 — was flex:1 (fine for a plain View, wrong for a
+    // ScrollView's contentContainerStyle). flexGrow:1 lets short content still
+    // center/fill the screen while tall content scrolls instead of clipping.
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: rs(20),
