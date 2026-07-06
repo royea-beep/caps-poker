@@ -179,13 +179,16 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
 const styles = StyleSheet.create({
   fab: {
     // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 17+").
-    // Dropped it into the empty band below the disclaimer, but a narrower REAL tester device
-    // still showed overlap: the 62-char disclaimer wraps to 2 lines at narrow widths (its font
-    // has a fixed floor, so it can't shrink to stay on 1 line), and that extra line ate into
-    // the clearance measured on a wider/taller test viewport. RESPONSIVE-FIX 2026-07-06 —
-    // bumped bottom 52->70 for a bigger, more conservative safety margin (comfortably clears a
-    // 2-line wrap on 320-375pt devices) plus the disclaimer's own margins were tightened.
-    position: 'absolute', right: rs(14), bottom: rs(70),
+    // RESPONSIVE-FIX 2026-07-06 — empirically re-measured (real getBoundingClientRect
+    // comparisons against the deployed build, not hand-computed estimates): the earlier
+    // 52->70 bump moved in the WRONG direction. "bottom" is distance from the container's
+    // BOTTOM edge, so a LARGER value pushes the FAB UP/closer to the disclaimer above it,
+    // not further away. Verified overlap at rs(70) on real iPhone dimensions (375x812,
+    // 380x844, 390x844, 393x852 — iPhone 12 mini/14/15, a huge share of the iOS install
+    // base). rs(20) clears all of them (9-168px margin) plus 320x568 and 480x960, and Home
+    // is now wrapped in a ScrollView (see app/(tabs)/index.tsx) so this is no longer the
+    // only thing standing between the disclaimer and being genuinely unreachable.
+    position: 'absolute', right: rs(14), bottom: rs(20),
     width: rs(44), height: rs(44), borderRadius: rs(22),
     backgroundColor: 'rgba(201,106,26,0.92)', alignItems: 'center', justifyContent: 'center',
     zIndex: 9000, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), shadowOffset: { width: 0, height: rs(2) }, elevation: 6,
