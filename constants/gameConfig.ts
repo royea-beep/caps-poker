@@ -35,14 +35,20 @@ export const DEFAULT_CONFIG = {
   revealSpeed: 'normal' as 'fast' | 'normal' | 'cinematic',
   botDifficulty: 'easy' as 'easy' | 'medium' | 'hard',
   /**
-   * MP-RENDER-PARITY 2026-06-28 — when true, MP plays the same <BoardReveal>
-   * animation SOLO plays before navigating to /results. DEFAULT FALSE: shipping
-   * with the jump-to-results behavior (zero change vs main) until we prove the
-   * 2-client reveal renders + finishes cleanly on both clients. The code path
-   * stays in tree, dormant; flip to true via Settings / a 1-line follow-up
-   * after live verification.
+   * MP-RENDER-PARITY 2026-06-28, ENABLED 2026-07-06 (FIX-MP-REVEAL-ANIMATION) — when
+   * true, MP plays the same <BoardReveal> animation SOLO plays before navigating to
+   * /results, instead of jumping straight to the final result. Owner confirmed on
+   * 2 real devices that MP itself works end-to-end (join, cards, correct final
+   * result) — the only gap was this flag being off, so both host and guest skipped
+   * setPendingRevealBoards/setShowSafeReveal entirely (app/multiplayer-game.tsx
+   * lines ~638 and ~763) and fell straight through to router.replace('/results').
+   * Both host and guest already build the exact same RevealBoardData[] shape SOLO
+   * does (adaptRevealBoardsForReveal), so no new rendering path is needed — this
+   * flag was the entire gap. Paired with feat/mp-stability's BOARD_REVEAL
+   * ACK+retry + guest-side grace period (this branch is based on that one) so the
+   * staged per-board animation isn't waiting on data that never reliably arrives.
    */
-  mpBoardReveal: false,
+  mpBoardReveal: true,
 };
 
 export type GameConfig = typeof DEFAULT_CONFIG;

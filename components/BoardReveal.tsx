@@ -570,7 +570,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {/* Bot cards — show all bots if allBotCards available, else fall back to single botCards */}
           {(board.allBotCards && board.allBotCards.length > 1 ? board.allBotCards : [board.botCards]).map((botHand, botIdx) => {
             const isFirstBot = botIdx === 0;
-            const botLabel = board.allBotCards && board.allBotCards.length > 1 ? `🤖 Bot ${botIdx + 1}` : '🤖 Bot';
+            // FIX-MP-REVEAL-ANIMATION 2026-07-06 — this label rendered "🤖 Bot" even for a
+            // real human opponent in MP (opponentName is already threaded through for the
+            // winner banner below, just never reached this per-board section header). Scoped
+            // to the primary opponent slot since that covers 2P MP (the only mode verified on
+            // real devices); 3P/4P MP would need per-seat names, which RevealBoardData doesn't
+            // carry today.
+            const botLabel = board.allBotCards && board.allBotCards.length > 1
+              ? `🤖 Bot ${botIdx + 1}`
+              : (isFirstBot && opponentName ? opponentName : '🤖 Bot');
             const rawBotHandName = board.allBotHandNames?.[botIdx] ?? (isFirstBot ? board.botHandName : '');
             const botHandName = getHandName(rawBotHandName, lang);
             return (
