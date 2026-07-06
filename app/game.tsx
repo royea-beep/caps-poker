@@ -359,7 +359,6 @@ function GameScreenInner() {
     setCountdownActive(true);
     setCountdown(COUNTDOWN_SECONDS);
     playSound('timerLow');
-    track('cards_placed', {}, 'game');
 
     countdownRef.current = setInterval(() => {
       // Guard: component may have unmounted between ticks (iOS New Architecture)
@@ -943,6 +942,13 @@ function GameScreenInner() {
     }).catch(() => {});
     debugLog('H1 handleReady called');
     if (!allBoardsFull) { isDealingRef.current = false; debugLog('H1.1 NOT allBoardsFull — abort'); return; }
+    // AUTO-LEARN 2026-07-06 — was only tracked inside startCountdown(), which is gated
+    // behind `!countdownActive` (only the FIRST hand-ready call in a game starts the
+    // shared countdown). A player confirming placement after that gate had already
+    // flipped never got counted, so cards_placed under-fired relative to hands
+    // completed (11 vs 13, an impossible ratio). Track unconditionally, right where a
+    // placement is confirmed — guaranteed once per hand via the guards above.
+    track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount }, 'game');
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     debugLog('H3 hapticNotify');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
