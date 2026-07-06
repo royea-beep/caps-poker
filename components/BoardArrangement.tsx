@@ -160,8 +160,18 @@ export function BoardArrangement({
           the hand's fixed height ate most of the viewport. The minHeight here
           guarantees a usable scroll viewport (~2 board cells) on every device;
           on tall screens flex: 1 still lets the region grow. Sized from the
-          live cellH so it tracks the same readability math, not a hardcoded px. */}
-      <View style={{ flex: 1, alignSelf: 'stretch', minHeight: Math.round(2 * cellH + rs(4)) }}>
+          live cellH so it tracks the same readability math, not a hardcoded px.
+          RESPONSIVE-FIX 2026-07-06 — capped at `boardsZoneH` (the space
+          useGameLayout already determined is truly available after hand/chrome).
+          Uncapped, a bc=4 (2P, 4 boards) game on a NARROW+SHORT real device (320-375pt,
+          exactly the class this comment calls out) could demand "2 cells" of height
+          that EXCEEDS boardsZoneH — pushing the whole flex column past safeH with no
+          outer-level scroll to reach it (game.tsx has no top-level ScrollView by
+          design; only this region scrolls internally). Confirmed live: tester screenshot
+          showed only Board 1+2 of 4, boards 3/4 unreachable. Capping guarantees this
+          region's FRAME never exceeds the space the layout engine says exists, so the
+          internal ScrollView below is always the one that scrolls — never the page. */}
+      <View style={{ flex: 1, alignSelf: 'stretch', minHeight: Math.min(Math.round(2 * cellH + rs(4)), boardsZoneH) }}>
         <ScrollView
           style={{ flex: 1 }}
           // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — clean column-stack contentContainer

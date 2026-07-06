@@ -808,7 +808,19 @@ export default function HomeScreen() {
   useEffect(() => {
     setCurrentScreen('Home');
     CapsHooks.screenViewed('home');
-    track('app_opened', {}, 'home');
+    // RESPONSIVE-FIX 2026-07-06 — analytics were blind to which device/screen-size a
+    // tester was on, so a real-device layout break (like this batch's 3 bugs) had no
+    // way to be spotted from telemetry alone. screen_width/height let us see the real
+    // device-width spread going forward; device_model (best-effort, expo-device may be
+    // unavailable on web) pinpoints which physical devices are narrow/short outliers.
+    let _deviceModel: string | null = null;
+    try { _deviceModel = require('expo-device').modelName ?? null; } catch { /* web / unavailable */ }
+    track('app_opened', {
+      screen_width: Math.round(screenW),
+      screen_height: Math.round(screenH),
+      platform: Platform.OS,
+      device_model: _deviceModel,
+    }, 'home');
     track('home_screen_loaded', {
       build: Constants.expoConfig?.version ?? 'unknown',
       platform: Platform.OS,
@@ -1178,7 +1190,12 @@ export default function HomeScreen() {
 
   // Cap play button width at effective web content width (WEB_MAX_WIDTH=430) to avoid overflow
   const _effectiveW = (Platform.OS === 'web' && screenW > 430) ? 430 : screenW;
-  const playBtnWidth = Math.round(_effectiveW * 0.75);
+  // RESPONSIVE-FIX 2026-07-06 — was 0.75. At narrow widths (320-375pt), 0.75 combined
+  // with the old fixed rs(32) horizontal padding left too little room for "Practice vs
+  // Bots" and it truncated on a real tester device. 0.82 gives ~9% more width at every
+  // size (paired with reduced padding + a lower font floor below) so the label has
+  // real margin to fit without relying solely on adjustsFontSizeToFit.
+  const playBtnWidth = Math.round(_effectiveW * 0.82);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -1356,7 +1373,7 @@ export default function HomeScreen() {
             title, ONE tagline, selector. */}
 
         {/* Player count selector — 2P / 3P / 4P */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 2 }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
+        <View style={{ flexDirection: 'row', gap: rs(8), marginBottom: rs(2) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
           {([2, 3, 4] as const).map(n => (
             <Pressable
               key={n}
@@ -1367,14 +1384,14 @@ export default function HomeScreen() {
               accessibilityLabel={`${n} players`}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{
-                paddingHorizontal: 16, paddingVertical: 8,
-                borderRadius: 20,
+                paddingHorizontal: rs(16), paddingVertical: rs(8),
+                borderRadius: rv(20),
                 backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
                 borderWidth: 1,
                 borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
               }}
             >
-              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: rs(14), fontWeight: '700' }}>
+              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: rf(14), fontWeight: '700' }}>
                 {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
               </Text>
             </Pressable>
@@ -1415,7 +1432,13 @@ export default function HomeScreen() {
                 <View style={styles.playBtnHighlight} pointerEvents="none" />
                 {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
                     button is a solo game vs bots, so name it honestly. */}
-                <Text style={styles.playBtnText} numberOfLines={1} adjustsFontSizeToFit>🤖 Practice vs Bots</Text>
+                {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
+                    LAYOUT width to the Pressable's content box (minus padding). Without it,
+                    the Pressable's default alignItems:'center' lets the Text intrinsic-size
+                    to its own natural (unconstrained) width, so adjustsFontSizeToFit had no
+                    real box to shrink into and the label truncated on narrow real devices
+                    instead of shrinking. */}
+                <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>🤖 Practice vs Bots</Text>
               </Pressable>
             </AnimatedRN.View>
           </View>
@@ -1503,7 +1526,7 @@ export default function HomeScreen() {
             }}
             accessibilityRole="button"
             accessibilityLabel="Share your COMPLETE win"
-            style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1.5, borderColor: '#c9a84c', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}
+            style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1.5, borderColor: '#c9a84c', borderRadius: rv(12), paddingVertical: rs(10), paddingHorizontal: rs(16), marginBottom: rs(4), alignItems: 'center' }}
           >
             <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }}>🏆 You got COMPLETE! Share it?</Text>
           </Pressable>
@@ -1708,12 +1731,19 @@ export default function HomeScreen() {
               ("Invite Friends 🎁"). Full invite + redeem lives on /referral (Play tab). */}
         </View>
 
+        {/* RESPONSIVE-FIX 2026-07-06 — fontSize/margins were hardcoded (fixed px regardless
+            of screen width), an Iron Rule violation. This 62-char string wraps to 2 lines on
+            narrow screens since the font never shrinks to compensate — tightened marginTop so
+            a 2-line wrap still clears the floating bug-report FAB below (which also got more
+            clearance, see ReportBugButton.tsx). fontSize floor is still 10 (skill's stated
+            floor for micro labels), so visually unchanged on narrow screens, but no longer
+            grows unbounded-hardcoded on wide ones either. */}
         <Text style={{
           color: '#aaa',
-          fontSize: 10,
+          fontSize: rf(10, 10),
           textAlign: 'center',
-          marginTop: 24,
-          marginBottom: 8,
+          marginTop: rs(18),
+          marginBottom: rs(6),
         }}>
           {"Free play | Virtual chips only | No real-money gambling | 17+"}
         </Text>
@@ -1764,7 +1794,7 @@ export default function HomeScreen() {
               onSubmitEditing={handleRedeemCode}
             />
             {/* S89: 6-char counter clarifies what the 6 means */}
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: -4 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rf(11), alignSelf: 'flex-end', marginTop: rs(-4) }}>
               {referralCodeInput.length}/6 characters
             </Text>
             <Pressable
@@ -2029,7 +2059,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   titleDivider: {
-    width: 80,
+    width: rs(80),
     height: 1,
     marginTop: rs(10),
     opacity: 0.4,
@@ -2065,7 +2095,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: rs(18),
-    paddingHorizontal: rs(32),
+    // RESPONSIVE-FIX 2026-07-06 — was rs(32). Combined with the old 0.75 width ratio
+    // this left too little room for "Practice vs Bots" on narrow devices (320-375pt);
+    // rs(20) + the wider 0.82 ratio above give the label real breathing room.
+    paddingHorizontal: rs(20),
     overflow: 'hidden',
     ...Platform.select({
       web: { boxShadow: '0 8px 32px rgba(34,197,94,0.4), 0 2px 8px rgba(0,0,0,0.3)' } as any,
@@ -2083,9 +2116,14 @@ const styles = StyleSheet.create({
   },
   playBtnText: {
     color: '#ffffff',
-    fontSize: rf(22),
+    // RESPONSIVE-FIX 2026-07-06 — was rf(22) (default floor ~17, i.e. it could barely
+    // shrink at narrow widths). Explicit min:13 lets it shrink further on tiny screens;
+    // the wider button + smaller padding above mean it rarely needs to go that low.
+    fontSize: rf(20, 13, 25),
     fontWeight: '900',
-    letterSpacing: 1.5,
+    // was a fixed 1.5 (didn't scale down on narrow screens, eating into the same
+    // tight space that caused the truncation).
+    letterSpacing: rs(0.8),
     textAlign: 'center',
   },
   playSubtext: {
@@ -2168,9 +2206,9 @@ const styles = StyleSheet.create({
 
   versionBadge: {
     position: 'absolute',
-    bottom: 8,
-    right: 12,
-    fontSize: 10,
+    bottom: rs(8),
+    right: rs(12),
+    fontSize: rf(10, 10),
     color: 'rgba(255,255,255,0.35)',
     zIndex: 0,
   },
