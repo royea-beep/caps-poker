@@ -13,7 +13,7 @@
  *   - variant="row": a Settings-style row.
  */
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, ActivityIndicator, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, ActivityIndicator, KeyboardAvoidingView, useWindowDimensions } from 'react-native';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
@@ -31,6 +31,21 @@ interface Props {
 export default function ReportBugButton({ variant = 'fab' }: Props) {
   const pathname = usePathname();
   const playerName = useGameStore((s) => s.playerName);
+  // RESPONSIVE-FIX 2026-07-06 — a static "bottom: rs(N)" can't reliably clear the Home
+  // disclaimer above it: the disclaimer's Y-position (from the top) is roughly CONSTANT
+  // across device heights (it's the last item in a content column whose height is driven
+  // mostly by WIDTH-based rs()/rv() scaling, not device height — and on web, rs() at
+  // module scope is frozen to a 393-width fallback regardless of real viewport, so it
+  // literally never varies there). A "bottom" offset measures from the OPPOSITE, variable
+  // edge, so clearing the disclaimer on a short device (fewer safe px available) meant
+  // OVERLAPPING it on a taller one (bottom pushed the FAB back up into the same band) —
+  // confirmed by direct measurement across iPhone SE/12-mini/14/15 dimensions. Anchoring
+  // from screenH directly (reactive via useWindowDimensions, correct on native AND web)
+  // targets a stable actual Y position instead: fabTop lands at ~700px regardless of
+  // device height, comfortably below where the disclaimer naturally ends. Floor of 16
+  // keeps a minimum touch margin on very short screens (which now scroll anyway).
+  const { height: screenH } = useWindowDimensions();
+  const fabBottomOffset = Math.max(16, Math.round(screenH - 750));
 
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
@@ -84,7 +99,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
     <>
       {variant === 'fab' ? (
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, { bottom: fabBottomOffset }]}
           onPress={() => setOpen(true)}
           activeOpacity={0.8}
           accessibilityRole="button"
@@ -179,16 +194,11 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
 const styles = StyleSheet.create({
   fab: {
     // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 17+").
-    // RESPONSIVE-FIX 2026-07-06 — empirically re-measured (real getBoundingClientRect
-    // comparisons against the deployed build, not hand-computed estimates): the earlier
-    // 52->70 bump moved in the WRONG direction. "bottom" is distance from the container's
-    // BOTTOM edge, so a LARGER value pushes the FAB UP/closer to the disclaimer above it,
-    // not further away. Verified overlap at rs(70) on real iPhone dimensions (375x812,
-    // 380x844, 390x844, 393x852 — iPhone 12 mini/14/15, a huge share of the iOS install
-    // base). rs(20) clears all of them (9-168px margin) plus 320x568 and 480x960, and Home
-    // is now wrapped in a ScrollView (see app/(tabs)/index.tsx) so this is no longer the
-    // only thing standing between the disclaimer and being genuinely unreachable.
-    position: 'absolute', right: rs(14), bottom: rs(20),
+    // RESPONSIVE-FIX 2026-07-06 — a static bottom offset can't reliably clear content whose
+    // position is roughly height-INDEPENDENT (see fabBottomOffset comment above, in the
+    // component body, for the full reasoning + measurements). "bottom" is now set inline
+    // per-render from useWindowDimensions() instead of hardcoded here.
+    position: 'absolute', right: rs(14),
     width: rs(44), height: rs(44), borderRadius: rs(22),
     backgroundColor: 'rgba(201,106,26,0.92)', alignItems: 'center', justifyContent: 'center',
     zIndex: 9000, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), shadowOffset: { width: 0, height: rs(2) }, elevation: 6,
