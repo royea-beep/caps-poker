@@ -13,7 +13,7 @@
  *   - variant="row": a Settings-style row.
  */
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, ActivityIndicator, KeyboardAvoidingView, useWindowDimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, ActivityIndicator, KeyboardAvoidingView } from 'react-native';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
@@ -31,21 +31,6 @@ interface Props {
 export default function ReportBugButton({ variant = 'fab' }: Props) {
   const pathname = usePathname();
   const playerName = useGameStore((s) => s.playerName);
-  // RESPONSIVE-FIX 2026-07-06 — a static "bottom: rs(N)" can't reliably clear the Home
-  // disclaimer above it: the disclaimer's Y-position (from the top) is roughly CONSTANT
-  // across device heights (it's the last item in a content column whose height is driven
-  // mostly by WIDTH-based rs()/rv() scaling, not device height — and on web, rs() at
-  // module scope is frozen to a 393-width fallback regardless of real viewport, so it
-  // literally never varies there). A "bottom" offset measures from the OPPOSITE, variable
-  // edge, so clearing the disclaimer on a short device (fewer safe px available) meant
-  // OVERLAPPING it on a taller one (bottom pushed the FAB back up into the same band) —
-  // confirmed by direct measurement across iPhone SE/12-mini/14/15 dimensions. Anchoring
-  // from screenH directly (reactive via useWindowDimensions, correct on native AND web)
-  // targets a stable actual Y position instead: fabTop lands at ~756px regardless of
-  // device height, comfortably below where the disclaimer naturally ends. Floor of 16
-  // keeps a minimum touch margin on very short screens (which now scroll anyway).
-  const { height: screenH } = useWindowDimensions();
-  const fabBottomOffset = Math.max(16, Math.round(screenH - 800));
 
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
@@ -99,7 +84,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
     <>
       {variant === 'fab' ? (
         <TouchableOpacity
-          style={[styles.fab, { bottom: fabBottomOffset }]}
+          style={styles.fab}
           onPress={() => setOpen(true)}
           activeOpacity={0.8}
           accessibilityRole="button"
@@ -194,11 +179,15 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
 const styles = StyleSheet.create({
   fab: {
     // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 17+").
-    // RESPONSIVE-FIX 2026-07-06 — a static bottom offset can't reliably clear content whose
-    // position is roughly height-INDEPENDENT (see fabBottomOffset comment above, in the
-    // component body, for the full reasoning + measurements). "bottom" is now set inline
-    // per-render from useWindowDimensions() instead of hardcoded here.
-    position: 'absolute', right: rs(14),
+    // RESPONSIVE-FIX 2026-07-06 — chasing a "bottom" pixel offset that clears the
+    // disclaimer on every device height turned out to be unreliable no matter the value
+    // (the two things scale independently, so a fixed gap that's safe on one height can
+    // collide on another). The robust fix lives in app/(tabs)/index.tsx instead: Home's
+    // scrollable content now reserves paddingBottom equal to this FAB's own footprint, so
+    // the disclaimer (the last scrollable item) can never land underneath it regardless of
+    // device height — this "bottom" only needs to keep the FAB comfortably above the tab
+    // bar, which IS a stable, known-height reference.
+    position: 'absolute', right: rs(14), bottom: rs(20),
     width: rs(44), height: rs(44), borderRadius: rs(22),
     backgroundColor: 'rgba(201,106,26,0.92)', alignItems: 'center', justifyContent: 'center',
     zIndex: 9000, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), shadowOffset: { width: 0, height: rs(2) }, elevation: 6,

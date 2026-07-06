@@ -2037,6 +2037,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingHorizontal: rs(20),
     paddingTop: rs(8),
+    // RESPONSIVE-FIX 2026-07-06 — reserves room for the floating bug-report FAB (44pt tall,
+    // 20pt clear of the tab bar) so the disclaimer (the LAST scrollable item) can never end
+    // up underneath it on any device height — the standard fix for "FAB overlaps the end of
+    // scrollable content" (this is what a fixed bottom-offset on the FAB alone couldn't
+    // reliably guarantee, since the two elements scale from opposite, unrelated edges).
+    paddingBottom: rs(76),
     gap: rs(16),
   },
 
