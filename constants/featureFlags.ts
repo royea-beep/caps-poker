@@ -10,9 +10,19 @@
  * "Practice vs Bots" button fix and the practice session demo counter are INDEPENDENT of this
  * flag either way.
  *
- * ENABLED 2026-07-05 — owner verified the cross-device countdown + cut-and-jump on a real device.
- * DB prerequisites confirmed by strategist: bot_practice seeds current_players=0 (no premature
- * autostart), join_table stamps started_at on the 2nd-player join (drives the jump), ghost-reaper
- * >90s (won't evict a practicer holding a seat). See docs/PENDING_practice_to_live.md.
+ * KILL-SWITCHED 2026-07-06 (MP-STABILITY, urgent) — owner ran a real 2-device game: the reveal
+ * never fired for the guest AND pressing back while waiting evicted the seat.
+ *
+ * FLAG AUDIT (2026-07-06): there is ALSO a Supabase app_config row `practice_mode_enabled=true`.
+ * Confirmed by full-repo grep (client, all supabase/functions, all supabase/migrations) plus a
+ * live pg_proc source search (`prosrc ILIKE '%practice_mode_enabled%'`) that it is an ORPHAN —
+ * no RPC, edge function, or client code reads it anywhere. This client-side constant is the
+ * ONLY real gate for the realtime seat-hold + countdown + jump path (read in app/lobby/index.tsx's
+ * playBot and utils/practiceLiveSession.ts). Flipping it to false does NOT touch plain local bot
+ * practice (no join_table, no seat-hold) — that keeps working exactly as before; only the "hold
+ * a real seat while you practice, then jump" behavior is disabled.
+ *
+ * Re-enable ONLY after a real 2-device pass (owner + tester) confirms both bugs are fixed.
+ * See docs/PENDING_practice_to_live.md.
  */
-export const PRACTICE_LIVE_ENABLED = true;
+export const PRACTICE_LIVE_ENABLED = false;
