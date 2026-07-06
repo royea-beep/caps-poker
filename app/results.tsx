@@ -51,7 +51,7 @@ import { getProgressToNextTier } from '../utils/battlePass';
 // @ts-ignore — parallel agent file, exists at deploy time
 import XPBar from '../components/XPBar';
 import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
-import { isPracticeLiveActive, endPracticeLive } from '../utils/practiceLiveSession';
+import { isPracticeLiveActive } from '../utils/practiceLiveSession';
 
 const SUIT_SYM: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 
@@ -645,8 +645,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   }, [revealData, chips, config, clearRevealData, router, isMultiplayer, mpServer, mpClient, connectedPlayers]);
 
   const handleHome = useCallback(() => {
-    // PRACTICE-TO-LIVE — going home ends the practice session: free the held realtime seat.
-    if (isPracticeLiveActive()) void endPracticeLive('exit_practice');
+    // MP-STABILITY 2026-07-06 (Problem 2) — same eviction bug as game.tsx's back button:
+    // tapping HOME must not silently give up a held realtime seat. Route to the lobby
+    // (the held table stays visible/discoverable there) instead of tearing the seat down;
+    // the coordinator keeps heartbeating regardless of which screen is mounted. The seat is
+    // only freed by an explicit leave-table action.
+    if (isPracticeLiveActive()) { clearRevealData(); router.replace('/lobby' as any); return; }
     clearRevealData();
     router.replace('/');
   }, [clearRevealData, router]);

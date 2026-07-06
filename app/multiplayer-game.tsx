@@ -412,7 +412,21 @@ function MultiplayerGameScreenInner() {
       },
       onHandComplete: (result: HandCompletePayload) => {
         if (!mountedRef.current) return;
-        buildGuestRevealDataAndNavigate(result);
+        // MP-STABILITY 2026-07-06 (Problem 1) — HAND_COMPLETE is reliably delivered (ACK+retry),
+        // but it can race ahead of one or more of this hand's BOARD_REVEAL messages, which now
+        // carry their own independent ACK+retry and may still be in flight. Give them a bounded
+        // grace period to land before falling back — instead of building immediately and locking
+        // in a blank/tied board for any reveal that simply hadn't arrived yet.
+        const boardsExpected = boardsRef.current.length;
+        const tryBuild = (attemptsLeft: number) => {
+          if (!mountedRef.current) return;
+          if (boardRevealsRef.current.size >= boardsExpected || attemptsLeft <= 0) {
+            buildGuestRevealDataAndNavigate(result);
+            return;
+          }
+          setTimeout(() => tryBuild(attemptsLeft - 1), 150);
+        };
+        tryBuild(10); // ~1.5s max grace for in-flight BOARD_REVEAL retries to land
       },
     });
   }, [isHost, mpClient, playerIndex, playerCount, config, boardCount]);

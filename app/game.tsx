@@ -51,7 +51,7 @@ import { useLevelStore } from '../stores/levelStore';
 import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
 import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
-import { getPracticeLiveState, requestPracticeLiveJumpNow, endPracticeLive } from '../utils/practiceLiveSession';
+import { getPracticeLiveState, requestPracticeLiveJumpNow } from '../utils/practiceLiveSession';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -1022,9 +1022,16 @@ function GameScreenInner() {
 
   const handleBack = useCallback(() => {
     const leave = () => {
-      // PRACTICE-TO-LIVE — leaving practice for real: free the held realtime seat + tear
-      // down the coordinator (no-op if we already launched into a live game).
-      if (liveMode) void endPracticeLive('exit_practice');
+      // MP-STABILITY 2026-07-06 (Problem 2) — a simple back-tap must NOT evict the held
+      // realtime seat. This used to call endPracticeLive() unconditionally, tearing down
+      // the seat-hold + heartbeat on ANY exit from the practice screen — including on WEB,
+      // where the branch below skips confirmation entirely and calls leave() straight away.
+      // The whole point of "practice while holding my spot" is that idle navigation can't
+      // cost the seat: the coordinator is a module-level singleton (utils/practiceLiveSession)
+      // that keeps heartbeating regardless of which screen is mounted, so routing to the
+      // lobby (where the held table is still visible) is enough — the seat is only ever
+      // freed by an explicit leave-table action, not a back-tap.
+      if (liveMode) { router.replace('/lobby' as any); return; }
       router.replace('/');
     };
 
