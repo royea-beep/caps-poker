@@ -1,5 +1,15 @@
 # CAPS POKER — Project Memory
 
+## 2026-07-06 — RECAP
+- **Live:** main `f660e33`, web bundle `index-4a6f7182`, OTA `ac8cf3f5`, build 506.
+- **Shipped this session (14 batches):** unified `GameView`; leave-recovery; QA batches A/B/C; UX-1/2; daily_login leak server-lock; Vercel rename (Wingman hijack recovery); Dependabot cleared; S-batch; lobby bot-practice tables + Practice-vs-Bots rename + Play Online CTA + declutter + fake-online-count removed; practice-session counter + games_played practice-guard + discoverable bug-report button; **POLISH-1** (onboarding ends in a dealt hand, Play-Online first-tap fix); **REALTIME-JUMP ENABLED** (`PRACTICE_LIVE_ENABLED=true` — 2P practice holds a real realtime seat → 30s synced countdown → jump to MP; monitored, 0 ghost seats); **RESPONSIVE-FIX** (Home Play-button truncation, bug-report FAB moved to an in-flow row, game-screen board-scroll cap, +`screen_width`/`screen_height`/`device_model` on `app_opened`).
+- **KEY LEARNING:** `rs()`/`rf()` called at `StyleSheet.create()` module scope are **FROZEN on web** — they capture the 393 fallback once and never react to the real viewport width. Only `useWindowDimensions()` used *inside a component body* reacts on web. Native is unaffected (device width is captured correctly at launch).
+- **OPEN:**
+  1. **Economy is still problem #1** — last 7d: 66,550 credits / **0 debits**. A rake sink is **not buildable yet** — no settle path exists; every chip outcome is client-attested via `submit_score` absolute writes. Needs the server-computed-amounts refactor first (flagship batch).
+  2. **responsive-fix shipped but NOT verified** on the original narrow-device tester's phone.
+  3. **0 bug reports from 49 testers** — the bug-report button may not be discoverable enough despite shipping.
+- **NEXT (needs owner/testers present, not background work):** verify the narrow-device fix; measure conversion post-responsive-fix; server-computed-amounts + rake refactor.
+
 ## 2026-07-05 — FULL RECAP
 - **Live:** main `353597f`, web bundle `index-10270cc5`, OTA `22f8c09e`, build 506, runtime 2.7.0.
 - **Shipped this session (11 batches):** unified `GameView` (MP renders == SOLO); leave-recovery (52s reconnect window); QA batches A/B/C; UX-1; UX-2; **daily_login leak fix** (110,850 leaked → server-locked: `daily_login` no-op + event whitelist + amount clamp); **Vercel incident** (Wingman project hijacked the domain → renamed `dist` → `caps-poker-web` to reclaim); Dependabot alerts cleared; **S-batch** (COMPLETE bonus curve via `app_config.complete_bonus_pct_by_boards` `{2:25,3:50,4:75}` + skip-board-reveal toggle); **lobby bot-practice tables** (`table_kind`, seeded `current_players=0`, XP-only, `submit_score` delta-clamp +2000/call); **Practice vs Bots rename** + Play Online CTA + home declutter + removed fake "32 online"; **practice-session demo counter** (transient, economy-neutral); **games_played practice-guard** (practice skips `update_leaderboard_elo`); **discoverable bug-report button** (Home 🐛 FAB + Settings→TOOLS row → `bug_reports`, AI-triage trigger).
