@@ -41,7 +41,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
-import { rf, rh, rs, rv } from '../utils/responsive';
+import { rf, rh, rs, rv, rb } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
 import GuidedTooltip from '../components/GuidedTooltip';
@@ -1600,11 +1600,14 @@ const styles = StyleSheet.create({
   floatingBtn: {
     paddingVertical: 0,
     paddingHorizontal: rs(16),
-    height: 48,
-    minHeight: 48,
+    // RESPONSIVE-FIX 2026-07-06 — was a plain hardcoded 48. Switched to rb() (floors at
+    // 44pt, the HIG minimum touch target) rather than rv()/rs() — a naive linear scale
+    // would shrink this below 44pt on narrow screens (rv(48) at 320pt ≈ 39pt).
+    height: rb(48),
+    minHeight: rb(48),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: rv(12),
     ...Platform.select({
       ios: {
         shadowColor: '#000',

@@ -179,9 +179,15 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
 const styles = StyleSheet.create({
   fab: {
     // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 17+").
-    // Drop it into the empty band below the disclaimer (still well clear of the tab bar) so it
-    // never overlaps that text, including on narrower screens where the disclaimer runs wider.
-    position: 'absolute', right: rs(14), bottom: rs(52),
+    // RESPONSIVE-FIX 2026-07-06 — chasing a "bottom" pixel offset that clears the
+    // disclaimer on every device height turned out to be unreliable no matter the value
+    // (the two things scale independently, so a fixed gap that's safe on one height can
+    // collide on another). The robust fix lives in app/(tabs)/index.tsx instead: Home's
+    // scrollable content now reserves paddingBottom equal to this FAB's own footprint, so
+    // the disclaimer (the last scrollable item) can never land underneath it regardless of
+    // device height — this "bottom" only needs to keep the FAB comfortably above the tab
+    // bar, which IS a stable, known-height reference.
+    position: 'absolute', right: rs(14), bottom: rs(20),
     width: rs(44), height: rs(44), borderRadius: rs(22),
     backgroundColor: 'rgba(201,106,26,0.92)', alignItems: 'center', justifyContent: 'center',
     zIndex: 9000, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), shadowOffset: { width: 0, height: rs(2) }, elevation: 6,
