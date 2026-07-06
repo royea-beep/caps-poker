@@ -51,6 +51,7 @@ import { initWebErrorReporter } from '../utils/webErrorReporter';
 import { initDebugger } from '@caps/debugger';
 import { sendCrashToWhatsApp } from '../utils/debug-whatsapp';
 import { CrashBoundary } from '../components/CrashBoundary';
+import { recordGlobalTap, onScreenChanged } from '../utils/frictionSignals';
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -282,6 +283,9 @@ export default function RootLayout() {
 
   // Track screen navigation as breadcrumbs for bug reports
   useEffect(() => { addBreadcrumb(currentPath); }, [currentPath]);
+  // AUTO-LEARN 2026-07-06 — passive friction signals (screen_abandon / stuck_dwell) key
+  // off this same pathname change.
+  useEffect(() => { onScreenChanged(currentPath); }, [currentPath]);
 
   // Crash detection + session init — ORDER MATTERS:
   // checkDirtyShutdown MUST run before initCrashSession (which overwrites CLEAN_EXIT_KEY).
@@ -553,7 +557,17 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-    <RootWrapper style={{ flex: 1, backgroundColor: '#161922' }}>
+    <RootWrapper
+      style={{ flex: 1, backgroundColor: '#161922' }}
+      // AUTO-LEARN 2026-07-06 — passive, non-claiming global touch observer for rage-tap
+      // detection. Returning false means this NEVER becomes the responder — every press,
+      // drag, and gesture elsewhere in the app continues exactly as before; this purely
+      // observes the touch-down coordinates in the capture phase.
+      onStartShouldSetResponderCapture={(evt) => {
+        recordGlobalTap(evt.nativeEvent.pageX, evt.nativeEvent.pageY);
+        return false;
+      }}
+    >
       <StatusBar style="light" />
       <CrashBoundary>
       <BugReporter>

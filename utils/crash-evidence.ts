@@ -287,6 +287,12 @@ export function stopCrashRecording(): void {
 
 // ─── Public API: Tracking ─────────────────────────────────────────────────────
 
+// AUTO-LEARN 2026-07-06 — read-only accessor so error boundaries / friction-signal
+// tracking can tag events with the screen the user was actually on.
+export function getCurrentScreen(): string {
+  return currentScreen
+}
+
 export function setCurrentScreen(screen: string): void {
   if (screen === currentScreen) return
   currentScreen = screen

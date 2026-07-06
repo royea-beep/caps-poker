@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { rv, rf, rs, rb } from '../utils/responsive';
+import { track } from '../utils/analytics';
+import { getCurrentScreen } from '../utils/crash-evidence';
 
 interface Props {
   children: React.ReactNode;
@@ -37,6 +39,11 @@ export class ErrorBoundary extends Component<Props, State> {
     // TASK 3 self-check (temporary): confirm a real stack reached this boundary.
     console.log('[ErrorBoundary] componentStack length:', componentStack?.length ?? 0);
     this.props.onError?.(error);
+    // AUTO-LEARN 2026-07-06 — passive friction signal, distinct from the crash pipelines
+    // below: those write to crash_reports for triage; this is a lightweight analytics_events
+    // row so "how often do boundaries catch, on which screens" shows up in the same
+    // dashboards as rage-tap/abandon/stuck-dwell, without needing to cross-reference tables.
+    track('error_boundary_hit', { message: error.message.slice(0, 200), screen: getCurrentScreen() }, getCurrentScreen());
     // Pipeline A (crash_reports.component_stack) — names the offending component chain.
     try {
       const { generateCrashReport } = require('../utils/crash-evidence');

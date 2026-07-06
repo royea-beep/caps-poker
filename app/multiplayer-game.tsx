@@ -1036,6 +1036,11 @@ function MultiplayerGameScreenInner() {
     if (!allBoardsFull) return;
     if (readySentRef.current) return; // idempotent: don't double-send (race with auto-fill timeout)
     readySentRef.current = true;
+    // AUTO-LEARN 2026-07-06 — multiplayer never tracked cards_placed at all (it has its
+    // own handleReady/startCountdown, entirely separate from game.tsx's, and the event
+    // was only ever wired into the solo/practice screen). Track it here too, guarded by
+    // the same idempotent readySentRef so it fires exactly once per hand per player.
+    track('cards_placed', { mode: 'multiplayer', isHost, numberOfPlayers: playerCount, boardCount }, 'multiplayer-game');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
     setSelectedCardId(null);
