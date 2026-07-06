@@ -1747,13 +1747,23 @@ export default function HomeScreen() {
               ("Invite Friends 🎁"). Full invite + redeem lives on /referral (Play tab). */}
         </View>
 
+        {/* RESPONSIVE-FIX 2026-07-06 — the bug-report entry moved from a floating,
+            absolutely-positioned FAB to an IN-FLOW row here. The FAB (fixed to the screen
+            bottom) and the disclaimer below (positioned by content-flow height) scale from
+            two independent, unrelated edges — no single "bottom" offset could clear the
+            disclaimer at every device height (verified: safe at some real iPhone dimensions,
+            colliding at others, including after two different offset strategies). Rendering
+            it as normal content instead makes overlap structurally impossible — no absolute
+            positioning, no magic number to keep re-tuning. */}
+        <View style={{ marginTop: rs(4), width: '100%' }}>
+          <ReportBugButton variant="row" />
+        </View>
+
         {/* RESPONSIVE-FIX 2026-07-06 — fontSize/margins were hardcoded (fixed px regardless
             of screen width), an Iron Rule violation. This 62-char string wraps to 2 lines on
-            narrow screens since the font never shrinks to compensate — tightened marginTop so
-            a 2-line wrap still clears the floating bug-report FAB below (which also got more
-            clearance, see ReportBugButton.tsx). fontSize floor is still 10 (skill's stated
-            floor for micro labels), so visually unchanged on narrow screens, but no longer
-            grows unbounded-hardcoded on wide ones either. */}
+            narrow screens since the font never shrinks to compensate. fontSize floor is still
+            10 (skill's stated floor for micro labels), so visually unchanged on narrow
+            screens, but no longer grows unbounded-hardcoded on wide ones either. */}
         <Text style={{
           color: '#aaa',
           fontSize: rf(10, 10),
@@ -1863,9 +1873,6 @@ export default function HomeScreen() {
       {/* VAMOS-UNIFY-FINAL 2026-06-28 — LevelUpModal, WeeklyRecapModal, and the
           StarterOfferModal removed per "no in-app popups". Tutorial gate now
           resolves immediately so a new user heads straight into onboarding. */}
-      {/* PRE-TESTER — discoverable floating "Report a bug" affordance (Settings has a row too).
-          POLISH-1 (1a) — hidden during onboarding so it doesn't poke through the tutorial overlay. */}
-      {!showInteractiveTutorial && <ReportBugButton variant="fab" />}
       </SafeAreaView>
   );
 }
@@ -2037,12 +2044,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingHorizontal: rs(20),
     paddingTop: rs(8),
-    // RESPONSIVE-FIX 2026-07-06 — reserves room for the floating bug-report FAB (44pt tall,
-    // 20pt clear of the tab bar) so the disclaimer (the LAST scrollable item) can never end
-    // up underneath it on any device height — the standard fix for "FAB overlaps the end of
-    // scrollable content" (this is what a fixed bottom-offset on the FAB alone couldn't
-    // reliably guarantee, since the two elements scale from opposite, unrelated edges).
-    paddingBottom: rs(76),
+    paddingBottom: rs(24),
     gap: rs(16),
   },
 
