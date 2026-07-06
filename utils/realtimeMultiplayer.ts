@@ -30,6 +30,13 @@ export const WAITING_STATE_TIMEOUT_MS = 60000;
 
 interface PendingDelivery {
   messageType: string;
+  // MP-STABILITY 2026-07-06 — the retry-tracking KEY (messageType, above) and the actual
+  // wire message.type sent to the client can now differ. BOARD_REVEAL needs a per-board
+  // tracking key (e.g. "BOARD_REVEAL_2") so 4 boards' pending deliveries don't collide and
+  // overwrite each other under the SAME messageType — but the wire type must stay the
+  // plain "BOARD_REVEAL" the client already switches on. Defaults to messageType for the
+  // existing CARDS_DEALT/HAND_COMPLETE callers, which don't need the distinction.
+  wireType: string;
   playerId: string;
   handId: number;
   payload: any;
@@ -395,6 +402,13 @@ export class RealtimeServer {
         this.handleDeliveryAck('HAND_COMPLETE', senderId, data);
         break;
       }
+      case 'BOARD_REVEAL_ACK': {
+        const ackBoardIndex = data?.boardIndex;
+        if (typeof ackBoardIndex === 'number') {
+          this.handleDeliveryAck(`BOARD_REVEAL_${ackBoardIndex}`, senderId, data);
+        }
+        break;
+      }
       case 'CHAT': {
         const msg: ChatMsg = { playerName: data?.playerName ?? 'Player', text: data?.text ?? '', timestamp: data?.timestamp ?? Date.now(), seat: data?.seat ?? -1 };
         this.callbacks.onChat?.(msg);
@@ -427,10 +441,11 @@ export class RealtimeServer {
     rtLog('SERVER', `${messageType} ACK received from ${senderId} for handId ${pending.handId}`);
   }
 
-  private trackDelivery(messageType: string, playerId: string, handId: number, payload: any): void {
+  private trackDelivery(messageType: string, playerId: string, handId: number, payload: any, wireType: string = messageType): void {
     const key = deliveryKey(messageType, playerId);
     this.pendingDeliveries.set(key, {
       messageType,
+      wireType,
       playerId,
       handId,
       payload,
@@ -464,7 +479,7 @@ export class RealtimeServer {
         maxRetries: DELIVERY_MAX_RETRIES,
         handId: current.handId,
       });
-      this.sendToPlayer(current.playerId, current.messageType, current.payload);
+      this.sendToPlayer(current.playerId, current.wireType, current.payload);
       this.scheduleRetry(key);
     }, DELIVERY_RETRY_INTERVAL_MS);
   }
@@ -654,7 +669,10 @@ export class RealtimeServer {
     return { boardResults, handResult };
   }
 
-  /** Broadcast board reveal to all players */
+  /** Send board reveal to each guest with per-board ACK tracking (MP-STABILITY 2026-07-06 —
+   * previously a fire-and-forget broadcastToAll with no retry; a single dropped BOARD_REVEAL
+   * over a real network silently produced a blank/tied board for the guest since
+   * buildGuestRevealDataAndNavigate falls back to a placeholder when a board's data is missing). */
   sendBoardReveal(
     boardIndex: number,
     closedCards: Card[],
@@ -669,7 +687,15 @@ export class RealtimeServer {
       winnerIndex,
       winnerName,
     };
-    this.broadcastToAll('BOARD_REVEAL', payload);
+    const fullPayload = { ...payload, handId: this.handId };
+
+    for (const client of this.clients.values()) {
+      if (client.isHost) continue;
+      if (!client.connected) continue;
+      this.sendToPlayer(client.id, 'BOARD_REVEAL', fullPayload);
+      rtLog('SERVER', `BOARD_REVEAL sent to ${client.id}`, { boardIndex, handId: this.handId });
+      this.trackDelivery(`BOARD_REVEAL_${boardIndex}`, client.id, this.handId, fullPayload, 'BOARD_REVEAL');
+    }
   }
 
   /** Send hand complete to each guest with ACK tracking */
@@ -1064,9 +1090,17 @@ export class RealtimeClient {
       case 'ALL_READY':
         this.callbacks.onAllReady?.();
         break;
-      case 'BOARD_REVEAL':
+      case 'BOARD_REVEAL': {
         this.callbacks.onBoardReveal?.(data as BoardRevealPayload);
+        // Always ACK immediately, even if duplicate (MP-STABILITY 2026-07-06 — lets the host's
+        // per-board retry/delivery tracking stop retrying this board once received)
+        const brHandId = data?.handId;
+        const brBoardIndex = data?.boardIndex;
+        if (typeof brHandId === 'number' && typeof brBoardIndex === 'number') {
+          this.send('BOARD_REVEAL_ACK', { handId: brHandId, boardIndex: brBoardIndex });
+        }
         break;
+      }
       case 'ROOM_STATE': {
         const players = data?.players;
         if (Array.isArray(players)) {

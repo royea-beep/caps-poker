@@ -28,7 +28,7 @@ import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { COLORS, setCompleteBonusPctByBoards } from '../constants/gameConfig';
+import { COLORS, setCompleteBonusPctByBoards, setMpBoardRevealEnabled } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
 import { setLanguage, Language, applyHtmlLocale } from '../utils/i18n';
 import * as Updates from 'expo-updates';
@@ -483,6 +483,25 @@ export default function RootLayout() {
           .single();
         if (data?.value) setCompleteBonusPctByBoards(data.value);
       } catch { /* fallback: flat completeBonusPercent */ }
+    })();
+  }, []);
+
+  // SHIP-MP-REVEAL 2026-07-06 — fast remote kill-switch for the MP board-reveal
+  // animation (shipped without a real 2-device confirmation). Any failure here
+  // (row missing, RLS, network) leaves the client default (true) in effect via
+  // isMpBoardRevealEnabled()'s fallback — never blocks app startup.
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data } = await supabase
+          .from('app_config')
+          .select('value')
+          .eq('key', 'mp_board_reveal_enabled')
+          .single();
+        if (typeof data?.value === 'boolean') setMpBoardRevealEnabled(data.value);
+      } catch { /* fallback: client default (true) */ }
     })();
   }, []);
 

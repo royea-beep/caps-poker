@@ -8,7 +8,7 @@ import PlayerHand from '../components/PlayerHand';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FriendsBg } from '../components/FriendsBg';
 import { useGameStore } from '../store/gameStore';
-import { COLORS, Card, CARDS_PER_BOARD, getCardDimensions } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getCardDimensions, isMpBoardRevealEnabled } from '../constants/gameConfig';
 import { getTheme } from '../constants/visualThemes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
@@ -179,8 +179,10 @@ function MultiplayerGameScreenInner() {
   const boardsRef = useRef(boards);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
 
-  // MP-BOARDREVEAL 2026-06-28 — gated reveal state. When config.mpBoardReveal is on,
-  // both host and guest play the same <BoardReveal> SOLO uses before /results.
+  // MP-BOARDREVEAL 2026-06-28, SHIP-MP-REVEAL 2026-07-06 — gated reveal state. When
+  // isMpBoardRevealEnabled() is true (client default true, remotely overridable via
+  // app_config `mp_board_reveal_enabled` — see constants/gameConfig.ts), both host and
+  // guest play the same <BoardReveal> SOLO uses before /results.
   const [showSafeReveal, setShowSafeReveal] = useState(false);
   const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
     winner: 'player' | 'bot' | 'tie';
@@ -412,7 +414,21 @@ function MultiplayerGameScreenInner() {
       },
       onHandComplete: (result: HandCompletePayload) => {
         if (!mountedRef.current) return;
-        buildGuestRevealDataAndNavigate(result);
+        // MP-STABILITY 2026-07-06 (Problem 1) — HAND_COMPLETE is reliably delivered (ACK+retry),
+        // but it can race ahead of one or more of this hand's BOARD_REVEAL messages, which now
+        // carry their own independent ACK+retry and may still be in flight. Give them a bounded
+        // grace period to land before falling back — instead of building immediately and locking
+        // in a blank/tied board for any reveal that simply hadn't arrived yet.
+        const boardsExpected = boardsRef.current.length;
+        const tryBuild = (attemptsLeft: number) => {
+          if (!mountedRef.current) return;
+          if (boardRevealsRef.current.size >= boardsExpected || attemptsLeft <= 0) {
+            buildGuestRevealDataAndNavigate(result);
+            return;
+          }
+          setTimeout(() => tryBuild(attemptsLeft - 1), 150);
+        };
+        tryBuild(10); // ~1.5s max grace for in-flight BOARD_REVEAL retries to land
       },
     });
   }, [isHost, mpClient, playerIndex, playerCount, config, boardCount]);
@@ -621,7 +637,7 @@ function MultiplayerGameScreenInner() {
     // MP-BOARDREVEAL — if the flag is on, play the same <BoardReveal> SOLO plays,
     // THEN navigate to /results in onRevealDone. Otherwise keep the jump-to-results
     // behavior so we can flip off live if 2-player desync feels weird.
-    if (config.mpBoardReveal) {
+    if (isMpBoardRevealEnabled()) {
       setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
       setShowSafeReveal(true);
       return;
@@ -746,7 +762,7 @@ function MultiplayerGameScreenInner() {
     // MP-BOARDREVEAL — guest plays the reveal locally too (BOARD_REVEAL payloads
     // already arrived; boardRevealsRef is populated). Slight finish-time diff
     // between host and guest is fine — both land on the (static) /results.
-    if (config.mpBoardReveal) {
+    if (isMpBoardRevealEnabled()) {
       setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
       setShowSafeReveal(true);
       return;

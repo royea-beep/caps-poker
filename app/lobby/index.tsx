@@ -24,7 +24,7 @@ import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
-import { beginPracticeLive } from '../../utils/practiceLiveSession';
+import { beginPracticeLive, getPracticeLiveState, isPracticeLiveActive, endPracticeLive } from '../../utils/practiceLiveSession';
 import { PRACTICE_LIVE_ENABLED } from '../../constants/featureFlags';
 import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 
@@ -61,6 +61,30 @@ export default function PublicLobby() {
   // Item 3 — real-time liveness so the lobby never looks like a graveyard. Counts live
   // humans currently on the lobby via Supabase presence (always ≥1 once synced — you count).
   const onlineCount = useLobbyPresence();
+
+  // MP-STABILITY 2026-07-06 (Problem 2 follow-up) — game.tsx's back button and results.tsx's
+  // home button no longer auto-evict a held practice-live seat (routing here instead), so this
+  // is now the ONLY explicit "leave table" affordance in the app. practiceLiveSession is a
+  // module-level singleton with no "state changed" event (only countdown/cancelled/jump/ended),
+  // so we poll it rather than subscribe — cheap and simple for a lobby-only banner.
+  const [heldSeatRoom, setHeldSeatRoom] = useState<string | null>(null);
+  const [leavingSeat, setLeavingSeat] = useState(false);
+  useEffect(() => {
+    const poll = () => setHeldSeatRoom(isPracticeLiveActive() ? getPracticeLiveState().roomCode : null);
+    poll();
+    const id = setInterval(poll, 2000);
+    return () => clearInterval(id);
+  }, []);
+  const leaveHeldSeat = useCallback(async () => {
+    if (leavingSeat) return;
+    setLeavingSeat(true);
+    try {
+      await endPracticeLive('user_left_lobby');
+      setHeldSeatRoom(null);
+    } finally {
+      setLeavingSeat(false);
+    }
+  }, [leavingSeat]);
 
   const load = useCallback(async () => {
     const rows = await listPublicTables();
@@ -204,6 +228,23 @@ export default function PublicLobby() {
         <View style={styles.liveRow} accessibilityRole="text" accessibilityLabel={`${onlineCount} players online now`}>
           <View style={styles.liveDot} />
           <Text style={styles.liveText}>{onlineCount} {onlineCount === 1 ? 'player' : 'players'} online now</Text>
+        </View>
+      )}
+
+      {/* Held practice-live seat — the only explicit way to give it up now that back/home
+          route here instead of auto-evicting (MP-STABILITY 2026-07-06). */}
+      {heldSeatRoom && (
+        <View style={styles.heldSeatBanner} accessibilityLiveRegion="polite">
+          <Text style={styles.heldSeatText}>You're holding your seat at table {heldSeatRoom}</Text>
+          <Pressable
+            style={[styles.heldSeatLeaveBtn, leavingSeat && styles.btnDisabled]}
+            disabled={leavingSeat}
+            onPress={leaveHeldSeat}
+            accessibilityRole="button"
+            accessibilityLabel="Leave table"
+          >
+            <Text style={styles.heldSeatLeaveText}>Leave table</Text>
+          </Pressable>
         </View>
       )}
 
@@ -372,4 +413,26 @@ const styles = StyleSheet.create({
     borderRadius: rv(10),
   },
   errorBannerText: { color: '#ef4444', fontSize: rf(12), fontWeight: '700', textAlign: 'center' },
+  heldSeatBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: rs(16),
+    marginBottom: rv(8),
+    paddingVertical: rv(8),
+    paddingHorizontal: rs(12),
+    backgroundColor: 'rgba(79,214,168,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.45)',
+    borderRadius: rv(10),
+  },
+  heldSeatText: { flex: 1, color: '#4FD6A8', fontSize: rf(12), fontWeight: '700' },
+  heldSeatLeaveBtn: {
+    marginLeft: rs(10),
+    paddingVertical: rv(6),
+    paddingHorizontal: rs(12),
+    backgroundColor: 'rgba(239,68,68,0.85)',
+    borderRadius: rv(8),
+  },
+  heldSeatLeaveText: { color: '#FFFEF8', fontSize: rf(12), fontWeight: '700' },
 });
