@@ -16,6 +16,23 @@ export function getCompleteBonusPercent(boardCount: number, fallbackPct: number)
   return typeof remote === 'number' && remote >= 0 ? remote : fallbackPct;
 }
 
+// SHIP-MP-REVEAL 2026-07-06 — fast remote kill-switch. mpBoardReveal is shipping without a
+// real 2-device confirmation (owner accepted the risk); this lets the strategist disable it
+// from app_config (key `mp_board_reveal_enabled`) with no code deploy if the reveal turns out
+// broken on real devices. Same "fetch once in _layout, default to the client const on any
+// failure" pattern as _remoteBonusPctByBoards above — no remote row / fetch failure / RLS
+// issue -> DEFAULT_CONFIG.mpBoardReveal (true) still applies, so this can never regress
+// offline/jest behavior.
+let _remoteMpBoardRevealEnabled: boolean | null = null;
+export function setMpBoardRevealEnabled(value: unknown): void {
+  if (typeof value === 'boolean') {
+    _remoteMpBoardRevealEnabled = value;
+  }
+}
+export function isMpBoardRevealEnabled(): boolean {
+  return _remoteMpBoardRevealEnabled ?? DEFAULT_CONFIG.mpBoardReveal;
+}
+
 export const DEFAULT_CONFIG = {
   arrangementTime: 60,
   boardRevealDuration: 5,
