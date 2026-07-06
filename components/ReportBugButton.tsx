@@ -41,11 +41,11 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
   // OVERLAPPING it on a taller one (bottom pushed the FAB back up into the same band) —
   // confirmed by direct measurement across iPhone SE/12-mini/14/15 dimensions. Anchoring
   // from screenH directly (reactive via useWindowDimensions, correct on native AND web)
-  // targets a stable actual Y position instead: fabTop lands at ~700px regardless of
+  // targets a stable actual Y position instead: fabTop lands at ~756px regardless of
   // device height, comfortably below where the disclaimer naturally ends. Floor of 16
   // keeps a minimum touch margin on very short screens (which now scroll anyway).
   const { height: screenH } = useWindowDimensions();
-  const fabBottomOffset = Math.max(16, Math.round(screenH - 750));
+  const fabBottomOffset = Math.max(16, Math.round(screenH - 800));
 
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
