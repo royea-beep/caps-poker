@@ -8,16 +8,22 @@ import { Platform, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARDS_PER_BOARD, CARD_SCALE, getCardDimensions } from '../constants/gameConfig';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
-import { rh, rs } from '../utils/responsive';
-import { PRD } from '../utils/prdTokens';
+import { rh as rhBase, rs as rsBase } from '../utils/responsive';
 
+// GAME-SCREEN-FIT 2026-07-07 — rh()/rs() (and PRD, which is itself built from them)
+// scale against SCREEN_W/H captured ONCE at module load. On native that's the real
+// device size, but on web utils/responsive.ts falls back to a hardcoded 393x852
+// (documented there: Dimensions.get() at module scope crashes the SPA before the DOM
+// is ready). Telemetry confirms every narrow/short report (320x553, 320x568, 360x640)
+// is platform:web, so every rh()/rs() call in this hook was silently scaling against
+// 393x852 regardless of the real viewport. game.tsx already gets a reactive
+// screenW/screenH via useWindowDimensions() and passes them in as opts — this hook
+// now threads them through every rh()/rs() call via local shadows below instead of
+// the frozen module-level defaults, so a real 320pt-wide/553pt-tall browser viewport
+// actually shrinks the layout instead of computing as if it were 393x852.
 // Layout constants — PR-M aggressive vertical budget (2026-05-29).
 // Top chrome (header + bot bar) collapsed to rh(56); FLOATING_ACTIONS to rs(56).
 // Boards consume everything else so 3p vertical-stack stops clipping board 3.
-const TOP_CHROME_H = PRD.zone.topChromeH;          // rh(56) — PR-M
-const TOP_BAR_H = Math.round(TOP_CHROME_H * 36 / 56);  // ~36/56 = top button row
-const BOT_STATUS_H = Math.round(TOP_CHROME_H * 20 / 56);// ~20/56 = bot pill row
-const FLOATING_ACTIONS_H = PRD.zone.actionBarH;    // rs(56) — PR-M
 const HINT_H = 22;                                  // selectionHint / boardError bar
 const BOARD_CHROME = 28;                            // per-board chrome budget (was 40)
 
@@ -32,6 +38,19 @@ export interface UseGameLayoutOpts {
 export function useGameLayout(opts: UseGameLayoutOpts) {
   const { screenW, screenH: SCREEN_H, insets, boardCount, numberOfPlayers } = opts;
   const isLandscape = false; // S86: portrait-only — Iron Rule 2
+
+  // GAME-SCREEN-FIT 2026-07-07 — shadow the module-level rh/rs with versions bound to
+  // THIS render's real screenW/SCREEN_H (see import comment above). Every rh(N)/rs(N)
+  // call below now resolves through these, not the frozen 393x852 default.
+  const rs = (v: number) => rsBase(v, screenW);
+  const rh = (v: number) => rhBase(v, SCREEN_H);
+
+  // Layout constants — PR-M aggressive vertical budget (2026-05-29). Was PRD.zone.*
+  // (itself frozen at module load); now computed with the reactive rh/rs above.
+  const TOP_CHROME_H = rh(56);                        // PRD.zone.topChromeH
+  const TOP_BAR_H = Math.round(TOP_CHROME_H * 36 / 56);  // ~36/56 = top button row
+  const BOT_STATUS_H = Math.round(TOP_CHROME_H * 20 / 56);// ~20/56 = bot pill row
+  const FLOATING_ACTIONS_H = rs(56);                  // PRD.zone.actionBarH
 
   // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
   // Persisted in AsyncStorage under 'max_board_card_h_dp'. Default rh(70) gives

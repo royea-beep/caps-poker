@@ -16,7 +16,7 @@ import { Badge } from './Badge';
 import HandNameOverlay from './HandNameOverlay';
 import { Card, COLORS, CARDS_PER_BOARD, BOARD_COLORS } from '../constants/gameConfig';
 import { rv } from '../constants/deviceBreakpoints';
-import { rf, rs, SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
+import { rf as rfBase, rs as rsBase, SCREEN_W as MODULE_SCREEN_W, SCREEN_H as MODULE_SCREEN_H } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { OBSIDIAN, OBSIDIAN_GEOM, boardIdentityGlow } from '../constants/obsidianTheme';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,6 +88,15 @@ interface BoardProps {
   // authority for commW (5 community cards) AND slotW (4 placed cards). Identical
   // to the hand's cardW. Cards-big aspect derives commH/slotH from cardW/0.72.
   universalCardW?: number;
+  // GAME-SCREEN-FIT 2026-07-07 — real viewport, threaded from BoardArrangement's
+  // single top-of-tree useWindowDimensions() (game.tsx). Deliberately NOT read via
+  // Board's own useWindowDimensions() call — a 2026-05-22 fix (see below) already
+  // found that recomputing dimensions on every Board render caused BOARD_HEIGHT +
+  // card sizes to drift on focus/keyboard/resize events; a single stable source
+  // threaded down as a prop avoids re-introducing that. Optional so legacy callers
+  // (results, BoardReveal) that omit cellWidth/cellHeight keep the frozen default.
+  screenW?: number;
+  screenH?: number;
 }
 
 function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
@@ -182,12 +191,26 @@ export default function Board({
   contentSafetyPad,
   boardCount,
   universalCardW,
+  screenW: screenWProp,
+  screenH: screenHProp,
 }: BoardProps) {
   // C-fix 2026-05-22: lock dimensions to module-level constants (computed once at app
   // load in utils/responsive.ts). Was useWindowDimensions() — recomputed every render,
   // causing BOARD_HEIGHT + card sizes to drift on any focus/keyboard/resize event.
-  const screenW = MODULE_SCREEN_W;
-  const screenH = MODULE_SCREEN_H;
+  // GAME-SCREEN-FIT 2026-07-07 — that fix traded a real per-render-drift bug for a
+  // real narrow-viewport-on-web bug (this frozen fallback is always 393x852 on web;
+  // telemetry confirms every narrow/short report is platform:web). Fix both: prefer
+  // screenW/screenH threaded down as props from BoardArrangement's single stable
+  // useWindowDimensions() call (game.tsx) — reactive to the true device, but with
+  // only ONE subscription for the whole tree, not one per Board. Falls back to the
+  // frozen module constant for legacy callers (results, BoardReveal) that don't pass
+  // cellWidth/cellHeight and so don't pass these either.
+  const screenW = screenWProp ?? MODULE_SCREEN_W;
+  const screenH = screenHProp ?? MODULE_SCREEN_H;
+  // Shadow the module-level rs/rf so every existing call below resolves against the
+  // real screenW above instead of the frozen 393-baseline default.
+  const rs = (v: number) => rsBase(v, screenW);
+  const rf = (v: number, min?: number, max?: number) => rfBase(v, min, max, screenW);
   // 2026-05-23 zone fix #3: cap at 130px so 4-board games on 320pt devices don't
   // squeeze the player hand to zero. screenH * 0.19 = 162 @ 852, 108 @ 568 — cap
   // bites only on tall devices, leaving 320pt-class layouts unchanged.
@@ -243,13 +266,17 @@ export default function Board({
     // (BOARD pill + Auto-Place + Hebrew ascent + iOS shadow); cards overlapped at
     // bc=2. Fallback rs(22) (was rs(16)) until first onLayout fires.
     const HEADER_H = measuredHeaderH > 0 ? measuredHeaderH + rs(2) : rs(22);
-    const PAD_V = PRD.board.cellPadV; // rs(2) after PR-M
-    const PAD_H = PRD.board.cellPadH; // rs(4) after PR-M
+    // GAME-SCREEN-FIT 2026-07-07 — these were PRD.board.* reads (frozen at module
+    // load, same 393-baseline-on-web issue as elsewhere in this pass). PRD's own
+    // values ARE just rs(2)/rs(4)/rs(2)/rs(3) per utils/prdTokens.ts — inlined here
+    // as direct reactive rs() calls (via the local shadow above) instead.
+    const PAD_V = rs(2); // was PRD.board.cellPadV
+    const PAD_H = rs(4); // was PRD.board.cellPadH
     // PR-O 2026-06-07 Fix 2 — innerW must also subtract:
     //   * container.borderWidth (PRD.board.border) on each side
     //   * BoardArrangement cell wrapper paddingHorizontal (rs(2) each side)
     //   * Roye's breathing room (rs(6) each side) so cards never touch border
-    const BORDER_W = PRD.board.border;       // rs(2)
+    const BORDER_W = rs(2); // was PRD.board.border
     const CELL_WRAPPER_PAD_H = rs(2);        // BoardArrangement cell paddingHorizontal
     // VAMOS-BOARD-FILL-3 2026-06-15 — at bc=2/3 the cells are full-screen-wide (one
     // board per row), so the 5-card row is the natural width bottleneck. Tighten
@@ -282,9 +309,9 @@ export default function Board({
       ? Math.max(20, _rowsBudget - _commBudgetH)
       : _commBudgetH;
     // Community row: 5 cards + 4 gaps + separator + 2*sepMargin
-    const sepW = PRD.board.flopSeparatorW;
+    const sepW = rs(3); // was PRD.board.flopSeparatorW
     const sepMarginH = isLowBoard ? rs(2) : rs(2);
-    const commGap = isLowBoard ? rs(3) : PRD.card.gap;
+    const commGap = rs(3); // was: isLowBoard ? rs(3) : PRD.card.gap — both sides were already rs(3)
     const commWByWidth = Math.max(14, Math.floor((innerW - 4 * commGap - sepW - 2 * sepMarginH) / 5));
     const slotWByWidth = Math.max(14, Math.floor((innerW - 3 * commGap) / 4));
     // VAMOS-CARDS-BIG 2026-06-16 — relaxed strict 0.72 aspect to bounded portrait
@@ -781,7 +808,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   pressableInner: {
-    // PR-D study: board padding rs(6/5).
+    // PR-D study: board padding rsBase(6/5).
     // PR-L Task B — justifyContent now lives on the inner contentCenter wrapper.
     // pressableInner just stacks header + contentCenter; contentCenter is
     // flex:1 + justifyContent:center, so the header stays at top and the
@@ -804,10 +831,10 @@ const styles = StyleSheet.create({
     // vertically centered the rows in the tall innerH at bc=2 and let big cards
     // ride up into the BOARD label / Auto-Place pill band. With flex-start the
     // first row anchors at contentCenter.top = header.bottom + header.marginBottom
-    // (rs(3)) — overlap is now geometrically impossible.
+    // (rsBase(3)) — overlap is now geometrically impossible.
     justifyContent: 'flex-start',
     alignItems: 'center',
-    gap: rs(4),
+    gap: rsBase(4),
     minHeight: 0,
     width: '100%',
     ...(Platform.OS === 'web' ? ({ direction: 'ltr' } as any) : null),
@@ -848,81 +875,81 @@ const styles = StyleSheet.create({
   header: {
     // VAMOS-PLACEMENT-AUDIT 2026-06-16 — restored a small marginBottom (was 0
     // since BOARD-DENSITY 2026-06-09). At bc=2 the tall community cards visually
-    // rode right up under the Auto-Place pill; the rs(3) gap is consumed by the
+    // rode right up under the Auto-Place pill; the rsBase(3) gap is consumed by the
     // measured-HEADER_H sizing math too (header now reports its rendered height
     // including this margin), so it costs nothing in card size while guaranteeing
     // a visible separation strip between header chrome and play surface.
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: rs(3),
+    marginBottom: rsBase(3),
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rs(4),
+    gap: rsBase(4),
     flex: 1,
   },
   boardFullBadge: {
-    width: rs(16),
-    height: rs(16),
-    borderRadius: rs(8),
+    width: rsBase(16),
+    height: rsBase(16),
+    borderRadius: rsBase(8),
     backgroundColor: '#28A745',
     justifyContent: 'center',
     alignItems: 'center',
   },
   boardFullText: {
     color: '#fff',
-    fontSize: rf(9),
+    fontSize: rfBase(9),
     fontWeight: '900',
   },
   boardLabel: {
     // VAMOS-VISUAL-C — minimal chip: thin identity-color border + identity-color text on dark
     // (color + borderColor are overridden inline to the per-board accent).
     color: '#ffffff',
-    fontSize: rf(10),
+    fontSize: rfBase(10),
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.20)',
-    paddingHorizontal: rs(7),
-    paddingVertical: rs(1),
+    paddingHorizontal: rsBase(7),
+    paddingVertical: rsBase(1),
     borderRadius: OBSIDIAN_GEOM.tabRadius,
     overflow: 'hidden',
   },
   rowLabel: {
     color: COLORS.textDim,
-    fontSize: rf(7),
+    fontSize: rfBase(7),
     fontWeight: '700',
     letterSpacing: 0.5,
-    width: rs(20),
+    width: rsBase(20),
     textAlign: 'center',
   },
   potArea: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rs(4),
+    gap: rsBase(4),
   },
   potRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rs(4),
+    gap: rsBase(4),
   },
   potLabel: {
     color: COLORS.gold,
-    fontSize: rf(10),
+    fontSize: rfBase(10),
     fontWeight: '700',
   },
   potDot: {
-    width: rs(8),
-    height: rs(8),
-    borderRadius: rs(4),
+    width: rsBase(8),
+    height: rsBase(8),
+    borderRadius: rsBase(4),
     backgroundColor: COLORS.gold,
   },
   floatingChips: {
-    fontSize: rf(11),
+    fontSize: rfBase(11),
     fontWeight: '800',
     position: 'absolute',
     right: -4,
@@ -943,7 +970,7 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: PRD.card.gap,
     paddingVertical: 0,
-    paddingHorizontal: rs(6),
+    paddingHorizontal: rsBase(6),
   },
   communitySeparator: {
     // VAMOS-BOARD-FILL 2026-06-15 — strengthened: 1.5 → 2 width, 0.68 → 0.80 opacity,
@@ -952,23 +979,23 @@ const styles = StyleSheet.create({
     height: '60%',
     backgroundColor: OBSIDIAN.mint,
     opacity: 0.80,
-    marginHorizontal: rs(5),
+    marginHorizontal: rsBase(5),
     alignSelf: 'center',
     borderRadius: 1,
   },
   communityLabelWrap: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(201,168,76,0.12)',
-    paddingHorizontal: rs(8),
-    paddingVertical: rs(2),
-    borderRadius: rs(6),
+    paddingHorizontal: rsBase(8),
+    paddingVertical: rsBase(2),
+    borderRadius: rsBase(6),
     borderWidth: 0.5,
     borderColor: '#c9a84c',
-    marginBottom: rs(3),
-    marginLeft: rs(2),
+    marginBottom: rsBase(3),
+    marginLeft: rsBase(2),
   },
   communityLabelText: {
-    fontSize: rf(8),
+    fontSize: rfBase(8),
     fontWeight: '800',
     letterSpacing: 2,
     color: '#c9a84c',
@@ -987,13 +1014,13 @@ const styles = StyleSheet.create({
   dropTarget: {
     // VAMOS-VISUAL-C — when a hand card is selected, slot brightens to solid mint
     borderColor: OBSIDIAN.slotDashActive,
-    borderWidth: rs(1.5),
+    borderWidth: rsBase(1.5),
     borderStyle: 'solid',
     backgroundColor: OBSIDIAN.mintGhost,
   },
   plusText: {
     color: '#c8a84b55',
-    fontSize: rf(10),
+    fontSize: rfBase(10),
     fontWeight: '700',
   },
   communityCardWrap: {
@@ -1003,35 +1030,35 @@ const styles = StyleSheet.create({
     // PR-D study: face-down community cards = opacity 0.5 + dark bg
     opacity: 0.5,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: rs(4),
+    borderRadius: rsBase(4),
   },
   cardLabel: {
-    fontSize: rf(9),
+    fontSize: rfBase(9),
     color: COLORS.textMuted,
     textAlign: 'center',
-    marginTop: rs(2),
+    marginTop: rsBase(2),
     letterSpacing: 0.5,
     opacity: 0.7,
   },
   botTooltip: {
     position: 'absolute',
-    top: -rs(22),
+    top: -rsBase(22),
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0,0,0,0.8)',
-    borderRadius: rs(6),
-    paddingHorizontal: rs(6),
-    paddingVertical: rs(3),
+    borderRadius: rsBase(6),
+    paddingHorizontal: rsBase(6),
+    paddingVertical: rsBase(3),
     alignItems: 'center',
   },
   botTooltipText: {
     color: '#fff',
-    fontSize: rf(9),
+    fontSize: rfBase(9),
     fontWeight: '600',
   },
   handName: {
     color: COLORS.textMuted,
-    fontSize: rf(8),
+    fontSize: rfBase(8),
     fontWeight: '600',
   },
   // PR-L Task D — let the rank text shrink within the header row.
@@ -1046,31 +1073,31 @@ const styles = StyleSheet.create({
   hintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: rs(4),
+    marginLeft: rsBase(4),
     flexWrap: 'wrap',
-    gap: rs(2),
-    minHeight: rs(44),
-    paddingVertical: rs(4),
+    gap: rsBase(2),
+    minHeight: rsBase(44),
+    paddingVertical: rsBase(4),
   },
   hintText: {
     color: COLORS.textMuted,
-    fontSize: rf(12),
+    fontSize: rfBase(12),
     fontWeight: '600',
   },
   hintInfoBtn: {
-    paddingHorizontal: rs(2),
+    paddingHorizontal: rsBase(2),
   },
   hintInfoIcon: {
     color: 'rgba(201,168,76,0.7)',
-    fontSize: rf(8),
+    fontSize: rfBase(8),
     fontWeight: '700',
   },
   hintExplText: {
     color: 'rgba(255,255,255,0.75)',
-    fontSize: rf(7),
+    fontSize: rfBase(7),
     fontWeight: '400',
     fontStyle: 'italic',
-    marginLeft: rs(2),
+    marginLeft: rsBase(2),
     flexShrink: 1,
   },
   winnerBadge: {
@@ -1081,7 +1108,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: rs(5),
+    paddingVertical: rsBase(5),
     borderBottomLeftRadius: OBSIDIAN_GEOM.boardRadius - 1,
     borderBottomRightRadius: OBSIDIAN_GEOM.boardRadius - 1,
     borderTopWidth: 1,
@@ -1112,13 +1139,13 @@ const styles = StyleSheet.create({
     // VAMOS-VISUAL-C-FINISH — dark ink on green/red/mint stays high-contrast and
     // matches the obsidian palette (no gold text).
     color: OBSIDIAN.cardInk,
-    fontSize: rf(11),
+    fontSize: rfBase(11),
     fontWeight: '900',
     letterSpacing: 2,
   },
   bannerHandName: {
     color: OBSIDIAN.cardInk,
-    fontSize: rf(8),
+    fontSize: rfBase(8),
     fontWeight: '700',
     letterSpacing: 0.5,
     opacity: 0.85,
@@ -1126,13 +1153,13 @@ const styles = StyleSheet.create({
   autoBtn: {
     // VAMOS-VISUAL-C — quiet chip with mint bolt. Layout/minHeight/hitSlop unchanged
     // so tap target stays >= 44pt HIG via the Pressable's hitSlop on the call site.
-    maxWidth: rs(105),
+    maxWidth: rsBase(105),
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: rs(3),
-    paddingHorizontal: rs(6),
-    paddingVertical: rs(1),
-    minHeight: rs(14),
+    gap: rsBase(3),
+    paddingHorizontal: rsBase(6),
+    paddingVertical: rsBase(1),
+    minHeight: rsBase(14),
     justifyContent: 'center' as const,
     borderRadius: OBSIDIAN_GEOM.tabRadius,
     backgroundColor: OBSIDIAN.autoBg,
@@ -1143,14 +1170,14 @@ const styles = StyleSheet.create({
   },
   autoBtnText: {
     color: OBSIDIAN.autoText,
-    fontSize: rf(7),
+    fontSize: rfBase(7),
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   autoBtnBolt: {
     color: OBSIDIAN.autoBolt,
-    fontSize: rf(8),
+    fontSize: rfBase(8),
     fontWeight: '900',
-    lineHeight: rf(10),
+    lineHeight: rfBase(10),
   },
 });

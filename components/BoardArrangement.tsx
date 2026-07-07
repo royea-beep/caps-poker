@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
 import Board from './Board';
@@ -7,7 +7,7 @@ import PlayerHand from './PlayerHand';
 import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS, getCompleteBonusPercent } from '../constants/gameConfig';
-import { rf, rs, rb, rv } from '../utils/responsive';
+import { rf as rfBase, rs as rsBase, rb as rbBase, rv as rvBase } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
 // PR-K v7 — Module-top side-effect and nativeID/dataSet/inline styles ALL
@@ -121,6 +121,24 @@ export function BoardArrangement({
   universalCardW,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
+  // GAME-SCREEN-FIT 2026-07-07 — screenW is already a reactive prop from game.tsx;
+  // screenH isn't passed down today, and Board needs it for its own rh()-equivalent
+  // math. Adding one more useWindowDimensions() subscription here (BoardArrangement
+  // renders once per game screen, not once per Board) is cheap and keeps game.tsx as
+  // the only OTHER place already doing this — no change to game.tsx needed.
+  const { height: screenH } = useWindowDimensions();
+
+  // GAME-SCREEN-FIT 2026-07-07 — rf/rs/rb/rv scale against SCREEN_W frozen at module
+  // load (393 on web, since Dimensions.get() at module scope crashes the SPA before
+  // the DOM is ready — see utils/responsive.ts). Telemetry shows every narrow/short
+  // report (320x553, 320x568, 360x640) is platform:web, so these were silently
+  // computing against 393pt regardless of the real viewport. screenW is already a
+  // reactive prop (game.tsx's useWindowDimensions()); shadow the imports so every
+  // existing rs()/rf()/rb()/rv() call below becomes reactive with no other changes.
+  const rs = (v: number) => rsBase(v, screenW);
+  const rf = (v: number, min?: number, max?: number) => rfBase(v, min, max, screenW);
+  const rb = (v: number) => rbBase(v, screenW);
+  const rv = (v: number) => rvBase(v, screenW);
 
   return (
     <>
@@ -188,8 +206,8 @@ export function BoardArrangement({
               flexDirection: 'column',
               alignItems: 'stretch',
               justifyContent: 'center',
-              paddingHorizontal: PRD.board.cellPadH,
-              paddingVertical: PRD.board.cellPadV,
+              paddingHorizontal: rs(4),
+              paddingVertical: rs(2),
             },
             !isWeb && { paddingTop: insets.top * 0.5 + rs(4) },
           ]}
@@ -257,6 +275,12 @@ export function BoardArrangement({
                   boardCount={boardCount}
                   /* VAMOS-UNIFY-CARD-SIZE 2026-06-17 — universal CARD_W from game.tsx */
                   universalCardW={universalCardW}
+                  /* GAME-SCREEN-FIT 2026-07-07 — real viewport, single source at the top of
+                     the tree (game.tsx's useWindowDimensions()), threaded down so Board's
+                     internal rs()/rf() budgets react to the true device instead of the
+                     frozen 393x852-on-web default. */
+                  screenW={screenW}
+                  screenH={screenH}
                 />
               </Animated.View>
             </View>
@@ -367,7 +391,7 @@ export function BoardArrangement({
         <View
           style={[
             baStyles.winAllBanner,
-            { bottom: insets.bottom + PRD.zone.actionBarH + rs(4) },
+            { bottom: insets.bottom + rs(56) + rs(4) },
           ]}
           pointerEvents="none"
         >
@@ -387,7 +411,7 @@ export function BoardArrangement({
           (above the action bar), shown only while boards still have empty slots. */}
       {isArranging && !allBoardsFull && onAutoFillAll && (
         <View
-          style={[baStyles.autoAllBar, { bottom: insets.bottom + PRD.zone.actionBarH + rs(4) }]}
+          style={[baStyles.autoAllBar, { bottom: insets.bottom + rs(56) + rs(4) }]}
           pointerEvents="box-none"
         >
           <Pressable
@@ -431,12 +455,12 @@ const baStyles = StyleSheet.create({
   boardsColumn: {
     flex: 1,
     flexDirection: 'column',
-    paddingHorizontal: rs(16),
-    gap: rs(4),
+    paddingHorizontal: rsBase(16),
+    gap: rsBase(4),
   },
   handZone: {
     // PR-D study: explicit hand-zone height + gold hairline above with horizontal
-    // margin (rs(12)) so the separator reads as a divider, not a full border.
+    // margin (rsBase(12)) so the separator reads as a divider, not a full border.
     height: HAND_ZONE_HEIGHT,
     borderTopWidth: 1,
     borderTopColor: COLORS.gold,
@@ -446,7 +470,7 @@ const baStyles = StyleSheet.create({
     // PR-D study: 2x2 grid. NOTE: do NOT use container `gap` with `width: '50%'`
     // cells — RN computes 50% relative to content box, then adds gap, so total
     // becomes 100% + gap and the row wraps. Instead, each cell carries
-    // padding = rs(3) and adjacent cells produce a visible gutter of rs(6).
+    // padding = rsBase(3) and adjacent cells produce a visible gutter of rsBase(6).
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'stretch',
@@ -462,73 +486,73 @@ const baStyles = StyleSheet.create({
     flex: 1,
   },
   boardCellHalf: {
-    // PR-D study: 2x2 cells. Each cell takes exactly 50% width; the rs(3)
-    // padding on each side produces the rs(6) gutter to the sibling cell.
+    // PR-D study: 2x2 cells. Each cell takes exactly 50% width; the rsBase(3)
+    // padding on each side produces the rsBase(6) gutter to the sibling cell.
     // PR-K: dropped minHeight floor so cell can shrink on small phones when
     // boardCount >= 4 needs 2 rows. height is set inline via boardCount check
     // (see boards.map above). overflow: hidden so Board content that's too tall
     // for the shrunken cell clips visually instead of pushing the layout.
     width: '50%',
-    paddingHorizontal: rs(3),
-    paddingVertical: rs(3),
+    paddingHorizontal: rsBase(3),
+    paddingVertical: rsBase(3),
     overflow: 'hidden',
   },
   boardCellThird: {
     width: '33.333%',
     minHeight: PRD.board.cellHCap,
-    paddingHorizontal: rs(3),
-    paddingVertical: rs(3),
+    paddingHorizontal: rsBase(3),
+    paddingVertical: rsBase(3),
   },
   selectionHint: {
     textAlign: 'center',
     color: COLORS.gold,
-    fontSize: rf(12),
+    fontSize: rfBase(12),
     fontWeight: '700',
     letterSpacing: 0.5,
-    paddingVertical: rs(4),
+    paddingVertical: rsBase(4),
   },
   firstTimeHint: {
     backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: rs(4),
-    paddingHorizontal: rs(12),
+    paddingVertical: rsBase(4),
+    paddingHorizontal: rsBase(12),
     alignItems: 'center',
-    marginHorizontal: rs(4),
-    borderRadius: rv(8),
+    marginHorizontal: rsBase(4),
+    borderRadius: rvBase(8),
   },
   firstTimeHintText: {
     color: '#FFFFFF',
-    fontSize: rf(12),
+    fontSize: rfBase(12),
     fontWeight: '500',
     textAlign: 'center',
   },
   boardErrorText: {
     textAlign: 'center',
     color: COLORS.neonRed,
-    fontSize: rf(12),
+    fontSize: rfBase(12),
     fontWeight: '700',
     letterSpacing: 0.5,
-    paddingVertical: rs(4),
+    paddingVertical: rsBase(4),
   },
   timeBankBtn: {
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.6)',
     borderWidth: 1,
     borderColor: COLORS.gold,
-    borderRadius: rv(16),
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(5),
-    marginBottom: rs(2),
+    borderRadius: rvBase(16),
+    paddingHorizontal: rsBase(16),
+    paddingVertical: rsBase(5),
+    marginBottom: rsBase(2),
   },
   timeBankText: {
     color: COLORS.gold,
-    fontSize: rf(12),
+    fontSize: rfBase(12),
     fontWeight: '800',
     letterSpacing: 1,
   },
   winAllHint: {
     textAlign: 'center',
     color: COLORS.goldBright,
-    fontSize: rf(11),
+    fontSize: rfBase(11),
     fontWeight: '700',
     letterSpacing: 0.5,
     opacity: 0.95,
@@ -539,8 +563,8 @@ const baStyles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingHorizontal: rs(16),
-    paddingVertical: rs(2),
+    paddingHorizontal: rsBase(16),
+    paddingVertical: rsBase(2),
     zIndex: 99, // below the action bar (100) so the bar's border still shows
   },
   floatingActions: {
@@ -551,9 +575,9 @@ const baStyles = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: rs(12),
-    paddingHorizontal: rs(20),
-    paddingVertical: rs(10),
+    gap: rsBase(12),
+    paddingHorizontal: rsBase(20),
+    paddingVertical: rsBase(10),
     minHeight: PRD.zone.actionBarH,
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
@@ -562,12 +586,12 @@ const baStyles = StyleSheet.create({
     elevation: 12,
   },
   floatingBtn: {
-    paddingVertical: rs(14),
-    paddingHorizontal: rs(28),
-    minHeight: rs(52),
+    paddingVertical: rsBase(14),
+    paddingHorizontal: rsBase(28),
+    minHeight: rsBase(52),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: rb(12),
+    borderRadius: rbBase(12),
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -628,7 +652,7 @@ const baStyles = StyleSheet.create({
   },
   floatingBtnText: {
     color: COLORS.textPrimary,
-    fontSize: rf(16),
+    fontSize: rfBase(16),
     fontWeight: '800',
     letterSpacing: 2,
     textAlign: 'center',
@@ -649,19 +673,19 @@ const baStyles = StyleSheet.create({
     backgroundColor: 'rgba(79,214,168,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(79,214,168,0.45)',
-    borderRadius: rs(20),
-    paddingVertical: rs(7),
-    paddingHorizontal: rs(16),
+    borderRadius: rsBase(20),
+    paddingVertical: rsBase(7),
+    paddingHorizontal: rsBase(16),
   },
   autoAllText: {
     color: COLORS.mint,
-    fontSize: rf(13),
+    fontSize: rfBase(13),
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   autoAllBolt: {
     color: COLORS.mint,
-    fontSize: rf(13),
+    fontSize: rfBase(13),
   },
   undoBtnText: {
     // VAMOS-PLACEMENT-POLISH-2 FIX 2 — gold #F5C842 → mint
@@ -672,12 +696,12 @@ const baStyles = StyleSheet.create({
   },
   continueBtn: {
     position: 'absolute',
-    bottom: rs(100),
+    bottom: rsBase(100),
     alignSelf: 'center',
     backgroundColor: COLORS.gold,
-    paddingVertical: rs(14),
-    paddingHorizontal: rs(40),
-    borderRadius: rv(24),
+    paddingVertical: rsBase(14),
+    paddingHorizontal: rsBase(40),
+    borderRadius: rvBase(24),
     ...Platform.select({
       ios: {
         shadowColor: COLORS.gold,
@@ -691,7 +715,7 @@ const baStyles = StyleSheet.create({
   },
   continueBtnText: {
     color: COLORS.background,
-    fontSize: rf(16),
+    fontSize: rfBase(16),
     fontWeight: '900',
     letterSpacing: 2,
   },
