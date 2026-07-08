@@ -258,9 +258,12 @@ export default function Board({
   let slotH: number;
   let slotW: number;
   if (cellWidth && cellHeight) {
-    // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)ârs(16). The actual rendered
-    // header strip is max(boardLabel ~12dp, autoBtn minHeight rs(14)) = ~14dp, plus
-    // a 2dp safety. HIG 44pt tap target maintained via hitSlop on autoBtn.
+    // BOARD-DENSITY 2026-06-09 — shrink HEADER_H rs(20)->rs(16). The actual rendered
+    // header strip height is now driven by measuredHeaderH (onHeaderLayout) below, not
+    // a static estimate — NATIVE-LAYOUT-FIX 2026-07-08 bumped autoBtn's own minHeight
+    // 14->18 for touch-target compliance (see autoBtn style), so the real measured
+    // value is correspondingly a bit taller than the historical ~14dp this comment
+    // used to describe. HIG 44pt tap target maintained via hitSlop on autoBtn.
     // VAMOS-CARDS-FIX 2026-06-16 — HEADER_H is MEASURED via onHeaderLayout when
     // available. Old rs(16) constant under-counted real rendered header on device
     // (BOARD pill + Auto-Place + Hebrew ascent + iOS shadow); cards overlapped at
@@ -558,7 +561,7 @@ export default function Board({
         <View style={styles.header} onLayout={onHeaderLayout}>
           <View style={styles.headerLeft}>
             {/* VAMOS-VISUAL-C — minimal chip tab: thin identity-color border + identity-color text on dark, not a filled gold pill */}
-            <Text style={[styles.boardLabel, { color: boardAccent, borderColor: boardAccent }]}>{t().boardLabel(index + 1)}</Text>
+            <Text style={[styles.boardLabel, { color: boardAccent, borderColor: boardAccent }]} allowFontScaling={false}>{t().boardLabel(index + 1)}</Text>
             {isArrangement && boardFull && (
               <View style={styles.boardFullBadge}>
                 <Text style={styles.boardFullText}>✓</Text>
@@ -592,14 +595,21 @@ export default function Board({
             <Pressable
               style={styles.autoBtn}
               onPress={onAutoFill}
-              hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+              // NATIVE-LAYOUT-FIX 2026-07-08 — widened from {10,10} so the tap target
+              // clears 44pt even at autoBtn's minWidth:20 floor (20+15+15=50), without
+              // growing the chip's own measured height/width (see autoBtn style comment).
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
               {/* VAMOS-VISUAL-C — mint bolt prefix for the quiet Auto-Place chip */}
               {/* VAMOS-FULL-POLISH B1 — i18n autoPlace already prefixes "⚡ ", so strip it
                   at the call site to keep ONE styled mint bolt (not ⚡⚡). Translators keep
                   the bolt in their string for non-CAPS surfaces; CAPS Board styles it. */}
-              <Text style={styles.autoBtnBolt}>{'⚡'}</Text>
-              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{t().autoPlace.replace(/^\s*⚡\s*/, '')}</Text>
+              <Text style={styles.autoBtnBolt} allowFontScaling={false}>{'⚡'}</Text>
+              {/* NATIVE-LAYOUT-FIX 2026-07-08 — minimumFontScale bumped 0.5->0.82: at the
+                  new 11pt base, 0.5 could still shrink to 5.5pt for long translated
+                  strings, defeating the floor. 0.82 keeps the effective floor ~9pt while
+                  still allowing some shrink so long text doesn't clip the 105pt chip. */}
+              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} allowFontScaling={false}>{t().autoPlace.replace(/^\s*⚡\s*/, '')}</Text>
             </Pressable>
           ) : (
             <View style={styles.potArea}>
@@ -906,8 +916,11 @@ const styles = StyleSheet.create({
   boardLabel: {
     // VAMOS-VISUAL-C — minimal chip: thin identity-color border + identity-color text on dark
     // (color + borderColor are overridden inline to the per-board accent).
+    // NATIVE-LAYOUT-FIX 2026-07-08 — rfBase(10) with no explicit min/max clamps to
+    // [7.5, 12.5]; on a narrow device this could render well under the 11pt readability
+    // floor. Explicit min=11 enforces the floor regardless of screenW.
     color: '#ffffff',
-    fontSize: rfBase(10),
+    fontSize: rfBase(10, 11),
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
@@ -1151,15 +1164,28 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   autoBtn: {
-    // VAMOS-VISUAL-C — quiet chip with mint bolt. Layout/minHeight/hitSlop unchanged
-    // so tap target stays >= 44pt HIG via the Pressable's hitSlop on the call site.
+    // VAMOS-VISUAL-C — quiet chip with mint bolt.
+    // NATIVE-LAYOUT-FIX 2026-07-08 — the OLD minHeight (rsBase(14)) relied ENTIRELY on
+    // the Pressable's vertical hitSlop (top/bottom 15) to reach the 44pt HIG floor
+    // (14+15+15=44, exactly AT the boundary with zero margin), and had no minWidth at
+    // all — for short/narrow translated labels the horizontal tap target (contentW +
+    // hitSlop left/right 10+10) could fall under 44pt. Deliberately did NOT bump the
+    // VISUAL minHeight/minWidth to 44 here: this chip sits inside the per-board header
+    // row, and its rendered height feeds directly into onHeaderLayout's measuredHeaderH
+    // -> HEADER_H -> innerH (see the cellWidth&&cellHeight branch above) — a 44pt-tall
+    // visual chip would grow every board's header by ~25-30pt, eating exactly the
+    // vertical room GAME-SCREEN-FIT/NATIVE-LAYOUT-FIX are trying to protect on
+    // short/narrow screens. Kept the chip visually tiny; widened hitSlop instead so the
+    // full 44x44 target is achieved via the (correctly HIG-sanctioned) invisible tap
+    // area, not by growing the measured layout.
+    minWidth: 20,
     maxWidth: rsBase(105),
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: rsBase(3),
     paddingHorizontal: rsBase(6),
     paddingVertical: rsBase(1),
-    minHeight: rsBase(14),
+    minHeight: 18,
     justifyContent: 'center' as const,
     borderRadius: OBSIDIAN_GEOM.tabRadius,
     backgroundColor: OBSIDIAN.autoBg,
@@ -1169,15 +1195,21 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   autoBtnText: {
+    // NATIVE-LAYOUT-FIX 2026-07-08 — was rfBase(7), clamping to [5.25, 8.75] with NO
+    // explicit min/max: well under the 11pt readability floor (this is the exact "7px
+    // glyph" the task calls out). Hard 11pt floor, not scaled by rfBase, matching how
+    // the 44pt touch target above is also a hard (non-scaled) floor.
     color: OBSIDIAN.autoText,
-    fontSize: rfBase(7),
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   autoBtnBolt: {
+    // NATIVE-LAYOUT-FIX 2026-07-08 — was rfBase(8); bumped to match autoBtnText's new
+    // 11pt floor so the bolt glyph doesn't look tiny next to the now-larger label.
     color: OBSIDIAN.autoBolt,
-    fontSize: rfBase(8),
+    fontSize: 11,
     fontWeight: '900',
-    lineHeight: rfBase(10),
+    lineHeight: 13,
   },
 });
