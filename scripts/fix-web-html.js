@@ -35,6 +35,26 @@ html = html.replace(
   '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />'
 );
 
+// 2b. WEB-MOBILE-LAYOUT 2026-07-08 — the html/body/#root { height:100% } reset (Expo
+// Router's own ScrollViewStyleReset, baked into every export) matches mobile Safari's
+// classic `100vh` footgun: on iOS Safari, a bare height:100%/100vh is measured against
+// the LARGEST possible viewport (URL bar collapsed), not the one that's actually visible.
+// While the URL bar is showing (page load, after scrolling up) the real visible area is
+// shorter than what 100% resolved to, so content sized against that box — the boards
+// ScrollView's available height, anything anchored near the bottom — renders as if there's
+// more room than is actually on screen. This is invisible in a desktop-resized browser or
+// an iframe (neither has a collapsing toolbar), which is exactly why earlier passes at
+// this bug (tested via iframe/panel) concluded web was clean. `dvh` is the CSS unit the
+// spec added specifically for this: it tracks the CURRENT toolbar state live, supported in
+// Safari since 15.4 (Mar 2022). Note: web.output is "single" (SPA) in app.json, so
+// Expo Router's app/+html.tsx static-rendering hook does NOT apply here (confirmed: adding
+// one had zero effect on the exported HTML) — this post-export string patch is the correct
+// mechanism for this project, same reasoning as every other patch in this script.
+html = html.replace(
+  /<style id="expo-reset">([\s\S]*?)<\/style>/,
+  (match, css) => `<style id="expo-reset">${css}    /* WEB-MOBILE-LAYOUT 2026-07-08 — dvh overrides height:100% above where supported (mobile Safari toolbar-aware); silently ignored as an invalid value on browsers that don't understand dvh, leaving the 100% fallback in effect there. */\n    html, body, #root { height: 100dvh; }\n  </style>`
+);
+
 // 3. Add iOS Safari meta tags
 if (!html.includes('apple-mobile-web-app-capable')) {
   html = html.replace(
@@ -52,7 +72,7 @@ if (!html.includes('window.onerror')) {
 }
 
 fs.writeFileSync(htmlPath, html);
-console.log('✓ index.html patched (type="module", error handler)');
+console.log('✓ index.html patched (type="module", error handler, dvh viewport fix)');
 
 // 3. Write vercel.json for SPA routing
 const vercelJson = JSON.stringify({ rewrites: [{ source: "/privacy.html", destination: "/privacy.html" }, { source: "/(.*)", destination: "/index.html" }] });

@@ -9,7 +9,7 @@
 //   - `chrome`     : per-screen extras after BoardReveal (SOLO tooltips/toasts;
 //                    MP connection/chat) — already wired by each caller.
 // and in the per-screen callbacks they pass through to BoardArrangement.
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -19,7 +19,7 @@ import BoardReveal from './BoardReveal';
 import { TimerBar } from './TimerController';
 import { BoardState } from '../utils/gameLogic';
 import { Card, COLORS } from '../constants/gameConfig';
-import { rf, rs, rv } from '../utils/responsive';
+import { rf as rfBase, rs as rsBase, rv as rvBase } from '../utils/responsive';
 
 // The per-mode sizing the SOLO fit-search (useGameLayout) produces. GameView maps
 // these onto the BoardArrangement props exactly as game.tsx did inline.
@@ -165,6 +165,14 @@ export function GameView({
   onContinue,
   reveal,
 }: GameViewProps) {
+  // GAME-SCREEN-FIT / NATIVE-LAYOUT-FIX — shadow rs/rf/rv bound to the real reactive
+  // screenW (see makeStyles comment above); rv/rs/rf all scale by width, not height, so
+  // no useWindowDimensions() call is needed here beyond the screenW already passed in.
+  const rs = (v: number) => rsBase(v, screenW);
+  const rf = (v: number, min?: number, max?: number) => rfBase(v, min, max, screenW);
+  const rv = (v: number) => rvBase(v, screenW);
+  const styles = useMemo(() => makeStyles(rs, rf, rv), [screenW]);
+
   return (
     <SafeAreaView
       style={[
@@ -273,60 +281,72 @@ export function GameView({
 
 // Shared topBar / status-strip styles, copied VERBATIM from SOLO (game.tsx). Inner
 // status content keeps its own per-screen styles via the slots.
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: rs(12),
-    paddingVertical: rs(4),
-    zIndex: 10,
-  },
-  backButton: {
-    width: rs(36),
-    height: rs(36),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 18,
-    ...Platform.select({ web: { cursor: 'pointer' } as any }),
-  },
-  backText: {
-    color: COLORS.textSecondary,
-    fontSize: rf(16),
-    fontWeight: '600',
-  },
-  topCenter: {
-    alignItems: 'center',
-  },
-  headerChips: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(4),
-    backgroundColor: 'rgba(79,214,168,0.12)',
-    borderRadius: rv(12),
-    paddingVertical: rs(4),
-    paddingHorizontal: rs(10),
-    borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.25)',
-  },
-  headerChipsEmoji: {
-    fontSize: rf(14),
-    lineHeight: rf(18),
-  },
-  headerChipsAmount: {
-    color: COLORS.mint,
-    fontSize: rf(14),
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  botSection: {
-    paddingVertical: rs(4),
-    paddingHorizontal: rs(12),
-    zIndex: 10,
-  },
-});
+// GAME-SCREEN-FIT / NATIVE-LAYOUT-FIX 2026-07-07/08 — this was a plain StyleSheet.create
+// object, so every rs()/rf()/rv() call inside it resolved against the frozen module-load
+// SCREEN_W (393 fallback on web; on native, whatever width Dimensions.get() reported the
+// instant this module first loaded — never updates on iPad Split View / Slide Over resize,
+// or if the app launches mid-transition before its final size settles). This is the actual
+// live render path for the game screen's header (app/game.tsx's own SafeAreaView/topBar is
+// dead code — isLandscape is hardcoded false, so it always renders <GameView> instead).
+// Converted to a function of the reactive screenW (already a prop, sourced from game.tsx's
+// useWindowDimensions()) built once per render via useMemo, so header sizing reacts to the
+// real device instead of whatever the frozen snapshot happened to capture at launch.
+function makeStyles(rs: (v: number) => number, rf: (v: number, min?: number, max?: number) => number, rv: (v: number) => number) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: COLORS.background,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: rs(12),
+      paddingVertical: rs(4),
+      zIndex: 10,
+    },
+    backButton: {
+      width: rs(36),
+      height: rs(36),
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.08)',
+      borderRadius: 18,
+      ...Platform.select({ web: { cursor: 'pointer' } as any }),
+    },
+    backText: {
+      color: COLORS.textSecondary,
+      fontSize: rf(16),
+      fontWeight: '600',
+    },
+    topCenter: {
+      alignItems: 'center',
+    },
+    headerChips: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: rs(4),
+      backgroundColor: 'rgba(79,214,168,0.12)',
+      borderRadius: rv(12),
+      paddingVertical: rs(4),
+      paddingHorizontal: rs(10),
+      borderWidth: 1,
+      borderColor: 'rgba(79,214,168,0.25)',
+    },
+    headerChipsEmoji: {
+      fontSize: rf(14),
+      lineHeight: rf(18),
+    },
+    headerChipsAmount: {
+      color: COLORS.mint,
+      fontSize: rf(14),
+      fontWeight: '800',
+      letterSpacing: 0.5,
+    },
+    botSection: {
+      paddingVertical: rs(4),
+      paddingHorizontal: rs(12),
+      zIndex: 10,
+    },
+  });
+}
