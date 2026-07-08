@@ -127,8 +127,40 @@ export async function playSound(name: SoundName): Promise<void> {
 let ambientPlayer: any = null;
 let ambientPlaying = false;
 
+// NATIVE-LAYOUT-FIX 2026-07-08 — startAmbient() fires on game.tsx mount, before any
+// user interaction. Browser autoplay policy rejects .play() with NotAllowedError until
+// the page has seen a real user gesture; the existing try/catch on the .play() call
+// swallows the REJECTION, but expo-audio's web player still reports it as an unhandled
+// exception upstream (confirmed live — the try/catch pattern alone did not silence it).
+// Gate the WEB path behind the first pointerdown/touchstart/click instead of attempting
+// playback prematurely and relying on catching the fallout. Native has no such
+// restriction, so this only changes behavior on web.
+let hasUserGesture = typeof document === 'undefined';
+let pendingAmbientStart = false;
+function armUserGestureListener(): void {
+  if (hasUserGesture || typeof document === 'undefined') return;
+  const onGesture = () => {
+    hasUserGesture = true;
+    document.removeEventListener('pointerdown', onGesture);
+    document.removeEventListener('touchstart', onGesture);
+    document.removeEventListener('keydown', onGesture);
+    if (pendingAmbientStart) {
+      pendingAmbientStart = false;
+      void startAmbient();
+    }
+  };
+  document.addEventListener('pointerdown', onGesture, { once: true });
+  document.addEventListener('touchstart', onGesture, { once: true });
+  document.addEventListener('keydown', onGesture, { once: true });
+}
+
 export async function startAmbient(): Promise<void> {
   if (!createAudioPlayer || ambientPlaying) return;
+  if (!hasUserGesture) {
+    pendingAmbientStart = true;
+    armUserGestureListener();
+    return;
+  }
   try {
     let enabled = true;
     try {
