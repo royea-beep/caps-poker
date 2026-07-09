@@ -7,6 +7,8 @@ interface CompleteBannerProps {
   visible: boolean;
   bonusChips: number;
   scale: Animated.Value;
+  /** OTA-CHIP-UI-PARITY — practice is XP-only, no chips actually move; hide the bonus-chips line. */
+  isPractice?: boolean;
 }
 
 const BALLOONS = ['🎈', '🌟', '🎊'];
@@ -39,8 +41,13 @@ function Balloon({ emoji, delay }: { emoji: string; delay: number }) {
   );
 }
 
-export function CompleteBanner({ visible, bonusChips, scale }: CompleteBannerProps) {
-  if (!visible || bonusChips <= 0) return null;
+export function CompleteBanner({ visible, bonusChips, scale, isPractice = false }: CompleteBannerProps) {
+  // OTA-CHIP-UI-PARITY 2026-07-09 — bonusChips is real pot arithmetic (totalPot * bonus%)
+  // even in practice, so it's never actually 0 there; the celebration itself should still
+  // show on a practice sweep (COMPLETE is a real, board-count-driven achievement), just
+  // without the chip amount. Non-practice keeps its original "no bonus configured" bail-out.
+  if (!visible) return null;
+  if (!isPractice && bonusChips <= 0) return null;
   return (
     <Animated.View style={[styles.completeRow, { transform: [{ scale }] }]}>
       <View style={styles.balloonRow} pointerEvents="none">
@@ -49,7 +56,7 @@ export function CompleteBanner({ visible, bonusChips, scale }: CompleteBannerPro
         ))}
       </View>
       <Text style={styles.completeLabel}>{t().complete} {t().completeBonus}</Text>
-      <Text style={styles.completeAmount}>+{bonusChips} bonus chips!</Text>
+      {!isPractice && <Text style={styles.completeAmount}>+{bonusChips} bonus chips!</Text>}
     </Animated.View>
   );
 }

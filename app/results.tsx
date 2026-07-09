@@ -1010,7 +1010,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           )}
 
           {/* Complete bonus banner (LOCAL complete only) */}
-          <CompleteBanner visible={localComplete} bonusChips={completeBonusAmount} scale={completeScale} />
+          <CompleteBanner visible={localComplete} bonusChips={completeBonusAmount} scale={completeScale} isPractice={revealData.isPractice} />
 
           {/* Net result — hidden in practice; same rationale as the per-board deltas and
               Current Balance above (revealData.netChips is a real, nonzero-looking number
