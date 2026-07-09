@@ -935,6 +935,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 autoShareUrl={autoShareUrl}
                 isComplete={localComplete}
                 completeBonusAmount={completeBonusAmount}
+                isPractice={revealData.isPractice}
               />
             );
           })}
@@ -1011,19 +1012,25 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* Complete bonus banner (LOCAL complete only) */}
           <CompleteBanner visible={localComplete} bonusChips={completeBonusAmount} scale={completeScale} />
 
-          {/* Net result */}
-          <View style={styles.netSection}>
-            <View style={styles.netRow}>
-              <Text style={styles.netLabel} accessibilityRole="header">Net Result</Text>
-              {netChips > 0 ? (
-                <Animated.Text style={[styles.netAmount, { color: chipsFlashAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: ['#FFD700', '#FFD700', '#4CAF50'] }) }]}>
-                  +{netChips}
-                </Animated.Text>
-              ) : (
-                <Text style={[styles.netAmount, { color: netChips === 0 ? COLORS.textDim : COLORS.neonRed }]}>{netChips === 0 ? '±0' : netChips}</Text>
-              )}
+          {/* Net result — hidden in practice; same rationale as the per-board deltas and
+              Current Balance above (revealData.netChips is a real, nonzero-looking number
+              here even in practice, since it's the pot arithmetic, not the real balance
+              delta — the practice stats-row below already reframes it as "XP only" instead
+              of hiding it, but this large standalone amount had no such reframing). */}
+          {!revealData.isPractice && (
+            <View style={styles.netSection}>
+              <View style={styles.netRow}>
+                <Text style={styles.netLabel} accessibilityRole="header">Net Result</Text>
+                {netChips > 0 ? (
+                  <Animated.Text style={[styles.netAmount, { color: chipsFlashAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: ['#FFD700', '#FFD700', '#4CAF50'] }) }]}>
+                    +{netChips}
+                  </Animated.Text>
+                ) : (
+                  <Text style={[styles.netAmount, { color: netChips === 0 ? COLORS.textDim : COLORS.neonRed }]}>{netChips === 0 ? '±0' : netChips}</Text>
+                )}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* B2: Daily streak bonus display */}
           {dailyRewardStreak >= 2 && (() => {
@@ -1055,8 +1062,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             </TouchableOpacity>
           )}
 
-          {/* Current balance */}
-          <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
+          {/* Current balance — hidden in practice (XP-only, no chips actually moved,
+              so showing a real-money-looking balance here is misleading, not just noise) */}
+          {!revealData.isPractice && (
+            <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
+          )}
 
           {/* VAMOS-UNIFY-FINAL 2026-06-28 — "Try 4 boards" upgrade nudge removed. */}
 
@@ -1105,7 +1115,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 const pHand = getSpecificHandName(board.playerHandName, board.playerBestCards) || '—';
                 const bHand = board.botHandName ? getSpecificHandName(board.botHandName, board.botBestCards) : '';
                 return (
-                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${pHand}${bHand ? ` vs ${bHand}` : ''}, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}>
+                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${pHand}${bHand ? ` vs ${bHand}` : ''}${revealData.isPractice ? '' : `, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}`}>
                     <View style={styles.breakdownLeft}>
                       <Text style={styles.breakdownNum}>Board {i + 1}</Text>
                       <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
@@ -1118,9 +1128,14 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                         <Text style={styles.breakdownVs}>vs {bHand}</Text>
                       ) : null}
                     </View>
-                    <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}>
-                      {board.winner === 'tie' ? '±0🪙' : `${playerWon ? '+' : ''}${chipChange}🪙`}
-                    </Text>
+                    {/* OTA-COSMETIC-FIXES 2026-07-09 — this compact list, not BoardResultCard's
+                        big-card view, is what actually renders here by default; practice never
+                        moves real chips, so the ± delta was misleading, not just noise. */}
+                    {!revealData.isPractice && (
+                      <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}>
+                        {board.winner === 'tie' ? '±0🪙' : `${playerWon ? '+' : ''}${chipChange}🪙`}
+                      </Text>
+                    )}
                   </View>
                 );
               })}
