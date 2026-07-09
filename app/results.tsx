@@ -526,8 +526,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   }, []);
 
   // Win celebration overlay (FIX 3) — shown for 3s when player wins chips
+  // PRACTICE-CHIP-GATE-SWEEP 2026-07-09 — netChips is real pot arithmetic, nonzero-looking
+  // even in practice (XP-only, no chips actually move) — this overlay quotes it directly.
   useEffect(() => {
-    if (!revealData || revealData.netChips <= 0) return;
+    if (!revealData || revealData.netChips <= 0 || revealData.isPractice) return;
     // Delay slightly so the results screen fade-in finishes first
     const showTimer = setTimeout(() => {
       setShowWinOverlay(true);
@@ -726,8 +728,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           immediately (no bot hand in flight to finish). Renders nothing unless a countdown fires. */}
       <PracticeLiveOverlay jumpImmediately />
 
-      {/* S108: Floating chip delta animation */}
-      {revealData && (
+      {/* S108: Floating chip delta animation — PRACTICE-CHIP-GATE-SWEEP: hidden in practice,
+          same rationale as the win overlay above (netChips is real pot arithmetic). */}
+      {revealData && !revealData.isPractice && (
         <FloatingChips
           amount={revealData.netChips}
           visible={showFloatingChips}
@@ -742,6 +745,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           bonusAmount={completeBonusAmount}
           duration={3}
           onDone={() => setCompleteOverlayDone(true)}
+          isPractice={revealData.isPractice}
         />
       )}
       {showCompleteOverlay && localComplete && (
@@ -795,7 +799,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       )}
 
       {/* Win celebration overlay (FIX 3) — "You won X chips!" for 3s */}
-      {showWinOverlay && revealData && revealData.netChips > 0 && (
+      {showWinOverlay && revealData && revealData.netChips > 0 && !revealData.isPractice && (
         <Animated.View
           pointerEvents="none"
           accessibilityLiveRegion="assertive"
@@ -849,7 +853,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
               <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
             </Text>
-            {playerWins === botWins && netChips > 0 && (
+            {playerWins === botWins && netChips > 0 && !revealData.isPractice && (
               <Text style={styles.tieBonusText}>
                 {`Tie bonus: +${netChips} chips`}
               </Text>
