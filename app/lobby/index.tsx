@@ -11,8 +11,8 @@
  * lobby (app/lobby/private). This screen also offers the solo fallback ("Play vs Bots")
  * so a player with no one to play never hits a dead end.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, RefreshControl, Alert, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '../../store/gameStore';
@@ -20,7 +20,8 @@ import { getSupabase } from '../../utils/supabase';
 import { getBoardCount } from '../../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import { getMatchCost, canAffordMatch } from '../../utils/economy';
-import { rf, rs, rv } from '../../utils/responsive';
+import { rf as rfBase, rs as rsBase, rv as rvBase } from '../../utils/responsive';
+import { WEB_MAX_WIDTH } from '../../components/WebContainer';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount } from '../../utils/lobbyApi';
@@ -42,6 +43,24 @@ type Slot = { key: string; table: OpenTable | null };
 
 export default function PublicLobby() {
   const router = useRouter();
+  // MP-PARITY-DEEP 2026-07-09 — rs()/rf()/rv() default to a 393pt-wide fallback that's
+  // frozen at module load on web (utils/responsive.ts IRON RULE), never the real device
+  // width. This screen never overrode it, so every row/font here rendered as if on a
+  // 393pt screen regardless of the visiting device — bloated/wrapping text on anything
+  // narrower. Same root cause + same "local shadow" fix as game.tsx/GameView/
+  // BoardArrangement/Board earlier this project (see game-screen-fit/native-layout-fix).
+  // Font sizes get an explicit floor (value-3, min 9) so they don't shrink below legible
+  // on the narrowest supported widths — same "font floor" strategy as native-layout-fix.
+  // On web the app renders inside a WebContainer capped at WEB_MAX_WIDTH (430) on desktop
+  // widths — useWindowDimensions() reports the raw (uncapped) browser width, which is wider
+  // than the actual rendered column on desktop, so scaling against it directly makes text
+  // wrap WORSE, not better. Clamp the same way results.tsx/PlayerHand.tsx already do.
+  const { width: rawScreenW } = useWindowDimensions();
+  const screenW = Platform.OS === 'web' ? Math.min(rawScreenW, WEB_MAX_WIDTH) : rawScreenW;
+  const rs = useCallback((v: number) => rsBase(v, screenW), [screenW]);
+  const rf = useCallback((v: number, floor?: number) => rfBase(v, floor ?? Math.max(9, v - 3), undefined, screenW), [screenW]);
+  const rv = useCallback((v: number) => rvBase(v, screenW), [screenW]);
+  const styles = useMemo(() => makeStyles(rs, rf, rv), [rs, rf, rv]);
   const playerName = useGameStore((s) => s.playerName);
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
@@ -351,7 +370,12 @@ export default function PublicLobby() {
   );
 }
 
-const styles = StyleSheet.create({
+// MP-PARITY-DEEP 2026-07-09 — factored into a function so it can be called per-render
+// with the real reactive rs/rf/rv shadows (see PublicLobby's useMemo above). Every
+// rs(/rf(/rv( call below is unchanged from the old static StyleSheet.create — only the
+// wrapping declaration changed, so it now closes over whichever rs/rf/rv is passed in.
+function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) => number, rv: (v: number) => number) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: '#161922' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingTop: rv(8) },
   back: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '600', width: rs(60) },
@@ -435,4 +459,5 @@ const styles = StyleSheet.create({
     borderRadius: rv(8),
   },
   heldSeatLeaveText: { color: '#FFFEF8', fontSize: rf(12), fontWeight: '700' },
-});
+  });
+}

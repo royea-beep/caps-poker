@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import Board from '../components/Board';
-import PlayerHand from '../components/PlayerHand';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FriendsBg } from '../components/FriendsBg';
 import { useGameStore } from '../store/gameStore';
@@ -13,7 +12,8 @@ import { getTheme } from '../constants/visualThemes';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../constants/networkConfig';
 import { RevealBoardData } from '../types/gameTypes';
-import { playSound } from '../utils/sounds';
+import { playSound, startAmbient, stopAmbient } from '../utils/sounds';
+import { sortHand } from '../utils/sortHand';
 import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMultiplayer';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
@@ -28,7 +28,6 @@ import ConnectionStatus from '../components/ConnectionStatus';
 import { ChatMsg } from '../utils/realtimeMultiplayer';
 import { OpponentHeader } from '../components/OpponentHeader';
 import { TimerController, TimerBar } from '../components/TimerController';
-import BoardReveal from '../components/BoardReveal';
 import { PRD } from '../utils/prdTokens';
 import { rf, rh, rs, rv } from '../utils/responsive';
 import { t } from '../utils/i18n';
@@ -74,6 +73,8 @@ function maybeRecordClubGame(roster: ClubGameResult[]) {
 
 const FREE_TIME_SECS = 30;
 const COUNTDOWN_SECS = 30;
+// MP-PARITY-DEEP 2026-07-09 — same AsyncStorage key SOLO (app/game.tsx) reads.
+const GAMES_PLAYED_KEY = 'caps_games_played';
 // MP-LEAVE-RECOVERY 2026-06-29 — host-authoritative backstop. A 2P hand can legitimately
 // take FREE_TIME_SECS (30) + COUNTDOWN_SECS (30) = 60s when both players play to the wire,
 // so the host deal-clock must sit ABOVE that. On expiry the host force-completes the hand
@@ -141,6 +142,7 @@ function MultiplayerGameScreenInner() {
   const storeRoomCode = useGameStore((s) => s.roomCode);
   const mpServer = useGameStore((s) => s.mpServer);
   const mpClient = useGameStore((s) => s.mpClient);
+  const handSortMethod = useGameStore((s) => s.handSortMethod);
 
   const isHost = params.isHost === 'true';
   const playerIndex = parseInt(params.playerIndex || '0', 10);
@@ -165,19 +167,40 @@ function MultiplayerGameScreenInner() {
   void TOP_BAR_H; void BOT_STATUS_H; void FLOATING_ACTIONS_H; void HINT_H; void BOARD_CHROME;
 
   // State
+  // MP-PARITY-DEEP 2026-07-09 — solo builds closedCards from the real (locally-known)
+  // turn+river cards; MP only ever learns closedCardCount pre-reveal (server withholds
+  // the actual cards to prevent peeking). Build face-down placeholders from the count so
+  // Board.tsx's closedCards.map() renders the same 2 face-down slots solo shows — the
+  // dummy suit/rank is never read since Card.tsx's renderBack() ignores them.
   const [boards, setBoards] = useState<BoardDisplay[]>(() =>
     boardsParam.map((b) => ({
       openCards: b.openCards,
-      closedCards: [],
+      closedCards: Array.from({ length: b.closedCardCount }, (_, i) => ({
+        suit: 'spades' as const,
+        rank: 'A' as const,
+        id: `closed-${b.boardIndex}-${i}`,
+      })),
       playerCards: [],
       revealed: false,
     }))
   );
-  const [playerHand, setPlayerHand] = useState<Card[]>(yourCards);
+  // MP-PARITY-DEEP 2026-07-09 — SOLO sorts the dealt hand (utils/sortHand.ts,
+  // handSortMethod preference) so ranks/pairs group visually; MP rendered raw deal
+  // order. Sort once at the same point solo does — right after the deal.
+  const [playerHand, setPlayerHand] = useState<Card[]>(() => sortHand(yourCards, handSortMethod));
   const playerHandRef = useRef(playerHand);
   useEffect(() => { playerHandRef.current = playerHand; }, [playerHand]);
   const boardsRef = useRef(boards);
   useEffect(() => { boardsRef.current = boards; }, [boards]);
+  // MP-PARITY-DEEP 2026-07-09 — SOLO gates its first-time hint (<1 game) and Pro-tip
+  // banner (>=3 games) on the real AsyncStorage games-played counter; MP hardcoded 0,
+  // which showed the "first time" hint on every single MP hand forever and made the
+  // Pro-tip banner structurally unreachable. Default high (like SOLO) so both stay
+  // hidden until the real count loads.
+  const [gamesPlayed, setGamesPlayed] = useState(99);
+  useEffect(() => {
+    AsyncStorage.getItem(GAMES_PLAYED_KEY).then((v) => setGamesPlayed(parseInt(v ?? '0', 10))).catch(() => {});
+  }, []);
 
   // MP-BOARDREVEAL 2026-06-28, SHIP-MP-REVEAL 2026-07-06 — gated reveal state. When
   // isMpBoardRevealEnabled() is true (client default true, remotely overridable via
@@ -254,6 +277,10 @@ function MultiplayerGameScreenInner() {
 
   // --- Time bank (1 use per hand) ---
   const [timeBankUsed, setTimeBankUsed] = useState(false);
+  // MP-PARITY-DEEP 2026-07-09 — SOLO's D1 auto-place trail flash (game.tsx) fires the
+  // instant the countdown auto-fills a stalled player's boards; MP had no equivalent,
+  // so a timed-out MP hand went silent/still where SOLO gives clear visual feedback.
+  const autoPlaceFlashAnim = useRef(new AnimatedRN.Value(0)).current;
 
   // Collected reveal data for guest
   const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
@@ -271,7 +298,13 @@ function MultiplayerGameScreenInner() {
 
   useEffect(() => {
     CapsHooks.gameStarted('online');
-    return () => { mountedRef.current = false; };
+    // MP-PARITY-DEEP 2026-07-09 — SOLO starts/stops ambient bg audio per game.tsx's
+    // mount effect; MP never did, making the table feel silent/dead by comparison.
+    void startAmbient();
+    return () => {
+      mountedRef.current = false;
+      void stopAmbient();
+    };
   }, []);
 
   // Player names from connected players
@@ -800,7 +833,16 @@ function MultiplayerGameScreenInner() {
   }, [router]);
 
   // Timer
+  // MP-PARITY-DEEP 2026-07-09 — SOLO plays a buzzer + Heavy haptic + gold flash the
+  // instant the countdown hits 0 (game.tsx:420-449); MP silently auto-filled with
+  // no feedback at all. Mirror it here, once, exactly at expiry.
   const handleTimerExpire = useCallback(() => {
+    playSound('buzzer');
+    haptic(Haptics?.ImpactFeedbackStyle?.Heavy);
+    AnimatedRN.sequence([
+      AnimatedRN.timing(autoPlaceFlashAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
+      AnimatedRN.timing(autoPlaceFlashAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start();
     autoFillAndReady();
   }, []);
 
@@ -809,6 +851,13 @@ function MultiplayerGameScreenInner() {
     onExpire: handleTimerExpire,
     autoStart: false,
   });
+
+  // MP-PARITY-DEEP 2026-07-09 — SOLO's countdown escalation beeps at 10s/3s
+  // (game.tsx:420); MP's countdown ran fully silent until expiry.
+  useEffect(() => {
+    if (!timer.isRunning) return;
+    if (timer.timeLeft === 10 || timer.timeLeft === 3) playSound('timerLow');
+  }, [timer.isRunning, timer.timeLeft]);
 
   // Start 30s countdown (idempotent — first caller wins)
   const startCountdown = useCallback(() => {
@@ -1157,7 +1206,7 @@ function MultiplayerGameScreenInner() {
       countdownActive={timer.isRunning}
       countdown={displayTimeLeft}
       timeBankUsed={timeBankUsed}
-      gamesPlayed={0}
+      gamesPlayed={gamesPlayed}
       playerReady={false}
       allBotsReady={false}
       showContinueButton={false}
@@ -1174,6 +1223,12 @@ function MultiplayerGameScreenInner() {
       onReady={handleReady}
       onTimeBank={handleTimeBank}
       onContinue={() => {}}
+      preChrome={
+        <AnimatedRN.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(201,168,76,0.18)', opacity: autoPlaceFlashAnim, zIndex: 99 }]}
+        />
+      }
       reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed } : null}
       topCenter={
         <>

@@ -7,13 +7,14 @@
  * code-joiner is a guest. Both hand off to the shared Table Room (app/lobby/table),
  * which owns the realtime session and auto-starts when the table fills.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Alert } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, Alert, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
-import { rf, rs, rv } from '../../utils/responsive';
+import { rf as rfBase, rs as rsBase, rv as rvBase } from '../../utils/responsive';
+import { WEB_MAX_WIDTH } from '../../components/WebContainer';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { createTable, joinTable, PlayerCount } from '../../utils/lobbyApi';
@@ -26,6 +27,15 @@ const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
 
 export default function PrivateLobby() {
   const router = useRouter();
+  // MP-PARITY-DEEP 2026-07-09 — same frozen-393pt-on-web bug fixed in lobby/index.tsx;
+  // this screen is now also the Challenge-a-Friend redirect target, so it needed the
+  // same reactive-shadow fix. Clamp to WEB_MAX_WIDTH on web — see lobby/index.tsx for why.
+  const { width: rawScreenW } = useWindowDimensions();
+  const screenW = Platform.OS === 'web' ? Math.min(rawScreenW, WEB_MAX_WIDTH) : rawScreenW;
+  const rs = useCallback((v: number) => rsBase(v, screenW), [screenW]);
+  const rf = useCallback((v: number, floor?: number) => rfBase(v, floor ?? Math.max(9, v - 3), undefined, screenW), [screenW]);
+  const rv = useCallback((v: number) => rvBase(v, screenW), [screenW]);
+  const styles = useMemo(() => makeStyles(rs, rf, rv), [rs, rf, rv]);
   const playerName = useGameStore((s) => s.playerName);
 
   const [code, setCode] = useState('');
@@ -151,7 +161,8 @@ export default function PrivateLobby() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) => number, rv: (v: number) => number) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: '#161922' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingTop: rv(8) },
   back: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '600', width: rs(60) },
@@ -170,4 +181,5 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   errorBanner: { marginHorizontal: rs(16), marginBottom: rv(8), paddingVertical: rv(8), paddingHorizontal: rs(12), backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.45)', borderRadius: rv(10) },
   errorBannerText: { color: '#ef4444', fontSize: rf(12), fontWeight: '700', textAlign: 'center' },
-});
+  });
+}
