@@ -21,9 +21,11 @@ interface SingleBoardShareCardProps {
   board: RevealBoardData;
   boardIndex: number;
   potAmount: number;
+  /** OTA-CHIP-UI-PARITY — practice is XP-only, no chips actually move; suppress the pot-in-chips line. */
+  isPractice?: boolean;
 }
 
-export function SingleBoardShareCard({ board, boardIndex, potAmount }: SingleBoardShareCardProps) {
+export function SingleBoardShareCard({ board, boardIndex, potAmount, isPractice = false }: SingleBoardShareCardProps) {
   const quote = getRandomQuote('summary');
   const communityCards = [...(board.openCards ?? []), ...(board.closedCards ?? [])];
   const botCards = (board.allBotCards ?? [])[0] ?? board.allBotCards?.[0] ?? [];
@@ -77,7 +79,7 @@ export function SingleBoardShareCard({ board, boardIndex, potAmount }: SingleBoa
       <View style={styles.doubleDivider} />
       <View style={styles.resultRow}>
         <Text style={[styles.resultLabel, { color: resultColor }]}>{resultText}</Text>
-        <Text style={styles.chipResult}>{chipResult}</Text>
+        {!isPractice && <Text style={styles.chipResult}>{chipResult}</Text>}
       </View>
       <View style={styles.doubleDivider} />
 
@@ -334,6 +336,8 @@ interface StoryShareCardProps {
   potAmount?: number;
   potPerBoard?: number;
   numberOfPlayers?: number;
+  /** OTA-CHIP-UI-PARITY — practice is XP-only, no chips actually move; suppress the pot-in-chips line. */
+  isPractice?: boolean;
 }
 
 export function StoryShareCard({
@@ -346,6 +350,7 @@ export function StoryShareCard({
   potAmount = 0,
   potPerBoard = 0,
   numberOfPlayers = 2,
+  isPractice = false,
 }: StoryShareCardProps) {
   const quote = getRandomQuote(isComplete ? 'complete' : 'summary');
   const isSingleBoard = !!board;
@@ -394,11 +399,11 @@ export function StoryShareCard({
         </View>
 
         <View style={storyStyles.doubleDivider} />
-        <Text style={[storyStyles.resultLabel, { color: resultColor }]}>{resultText}  {chipDelta}</Text>
+        <Text style={[storyStyles.resultLabel, { color: resultColor }]}>{resultText}{isPractice ? '' : `  ${chipDelta}`}</Text>
         <View style={storyStyles.doubleDivider} />
 
-        {isComplete && completeBonusAmount > 0 && (
-          <Text style={storyStyles.completeLabel}>🏆 COMPLETE! +50% BONUS (+{completeBonusAmount})</Text>
+        {isComplete && (isPractice || completeBonusAmount > 0) && (
+          <Text style={storyStyles.completeLabel}>{isPractice ? '🏆 COMPLETE!' : `🏆 COMPLETE! +50% BONUS (+${completeBonusAmount})`}</Text>
         )}
 
         <Text style={storyStyles.quoteText}>"{quote?.quote ?? ''}"</Text>

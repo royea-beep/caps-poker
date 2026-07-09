@@ -92,13 +92,15 @@ export async function saveHandForWebReplay(data: ShareData): Promise<string | nu
 }
 
 // Generate share text for the native share sheet
-export function generateShareText(data: ShareData, replayUrl?: string | null): string {
+// OTA-CHIP-UI-PARITY 2026-07-09 — isPractice suppresses the "Net: ±N chips" line, same
+// predicate/rationale as the share-card images (practice never moves real chips).
+export function generateShareText(data: ShareData, replayUrl?: string | null, isPractice = false): string {
   const emoji = data.isComplete ? '🏆' : data.netChips > 0 ? '✅' : '❌';
   const completeLine = data.isComplete ? '\n🏆 COMPLETE! Swept all boards!' : '';
   const urlLine = replayUrl ? `\nReplay: ${replayUrl}` : '';
+  const netLine = isPractice ? '' : `\nNet: ${data.netChips >= 0 ? '+' : ''}${data.netChips} chips`;
 
-  return `${emoji} CAPS Poker — ${data.boardsWon}/${data.totalBoards} boards won!${completeLine}
-Net: ${data.netChips >= 0 ? '+' : ''}${data.netChips} chips${urlLine}
+  return `${emoji} CAPS Poker — ${data.boardsWon}/${data.totalBoards} boards won!${completeLine}${netLine}${urlLine}
 
 Play CAPS: caps.ftable.co.il`;
 }

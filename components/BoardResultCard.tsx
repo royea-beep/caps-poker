@@ -89,7 +89,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
     setSharing(true);
     await new Promise((r) => setTimeout(r, 150));
     const url = autoShareUrl ?? await saveHandForWebReplay(shareData).catch(() => null);
-    const text = generateShareText(shareData, url);
+    const text = generateShareText(shareData, url, isPractice);
     await captureAndShare(ref, text);
     setSharing(false);
   };
@@ -162,10 +162,10 @@ export const BoardResultCard = React.memo(function BoardResultCard({
         {Platform.OS !== 'web' && (
           <>
             <View ref={boardShareRef} style={styles.offscreen} pointerEvents="none">
-              <SingleBoardShareCard board={board as any} boardIndex={boardIndex} potAmount={pot} />
+              <SingleBoardShareCard board={board as any} boardIndex={boardIndex} potAmount={pot} isPractice={isPractice} />
             </View>
             <View ref={boardStoryRef} style={styles.offscreen} pointerEvents="none">
-              <StoryShareCard board={board as any} boardIndex={boardIndex} potAmount={pot} isComplete={isComplete} completeBonusAmount={completeBonusAmount} />
+              <StoryShareCard board={board as any} boardIndex={boardIndex} potAmount={pot} isComplete={isComplete} completeBonusAmount={completeBonusAmount} isPractice={isPractice} />
             </View>
           </>
         )}
