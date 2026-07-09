@@ -40,6 +40,8 @@ export interface BoardArrangementProps {
   boardError: string | null;
   boardCount: number;
   numberOfPlayers: number;
+  /** PRACTICE-CHIP-GATE-SWEEP — practice is XP-only; hides the "WIN ALL → +N" chip banner. */
+  isPractice?: boolean;
   communityScale: number;
   BOARD_CARD_H: number;
   screenW: number;
@@ -91,6 +93,7 @@ export function BoardArrangement({
   boardError,
   boardCount,
   numberOfPlayers,
+  isPractice,
   communityScale,
   BOARD_CARD_H,
   screenW,
@@ -387,7 +390,7 @@ export function BoardArrangement({
           button bar instead of normal-flow above it (it was visually rendering
           below the absolute-positioned button bar, looking like an
           afterthought). Now sits directly above buttons. */}
-      {isArranging && allBoardsFull && (
+      {isArranging && allBoardsFull && !isPractice && (
         <View
           style={[
             baStyles.winAllBanner,

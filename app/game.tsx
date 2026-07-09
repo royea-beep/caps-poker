@@ -1232,6 +1232,7 @@ function GameScreenInner() {
       boardError={boardError}
       boardCount={boardCount}
       numberOfPlayers={numberOfPlayers}
+      isPractice={isPractice}
       potPerBoard={config.potPerBoard}
       countdownActive={countdownActive}
       countdown={countdown}

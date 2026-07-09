@@ -98,6 +98,8 @@ export interface GameViewProps {
   boardCount: number;
   numberOfPlayers: number;
   potPerBoard: number;
+  /** PRACTICE-CHIP-GATE-SWEEP — practice is XP-only; hides the header balance pill and BoardArrangement's WIN ALL chip banner. */
+  isPractice?: boolean;
   countdownActive: boolean;
   countdown: number;
   timeBankUsed: boolean;
@@ -149,6 +151,7 @@ export function GameView({
   boardCount,
   numberOfPlayers,
   potPerBoard,
+  isPractice,
   countdownActive,
   countdown,
   timeBankUsed,
@@ -202,7 +205,7 @@ export function GameView({
           </View>
           {topRight !== undefined ? (
             topRight
-          ) : (
+          ) : isPractice ? null : (
             <View style={styles.headerChips}>
               <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
               <Text style={styles.headerChipsAmount}>{chips.toLocaleString()}</Text>
@@ -236,6 +239,7 @@ export function GameView({
           boardError={boardError}
           boardCount={boardCount}
           numberOfPlayers={numberOfPlayers}
+          isPractice={isPractice}
           communityScale={layout.communityScale}
           BOARD_CARD_H={layout.BOARD_CARD_H}
           screenW={screenW}

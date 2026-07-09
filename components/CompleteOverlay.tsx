@@ -5,6 +5,7 @@ import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import ProQuoteBanner from './ProQuoteBanner';
 import { rv, rf, rs } from '../utils/responsive';
+import { shouldShowCompleteBonus } from './completeOverlayGate';
 
 // Lazy-load expo-haptics
 let Haptics: any = null;
@@ -19,6 +20,8 @@ interface CompleteOverlayProps {
   bonusAmount: number;
   duration: number;
   onDone: () => void;
+  /** PRACTICE-CHIP-GATE-SWEEP — practice is XP-only; hides the "BONUS +N" pill, keeps the celebration. */
+  isPractice?: boolean;
 }
 
 const NUM_PARTICLES = 15;
@@ -31,7 +34,7 @@ const PARTICLE_COLORS = [
   '#FF9800',
 ];
 
-export default function CompleteOverlay({ winner, bonusAmount, duration, onDone }: CompleteOverlayProps) {
+export default function CompleteOverlay({ winner, bonusAmount, duration, onDone, isPractice = false }: CompleteOverlayProps) {
   const { width: screenW } = useWindowDimensions();
   debugLog('C1 CompleteOverlay mounted');
 
@@ -193,13 +196,16 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone 
           {winner === 'player' ? 'You won ALL boards! +50% bonus 🏆' : 'Bot swept all boards!'}
         </Animated.Text>
 
-        {/* Bonus row */}
-        <Animated.View style={[styles.bonusRow, { opacity: bonusOpacity }]}>
-          <Text style={styles.bonusLabel}>BONUS</Text>
-          <Text style={styles.bonusSeparator}>+</Text>
-          <Text style={styles.bonusAmount}>{bonusAmount}</Text>
-          <View style={styles.bonusChip} />
-        </Animated.View>
+        {/* Bonus row — PRACTICE-CHIP-GATE-SWEEP: hidden in practice (headline fix — this
+            full-screen flash was the most prominent unaddressed chip leak in the app). */}
+        {shouldShowCompleteBonus(isPractice) && (
+          <Animated.View style={[styles.bonusRow, { opacity: bonusOpacity }]}>
+            <Text style={styles.bonusLabel}>BONUS</Text>
+            <Text style={styles.bonusSeparator}>+</Text>
+            <Text style={styles.bonusAmount}>{bonusAmount}</Text>
+            <View style={styles.bonusChip} />
+          </Animated.View>
+        )}
 
         {/* Pro quote */}
         {winner === 'player' && (
