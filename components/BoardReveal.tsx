@@ -514,12 +514,24 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
   // Card sizing — maximize use of screen width
   const pad = 32;
-  const commGap = 6;
-  const commCardW = Math.min(62, Math.floor((screenW - pad - commGap * 4) / 5));
-  const commCardH = Math.round(commCardW * 1.4);
   const handGap = 8;
   const handCardW = Math.min(70, Math.floor((screenW - pad - handGap * 3) / 4));
   const handCardH = Math.round(handCardW * 1.4);
+
+  // MP-PARITY-DEEP 2026-07-09 — owner design call: community cards are the visual focus
+  // of the reveal moment, so they render deliberately LARGER than hand cards (+10pt)
+  // rather than smaller. 5 community cards can't out-size 4 hand cards side-by-side in
+  // the same width without shrinking below hand size on narrow phones (the old 62-vs-70
+  // cap did exactly that) — so instead of a gap, community cards OVERLAP like a fanned
+  // hand. The frame border (styles.commCardFrame, added at the wrapper below) keeps each
+  // card visually distinct even where it overlaps its neighbor. On wide screens the
+  // overlap shrinks toward 0 automatically; it never goes negative-into-overflow since
+  // it's clamped at 0.
+  const commCardW = handCardW + 10;
+  const commCardH = Math.round(commCardW * 1.4);
+  // RN's flexbox `gap` can't go negative, so overlap is applied per-card via marginLeft
+  // (see the community card map below) instead of a row-level gap.
+  const commOverlap = Math.max(0, Math.round((commCardW * 5 - (screenW - pad)) / 4));
 
   const resultColor = board.winner === 'player' ? gameColors.win : board.winner === 'bot' ? gameColors.lose : '#fff';
   const tx = t();
@@ -619,7 +631,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {/* Community cards — flop face-up, turn+river flip in sequence (middle) */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Community</Text>
-            <View style={[styles.cardRow, { gap: commGap }]}>
+            <View style={styles.cardRow}>
               {allCommunity.map((c, i) => {
                 const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);
                 const isRiver = i === 4;
@@ -627,7 +639,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                   <AnimatedRN.View
                     key={c.id}
                     style={[
-                      { opacity: communitySpotlightOpacities[i] },
+                      styles.commCardFrame,
+                      { opacity: communitySpotlightOpacities[i], marginLeft: i === 0 ? 0 : -commOverlap, zIndex: i },
                       isRiver && { transform: [{ scaleY: riverSqueezeAnim }] },
                       isHighlighted && styles.winGlow,
                     ]}
@@ -870,6 +883,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // MP-PARITY-DEEP 2026-07-09 — frame border for community cards at the reveal; keeps
+  // each card visually distinct where it overlaps its neighbor (see commOverlap).
+  commCardFrame: {
+    borderWidth: 2,
+    borderColor: COLORS.goldBright,
+    borderRadius: rs(10), // >= Card.tsx's own cardRadius(8) so the frame fully encloses the card's rounded corners
   },
   handNameBadge: {
     color: COLORS.textPrimary,
