@@ -51,6 +51,8 @@ interface BoardResultCardProps {
   autoShareUrl: string | null;
   isComplete: boolean;
   completeBonusAmount: number;
+  /** OTA-COSMETIC-FIXES — practice is XP-only, no chips actually move; hide the per-board ± chip delta. */
+  isPractice?: boolean;
 }
 
 // VAMOS-FIX-RESULTS-RENDER 2026-06-17 — memo'd. Renders up to 9 cards per
@@ -61,7 +63,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
   board, boardIndex, pot, cardW, cardH, translateY,
   commCardW, commCardH, botCardW, botCardH,
   winBorderColor, winBadgeAnim, shareData, autoShareUrl,
-  isComplete, completeBonusAmount,
+  isComplete, completeBonusAmount, isPractice,
 }: BoardResultCardProps) {
   const cW = commCardW ?? cardW;
   const cH = commCardH ?? cardH;
@@ -145,7 +147,9 @@ export const BoardResultCard = React.memo(function BoardResultCard({
             )}
           </View>
           <View style={styles.boardHeaderRight}>
-            <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>
+            {/* OTA-COSMETIC-FIXES 2026-07-09 — practice never moves real chips; showing
+                a per-board ±N chip delta there is misleading, not just redundant. */}
+            {!isPractice && <Text style={[styles.chipAmount, { color: chipColor }]}>{chipResult}</Text>}
             {Platform.OS !== 'web' && (
               <Pressable onPress={handleShare} style={styles.shareBtn} disabled={sharing}>
                 <Text style={styles.shareBtnText}>{sharing ? '...' : '📸'}</Text>

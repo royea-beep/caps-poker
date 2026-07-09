@@ -55,6 +55,8 @@ export interface GameViewReveal {
   onDone: () => void;
   revealSpeed?: 'fast' | 'normal' | 'cinematic';
   isFirstGame?: boolean;
+  /** OTA-COSMETIC-FIXES — passed straight through to <BoardReveal/> to hide chip UI in practice. */
+  isPractice?: boolean;
 }
 
 export interface GameViewProps {
@@ -271,6 +273,7 @@ export function GameView({
           onDone={reveal.onDone}
           revealSpeed={reveal.revealSpeed}
           isFirstGame={reveal.isFirstGame}
+          isPractice={reveal.isPractice}
         />
       )}
 

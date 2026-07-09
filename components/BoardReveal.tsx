@@ -78,9 +78,11 @@ interface Props {
   onDone: () => void;
   revealSpeed?: 'fast' | 'normal' | 'cinematic';
   isFirstGame?: boolean;
+  /** OTA-COSMETIC-FIXES — practice is XP-only, no chips actually move; hide the coin/± chip UI. */
+  isPractice?: boolean;
 }
 
-export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false }: Props) {
+export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false, isPractice = false }: Props) {
   const { width: screenW } = useWindowDimensions();
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
@@ -685,7 +687,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {showResult ? (
             <AnimatedRN.View style={[styles.resultRow, { transform: [{ scale: resultScale }] }]}>
               <Text style={[styles.resultText, { color: resultColor }]}>{resultText}</Text>
-              {board.winner === 'tie' ? (
+              {isPractice ? null : board.winner === 'tie' ? (
                 <Text style={styles.chipTie}>Tie board</Text>
               ) : board.potAmount === 0 ? (
                 <Text style={[styles.chipDelta, { color: chipColor }]}>—</Text>
@@ -757,12 +759,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
           </AnimatedRN.View>
 
-          {/* FloatingChips — outside slide wrapper, position absolute */}
-          <FloatingChips
-            amount={board.winner === 'player' ? board.potAmount : -board.potAmount}
-            visible={showChipsAnim}
-            onDone={() => setShowChipsAnim(false)}
-          />
+          {/* FloatingChips — outside slide wrapper, position absolute. Hidden in practice
+              (OTA-COSMETIC-FIXES) — no real chips move, so a flying coin animation is misleading. */}
+          {!isPractice && (
+            <FloatingChips
+              amount={board.winner === 'player' ? board.potAmount : -board.potAmount}
+              visible={showChipsAnim}
+              onDone={() => setShowChipsAnim(false)}
+            />
+          )}
         </Pressable>
 
         {/* S113: Auto-advance progress bar — gold depleting bar at bottom */}
@@ -796,7 +801,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                     : resultText)
                 : resultText}
             </Text>
-            {board.potAmount > 0 && board.winner !== 'tie' && (
+            {!isPractice && board.potAmount > 0 && board.winner !== 'tie' && (
               <Text style={[styles.intermissionChip, { color: chipColor }]}>
                 {chipSign}{board.potAmount} chips
               </Text>

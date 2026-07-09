@@ -28,6 +28,7 @@ import { listPublicTables, joinTable, groupTablesByType, OpenTable, PlayerCount 
 import { beginPracticeLive, getPracticeLiveState, isPracticeLiveActive, endPracticeLive } from '../../utils/practiceLiveSession';
 import { PRACTICE_LIVE_ENABLED } from '../../constants/featureFlags';
 import { useLobbyPresence } from '../../hooks/useLobbyPresence';
+import { t } from '../../utils/i18n';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -294,7 +295,7 @@ export default function PublicLobby() {
             <View style={styles.botBadge}><Text style={styles.botBadgeText}>🤖 BOT</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.botRowTitle}>Practice vs Bots</Text>
-              <Text style={styles.botRowSub}>{n} players · {getBoardCount(n)} boards · starts instantly</Text>
+              <Text style={styles.botRowSub}>{t().botRowSub(n, getBoardCount(n))}</Text>
             </View>
             <View style={styles.botPlayBtn}><Text style={styles.botPlayText}>Play now</Text></View>
           </Pressable>
@@ -396,7 +397,9 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   botBadge: { backgroundColor: 'rgba(34,197,94,0.20)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.55)', borderRadius: rv(7), paddingHorizontal: rs(8), paddingVertical: rv(3) },
   botBadgeText: { color: '#4ADE80', fontSize: rf(10), fontWeight: '900', letterSpacing: 0.5 },
   botRowTitle: { color: '#fff', fontSize: rf(14), fontWeight: '700' },
-  botRowSub: { color: 'rgba(255,255,255,0.55)', fontSize: rf(10), marginTop: rv(1) },
+  // OTA-COSMETIC-FIXES 2026-07-09 — explicit 11pt floor (was rf(10), which floors to 9
+  // via the default v-3 floor) so the shortened subtitle never drops below 11pt at 320.
+  botRowSub: { color: 'rgba(255,255,255,0.55)', fontSize: rf(11, 11), marginTop: rv(1) },
   botPlayBtn: { backgroundColor: '#22C55E', borderRadius: rv(9), paddingHorizontal: rs(14), paddingVertical: rv(7) },
   botPlayText: { color: '#ffffff', fontSize: rf(13), fontWeight: '900' },
   humanHead: { marginHorizontal: rs(16), marginTop: rv(4), marginBottom: rv(2) },

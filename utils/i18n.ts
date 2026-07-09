@@ -168,6 +168,8 @@ interface Translations {
   // Game screen (S-LOCALE-FIX)
   boardLabel: (n: number) => string;
   arrangeCards: (n: number) => string;
+  /** OTA-COSMETIC-FIXES — lobby instant-bot row subtitle, e.g. "2P · 4 boards · instant". */
+  botRowSub: (players: number, boards: number) => string;
   timeUpAutoplaced: string;
   botSingular: string;
   botPlural: (ready: number, total: number) => string;
@@ -310,6 +312,7 @@ const he: Translations = {
   // Game screen
   boardLabel: (n) => `לוח ${n}`,
   arrangeCards: (n) => `סדר ${n} קלפים`,
+  botRowSub: (players, boards) => `${players} שחקנים · ${boards} לוחות · מיידי`,
   timeUpAutoplaced: '⏱ הזמן נגמר — קלפים הונחו אוטומטית',
   botSingular: 'בוט',
   botPlural: (r, t) => `בוטים ${r}/${t}`,
@@ -452,6 +455,7 @@ const en: Translations = {
   // Game screen
   boardLabel: (n) => `Board ${n}`,
   arrangeCards: (n) => `Place ${n} cards`,
+  botRowSub: (players, boards) => `${players}P · ${boards} boards · instant`,
   timeUpAutoplaced: '⏱ Time up — cards placed automatically',
   botSingular: 'Bot',
   botPlural: (r, t) => `Bots ${r}/${t}`,

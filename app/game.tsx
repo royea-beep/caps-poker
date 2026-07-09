@@ -1267,7 +1267,7 @@ function GameScreenInner() {
         debugLog('[GAME] fallback button pressed — calling doNavigate manually');
         doNavigateRef.current(boardsRef.current);
       }}
-      reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed, isFirstGame } : null}
+      reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed, isFirstGame, isPractice } : null}
       preChrome={
         <>
           {/* BUILD467-VERIFY layout debug readout -- gated by AsyncStorage debug_overlay_enabled */}
