@@ -20,7 +20,7 @@
  * owned by the game screen, so unmount does NOT tear it down.
  */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Share } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGameStore } from '../../store/gameStore';
@@ -64,6 +64,17 @@ export default function TableRoomScreen() {
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'starting' | 'error'>('connecting');
   const [errorMsg, setErrorMsg] = useState('');
+  // FRIEND-CHALLENGE-AND-SEAT 2026-07-09 — the unmount cleanup below unconditionally
+  // called leaveTable() on ANY unmount (back-press, navigation elsewhere, etc.) with
+  // zero confirmation -- proven live: a real 2-device test showed a host losing its
+  // seat within 18 seconds of joining, far too fast to be the 90s ghost-reaper, i.e.
+  // a live back-tap silently evicting mid-wait. The header button is already labeled
+  // "‹ Leave" (not a bare back arrow), so the FIX isn't relabeling -- it's that
+  // tapping it fires the eviction with no chance to reconsider. Gate it behind an
+  // in-app confirmation instead of Alert.alert, which is unreliable on web (see
+  // CLAUDE.md hard rules + the identical pattern already worked around in
+  // app/game.tsx's handleBack) -- and web is exactly where this was reported from.
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const serverRef = useRef<RealtimeServer | null>(null);
   const clientRef = useRef<RealtimeClient | null>(null);
@@ -328,7 +339,7 @@ export default function TableRoomScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable onPress={bailOut} hitSlop={10} accessibilityRole="button" accessibilityLabel="Leave table">
+        <Pressable onPress={() => setShowLeaveConfirm(true)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Leave table">
           <Text style={styles.back}>‹ Leave</Text>
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">{TYPE_LABEL[maxPlayers]}</Text>
@@ -370,6 +381,33 @@ export default function TableRoomScreen() {
         </Text>
         <Text style={styles.hint}>The game starts automatically when the table is full.</Text>
       </View>
+
+      <Modal visible={showLeaveConfirm} transparent animationType="fade" onRequestClose={() => setShowLeaveConfirm(false)}>
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Leave this table?</Text>
+            <Text style={styles.confirmBody}>Your seat will be given up and the table can fill without you.</Text>
+            <View style={styles.confirmRow}>
+              <Pressable
+                style={[styles.confirmBtn, styles.confirmBtnStay]}
+                onPress={() => setShowLeaveConfirm(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Stay seated"
+              >
+                <Text style={styles.confirmBtnStayText}>Stay Seated</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.confirmBtn, styles.confirmBtnLeave]}
+                onPress={() => { setShowLeaveConfirm(false); bailOut(); }}
+                accessibilityRole="button"
+                accessibilityLabel="Leave table"
+              >
+                <Text style={styles.confirmBtnLeaveText}>Leave Table</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -423,4 +461,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   leaveText: { color: COLORS.mintBright, fontSize: rf(15), fontWeight: '800' },
+  // FRIEND-CHALLENGE-AND-SEAT 2026-07-09 — leave-table confirmation. In-app Modal, not
+  // Alert.alert, which silently no-ops on web (the exact platform this eviction bug was
+  // reported from).
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: rs(24),
+  },
+  confirmCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: COLORS.background,
+    borderRadius: rv(16),
+    borderWidth: 1,
+    borderColor: COLORS.mintBright,
+    padding: rs(20),
+  },
+  confirmTitle: { color: COLORS.mintBright, fontSize: rf(18), fontWeight: '900', textAlign: 'center', marginBottom: rv(8) },
+  confirmBody: { color: COLORS.textSecondary, fontSize: rf(14), textAlign: 'center', marginBottom: rv(20) },
+  confirmRow: { flexDirection: 'row', gap: rs(12) },
+  confirmBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: rv(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: rv(11),
+  },
+  confirmBtnStay: { backgroundColor: COLORS.mintBright },
+  confirmBtnStayText: { color: COLORS.background, fontSize: rf(15), fontWeight: '800' },
+  confirmBtnLeave: { borderWidth: 1.5, borderColor: COLORS.textSecondary },
+  confirmBtnLeaveText: { color: COLORS.textSecondary, fontSize: rf(15), fontWeight: '800' },
 });

@@ -1140,25 +1140,36 @@ export default function HomeScreen() {
     }
   }, [referralCodeInput, showReferralToast]);
 
-  const handleFriendChallenge = useCallback(async () => {
-    try {
-      const sb = getSupabase();
-      if (!sb) return;
-      const { data, error } = await sb.rpc('create_friend_challenge', { p_user_id: user?.id ?? '' });
-      if (error || !data?.code) {
-        Alert.alert(
-          getLanguage() === 'he' ? 'שגיאה' : 'Error',
-          getLanguage() === 'he' ? 'לא ניתן ליצור אתגר. נסה שוב.' : 'Could not create challenge. Try again.',
-        );
-        return;
-      }
-      await Share.share({
-        message: getLanguage() === 'he'
-          ? `🃏 אני מאתגר אותך ב-CAPS Poker!\nקוד: ${data.code}`
-          : `🃏 I challenge you to CAPS Poker!\nCode: ${data.code}`,
-      });
-    } catch {}
-  }, [user?.id]);
+  // FRIEND-CHALLENGE-AND-SEAT 2026-07-09 — this used to call create_friend_challenge
+  // directly. That RPC turned out to be dead-on-arrival: (1) it was completely
+  // untracked (no track() call anywhere, fully explaining "0 challenge taps in 14
+  // days" on its own), (2) p_user_id fell back to '' for anonymous/device-only
+  // sessions (the common case per this app's auth model), which the RPC likely
+  // rejects silently, matching "0 rows in friend_challenges ever", (3) the RPC
+  // returns a share_url the client never used -- it shared a bare code as plain
+  // text with no link at all, and that share_url pointed at caps.app, a domain
+  // that isn't this app's live domain (caps.ftable.co.il), and (4) most
+  // importantly, accept_friend_challenge -- even if reached -- only does chip/
+  // status bookkeeping in the friend_challenges table; it NEVER creates or joins
+  // a game_rooms row, so there was no accept-side screen and no mechanism at all
+  // to actually seat two players together. Completing that properly needs new
+  // backend RPC logic (which this agent can't apply directly to prod -- it'd need
+  // a strategist hand-off) plus a new accept route/screen.
+  // Redirect to app/lobby/private.tsx instead: an ALREADY-WORKING create-table +
+  // share-code + join-by-code flow built on the same battle-tested game_rooms/
+  // join_table/RealtimeServer infrastructure this session already fixed real bugs
+  // in (app/lobby/table.tsx). It has no chip wager (friend_challenges' buyin/
+  // spend_chips columns suggest it was meant for a stakes-based challenge, a
+  // materially different feature) -- but it delivers exactly what this task
+  // actually asked for: tap -> pick a size -> get a shareable code -> friend joins
+  // -> both land in the same room -> game auto-starts. friend_challenges/
+  // create_friend_challenge/accept_friend_challenge are left in place (DB rows,
+  // RPCs, the unused useCapsSystem.ts wrapper) in case the owner wants to build a
+  // real wagered-challenge feature on them later -- not deleted, just unused.
+  const handleFriendChallenge = useCallback(() => {
+    track('home_challenge_friend_tapped', {}, 'home');
+    router.push('/lobby/private' as any);
+  }, [router]);
 
   const canClaim = ECONOMY_FLAGS.dailyRewardEnabled && canClaimDailyReward(lastDailyRewardClaim);
 
