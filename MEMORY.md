@@ -5,6 +5,33 @@
 - **DEAD-RENDER (S54, OPEN — not yet fixed, no speculative refactor):** `BoardResultCard` is imported + mapped in `app/results.tsx`, but `visibleBoardCount` (hooks/useResultsAnimations.ts) stays **0** on web because `InteractionManager.runAfterInteractions` never resolves — so its per-board animated fade-in never appears and `BoardResultCard` + its offscreen `SingleBoardShareCard`/`StoryShareCard` are effectively dead in the live results flow (instrumented, confirmed 25 render passes over 16s). The compact "Board by board" list is what users actually see.
   - ⚠️ CHIP-GATE COUPLING (S55): FloatingChips-dup, BoardResultCard+ShareCards, and StoryShareCard/FullGameShareCard are currently chip-UNGATED and safe ONLY because they are unreachable. ANY change that makes them render again (especially fixing visibleBoardCount=0) MUST gate their chip figures behind isPractice IN THE SAME PR.
 
+### S52–S56 batch history (backfilled 2026-07-09; strategist-verified vs live bundles)
+- S52 OTA-COSMETIC — SHA b6192d3 | bundle b0fceafa → 3354a01db16696bc991324f191a3fac8 |
+  OTA 48dd0d81. Results XP-only: hid coin icons / ±deltas / CURRENT BALANCE. Lobby instant-bot
+  subtitle shortened to `${n}P · ${b} boards · instant` + 11pt floor (a11y label kept verbose).
+  Per-board Auto-Place tag 11pt. tsc 0, jest 2505.
+- S53 OTA-CHIP-UI-PARITY — SHA b797c99 | bundle 3354a01 → 1202589a36a11db6a84c04adf2280b39 |
+  OTA ca5485d9. CompleteBanner gated by isPractice (verified chip-free). ShareCard potAmount fix
+  landed on DEAD code (see S54). jest 2505.
+- S54 S53-VERIFY (no ship) — instrumented: BoardResultCard NOT reached, visibleBoardCount stuck
+  at 0 (25 passes). ShareCards = captureRef/react-native-view-shot, wired but unreachable.
+  CompleteBanner practice render correct (screenshot). Real Share Hand/COMPLETE = plain text,
+  chip-safe. OPEN BUG: visibleBoardCount=0 dead-render (BoardResultCard animated view).
+- S55 PRACTICE-CHIP-GATE-SWEEP — SHA c768fa4 | bundle 1202589a →
+  a199ec36fb26c4e8d9662d91b18cfbce | OTA b5749ca4. Single gate = isPractice (29 uses). Gated
+  every REACHABLE chip render; headline = CompleteOverlay `🏆 COMPLETE! +50% BONUS (+${x})`.
+  Forced practice+real COMPLETE sweeps screenshotted (practice = 0 chips, real = intact).
+  +3 tests → jest 2508. >>> CURRENT LIVE BUNDLE = a199ec36fb26c4e8d9662d91b18cfbce <
+- S56 MEMORY-COUPLING-NOTE (docs only) — SHA 2f3cece. Added the chip-gate coupling note.
+- DB (strategist, Supabase MCP): deleted junk chip_transactions row AUDIT_TEST +999,999
+  (device AUDIT-PROBE-DELETE-ME, no user, no leaderboard/economy_log dependency). Post-delete
+  economy truth: credits 635,695 vs debits −6,950; sink (quick_poker buy-ins) DEAD since
+  2026-06-24; active faucets = daily_streak (+508k/984 rows), daily_login, daily_reward.
+  `test` (+20) rows left for the economy-track purge.
+- Category status: practice chip-parity CLOSED after S55. Open real work: native Board-2
+  overflow (needs 320/375 device capture) + economy sink refactor (submit_score
+  server-computed amounts).
+
 ## 2026-07-06 — RECAP
 - **Live:** main `f660e33`, web bundle `index-4a6f7182`, OTA `ac8cf3f5`, build 506.
 - **Shipped this session (14 batches):** unified `GameView`; leave-recovery; QA batches A/B/C; UX-1/2; daily_login leak server-lock; Vercel rename (Wingman hijack recovery); Dependabot cleared; S-batch; lobby bot-practice tables + Practice-vs-Bots rename + Play Online CTA + declutter + fake-online-count removed; practice-session counter + games_played practice-guard + discoverable bug-report button; **POLISH-1** (onboarding ends in a dealt hand, Play-Online first-tap fix); **REALTIME-JUMP ENABLED** (`PRACTICE_LIVE_ENABLED=true` — 2P practice holds a real realtime seat → 30s synced countdown → jump to MP; monitored, 0 ghost seats); **RESPONSIVE-FIX** (Home Play-button truncation, bug-report FAB moved to an in-flow row, game-screen board-scroll cap, +`screen_width`/`screen_height`/`device_model` on `app_opened`).
