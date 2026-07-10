@@ -86,6 +86,37 @@ export async function earnChips(
 }
 
 // ---------------------------------------------------------------------------
+// record_hand_net — ECON-SINGLEWRITER Phase 1 (S59)
+// ---------------------------------------------------------------------------
+
+export interface HandNetResult {
+  ok: boolean;
+  net: number;
+  new_balance?: number;
+  clamped?: boolean;
+}
+
+/**
+ * Persist a REAL-chip hand's NET (= gross winnings − buy-in, i.e. revealData.netChips) as a
+ * single LEDGERED server delta via the strategist-owned `record_hand_net` RPC. This RPC is the
+ * SOLE per-hand balance-mover: it moves leaderboard.total_chips by exactly the net once, writes a
+ * `chip_transactions` row with event_type 'hand_net', and returns the post-delta `new_balance` so
+ * the caller can feed it to submit_score as a stats-only read-back (no double-count). NEVER call
+ * for practice hands. Contract (server clamps net to ±10000):
+ *   record_hand_net(p_device_id, p_net) -> { ok, new_balance, net, clamped }
+ */
+export async function recordHandNet(deviceId: string, net: number): Promise<HandNetResult | null> {
+  const raw = await callRPC<any>('record_hand_net', { p_device_id: deviceId, p_net: net });
+  if (!raw) return null;
+  return {
+    ok: raw.ok === true,
+    net: raw.net ?? net,
+    new_balance: raw.new_balance,
+    clamped: raw.clamped,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Card display config
 // ---------------------------------------------------------------------------
 
