@@ -38,7 +38,7 @@ import { getSupabase } from '../utils/supabase';
 import { shouldPromptLogin } from '../utils/auth';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
-import { earnChips, recordHandNet } from '../utils/supabaseEconomy';
+import { earnChips, recordHandNet, recordReward } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
 import { FloatingChips } from '../components/FloatingChips';
@@ -271,25 +271,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     revealData.boards.forEach((board, i) => CapsHooks.boardCompleted(i, board.playerHandName, board.winner === 'player'));
     if (localSwept && revealData.completeBonusAmount > 0) CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
 
-    const store = useGameStore.getState();
-    if (!isPracticeGame && !handNetPersistedRef.current) {
-      handNetPersistedRef.current = true;
-      // ECON-SW-P1 (S59) — the per-hand NET now persists as ONE ledgered server delta via
-      // record_hand_net (event_type 'hand_net'), which is the SOLE per-hand balance-mover:
-      // it moves leaderboard.total_chips by EXACTLY the net once. submit_score is then fed
-      // the READ-BACK new_balance (stats/echo only) so its absolute write re-affirms the
-      // current total instead of independently moving it = no double-count. submit_score
-      // stays in place (its balance write is stripped in Phase 3). Practice writes NOTHING.
-      // Pass NET (revealData.netChips = gross − buy-in), not gross.
-      void (async () => {
-        try {
-          const deviceId = await getDeviceId();
-          const res = await recordHandNet(deviceId, revealData.netChips);
-          const readBack = (res && typeof res.new_balance === 'number') ? res.new_balance : store.chips;
-          await submitScore(store.playerName || 'Player', readBack, store.handsPlayed, store.handsWon, store.biggestWin);
-        } catch { /* economy RPCs never crash the game */ }
-      })();
-    }
+    // ECON-SW-P1 + ECON-ACHIEVEMENT-LEDGER — the per-hand net, achievement grants, and the
+    // submit_score stats write are persisted TOGETHER in ONE sequenced block further below
+    // (after achievements are computed). They cannot be separate async flows: submit_score
+    // does an ABSOLUTE read-back write, so any ledgered delta (record_hand_net / record_reward)
+    // that lands after submit_score captured its balance would be CLOBBERED. See the
+    // consolidated block right after the achievement-unlock section.
 
     const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
       boardIndex: i,
@@ -386,18 +373,42 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       alreadyUnlocked: gs.unlockedAchievements,
     });
 
-    if (newlyUnlocked.length > 0) {
-      // VAMOS-UNIFY-FINAL 2026-06-28 — achievements are still unlocked + the
-      // reward chips still credited; the in-app AchievementToast is gone.
-      // Players see unlocks on the Achievements screen.
-      const unlocked = newlyUnlocked
-        .map((id) => getAchievement(id))
-        .filter((a): a is Achievement => a !== undefined);
-      unlocked.forEach((a) => {
-        gs.unlockAchievement(a.id);
-        gs.addChips(a.reward);
-        gs.trackChipsEarned(a.reward);
-      });
+    // ECON-ACHIEVEMENT-LEDGER (S60) — set local unlock state immediately (prevents re-fire);
+    // players see unlocks on the Achievements screen (the in-app toast is gone). The durable
+    // CHIP grant per unlock is a ledgered server delta (record_reward, event_type 'ach_'+id,
+    // once=true → server dedupes per achievement FOREVER), applied in the consolidated
+    // persistence block below so its credit isn't clobbered by submit_score's read-back.
+    // isPractice yields [] via the checkAchievements guard, so nothing is granted in practice.
+    const unlockedAchievements = newlyUnlocked
+      .map((id) => getAchievement(id))
+      .filter((a): a is Achievement => a !== undefined);
+    unlockedAchievements.forEach((a) => gs.unlockAchievement(a.id));
+
+    // ECON-SW-P1 + ECON-ACHIEVEMENT-LEDGER — CONSOLIDATED, SEQUENCED economy persistence.
+    // submit_score does an ABSOLUTE read-back write, so every ledgered delta must land BEFORE
+    // it or be clobbered. Strict order: record_hand_net (per-hand net, sole per-hand mover) →
+    // record_reward(each unlocked achievement) → submit_score(FINAL new_balance = stats + a
+    // no-op echo of the true post-delta total). Fires exactly ONCE per hand (handNetPersistedRef
+    // + the []-deps effect). Practice writes NOTHING.
+    if (!isPracticeGame && !handNetPersistedRef.current) {
+      handNetPersistedRef.current = true;
+      void (async () => {
+        try {
+          const deviceId = await getDeviceId();
+          let latest: number | null = null;
+          const netRes = await recordHandNet(deviceId, revealData.netChips);
+          if (netRes && typeof netRes.new_balance === 'number') latest = netRes.new_balance;
+          for (const a of unlockedAchievements) {
+            const r = await recordReward(deviceId, a.reward, 'ach_' + a.id, true);
+            if (r && r.granted > 0 && typeof r.new_balance === 'number') {
+              latest = r.new_balance;
+              gs.trackChipsEarned(r.granted);
+            }
+          }
+          if (latest !== null) gs.setChips(latest);
+          await submitScore(gs.playerName || 'Player', latest ?? gs.chips, gs.handsPlayed, gs.handsWon, gs.biggestWin);
+        } catch { /* economy RPCs never crash the game */ }
+      })();
     }
 
     // ECON-SW-P1 (S59) — the old per-hand earn_chips('hand_won' +50 / 'streak_5_wins' +100)
