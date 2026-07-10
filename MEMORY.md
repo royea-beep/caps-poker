@@ -1,5 +1,47 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-10 — Economy single-writer refactor (strategist-verified vs live DB)
+LIVE BUNDLE = e0a78cd8aeb48d34b509d3d81cb56436 (S62 ship). Runtime 2.7.0.
+
+Batches:
+- S57 MEMORY-BACKFILL (dd8cb01, docs). S58 ECON-WRITE-PATH-AUDIT (read-only).
+- S59 ECON-SINGLEWRITER-P1 (d113981 | OTA 4a62f899): per-hand net routed to record_hand_net;
+  submit_score demoted to read-back; hand_won/streak_5_wins removed from per-hand path.
+- S60 ECON-ACHIEVEMENT-LEDGER (fd1dcb6 | OTA c564024e): achievements + referral routed to
+  record_reward (fixed a LIVE regression where achievement chips were erased post-P1).
+- S61 ECON-MP-PATH-AUDIT (read-only): MP writes per-own-device net; found record_hand_net had
+  NO server dedup.
+- S62 hand_id dedup (1bcfe59 | OTA 4fde5feb): client passes RevealData.handId; server dedup live.
+- S63 ECON-PRE-PHASE3-AUDIT (read-only): Phase 3 cleared except MP net verification.
+
+Strategist DB migrations (via apply_migration; DB is strategist-owned, NOT the bot):
+- record_hand_net(p_device_id text, p_net integer, p_hand_id text) → jsonb{ok,new_balance,net,
+  clamped,duplicate?}. Ledgered 'hand_net' delta, clamp +/-10000, hand_id idempotency.
+  Reverse: DROP FUNCTION.
+- record_reward(p_device_id text, p_amount integer, p_event_type text, p_once boolean) →
+  jsonb{ok,granted,new_balance,already_granted?,clamped?}. Clamp [0,2000], p_once dedup.
+- INDEX uq_hand_net_ref: UNIQUE (device_id, reference_id) WHERE event_type='hand_net' AND
+  reference_id IS NOT NULL. (hand_id stored in chip_transactions.reference_id.)
+- submit_score: NEVER-LOWER guard added (v_chips := GREATEST(v_chips, v_prev)). Kills the stale
+  read-back clobber. Signature/stats/return unchanged. This is INTERIM Phase-3.
+- Deleted junk row chip_transactions AUDIT_TEST +999,999 (device AUDIT-PROBE-DELETE-ME).
+
+Economy truth (corrects the old "635k credits / 0 debits / no sink" framing — that was a LEDGER
+artifact): leaderboard.total_chips is authoritative; ledger missed ~70% of real chips because
+submit_score wrote absolute + un-ledgered. Snapshot 2026-07-10: 150 devices, 336,855 total.
+hand_net 10 rows (4 with hand_id). Junk 'test' (+20, 2 rows) still pending purge.
+
+OPEN:
+- PHASE 3 FULL (strip submit_score's total_chips write) is BLOCKED on a live MP hand WITH A
+  WINNER. Both MP hands observed so far netted 0/0 (tie or an MP net-computation bug — unresolved).
+  Remaining Phase-3 steps when unblocked: (1) submit_score stats-only (read+return current);
+  (2) client retry-on-failure for record_hand_net (safe via hand_id); (3) route gameover.tsx:57
+  bust-reset through claim_low_chip_rescue; (4) genesis snapshot Option A at cutover.
+- Native Board-2 overflow + wordmark clip: needs a 320/375 device capture.
+- chip_config reconciliation (referral 300 != client 100; 9 of 12 achievements missing) — deferred;
+  client literals are the live truth.
+- BoardResultCard visibleBoardCount=0 dead-render still open (see chip-gate coupling note above).
+
 ## 2026-07-09 — CHIP-GATE SWEEP + DEAD-RENDER COUPLING (S52–S56)
 - **Practice-mode chip UI fully gated (S52–S55):** every chip figure in the game flow now respects `isPractice` (the single source of truth) — results Net/Balance/board-by-board/earned-CTA/FloatingChips/win-overlay/tie-bonus, BoardReveal delta/FloatingChips/intermission, CompleteBanner bonus line, **CompleteOverlay "BONUS +N" full-screen flash** (S55 headline fix), GameView header balance pill, and the BoardArrangement "WIN ALL → +N" banner. Live: main `c768fa4`, web bundle `index-a199ec36`, OTA `b5749ca4`. Regression test `components/__tests__/CompleteOverlay.test.ts` (gate extracted to `components/completeOverlayGate.ts` — this project's jest is logic-only, no JSX rendering).
 - **DEAD-RENDER (S54, OPEN — not yet fixed, no speculative refactor):** `BoardResultCard` is imported + mapped in `app/results.tsx`, but `visibleBoardCount` (hooks/useResultsAnimations.ts) stays **0** on web because `InteractionManager.runAfterInteractions` never resolves — so its per-board animated fade-in never appears and `BoardResultCard` + its offscreen `SingleBoardShareCard`/`StoryShareCard` are effectively dead in the live results flow (instrumented, confirmed 25 render passes over 16s). The compact "Board by board" list is what users actually see.
