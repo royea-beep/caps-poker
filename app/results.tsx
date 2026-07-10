@@ -396,7 +396,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         try {
           const deviceId = await getDeviceId();
           let latest: number | null = null;
-          const netRes = await recordHandNet(deviceId, revealData.netChips);
+          // ECON-SW P1.1 (S62) — pass the STABLE per-hand id (set once at hand end in
+          // revealData) as p_hand_id so the server dedups a results double-mount. NOT
+          // handRecord.id — that's regenerated per mount and would defeat the dedup.
+          const netRes = await recordHandNet(deviceId, revealData.netChips, revealData.handId);
           if (netRes && typeof netRes.new_balance === 'number') latest = netRes.new_balance;
           for (const a of unlockedAchievements) {
             const r = await recordReward(deviceId, a.reward, 'ach_' + a.id, true);

@@ -94,6 +94,8 @@ export interface HandNetResult {
   net: number;
   new_balance?: number;
   clamped?: boolean;
+  /** ECON-SW P1.1 (S62) — true when the server deduped this (device_id, hand_id) → no balance change. */
+  duplicate?: boolean;
 }
 
 /**
@@ -105,14 +107,21 @@ export interface HandNetResult {
  * for practice hands. Contract (server clamps net to ±10000):
  *   record_hand_net(p_device_id, p_net) -> { ok, new_balance, net, clamped }
  */
-export async function recordHandNet(deviceId: string, net: number): Promise<HandNetResult | null> {
-  const raw = await callRPC<any>('record_hand_net', { p_device_id: deviceId, p_net: net });
+export async function recordHandNet(deviceId: string, net: number, handId?: string): Promise<HandNetResult | null> {
+  // ECON-SW P1.1 (S62) — pass a STABLE per-hand id as p_hand_id when available; the server
+  // dedups on (device_id, hand_id) via a partial unique index, so a results re-mount for the
+  // same hand returns { duplicate:true, net:0 } instead of double-counting. Omitting it (2-arg
+  // call) keeps the old no-dedup behavior.
+  const params: Record<string, unknown> = { p_device_id: deviceId, p_net: net };
+  if (handId) params.p_hand_id = handId;
+  const raw = await callRPC<any>('record_hand_net', params);
   if (!raw) return null;
   return {
     ok: raw.ok === true,
     net: raw.net ?? net,
     new_balance: raw.new_balance,
     clamped: raw.clamped,
+    duplicate: raw.duplicate,
   };
 }
 
