@@ -654,6 +654,10 @@ function GameScreenInner() {
       potPerBoard: config.potPerBoard,
       numberOfPlayers,
       boardCount,
+      // ECON-SW P1.1 (S62) — stable per-hand id for record_hand_net server-side dedup.
+      // doNavigate is guarded (hasNavigatedRef) so this runs once per hand → stable across
+      // any results re-mount that reads this same revealData.
+      handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
     debugLog('11 setRevealData DONE');
 

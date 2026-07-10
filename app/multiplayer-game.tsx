@@ -638,6 +638,9 @@ function MultiplayerGameScreenInner() {
       potPerBoard: config.potPerBoard,
       numberOfPlayers: clientArray.length,
       boardCount,
+      // ECON-SW P1.1 (S62) — stable per-hand id for record_hand_net server-side dedup. Host
+      // reveal fires once per hand (onAllPlayersReady) → stable across any results re-mount.
+      handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
@@ -758,6 +761,10 @@ function MultiplayerGameScreenInner() {
       potPerBoard: config.potPerBoard,
       numberOfPlayers: playerCount,
       boardCount,
+      // ECON-SW P1.1 (S62) — stable per-hand id for record_hand_net server-side dedup. Guest
+      // reveal is HAND_COMPLETE-deduped (per network handId) → fires once per hand → stable
+      // across any results re-mount.
+      handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
 
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);

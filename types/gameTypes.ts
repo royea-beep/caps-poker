@@ -58,6 +58,11 @@ export interface RevealBoardData {
 
 export interface RevealData {
   boards: RevealBoardData[];
+  /** ECON-SW P1.1 (S62) — stable per-hand id, generated ONCE when the hand ends (at each
+   *  setRevealData site). Passed to record_hand_net as p_hand_id for server-side dedup, so a
+   *  results re-mount reading the same revealData can't double-count the net. In-memory only
+   *  (RevealData is not persisted). */
+  handId?: string;
   /** LOBBY-BOT-PRACTICE — practice game vs bot: XP only, ZERO real chips (results.tsx skips every credit path) */
   isPractice?: boolean;
   netChips: number;
