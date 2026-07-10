@@ -117,6 +117,49 @@ export async function recordHandNet(deviceId: string, net: number): Promise<Hand
 }
 
 // ---------------------------------------------------------------------------
+// record_reward — ECON-ACHIEVEMENT-LEDGER (S60)
+// ---------------------------------------------------------------------------
+
+export interface RewardResult {
+  ok: boolean;
+  granted: number;
+  new_balance?: number;
+  already_granted?: boolean;
+  clamped?: boolean;
+}
+
+/**
+ * Grant a one-off / achievement chip reward as a LEDGERED server delta via the
+ * strategist-owned `record_reward` RPC — restoring server persistence for grants that used
+ * to ride on submit_score's absolute write (broken by ECON-SW-P1's read-back). The amount is
+ * CLIENT-SENT (server clamps to [0, 2000]); pass `once=true` for grants that must fire at most
+ * once per (device, eventType) EVER (server-side idempotency — reinstall-farm safe). Returns
+ * the post-grant `new_balance`. NEVER call for practice. Contract:
+ *   record_reward(p_device_id, p_amount, p_event_type, p_once) -> { ok, granted, new_balance, already_granted, clamped }
+ */
+export async function recordReward(
+  deviceId: string,
+  amount: number,
+  eventType: string,
+  once: boolean = false,
+): Promise<RewardResult | null> {
+  const raw = await callRPC<any>('record_reward', {
+    p_device_id: deviceId,
+    p_amount: amount,
+    p_event_type: eventType,
+    p_once: once,
+  });
+  if (!raw) return null;
+  return {
+    ok: raw.ok === true,
+    granted: raw.granted ?? 0,
+    new_balance: raw.new_balance,
+    already_granted: raw.already_granted,
+    clamped: raw.clamped,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Card display config
 // ---------------------------------------------------------------------------
 

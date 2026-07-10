@@ -58,7 +58,7 @@ import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
-import { earnChips, fetchCardDisplayConfig, fetchPokerShop } from '../../utils/supabaseEconomy';
+import { earnChips, fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
 import { trackEvent } from '../../utils/heatmap';
 import { getSupabase } from '../../utils/supabase';
@@ -1127,8 +1127,18 @@ export default function HomeScreen() {
       if (error || !data?.success) {
         showReferralToast(data?.message ?? 'Invalid or already used code.');
       } else {
-        useGameStore.getState().addChips(100);
-        useGameStore.getState().trackChipsEarned(100);
+        // ECON-ACHIEVEMENT-LEDGER (S60) — the +100 welcome bonus now persists as a LEDGERED
+        // server grant via record_reward (once=true → server dedupes per device forever),
+        // replacing the local-only addChips that ECON-SW-P1 broke (submit_score is read-back
+        // now). Client literal 100 is intentional (live behavior); chip_config's referral_joined
+        // 300 is a separate deferred cleanup, not used here.
+        try {
+          const res = await recordReward(deviceId, 100, 'referral_welcome', true);
+          if (res && res.granted > 0 && typeof res.new_balance === 'number') {
+            useGameStore.getState().setChips(res.new_balance);
+            useGameStore.getState().trackChipsEarned(res.granted);
+          }
+        } catch { /* economy RPC never crashes the UI */ }
         showReferralToast('+100 💰 Welcome bonus!');
         setReferralCodeInput('');
         setShowReferralModal(false);
