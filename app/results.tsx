@@ -38,7 +38,7 @@ import { getSupabase } from '../utils/supabase';
 import { shouldPromptLogin } from '../utils/auth';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
-import { earnChips } from '../utils/supabaseEconomy';
+import { earnChips, recordHandNet } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
 import { FloatingChips } from '../components/FloatingChips';
@@ -159,6 +159,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   };
   const winOverlayOpacity = useRef(new Animated.Value(0)).current;
   const winOverlayScale = useRef(new Animated.Value(0.7)).current;
+  // ECON-SW-P1 (S59) — idempotency guard: record_hand_net is a DELTA, so it must fire
+  // EXACTLY ONCE per hand. The persistence effect below has [] deps (single run per mount)
+  // and results mounts once per hand, but this ref makes a double-fire (StrictMode / any
+  // future effect re-run) structurally impossible.
+  const handNetPersistedRef = useRef(false);
   // Colored dots for win animation (RN Animated only — no confetti library, Hermes-safe)
   const WIN_DOT_COLORS = ['#FFD700', '#4CAF50', '#00BFFF', '#FF6B6B', '#c9a84c', '#39FF14', '#FF69B4', '#FFD700'];
   const WIN_DOT_COUNT = 8;
@@ -267,8 +272,23 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     if (localSwept && revealData.completeBonusAmount > 0) CapsHooks.bonusAchieved('complete', revealData.completeBonusAmount);
 
     const store = useGameStore.getState();
-    if (!isPracticeGame) {
-      submitScore(store.playerName || 'Player', store.chips, store.handsPlayed, store.handsWon, store.biggestWin).catch(() => {});
+    if (!isPracticeGame && !handNetPersistedRef.current) {
+      handNetPersistedRef.current = true;
+      // ECON-SW-P1 (S59) — the per-hand NET now persists as ONE ledgered server delta via
+      // record_hand_net (event_type 'hand_net'), which is the SOLE per-hand balance-mover:
+      // it moves leaderboard.total_chips by EXACTLY the net once. submit_score is then fed
+      // the READ-BACK new_balance (stats/echo only) so its absolute write re-affirms the
+      // current total instead of independently moving it = no double-count. submit_score
+      // stays in place (its balance write is stripped in Phase 3). Practice writes NOTHING.
+      // Pass NET (revealData.netChips = gross − buy-in), not gross.
+      void (async () => {
+        try {
+          const deviceId = await getDeviceId();
+          const res = await recordHandNet(deviceId, revealData.netChips);
+          const readBack = (res && typeof res.new_balance === 'number') ? res.new_balance : store.chips;
+          await submitScore(store.playerName || 'Player', readBack, store.handsPlayed, store.handsWon, store.biggestWin);
+        } catch { /* economy RPCs never crash the game */ }
+      })();
     }
 
     const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
@@ -380,31 +400,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       });
     }
 
-    // Economy: earn_chips via Supabase RPC — fire-and-forget, never block UI.
-    // VAMOS-UNIFY-FINAL 2026-06-28 — the floating "+N 💰" earn toast is gone;
-    // chips are still awarded silently (they appear in the chip counter).
-    void (async () => {
-      try {
-        if (isPracticeGame) return; // ZERO real chips from practice — no earn events
-        const deviceId = await getDeviceId();
-        if (revealData.netChips > 0) {
-          const wonResult = await earnChips(deviceId, 'hand_won');
-          if (wonResult?.chips_earned) {
-            gs.addChips(wonResult.chips_earned);
-            gs.trackChipsEarned(wonResult.chips_earned);
-            if (gs.currentWinStreak === 5) {
-              const streakResult = await earnChips(deviceId, 'streak_5_wins');
-              if (streakResult?.chips_earned) {
-                gs.addChips(streakResult.chips_earned);
-                gs.trackChipsEarned(streakResult.chips_earned);
-              }
-            }
-          }
-        }
-      } catch {
-        // silent — economy RPCs never crash the game
-      }
-    })();
+    // ECON-SW-P1 (S59) — the old per-hand earn_chips('hand_won' +50 / 'streak_5_wins' +100)
+    // credits were REMOVED from the per-hand path. Before, submit_score's absolute overwrite
+    // clobbered them so they were effectively cosmetic; keeping them now would STACK on top of
+    // the real net (record_hand_net), breaking the "total_chips moves by EXACTLY the net once"
+    // invariant. The per-hand net (record_hand_net above) is now the SOLE per-hand chip movement.
+    // Daily faucets (daily_streak/login/reward) and the share_hand reward are untouched; XP /
+    // battle-pass / mission tracking below is unaffected.
 
     // Battle Pass XP + mission tracking
     try {
