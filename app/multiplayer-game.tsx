@@ -223,7 +223,10 @@ function MultiplayerGameScreenInner() {
     boardHighlightIds: string[];
   }>>([]);
 
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  // MP-MULTISELECT 2026-07-10 — mirror SOLO's multi-select (game.tsx:186): tap up to 4 hand
+  // cards, then tap a board to place them all. Placement stays 100% local; only the final
+  // arrangement syncs on Ready, so this is zero protocol/reveal impact.
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   // If rejoining after disconnect and already auto-readied, start in waiting (CAPS 12)
   const initialPhase = params.rejoinPhase === 'waiting' ? 'waiting' : 'arranging';
   const [phase, setPhase] = useState<'arranging' | 'waiting' | 'navigating'>(initialPhase);
@@ -936,7 +939,7 @@ function MultiplayerGameScreenInner() {
     setBoards(updated);
     boardsRef.current = updated;
     setPlayerHand([]);
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
     setPhase('waiting');
     timer.stop();
     // broadcast exactly once, outside any updater
@@ -999,40 +1002,71 @@ function MultiplayerGameScreenInner() {
     };
   }, []);
 
-  // Card selection (same UX as game.tsx)
+  // Card selection (same UX as game.tsx:741) — toggle in selectedCardIds, up to 4.
   const handleSelectCard = useCallback((card: Card) => {
     if (!isArranging) return;
     haptic(Haptics?.ImpactFeedbackStyle?.Light);
     playSound('cardSelect');
-    setSelectedCardId((prev) => (prev === card.id ? null : card.id));
+    setSelectedCardIds((prev) => {
+      if (prev.includes(card.id)) {
+        // Deselect
+        return prev.filter((id) => id !== card.id);
+      }
+      if (prev.length < 4) {
+        return [...prev, card.id];
+      }
+      // At max (4) — replace the last selected with the new card
+      return [...prev.slice(0, 3), card.id];
+    });
   }, [isArranging]);
 
-  // Place card on board
+  // Place ALL selected cards on the board (or the first hand card if none selected).
+  // Mirrors SOLO's handleBoardPress (game.tsx:773): compute cardsToPlace OUTSIDE the
+  // setBoards updater and issue the three setState calls in the same synchronous handler
+  // so React 18 batches them (no duplicate-card flicker, no side effects inside an updater).
+  // MP removes placed cards from the hand on placement, so a selected card is always still
+  // in the hand and never on another board — no cross-board re-validation needed.
   const handleBoardPress = useCallback((boardIndex: number) => {
     if (!isArranging) return;
     const currentHand = playerHandRef.current;
     if (currentHand.length === 0) return;
 
-    const cardToPlace = selectedCardId
-      ? currentHand.find((c) => c.id === selectedCardId)
-      : currentHand[0];
-    if (!cardToPlace) return;
+    const board = boardsRef.current[boardIndex];
+    if (!board) return;
+
+    const emptySlots = CARDS_PER_BOARD - board.playerCards.length;
+    if (emptySlots <= 0) return; // board full — no-op
+
+    const candidateCards: Card[] = selectedCardIds.length > 0
+      ? selectedCardIds
+          .map((id) => currentHand.find((c) => c.id === id))
+          .filter((c): c is Card => c !== undefined)
+      : currentHand.slice(0, 1);
+
+    const cardsToPlace = candidateCards.slice(0, emptySlots);
+    if (cardsToPlace.length === 0) return;
+
+    haptic(Haptics?.ImpactFeedbackStyle?.Medium);
+    playSound('cardPlace');
+    const placedIds = new Set(cardsToPlace.map((c) => c.id));
 
     setBoards((prev) => {
-      const board = prev[boardIndex];
-      if (!board || board.playerCards.length >= CARDS_PER_BOARD) return prev;
-      haptic(Haptics?.ImpactFeedbackStyle?.Medium);
-      playSound('cardPlace');
+      const prevBoard = prev[boardIndex];
+      if (!prevBoard) return prev;
+      // Re-validate slot count in the updater against a stale closure
+      const slots = CARDS_PER_BOARD - prevBoard.playerCards.length;
+      const validCards = cardsToPlace.slice(0, slots);
+      if (validCards.length === 0) return prev;
       const updated = [...prev];
       updated[boardIndex] = {
-        ...board,
-        playerCards: [...board.playerCards, cardToPlace],
+        ...prevBoard,
+        playerCards: [...prevBoard.playerCards, ...validCards],
       };
-      setPlayerHand((hand) => hand.filter((c) => c.id !== cardToPlace.id));
-      setSelectedCardId(null);
       return updated;
     });
-  }, [isArranging, selectedCardId]);
+    setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+    setSelectedCardIds([]);
+  }, [isArranging, selectedCardIds]);
 
   // Remove card from board
   const handleRemoveCardFromBoard = useCallback((boardIndex: number, card: Card) => {
@@ -1074,7 +1108,7 @@ function MultiplayerGameScreenInner() {
       return updated;
     });
     setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
   }, [isArranging]);
 
   // Auto-place ALL empty boards from the hand in ONE batched update (no ready broadcast —
@@ -1099,7 +1133,7 @@ function MultiplayerGameScreenInner() {
     playSound('cardPlace');
     setBoards(updated);
     setPlayerHand((h) => h.filter((c) => !placed.has(c.id)));
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
   }, [isArranging]);
 
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
@@ -1115,7 +1149,7 @@ function MultiplayerGameScreenInner() {
     track('cards_placed', { mode: 'multiplayer', isHost, numberOfPlayers: playerCount, boardCount }, 'multiplayer-game');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
     setPhase('waiting');
 
     const assignments = boards.map((b) => b.playerCards);
@@ -1202,7 +1236,7 @@ function MultiplayerGameScreenInner() {
       boards={_baBoards}
       boardShakeStyles={[]}
       playerHand={playerHand}
-      selectedCardIds={selectedCardId ? [selectedCardId] : []}
+      selectedCardIds={selectedCardIds}
       isArranging={isArranging}
       allBoardsFull={allBoardsFull}
       cardsRemaining={cardsRemaining}
