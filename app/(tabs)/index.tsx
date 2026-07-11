@@ -1404,30 +1404,35 @@ export default function HomeScreen() {
             (duplicated the title AND was wrong: only 2P has 4 boards; 3P=3, 4P=2). Kept:
             title, ONE tagline, selector. */}
 
-        {/* Player count selector — 2P / 3P / 4P */}
-        <View style={{ flexDirection: 'row', gap: rs(8), marginBottom: rs(2) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
-          {([2, 3, 4] as const).map(n => (
-            <Pressable
-              key={n}
-              onPress={() => updateConfig({ numberOfPlayers: n })}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: config.numberOfPlayers === n }}
-              aria-checked={config.numberOfPlayers === n}
-              accessibilityLabel={`${n} players`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={{
-                paddingHorizontal: rs(16), paddingVertical: rs(8),
-                borderRadius: rv(20),
-                backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
-                borderWidth: 1,
-                borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.18)',
-              }}
-            >
-              <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.75)', fontSize: rf(14), fontWeight: '700' }}>
-                {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
-              </Text>
-            </Pressable>
-          ))}
+        {/* S72 — player count is a SMALL SETTING, not a decision gate: a muted "Players"
+            caption + compact pills, so a first-time user's eye drops straight to the loud
+            green PLAY button below instead of stalling on "which do I pick?". */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(8), marginBottom: rs(2) }}>
+          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rf(11, 10), fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>Players</Text>
+          <View style={{ flexDirection: 'row', gap: rs(6) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
+            {([2, 3, 4] as const).map(n => (
+              <Pressable
+                key={n}
+                onPress={() => updateConfig({ numberOfPlayers: n })}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: config.numberOfPlayers === n }}
+                aria-checked={config.numberOfPlayers === n}
+                accessibilityLabel={`${n} players`}
+                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                style={{
+                  paddingHorizontal: rs(12), paddingVertical: rs(6),
+                  borderRadius: rv(16),
+                  backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
+                  borderWidth: 1,
+                  borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: rf(12, 11), fontWeight: '700' }}>
+                  {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
         {/* HOME-DECLUTTER — removed the "N boards · Omaha · Best hand wins each" line under
             the selector; it near-duplicates the dynamic meta line under Play (kept). */}
@@ -1509,20 +1514,17 @@ export default function HomeScreen() {
         {/* HOME-DECLUTTER — "Welcome to CAPS Poker! Tap Play to start" card removed:
             redundant now that onboarding + the clear Play button + Play Online CTA exist. */}
 
-        {/* Challenge a Friend — beginner+ only */}
+        {/* Challenge a Friend — S72: demoted from a loud gold card to a quiet secondary
+            link so it no longer competes with the primary PLAY (beginner+ only). */}
         {show_friend_challenge && (
           <Pressable
-            style={{
-              borderWidth: 1, borderColor: '#FFD700', borderRadius: rv(12),
-              paddingVertical: rs(14), marginHorizontal: rs(16), marginTop: rs(8),
-              alignItems: 'center', backgroundColor: 'rgba(255,215,0,0.08)',
-            }}
+            style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: rs(6), paddingVertical: rs(8), paddingHorizontal: rs(14), marginTop: rs(10) }}
             onPress={handleFriendChallenge}
             accessibilityRole="button"
             accessibilityLabel="Challenge a Friend"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={{ color: '#FFD700', fontSize: rf(15), fontWeight: '600' }}>Challenge a Friend</Text>
-            <Text style={{ color: '#A5D6A7', fontSize: rf(11), marginTop: rs(2) }}>Send a poker challenge to a friend</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(13), fontWeight: '600' }}>⚔️ Challenge a Friend</Text>
           </Pressable>
         )}
 
