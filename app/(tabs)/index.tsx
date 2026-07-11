@@ -40,6 +40,7 @@ import CardComponent from '../../components/Card';
 import ChipsDisplay from '../../components/ChipsDisplay';
 import SideMenu from '../../components/SideMenu';
 import { useGameStore } from '../../store/gameStore';
+import { buildInviteUrl } from '../../constants/appLinks';
 import { COLORS, getBoardCount, Card } from '../../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import {
@@ -1101,7 +1102,7 @@ export default function HomeScreen() {
         code = data.code as string;
         setMyReferralCode(code);
       }
-      const message = `🃏 Come play CAPS with me! Enter code ${code} and get 100 💰 bonus! https://caps.app/invite/${code}`;
+      const message = `🃏 Come play CAPS with me! Enter code ${code} and get 100 💰 bonus! ${buildInviteUrl(code)}`;
       await Share.share({ message });
     } catch {
       // silent — share cancelled or unavailable

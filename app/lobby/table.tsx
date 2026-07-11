@@ -87,6 +87,13 @@ export default function TableRoomScreen() {
     else router.replace('/lobby' as any);
   }, [router, roomCode, releaseSeat]);
 
+  // S70 — "‹ Back": leave the SCREEN but KEEP the seat. The seat stays held app-wide
+  // (WaitingSeatBanner keeps heartbeating + offers Return/Leave); does NOT call leave_table.
+  const minimize = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/lobby' as any);
+  }, [router]);
+
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
@@ -337,8 +344,8 @@ export default function TableRoomScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable onPress={bailOut} hitSlop={10} accessibilityRole="button" accessibilityLabel="Leave table">
-          <Text style={styles.back}>‹ Leave</Text>
+        <Pressable onPress={minimize} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back — keep your seat">
+          <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">{TYPE_LABEL[maxPlayers]}</Text>
         <View style={{ width: rs(50) }} />
@@ -378,6 +385,12 @@ export default function TableRoomScreen() {
             : 'Waiting for the table to fill…'}
         </Text>
         <Text style={styles.hint}>The game starts automatically when the table is full.</Text>
+
+        {/* S70 — explicit "give up your seat" action, distinct from "‹ Back" (which keeps it). */}
+        <Pressable onPress={bailOut} style={styles.leaveTableBtn} accessibilityRole="button" accessibilityLabel="Leave table and give up your seat">
+          <Text style={styles.leaveTableText}>Leave table</Text>
+        </Pressable>
+        <Text style={styles.leaveTableHint}>Gives up your seat. Tap “‹ Back” to keep it and return later.</Text>
       </View>
     </SafeAreaView>
   );
@@ -432,4 +445,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(24),
   },
   leaveText: { color: COLORS.mintBright, fontSize: rf(15), fontWeight: '800' },
+  // S70 — explicit "give up your seat" button on the waiting screen (distinct from "‹ Back").
+  leaveTableBtn: {
+    marginTop: rs(22),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    borderRadius: rv(10),
+    paddingVertical: rs(10),
+    paddingHorizontal: rs(26),
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  leaveTableText: { color: 'rgba(255,255,255,0.85)', fontSize: rf(14), fontWeight: '700' },
+  leaveTableHint: { color: COLORS.textMuted, fontSize: rf(11, 10), textAlign: 'center', marginTop: rs(6) },
 });
