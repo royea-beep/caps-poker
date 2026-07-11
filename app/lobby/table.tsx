@@ -36,6 +36,7 @@ import {
 import { CapsHooks } from '../../utils/learning';
 import { track } from '../../utils/analytics';
 import { leaveTable, touchRoomPlayer } from '../../utils/lobbyApi';
+import { useWaitingSeatStore } from '../../stores/waitingSeatStore';
 import { getDeviceId } from '../../utils/leaderboard';
 import { getSupabase } from '../../utils/supabase';
 import { rf, rs, rv } from '../../utils/responsive';
@@ -60,6 +61,9 @@ export default function TableRoomScreen() {
   const setClubCode = useGameStore((s) => s.setClubCode);
   const setConnectedPlayers = useGameStore((s) => s.setConnectedPlayers);
   const updateConfig = useGameStore((s) => s.updateConfig);
+  // S69 — app-wide waiting-seat hold (heartbeat + banner owned by WaitingSeatBanner).
+  const holdSeat = useWaitingSeatStore((s) => s.holdSeat);
+  const releaseSeat = useWaitingSeatStore((s) => s.releaseSeat);
 
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'starting' | 'error'>('connecting');
@@ -67,7 +71,6 @@ export default function TableRoomScreen() {
 
   const serverRef = useRef<RealtimeServer | null>(null);
   const clientRef = useRef<RealtimeClient | null>(null);
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef(false); // host: deal already fired
   const dealScheduledRef = useRef(false); // host: a deal is queued (settle delay)
   const launchedRef = useRef(false); // navigated into the game — keep the connection alive
@@ -75,12 +78,14 @@ export default function TableRoomScreen() {
   const userIdRef = useRef<string | null>(null);
   const mountedRef = useRef(true);
 
-  // Bail out of the table: navigate back. The unmount cleanup frees the DB seat and
-  // tears down realtime (only when we did NOT launch into the game).
+  // Explicit leave — S69: the unmount cleanup no longer frees the seat, so an explicit
+  // Leave/Back must free it here (leave_table) + release the app-wide hold, then navigate.
   const bailOut = useCallback(() => {
+    void leaveTable(roomCode, userIdRef.current, deviceIdRef.current);
+    releaseSeat();
     if (router.canGoBack()) router.back();
     else router.replace('/lobby' as any);
-  }, [router]);
+  }, [router, roomCode, releaseSeat]);
 
   const handleShare = useCallback(async () => {
     try {
@@ -110,17 +115,12 @@ export default function TableRoomScreen() {
     // exact roster row that backs this seat.
     getDeviceId().then((d) => {
       deviceIdRef.current = d;
-      // Once we have a device_id, prime the seat immediately, then heartbeat every
-      // 25s. evict_ghost_seats considers a seat stale at >90s, so 25s leaves ~3
-      // beats of headroom before reaping. We stop the interval the moment we leave
-      // the waiting room (launched into the game OR bailed out / unmounted).
       if (!d || !roomCode) return;
+      // Prime the seat immediately, then hold it app-wide. From here the WaitingSeatBanner
+      // (root layout) owns the recurring touch_room_player heartbeat, so the seat stays
+      // alive even after navigating away from this screen. Released on launch/leave/error.
       void touchRoomPlayer(roomCode, d, userIdRef.current);
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-      heartbeatRef.current = setInterval(() => {
-        if (!mountedRef.current || launchedRef.current) return;
-        void touchRoomPlayer(roomCode, deviceIdRef.current, userIdRef.current);
-      }, 25_000);
+      holdSeat({ roomCode, deviceId: d, userId: userIdRef.current, maxPlayers, isHost, clubCode });
     }).catch(() => {});
     getSupabase()?.auth.getUser().then(({ data }) => { userIdRef.current = data?.user?.id ?? null; }).catch(() => {});
 
@@ -154,6 +154,7 @@ export default function TableRoomScreen() {
 
       const { boards, playerHands } = server.getDealtCards();
       launchedRef.current = true;
+      releaseSeat(); // S69 — game launched: the game screen owns the seat now, not the waiting banner
       router.replace({
         pathname: '/multiplayer-game',
         params: {
@@ -237,6 +238,7 @@ export default function TableRoomScreen() {
       client.updateCallbacks({
         onCardsDealt: (data: any) => {
           launchedRef.current = true;
+          releaseSeat(); // S69 — game launched: game screen owns the seat now
           track('mp_game_started', { player_count: maxPlayers, room_code: roomCode, role: 'guest' }, 'table-room');
           router.replace({
             pathname: '/multiplayer-game',
@@ -256,6 +258,7 @@ export default function TableRoomScreen() {
         onGameStateSnapshot: (snapshot: GameStateSnapshot) => {
           if (snapshot.phase === 'arranging' || snapshot.phase === 'waiting') {
             launchedRef.current = true;
+            releaseSeat(); // S69 — rejoined into the game: game screen owns the seat now
             router.replace({
               pathname: '/multiplayer-game',
               params: {
@@ -299,16 +302,22 @@ export default function TableRoomScreen() {
     return () => {
       cancelled = true;
       mountedRef.current = false;
-      if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; }
-      // If we launched into the game, the game screen owns the realtime connection.
-      // Otherwise free the DB seat and tear down realtime so no ghost table lingers.
+      // S69 — leaving the SCREEN must NOT free the seat. The seat is held app-wide
+      // (WaitingSeatBanner heartbeat); an explicit Leave (bailOut / banner) frees it
+      // immediately, otherwise the 90s reaper does. On launch the game screen owns the
+      // realtime connection. We still drop the store's realtime refs when not launched.
       if (!launchedRef.current) {
-        void leaveTable(roomCode, userIdRef.current, deviceIdRef.current);
         useGameStore.getState().resetMultiplayer();
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // S69 — if the table errors out, stop holding the seat so the app-wide heartbeat stops
+  // (the reaper frees the DB row ~90s later; "Back to Lobby" frees it immediately).
+  useEffect(() => {
+    if (status === 'error') releaseSeat();
+  }, [status, releaseSeat]);
 
   if (status === 'error') {
     return (

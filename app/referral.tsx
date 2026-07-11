@@ -24,6 +24,8 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
+import { recordReward } from '../utils/supabaseEconomy';
+import { useGameStore } from '../store/gameStore';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 // Suppress unused-import lint warning — COLORS used by pattern convention
@@ -146,9 +148,21 @@ export default function ReferralScreen() {
         p_code: code,
       });
       if (error || !data?.success) {
-        showToast(data?.message ?? 'Invalid code or already used.');
+        // S69 (A) — DB returns the reason in `data.error`
+        // ('Already redeemed' | 'Invalid or expired code' | 'Cannot use own code' | 'Missing code').
+        showToast(data?.error ?? 'Invalid code or already used.');
       } else {
-        showToast(`+${rewardPerReferral} 💰 received!`);
+        // S69 (A) — grant the redeemer's welcome bonus. The DB rewards only the REFERRER;
+        // the redeemer's bonus is client-side via record_reward(once=true → server dedupes
+        // per device forever, so it can never double-grant, incl. vs the Home redeem path).
+        try {
+          const res = await recordReward(deviceId, 100, 'referral_welcome', true);
+          if (res && res.granted > 0 && typeof res.new_balance === 'number') {
+            useGameStore.getState().setChips(res.new_balance);
+            useGameStore.getState().trackChipsEarned(res.granted);
+          }
+        } catch { /* economy RPC never crashes the UI */ }
+        showToast('+100 💰 Welcome bonus!');
         setRedeemInput('');
       }
     } catch {

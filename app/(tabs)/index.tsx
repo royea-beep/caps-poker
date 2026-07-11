@@ -1128,7 +1128,9 @@ export default function HomeScreen() {
       if (!sb) return;
       const { data, error } = await sb.rpc('redeem_referral', { p_device_id: deviceId, p_code: code });
       if (error || !data?.success) {
-        showReferralToast(data?.message ?? 'Invalid or already used code.');
+        // S69 (A) — the DB returns the reason in `data.error`
+        // ('Already redeemed' | 'Invalid or expired code' | 'Cannot use own code' | 'Missing code').
+        showReferralToast(data?.error ?? 'Invalid or already used code.');
       } else {
         // ECON-ACHIEVEMENT-LEDGER (S60) — the +100 welcome bonus now persists as a LEDGERED
         // server grant via record_reward (once=true → server dedupes per device forever),

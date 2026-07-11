@@ -51,6 +51,7 @@ import { initWebErrorReporter } from '../utils/webErrorReporter';
 import { initDebugger } from '@caps/debugger';
 import { sendCrashToWhatsApp } from '../utils/debug-whatsapp';
 import { CrashBoundary } from '../components/CrashBoundary';
+import WaitingSeatBanner from '../components/WaitingSeatBanner';
 import { recordGlobalTap, onScreenChanged } from '../utils/frictionSignals';
 
 // Lazy-load expo-screen-orientation (not available on web)
@@ -621,6 +622,8 @@ export default function RootLayout() {
         </WebContainer>
       </BugReporter>
       </CrashBoundary>
+      {/* S69 — app-wide waiting-seat banner + heartbeat (overlays every screen except the table) */}
+      <WaitingSeatBanner />
       {debugEnabled && <DebugOverlay />}
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
