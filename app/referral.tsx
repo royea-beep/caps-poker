@@ -83,7 +83,9 @@ export default function ReferralScreen() {
         if (!sb) return;
 
         // Ensure code exists (idempotent RPC)
-        const { data: codeData } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
+        // S68 (B) — create_referral_link returns json { success, code, ... } so `.code`
+        // resolves; create_referral_code returns a bare text code (`.code` was undefined).
+        const { data: codeData } = await sb.rpc('create_referral_link', { p_device_id: deviceId });
         if (codeData?.code) setMyCode(codeData.code as string);
 
         // Reward amount from app_config (fetched first so we can derive chips earned).
