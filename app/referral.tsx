@@ -26,6 +26,7 @@ import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
 import { recordReward } from '../utils/supabaseEconomy';
 import { useGameStore } from '../store/gameStore';
+import { buildInviteUrl } from '../constants/appLinks';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 // Suppress unused-import lint warning — COLORS used by pattern convention
@@ -122,7 +123,7 @@ export default function ReferralScreen() {
   // Share via native share sheet (WhatsApp picks it up)
   const handleShare = useCallback(async () => {
     if (!myCode) return;
-    const message = `🃏 Come play CAPS with me!\nUse code ${myCode} to get a ${rewardPerReferral} 💰 bonus!\nhttps://caps.app/invite/${myCode}`;
+    const message = `🃏 Come play CAPS with me!\nUse code ${myCode} to get a ${rewardPerReferral} 💰 bonus!\n${buildInviteUrl(myCode)}`;
     try {
       await Share.share({ message });
     } catch {
