@@ -63,7 +63,9 @@ const TIP = (en: string, he: string) => getLanguage() === 'he' ? he : en;
 // the rest are already short.
 const TIPS = [
   () => TIP('These are your cards. Place 4 on each board.', 'אלה הקלפים שלך. תשים 4 על כל לוח.'),
-  () => TIP('Tap a card, then tap an empty slot.', 'לחץ על קלף, ואז על מקום ריק.'),
+  // S71 — teach the Auto-Place fast path alongside tap-to-place (placing 4×N cards by hand
+  // is the biggest first-hand friction; Auto-Place fills a board in one tap).
+  () => TIP('Tap a card then a slot — or tap Auto-Place to fill a board fast.', 'לחץ קלף ואז מקום ריק — או Auto-Place למילוי מהיר.'),
   () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הלוח הזה.'),
   () => TIP('Hand strength shown here. Better hands win more!', 'עוצמת היד מוצגת כאן. ידיים טובות יותר מנצחות יותר!'),
   // Tip 5 (index 4): Omaha hand selection — the game picks the best 2+3 automatically.
