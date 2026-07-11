@@ -71,8 +71,11 @@ export function useResultsAnimations(revealData: RevealDataShape | null) {
     boardsInteractionRef.current = ih;
 
     // Chip roll-up
-    const chipTarget = useGameStore.getState().chips;
-    const chipStart = chipTarget - revealData.netChips;
+    // S68 (A) — floor the roll-up endpoints so the count-up never shows fractional chips.
+    // The intermediate steps below already Math.round; the start/end frames did not, so a
+    // fractional stored balance would surface decimals at the first/last frame.
+    const chipTarget = Math.round(useGameStore.getState().chips);
+    const chipStart = Math.round(chipTarget - revealData.netChips);
     const chipSteps = 20;
     let chipStep = 0;
     setDisplayChips(chipStart);

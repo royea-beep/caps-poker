@@ -700,7 +700,10 @@ export default function HomeScreen() {
     getDeviceId().then(async (deviceId) => {
       const sb = getSupabase();
       if (!sb) return;
-      const { data } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
+      // S68 (B) — create_referral_link returns json { success, code, clicks, conversions };
+      // create_referral_code returns a BARE text code, so `data.code` was always undefined
+      // and the code never loaded. Both write the same referral_links row (idempotent).
+      const { data } = await sb.rpc('create_referral_link', { p_device_id: deviceId });
       if (data?.code) setMyReferralCode(data.code);
     }).catch(() => {});
   }, []);
@@ -1090,7 +1093,7 @@ export default function HomeScreen() {
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
-        const { data, error } = await sb.rpc('create_referral_code', { p_device_id: deviceId });
+        const { data, error } = await sb.rpc('create_referral_link', { p_device_id: deviceId });
         if (error || !data?.code) {
           showReferralToast('Could not create invite link. Try again.');
           return;
