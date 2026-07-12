@@ -71,16 +71,19 @@ function maybeRecordClubGame(roster: ClubGameResult[]) {
   })();
 }
 
-const FREE_TIME_SECS = 30;
-const COUNTDOWN_SECS = 30;
+// S73 — placement is UNLIMITED until the FIRST player finishes (locks in / hits Ready). The
+// moment someone finishes, every remaining player gets COUNTDOWN_SECS; the start is broadcast
+// (READY_PRESSED) so all clients count the same window. On expiry a player's remaining cards
+// auto-place and the hand reveals. There is NO from-the-start countdown any more.
+const COUNTDOWN_SECS = 60;
 // MP-PARITY-DEEP 2026-07-09 — same AsyncStorage key SOLO (app/game.tsx) reads.
 const GAMES_PLAYED_KEY = 'caps_games_played';
-// MP-LEAVE-RECOVERY 2026-06-29 — host-authoritative backstop. A 2P hand can legitimately
-// take FREE_TIME_SECS (30) + COUNTDOWN_SECS (30) = 60s when both players play to the wire,
-// so the host deal-clock must sit ABOVE that. On expiry the host force-completes the hand
-// (auto-fills every not-ready CONNECTED client) so a wedged hand can never sit forever —
-// the safety net for the case where presence never drops (e.g. an unclean disconnect).
-const DEAL_CLOCK_MS = 90000;
+// S73 — host-authoritative backstop, armed ONLY once the first player finishes (see
+// startCountdown), sitting just ABOVE the countdown. It force-completes an unclean-disconnected
+// client that can't run its own expiry auto-fill. Before anyone finishes it is NEVER armed, so a
+// room where players are simply still arranging is never force-revealed (the reason the reveal
+// used to fire ~1 min in while both were still placing).
+const DEAL_CLOCK_MS = COUNTDOWN_SECS * 1000 + 15000; // 75s
 // Keep the seat's room_players.last_seen fresh DURING the game (the waiting-room heartbeat
 // in lobby/table stops at game start). Gives the server-side reaper a per-seat signal so a
 // player who leaves goes stale within ~2 beats and a wedged 'playing' room can be reaped.
@@ -238,13 +241,11 @@ function MultiplayerGameScreenInner() {
   const reconnectAlertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Free time + countdown state
-  const [freeTimeLeft, setFreeTimeLeft] = useState(FREE_TIME_SECS);
-  const [readyEnabled, setReadyEnabled] = useState(false);
+  // S73 — removed the from-the-start free-time countdown + the dead readyEnabled flag.
   const countdownStartedRef = useRef(false);
   // Guards the ready broadcast against double-send (timeout auto-fill vs manual ready,
   // and React updater double-invoke). One hand per screen mount, so no reset needed.
   const readySentRef = useRef(false);
-  const freeTimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Chat (internet MP only) ---
   const isInternetMP = typeof (mpServer as any)?.sendChat === 'function' || typeof (mpClient as any)?.sendChat === 'function';
@@ -869,30 +870,25 @@ function MultiplayerGameScreenInner() {
     if (timer.timeLeft === 10 || timer.timeLeft === 3) playSound('timerLow');
   }, [timer.isRunning, timer.timeLeft]);
 
-  // Start 30s countdown (idempotent — first caller wins)
+  // S73 — start the COUNTDOWN_SECS window the moment the FIRST player finishes (idempotent —
+  // first caller wins). Triggered by handleReady locally + the READY_PRESSED broadcast on every
+  // client, so all clients count the same window. Also arms the host backstop (see below).
   const startCountdown = useCallback(() => {
     if (countdownStartedRef.current) return;
     countdownStartedRef.current = true;
     timer.reset(COUNTDOWN_SECS);
     timer.start();
-  }, [timer]);
-
-  // Free time countdown on mount — 30s before READY button appears
-  useEffect(() => {
-    freeTimeIntervalRef.current = setInterval(() => {
-      setFreeTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (freeTimeIntervalRef.current) clearInterval(freeTimeIntervalRef.current);
-          setReadyEnabled(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => {
-      if (freeTimeIntervalRef.current) clearInterval(freeTimeIntervalRef.current);
-    };
-  }, []);
+    // The first player just finished — arm the HOST-only backstop NOW (never before), just
+    // above the countdown, to force-complete an unclean-disconnected client that can't run its
+    // own expiry auto-fill. Cleared on hand completion / unmount by the mount effect cleanup.
+    if (isHost && mpServer && !dealClockRef.current) {
+      dealClockRef.current = setTimeout(() => {
+        if (!mountedRef.current || completedRef.current) return;
+        try { autoFillReadyRef.current?.(); } catch { /* ready host's own hand */ }
+        try { (mpServer as any)?.forceReadyAllConnected?.(); } catch { /* force-complete the rest */ }
+      }, DEAL_CLOCK_MS);
+    }
+  }, [timer, isHost, mpServer]);
 
   // --- Wire onReadyPressed (host receives from guests via rebroadcast, guests receive from host) ---
   useEffect(() => {
@@ -974,13 +970,9 @@ function MultiplayerGameScreenInner() {
       } catch { /* heartbeat is best-effort */ }
     })();
 
-    if (isHost && mpServer) {
-      dealClockRef.current = setTimeout(() => {
-        if (!mountedRef.current || completedRef.current) return;
-        try { autoFillReadyRef.current?.(); } catch { /* ready host's own hand */ }
-        try { (mpServer as any)?.forceReadyAllConnected?.(); } catch { /* force-complete the rest */ }
-      }, DEAL_CLOCK_MS);
-    }
+    // S73 — the host backstop is NO LONGER armed at mount. Placement is unlimited until the
+    // first player finishes; the backstop is armed in startCountdown at that moment instead, so
+    // a room where players are simply still arranging is never force-revealed.
 
     return () => {
       cancelled = true;
@@ -1273,7 +1265,7 @@ function MultiplayerGameScreenInner() {
       reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed } : null}
       topCenter={
         <>
-          {isArranging && !timer.isRunning && freeTimeLeft > 0 && (
+          {isArranging && !timer.isRunning && (
             <Text style={styles.freePlayLabel} accessibilityLiveRegion="polite">
               {cardsRemaining === 0 ? t().allPlaced : t().arrangeCards(cardsRemaining)}
             </Text>
