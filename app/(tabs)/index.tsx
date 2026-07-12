@@ -1404,38 +1404,10 @@ export default function HomeScreen() {
             (duplicated the title AND was wrong: only 2P has 4 boards; 3P=3, 4P=2). Kept:
             title, ONE tagline, selector. */}
 
-        {/* S72 — player count is a SMALL SETTING, not a decision gate: a muted "Players"
-            caption + compact pills, so a first-time user's eye drops straight to the loud
-            green PLAY button below instead of stalling on "which do I pick?". */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(8), marginBottom: rs(2) }}>
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rf(11, 10), fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>Players</Text>
-          <View style={{ flexDirection: 'row', gap: rs(6) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
-            {([2, 3, 4] as const).map(n => (
-              <Pressable
-                key={n}
-                onPress={() => updateConfig({ numberOfPlayers: n })}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: config.numberOfPlayers === n }}
-                aria-checked={config.numberOfPlayers === n}
-                accessibilityLabel={`${n} players`}
-                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
-                style={{
-                  paddingHorizontal: rs(12), paddingVertical: rs(6),
-                  borderRadius: rv(16),
-                  backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
-                  borderWidth: 1,
-                  borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.15)',
-                }}
-              >
-                <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: rf(12, 11), fontWeight: '700' }}>
-                  {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-        {/* HOME-DECLUTTER — removed the "N boards · Omaha · Best hand wins each" line under
-            the selector; it near-duplicates the dynamic meta line under Play (kept). */}
+        {/* S74 — the 2P/3P/4P selector MOVED BELOW the Play button (see below). S72 only
+            dimmed it in place, but the gate was POSITIONAL: sitting above Play forced a choice
+            before the user could act, and Home stuck_dwell rose (57 devices). Now nothing sits
+            between the wordmark and Play, so Play is the first thing the eye hits and taps. */}
 
         {/* HOME-DECLUTTER 2026-07-05 — removed the hardcoded "32 players online" line.
             It was fake (real presence ~2 now / 9 today) and deceptive: "32 online" → empty
@@ -1485,6 +1457,37 @@ export default function HomeScreen() {
             {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
             {config.potPerBoard > 0 ? ` · ${config.potPerBoard <= 25 ? 'Low' : config.potPerBoard <= 100 ? 'Mid' : 'High'} Blinds · ${config.potPerBoard}/board` : ' · Free'}
           </Text>
+        </View>
+
+        {/* S74 — player selector lives BELOW Play now: a small centered "change players"
+            affordance, never a gate. Play always works with the remembered/default players
+            (3P on first run), so a first-time user starts a game in ONE tap without touching it. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), marginTop: rs(10) }}>
+          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rf(11, 10), fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>Players</Text>
+          <View style={{ flexDirection: 'row', gap: rs(6) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
+            {([2, 3, 4] as const).map(n => (
+              <Pressable
+                key={n}
+                onPress={() => updateConfig({ numberOfPlayers: n })}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: config.numberOfPlayers === n }}
+                aria-checked={config.numberOfPlayers === n}
+                accessibilityLabel={`${n} players`}
+                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                style={{
+                  paddingHorizontal: rs(12), paddingVertical: rs(6),
+                  borderRadius: rv(16),
+                  backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
+                  borderWidth: 1,
+                  borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: rf(12, 11), fontWeight: '700' }}>
+                  {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         {/* HOME-MP-LINK — prominent multiplayer entry (owner asked twice). The lobby was
