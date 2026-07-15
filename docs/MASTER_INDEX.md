@@ -1,6 +1,6 @@
 # 📚 CAPS Poker — Master Index
 
-**Last updated:** 2026-05-04 22:00 IL
+**Last updated:** 2026-07-15
 **Maintainer:** Claude (auto-updated each session)
 
 ---
@@ -15,36 +15,29 @@
 
 ---
 
-## 🛠️ Tools Inventory (verified working as of May 4)
+## 🛠️ Tools Inventory (EF LIVE reconcile 2026-07-15)
 
-### Edge Functions (callable via `https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/<name>`)
+### Edge Functions — LIVE ACTIVE **11** (`https://gxrpunvhjcrzqnitbqah.supabase.co/functions/v1/<name>`)
 
-| EF | Auth | What | Key params |
+Source: `supabase functions list` · Atlas Sheet 46 Part A. All 11 dual = on disk under `supabase/functions/` (6 pulled from cloud 2026-07-15).
+
+| EF | Mark | On disk | What |
 |---|---|---|---|
-| `github-debug` | None | GitHub Actions API wrapper | `action=runs/jobs/logs/logs_full/cancel/rerun`, `run_id`, `filter`, `start`, `end` |
-| `github-file` | None | GitHub file API wrapper | `action=edit/lines/search/replace_line`, `path`, `branch`, `content` |
-| `fix-workflow` | None | Auto-fix CI workflow | (read source for params) |
-| `screenshot-app` | None | Capture app screen | (read source for params) |
-| `check-ota-status` | None | Verify OTA delivery | Compare manifest createdAt vs commit time |
-| `auto-fix-crashes` | None | Cron-triggered crash fixer | Runs every ~30 min |
-| `analyze-bug-report` | None | LLM bug triage | Returns `suggested_fix` + files |
-| `crash-analyzer` | None | Sentry-style crash dedup | |
-| `log-error` | None | Error sink for app runtime | |
-| `telegram-bot-handler` | None | @caps_bug_bot inbound | v20+, multi-lang Whisper |
-| `whatsapp-bot-handler` | None | WhatsApp inbound | Multi-project router |
-| `flush-outbound` | None | Outbound message queue flush | |
-| `retriage-pending` | None | Re-triage pending bugs | |
-| `sync-bugs-to-drive` | None | Sync bug DB to Google Drive | |
-| `design-panel` | None | Design control panel | |
-| `upload-chunked` | None | Chunked file upload | |
-| `legal` | None | Privacy/terms pages | |
-| `setup-heroes-deploy` | None | Heroes-Hadera deploy helper | |
-| `get-api-key-temp` | JWT | Temp API key access | |
-| `wire-phoenix-temp` | JWT | Phoenix wire helper | |
-| `read-sms-temp` | None | SMS reader | |
-| `env-probe-temp` | JWT | Env var probe | |
-| `env-probe-vercel` | JWT | Vercel env probe | |
-| `github-probe-temp` | JWT | GitHub diagnostic | |
+| `whatsapp-bot-handler` | dual | ✅ | WhatsApp inbound · multi-project router |
+| `telegram-bot-handler` | dual | ✅ | @caps_bug_bot inbound · multi-lang Whisper |
+| `crash-analyzer` | dual | ✅ | Sentry-style crash dedup |
+| `auto-fix-crashes` | dual | ✅ | Cron-triggered crash fixer (~30 min) |
+| `sync-bugs-to-drive` | dual | ✅ | Sync bug DB to Google Drive |
+| `log-error` | dual | ✅ (pulled 2026-07-15) | Error sink for app runtime |
+| `analyze-bug-report` | dual | ✅ (pulled 2026-07-15) | LLM bug triage |
+| `flush-outbound` | dual | ✅ (pulled 2026-07-15) | Outbound message queue flush |
+| `retriage-pending` | dual | ✅ (pulled 2026-07-15) | Re-triage pending bugs |
+| `legal` | dual | ✅ (pulled 2026-07-15) | Privacy/terms pages |
+| `anthropic-proxy` | dual | ✅ (pulled 2026-07-15) | Anthropic API proxy |
+
+### Retired May→Jul 2026 (HIST 2026-07-15 — not in LIVE)
+
+`github-debug` · `github-file` · `fix-workflow` · `screenshot-app` · `check-ota-status` · `design-panel` · `upload-chunked` · `setup-heroes-deploy` · `get-api-key-temp` · `wire-phoenix-temp` · `read-sms-temp` · `env-probe-temp` · `env-probe-vercel` · `github-probe-temp`
 
 ### Supabase MCP tools
 
