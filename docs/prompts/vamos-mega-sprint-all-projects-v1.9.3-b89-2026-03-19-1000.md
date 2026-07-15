@@ -104,7 +104,7 @@ E4. Create docs/lemonsqueezy-products.md with setup checklist:
     1. dashboard.lemonsqueezy.com → Products → New Product
     2. Set price + billing period
     3. Copy product ID → add to .env as LEMONSQUEEZY_PRODUCT_ID_[NAME]
-    4. Set webhook → /api/lemonsqueezy/webhook
+    4. Set webhook → per-app path (PostPilot/ExplainIt/analyzer: `/api/billing/webhook`; KeyDrop: `/api/webhooks/lemonsqueezy`) — NOT `/api/lemonsqueezy/webhook`
     ```
 E5. Report: what's already set up, what needs to be done
 
