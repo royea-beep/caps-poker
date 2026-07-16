@@ -26,6 +26,32 @@ export interface ThemeTokens {
   primaryBtnRadius: number;
   winColor: string;
   loseColor: string;
+
+  // ── S76-BOARD, PIN STAGE. The Board's colour vocabulary. See the block comment
+  //    on VisualPaint in constants/paintThemes.ts for the full rationale.
+  //    NOTHING READS THESE YET — Board.tsx is untouched this batch. They are
+  //    pinned classic === fiveo === today's static value so the routing batch is
+  //    a provable no-op. All 19 are COLOUR. `primaryBtnRadius` above stays the
+  //    ONLY number in this type — geometry is frozen (R-C).
+  boardGold: string;
+  boardGoldLight: string;
+  boardGoldBright: string;
+  boardTextPrimary: string;
+  boardTextSecondary: string;
+  boardTextMuted: string;
+  boardTextDim: string;
+  boardNeonGreen: string;
+  boardNeonRed: string;
+  boardMintHairline: string;
+  boardMintGhost: string;
+  boardSlotFill: string;
+  boardSlotDash: string;
+  boardSlotDashActive: string;
+  boardCardInk: string;
+  boardAutoBg: string;
+  boardAutoBorder: string;
+  boardAutoText: string;
+  boardAutoBolt: string;
 }
 
 // S75 (theme plumbing) — the 32 paint VALUES (2 themes x 16 keys) moved verbatim to
@@ -75,6 +101,40 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     // palette. Deferred to a later polish pass, not an oversight.
     winColor: activePaint.visual.classic.winColor, // #22c55e
     loseColor: activePaint.visual.classic.loseColor, // #ef4444
+
+    // ── S76-BOARD pin. Sourced FROM the paint layer, never hardcoded here
+    //    (paintThemes = DATA, visualThemes = DELIVERY — S76 Option 2).
+    //    NOTHING READS THESE YET; Board is routed in a later batch.
+    //
+    //    Where the N8 spec defines the token, its value flows through. Where it
+    //    does NOT, the read below resolves to the value streetStencil INHERITS
+    //    from currentPaint (it is authored as a spread) and carries a TODO.
+    //    Inheriting is safe — streetStencil is structurally unselectable (no
+    //    picker lists it) — and honest. Guessing an N8 colour is neither.
+    boardGold: streetStencilPaint.colors.gold,             // TODO(S77): N8 has no gold — inherits #c9a84c
+    boardGoldLight: streetStencilPaint.colors.goldLight,   // TODO(S77): N8 has no gold
+    boardGoldBright: streetStencilPaint.colors.goldBright, // TODO(S77): N8 has no gold
+    // `text` is N8-authored under "// Labels"; COLORS.textPrimary is a legacy alias of
+    // COLORS.text (identical #f0ead6 in currentPaint), so this follows the N8 author's
+    // stated intent rather than inheriting the cream, which would be unreadable on concrete.
+    boardTextPrimary: streetStencilPaint.colors.text,           // #ECECEC
+    boardTextSecondary: streetStencilPaint.colors.textSecondary, // #c8c8cc
+    boardTextMuted: streetStencilPaint.colors.textMuted,         // #c8c8cc
+    boardTextDim: streetStencilPaint.colors.textDim,       // TODO(S77): N8 defines no dim label
+    // DELIBERATE, not a TODO: win/lose markers stay generic green/red for the same
+    // readability reason winColor/loseColor above are not themed.
+    boardNeonGreen: streetStencilPaint.colors.neonGreen,
+    boardNeonRed: streetStencilPaint.colors.neonRed,
+    boardMintHairline: streetStencilPaint.obsidian.mintHairline, // rgba(248,240,80,0.45)
+    boardMintGhost: streetStencilPaint.obsidian.mintGhost,       // rgba(248,240,80,0.10)
+    boardSlotFill: streetStencilPaint.obsidian.slotFill,             // TODO(S77): N8 slot colours pending
+    boardSlotDash: streetStencilPaint.obsidian.slotDash,             // TODO(S77): N8 slot colours pending
+    boardSlotDashActive: streetStencilPaint.obsidian.slotDashActive, // TODO(S77): N8 slot colours pending
+    boardCardInk: streetStencilPaint.obsidian.cardInk,           // #18181c
+    boardAutoBg: streetStencilPaint.obsidian.autoBg,             // TODO(S77): N8 auto-place chip pending
+    boardAutoBorder: streetStencilPaint.obsidian.autoBorder,     // TODO(S77): N8 auto-place chip pending
+    boardAutoText: streetStencilPaint.obsidian.autoText,         // TODO(S77): N8 auto-place chip pending
+    boardAutoBolt: streetStencilPaint.obsidian.autoBolt,         // TODO(S77): N8 auto-place chip pending
   },
 };
 
