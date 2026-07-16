@@ -14,7 +14,7 @@ import { colors, spacing, fontWeight } from '../theme';
 import { OBSIDIAN, OBSIDIAN_GEOM } from '../obsidianTheme';
 import { HOME_THEMES } from '../homeThemes';
 import { CARD_THEMES } from '../cardThemes';
-import { VISUAL_THEMES } from '../visualThemes';
+import { VISUAL_THEMES, getTheme } from '../visualThemes';
 
 // ── Key counts: the audited shape of the live paint surface ──────────────────
 describe('paint layer — domain key counts (audited)', () => {
@@ -284,6 +284,46 @@ describe('visualThemes VISUAL_THEMES — paint from layer, GEOMETRY untouched', 
   it('primaryBtnRadius (GEOMETRY) is preserved exactly', () => {
     expect(VISUAL_THEMES.classic.primaryBtnRadius).toBe(12);
     expect(VISUAL_THEMES.fiveo.primaryBtnRadius).toBe(8);
+  });
+
+  // ── S76 — streetStencil (N8) registered, DORMANT ──────────────────────────
+  it('streetStencil resolves the N8 token map', () => {
+    expect(VISUAL_THEMES.streetStencil).toMatchObject({
+      background: '#4e4e54',      // flat concrete (55% mid-stop; gradient is 1b)
+      surface: '#42424a',
+      boardBg: '#42424a',
+      boardBorder: '#F8F050',
+      textPrimary: '#ECECEC',
+      textSecondary: '#c8c8cc',
+      textMuted: '#c8c8cc',
+      accent: '#F8F050',
+      accentText: '#18181c',
+      cardFace: '#ECECEC',
+      cardBorder: '#18181c',
+      cardShadow: 'rgba(58,214,255,0.5)',
+      primaryBtn: '#18181c',
+      primaryBtnText: '#F8F050',
+    });
+  });
+
+  it('streetStencil primaryBtnRadius is 12 — IDENTICAL to classic (no per-theme shape)', () => {
+    expect(VISUAL_THEMES.streetStencil.primaryBtnRadius).toBe(12);
+    expect(VISUAL_THEMES.streetStencil.primaryBtnRadius).toBe(VISUAL_THEMES.classic.primaryBtnRadius);
+  });
+
+  it('streetStencil win/lose stay GENERIC green/red (readability-critical, deliberately unthemed)', () => {
+    expect(VISUAL_THEMES.streetStencil.winColor).toBe('#22c55e');
+    expect(VISUAL_THEMES.streetStencil.loseColor).toBe('#ef4444');
+  });
+
+  it('adding streetStencil left classic + fiveo byte-identical', () => {
+    expect(VISUAL_THEMES.classic).toEqual({ ...currentPaint.visual.classic, primaryBtnRadius: 12 });
+    expect(VISUAL_THEMES.fiveo).toEqual({ ...currentPaint.visual.fiveo, primaryBtnRadius: 8 });
+  });
+
+  it('getTheme still defaults to classic (streetStencil is DORMANT)', () => {
+    expect(getTheme(null)).toBe(VISUAL_THEMES.classic);
+    expect(getTheme('streetStencil')).toBe(VISUAL_THEMES.streetStencil);
   });
 });
 

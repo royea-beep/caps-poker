@@ -30,7 +30,19 @@ import { Platform } from 'react-native';
 // source files that now read back from this module.
 import type { HomeThemeId } from './homeThemes';
 import type { CardThemeId } from './cardThemes';
-import type { VisualTheme } from './visualThemes';
+
+/**
+ * S76 — the key type for the paint layer's `visual` namespace.
+ *
+ * Deliberately NOT `VisualTheme` from visualThemes.ts. That union is the registry of
+ * SELECTABLE themes and it grows (S76 added 'streetStencil'); this namespace is a
+ * frozen SNAPSHOT of the two LEGACY visualThemes palettes mirrored in S75 (2 x 16 = 32
+ * values). Keying it by `VisualTheme` coupled the two, so widening the registry
+ * demanded a bogus `streetStencil` entry inside the Obsidian snapshot — tsc caught it.
+ * A NEW theme composes its ThemeTokens in visualThemes.ts FROM this layer's
+ * colors/obsidian tokens; it does not add an entry here.
+ */
+export type LegacyVisualPaintId = 'classic' | 'fiveo';
 
 /** One home-screen palette (constants/homeThemes.ts → HomeTheme). Paint only. */
 export interface HomePaint {
@@ -123,7 +135,7 @@ export interface PaintTokens {
   };
   home: Record<HomeThemeId, HomePaint>;
   card: Record<CardThemeId, CardPaint>;
-  visual: Record<VisualTheme, VisualPaint>;
+  visual: Record<LegacyVisualPaintId, VisualPaint>;
   /** Font FAMILIES are paint; font WEIGHTS stay static in theme.ts (R-B). */
   fonts: { display: string | undefined };
 }

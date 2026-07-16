@@ -10,7 +10,11 @@ import { FriendsBgId } from '../constants/friendsBgs';
 import { CardDisplayConfig } from '../utils/supabaseEconomy';
 
 export type OrientationType = 'portrait' | 'landscape';
-export type VisualTheme = 'classic' | 'fiveo';
+// S76 — MUST stay in sync with the same-named type in constants/visualThemes.ts.
+// `streetStencil` (N8) is DORMANT: neither picker lists it (both hardcode
+// [classic, fiveo]) and _layout defaults to 'classic', so it is unselectable
+// structurally until S77 wires the picker + premium_theme_enabled gate.
+export type VisualTheme = 'classic' | 'fiveo' | 'streetStencil';
 
 interface GameStore {
   // Persisted state
