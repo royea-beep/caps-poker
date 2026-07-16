@@ -599,6 +599,15 @@ export const streetStencil = {
     text: '#ECECEC',
     textSecondary: '#c8c8cc',
     textMuted: '#c8c8cc',
+    // S76-BOARD FILL11 — concrete-grey. The Obsidian value (#5b6168) is a mint-grey
+    // tuned for a near-black bg; on #4e4e54 concrete it drops below legibility.
+    textDim: '#8a8a90',
+    // S76-BOARD FILL11 — Gold, Variant A (Roye-approved). A DELIBERATE second accent:
+    // a warm gold kept distinct from the spray yellow so a win badge reads as a prize
+    // rather than merging into the all-yellow UI. Not an oversight, not a leftover.
+    gold: '#F8C020',
+    goldLight: '#FFD84D',
+    goldBright: '#FFE87A',
     // Cards
     cardFace: '#ECECEC',
     cardWhite: '#ECECEC',
@@ -629,6 +638,21 @@ export const streetStencil = {
     mintGhost: 'rgba(248,240,80,0.10)',
     // The cyan spray glow — the reason cardGlow exists (see PaintTokens.cardGlow).
     cardGlow: 'rgba(58,214,255,0.5)',
+
+    // ── S76-BOARD FILL11 (Roye-approved) ────────────────────────────────────
+    // Empty card slots. Spray yellow, but at RAISED alphas vs the mint they
+    // replace (fill 0.03 -> 0.06, dash 0.30 -> 0.45): yellow on concrete has far
+    // less contrast than mint on near-black, so the Obsidian alphas would leave
+    // the slot invisible. Deliberate, not a copy of the mint alphas.
+    slotFill: 'rgba(248,240,80,0.06)',
+    slotDash: 'rgba(248,240,80,0.45)',
+    slotDashActive: '#F8F050',
+    // Auto-place chip. Solid charcoal body — matches the PLACE button rather than
+    // the translucent mint chip it replaces — with accent border + label.
+    autoBg: '#18181c',
+    autoBorder: '#F8F050',
+    autoText: '#F8F050',
+    autoBolt: '#F8F050',
   },
 } as const satisfies PaintTokens;
 

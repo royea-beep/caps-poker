@@ -395,20 +395,57 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     expect(VISUAL_THEMES.classic.boardNeonRed).not.toBe(VISUAL_THEMES.classic.loseColor);
   });
 
-  it('streetStencil carries its own board* values (data ready for the routing batch)', () => {
-    Object.keys(PINS).forEach((k) => {
-      expect(typeof (VISUAL_THEMES.streetStencil as unknown as Record<string, unknown>)[k]).toBe('string');
+  // S76-BOARD FILL11 — every board* key now holds a REAL N8 value. The 11 marked
+  // (FILL11) replaced inherited-Obsidian TODOs; all values are Roye-approved.
+  // Written as literals so a drift in either layer fails here.
+  const STREET: Record<string, string> = {
+    boardGold: '#F8C020',                        // FILL11 — Variant A warm gold, deliberately
+    boardGoldLight: '#FFD84D',                   // FILL11   NOT the spray yellow: a win badge
+    boardGoldBright: '#FFE87A',                  // FILL11   must not merge into the yellow UI
+    boardTextPrimary: '#ECECEC',
+    boardTextSecondary: '#c8c8cc',
+    boardTextMuted: '#c8c8cc',
+    boardTextDim: '#8a8a90',                     // FILL11 — concrete-grey
+    boardNeonGreen: '#2ecc71',                   // generic green — readability, deliberately unthemed
+    boardNeonRed: '#c0392b',                     // generic red — ditto
+    boardMintHairline: 'rgba(248,240,80,0.45)',
+    boardMintGhost: 'rgba(248,240,80,0.10)',
+    boardSlotFill: 'rgba(248,240,80,0.06)',      // FILL11 — alpha RAISED from 0.03 (see paintThemes)
+    boardSlotDash: 'rgba(248,240,80,0.45)',      // FILL11 — alpha RAISED from 0.30
+    boardSlotDashActive: '#F8F050',              // FILL11
+    boardCardInk: '#18181c',
+    boardAutoBg: '#18181c',                      // FILL11 — solid charcoal, not a translucent chip
+    boardAutoBorder: '#F8F050',                  // FILL11
+    boardAutoText: '#F8F050',                    // FILL11
+    boardAutoBolt: '#F8F050',                    // FILL11
+  };
+
+  it('streetStencil carries all 19 board* values (data ready for the routing batch)', () => {
+    expect(Object.keys(STREET).sort()).toEqual(Object.keys(PINS).sort());
+  });
+
+  Object.entries(STREET).forEach(([key, value]) => {
+    it(`streetStencil.${key} === ${value}`, () => {
+      expect((VISUAL_THEMES.streetStencil as unknown as Record<string, string>)[key]).toBe(value);
     });
-    // the keys the N8 spec actually defines
-    expect(VISUAL_THEMES.streetStencil.boardTextPrimary).toBe('#ECECEC');
-    expect(VISUAL_THEMES.streetStencil.boardTextSecondary).toBe('#c8c8cc');
-    expect(VISUAL_THEMES.streetStencil.boardTextMuted).toBe('#c8c8cc');
-    expect(VISUAL_THEMES.streetStencil.boardMintHairline).toBe('rgba(248,240,80,0.45)');
-    expect(VISUAL_THEMES.streetStencil.boardMintGhost).toBe('rgba(248,240,80,0.10)');
-    expect(VISUAL_THEMES.streetStencil.boardCardInk).toBe('#18181c');
-    // win/lose markers stay generic — deliberate, mirrors winColor/loseColor
-    expect(VISUAL_THEMES.streetStencil.boardNeonGreen).toBe('#2ecc71');
-    expect(VISUAL_THEMES.streetStencil.boardNeonRed).toBe('#c0392b');
+  });
+
+  it('streetStencil gold stays DISTINCT from the spray yellow (Variant A)', () => {
+    expect(VISUAL_THEMES.streetStencil.boardGold).not.toBe('#F8F050');
+    expect(VISUAL_THEMES.streetStencil.boardGold).not.toBe(VISUAL_THEMES.streetStencil.accent);
+  });
+
+  it('no board* key still inherits its Obsidian value (FILL11 left no TODO)', () => {
+    // The 11 that used to inherit. If any reverts, it silently paints mint on concrete.
+    const FILLED = ['boardGold', 'boardGoldLight', 'boardGoldBright', 'boardTextDim', 'boardSlotFill',
+      'boardSlotDash', 'boardSlotDashActive', 'boardAutoBg', 'boardAutoBorder', 'boardAutoText', 'boardAutoBolt'];
+    expect(FILLED).toHaveLength(11);
+    FILLED.forEach((k) => {
+      const street = (VISUAL_THEMES.streetStencil as unknown as Record<string, string>)[k];
+      expect(street).not.toBe(PINS[k]);              // no longer today's Obsidian value
+      expect(street).not.toMatch(/79,214,168/);      // no mint rgba survived
+      expect(street).not.toBe('#4FD6A8');            // no mint hex survived
+    });
   });
 });
 

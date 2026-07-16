@@ -106,35 +106,34 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     //    (paintThemes = DATA, visualThemes = DELIVERY — S76 Option 2).
     //    NOTHING READS THESE YET; Board is routed in a later batch.
     //
-    //    Where the N8 spec defines the token, its value flows through. Where it
-    //    does NOT, the read below resolves to the value streetStencil INHERITS
-    //    from currentPaint (it is authored as a spread) and carries a TODO.
-    //    Inheriting is safe — streetStencil is structurally unselectable (no
-    //    picker lists it) — and honest. Guessing an N8 colour is neither.
-    boardGold: streetStencilPaint.colors.gold,             // TODO(S77): N8 has no gold — inherits #c9a84c
-    boardGoldLight: streetStencilPaint.colors.goldLight,   // TODO(S77): N8 has no gold
-    boardGoldBright: streetStencilPaint.colors.goldBright, // TODO(S77): N8 has no gold
+    //    S76-BOARD FILL11: every board* key below now resolves to a REAL N8 value.
+    //    No TODOs remain — the 11 that previously inherited Obsidian were authored
+    //    into paintThemes.streetStencil (the DATA layer) and flow through here
+    //    unchanged. This file gained no hardcoded colour.
+    boardGold: streetStencilPaint.colors.gold,             // #F8C020 — Variant A warm gold
+    boardGoldLight: streetStencilPaint.colors.goldLight,   // #FFD84D
+    boardGoldBright: streetStencilPaint.colors.goldBright, // #FFE87A
     // `text` is N8-authored under "// Labels"; COLORS.textPrimary is a legacy alias of
     // COLORS.text (identical #f0ead6 in currentPaint), so this follows the N8 author's
     // stated intent rather than inheriting the cream, which would be unreadable on concrete.
     boardTextPrimary: streetStencilPaint.colors.text,           // #ECECEC
     boardTextSecondary: streetStencilPaint.colors.textSecondary, // #c8c8cc
     boardTextMuted: streetStencilPaint.colors.textMuted,         // #c8c8cc
-    boardTextDim: streetStencilPaint.colors.textDim,       // TODO(S77): N8 defines no dim label
+    boardTextDim: streetStencilPaint.colors.textDim,       // #8a8a90 — concrete-grey
     // DELIBERATE, not a TODO: win/lose markers stay generic green/red for the same
     // readability reason winColor/loseColor above are not themed.
     boardNeonGreen: streetStencilPaint.colors.neonGreen,
     boardNeonRed: streetStencilPaint.colors.neonRed,
     boardMintHairline: streetStencilPaint.obsidian.mintHairline, // rgba(248,240,80,0.45)
     boardMintGhost: streetStencilPaint.obsidian.mintGhost,       // rgba(248,240,80,0.10)
-    boardSlotFill: streetStencilPaint.obsidian.slotFill,             // TODO(S77): N8 slot colours pending
-    boardSlotDash: streetStencilPaint.obsidian.slotDash,             // TODO(S77): N8 slot colours pending
-    boardSlotDashActive: streetStencilPaint.obsidian.slotDashActive, // TODO(S77): N8 slot colours pending
+    boardSlotFill: streetStencilPaint.obsidian.slotFill,             // rgba(248,240,80,0.06)
+    boardSlotDash: streetStencilPaint.obsidian.slotDash,             // rgba(248,240,80,0.45)
+    boardSlotDashActive: streetStencilPaint.obsidian.slotDashActive, // #F8F050
     boardCardInk: streetStencilPaint.obsidian.cardInk,           // #18181c
-    boardAutoBg: streetStencilPaint.obsidian.autoBg,             // TODO(S77): N8 auto-place chip pending
-    boardAutoBorder: streetStencilPaint.obsidian.autoBorder,     // TODO(S77): N8 auto-place chip pending
-    boardAutoText: streetStencilPaint.obsidian.autoText,         // TODO(S77): N8 auto-place chip pending
-    boardAutoBolt: streetStencilPaint.obsidian.autoBolt,         // TODO(S77): N8 auto-place chip pending
+    boardAutoBg: streetStencilPaint.obsidian.autoBg,             // #18181c — solid charcoal body
+    boardAutoBorder: streetStencilPaint.obsidian.autoBorder,     // #F8F050
+    boardAutoText: streetStencilPaint.obsidian.autoText,         // #F8F050
+    boardAutoBolt: streetStencilPaint.obsidian.autoBolt,         // #F8F050
   },
 };
 
