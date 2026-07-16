@@ -17,50 +17,18 @@
 
 import { Platform } from 'react-native';
 import { PRD } from '../utils/prdTokens';
+import { activePaint } from './paintThemes';
 
 // ---------- Color tokens ----------
 
-export const OBSIDIAN = {
-  /** Mint accent — inner details only (separator, slot dash, card-back emblem) */
-  mint: '#4FD6A8',
-  mintSoft: 'rgba(79,214,168,0.30)',
-  mintHairline: 'rgba(79,214,168,0.45)',
-  mintGhost: 'rgba(79,214,168,0.10)',
-
-  /** Board obsidian surface */
-  bgTop: '#1C1F26',
-  bgBottom: '#101218',
-  bgFallback: '#161922', // single-color fallback for platforms that skip the gradient
-
-  /** Card face — near-white with cream undertone */
-  cardFaceTop: '#FFFFFF',
-  cardFaceBottom: '#F7F4EC',
-  cardFaceFallback: '#FCFAF3',
-  cardInk: '#1B1B24',
-  cardRed: '#CC1733',
-
-  /** Card-back — VAMOS-PLACEMENT-POLISH D1 (#6) — second bump for face-down community
-   *  legibility. Lifted from #2A2F3D base to brighter slate so face-down community
-   *  cards clearly read as hidden cards on the obsidian felt. Border + emblem
-   *  remain at 55%/80% mint. */
-  backTop: '#363D4E',
-  backBottom: '#1F2330',
-  backBorder: 'rgba(79,214,168,0.65)',
-  backEmblemOutline: 'rgba(79,214,168,0.85)',
-  backEmblemCore: 'rgba(79,214,168,0.85)',
-
-  /** Slot ghost target */
-  slotFill: 'rgba(79,214,168,0.03)',
-  slotDash: 'rgba(79,214,168,0.30)',
-  slotDashActive: '#4FD6A8',
-
-  /** Auto-Place chip — VAMOS-BOARD-FILL 2026-06-15: switched from neutral gray to
-   *  mint so it matches the rest of the obsidian/mint chrome (no more gray). */
-  autoBg: 'rgba(79,214,168,0.10)',
-  autoBorder: 'rgba(79,214,168,0.35)',
-  autoText: '#4FD6A8',
-  autoBolt: '#4FD6A8',
-} as const;
+// S75 (theme plumbing) — the 24 paint VALUES moved verbatim to the paint layer
+// (constants/paintThemes.ts → currentPaint.obsidian) and this export now RESOLVES
+// from the active paint. Name, shape, literal types and values are unchanged, so
+// components/Card.tsx (the real consumer of this palette) renders identically.
+// The geometry (OBSIDIAN_GEOM) and the shadow specs below are NOT paint and are
+// deliberately left untouched — the shadow objects mix shadowColor with
+// offset/radius/elevation, so splitting them is a later, separately-audited batch.
+export const OBSIDIAN = activePaint.obsidian;
 
 /** Per-board identity (already locked in PRD.board.accent — re-exported for clarity). */
 export const BOARD_IDENTITY = PRD.board.accent;

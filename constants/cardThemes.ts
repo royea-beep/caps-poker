@@ -1,3 +1,5 @@
+import { activePaint } from './paintThemes';
+
 // Card Theme System — V1/V2/V3
 
 export type CardThemeId = 'v1' | 'v2' | 'v3';
@@ -25,25 +27,20 @@ export interface CardThemeConfig {
   selectedTranslateY: number;
 }
 
+// S75 (theme plumbing) — the 27 paint VALUES (3 themes x 9 keys) moved verbatim to the
+// paint layer (constants/paintThemes.ts -> currentPaint.card); each config now spreads
+// the active paint and keeps its own GEOMETRY inline. faceRadius / faceBorderWidth /
+// backBorderWidth / selectedTranslateY are dimensions, NOT paint, so they stay here
+// untouched and identical across themes (S75 R-B / R-C). id/name/label are metadata.
 const V1_CLASSIC: CardThemeConfig = {
   id: 'v1',
   name: 'Classic Poker',
   label: 'V1: Classic',
-  // Warm white face — Monaco casino style
-  faceBg: '#f5f0e8',
+  ...activePaint.card.v1,
+  // GEOMETRY — unchanged
   faceRadius: 8,
   faceBorderWidth: 1,
-  faceBorderColor: 'rgba(0,0,0,0.10)',
-  redSuit: '#c0392b',   // rich crimson
-  blackSuit: '#1a1a2e', // dark navy
-  // Deep navy back with gold border
-  backBg: '#0a0a1e',
-  backBorderColor: '#c9a84c',
   backBorderWidth: 2,
-  backDiamond: '#c9a84c',
-  // Gold selected
-  selectedBorderColor: '#c9a84c',
-  selectedGlowColor: '#c9a84c',
   selectedTranslateY: -8,
 };
 
@@ -51,22 +48,11 @@ const V2_VEGAS: CardThemeConfig = {
   id: 'v2',
   name: 'Vegas Dark',
   label: 'V2: Vegas',
-  // Dark face — premium night club feel
-  faceBg: '#1a1a2e',
+  ...activePaint.card.v2,
+  // GEOMETRY — unchanged
   faceRadius: 12,
   faceBorderWidth: 2,
-  faceBorderColor: '#C9A84C',
-  // All suits in gold on dark face
-  redSuit: '#E5C56A',
-  blackSuit: '#C9A84C',
-  // Rich navy back with bright gold
-  backBg: '#0a0a1a',
-  backBorderColor: '#C9A84C',
   backBorderWidth: 2.5,
-  backDiamond: '#E5C56A',
-  // Purple selected glow
-  selectedBorderColor: '#9B59B6',
-  selectedGlowColor: '#9B59B6',
   selectedTranslateY: -6,
 };
 
@@ -74,21 +60,11 @@ const V3_MODERN: CardThemeConfig = {
   id: 'v3',
   name: 'Clean Modern',
   label: 'V3: Modern',
-  // Pure white, no border — shadow only
-  faceBg: '#FFFFFF',
+  ...activePaint.card.v3,
+  // GEOMETRY — unchanged
   faceRadius: 16,
   faceBorderWidth: 0,
-  faceBorderColor: 'transparent',
-  redSuit: '#E74C3C',
-  blackSuit: '#2C3E50',
-  // Deep purple back
-  backBg: '#4A0E8F',
-  backBorderColor: '#7B2FBE',
   backBorderWidth: 2,
-  backDiamond: '#C39BD3',
-  // Blue selected
-  selectedBorderColor: '#3498DB',
-  selectedGlowColor: '#3498DB',
   selectedTranslateY: -4,
 };
 
