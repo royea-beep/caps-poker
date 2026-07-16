@@ -5,7 +5,11 @@
 // Gold KEEPS its value for the winning-card highlight only — see card-state docs.
 // Rollback: tag `good/pre-theme-prop`.
 
+import { activePaint } from './paintThemes';
+
 // ─── Spacing ────────────────────────────────────────────────────────────────
+// GEOMETRY — deliberately NOT in the paint layer (S75 R-B). A theme changes paint
+// only; it must never move or resize anything. Do not route this through a theme.
 export const spacing = {
   hairline: 1,
   xs: 4,
@@ -33,92 +37,13 @@ export const fontWeight = {
 // per-board identity (yellow/blue/green/orange) lives in PRD.board.accent.
 // `gold` is preserved at its original value so the winning-card highlight
 // (the ONLY surviving gold use) reads correctly on the obsidian felt.
-export const colors = {
-  // Core surfaces — obsidian neutrals (was deep black + dark casino)
-  background: '#0a0a0a',
-  surface: '#161922',         // was '#111111' — obsidian fallback
-  surfaceRaised: '#1c1f26',   // was '#1a1a1a' — obsidian top
-  border: 'rgba(255,255,255,0.10)',  // was '#2a2a2a' — neutral hairline (mint reserved for accents)
-  overlay: 'rgba(0,0,0,0.88)',
-
-  // Primary accent — gold KEPT for the winning-card highlight ONLY.
-  // Selected/active/community frame remap to mint via mintHalo + boardActive below.
-  gold: '#c9a84c',          // KEEP — winning-card highlight only
-  goldLight: '#e8c96a',     // KEEP — winning text/bannerHandName
-  goldDim: 'rgba(79,214,168,0.65)',         // was '#9a7a2e' (mocha gold) → mint @65%
-  goldGlow: 'rgba(79,214,168,0.40)',        // was rgba(201,168,76,0.4)  → mint glow
-  goldBright: '#e8c96a',    // KEEP — winning text alias
-
-  // Mint accent (NEW tokens for direct use)
-  mint: '#4FD6A8',
-  // VAMOS-THEME-SWEEP-4 — light/bright/dim variants for use where the chrome
-  // previously used goldLight/goldBright/goldDim. Semantic gold paths
-  // (winner/celebration text) keep using gold* tokens.
-  mintLight: '#7FE3C2',
-  mintBright: '#A7EED6',
-  mintDim: 'rgba(79,214,168,0.55)',
-  mintGlow: 'rgba(79,214,168,0.55)',
-  mintHairline: 'rgba(79,214,168,0.30)',
-  mintGhost: 'rgba(79,214,168,0.10)',
-
-  // Warm accents — neonBlue retasked from gold-alias → mint so all legacy
-  // "neonBlue" decorations cascade to mint.
-  neonBlue: '#4FD6A8',         // was '#c9a84c' (gold legacy) — now mint
-  neonPurple: '#3da583',       // was '#8a6a45' (mocha) — now darker mint
-  neonGreen: '#2ecc71',        // KEEP — semantic win
-  neonRed: '#c0392b',          // KEEP — semantic lose
-
-  // Text — warm cream still reads beautifully on obsidian; mute/dim go cool
-  text: '#f0ead6',
-  textMuted: '#9aa19b',        // was '#8a7a5a' (warm tan) — cooler gray
-  textDim: '#5b6168',          // was '#5a4a30' (mocha) — cooler dim
-
-  // Cards — premium warm whites unchanged. Back palette obsidianized.
-  cardRed: '#c0392b',
-  cardBlack: '#1a1a2e',
-  cardBack: '#2A2F3D',         // was '#0f3460' (navy) — obsidian back top
-  cardFace: '#f5f0e8',
-  cardWhite: '#f5f0e8',
-  cardBackPattern: 'rgba(79,214,168,0.45)',  // was '#16213e' (deep navy) — mint emblem hint
-
-  // Semantic
-  success: '#2ecc71',
-  error: '#c0392b',
-  danger: '#c0392b',
-
-  // Board — obsidian
-  boardBg: '#161922',          // was '#6B0000' (red felt) — obsidian
-  boardBorder: 'rgba(79,214,168,0.45)',  // was '#8B0000' — mint hairline
-  boardActive: '#4FD6A8',      // was '#c9a84c' (gold) — mint for active state
-  boardFull: '#2ecc71',        // KEEP — semantic "board filled" green
-
-  // Table / felt — eliminate red entirely
-  felt: '#161922',             // was '#6B0000'
-  feltLight: '#1c1f26',        // was '#8B0000'
-  feltBorder: 'rgba(79,214,168,0.30)',  // was '#a00000'
-  tableEdge: '#0a0a0a',
-
-  // Chip colors (denomination-based) unchanged — semantic
-  chip1: '#f5f0e8',
-  chip5: '#c0392b',
-  chip25: '#2ecc71',
-  chip100: '#1a1a2e',
-  chip500: '#8B008B',
-
-  // Legacy aliases
-  red: '#c0392b',
-  black: '#1a1a2e',
-  white: '#f0ead6',
-  textPrimary: '#f0ead6',
-  textSecondary: '#9aa19b',    // matches textMuted
-  chipGreen: '#2ecc71',
-  chipRed: '#c0392b',
-
-  // Button — primary CTA is now mint (was gold)
-  buttonPrimary: '#4FD6A8',
-  buttonSecondary: '#161922',
-  buttonDanger: '#8b1a1a',
-} as const;
+//
+// S75 (theme plumbing) — the 56 VALUES moved verbatim to the paint layer
+// (constants/paintThemes.ts → currentPaint.colors) and this export now RESOLVES
+// from the active paint. The name, shape, literal types and values are unchanged,
+// so every `COLORS.*` consumer (648 refs) renders identically. Geometry stays put:
+// `spacing`/`fontWeight` above are NOT part of the paint layer.
+export const colors = activePaint.colors;
 
 // ─── Unified THEME export ──────────────────────────────────────────────────
 export const THEME = {

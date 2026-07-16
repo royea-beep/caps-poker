@@ -52,6 +52,7 @@ import { initDebugger } from '@caps/debugger';
 import { sendCrashToWhatsApp } from '../utils/debug-whatsapp';
 import { CrashBoundary } from '../components/CrashBoundary';
 import WaitingSeatBanner from '../components/WaitingSeatBanner';
+import { PaintProvider } from '../contexts/PaintProvider';
 import { recordGlobalTap, onScreenChanged } from '../utils/frictionSignals';
 
 // Lazy-load expo-screen-orientation (not available on web)
@@ -577,6 +578,10 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+    {/* S75 — paint layer provider. Context only: renders no element, adds no view to
+        the tree, and exposes NO geometry, so the layout is untouched. No component
+        reads usePaint() yet (S75 migrates 0 components / repaints 0 surfaces). */}
+    <PaintProvider>
     <RootWrapper
       style={{ flex: 1, backgroundColor: '#161922' }}
       // AUTO-LEARN 2026-07-06 — passive, non-claiming global touch observer for rage-tap
@@ -627,6 +632,7 @@ export default function RootLayout() {
       {debugEnabled && <DebugOverlay />}
       {!splashDone && <SplashOverlay onDone={() => setSplashDone(true)} />}
     </RootWrapper>
+    </PaintProvider>
     </SafeAreaProvider>
   );
 }
