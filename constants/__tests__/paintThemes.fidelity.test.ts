@@ -9,6 +9,8 @@
  *
  * It also guards the Iron Constraint: geometry must NEVER enter the paint layer.
  */
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { currentPaint, PAINT_THEMES, getPaint, DEFAULT_PAINT_THEME, activePaint } from '../paintThemes';
 import { colors, spacing, fontWeight } from '../theme';
 import { OBSIDIAN, OBSIDIAN_GEOM } from '../obsidianTheme';
@@ -34,11 +36,11 @@ describe('paint layer — domain key counts (audited)', () => {
       expect(Object.keys((currentPaint.card as Record<string, object>)[t])).toHaveLength(9);
     });
   });
-  it('visual = 2 themes x 16 keys = 32', () => {
+  it('visual = 2 themes x 35 keys = 70 (S76-BOARD added 19 board* pins)', () => {
     const themes = Object.keys(currentPaint.visual);
     expect(themes).toHaveLength(2);
     themes.forEach((t) => {
-      expect(Object.keys((currentPaint.visual as Record<string, object>)[t])).toHaveLength(16);
+      expect(Object.keys((currentPaint.visual as Record<string, object>)[t])).toHaveLength(35);
     });
   });
   it('fonts = 1', () => expect(Object.keys(currentPaint.fonts)).toHaveLength(1));
@@ -324,6 +326,139 @@ describe('visualThemes VISUAL_THEMES — paint from layer, GEOMETRY untouched', 
   it('getTheme still defaults to classic (streetStencil is DORMANT)', () => {
     expect(getTheme(null)).toBe(VISUAL_THEMES.classic);
     expect(getTheme('streetStencil')).toBe(VISUAL_THEMES.streetStencil);
+  });
+});
+
+// ── S76-BOARD, PIN STAGE ─────────────────────────────────────────────────────
+// Board.tsx's colour vocabulary, pinned classic === fiveo === today's value.
+// NOTHING reads these yet — Board is routed in a later batch. These assertions are
+// what make that batch provable: each flip swaps a token for a key of equal value.
+//
+// Expected values are written as LITERALS on purpose. Asserting `board* === COLORS.x`
+// would pass no matter what either side drifted to, and prove nothing.
+describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
+  const PINS: Record<string, string> = {
+    // from COLORS (constants/theme.ts)
+    boardGold: '#c9a84c',
+    boardGoldLight: '#e8c96a',
+    boardGoldBright: '#e8c96a',
+    boardTextPrimary: '#f0ead6',
+    boardTextSecondary: '#9aa19b',
+    boardTextMuted: '#9aa19b',
+    boardTextDim: '#5b6168',
+    boardNeonGreen: '#2ecc71',
+    boardNeonRed: '#c0392b',
+    // from OBSIDIAN (constants/obsidianTheme.ts)
+    boardMintHairline: 'rgba(79,214,168,0.45)',
+    boardMintGhost: 'rgba(79,214,168,0.10)',
+    boardSlotFill: 'rgba(79,214,168,0.03)',
+    boardSlotDash: 'rgba(79,214,168,0.30)',
+    boardSlotDashActive: '#4FD6A8',
+    boardCardInk: '#1B1B24',
+    boardAutoBg: 'rgba(79,214,168,0.10)',
+    boardAutoBorder: 'rgba(79,214,168,0.35)',
+    boardAutoText: '#4FD6A8',
+    boardAutoBolt: '#4FD6A8',
+  };
+
+  it('pins exactly 19 board* keys', () => {
+    expect(Object.keys(PINS)).toHaveLength(19);
+    const onTheme = Object.keys(currentPaint.visual.classic).filter((k) => k.startsWith('board') && k !== 'boardBg' && k !== 'boardBorder');
+    expect(onTheme.sort()).toEqual(Object.keys(PINS).sort());
+  });
+
+  Object.entries(PINS).forEach(([key, value]) => {
+    it(`${key} — classic === fiveo === ${value}`, () => {
+      expect((currentPaint.visual.classic as Record<string, string>)[key]).toBe(value);
+      expect((currentPaint.visual.fiveo as Record<string, string>)[key]).toBe(value);
+      // and it reaches the delivery layer unchanged
+      expect((VISUAL_THEMES.classic as unknown as Record<string, string>)[key]).toBe(value);
+      expect((VISUAL_THEMES.fiveo as unknown as Record<string, string>)[key]).toBe(value);
+    });
+  });
+
+  it('every board* pin is a COLOUR, never geometry', () => {
+    Object.keys(PINS).forEach((k) => {
+      expect(typeof (currentPaint.visual.classic as Record<string, unknown>)[k]).toBe('string');
+      expect((currentPaint.visual.classic as Record<string, string>)[k]).toMatch(/^(#|rgba?\()/);
+    });
+  });
+
+  // The traps that Ruling 1 (new-key-by-default) exists to dodge. If a later batch
+  // "simplifies" a board* pin into the same-named existing key, these fail loudly.
+  it('board* pins are DISTINCT from the same-named theme keys (the collision traps)', () => {
+    expect(VISUAL_THEMES.classic.boardTextSecondary).not.toBe(VISUAL_THEMES.classic.textSecondary);
+    expect(VISUAL_THEMES.fiveo.boardTextSecondary).not.toBe(VISUAL_THEMES.fiveo.textSecondary);
+    expect(VISUAL_THEMES.fiveo.boardTextPrimary).not.toBe(VISUAL_THEMES.fiveo.textPrimary);
+    expect(VISUAL_THEMES.fiveo.boardTextMuted).not.toBe(VISUAL_THEMES.fiveo.textMuted);
+    expect(VISUAL_THEMES.classic.boardNeonGreen).not.toBe(VISUAL_THEMES.classic.winColor);
+    expect(VISUAL_THEMES.classic.boardNeonRed).not.toBe(VISUAL_THEMES.classic.loseColor);
+  });
+
+  // S76-BOARD FILL11 — every board* key now holds a REAL N8 value. The 11 marked
+  // (FILL11) replaced inherited-Obsidian TODOs; all values are Roye-approved.
+  // Written as literals so a drift in either layer fails here.
+  const STREET: Record<string, string> = {
+    boardGold: '#F8C020',                        // FILL11 — Variant A warm gold, deliberately
+    boardGoldLight: '#FFD84D',                   // FILL11   NOT the spray yellow: a win badge
+    boardGoldBright: '#FFE87A',                  // FILL11   must not merge into the yellow UI
+    boardTextPrimary: '#ECECEC',
+    boardTextSecondary: '#c8c8cc',
+    boardTextMuted: '#c8c8cc',
+    boardTextDim: '#8a8a90',                     // FILL11 — concrete-grey
+    boardNeonGreen: '#2ecc71',                   // generic green — readability, deliberately unthemed
+    boardNeonRed: '#c0392b',                     // generic red — ditto
+    boardMintHairline: 'rgba(248,240,80,0.45)',
+    boardMintGhost: 'rgba(248,240,80,0.10)',
+    boardSlotFill: 'rgba(248,240,80,0.06)',      // FILL11 — alpha RAISED from 0.03 (see paintThemes)
+    boardSlotDash: 'rgba(248,240,80,0.45)',      // FILL11 — alpha RAISED from 0.30
+    boardSlotDashActive: '#F8F050',              // FILL11
+    boardCardInk: '#18181c',
+    boardAutoBg: '#18181c',                      // FILL11 — solid charcoal, not a translucent chip
+    boardAutoBorder: '#F8F050',                  // FILL11
+    boardAutoText: '#F8F050',                    // FILL11
+    boardAutoBolt: '#F8F050',                    // FILL11
+  };
+
+  it('streetStencil carries all 19 board* values (data ready for the routing batch)', () => {
+    expect(Object.keys(STREET).sort()).toEqual(Object.keys(PINS).sort());
+  });
+
+  Object.entries(STREET).forEach(([key, value]) => {
+    it(`streetStencil.${key} === ${value}`, () => {
+      expect((VISUAL_THEMES.streetStencil as unknown as Record<string, string>)[key]).toBe(value);
+    });
+  });
+
+  it('streetStencil gold stays DISTINCT from the spray yellow (Variant A)', () => {
+    expect(VISUAL_THEMES.streetStencil.boardGold).not.toBe('#F8F050');
+    expect(VISUAL_THEMES.streetStencil.boardGold).not.toBe(VISUAL_THEMES.streetStencil.accent);
+  });
+
+  it('no board* key still inherits its Obsidian value (FILL11 left no TODO)', () => {
+    // The 11 that used to inherit. If any reverts, it silently paints mint on concrete.
+    const FILLED = ['boardGold', 'boardGoldLight', 'boardGoldBright', 'boardTextDim', 'boardSlotFill',
+      'boardSlotDash', 'boardSlotDashActive', 'boardAutoBg', 'boardAutoBorder', 'boardAutoText', 'boardAutoBolt'];
+    expect(FILLED).toHaveLength(11);
+    FILLED.forEach((k) => {
+      const street = (VISUAL_THEMES.streetStencil as unknown as Record<string, string>)[k];
+      expect(street).not.toBe(PINS[k]);              // no longer today's Obsidian value
+      expect(street).not.toMatch(/79,214,168/);      // no mint rgba survived
+      expect(street).not.toBe('#4FD6A8');            // no mint hex survived
+    });
+  });
+});
+
+// ── S76-BOARD: proof this batch routed NOTHING ───────────────────────────────
+describe('S76-BOARD — Board.tsx is UNTOUCHED (pin stage routes nothing)', () => {
+  const boardSrc = readFileSync(join(__dirname, '..', '..', 'components', 'Board.tsx'), 'utf8');
+
+  it('Board.tsx reads no board* theme key yet', () => {
+    expect(boardSrc).not.toMatch(/theme\.board(?!Bg|Border\b)/);
+  });
+
+  it('Board.tsx still has exactly 7 shared values (geometry frozen)', () => {
+    expect(boardSrc.match(/useSharedValue\(/g) ?? []).toHaveLength(7);
   });
 });
 

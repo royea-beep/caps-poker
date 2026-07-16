@@ -89,12 +89,57 @@ export interface VisualPaint {
   primaryBtnText: string;
   winColor: string;
   loseColor: string;
+
+  /**
+   * ── S76-BOARD, PIN STAGE ─────────────────────────────────────────────────
+   * The Board's colour vocabulary. Board.tsx paints from module-scope
+   * StyleSheets that freeze `COLORS.*` / `OBSIDIAN.*` at import, so it cannot
+   * repaint at runtime. These keys give each of those reads a themed home.
+   *
+   * NOTHING READS THESE YET. The routing batch flips Board's reads to them, one
+   * surface at a time; each flip is provably a no-op because the key already
+   * holds the exact value it replaces.
+   *
+   * PINNED classic === fiveo === today's static value. They are equal by
+   * construction: every read below is a STATIC read, so both themes already
+   * render it identically today.
+   *
+   * NAMED `board*` BY DELIBERATE CHOICE. Do NOT route a Board read to the
+   * same-named existing key — `theme.*` and `COLORS.*` collide by name with
+   * DIFFERENT values (theme.textSecondary is mint #4FD6A8; COLORS.textSecondary
+   * is grey #9aa19b). Reusing by name is exactly how a grey label silently turns
+   * mint. Only 3 reads were value-identical on BOTH themes and so reuse an
+   * existing key instead of minting one here: COLORS.background → background,
+   * COLORS.mint / OBSIDIAN.mint → accent, COLORS.boardBorder → boardBorder.
+   */
+  // from COLORS (constants/theme.ts)
+  boardGold: string;
+  boardGoldLight: string;
+  boardGoldBright: string;
+  boardTextPrimary: string;
+  boardTextSecondary: string;
+  boardTextMuted: string;
+  boardTextDim: string;
+  boardNeonGreen: string;
+  boardNeonRed: string;
+  // from OBSIDIAN (constants/obsidianTheme.ts)
+  boardMintHairline: string;
+  boardMintGhost: string;
+  boardSlotFill: string;
+  boardSlotDash: string;
+  boardSlotDashActive: string;
+  boardCardInk: string;
+  boardAutoBg: string;
+  boardAutoBorder: string;
+  boardAutoText: string;
+  boardAutoBolt: string;
 }
 
 /**
  * The full LIVE paint surface of the app — colour + font-family ONLY.
- * Key counts: colors 56 · obsidian 24 · home 10x10=100 · card 9x3=27 ·
- * visual 16x2=32 · fonts 1  →  240 paint values.
+ * Key counts: colors 56 · obsidian 25 · home 10x10=100 · card 9x3=27 ·
+ * visual 35x2=70 · fonts 1  →  279 paint values.
+ * (S76 added obsidian.cardGlow; S76-BOARD added the 19 `board*` visual keys.)
  */
 export interface PaintTokens {
   /** constants/theme.ts → colors → THEME.colors → gameConfig.COLORS (648 refs). */
@@ -435,6 +480,28 @@ export const currentPaint = {
       primaryBtnText: '#0a0a0a',
       winColor: '#22c55e',
       loseColor: '#ef4444',
+
+      // ── S76-BOARD pin. Each value is Board.tsx's TODAY value, copied from the
+      //    token it reads. classic === fiveo (static reads — no divergence). ──
+      boardGold: '#c9a84c',              // COLORS.gold
+      boardGoldLight: '#e8c96a',         // COLORS.goldLight
+      boardGoldBright: '#e8c96a',        // COLORS.goldBright
+      boardTextPrimary: '#f0ead6',       // COLORS.textPrimary — NOT theme.textPrimary (#ffffff on fiveo)
+      boardTextSecondary: '#9aa19b',     // COLORS.textSecondary — NOT theme.textSecondary (#4FD6A8 mint)
+      boardTextMuted: '#9aa19b',         // COLORS.textMuted — NOT theme.textMuted (#bbbbbb on fiveo)
+      boardTextDim: '#5b6168',           // COLORS.textDim
+      boardNeonGreen: '#2ecc71',         // COLORS.neonGreen — NOT winColor (#22c55e)
+      boardNeonRed: '#c0392b',           // COLORS.neonRed — NOT loseColor (#ef4444)
+      boardMintHairline: 'rgba(79,214,168,0.45)',  // OBSIDIAN.mintHairline
+      boardMintGhost: 'rgba(79,214,168,0.10)',     // OBSIDIAN.mintGhost
+      boardSlotFill: 'rgba(79,214,168,0.03)',      // OBSIDIAN.slotFill
+      boardSlotDash: 'rgba(79,214,168,0.30)',      // OBSIDIAN.slotDash
+      boardSlotDashActive: '#4FD6A8',              // OBSIDIAN.slotDashActive
+      boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
+      boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
+      boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
+      boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
+      boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
     },
     fiveo: {
       background: '#0a0a0a',
@@ -453,6 +520,31 @@ export const currentPaint = {
       primaryBtnText: '#1A1A2E',
       winColor: '#28A745',
       loseColor: '#CC0000',
+
+      // ── S76-BOARD pin. IDENTICAL to classic above, by construction: every
+      //    Board read these mirror is STATIC (a module-scope StyleSheet read of
+      //    COLORS.*/OBSIDIAN.*), so fiveo renders the same pixels as classic
+      //    there TODAY. Pinning them equal is what makes the later routing batch
+      //    a provable no-op on BOTH themes. Divergence here would be a bug. ──
+      boardGold: '#c9a84c',              // COLORS.gold
+      boardGoldLight: '#e8c96a',         // COLORS.goldLight
+      boardGoldBright: '#e8c96a',        // COLORS.goldBright
+      boardTextPrimary: '#f0ead6',       // COLORS.textPrimary — NOT theme.textPrimary (#ffffff here)
+      boardTextSecondary: '#9aa19b',     // COLORS.textSecondary — NOT theme.textSecondary (#4FD6A8 mint)
+      boardTextMuted: '#9aa19b',         // COLORS.textMuted — NOT theme.textMuted (#bbbbbb here)
+      boardTextDim: '#5b6168',           // COLORS.textDim
+      boardNeonGreen: '#2ecc71',         // COLORS.neonGreen — NOT winColor (#28A745 here)
+      boardNeonRed: '#c0392b',           // COLORS.neonRed — NOT loseColor (#CC0000 here)
+      boardMintHairline: 'rgba(79,214,168,0.45)',  // OBSIDIAN.mintHairline
+      boardMintGhost: 'rgba(79,214,168,0.10)',     // OBSIDIAN.mintGhost
+      boardSlotFill: 'rgba(79,214,168,0.03)',      // OBSIDIAN.slotFill
+      boardSlotDash: 'rgba(79,214,168,0.30)',      // OBSIDIAN.slotDash
+      boardSlotDashActive: '#4FD6A8',              // OBSIDIAN.slotDashActive
+      boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
+      boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
+      boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
+      boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
+      boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
     },
   },
 
@@ -507,6 +599,15 @@ export const streetStencil = {
     text: '#ECECEC',
     textSecondary: '#c8c8cc',
     textMuted: '#c8c8cc',
+    // S76-BOARD FILL11 — concrete-grey. The Obsidian value (#5b6168) is a mint-grey
+    // tuned for a near-black bg; on #4e4e54 concrete it drops below legibility.
+    textDim: '#8a8a90',
+    // S76-BOARD FILL11 — Gold, Variant A (Roye-approved). A DELIBERATE second accent:
+    // a warm gold kept distinct from the spray yellow so a win badge reads as a prize
+    // rather than merging into the all-yellow UI. Not an oversight, not a leftover.
+    gold: '#F8C020',
+    goldLight: '#FFD84D',
+    goldBright: '#FFE87A',
     // Cards
     cardFace: '#ECECEC',
     cardWhite: '#ECECEC',
@@ -537,6 +638,21 @@ export const streetStencil = {
     mintGhost: 'rgba(248,240,80,0.10)',
     // The cyan spray glow — the reason cardGlow exists (see PaintTokens.cardGlow).
     cardGlow: 'rgba(58,214,255,0.5)',
+
+    // ── S76-BOARD FILL11 (Roye-approved) ────────────────────────────────────
+    // Empty card slots. Spray yellow, but at RAISED alphas vs the mint they
+    // replace (fill 0.03 -> 0.06, dash 0.30 -> 0.45): yellow on concrete has far
+    // less contrast than mint on near-black, so the Obsidian alphas would leave
+    // the slot invisible. Deliberate, not a copy of the mint alphas.
+    slotFill: 'rgba(248,240,80,0.06)',
+    slotDash: 'rgba(248,240,80,0.45)',
+    slotDashActive: '#F8F050',
+    // Auto-place chip. Solid charcoal body — matches the PLACE button rather than
+    // the translucent mint chip it replaces — with accent border + label.
+    autoBg: '#18181c',
+    autoBorder: '#F8F050',
+    autoText: '#F8F050',
+    autoBolt: '#F8F050',
   },
 } as const satisfies PaintTokens;
 
