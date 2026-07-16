@@ -30,7 +30,19 @@ import { Platform } from 'react-native';
 // source files that now read back from this module.
 import type { HomeThemeId } from './homeThemes';
 import type { CardThemeId } from './cardThemes';
-import type { VisualTheme } from './visualThemes';
+
+/**
+ * S76 — the key type for the paint layer's `visual` namespace.
+ *
+ * Deliberately NOT `VisualTheme` from visualThemes.ts. That union is the registry of
+ * SELECTABLE themes and it grows (S76 added 'streetStencil'); this namespace is a
+ * frozen SNAPSHOT of the two LEGACY visualThemes palettes mirrored in S75 (2 x 16 = 32
+ * values). Keying it by `VisualTheme` coupled the two, so widening the registry
+ * demanded a bogus `streetStencil` entry inside the Obsidian snapshot — tsc caught it.
+ * A NEW theme composes its ThemeTokens in visualThemes.ts FROM this layer's
+ * colors/obsidian tokens; it does not add an entry here.
+ */
+export type LegacyVisualPaintId = 'classic' | 'fiveo';
 
 /** One home-screen palette (constants/homeThemes.ts → HomeTheme). Paint only. */
 export interface HomePaint {
@@ -113,10 +125,17 @@ export interface PaintTokens {
     backEmblemOutline: string; backEmblemCore: string;
     slotFill: string; slotDash: string; slotDashActive: string;
     autoBg: string; autoBorder: string; autoText: string; autoBolt: string;
+    /**
+     * S76 — the card's glow shadowColor. Split out from `mint` because Card.tsx read
+     * ONE token for TWO intents (community-frame border AND the glow), and Street
+     * Stencil needs them to differ (yellow frame vs cyan glow). `current` keeps the
+     * old value (#4FD6A8), so unmigrated surfaces stay byte-identical.
+     */
+    cardGlow: string;
   };
   home: Record<HomeThemeId, HomePaint>;
   card: Record<CardThemeId, CardPaint>;
-  visual: Record<VisualTheme, VisualPaint>;
+  visual: Record<LegacyVisualPaintId, VisualPaint>;
   /** Font FAMILIES are paint; font WEIGHTS stay static in theme.ts (R-B). */
   fonts: { display: string | undefined };
 }
@@ -228,6 +247,9 @@ export const currentPaint = {
     autoBorder: 'rgba(79,214,168,0.35)',
     autoText: '#4FD6A8',
     autoBolt: '#4FD6A8',
+    // S76 — split out of `mint` (see PaintTokens). Today's value, so Card.tsx's glow
+    // is byte-identical to before for anything still reading `current`.
+    cardGlow: '#4FD6A8',
   },
 
   // ── home: moved verbatim from constants/homeThemes.ts → HOME_THEMES (10 x 10) ──
@@ -442,14 +464,98 @@ export const currentPaint = {
   },
 } as const satisfies PaintTokens;
 
-/** The theme ids the paint layer can resolve. Only `current` exists in S75. */
-export type PaintThemeId = 'current';
+/**
+ * `streetStencil` (N8) — S76. The NEW default look: dark concrete + spray-yellow
+ * accent + stencil cards with a cyan spray glow.
+ *
+ * Authored as a spread of `currentPaint` + the N8 intent overrides. Keys the N8 spec
+ * does not define yet simply inherit today's value — harmless, because only surfaces
+ * migrated to usePaint() read this theme, and those read exactly the keys overridden
+ * below. As each later surface migrates, its keys get their N8 values here.
+ *
+ * PAINT ONLY — every value below is a colour. No geometry (Street Stencil is painted
+ * onto the existing frozen layout; nothing moves).
+ */
+export const streetStencil = {
+  ...currentPaint,
+  colors: {
+    ...currentPaint.colors,
+    // Concrete. FLAT in Commit 1a — the 3-stop 160deg gradient (#6a6a70 → #4e4e54 55%
+    // → #3a3a40) needs a LinearGradient element, which would be a STRUCTURAL change to
+    // GameView's tree. It lands in Commit 1b on Board, where the felt surface lives.
+    // #4e4e54 is the 55% mid-stop, so the flat fill reads as the gradient's midpoint.
+    background: '#4e4e54',
+    surface: '#42424a',
+    surfaceRaised: '#5a5a60',
+    // Table / felt — the 3 concrete stops, present now for Commit 1b to gradient with.
+    felt: '#5a5a60',
+    feltLight: '#42424a',
+    tableEdge: '#33333a',
+    feltBorder: '#F8F050', // accent hairline
+    // Accent — spray yellow. `mint` is the app's accent token name (legacy); under N8
+    // it carries the yellow, so every migrated accent read flips together.
+    mint: '#F8F050',
+    mintLight: '#FBF68C',
+    mintBright: '#FDFAC0',
+    mintDim: 'rgba(248,240,80,0.55)',
+    mintGlow: 'rgba(248,240,80,0.55)',
+    mintHairline: 'rgba(248,240,80,0.45)',
+    mintGhost: 'rgba(248,240,80,0.10)',
+    boardActive: '#F8F050',
+    boardBorder: 'rgba(248,240,80,0.45)',
+    // Labels
+    text: '#ECECEC',
+    textSecondary: '#c8c8cc',
+    textMuted: '#c8c8cc',
+    // Cards
+    cardFace: '#ECECEC',
+    cardWhite: '#ECECEC',
+    cardBlack: '#18181c',
+    cardRed: '#E82E5A',
+    // Chips / buttons — dark ink body, accent border+text
+    buttonPrimary: '#18181c',
+    buttonSecondary: '#18181c',
+  },
+  obsidian: {
+    ...currentPaint.obsidian,
+    // Card face — stencil greys (hole #ECECEC → community #DADADA)
+    cardFaceTop: '#ECECEC',
+    cardFaceBottom: '#DADADA',
+    cardFaceFallback: '#ECECEC',
+    cardInk: '#18181c',
+    cardRed: '#E82E5A',
+    // Card back — dark ink with a sprayed accent emblem
+    backTop: '#2a2a30',
+    backBottom: '#18181c',
+    backBorder: '#F8F050',
+    backEmblemOutline: '#F8F050',
+    backEmblemCore: '#F8F050',
+    // Accent (community frame / hairlines) — spray yellow
+    mint: '#F8F050',
+    mintSoft: 'rgba(248,240,80,0.30)',
+    mintHairline: 'rgba(248,240,80,0.45)',
+    mintGhost: 'rgba(248,240,80,0.10)',
+    // The cyan spray glow — the reason cardGlow exists (see PaintTokens.cardGlow).
+    cardGlow: 'rgba(58,214,255,0.5)',
+  },
+} as const satisfies PaintTokens;
+
+/** The theme ids the paint layer can resolve. */
+export type PaintThemeId = 'current' | 'streetStencil';
 
 export const PAINT_THEMES: Record<PaintThemeId, PaintTokens> = {
   current: currentPaint,
+  streetStencil,
 };
 
-export const DEFAULT_PAINT_THEME: PaintThemeId = 'current';
+/**
+ * S76 — the default is now Street Stencil, so `usePaint()` returns it (the
+ * premium_theme_enabled gate is absent → PaintProvider forces the default).
+ * NOTE: `activePaint` below deliberately still points at `currentPaint`, so every
+ * surface NOT yet migrated to usePaint() keeps rendering Obsidian byte-identically.
+ * That split is what makes the surface-by-surface rollout possible on a global cascade.
+ */
+export const DEFAULT_PAINT_THEME: PaintThemeId = 'streetStencil';
 
 /** Resolve a paint theme by id; unknown/absent ids fall back to `current`. */
 export function getPaint(id: PaintThemeId | null | undefined): PaintTokens {

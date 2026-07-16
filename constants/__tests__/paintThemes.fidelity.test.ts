@@ -9,17 +9,17 @@
  *
  * It also guards the Iron Constraint: geometry must NEVER enter the paint layer.
  */
-import { currentPaint, PAINT_THEMES, getPaint, DEFAULT_PAINT_THEME } from '../paintThemes';
+import { currentPaint, PAINT_THEMES, getPaint, DEFAULT_PAINT_THEME, activePaint } from '../paintThemes';
 import { colors, spacing, fontWeight } from '../theme';
 import { OBSIDIAN, OBSIDIAN_GEOM } from '../obsidianTheme';
 import { HOME_THEMES } from '../homeThemes';
 import { CARD_THEMES } from '../cardThemes';
-import { VISUAL_THEMES } from '../visualThemes';
+import { VISUAL_THEMES, getTheme } from '../visualThemes';
 
 // ── Key counts: the audited shape of the live paint surface ──────────────────
 describe('paint layer — domain key counts (audited)', () => {
   it('colors = 56', () => expect(Object.keys(currentPaint.colors)).toHaveLength(56));
-  it('obsidian = 24', () => expect(Object.keys(currentPaint.obsidian)).toHaveLength(24));
+  it('obsidian = 25 (S76 added cardGlow)', () => expect(Object.keys(currentPaint.obsidian)).toHaveLength(25));
   it('home = 10 themes x 10 keys = 100', () => {
     const themes = Object.keys(currentPaint.home);
     expect(themes).toHaveLength(10);
@@ -185,6 +185,9 @@ describe('obsidianTheme OBSIDIAN — mirrors pre-refactor values exactly', () =>
       autoBorder: 'rgba(79,214,168,0.35)',
       autoText: '#4FD6A8',
       autoBolt: '#4FD6A8',
+      // S76 — split out of `mint`; `current` keeps the OLD value so unmigrated
+      // surfaces stay byte-identical.
+      cardGlow: '#4FD6A8',
     });
   });
 });
@@ -282,6 +285,46 @@ describe('visualThemes VISUAL_THEMES — paint from layer, GEOMETRY untouched', 
     expect(VISUAL_THEMES.classic.primaryBtnRadius).toBe(12);
     expect(VISUAL_THEMES.fiveo.primaryBtnRadius).toBe(8);
   });
+
+  // ── S76 — streetStencil (N8) registered, DORMANT ──────────────────────────
+  it('streetStencil resolves the N8 token map', () => {
+    expect(VISUAL_THEMES.streetStencil).toMatchObject({
+      background: '#4e4e54',      // flat concrete (55% mid-stop; gradient is 1b)
+      surface: '#42424a',
+      boardBg: '#42424a',
+      boardBorder: '#F8F050',
+      textPrimary: '#ECECEC',
+      textSecondary: '#c8c8cc',
+      textMuted: '#c8c8cc',
+      accent: '#F8F050',
+      accentText: '#18181c',
+      cardFace: '#ECECEC',
+      cardBorder: '#18181c',
+      cardShadow: 'rgba(58,214,255,0.5)',
+      primaryBtn: '#18181c',
+      primaryBtnText: '#F8F050',
+    });
+  });
+
+  it('streetStencil primaryBtnRadius is 12 — IDENTICAL to classic (no per-theme shape)', () => {
+    expect(VISUAL_THEMES.streetStencil.primaryBtnRadius).toBe(12);
+    expect(VISUAL_THEMES.streetStencil.primaryBtnRadius).toBe(VISUAL_THEMES.classic.primaryBtnRadius);
+  });
+
+  it('streetStencil win/lose stay GENERIC green/red (readability-critical, deliberately unthemed)', () => {
+    expect(VISUAL_THEMES.streetStencil.winColor).toBe('#22c55e');
+    expect(VISUAL_THEMES.streetStencil.loseColor).toBe('#ef4444');
+  });
+
+  it('adding streetStencil left classic + fiveo byte-identical', () => {
+    expect(VISUAL_THEMES.classic).toEqual({ ...currentPaint.visual.classic, primaryBtnRadius: 12 });
+    expect(VISUAL_THEMES.fiveo).toEqual({ ...currentPaint.visual.fiveo, primaryBtnRadius: 8 });
+  });
+
+  it('getTheme still defaults to classic (streetStencil is DORMANT)', () => {
+    expect(getTheme(null)).toBe(VISUAL_THEMES.classic);
+    expect(getTheme('streetStencil')).toBe(VISUAL_THEMES.streetStencil);
+  });
 });
 
 // ── Geometry exports must remain static, never themed ────────────────────────
@@ -306,10 +349,16 @@ describe('geometry exports stay static (never routed through paint)', () => {
 
 // ── Resolver: only `current` exists in S75 ───────────────────────────────────
 describe('paint resolver', () => {
-  it('default id is current', () => expect(DEFAULT_PAINT_THEME).toBe('current'));
-  it('only ships the current theme in S75', () => expect(Object.keys(PAINT_THEMES)).toEqual(['current']));
-  it('falls back to current for null/unknown ids', () => {
-    expect(getPaint(null)).toBe(currentPaint);
-    expect(getPaint(undefined)).toBe(currentPaint);
+  it('default id is streetStencil (S76 — the new default look)', () => expect(DEFAULT_PAINT_THEME).toBe('streetStencil'));
+  it('ships current + streetStencil (S76)', () => expect(Object.keys(PAINT_THEMES)).toEqual(['current', 'streetStencil']));
+  it('null/undefined resolve to the DEFAULT theme (now streetStencil)', () => {
+    expect(getPaint(null)).toBe(PAINT_THEMES.streetStencil);
+    expect(getPaint(undefined)).toBe(PAINT_THEMES.streetStencil);
+  });
+
+  it('activePaint still points at currentPaint so UNMIGRATED surfaces stay Obsidian', () => {
+    expect(activePaint).toBe(currentPaint);
+    expect(colors).toBe(currentPaint.colors);
+    expect(OBSIDIAN).toBe(currentPaint.obsidian);
   });
 });
