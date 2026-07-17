@@ -1,3 +1,21 @@
+> ## ⚠ SEQUENCING SUPERSEDED — see `CAPS-PREPLAN-2026-07-17-first-light.md`
+>
+> **Still authoritative here:** LIVE STATE, SHIPPED, LANDMINES, DEBT, and the
+> counts-are-smoke-alarms rule. Read those.
+>
+> **DISPROVEN — do NOT act on:** the section *"THEN: DEV-BUILD DEFAULT FLIP"*.
+> A default flip **cannot work**: `_layout.tsx:248` seeds the theme only
+> `if (visualTheme === null)`, and `gameStore.ts:317` PERSISTS `visualTheme`.
+> Roye's device already has `'classic'` persisted, so the seed never fires and the
+> dev build would render classic — a failed payoff session with routing working
+> perfectly. The PREPLAN replaces it with a branch-only picker edit
+> (`settings.tsx:844-847`) + a separate dev bundle id.
+>
+> **Also superseded:** merge is NOT on the critical path (dev-build from the
+> branch; merge after the eye-test).
+>
+> Where this doc and the PREPLAN disagree, **the PREPLAN wins**.
+
 # CAPS THEME — CURRENT STATUS (2026-07-17 ~01:40 IST) — read this first, then the full handoff
 
 ## LIVE STATE (strategist-verified)
