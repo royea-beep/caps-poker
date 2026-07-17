@@ -450,15 +450,65 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
 });
 
 // ── S76-BOARD: proof this batch routed NOTHING ───────────────────────────────
-describe('S76-BOARD — Board.tsx is UNTOUCHED (pin stage routes nothing)', () => {
-  const boardSrc = readFileSync(join(__dirname, '..', '..', 'components', 'Board.tsx'), 'utf8');
+// S76-BOARD-ROUTING — Board now CONSUMES the pinned keys.
+//
+// The pin stage asserted here that Board read NO board* key ("routes nothing"). That
+// guard did its job: it failed the moment routing landed, which is exactly what it was
+// for. Routing is now the intent, so the assertion is INVERTED — and replaced with the
+// guards that protect THIS batch.
+describe('S76-BOARD-ROUTING — Board.tsx consumes the pinned keys, safely', () => {
+  const rawSrc = readFileSync(join(__dirname, '..', '..', 'components', 'Board.tsx'), 'utf8');
 
-  it('Board.tsx reads no board* theme key yet', () => {
-    expect(boardSrc).not.toMatch(/theme\.board(?!Bg|Border\b)/);
+  // Match CODE, never prose. The first draft of the trap guard below failed on Board's
+  // own explanatory comment ("...NOT theme.loseColor or theme.textSecondary...") — the
+  // exact `goldDim` failure mode this codebase has already been bitten by: a comment
+  // read as a live reference. A guard that greps prose proves nothing; strip it first.
+  const stripComments = (src: string) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const boardSrc = stripComments(rawSrc);
+
+  it('the comment-stripper actually works (guards the guard)', () => {
+    // Board DOES mention the trap keys in prose; it must NOT reference them in code.
+    expect(rawSrc).toMatch(/theme\.textSecondary/);   // present as prose
+    expect(boardSrc).not.toMatch(/theme\.textSecondary/); // absent from code
   });
 
-  it('Board.tsx still has exactly 7 shared values (geometry frozen)', () => {
-    expect(boardSrc.match(/useSharedValue\(/g) ?? []).toHaveLength(7);
+  it('Board.tsx now reads board* theme keys (routing landed)', () => {
+    const reads = boardSrc.match(/theme\.board[A-Z][A-Za-z]*/g) ?? [];
+    expect(reads.length).toBeGreaterThan(0);
+  });
+
+  it('Board.tsx still has exactly 7 shared values — NOT 8 (geometry frozen)', () => {
+    expect(rawSrc.match(/useSharedValue\(/g) ?? []).toHaveLength(7);
+  });
+
+  // THE TRAPS. Board must never read the same-named legacy keys: theme.textSecondary is
+  // MINT on both themes (COLORS.textSecondary is grey #9aa19b); theme.textMuted is
+  // #bbbbbb on fiveo (COLORS.textMuted is #9aa19b); theme.textPrimary is #ffffff on
+  // fiveo. Routing to any of them breaks a legacy theme silently — fiveo-only for two
+  // of the three, so no eye-test on classic would ever catch it.
+  it('Board.tsx reads NO trap key (textSecondary / textMuted / textPrimary)', () => {
+    expect(boardSrc).not.toMatch(/theme\.textSecondary\b/);
+    expect(boardSrc).not.toMatch(/theme\.textMuted\b/);
+    expect(boardSrc).not.toMatch(/theme\.textPrimary\b/);
+  });
+
+  // R1 — win/lose is an ACCESSIBILITY axis (useGameColors → colorblind blue/orange),
+  // never a theme axis. Routing it to theme.winColor/loseColor would override a
+  // colorblind user's palette and BREAK colorblind mode. Inviolable, not a preference.
+  it('win/lose stays on useGameColors — colorblind mode intact', () => {
+    expect(boardSrc).toMatch(/gameColors\.win\b/);
+    expect(boardSrc).toMatch(/gameColors\.lose\b/);
+    expect(boardSrc).not.toMatch(/theme\.winColor\b/);
+    expect(boardSrc).not.toMatch(/theme\.loseColor\b/);
+  });
+
+  // R5 — the literals batch is NOT this batch. These must still be present & unrouted.
+  it('panel + literals remain UNROUTED (next increment)', () => {
+    expect(boardSrc).toMatch(/OBSIDIAN\.bgTop/);
+    expect(boardSrc).toMatch(/OBSIDIAN\.bgFallback/);
+    expect(boardSrc).toMatch(/#c9a84c/);
+    expect(boardSrc).toMatch(/#FFD700/);
   });
 });
 
