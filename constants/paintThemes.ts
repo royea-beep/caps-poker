@@ -133,13 +133,34 @@ export interface VisualPaint {
   boardAutoBorder: string;
   boardAutoText: string;
   boardAutoBolt: string;
+
+  /**
+   * ── S76-BOARD-LITERALS/PANEL ──────────────────────────────────────────────
+   * The board PANEL backdrop + the 3 live raw literals. Same pin rule: classic ===
+   * fiveo === today. Byte-identity here is STRUCTURAL, not a coincidence: the panel
+   * reads OBSIDIAN.* (theme-independent) and the literals are literals, so both
+   * themes already render them identically today.
+   *
+   * WHY THESE ARE NEW KEYS AND NOT REUSES OF boardGold: reuse demands VALUE and
+   * ALPHA identity, not merely the same hue. #FFD700 (boardChipFloat) is not
+   * boardGold's #c9a84c; and rgba(201,168,76,0.7) IS boardGold at 0.7 alpha —
+   * routing it to boardGold would silently drop the alpha. Different value OR
+   * different alpha ⇒ a new key. This is the name-collision trap one level down.
+   */
+  boardPanelTop: string;
+  boardPanelBottom: string;
+  boardPanelFallback: string;
+  boardHintIcon: string;
+  boardTieBg: string;
+  boardChipFloat: string;
 }
 
 /**
  * The full LIVE paint surface of the app — colour + font-family ONLY.
  * Key counts: colors 56 · obsidian 25 · home 10x10=100 · card 9x3=27 ·
- * visual 35x2=70 · fonts 1  →  279 paint values.
- * (S76 added obsidian.cardGlow; S76-BOARD added the 19 `board*` visual keys.)
+ * visual 41x2=82 · fonts 1  →  291 paint values.
+ * (S76 added obsidian.cardGlow; S76-BOARD added 19 `board*` visual keys;
+ *  S76-BOARD-LITERALS/PANEL added 6 more — 25 `board*` keys total.)
  */
 export interface PaintTokens {
   /** constants/theme.ts → colors → THEME.colors → gameConfig.COLORS (648 refs). */
@@ -502,6 +523,14 @@ export const currentPaint = {
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
       boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
       boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
+
+      // ── S76-BOARD-LITERALS/PANEL pin. Today's values. ──
+      boardPanelTop: '#1C1F26',                    // OBSIDIAN.bgTop
+      boardPanelBottom: '#101218',                 // OBSIDIAN.bgBottom
+      boardPanelFallback: '#161922',               // OBSIDIAN.bgFallback
+      boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
+      boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
+      boardChipFloat: '#FFD700',                   // raw literal — NOT boardGold (#c9a84c)
     },
     fiveo: {
       background: '#0a0a0a',
@@ -545,6 +574,17 @@ export const currentPaint = {
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
       boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
       boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
+
+      // ── S76-BOARD-LITERALS/PANEL pin. IDENTICAL to classic, STRUCTURALLY: the
+      //    panel reads OBSIDIAN.* (theme-independent — fiveo has never had its own
+      //    panel colour) and the other three are raw literals. Both themes render
+      //    these exact pixels today, so pinning them equal is a proof, not a choice.
+      boardPanelTop: '#1C1F26',                    // OBSIDIAN.bgTop
+      boardPanelBottom: '#101218',                 // OBSIDIAN.bgBottom
+      boardPanelFallback: '#161922',               // OBSIDIAN.bgFallback
+      boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
+      boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
+      boardChipFloat: '#FFD700',                   // raw literal — NOT boardGold (#c9a84c)
     },
   },
 

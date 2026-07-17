@@ -163,8 +163,9 @@ function FloatingChips({ amount, winner, theme }: { amount: number; winner: 'pla
   // theme.textSecondary. TRAPS: theme.textSecondary is MINT (#4FD6A8) on BOTH themes
   // while COLORS.textSecondary is grey (#9aa19b); and win/lose belongs to the
   // ACCESSIBILITY axis (useGameColors), never the theme axis.
-  // '#FFD700' stays raw — it is the LITERALS batch (R5), deliberately not touched here.
-  const color = winner === 'player' ? '#FFD700' : winner === 'bot' ? theme.boardNeonRed : theme.boardTextSecondary;
+  // '#FFD700' is now boardChipFloat (S76-BOARD-LITERALS): a NEW key, because #FFD700
+  // is NOT boardGold's #c9a84c — routing it there would have changed classic.
+  const color = winner === 'player' ? theme.boardChipFloat : winner === 'bot' ? theme.boardNeonRed : theme.boardTextSecondary;
 
   return (
     <Animated.Text style={[styles.floatingChips, { color }, animStyle]}>
@@ -542,10 +543,12 @@ export default function Board({
         // VAMOS-BOARD-RESTORE 2026-06-14 — reverted FIX 4 (board hug content). In a
         // column-laid grid `flex` controls the MAIN AXIS = height; flex:0 collapsed
         // every board's height to ~0. Restored to layout-471 flex:1 full-cell.
-        { backgroundColor: OBSIDIAN.bgFallback, borderColor: boardAccent },
+        // S76-LITERALS/PANEL — fallback under the gradient. borderColor stays
+        // boardAccent: per-board IDENTITY (PRD.board.accent), not a theme colour.
+        { backgroundColor: theme.boardPanelFallback, borderColor: boardAccent },
         boardIdentityGlow(boardAccent),
         Platform.OS === 'web' && {
-          background: `linear-gradient(165deg, ${OBSIDIAN.bgTop} 0%, ${OBSIDIAN.bgBottom} 100%)`,
+          background: `linear-gradient(165deg, ${theme.boardPanelTop} 0%, ${theme.boardPanelBottom} 100%)`,
           boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
         } as any,
         // S76-BOARD-ROUTING — colour-only overrides. shadowColor is guarded to iOS to
@@ -565,7 +568,10 @@ export default function Board({
           the per-board identity glow on the container border, IN FRONT of nothing. The
           container's overflow:'hidden' + borderRadius clip the gradient cleanly. */}
       <LinearGradient
-        colors={[OBSIDIAN.bgTop, OBSIDIAN.bgBottom]}
+        // S76-LITERALS/PANEL — COLOURS ONLY. start/end/absoluteFillObject/
+        // pointerEvents are untouched: this stays an absolute-fill backdrop that
+        // cannot move or resize a single child. 2-stop shape preserved.
+        colors={[theme.boardPanelTop, theme.boardPanelBottom]}
         // 165° in CSS = mostly top→bottom with a slight right→down skew. Approximate
         // with start at top-center-left and end at bottom-center-right.
         start={{ x: 0.3, y: 0 }}
@@ -790,7 +796,7 @@ export default function Board({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
-                    <Text style={styles.hintInfoIcon}>ⓘ</Text>
+                    <Text style={[styles.hintInfoIcon, { color: theme.boardHintIcon }]}>ⓘ</Text>
                   </Pressable>
                 )}
                 {hintInfoVisible && explText ? (
@@ -809,7 +815,7 @@ export default function Board({
             it is useGameColors() = the ACCESSIBILITY axis (colorblind blue/orange). Routing
             it to theme would break colorblind mode (R1). tieBadge's mint = LITERALS batch. */}
         {winner && (
-          <Animated.View style={[styles.winnerBadge, { borderTopColor: theme.boardMintHairline }, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : styles.tieBadge, bannerAnimStyle]}>
+          <Animated.View style={[styles.winnerBadge, { borderTopColor: theme.boardMintHairline }, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : [styles.tieBadge, { backgroundColor: theme.boardTieBg }], bannerAnimStyle]}>
             <Text style={[styles.winnerText, { color: theme.boardCardInk }]}>
               {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
             </Text>

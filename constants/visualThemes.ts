@@ -52,6 +52,14 @@ export interface ThemeTokens {
   boardAutoBorder: string;
   boardAutoText: string;
   boardAutoBolt: string;
+  // S76-BOARD-LITERALS/PANEL — panel backdrop + the 3 live raw literals. New keys, NOT
+  // reuses of boardGold: reuse needs VALUE and ALPHA identity (see VisualPaint).
+  boardPanelTop: string;
+  boardPanelBottom: string;
+  boardPanelFallback: string;
+  boardHintIcon: string;
+  boardTieBg: string;
+  boardChipFloat: string;
 }
 
 // S75 (theme plumbing) — the 32 paint VALUES (2 themes x 16 keys) moved verbatim to
@@ -134,6 +142,34 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     boardAutoBorder: streetStencilPaint.obsidian.autoBorder,     // #F8F050
     boardAutoText: streetStencilPaint.obsidian.autoText,         // #F8F050
     boardAutoBolt: streetStencilPaint.obsidian.autoBolt,         // #F8F050
+
+    // ── S76-BOARD-LITERALS/PANEL ──────────────────────────────────────────────
+    // PANEL: the FELT stops, deliberately NOT the screen-bg stops. GameView's N8
+    // background is colors.background (#4e4e54); painting the panel with the same
+    // stops would make the board VANISH into it. felt/feltLight were authored for
+    // exactly this surface ("Commit 1b on Board, where the felt surface lives").
+    // Kept 2-STOP to match today's gradient shape — a 3rd stop would force classic
+    // to carry a synthetic middle value, making byte-identity an argument instead
+    // of a proof. tableEdge (#33333a) stays available for a later polish pass.
+    boardPanelTop: streetStencilPaint.colors.felt,           // #5a5a60
+    boardPanelBottom: streetStencilPaint.colors.feltLight,   // #42424a
+    boardPanelFallback: streetStencilPaint.colors.background, // #4e4e54 — sits UNDER the gradient
+    boardChipFloat: streetStencilPaint.colors.gold,          // #F8C020 — the +chips float is a PRIZE, so it takes Variant-A gold, matching the win badge
+    // The two below are LITERALS in this file, deviating from the FILL11 rule that
+    // visualThemes holds no hardcoded colour. No paint token carries either value
+    // (nothing sits at 0.7 alpha, and there is no neutral token), and minting global
+    // `colors` entries — which feed COLORS, 648 refs — to serve one glyph and one
+    // badge would pollute a namespace far larger than the problem. Logged as debt.
+    //
+    // ⓘ hint glyph — UI chrome, so it takes the spray yellow, NOT the gold: gold is
+    // reserved for prizes (Variant A). Today's 0.7 alpha preserved exactly.
+    boardHintIcon: 'rgba(248,240,80,0.7)',
+    // Tie badge — Board.tsx's own comment records why mint was chosen: it "reads
+    // NEUTRAL". A tie is neither win nor loss, and under N8 spray yellow is the
+    // celebratory accent — it would read as a WIN. Concrete grey (#c8c8cc, the N8
+    // label colour) keeps the neutral intent; boardCardInk stays readable on it.
+    // Today's 0.92 alpha preserved exactly.
+    boardTieBg: 'rgba(200,200,204,0.92)',
   },
 };
 
