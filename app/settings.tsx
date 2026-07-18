@@ -1366,7 +1366,7 @@ export default function SettingsScreen() {
         {/* Gambling disclaimer + legal links (Apple requirement) */}
         <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
-            {"CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 17+."}
+            {"CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 18+."}
           </Text>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
             <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Privacy Policy</Text>
