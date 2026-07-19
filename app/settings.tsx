@@ -1104,7 +1104,6 @@ export default function SettingsScreen() {
   };
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [muteQuotes, setMuteQuotes] = useState(false);
-  const [muteSounds, setMuteSounds] = useState(false);
   const isBeta = Constants.expoConfig?.extra?.isBeta === true;
   // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
   // Stored in AsyncStorage under 'max_board_card_h_dp' in dp at base 393x852.
@@ -1120,7 +1119,6 @@ export default function SettingsScreen() {
       setDebugEnabled(v === 'true');
     }).catch(() => {});
     AsyncStorage.getItem('caps_beta_mute_quotes').then(v => setMuteQuotes(v === 'true')).catch(() => {});
-    AsyncStorage.getItem('caps_beta_mute_sounds').then(v => setMuteSounds(v === 'true')).catch(() => {});
     AsyncStorage.getItem('max_board_card_h_dp').then(v => {
       const n = v ? parseFloat(v) : NaN;
       if (Number.isFinite(n) && n >= BOARD_CAP_MIN && n <= BOARD_CAP_MAX) {
@@ -1277,7 +1275,7 @@ export default function SettingsScreen() {
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <Text style={styles.rowLabel}>Max board card</Text>
-            <Text style={styles.rowHint}>Cap on board card height ({BOARD_CAP_MIN}â{BOARD_CAP_MAX} dp). Default {BOARD_CAP_DEFAULT}.</Text>
+            <Text style={styles.rowHint}>Cap on board card height ({BOARD_CAP_MIN}–{BOARD_CAP_MAX} dp). Default {BOARD_CAP_DEFAULT}.</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Pressable
@@ -1287,7 +1285,7 @@ export default function SettingsScreen() {
               accessibilityLabel="Decrease max board card height"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.toggleText}>â</Text>
+              <Text style={styles.toggleText}>−</Text>
             </Pressable>
             <Text style={[styles.toggleText, { minWidth: 36, textAlign: 'center' }]}>{boardCardCap}</Text>
             <Pressable
@@ -1316,21 +1314,11 @@ export default function SettingsScreen() {
               <Text style={styles.rowLabel}>Version</Text>
               <Text style={styles.rowHint}>{Constants.expoConfig?.version ?? '—'} (EAS {Constants.expoConfig?.extra?.buildNumber ?? '—'})</Text>
             </View>
-            <Button
-              title="🔄 Reset Progress (beta)"
-              variant="secondary"
-              onPress={() => {
-                Alert.alert('Reset Progress', 'Reset all progress?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Reset', style: 'destructive', onPress: async () => {
-                    await AsyncStorage.clear().catch(() => {});
-                    useGameStore.getState().addChips(1000 - useGameStore.getState().chips);
-                    router.replace('/');
-                  }},
-                ]);
-              }}
-              style={{ marginBottom: 12 }}
-            />
+            {/* A6 (Batch A): "Reset Progress (beta)" REMOVED. It called
+                AsyncStorage.clear() — nuking ALL storage (device/referral/auth state),
+                far beyond progress. The surgical, guarded "Reset All Progress" in the
+                DANGER ZONE below (multiRemove of a specific key list) is the single
+                reset control. */}
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Mute quotes</Text>
               <Switch
@@ -1342,18 +1330,11 @@ export default function SettingsScreen() {
                 accessibilityLabel="Mute quotes"
               />
             </View>
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Mute sounds</Text>
-              <Switch
-                value={muteSounds}
-                onValueChange={(v) => {
-                  setMuteSounds(v);
-                  AsyncStorage.setItem('caps_beta_mute_sounds', v ? 'true' : 'false').catch(() => {});
-                  useGameStore.getState().updateConfig({ soundEnabled: !v });
-                }}
-                accessibilityLabel="Mute sounds"
-              />
-            </View>
+            {/* A3 (Batch A): "Mute sounds" REMOVED. It wrote a dead key
+                (caps_beta_mute_sounds — 0 readers) AND flipped the real
+                config.soundEnabled, making it a second, conflicting control over the
+                sound asset that "Sound Volume" (SoundToggle) already owns. Ambient
+                Sound is real (utils/sounds.ts + assets/sounds/ambient.mp3) and stays. */}
           </View>
         )}
 
@@ -1378,19 +1359,14 @@ export default function SettingsScreen() {
             Your Rank
           </Text>
         </Pressable>
-        <Pressable
-          onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy')}
-          style={styles.privacyLink}
-          accessibilityRole="link"
-          accessibilityLabel="Privacy policy"
-        >
-          <Text style={styles.privacyLinkText}>Privacy Policy</Text>
-        </Pressable>
+        {/* A4 (Batch A): standalone Privacy Policy link removed — the Privacy Policy
+            link now lives once, in the Apple-required legal footer below (paired with
+            Terms). Same destination; no behaviour change. */}
 
         {/* Gambling disclaimer + legal links (Apple requirement) */}
         <View style={{ marginTop: 16, marginBottom: 8, alignItems: 'center' }}>
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
-            {"CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 17+."}
+            {"CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 18+."}
           </Text>
           <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
             <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Privacy Policy</Text>

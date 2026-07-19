@@ -1792,7 +1792,7 @@ export default function HomeScreen() {
           marginTop: rs(18),
           marginBottom: rs(6),
         }}>
-          {"Free play | Virtual chips only | No real-money gambling | 17+"}
+          {"Free play | Virtual chips only | No real-money gambling | 18+"}
         </Text>
 
       </ScrollView>

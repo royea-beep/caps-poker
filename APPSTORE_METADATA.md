@@ -17,7 +17,7 @@
 - **Price**: Free (Tier 0)
 
 ### Age Rating
-- **Simulated Gambling**: Yes → 17+
+- **Simulated Gambling**: Yes → 18+  (old tier retired by Apple 2026-01-31)
 - **Unrestricted Web Access**: No
 - **Gambling & Contests**: No (no real money)
 

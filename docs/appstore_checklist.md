@@ -48,7 +48,7 @@ URL: https://appstoreconnect.apple.com/apps/6760429619
 
 ### Age Rating
 - [ ] Fill out the Age Rating questionnaire
-- [ ] Simulated Gambling: **Yes** (this sets the rating to 17+)
+- [ ] Simulated Gambling: **Yes** (this sets the rating to 18+)
 - [ ] All other categories: **No** (no real money, no violence, etc.)
 
 ### Version 1.0 — Prepare for Submission

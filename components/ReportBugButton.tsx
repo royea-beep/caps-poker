@@ -178,7 +178,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
 
 const styles = StyleSheet.create({
   fab: {
-    // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 17+").
+    // POLISH-1 (3c) — sat right on the Home legal-disclaimer line ("Free play · … · 18+").
     // RESPONSIVE-FIX 2026-07-06 — chasing a "bottom" pixel offset that clears the
     // disclaimer on every device height turned out to be unreliable no matter the value
     // (the two things scale independently, so a fixed gap that's safe on one height can

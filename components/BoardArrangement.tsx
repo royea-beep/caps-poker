@@ -336,7 +336,15 @@ export function BoardArrangement({
         >
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
+            // A1 (Batch A) — the "Auto-Place ALL" button is an absolute overlay
+            // (autoAllBar, zIndex 101) floating at insets.bottom + rs(60), ~rs(31)
+            // tall, so it sat OVER the hand's lower row and both hid AND blocked
+            // those cards (box-none passes touch through EXCEPT on the button).
+            // Additive, contained fix: reserve scroll-content bottom space ONLY
+            // when that button is shown, lifting the last row above it. This pads
+            // INSIDE the ScrollView — the handZone outer size and the boards region
+            // above are untouched, so nothing else on screen shifts.
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: (!allBoardsFull && onAutoFillAll) ? rs(48) : 0 }}
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
