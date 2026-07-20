@@ -59,7 +59,7 @@ import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
-import { earnChips, fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
+import { fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
 import { trackEvent } from '../../utils/heatmap';
 import { getSupabase } from '../../utils/supabase';
@@ -774,7 +774,8 @@ export default function HomeScreen() {
         autoClaimedRef.current = true;
         const reward = Number(claim.chips_earned) || 0;
         const streak = Number(claim.streak) || 1;
-        if (reward > 0) await earnChips(deviceId, 'daily_reward', reward);
+        // daily_reward is credited server-side by claim_daily_reward (C1 fold, 2026-07-20).
+        // The old client earn_chips('daily_reward') call was removed — it is now a gated no-op.
         try {
           const shop = await fetchPokerShop(deviceId);
           if (shop && typeof shop.balance === 'number') store.setChips(shop.balance);
@@ -1660,7 +1661,10 @@ export default function HomeScreen() {
               <Text style={homeDataCardStyles.sub}>Achievements · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} win rate</Text>
             </Pressable>
             <Pressable
-              onPress={() => router.push('/missions' as any)}
+              // Re-pointed 2026-07-20 /missions → /leaderboard: the Missions claim path
+              // (claim_mission_d) shows "+X chips" but never credits. Card kept for its rank
+              // display; tap now goes to the leaderboard, never to the broken claim screen.
+              onPress={() => router.push('/leaderboard' as any)}
               accessibilityRole="button"
               accessibilityLabel="Competition"
               style={homeDataCardStyles.card}

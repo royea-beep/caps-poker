@@ -86,6 +86,35 @@ export async function earnChips(
 }
 
 // ---------------------------------------------------------------------------
+// claim_share_reward — guarded share_hand reward (cap + per-share idempotency)
+// ---------------------------------------------------------------------------
+export interface ShareRewardResult {
+  ok: boolean;
+  granted: number;
+  new_balance?: number;
+  already_claimed?: boolean;
+  capped?: boolean;
+}
+
+/**
+ * Claim the share_hand reward via the guarded `claim_share_reward` RPC. Controls live server-side
+ * (daily cap via app_config.share_reward_max_daily + partial-unique idempotency on the shared_hands
+ * id). Pass the shared_hands row id as shareId (required — the no-id case uses the legacy fallback
+ * path in the caller, not this wrapper). Returns null on RPC failure; granted>0 means chips moved.
+ */
+export async function claimShareReward(deviceId: string, shareId: string): Promise<ShareRewardResult | null> {
+  const raw = await callRPC<any>('claim_share_reward', { p_device_id: deviceId, p_share_id: shareId });
+  if (!raw) return null;
+  return {
+    ok: raw.ok === true,
+    granted: Number(raw.granted) || 0,
+    new_balance: raw.new_balance,
+    already_claimed: raw.already_claimed === true,
+    capped: raw.capped === true,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // record_hand_net — ECON-SINGLEWRITER Phase 1 (S59)
 // ---------------------------------------------------------------------------
 

@@ -88,14 +88,14 @@ export const BoardResultCard = React.memo(function BoardResultCard({
   const doShare = async (ref: React.RefObject<any>) => {
     setSharing(true);
     await new Promise((r) => setTimeout(r, 150));
-    const url = autoShareUrl ?? await saveHandForWebReplay(shareData).catch(() => null);
+    const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null))?.url ?? null;
     const text = generateShareText(shareData, url, isPractice);
     await captureAndShare(ref, text);
     setSharing(false);
   };
 
   const doCopy = async () => {
-    const url = autoShareUrl ?? await saveHandForWebReplay(shareData).catch(() => null);
+    const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null))?.url ?? null;
     if (url) { await copyToClipboard(url); Alert.alert('Link copied!', url); }
   };
 

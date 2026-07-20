@@ -68,7 +68,7 @@ export async function captureAndShare(viewRef: React.RefObject<any>, shareText: 
 }
 
 // Save hand data to Supabase shared_hands table, returns web replay URL
-export async function saveHandForWebReplay(data: ShareData): Promise<string | null> {
+export async function saveHandForWebReplay(data: ShareData): Promise<{ url: string; id: string } | null> {
   if (!isSupabaseConfigured) return null;
   const supabase = getSupabase();
   if (!supabase) return null;
@@ -84,7 +84,7 @@ export async function saveHandForWebReplay(data: ShareData): Promise<string | nu
       debugLog(`[shareHand] Supabase insert failed: ${error.message}`, 'warn');
       return null;
     }
-    return `https://caps.ftable.co.il/hand/?id=${handId}`;
+    return { url: `https://caps.ftable.co.il/hand/?id=${handId}`, id: handId };
   } catch (e) {
     debugLog(`[shareHand] saveHandForWebReplay failed: ${e}`, 'warn');
     return null;

@@ -38,7 +38,7 @@ import { getSupabase } from '../utils/supabase';
 import { shouldPromptLogin } from '../utils/auth';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
-import { earnChips, recordHandNet, recordReward } from '../utils/supabaseEconomy';
+import { claimShareReward, earnChips, recordHandNet, recordReward } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
 import { FloatingChips } from '../components/FloatingChips';
@@ -124,6 +124,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const [xpGained, setXpGained] = useState(0);
   const [pendingAchievements, setPendingAchievements] = useState<Achievement[]>([]);
   const [autoShareUrl, setAutoShareUrl] = useState<string | null>(null);
+  const [autoShareId, setAutoShareId] = useState<string | null>(null);
   const [waitingForNextHand, setWaitingForNextHand] = useState(false);
   const [disconnectMessage, setDisconnectMessage] = useState<string | null>(null);
   const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
@@ -343,7 +344,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       numberOfPlayers: revealData.numberOfPlayers,
     };
     if (!isPracticeGame) {
-      saveHandForWebReplay(autoShareData).then((url) => { if (url) setAutoShareUrl(url); }).catch(() => {});
+      saveHandForWebReplay(autoShareData).then((res) => { if (res) { setAutoShareUrl(res.url); setAutoShareId(res.id); } }).catch(() => {});
     }
 
     // VAMOS-UNIFY-FINAL 2026-06-28 — "Try 4 boards" upgrade nudge + login prompt
@@ -981,11 +982,22 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 import('../utils/heatmap').then(({ trackEvent }) => {
                   trackEvent('results', 'share_whatsapp', deviceId);
                 }).catch(() => {});
-                const shareResult = await earnChips(deviceId, 'share_hand');
-                if (shareResult?.chips_earned) {
-                  useGameStore.getState().addChips(shareResult.chips_earned);
-                  useGameStore.getState().trackChipsEarned(shareResult.chips_earned);
-                  showEarnToast(`+${shareResult.chips_earned} 💰`);
+                // Guarded path when the shared_hands id is present; legacy earn_chips fallback
+                // (tagged distinctly for the C2 adoption metric) when the auto-save hadn't
+                // produced an id yet. Never silently drop the reward.
+                let earned = 0;
+                if (autoShareId) {
+                  const res = await claimShareReward(deviceId, autoShareId);
+                  earned = res?.granted ?? 0;
+                } else {
+                  const res = await earnChips(deviceId, 'share_hand');
+                  earned = res?.chips_earned ?? 0;
+                  track('share_reward_fallback', { reason: 'no_share_id' }, 'results');
+                }
+                if (earned > 0) {
+                  useGameStore.getState().addChips(earned);
+                  useGameStore.getState().trackChipsEarned(earned);
+                  showEarnToast(`+${earned} 💰`);
                 }
               } catch {}
             }}

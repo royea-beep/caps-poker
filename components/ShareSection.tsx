@@ -42,7 +42,7 @@ export function ShareSection({
     // Web fallback: copy the replay link + inline confirmation (no native share sheet,
     // and Alert.alert silently no-ops on web — so the confirmation must be inline).
     const doWebCopy = async () => {
-      const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null));
+      const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null))?.url ?? null;
       if (!url) return;
       await copyToClipboard(url);
       setWebCopied(true);
@@ -68,7 +68,7 @@ export function ShareSection({
   const doShareGame = async (ref: React.RefObject<any>) => {
     setSharingGame(true);
     await new Promise((r) => setTimeout(r, 150));
-    const url = autoShareUrl ?? await saveHandForWebReplay(shareData).catch(() => null);
+    const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null))?.url ?? null;
     const text = generateShareText(shareData, url);
     await captureAndShare(ref, text);
     setSharingGame(false);
@@ -76,7 +76,7 @@ export function ShareSection({
   };
 
   const doCopy = async () => {
-    const url = autoShareUrl ?? await saveHandForWebReplay(shareData).catch(() => null);
+    const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null))?.url ?? null;
     if (url) { await copyToClipboard(url); Alert.alert('Link copied!', url); }
   };
 
