@@ -330,21 +330,24 @@ export function BoardArrangement({
               maxHeight: handZoneH ?? HAND_ZONE_HEIGHT,
               flexShrink: 1,
               minHeight: 0,
-              marginBottom: (rs(72) + insets.bottom + rs(8)),
+              // A1-REDO — lift the WHOLE handZone up rs(24) when the "Auto-Place ALL"
+              // overlay (autoAllBar, absolute at insets.bottom + rs(60), ~rs(31) tall)
+              // is shown, so the hand's last visible row clears it. This moves the
+              // CONTAINER, so the row rises regardless of whether the hand overflows —
+              // unlike the removed paddingBottom (which added space BELOW top-anchored
+              // overflowing content and never moved the visible cards). Overlap is
+              // rs(11) and insets-independent (button + this margin both scale with
+              // insets), so rs(24) clears it with ~rs(13) breathing room on web AND
+              // native. Cost: the boards region (flex:1) gives up ≤rs(24) on roomy
+              // screens; on tight screens the hand flexShrinks instead — both keep the
+              // last row clear.
+              marginBottom: (rs(72) + insets.bottom + rs(8)) + ((!allBoardsFull && onAutoFillAll) ? rs(24) : 0),
             },
           ]}
         >
           <ScrollView
             style={{ flex: 1 }}
-            // A1 (Batch A) — the "Auto-Place ALL" button is an absolute overlay
-            // (autoAllBar, zIndex 101) floating at insets.bottom + rs(60), ~rs(31)
-            // tall, so it sat OVER the hand's lower row and both hid AND blocked
-            // those cards (box-none passes touch through EXCEPT on the button).
-            // Additive, contained fix: reserve scroll-content bottom space ONLY
-            // when that button is shown, lifting the last row above it. This pads
-            // INSIDE the ScrollView — the handZone outer size and the boards region
-            // above are untouched, so nothing else on screen shifts.
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: (!allBoardsFull && onAutoFillAll) ? rs(48) : 0 }}
+            contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
