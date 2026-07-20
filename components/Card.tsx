@@ -40,6 +40,25 @@ const BLACK_COLOR = '#111111';
 const CARD_BACK_BG = '#1A1A2E';
 const CARD_BACK_BORDER = '#C5A028';
 
+// ── S-CARD-BACK — the "C" back (Variant B) ────────────────────────────────────
+// The card back is ALWAYS on, in every theme, so its palette is the classic CAPS
+// black/gold (NOT the streetStencil spray-yellow, which would clash on classic and
+// wouldn't match the gold wordmark on Home). Values are local to the back — this
+// batch touches colour/graphics only, no theme wiring.
+const CARD_BACK_C_BG = '#18181c';                     // charcoal
+const CARD_BACK_C_GOLD = '#c9a84c';                   // the "C" + edge ring
+const CARD_BACK_C_RING = 'rgba(201,168,76,0.28)';     // inner circle, low-alpha gold
+const CARD_BACK_C_EDGE = 'rgba(201,168,76,0.5)';      // inset edge ring
+const CARD_BACK_C_GLOW = 'rgba(201,168,76,0.55)';     // soft glow on the C
+// FONT RULING A: Bangers is NOT bundled (0 font files, expo-font never imported).
+// Ship on the platform's heaviest system face now; when the font-infra batch bundles
+// Bangers, this ONE constant becomes 'Bangers' and the C upgrades with a one-line swap.
+// On native, `fontFamily: undefined` + fontWeight '900' = the system heavy face.
+const CARD_BACK_FONT = Platform.select<string | undefined>({
+  web: 'Arial Black, Impact, sans-serif',
+  default: undefined,
+});
+
 // V2 Minimalist palette
 const V2_RED = '#c41e3a';
 const V2_BLACK = '#18181b';
@@ -159,19 +178,25 @@ function CardComponent({
   const glowTranslateY = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
   // floatY interpolation REMOVED 2026-05-22 — see KILL_Card.
 
-  // VAMOS-VISUAL-C — geometric mint card-back (rotated <View>s, no svg dep).
+  // S-CARD-BACK (Variant B) — "ring + bold C". Flat charcoal, a low-alpha gold ring,
+  // and a heavy gold "C" with a soft glow. ALWAYS on, every theme (classic black/gold,
+  // not spray-yellow). GRAPHICS ONLY: width/height/radius are the card's existing
+  // frozen geometry; nothing here changes size, position, or the shadow tier.
   const renderBack = () => {
-    const emblemSize = Math.max(10, Math.floor(Math.min(width, height) * 0.34));
-    const emblemCore = Math.max(4, Math.floor(emblemSize * 0.35));
-    const emblemStroke = Math.max(1, Math.floor(emblemSize * 0.07));
+    // Everything scales off min(width,height) — the confirmed anchor — so the back
+    // reads at both ~40px board backs and large hole cards, never a fixed px.
+    const anchor = Math.min(width, height);
+    const cSize = Math.max(12, Math.floor(anchor * 0.5));
+    const ringD = Math.max(18, Math.floor(anchor * 0.72));
+    const ringBorder = Math.max(2, Math.round(anchor * 0.05));
     const cardStyle: any[] = [
       {
         width,
         height,
-        backgroundColor: OBSIDIAN.backTop,
+        backgroundColor: CARD_BACK_C_BG,
         borderRadius: OBSIDIAN_GEOM.cardBackRadius,
-        borderWidth: 1,
-        borderColor: OBSIDIAN.backBorder,
+        borderWidth: 2,
+        borderColor: CARD_BACK_C_EDGE,
         overflow: 'hidden' as const,
         justifyContent: 'center' as const,
         alignItems: 'center' as const,
@@ -181,39 +206,36 @@ function CardComponent({
 
     return (
       <View style={cardStyle}>
-        {/* VAMOS-VISUAL-C-FINISH — true back gradient (native + web), tokenized */}
-        <LinearGradient
-          colors={[OBSIDIAN.backTop, OBSIDIAN.backBottom]}
-          start={{ x: 0.3, y: 0 }}
-          end={{ x: 0.7, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="none"
-        />
-        {/* Subtle bottom darkening for depth */}
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: OBSIDIAN.backBottom, opacity: 0.45, top: '55%' }]} pointerEvents="none" />
-        {/* Outline diamond \u2014 rotated square outline in mint */}
+        {/* Inner low-alpha gold ring, centered */}
         <View
           style={{
             position: 'absolute',
-            width: emblemSize,
-            height: emblemSize,
-            borderWidth: emblemStroke,
-            borderColor: OBSIDIAN.backEmblemOutline,
-            transform: [{ rotate: '45deg' }],
+            width: ringD,
+            height: ringD,
+            borderRadius: ringD / 2,
+            borderWidth: ringBorder,
+            borderColor: CARD_BACK_C_RING,
           }}
           pointerEvents="none"
         />
-        {/* Filled mint core \u2014 small filled square at center */}
-        <View
+        {/* The bold gold "C" — heavy system weight now; CARD_BACK_FONT becomes
+            'Bangers' in a one-line swap once the font-infra batch bundles it. */}
+        <Text
+          allowFontScaling={false}
           style={{
-            position: 'absolute',
-            width: emblemCore,
-            height: emblemCore,
-            backgroundColor: OBSIDIAN.backEmblemCore,
-            transform: [{ rotate: '45deg' }],
+            color: CARD_BACK_C_GOLD,
+            fontSize: cSize,
+            fontWeight: '900',
+            fontFamily: CARD_BACK_FONT,
+            lineHeight: Math.round(cSize * 1.02),
+            textShadowColor: CARD_BACK_C_GLOW,
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 8,
           }}
           pointerEvents="none"
-        />
+        >
+          C
+        </Text>
       </View>
     );
   };
