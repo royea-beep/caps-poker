@@ -36,11 +36,11 @@ describe('paint layer — domain key counts (audited)', () => {
       expect(Object.keys((currentPaint.card as Record<string, object>)[t])).toHaveLength(9);
     });
   });
-  it('visual = 2 themes x 35 keys = 70 (S76-BOARD added 19 board* pins)', () => {
+  it('visual = 2 themes x 41 keys = 82 (S76-BOARD 19 + LITERALS/PANEL 6 = 25 board* pins)', () => {
     const themes = Object.keys(currentPaint.visual);
     expect(themes).toHaveLength(2);
     themes.forEach((t) => {
-      expect(Object.keys((currentPaint.visual as Record<string, object>)[t])).toHaveLength(35);
+      expect(Object.keys((currentPaint.visual as Record<string, object>)[t])).toHaveLength(41);
     });
   });
   it('fonts = 1', () => expect(Object.keys(currentPaint.fonts)).toHaveLength(1));
@@ -359,10 +359,17 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     boardAutoBorder: 'rgba(79,214,168,0.35)',
     boardAutoText: '#4FD6A8',
     boardAutoBolt: '#4FD6A8',
+    // S76-BOARD-LITERALS/PANEL — panel backdrop + the 3 live raw literals.
+    boardPanelTop: '#1C1F26',
+    boardPanelBottom: '#101218',
+    boardPanelFallback: '#161922',
+    boardHintIcon: 'rgba(201,168,76,0.7)',
+    boardTieBg: 'rgba(79,214,168,0.92)',
+    boardChipFloat: '#FFD700',
   };
 
-  it('pins exactly 19 board* keys', () => {
-    expect(Object.keys(PINS)).toHaveLength(19);
+  it('pins exactly 25 board* keys', () => {
+    expect(Object.keys(PINS)).toHaveLength(25);
     const onTheme = Object.keys(currentPaint.visual.classic).filter((k) => k.startsWith('board') && k !== 'boardBg' && k !== 'boardBorder');
     expect(onTheme.sort()).toEqual(Object.keys(PINS).sort());
   });
@@ -418,9 +425,17 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     boardAutoBorder: '#F8F050',                  // FILL11
     boardAutoText: '#F8F050',                    // FILL11
     boardAutoBolt: '#F8F050',                    // FILL11
+    // S76-BOARD-LITERALS/PANEL. Panel = the FELT stops, NOT the screen-bg stops:
+    // GameView's N8 bg is #4e4e54, so bg stops would make the board VANISH into it.
+    boardPanelTop: '#5a5a60',
+    boardPanelBottom: '#42424a',
+    boardPanelFallback: '#4e4e54',
+    boardHintIcon: 'rgba(248,240,80,0.7)',   // UI chrome -> spray yellow (gold is for PRIZES)
+    boardTieBg: 'rgba(200,200,204,0.92)',    // neutral grey — a tie is neither win nor loss
+    boardChipFloat: '#F8C020',               // a prize -> Variant-A gold, matching the win badge
   };
 
-  it('streetStencil carries all 19 board* values (data ready for the routing batch)', () => {
+  it('streetStencil carries all 25 board* values', () => {
     expect(Object.keys(STREET).sort()).toEqual(Object.keys(PINS).sort());
   });
 
@@ -450,15 +465,110 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
 });
 
 // ── S76-BOARD: proof this batch routed NOTHING ───────────────────────────────
-describe('S76-BOARD — Board.tsx is UNTOUCHED (pin stage routes nothing)', () => {
-  const boardSrc = readFileSync(join(__dirname, '..', '..', 'components', 'Board.tsx'), 'utf8');
+// S76-BOARD-ROUTING — Board now CONSUMES the pinned keys.
+//
+// The pin stage asserted here that Board read NO board* key ("routes nothing"). That
+// guard did its job: it failed the moment routing landed, which is exactly what it was
+// for. Routing is now the intent, so the assertion is INVERTED — and replaced with the
+// guards that protect THIS batch.
+describe('S76-BOARD-ROUTING — Board.tsx consumes the pinned keys, safely', () => {
+  const rawSrc = readFileSync(join(__dirname, '..', '..', 'components', 'Board.tsx'), 'utf8');
 
-  it('Board.tsx reads no board* theme key yet', () => {
-    expect(boardSrc).not.toMatch(/theme\.board(?!Bg|Border\b)/);
+  // Match CODE, never prose. The first draft of the trap guard below failed on Board's
+  // own explanatory comment ("...NOT theme.loseColor or theme.textSecondary...") — the
+  // exact `goldDim` failure mode this codebase has already been bitten by: a comment
+  // read as a live reference. A guard that greps prose proves nothing; strip it first.
+  const stripComments = (src: string) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const boardSrc = stripComments(rawSrc);
+
+  it('the comment-stripper actually works (guards the guard)', () => {
+    // Board DOES mention the trap keys in prose; it must NOT reference them in code.
+    expect(rawSrc).toMatch(/theme\.textSecondary/);   // present as prose
+    expect(boardSrc).not.toMatch(/theme\.textSecondary/); // absent from code
   });
 
-  it('Board.tsx still has exactly 7 shared values (geometry frozen)', () => {
-    expect(boardSrc.match(/useSharedValue\(/g) ?? []).toHaveLength(7);
+  it('Board.tsx now reads board* theme keys (routing landed)', () => {
+    const reads = boardSrc.match(/theme\.board[A-Z][A-Za-z]*/g) ?? [];
+    expect(reads.length).toBeGreaterThan(0);
+  });
+
+  it('Board.tsx still has exactly 7 shared values — NOT 8 (geometry frozen)', () => {
+    expect(rawSrc.match(/useSharedValue\(/g) ?? []).toHaveLength(7);
+  });
+
+  // THE TRAPS. Board must never read the same-named legacy keys: theme.textSecondary is
+  // MINT on both themes (COLORS.textSecondary is grey #9aa19b); theme.textMuted is
+  // #bbbbbb on fiveo (COLORS.textMuted is #9aa19b); theme.textPrimary is #ffffff on
+  // fiveo. Routing to any of them breaks a legacy theme silently — fiveo-only for two
+  // of the three, so no eye-test on classic would ever catch it.
+  it('Board.tsx reads NO trap key (textSecondary / textMuted / textPrimary)', () => {
+    expect(boardSrc).not.toMatch(/theme\.textSecondary\b/);
+    expect(boardSrc).not.toMatch(/theme\.textMuted\b/);
+    expect(boardSrc).not.toMatch(/theme\.textPrimary\b/);
+  });
+
+  // R1 — win/lose is an ACCESSIBILITY axis (useGameColors → colorblind blue/orange),
+  // never a theme axis. Routing it to theme.winColor/loseColor would override a
+  // colorblind user's palette and BREAK colorblind mode. Inviolable, not a preference.
+  it('win/lose stays on useGameColors — colorblind mode intact', () => {
+    expect(boardSrc).toMatch(/gameColors\.win\b/);
+    expect(boardSrc).toMatch(/gameColors\.lose\b/);
+    expect(boardSrc).not.toMatch(/theme\.winColor\b/);
+    expect(boardSrc).not.toMatch(/theme\.loseColor\b/);
+  });
+
+  // S76-BOARD-LITERALS/PANEL — this guard previously asserted the panel/literals were
+  // still UNROUTED (they were that batch's scope, not routing's). It failed the moment
+  // this batch landed — by design, same as the pin stage's guard before it. Inverted.
+  it('panel + the 3 live literals are now ROUTED', () => {
+    // Reads that lived in RENDER code are gone — replaced outright.
+    expect(boardSrc).not.toMatch(/OBSIDIAN\.bgTop/);
+    expect(boardSrc).not.toMatch(/OBSIDIAN\.bgBottom/);
+    expect(boardSrc).not.toMatch(/#FFD700/); // was inline in FloatingChips -> boardChipFloat
+
+    // Every routed read now resolves from the theme.
+    expect(boardSrc).toMatch(/theme\.boardPanelTop/);
+    expect(boardSrc).toMatch(/theme\.boardPanelBottom/);
+    expect(boardSrc).toMatch(/theme\.boardPanelFallback/);
+    expect(boardSrc).toMatch(/theme\.boardHintIcon/);
+    expect(boardSrc).toMatch(/theme\.boardTieBg/);
+    expect(boardSrc).toMatch(/theme\.boardChipFloat/);
+  });
+
+  // HOUSE-STYLE, asserted so nobody "tidies" it away: colour is overridden at the JSX
+  // site while the StyleSheet KEEPS its geometry AND its colour as a fallback (the
+  // file's own precedent at communitySeparator). So hintInfoIcon's and tieBadge's
+  // literals SURVIVING in the StyleSheet is correct — they are dead fallbacks, not
+  // unrouted reads. Deleting them would risk a site silently losing its paint.
+  it('StyleSheet keeps its colour fallbacks (override house-style)', () => {
+    expect(boardSrc).toMatch(/rgba\(201,168,76,0\.7\)/);  // hintInfoIcon fallback
+    expect(boardSrc).toMatch(/rgba\(79,214,168,0\.92\)/); // tieBadge fallback
+  });
+
+  // R4 — DEAD code stays untouched (its own cleanup batch, never a paint batch).
+  // #c9a84c survives ONLY in dead styles (communityLabelWrap/Text, 0 consumers) and
+  // OBSIDIAN.bgFallback ONLY at the dead container.backgroundColor (overridden inline).
+  it('dead styles are left alone, not routed', () => {
+    expect(boardSrc).toMatch(/#c9a84c/);
+    expect(boardSrc).toMatch(/OBSIDIAN\.bgFallback/);
+  });
+
+  // The trap THIS batch had: reuse demands VALUE **and ALPHA** identity, not just hue.
+  it('the 3 literal keys are DISTINCT from boardGold (value + alpha identity)', () => {
+    expect(VISUAL_THEMES.classic.boardChipFloat).not.toBe(VISUAL_THEMES.classic.boardGold);
+    expect(VISUAL_THEMES.classic.boardHintIcon).not.toBe(VISUAL_THEMES.classic.boardGold);
+    expect(VISUAL_THEMES.streetStencil.boardHintIcon).not.toBe(VISUAL_THEMES.streetStencil.boardGold);
+    // boardHintIcon IS boardGold's rgb at 0.7 alpha — routing it to boardGold would
+    // have silently dropped the alpha. Proof the alpha is still carried:
+    expect(VISUAL_THEMES.classic.boardHintIcon).toMatch(/0\.7\)$/);
+    expect(VISUAL_THEMES.classic.boardTieBg).toMatch(/0\.92\)$/);
+  });
+
+  // The panel must not collapse into GameView's background on streetStencil.
+  it('streetStencil panel uses the FELT stops, not the screen-bg stops', () => {
+    expect(VISUAL_THEMES.streetStencil.boardPanelTop).toBe('#5a5a60');
+    expect(VISUAL_THEMES.streetStencil.boardPanelTop).not.toBe(VISUAL_THEMES.streetStencil.background);
   });
 });
 

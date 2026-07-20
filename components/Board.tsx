@@ -24,7 +24,7 @@ import { t, getLanguage } from '../utils/i18n';
 import { trackAction } from '../utils/crash-evidence';
 import { useGameColors } from '../utils/useGameColors';
 import { getHandHint } from '../utils/handHint';
-import { getTheme } from '../constants/visualThemes';
+import { getTheme, ThemeTokens } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { KILL_Board } from '../utils/animationKill';
 
@@ -99,7 +99,11 @@ interface BoardProps {
   screenH?: number;
 }
 
-function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number }) {
+// S76-BOARD-ROUTING — `theme` is prop-threaded in because this sibling is rendered by
+// Board but sits OUTSIDE its render scope, so it cannot see Board's getTheme() result.
+// In-file, private component, no external contract → same risk class as the rest of this
+// batch. (BoardArrangement stays deferred: cross-file = a public API change.)
+function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight, theme }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number; theme: ThemeTokens }) {
   const pulseOpacity = useSharedValue(0.6);
 
   useEffect(() => {
@@ -128,14 +132,18 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight }: { 
 
   return (
     <Pressable onPress={onPress}>
-      <Animated.View style={[styles.emptySlot, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, animStyle]}>
+      {/* S76-BOARD-ROUTING — colour overrides only; every geometry value (borderWidth,
+          borderStyle, radius, margin, width/height) stays in the StyleSheet untouched. */}
+      <Animated.View style={[styles.emptySlot, { borderColor: theme.boardSlotDash, backgroundColor: theme.boardSlotFill }, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, isArrangement && { borderColor: theme.boardSlotDashActive, backgroundColor: theme.boardMintGhost }, animStyle]}>
         {false && <Text style={styles.plusText}>tap</Text>}
       </Animated.View>
     </Pressable>
   );
 }
 
-function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 'bot' | 'tie' }) {
+// S76-BOARD-ROUTING — `theme` prop-threaded for the same reason as EmptySlotAnimated:
+// in-file sibling, outside Board's render scope.
+function FloatingChips({ amount, winner, theme }: { amount: number; winner: 'player' | 'bot' | 'tie'; theme: ThemeTokens }) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(0);
 
@@ -151,7 +159,13 @@ function FloatingChips({ amount, winner }: { amount: number; winner: 'player' | 
   }));
 
   const text = winner === 'tie' ? '\u00b10' : winner === 'player' ? `+${amount}` : `-${amount}`;
-  const color = winner === 'player' ? '#FFD700' : winner === 'bot' ? COLORS.neonRed : COLORS.textSecondary;
+  // S76-BOARD-ROUTING — boardNeonRed / boardTextSecondary, NOT theme.loseColor or
+  // theme.textSecondary. TRAPS: theme.textSecondary is MINT (#4FD6A8) on BOTH themes
+  // while COLORS.textSecondary is grey (#9aa19b); and win/lose belongs to the
+  // ACCESSIBILITY axis (useGameColors), never the theme axis.
+  // '#FFD700' is now boardChipFloat (S76-BOARD-LITERALS): a NEW key, because #FFD700
+  // is NOT boardGold's #c9a84c — routing it there would have changed classic.
+  const color = winner === 'player' ? theme.boardChipFloat : winner === 'bot' ? theme.boardNeonRed : theme.boardTextSecondary;
 
   return (
     <Animated.Text style={[styles.floatingChips, { color }, animStyle]}>
@@ -529,16 +543,22 @@ export default function Board({
         // VAMOS-BOARD-RESTORE 2026-06-14 — reverted FIX 4 (board hug content). In a
         // column-laid grid `flex` controls the MAIN AXIS = height; flex:0 collapsed
         // every board's height to ~0. Restored to layout-471 flex:1 full-cell.
-        { backgroundColor: OBSIDIAN.bgFallback, borderColor: boardAccent },
+        // S76-LITERALS/PANEL — fallback under the gradient. borderColor stays
+        // boardAccent: per-board IDENTITY (PRD.board.accent), not a theme colour.
+        { backgroundColor: theme.boardPanelFallback, borderColor: boardAccent },
         boardIdentityGlow(boardAccent),
         Platform.OS === 'web' && {
-          background: `linear-gradient(165deg, ${OBSIDIAN.bgTop} 0%, ${OBSIDIAN.bgBottom} 100%)`,
+          background: `linear-gradient(165deg, ${theme.boardPanelTop} 0%, ${theme.boardPanelBottom} 100%)`,
           boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
         } as any,
-        active && styles.active,
-        selected && styles.selected,
-        winner === 'player' && styles.playerWon,
-        winner === 'bot' && styles.botWon,
+        // S76-BOARD-ROUTING — colour-only overrides. shadowColor is guarded to iOS to
+        // mirror the StyleSheet's Platform.select exactly: Android uses `elevation` and
+        // has NO shadowColor today, and RN DOES honour shadowColor on Android elevation
+        // shadows, so an unguarded override would tint them = a real visual change.
+        active && [styles.active, { borderColor: theme.boardGold }, Platform.OS === 'ios' && { shadowColor: theme.boardGold }],
+        selected && [styles.selected, { borderColor: theme.boardGold }, Platform.OS === 'ios' && { shadowColor: theme.boardGold }],
+        winner === 'player' && [styles.playerWon, { borderColor: theme.boardNeonGreen }],
+        winner === 'bot' && [styles.botWon, { borderColor: theme.boardNeonRed }],
         active && pulseStyle,
         completePulseStyle,
         isWinner && winnerPulseStyle,
@@ -548,7 +568,10 @@ export default function Board({
           the per-board identity glow on the container border, IN FRONT of nothing. The
           container's overflow:'hidden' + borderRadius clip the gradient cleanly. */}
       <LinearGradient
-        colors={[OBSIDIAN.bgTop, OBSIDIAN.bgBottom]}
+        // S76-LITERALS/PANEL — COLOURS ONLY. start/end/absoluteFillObject/
+        // pointerEvents are untouched: this stays an absolute-fill backdrop that
+        // cannot move or resize a single child. 2-stop shape preserved.
+        colors={[theme.boardPanelTop, theme.boardPanelBottom]}
         // 165° in CSS = mostly top→bottom with a slight right→down skew. Approximate
         // with start at top-center-left and end at bottom-center-right.
         start={{ x: 0.3, y: 0 }}
@@ -579,7 +602,7 @@ export default function Board({
               // mid-word ("Straigh…", "Pai…"). Add numberOfLines + adjustsFontSizeToFit
               // + flexShrink so the text fits whatever width is left.
               <Text
-                style={[styles.handName, styles.handNameShrink, winner === 'player' && styles.winnerHandName]}
+                style={[styles.handName, styles.handNameShrink, winner === 'player' && styles.winnerHandName, { color: winner === 'player' ? theme.boardGoldLight : theme.boardTextMuted }]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.65}
@@ -593,7 +616,7 @@ export default function Board({
               end from BOARD-N pill on web + native, RTL or LTR. */}
           {isArrangement && playerCards.length === 0 && onAutoFill ? (
             <Pressable
-              style={styles.autoBtn}
+              style={[styles.autoBtn, { backgroundColor: theme.boardAutoBg, borderColor: theme.boardAutoBorder }]}
               onPress={onAutoFill}
               // NATIVE-LAYOUT-FIX 2026-07-08 — widened from {10,10} so the tap target
               // clears 44pt even at autoBtn's minWidth:20 floor (20+15+15=50), without
@@ -604,16 +627,16 @@ export default function Board({
               {/* VAMOS-FULL-POLISH B1 — i18n autoPlace already prefixes "⚡ ", so strip it
                   at the call site to keep ONE styled mint bolt (not ⚡⚡). Translators keep
                   the bolt in their string for non-CAPS surfaces; CAPS Board styles it. */}
-              <Text style={styles.autoBtnBolt} allowFontScaling={false}>{'⚡'}</Text>
+              <Text style={[styles.autoBtnBolt, { color: theme.boardAutoBolt }]} allowFontScaling={false}>{'⚡'}</Text>
               {/* NATIVE-LAYOUT-FIX 2026-07-08 — minimumFontScale bumped 0.5->0.82: at the
                   new 11pt base, 0.5 could still shrink to 5.5pt for long translated
                   strings, defeating the floor. 0.82 keeps the effective floor ~9pt while
                   still allowing some shrink so long text doesn't clip the 105pt chip. */}
-              <Text style={styles.autoBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} allowFontScaling={false}>{t().autoPlace.replace(/^\s*⚡\s*/, '')}</Text>
+              <Text style={[styles.autoBtnText, { color: theme.boardAutoText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} allowFontScaling={false}>{t().autoPlace.replace(/^\s*⚡\s*/, '')}</Text>
             </Pressable>
           ) : (
             <View style={styles.potArea}>
-              {winner && <FloatingChips amount={potAmount} winner={winner} />}
+              {winner && <FloatingChips amount={potAmount} winner={winner} theme={theme} />}
             </View>
           )}
         </View>
@@ -638,7 +661,7 @@ export default function Board({
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              <Text style={styles.rowLabel}>{`${t().bot} ${botIdx + 1}`}</Text>
+              <Text style={[styles.rowLabel, { color: theme.boardTextDim }]}>{`${t().bot} ${botIdx + 1}`}</Text>
               {(botCardSet ?? []).map((c) => (
                 <Pressable
                   key={c.id}
@@ -666,7 +689,7 @@ export default function Board({
               )}
               {revealed && (allBotHandNames?.[botIdx] || (botIdx === 0 && botHandName)) && (
                 <Text
-                  style={[styles.handName, styles.handNameShrink, winner === 'bot' && styles.winnerHandName, { marginLeft: 4 }]}
+                  style={[styles.handName, styles.handNameShrink, winner === 'bot' && styles.winnerHandName, { color: winner === 'bot' ? theme.boardGoldLight : theme.boardTextMuted }, { marginLeft: 4 }]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.65}
@@ -695,7 +718,7 @@ export default function Board({
             />
           ))}
           {/* VAMOS-VISUAL-C — separator now MINT (cohesive inner detail), no longer per-board identity */}
-          <View style={[styles.communitySeparator, { backgroundColor: OBSIDIAN.mint }]} />
+          <View style={[styles.communitySeparator, { backgroundColor: theme.accent }]} />
           {(closedCards ?? []).map((c, i) => (
             <View key={c.id} style={[styles.communityCardWrap, !revealed && styles.faceDownWrap]}>
               <CardComponent
@@ -739,12 +762,12 @@ export default function Board({
             ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
+              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
             ))
           )}
           {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
             Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} />
+              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
             ))
           }
           {/* PR-N 2026-06-02 — hand-strength hint suppressed during arrangement.
@@ -758,7 +781,7 @@ export default function Board({
             const explText = expl ? (isHE ? expl.he : expl.en) : '';
             return (
               <View style={styles.hintRow}>
-                <Text style={styles.hintText}>{hint}</Text>
+                <Text style={[styles.hintText, { color: theme.boardTextMuted }]}>{hint}</Text>
                 {expl && (
                   <Pressable
                     onPress={() => {
@@ -773,7 +796,7 @@ export default function Board({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.hintInfoBtn}
                   >
-                    <Text style={styles.hintInfoIcon}>ⓘ</Text>
+                    <Text style={[styles.hintInfoIcon, { color: theme.boardHintIcon }]}>ⓘ</Text>
                   </Pressable>
                 )}
                 {hintInfoVisible && explText ? (
@@ -788,15 +811,18 @@ export default function Board({
         </View>
         </View>{/* /contentCenter — PR-L Task B */}
 
+        {/* S76-BOARD-ROUTING — borderTopColor routed. backgroundColor DELIBERATELY untouched:
+            it is useGameColors() = the ACCESSIBILITY axis (colorblind blue/orange). Routing
+            it to theme would break colorblind mode (R1). tieBadge's mint = LITERALS batch. */}
         {winner && (
-          <Animated.View style={[styles.winnerBadge, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : styles.tieBadge, bannerAnimStyle]}>
-            <Text style={styles.winnerText}>
+          <Animated.View style={[styles.winnerBadge, { borderTopColor: theme.boardMintHairline }, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : [styles.tieBadge, { backgroundColor: theme.boardTieBg }], bannerAnimStyle]}>
+            <Text style={[styles.winnerText, { color: theme.boardCardInk }]}>
               {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
             </Text>
             {winner === 'player' && playerHandName ? (
-              <Text style={styles.bannerHandName}>{playerHandName}</Text>
+              <Text style={[styles.bannerHandName, { color: theme.boardCardInk }]}>{playerHandName}</Text>
             ) : winner === 'bot' && botHandName ? (
-              <Text style={styles.bannerHandName}>{botHandName}</Text>
+              <Text style={[styles.bannerHandName, { color: theme.boardCardInk }]}>{botHandName}</Text>
             ) : null}
           </Animated.View>
         )}
