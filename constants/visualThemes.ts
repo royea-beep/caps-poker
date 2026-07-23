@@ -1,4 +1,6 @@
 import { activePaint, streetStencil as streetStencilPaint } from './paintThemes';
+import type { FriendsBgId } from './friendsBgs';
+import type { HomeThemeId } from './homeThemes';
 
 // S76 — `streetStencil` (N8) joins classic/fiveo. It is DORMANT: neither picker lists it
 // (both hardcode [classic, fiveo] literals — settings.tsx VisualThemePicker `options` and
@@ -175,4 +177,21 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
 
 export function getTheme(theme: VisualTheme | null): ThemeTokens {
   return VISUAL_THEMES[theme ?? 'classic'];
+}
+
+/**
+ * BATCH-B (2026-07-23) — the single Visual Style pick now drives the folded Background + Home
+ * axes. CONSERVATIVE mapping: every theme maps to TODAY'S DEFAULTS (bg 'none', home 'dark_gold'),
+ * so unifying the five old pickers is a pure restructure with ZERO visual change for a default
+ * user. The distinct per-theme atmospheres (felt for Classic, neon for Five-O, …) are the
+ * follow-up aesthetics batch — change the values here, not the structure.
+ */
+export const VISUAL_THEME_AXES: Record<VisualTheme, { bg: FriendsBgId; home: HomeThemeId }> = {
+  classic:       { bg: 'none', home: 'dark_gold' },
+  fiveo:         { bg: 'none', home: 'dark_gold' },
+  streetStencil: { bg: 'none', home: 'dark_gold' },
+};
+
+export function themeAxes(theme: VisualTheme | null): { bg: FriendsBgId; home: HomeThemeId } {
+  return VISUAL_THEME_AXES[theme ?? 'classic'];
 }

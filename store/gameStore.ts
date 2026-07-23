@@ -27,6 +27,10 @@ interface GameStore {
   playerName: string;
   playerAvatar: string;
   notificationsEnabled: boolean;
+  // RESERVED — cardTheme is the toggle for the upcoming CARD-FACE batch. Its Settings picker was
+  // removed in BATCH-B (five look-pickers unified into Visual Style), but the store field + setter
+  // + persistence STAY. Do NOT delete as "unused": simulate.tsx reads it, and the card-face batch
+  // depends on this mechanism being intact.
   cardTheme: CardThemeId;
   homeTheme: HomeThemeId;
   buttonStyle: ButtonStyle;

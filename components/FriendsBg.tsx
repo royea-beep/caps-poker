@@ -2,9 +2,12 @@ import React from 'react';
 import { View, Platform } from 'react-native';
 import { useGameStore } from '../store/gameStore';
 import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
+import { themeAxes } from '../constants/visualThemes';
 
 export function FriendsBg() {
-  const friendsBg = useGameStore((s) => s.friendsBg ?? 'none');
+  // BATCH-B: background is now DERIVED from Visual Style (folded), not an independent picker.
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const friendsBg = themeAxes(visualTheme).bg;
   if (friendsBg === 'none') return null;
 
   const bg = FRIENDS_BGS[friendsBg as Exclude<FriendsBgId, 'none'>];

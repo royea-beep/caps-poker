@@ -58,6 +58,7 @@ import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
+import { themeAxes } from '../../constants/visualThemes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
 import { fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
@@ -527,8 +528,10 @@ export default function HomeScreen() {
   const currentWinStreak = useGameStore((s) => s.currentWinStreak);
   const bestWinStreak = useGameStore((s) => s.bestWinStreak);
   const lastFreeRefill = useGameStore((s) => s.lastFreeRefill);
-  const homeThemeId = useGameStore((s) => s.homeTheme);
-  const theme = HOME_THEMES[homeThemeId as import("../../constants/homeThemes").HomeThemeId] ?? HOME_THEMES[DEFAULT_HOME_THEME];
+  // BATCH-B: home palette is now DERIVED from Visual Style (folded), not an independent picker.
+  const visualTheme = useGameStore((s) => s.visualTheme);
+  const homeThemeId = themeAxes(visualTheme).home;
+  const theme = HOME_THEMES[homeThemeId] ?? HOME_THEMES[DEFAULT_HOME_THEME];
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
 
   const user = useAuthUser();

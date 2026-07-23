@@ -1,3 +1,7 @@
+// RESERVED — this is the card-face mechanism. Its Settings picker was removed in BATCH-B (the five
+// look-pickers were unified into Visual Style), but the mechanism (CardThemeId, CARD_THEMES,
+// DEFAULT_CARD_THEME + the store's cardTheme field) MUST stay: the upcoming CARD-FACE batch revives
+// this as its toggle, and simulate.tsx still reads it. Do NOT remove as "unused".
 import { activePaint } from './paintThemes';
 
 // Card Theme System — V1/V2/V3
