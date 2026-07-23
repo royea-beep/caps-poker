@@ -31,16 +31,15 @@ import { Button } from '../components/Button';
 import CardComponent from '../components/Card';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
-import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
-import { HOME_THEMES, HOME_THEME_NAMES, HomeThemeId, ButtonStyle } from '../constants/homeThemes';
-import { FRIENDS_BGS, FriendsBgId } from '../constants/friendsBgs';
+// BATCH-B: cardThemes / homeThemes-picker / friendsBgs imports removed — the four pickers were
+// folded into Visual Style (Background+Home derived via VISUAL_THEME_AXES; Button dead; Card
+// Design picker removed, cardTheme MECHANISM retained in the store for the card-face batch).
 import { CapsHooks } from '../utils/learning';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
 import { getAuthState, logout } from '../utils/auth';
 import { track } from '../utils/analytics';
 import { OrientationType, VisualTheme } from '../store/gameStore';
-import { getTheme, VISUAL_THEMES } from '../constants/visualThemes';
 import { VersionBadge } from '../components/VersionBadge';
 import ReportBugButton from '../components/ReportBugButton';
 
@@ -636,206 +635,6 @@ function HandSortToggle() {
   );
 }
 
-// Preview cards: A♠ (face-up) + face-down
-const ACE_SPADES = { rank: 'A' as const, suit: 'spades' as const, id: 'preview-as' };
-const KING_HEARTS = { rank: 'K' as const, suit: 'hearts' as const, id: 'preview-kh' };
-
-function CardThemePicker() {
-  const cardTheme = useGameStore((s) => s.cardTheme);
-  const setCardTheme = useGameStore((s) => s.setCardTheme);
-
-  return (
-    <View style={themeStyles.pickerRow} accessibilityRole="radiogroup" accessibilityLabel="Card theme">
-      {(['v1', 'v2', 'v3'] as CardThemeId[]).map((id) => {
-        const t = CARD_THEMES[id];
-        const active = cardTheme === id;
-        return (
-          <Pressable
-            key={id}
-            onPress={() => { hapticLight(); setCardTheme(id); }}
-            style={[themeStyles.themeBtn, active && themeStyles.themeBtnActive]}
-            accessibilityRole="radio"
-            accessibilityLabel={`Card theme ${t.name}`}
-            accessibilityState={{ checked: active }} aria-checked={active}
-          >
-            <Text style={[themeStyles.themeBtnLabel, active && themeStyles.themeBtnLabelActive]}>
-              {t.name}
-            </Text>
-            <View style={themeStyles.previewRow}>
-              <CardComponent
-                card={ACE_SPADES}
-                faceDown={false}
-                cardWidth={32}
-                cardHeight={46}
-                themeOverride={id}
-              />
-              <CardComponent
-                card={KING_HEARTS}
-                faceDown={false}
-                cardWidth={32}
-                cardHeight={46}
-                themeOverride={id}
-              />
-              <CardComponent
-                faceDown
-                cardWidth={32}
-                cardHeight={46}
-                themeOverride={id}
-              />
-            </View>
-            {active && (
-              <View style={themeStyles.activePill}>
-                <Text style={themeStyles.activePillText}>
-                  <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">✓ </Text>
-                  Active
-                </Text>
-              </View>
-            )}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function HomeThemePicker() {
-  const homeTheme = useGameStore((s) => s.homeTheme);
-  const setHomeTheme = useGameStore((s) => s.setHomeTheme);
-  const allIds = Object.keys(HOME_THEMES) as HomeThemeId[];
-  const rows = [allIds.slice(0, 5), allIds.slice(5, 10)];
-
-  return (
-    <View style={homeThemeStyles.container} accessibilityRole="radiogroup" accessibilityLabel="Home theme">
-      {rows.map((row, rowIdx) => (
-        <View key={rowIdx} style={homeThemeStyles.swatchRow}>
-          {row.map((id) => {
-            const t = HOME_THEMES[id];
-            const active = homeTheme === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => { hapticLight(); setHomeTheme(id); }}
-                style={homeThemeStyles.swatchItem}
-                accessibilityRole="radio"
-                accessibilityLabel={`Home theme ${HOME_THEME_NAMES[id]}`}
-                accessibilityState={{ checked: active }} aria-checked={active}
-              >
-                <View
-                  style={[
-                    homeThemeStyles.swatchCircle,
-                    { backgroundColor: t.accent },
-                    active && homeThemeStyles.swatchCircleActive,
-                  ]}
-                >
-                  {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={homeThemeStyles.swatchCheck}>✓</Text>}
-                </View>
-                <Text style={[homeThemeStyles.swatchLabel, { color: active ? t.accent : COLORS.textMuted }]}>
-                  {HOME_THEME_NAMES[id]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function ButtonStylePicker() {
-  const buttonStyle = useGameStore((s) => s.buttonStyle);
-  const setButtonStyle = useGameStore((s) => s.setButtonStyle);
-  const homeTheme = useGameStore((s) => s.homeTheme);
-  const t = HOME_THEMES[homeTheme];
-
-  const options: { id: ButtonStyle; label: string }[] = [
-    { id: 'solid', label: 'Solid' },
-    { id: 'glass', label: 'Glass' },
-    { id: 'outline', label: 'Outline' },
-  ];
-
-  return (
-    <View style={btnStyleStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Button style">
-      {options.map(({ id, label }) => {
-        const active = buttonStyle === id;
-        const previewBg =
-          id === 'solid' ? t.accent
-          : id === 'glass' ? t.accent + '30'
-          : 'transparent';
-        const previewBorder = id === 'solid' ? undefined : t.accent;
-        const previewText = id === 'solid' ? t.buttonPrimaryText : t.accent;
-        return (
-          <Pressable
-            key={id}
-            onPress={() => { hapticLight(); setButtonStyle(id); }}
-            style={[btnStyleStyles.option, active && { borderColor: t.accent, borderWidth: 2 }]}
-            accessibilityRole="radio"
-            accessibilityLabel={`Button style ${label}`}
-            accessibilityState={{ checked: active }} aria-checked={active}
-          >
-            <View style={[
-              btnStyleStyles.preview,
-              { backgroundColor: previewBg },
-              previewBorder ? { borderColor: previewBorder, borderWidth: 1.5 } : undefined,
-            ]}>
-              <Text style={[btnStyleStyles.previewText, { color: previewText }]}>BTN</Text>
-            </View>
-            <Text style={[btnStyleStyles.label, { color: active ? t.accent : COLORS.textSecondary }]}>
-              {label}
-            </Text>
-            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[btnStyleStyles.check, { color: t.accent }]}>✓</Text>}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-const BG_OPTIONS: { id: FriendsBgId; label: string; hint: string }[] = [
-  { id: 'none', label: 'None', hint: 'No bg' },
-  { id: 'sofa', label: 'Felt', hint: 'Green table' },
-  { id: 'logo', label: 'Neon', hint: 'Casino sign' },
-  { id: 'fountain', label: 'Vegas', hint: 'Strip lights' },
-];
-
-function FriendsBgPicker() {
-  const friendsBg = useGameStore((s) => s.friendsBg ?? 'none');
-  const setFriendsBg = useGameStore((s) => s.setFriendsBg);
-
-  return (
-    <View style={bgPickerStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Friends background">
-      {BG_OPTIONS.map(({ id, label, hint }) => {
-        const active = friendsBg === id;
-        const entry = id !== 'none' ? FRIENDS_BGS[id as Exclude<FriendsBgId, 'none'>] : null;
-        return (
-          <Pressable
-            key={id}
-            onPress={() => { hapticLight(); setFriendsBg(id); }}
-            style={[bgPickerStyles.tile, active && bgPickerStyles.tileActive]}
-            accessibilityRole="radio"
-            accessibilityLabel={`Background ${label}`}
-            accessibilityState={{ checked: active }} aria-checked={active}
-          >
-            {Platform.OS === 'web' && entry ? (
-              <img
-                alt={label}
-                src={`data:image/svg+xml;utf8,${encodeURIComponent(entry.svg('#c8a84b'))}`}
-                style={{ width: 48, height: 28, opacity: 0.9 } as React.CSSProperties}
-              />
-            ) : (
-              <View style={bgPickerStyles.noPreview} />
-            )}
-            <Text style={[bgPickerStyles.tileLabel, active && bgPickerStyles.tileLabelActive]}>
-              {label}
-            </Text>
-            <Text style={bgPickerStyles.tileHint}>{hint}</Text>
-            {active && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[bgPickerStyles.check, { color: COLORS.mint }]}>✓</Text>}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 function VisualThemePicker() {
   const visualTheme = useGameStore((s) => s.visualTheme);
   const setVisualTheme = useGameStore((s) => s.setVisualTheme);
@@ -1155,9 +954,10 @@ export default function SettingsScreen() {
             portrait-only (Iron Rule #2); the prior section offered Portrait /
             Widescreen which violated the rule. */}
 
-        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="BACKGROUND THEME">🖼️ BACKGROUND THEME</Text>
-        <FriendsBgPicker />
-
+        {/* BATCH-B: Background/Home/Button/Card-design pickers folded into Visual Style above.
+            Background + Home are now derived from visualTheme (see constants/visualThemes.ts
+            VISUAL_THEME_AXES); Button Style was dead; Card Design picker removed (cardTheme
+            mechanism retained for the card-face batch). */}
         <Text style={styles.sectionTitle} accessibilityRole="header">PROFILE</Text>
         <ProfileSection />
 
@@ -1173,17 +973,7 @@ export default function SettingsScreen() {
         <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
         <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
 
-        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="HOME THEME">🏠 HOME THEME</Text>
-        <HomeThemePicker />
-
-        <Text style={styles.sectionTitle} accessibilityRole="header">
-          <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
-          BUTTON STYLE
-        </Text>
-        <ButtonStylePicker />
-
-        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="Card design">🃏 CARD DESIGN</Text>
-        <CardThemePicker />
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="Cards">🃏 CARDS</Text>
         <FourColorSuitsToggle />
         <ColorblindToggle />
         <HandSortToggle />
@@ -1649,139 +1439,11 @@ const styles = StyleSheet.create({
   },
 });
 
-const themeStyles = StyleSheet.create({
-  pickerRow: {
-    flexDirection: 'row',
-    gap: rs(8),
-    marginBottom: rs(6),
-  },
-  themeBtn: {
-    flex: 1,
-    backgroundColor: COLORS.feltLight,
-    borderRadius: rv(10),
-    borderWidth: 1.5,
-    borderColor: COLORS.boardBorder,
-    padding: rs(10),
-    alignItems: 'center',
-    gap: rs(8),
-  },
-  themeBtnActive: {
-    borderColor: COLORS.mint,
-    borderWidth: 2,
-  },
-  themeBtnLabel: {
-    color: COLORS.textSecondary,
-    fontSize: rf(10),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textAlign: 'center',
-  },
-  themeBtnLabelActive: {
-    color: COLORS.mint,
-  },
-  previewRow: {
-    flexDirection: 'row',
-    gap: rs(3),
-    justifyContent: 'center',
-  },
-  activePill: {
-    backgroundColor: COLORS.mint,
-    paddingHorizontal: rs(8),
-    paddingVertical: rs(2),
-    borderRadius: rv(6),
-  },
-  activePillText: {
-    color: COLORS.background,
-    fontSize: rf(9),
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-});
+;
 
-const homeThemeStyles = StyleSheet.create({
-  container: {
-    gap: rs(8),
-    marginBottom: rs(6),
-  },
-  swatchRow: {
-    flexDirection: 'row',
-    gap: rs(8),
-  },
-  swatchItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: rs(4),
-    minHeight: 44,
-  },
-  swatchCircle: {
-    width: rv(40),
-    height: rv(40),
-    borderRadius: rv(20),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swatchCircleActive: {
-    borderWidth: 3,
-    borderColor: '#ffffff',
-  },
-  swatchCheck: {
-    fontSize: rf(16),
-    fontWeight: '900',
-    color: '#000000',
-  },
-  swatchLabel: {
-    fontSize: rf(9),
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textAlign: 'center',
-  },
-});
+;
 
-const bgPickerStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: rs(8),
-    marginBottom: rs(6),
-  },
-  tile: {
-    flex: 1,
-    backgroundColor: COLORS.feltLight,
-    borderRadius: rv(10),
-    borderWidth: 1.5,
-    borderColor: COLORS.boardBorder,
-    padding: rs(10),
-    alignItems: 'center',
-    gap: rs(4),
-    minHeight: rb(80),
-    justifyContent: 'center',
-  },
-  tileActive: {
-    borderColor: COLORS.mint,
-    borderWidth: 2,
-  },
-  noPreview: {
-    width: rv(48),
-    height: rv(28),
-  },
-  tileLabel: {
-    color: COLORS.textSecondary,
-    fontSize: rf(10),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  tileLabelActive: {
-    color: COLORS.mint,
-  },
-  tileHint: {
-    color: COLORS.textMuted,
-    fontSize: rf(8),
-    textAlign: 'center',
-  },
-  check: {
-    fontSize: rf(10),
-    fontWeight: '900',
-  },
-});
+;
 
 const orientationStyles = StyleSheet.create({
   row: {
@@ -1826,41 +1488,4 @@ const orientationStyles = StyleSheet.create({
   },
 });
 
-const btnStyleStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: rs(8),
-    marginBottom: rs(6),
-  },
-  option: {
-    flex: 1,
-    backgroundColor: COLORS.feltLight,
-    borderRadius: rv(10),
-    borderWidth: 1.5,
-    borderColor: COLORS.boardBorder,
-    padding: rs(12),
-    alignItems: 'center',
-    gap: rs(6),
-  },
-  preview: {
-    borderRadius: rv(8),
-    paddingVertical: rs(6),
-    paddingHorizontal: rs(10),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewText: {
-    fontSize: rf(11),
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  label: {
-    fontSize: rf(10),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  check: {
-    fontSize: rf(10),
-    fontWeight: '900',
-  },
-});
+;
