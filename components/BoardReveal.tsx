@@ -669,6 +669,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                   <CardComponent
                     card={c}
                     owner="player"
+                    zone="reveal"
                     faceDown={false}
                     flipDuration={300}
                     cardWidth={handCardW}

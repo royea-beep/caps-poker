@@ -19,11 +19,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 //   v3.1 panel tunings, all size gates are named constants at the top of this file:
 //     - centre suit centerSuitBig *0.64. CORNER GLYPHS DELIBERATELY UNTOUCHED — the corner is the
 //       legibility workhorse at 40px, and we do not move two legibility variables in one change.
-//     - bottom-right index (rotated 180°) only at width >= DOUBLE_CORNER_MIN_W.
+//     - bottom-right index (rotated 180°) only at width >= DOUBLE_CORNER_MIN_W (54) => 3P/4P yes, 2P no.
 //     - ownership RIM (not an aura): 0 0 6px rgba(58,214,255,0.30), spread 0, PLAYER cards only,
-//       suppressed below GLOW_MIN_W. One-time 250ms ease-out deal-in pulse (0.5 -> 0.30) then
-//       STATIC — no loops, no reanimation on re-render. Carried by the outer wrapper so it can
-//       coexist with the depth shadow (iOS = one shadow per view).
+//       gated by owner + ZONE (hand/reveal glow, board-placed does NOT) — NEVER by width, because
+//       hand and board cards are the same width (see the measured width map below). One-time 250ms
+//       ease-out deal-in pulse (0.5 -> 0.30) then STATIC — no loops, no reanimation on re-render,
+//       driven by ONE shared Animated.Value for all cards (never one animator per card). Carried by
+//       the outer wrapper so it can coexist with the depth shadow (iOS = one shadow per view).
+//       Web/Android render the SAME 0.30 resting rim; only the pulse is skipped (no old 0.5 aura).
 //     - depth tiered at DEPTH_RICH_MIN_W: above = gradient #FDFCF7->#F3EEDF + warm two-tier shadow;
 //       at/below = inset top highlight ONLY.
 //     - card OUTER size/position/hitbox is IDENTICAL to the default — internal graphics only (Iron Rule).
@@ -53,6 +56,10 @@ interface CardProps {
   /** CARD-FACE batch — whose card this is. Drives the ALWAYS-cyan ownership glow on the UPGRADED
    *  face (player = cyan glow, bot/undefined = none). Ignored on the default face. */
   owner?: 'player' | 'bot';
+  /** Where this card is rendered. Gates the ownership rim: 'board' (placed/committed) never glows,
+   *  'hand' and 'reveal' do. Deliberately a DENYLIST (zone !== 'board') so a new player-card site
+   *  that forgets the prop still shows the ownership cue rather than silently losing it. */
+  zone?: 'hand' | 'board' | 'reveal';
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -100,11 +107,37 @@ const GLOW_REST_ALPHA = 0.30;   // resting rim alpha (ownership cue, not an aura
 const GLOW_PEAK_ALPHA = 0.5;    // deal-in pulse peak, decays once to GLOW_REST_ALPHA
 const GLOW_BLUR_PX = 6;         // tight rim, spread 0
 const GLOW_PULSE_MS = 250;      // one-time ease-out on deal-in; no loops, no re-trigger
-const GLOW_MIN_W = 40;          // below this width the glow is suppressed entirely (perf tier)
-const DOUBLE_CORNER_MIN_W = 60; // bottom-right index renders only at/above this width
+// v3.2 — MEASURED CARD-WIDTH MAP (393pt phone, rendered, not assumed). Width is ONE number per
+// player count: VAMOS-UNIFY-CARD-SIZE makes a single universal CARD_W the authority for the hand,
+// the slots AND the community, so hand and board cards are ALWAYS the same width:
+//     2P (4 boards) = 40px   3P (3 boards) = 54px   4P (2 boards) = 65px   (65 = max possible)
+// CONSEQUENCE: width CANNOT separate "hand" from "board-placed" — the proposed GLOW_MIN_W=48 proxy
+// would have silently killed the glow on the 2P HAND (40px), the exact opposite of the intent.
+// The glow is therefore gated by owner + ZONE (see CardProps.zone), never by width. No GLOW_MIN_W.
+const DOUBLE_CORNER_MIN_W = 54; // bottom-right index renders at/above this width => 3P+4P yes, 2P (40px) no
 const DEPTH_RICH_MIN_W = 48;    // above: gradient + warm two-tier shadow. at/below: inset highlight only
 const CARD_GLOW_CYAN = `rgba(58,214,255,${GLOW_REST_ALPHA})`;
 const GLOW_RGB = '#3ad6ff';
+
+// v3.2 PULSE ARCHITECTURE — ONE shared driver for every card on screen, not one animator per card.
+// A per-card Animated.Value would mean 12-16 concurrent animators on the hand (old-iPhone jank and
+// a breach of the shared-animated-values budget). All glowing cards read this single value; the
+// first card to mount after a deal starts the pulse and the rest ride it. The window guard keeps a
+// 16-card mount burst from restarting the animation 16 times.
+const sharedGlowAlpha = new Animated.Value(GLOW_REST_ALPHA);
+let _lastGlowPulseAt = 0;
+function triggerSharedGlowPulse() {
+  const now = Date.now();
+  if (now - _lastGlowPulseAt < GLOW_PULSE_MS * 2) return; // one pulse per deal, not per card
+  _lastGlowPulseAt = now;
+  sharedGlowAlpha.setValue(GLOW_PEAK_ALPHA);
+  Animated.timing(sharedGlowAlpha, {
+    toValue: GLOW_REST_ALPHA,
+    duration: GLOW_PULSE_MS,
+    easing: Easing.out(Easing.quad),
+    useNativeDriver: false, // shadowOpacity is not native-driver safe
+  }).start();
+}
 
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
@@ -132,6 +165,7 @@ function CardComponent({
   suitsOnly = false,
   isCommunityCard = false,
   owner,
+  zone,
 }: CardProps) {
   // VAMOS-HAND-FIX-FINAL 2026-06-15 — when an EXPLICIT cardWidth is provided
   // (placement hand path: PlayerHand passes a measure-then-size value), it is
@@ -157,20 +191,14 @@ function CardComponent({
   // opts into the upgraded face: enriched depth + bigger centre suit + double corners + owner glow.
   const cardTheme = useGameStore((s) => s.cardTheme);
   const isUpgraded = cardTheme !== DEFAULT_CARD_THEME;
-  // v3.1 — ownership RIM (not an aura): upgraded face + player-owned + face-up, and never below
-  // GLOW_MIN_W. NOTE: player-owned cards DO render small — Board.tsx passes owner="player" for
-  // PLACED cards at slot width (floor 14px), so this gate genuinely suppresses the cue there.
-  const showOwnerGlow = isUpgraded && owner === 'player' && !faceDown && width >= GLOW_MIN_W;
-  // One-time deal-in pulse: GLOW_PEAK_ALPHA -> GLOW_REST_ALPHA, then STATIC. Empty deps = fires
-  // once per MOUNT (deal-in) and never re-runs on re-render. No loop, no reanimation.
-  const glowAlpha = useRef(new Animated.Value(GLOW_PEAK_ALPHA)).current;
+  // v3.2 — ownership RIM gated by owner + ZONE, never by width. Width is the same number for hand
+  // and board cards (see the measured width map above), so it cannot express "these are in my hand".
+  // Board-PLACED cards are player-owned but already committed, so they carry no rim.
+  const showOwnerGlow = isUpgraded && owner === 'player' && zone !== 'board' && !faceDown;
+  // One-time deal-in pulse off the SHARED driver. Empty deps = fires once per MOUNT (deal-in),
+  // never on re-render; the guard inside collapses a 16-card mount burst into a single animation.
   useEffect(() => {
-    Animated.timing(glowAlpha, {
-      toValue: GLOW_REST_ALPHA,
-      duration: GLOW_PULSE_MS,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: false, // shadowOpacity is not native-driver safe
-    }).start();
+    if (showOwnerGlow) triggerSharedGlowPulse();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -353,7 +381,7 @@ function CardComponent({
             shadowColor: GLOW_RGB,
             shadowOffset: { width: 0, height: 0 },
             shadowRadius: GLOW_BLUR_PX / 2,
-            shadowOpacity: glowAlpha, // animated: one-time deal-in pulse, then static
+            shadowOpacity: sharedGlowAlpha, // ONE shared driver for every glowing card
           } as any,
           // Web/Android: static resting rim — boxShadow cannot take an Animated value. The pulse is
           // an iOS-device concern (that's the eye-test surface); static keeps web measurement exact.

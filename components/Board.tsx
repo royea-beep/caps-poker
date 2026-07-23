@@ -754,6 +754,7 @@ export default function Board({
                 <CardComponent
                   card={c}
                   owner="player"
+                  zone="board"
                   faceDown={false}
                   cardWidth={cw}
                   cardHeight={ch}
