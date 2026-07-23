@@ -606,14 +606,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                         key={c.id}
                         style={{ transform: [{ scale: botCardScales[i] }], opacity: botSpotlightOpacities[i] }}
                       >
-                        <CardComponent card={c} faceDown={botFaceDown[i] ?? false} flipDuration={300} cardWidth={handCardW} cardHeight={handCardH} />
+                        <CardComponent card={c} owner="bot" faceDown={botFaceDown[i] ?? false} flipDuration={300} cardWidth={handCardW} cardHeight={handCardH} />
                       </AnimatedRN.View>
                     ))}
                   </AnimatedRN.View>
                 ) : (
                   <View style={[styles.cardRow, { gap: handGap }]}>
                     {botHand.map((c, i) => (
-                      <CardComponent key={c.id} card={c} faceDown={false} flipDuration={300} cardWidth={handCardW} cardHeight={handCardH} />
+                      <CardComponent key={c.id} card={c} owner="bot" faceDown={false} flipDuration={300} cardWidth={handCardW} cardHeight={handCardH} />
                     ))}
                   </View>
                 )}
@@ -668,6 +668,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 <AnimatedRN.View key={c.id} style={{ opacity: playerSpotlightOpacities[i] }}>
                   <CardComponent
                     card={c}
+                    owner="player"
                     faceDown={false}
                     flipDuration={300}
                     cardWidth={handCardW}

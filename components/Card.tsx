@@ -4,15 +4,23 @@ import { rs } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useGameStore } from '../store/gameStore';
 import { Card as CardType } from '../constants/gameConfig';
+import { DEFAULT_CARD_THEME } from '../constants/cardThemes';
 import { OBSIDIAN, OBSIDIAN_GEOM, cardLiftShadow, cardLiftShadowSmall, cardBackShadow } from '../constants/obsidianTheme';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Card Display Bible (S81 — PERMANENT — never change without "UNLOCK CARD BIBLE"):
-// - Every card shows ONLY: large centered rank + large centered suit
-// - NO corner indicators anywhere
-// - Font formula: Math.max(cardWidth * 0.38, 16) rank, Math.max(cardWidth * 0.28, 12) suit
-// - ALL card types use identical formula (board, hand, community, revealed)
-// - 3D flip: RN Animated only — ZERO Reanimated
+// Card Display Bible (V2+ — rewritten 2026-07-23, CARD-FACE batch). The old S81 version was STALE:
+// it still said "NO corners / large centered RANK" long after V2 shipped a top-left corner +
+// centre-SUIT-only (no centre rank) on 2026-05-23. Keep THIS in sync with the code; don't
+// resurrect the old rules. Update deliberately when the face changes.
+//   DEFAULT face  (cardTheme === 'v1'):
+//     - top-left corner (rank + suit) + ONE large centre SUIT, no centre rank
+//     - sizes (width-based, utils/prdTokens.ts): cornerRank *0.30, cornerSuit *0.22, centerSuit *0.55
+//   UPGRADED face (cardTheme !== 'v1' — opt-in via the Batch-B-preserved cardTheme mechanism):
+//     - ADDS: bottom-right corner (rotated 180°), bigger centre suit (centerSuitBig *0.62), enriched
+//       inset-highlight depth, and an ALWAYS-cyan OWNERSHIP glow on the PLAYER's cards only (owner
+//       prop; bots + default = none). Glow/shadow perf-tiered: light on width<40 board cards.
+//     - card OUTER size/position/hitbox is IDENTICAL to the default — internal graphics only (Iron Rule).
+//   - 3D flip: RN Animated only — ZERO Reanimated.
 
 interface CardProps {
   card?: CardType;
@@ -26,6 +34,9 @@ interface CardProps {
   themeOverride?: string; // kept for prop compatibility
   suitsOnly?: boolean;
   isCommunityCard?: boolean;
+  /** CARD-FACE batch — whose card this is. Drives the ALWAYS-cyan ownership glow on the UPGRADED
+   *  face (player = cyan glow, bot/undefined = none). Ignored on the default face. */
+  owner?: 'player' | 'bot';
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -63,6 +74,10 @@ const CARD_BACK_FONT = Platform.select<string | undefined>({
 const V2_RED = '#c41e3a';
 const V2_BLACK = '#18181b';
 
+// CARD-FACE batch — the ownership glow: ALWAYS cyan, theme-independent (never getTheme). Applied
+// ONLY to the player's cards on the UPGRADED face so the player instantly reads which are theirs.
+const CARD_GLOW_CYAN = 'rgba(58,214,255,0.5)';
+
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
   diamonds: '#1565C0',
@@ -88,6 +103,7 @@ function CardComponent({
   cardHeight,
   suitsOnly = false,
   isCommunityCard = false,
+  owner,
 }: CardProps) {
   // VAMOS-HAND-FIX-FINAL 2026-06-15 — when an EXPLICIT cardWidth is provided
   // (placement hand path: PlayerHand passes a measure-then-size value), it is
@@ -108,6 +124,12 @@ function CardComponent({
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
+  // CARD-FACE batch — the upgraded face is OPT-IN via cardTheme (mechanism preserved in Batch B).
+  // Default (DEFAULT_CARD_THEME = 'v1') renders the CURRENT face byte-identically; any other value
+  // opts into the upgraded face: enriched depth + bigger centre suit + double corners + owner glow.
+  const cardTheme = useGameStore((s) => s.cardTheme);
+  const isUpgraded = cardTheme !== DEFAULT_CARD_THEME;
+  const showOwnerGlow = isUpgraded && owner === 'player' && !faceDown;
 
   // Card sizing — width-based (S80/S81 Card Bible)
   const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.46;
@@ -261,6 +283,18 @@ function CardComponent({
   // VAMOS-VISUAL-C — lifted face-up: cardLiftShadow for normal/hand/slot cards,
   // cardLiftShadowSmall for community/bc=4 cards (legibility+perf gate D1/D2).
   const v2Shadow = width < 40 ? cardLiftShadowSmall : cardLiftShadow;
+  // CARD-FACE batch — the ALWAYS-cyan ownership glow (upgraded face + player + face-up). Perf-tiered:
+  // reduced radius on small board cards (width < 40). Replaces the lift shadow (iOS = one shadow),
+  // keeping a lift cue via offset/dark boxShadow on web.
+  const ownerGlowShadow = width < 40
+    ? Platform.select({
+        ios: { shadowColor: '#3ad6ff', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.6, shadowRadius: 4 } as any,
+        default: { boxShadow: `0 2px 6px rgba(0,0,0,0.4), 0 0 6px ${CARD_GLOW_CYAN}` } as any,
+      })
+    : Platform.select({
+        ios: { shadowColor: '#3ad6ff', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.85, shadowRadius: 11 } as any,
+        default: { boxShadow: `0 6px 16px rgba(0,0,0,0.45), 0 0 14px ${CARD_GLOW_CYAN}, 0 0 5px rgba(58,214,255,0.65)` } as any,
+      });
   const v2Border = highlighted
     ? { borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' as const }
     : { borderWidth: 0 };
@@ -338,7 +372,7 @@ function CardComponent({
           // VAMOS-VISUAL-C-FINISH — solid bg kept as fallback; the LinearGradient child
           // below renders the true cream gradient on native AND web.
           !isV2 && Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
-          isV2 ? v2Shadow : faceUpShadow,
+          isV2 ? (showOwnerGlow ? ownerGlowShadow : v2Shadow) : faceUpShadow,
           isV2 ? v2Border : highlightBorder,
           !isV2 && highlightShadow,
           dimmed && styles.dimmed,
@@ -381,7 +415,7 @@ function CardComponent({
               backgroundColor: 'rgba(255,255,255,0.9)',
               borderTopLeftRadius: OBSIDIAN_GEOM.cardRadius,
               borderTopRightRadius: OBSIDIAN_GEOM.cardRadius,
-              opacity: 0.7,
+              opacity: isUpgraded ? 0.95 : 0.7,
             }}
             pointerEvents="none"
           />
@@ -400,14 +434,21 @@ function CardComponent({
           </View>
         ) : isV2 ? (
           <>
-            {/* V2 Minimalist: top-left corner only */}
+            {/* top-left corner */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
               <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor, fontSize: PRD.card.cornerRank(width), lineHeight: Math.round(PRD.card.cornerRank(width) * 1.1) }]}>{card.rank}</Text>
               <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor, fontSize: PRD.card.cornerSuit(width), lineHeight: Math.round(PRD.card.cornerSuit(width) * 1.1) }]}>{SUIT_SYMBOLS[card.suit]}</Text>
             </View>
-            {/* V2 Minimalist: large center suit only — sized to ~55% of card width */}
+            {/* CARD-FACE batch — bottom-right corner (UPGRADED face only; rotated 180° like a real card) */}
+            {isUpgraded && (
+              <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
+                <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor, fontSize: PRD.card.cornerRank(width), lineHeight: Math.round(PRD.card.cornerRank(width) * 1.1) }]}>{card.rank}</Text>
+                <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor, fontSize: PRD.card.cornerSuit(width), lineHeight: Math.round(PRD.card.cornerSuit(width) * 1.1) }]}>{SUIT_SYMBOLS[card.suit]}</Text>
+              </View>
+            )}
+            {/* large center suit — bigger on the UPGRADED face (default keeps *0.55, byte-identical) */}
             <View style={styles.centerDisplay}>
-              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor, fontSize: PRD.card.centerSuit(width) }]}>
+              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor, fontSize: isUpgraded ? PRD.card.centerSuitBig(width) : PRD.card.centerSuit(width) }]}>
                 {SUIT_SYMBOLS[card.suit]}
               </Text>
             </View>

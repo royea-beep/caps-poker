@@ -673,6 +673,7 @@ export default function Board({
                 >
                   <CardComponent
                     card={c}
+                    owner="bot"
                     faceDown={!revealed}
                     cardWidth={cw}
                     cardHeight={ch}
@@ -752,6 +753,7 @@ export default function Board({
               <Pressable key={c.id} onPress={isArrangement && onRemoveCard ? () => onRemoveCard(c) : undefined}>
                 <CardComponent
                   card={c}
+                  owner="player"
                   faceDown={false}
                   cardWidth={cw}
                   cardHeight={ch}

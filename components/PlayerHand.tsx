@@ -67,7 +67,7 @@ function AnimatedCardSlot({
         testID="hand-card"
         style={[isUnified ? styles.unifiedCardWrapper : styles.cardWrapper, isSelected && styles.selected]}
       >
-        <CardComponent card={card} faceDown={false} cardWidth={cardW} cardHeight={cardH} />
+        <CardComponent card={card} owner="player" faceDown={false} cardWidth={cardW} cardHeight={cardH} />
         {isSelected && (
           <View style={styles.selBadge}>
             <Text style={styles.selBadgeText}>{selIndex + 1}</Text>
