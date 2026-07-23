@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, Platform, Animated, Easing } from 'react-native';
 import { rs } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useGameStore } from '../store/gameStore';
@@ -15,12 +15,28 @@ import { LinearGradient } from 'expo-linear-gradient';
 //   DEFAULT face  (cardTheme === 'v1'):
 //     - top-left corner (rank + suit) + ONE large centre SUIT, no centre rank
 //     - sizes (width-based, utils/prdTokens.ts): cornerRank *0.30, cornerSuit *0.22, centerSuit *0.55
-//   UPGRADED face (cardTheme !== 'v1' — opt-in via the Batch-B-preserved cardTheme mechanism):
-//     - ADDS: bottom-right corner (rotated 180°), bigger centre suit (centerSuitBig *0.62), enriched
-//       inset-highlight depth, and an ALWAYS-cyan OWNERSHIP glow on the PLAYER's cards only (owner
-//       prop; bots + default = none). Glow/shadow perf-tiered: light on width<40 board cards.
+//   UPGRADED face (cardTheme !== 'v1' — opt-in via the Batch-B-preserved cardTheme mechanism).
+//   v3.1 panel tunings, all size gates are named constants at the top of this file:
+//     - centre suit centerSuitBig *0.64. CORNER GLYPHS DELIBERATELY UNTOUCHED — the corner is the
+//       legibility workhorse at 40px, and we do not move two legibility variables in one change.
+//     - bottom-right index (rotated 180°) only at width >= DOUBLE_CORNER_MIN_W.
+//     - ownership RIM (not an aura): 0 0 6px rgba(58,214,255,0.30), spread 0, PLAYER cards only,
+//       suppressed below GLOW_MIN_W. One-time 250ms ease-out deal-in pulse (0.5 -> 0.30) then
+//       STATIC — no loops, no reanimation on re-render. Carried by the outer wrapper so it can
+//       coexist with the depth shadow (iOS = one shadow per view).
+//     - depth tiered at DEPTH_RICH_MIN_W: above = gradient #FDFCF7->#F3EEDF + warm two-tier shadow;
+//       at/below = inset top highlight ONLY.
 //     - card OUTER size/position/hitbox is IDENTICAL to the default — internal graphics only (Iron Rule).
 //   - 3D flip: RN Animated only — ZERO Reanimated.
+//
+//   LOGGED FOLLOW-UPS (raised by the v3.1 panel, deliberately NOT in this batch):
+//     1. Shrinking the CORNER SUIT alongside the centre bump — refused here to avoid moving two
+//        legibility variables at once. Candidate for a later, isolated legibility pass.
+//     2. Evicting gold #c9a84c from the "selected/placed" state. The incoherence is real (gold
+//        serves brand AND selection simultaneously — ~70 uses; the brand accent proper is mint
+//        #4FD6A8, ~59 uses), so your own card appears to change team colour on placement. That is
+//        a placement-screen-wide colour change and needs its own batch + before-audit, after the
+//        face lands.
 
 interface CardProps {
   card?: CardType;
@@ -76,7 +92,19 @@ const V2_BLACK = '#18181b';
 
 // CARD-FACE batch — the ownership glow: ALWAYS cyan, theme-independent (never getTheme). Applied
 // ONLY to the player's cards on the UPGRADED face so the player instantly reads which are theirs.
-const CARD_GLOW_CYAN = 'rgba(58,214,255,0.5)';
+// CARD-FACE v3.1 (panel tunings) — every size gate is a NAMED constant, never a magic number.
+// NOTE the cyan is NOT "the existing cyan": the brand accent is mint #4FD6A8. rgba(58,214,255,*)
+// also exists in the bundle as streetStencil's DORMANT cardGlow token (S76, unconsumed) — this
+// ownership rim is a separate, deliberate use of the same hue.
+const GLOW_REST_ALPHA = 0.30;   // resting rim alpha (ownership cue, not an aura)
+const GLOW_PEAK_ALPHA = 0.5;    // deal-in pulse peak, decays once to GLOW_REST_ALPHA
+const GLOW_BLUR_PX = 6;         // tight rim, spread 0
+const GLOW_PULSE_MS = 250;      // one-time ease-out on deal-in; no loops, no re-trigger
+const GLOW_MIN_W = 40;          // below this width the glow is suppressed entirely (perf tier)
+const DOUBLE_CORNER_MIN_W = 60; // bottom-right index renders only at/above this width
+const DEPTH_RICH_MIN_W = 48;    // above: gradient + warm two-tier shadow. at/below: inset highlight only
+const CARD_GLOW_CYAN = `rgba(58,214,255,${GLOW_REST_ALPHA})`;
+const GLOW_RGB = '#3ad6ff';
 
 const SUIT_COLORS_4: Record<string, string> = {
   hearts:   '#E8192C',
@@ -129,7 +157,22 @@ function CardComponent({
   // opts into the upgraded face: enriched depth + bigger centre suit + double corners + owner glow.
   const cardTheme = useGameStore((s) => s.cardTheme);
   const isUpgraded = cardTheme !== DEFAULT_CARD_THEME;
-  const showOwnerGlow = isUpgraded && owner === 'player' && !faceDown;
+  // v3.1 — ownership RIM (not an aura): upgraded face + player-owned + face-up, and never below
+  // GLOW_MIN_W. NOTE: player-owned cards DO render small — Board.tsx passes owner="player" for
+  // PLACED cards at slot width (floor 14px), so this gate genuinely suppresses the cue there.
+  const showOwnerGlow = isUpgraded && owner === 'player' && !faceDown && width >= GLOW_MIN_W;
+  // One-time deal-in pulse: GLOW_PEAK_ALPHA -> GLOW_REST_ALPHA, then STATIC. Empty deps = fires
+  // once per MOUNT (deal-in) and never re-runs on re-render. No loop, no reanimation.
+  const glowAlpha = useRef(new Animated.Value(GLOW_PEAK_ALPHA)).current;
+  useEffect(() => {
+    Animated.timing(glowAlpha, {
+      toValue: GLOW_REST_ALPHA,
+      duration: GLOW_PULSE_MS,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false, // shadowOpacity is not native-driver safe
+    }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Card sizing — width-based (S80/S81 Card Bible)
   const mainRankRatio = cardConfig?.main_rank_size_ratio ?? 0.46;
@@ -283,18 +326,41 @@ function CardComponent({
   // VAMOS-VISUAL-C — lifted face-up: cardLiftShadow for normal/hand/slot cards,
   // cardLiftShadowSmall for community/bc=4 cards (legibility+perf gate D1/D2).
   const v2Shadow = width < 40 ? cardLiftShadowSmall : cardLiftShadow;
-  // CARD-FACE batch — the ALWAYS-cyan ownership glow (upgraded face + player + face-up). Perf-tiered:
-  // reduced radius on small board cards (width < 40). Replaces the lift shadow (iOS = one shadow),
-  // keeping a lift cue via offset/dark boxShadow on web.
-  const ownerGlowShadow = width < 40
-    ? Platform.select({
-        ios: { shadowColor: '#3ad6ff', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.6, shadowRadius: 4 } as any,
-        default: { boxShadow: `0 2px 6px rgba(0,0,0,0.4), 0 0 6px ${CARD_GLOW_CYAN}` } as any,
-      })
-    : Platform.select({
-        ios: { shadowColor: '#3ad6ff', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.85, shadowRadius: 11 } as any,
-        default: { boxShadow: `0 6px 16px rgba(0,0,0,0.45), 0 0 14px ${CARD_GLOW_CYAN}, 0 0 5px rgba(58,214,255,0.65)` } as any,
-      });
+  // v3.1 DEPTH, tiered (UPGRADED face ONLY — the default face keeps v2Shadow byte-identical):
+  //   width  > DEPTH_RICH_MIN_W : gradient + warm two-tier shadow
+  //   width <= DEPTH_RICH_MIN_W : inset top highlight ONLY — no gradient, no multi-layer shadow
+  // iOS renders ONE shadow per view, so the two-tier stack is approximated by its dominant tier.
+  const isRichDepth = isUpgraded && width > DEPTH_RICH_MIN_W;
+  const upgradedDepthShadow = !isUpgraded
+    ? v2Shadow
+    : isRichDepth
+      ? Platform.select({
+          ios: { shadowColor: '#281E0A', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.22, shadowRadius: 4 } as any,
+          default: { boxShadow: '0 1px 2px rgba(40,30,10,0.25), 0 3px 8px rgba(40,30,10,0.18)' } as any,
+        })
+      : {}; // light tier — the inset top highlight alone carries the lift cue
+
+  // v3.1 GLOW — a TIGHT RIM (spread 0) carried by the OUTER wrapper, not the face, so it coexists
+  // with the depth shadow above (both on the face would force iOS to drop one). The wrapper is
+  // sized exactly to the card and painted the card colour so iOS has an opaque surface to cast
+  // from; the face covers it completely, so nothing shows through. Shadows never affect layout,
+  // so the card's outer footprint is unchanged.
+  const ownerGlowWrapStyle = showOwnerGlow
+    ? [
+        { backgroundColor: OBSIDIAN.cardFaceFallback, borderRadius: OBSIDIAN_GEOM.cardRadius },
+        Platform.select({
+          ios: {
+            shadowColor: GLOW_RGB,
+            shadowOffset: { width: 0, height: 0 },
+            shadowRadius: GLOW_BLUR_PX / 2,
+            shadowOpacity: glowAlpha, // animated: one-time deal-in pulse, then static
+          } as any,
+          // Web/Android: static resting rim — boxShadow cannot take an Animated value. The pulse is
+          // an iOS-device concern (that's the eye-test surface); static keeps web measurement exact.
+          default: { boxShadow: `0 0 ${GLOW_BLUR_PX}px ${CARD_GLOW_CYAN}` } as any,
+        }),
+      ]
+    : null;
   const v2Border = highlighted
     ? { borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' as const }
     : { borderWidth: 0 };
@@ -343,7 +409,9 @@ function CardComponent({
     : {};
 
   return (
-    <View style={{ width, height }}>
+    // Animated.View (not View) so the ownership rim's shadowOpacity can carry the deal-in pulse.
+    // Identical layout/footprint to the plain View it replaces.
+    <Animated.View style={[{ width, height }, ownerGlowWrapStyle]}>
       {/* Back face — 3D flip */}
       <Animated.View
         style={[
@@ -372,7 +440,7 @@ function CardComponent({
           // VAMOS-VISUAL-C-FINISH — solid bg kept as fallback; the LinearGradient child
           // below renders the true cream gradient on native AND web.
           !isV2 && Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
-          isV2 ? (showOwnerGlow ? ownerGlowShadow : v2Shadow) : faceUpShadow,
+          isV2 ? upgradedDepthShadow : faceUpShadow,
           isV2 ? v2Border : highlightBorder,
           !isV2 && highlightShadow,
           dimmed && styles.dimmed,
@@ -390,9 +458,11 @@ function CardComponent({
       >
         {/* VAMOS-VISUAL-C-FINISH — true cream gradient (native + web), borderRadius on the
             gradient itself so we don't need overflow:hidden on the shadowed Animated.View. */}
-        {isV2 && (
+        {/* v3.1 — on the UPGRADED face the gradient is part of the RICH depth tier only; at/below
+            DEPTH_RICH_MIN_W the inset top highlight carries the lift alone. Default face unchanged. */}
+        {isV2 && (!isUpgraded || isRichDepth) && (
           <LinearGradient
-            colors={[OBSIDIAN.cardFaceTop, OBSIDIAN.cardFaceBottom]}
+            colors={isUpgraded ? ['#FDFCF7', '#F3EEDF'] : [OBSIDIAN.cardFaceTop, OBSIDIAN.cardFaceBottom]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={[StyleSheet.absoluteFillObject, { borderRadius: OBSIDIAN_GEOM.cardRadius }]}
@@ -440,7 +510,9 @@ function CardComponent({
               <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor, fontSize: PRD.card.cornerSuit(width), lineHeight: Math.round(PRD.card.cornerSuit(width) * 1.1) }]}>{SUIT_SYMBOLS[card.suit]}</Text>
             </View>
             {/* CARD-FACE batch — bottom-right corner (UPGRADED face only; rotated 180° like a real card) */}
-            {isUpgraded && (
+            {/* v3.1 — size-gated: the bottom-right index is suppressed below DOUBLE_CORNER_MIN_W,
+                where it would crowd the centre suit and cost legibility rather than add realism. */}
+            {isUpgraded && width >= DOUBLE_CORNER_MIN_W && (
               <View style={[styles.cornerBottomRight, { transform: [{ rotate: '180deg' }] }]} pointerEvents="none">
                 <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor, fontSize: PRD.card.cornerRank(width), lineHeight: Math.round(PRD.card.cornerRank(width) * 1.1) }]}>{card.rank}</Text>
                 <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor, fontSize: PRD.card.cornerSuit(width), lineHeight: Math.round(PRD.card.cornerSuit(width) * 1.1) }]}>{SUIT_SYMBOLS[card.suit]}</Text>
@@ -455,7 +527,7 @@ function CardComponent({
           </>
         ) : null /* Legacy non-V2 branch removed 2026-05-23 — isV2 is now always true */}
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 

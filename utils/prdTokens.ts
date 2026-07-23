@@ -22,7 +22,7 @@ export const PRD = {
     // centerSuit) so the DEFAULT face stays byte-identical. Internal glyph only: the card's outer
     // width/height/hitbox is unchanged (proven before/after). Flip centerSuit itself to 0.62 only
     // if/when Roye makes the upgraded face the default.
-    centerSuitBig: (cardW: number): number => Math.max(16, Math.round(cardW * 0.62)),
+    centerSuitBig: (cardW: number): number => Math.max(16, Math.round(cardW * 0.64)),
     cornerRank: (cardW: number): number => Math.max(9,  Math.round(cardW * 0.30)),
     cornerSuit: (cardW: number): number => Math.max(7,  Math.round(cardW * 0.22)),
   },
