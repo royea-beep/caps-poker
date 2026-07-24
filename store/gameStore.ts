@@ -8,6 +8,7 @@ import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
 import { HomeThemeId, DEFAULT_HOME_THEME, ButtonStyle } from '../constants/homeThemes';
 import { FriendsBgId } from '../constants/friendsBgs';
 import { CardDisplayConfig } from '../utils/supabaseEconomy';
+import { migrateGameStorePersisted } from './cardThemeMigration';
 
 export type OrientationType = 'portrait' | 'landscape';
 // S76 — MUST stay in sync with the same-named type in constants/visualThemes.ts.
@@ -318,6 +319,11 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'caps-poker-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      // CARD-FACE MERGE (v3.2 ship): store was previously unversioned (version 0). Bump to 1 so the
+      // one-time migrate runs on existing devices to move the flipped card-face default. Logic lives
+      // in the exported migrateGameStorePersisted() (below) so it can be unit-tested directly.
+      version: 1,
+      migrate: migrateGameStorePersisted,
       partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, skipBoardReveal: state.skipBoardReveal, colorblindMode: state.colorblindMode, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
     }
   )

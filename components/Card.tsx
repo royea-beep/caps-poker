@@ -4,7 +4,6 @@ import { rs } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 import { useGameStore } from '../store/gameStore';
 import { Card as CardType } from '../constants/gameConfig';
-import { DEFAULT_CARD_THEME } from '../constants/cardThemes';
 import { OBSIDIAN, OBSIDIAN_GEOM, cardLiftShadow, cardLiftShadowSmall, cardBackShadow } from '../constants/obsidianTheme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -12,10 +11,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 // it still said "NO corners / large centered RANK" long after V2 shipped a top-left corner +
 // centre-SUIT-only (no centre rank) on 2026-05-23. Keep THIS in sync with the code; don't
 // resurrect the old rules. Update deliberately when the face changes.
-//   DEFAULT face  (cardTheme === 'v1'):
+//   SHIPPED DEFAULT = the UPGRADED face. cardTheme default is 'v3' (constants/cardThemes.ts) and the
+//   gate is isUpgraded = cardTheme !== 'v1', so every user gets the upgraded face; existing 'v1'
+//   devices are migrated to 'v3' by the store's persist migrate (version 1).
+//   CLASSIC face (cardTheme === 'v1' — reachable via a future "Card Style" settings row):
 //     - top-left corner (rank + suit) + ONE large centre SUIT, no centre rank
 //     - sizes (width-based, utils/prdTokens.ts): cornerRank *0.30, cornerSuit *0.22, centerSuit *0.55
-//   UPGRADED face (cardTheme !== 'v1' — opt-in via the Batch-B-preserved cardTheme mechanism).
+//   UPGRADED face (cardTheme !== 'v1' — the default 'v3', plus 'v2').
 //   v3.1 panel tunings, all size gates are named constants at the top of this file:
 //     - centre suit centerSuitBig *0.64. CORNER GLYPHS DELIBERATELY UNTOUCHED — the corner is the
 //       legibility workhorse at 40px, and we do not move two legibility variables in one change.
@@ -103,7 +105,13 @@ const V2_BLACK = '#18181b';
 // NOTE the cyan is NOT "the existing cyan": the brand accent is mint #4FD6A8. rgba(58,214,255,*)
 // also exists in the bundle as streetStencil's DORMANT cardGlow token (S76, unconsumed) — this
 // ownership rim is a separate, deliberate use of the same hue.
-const GLOW_REST_ALPHA = 0.30;   // resting rim alpha (ownership cue, not an aura)
+// ON-RECORD DECISION (Roye's MERGE-GO ruling, do NOT "fix" this as a bug): this cyan rim was
+// originally justified as an OWNERSHIP marker, but as shipped it does NOT serve that function — it is
+// HAND-ONLY (zone!=='board'), and everything in your hand is already yours; at REVEAL, where your
+// cards sit beside the bots', there is no rim at all (measured: 0 glowing elements post-placement).
+// Roye ruled to ship anyway: the rim's real value is the PREMIUM FEEL on the hand, and ownership is
+// already carried by the BOT/YOU row labels. Deliberate, not an oversight. Glow stays hand-only.
+const GLOW_REST_ALPHA = 0.30;   // resting rim alpha (premium-feel cue on the hand; see decision above)
 const GLOW_PEAK_ALPHA = 0.5;    // deal-in pulse peak, decays once to GLOW_REST_ALPHA
 const GLOW_BLUR_PX = 6;         // tight rim, spread 0
 const GLOW_PULSE_MS = 250;      // one-time ease-out on deal-in; no loops, no re-trigger
@@ -187,10 +195,12 @@ function CardComponent({
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
   // CARD-FACE batch — the upgraded face is OPT-IN via cardTheme (mechanism preserved in Batch B).
-  // Default (DEFAULT_CARD_THEME = 'v1') renders the CURRENT face byte-identically; any other value
-  // opts into the upgraded face: enriched depth + bigger centre suit + double corners + owner glow.
+  // CARD-FACE MERGE (v3.2 ship): the upgraded face is now the DEFAULT for everyone. The gate is
+  // pinned to the explicit LEGACY id 'v1' — NOT DEFAULT_CARD_THEME — so flipping the default to 'v3'
+  // does not invert this. 'v1' = Classic (reachable via a future "Card Style" row); everything else
+  // (default 'v3', plus 'v2') = upgraded. Existing 'v1' devices are migrated to 'v3' by the store.
   const cardTheme = useGameStore((s) => s.cardTheme);
-  const isUpgraded = cardTheme !== DEFAULT_CARD_THEME;
+  const isUpgraded = cardTheme !== 'v1';
   // v3.2 — ownership RIM gated by owner + ZONE, never by width. Width is the same number for hand
   // and board cards (see the measured width map above), so it cannot express "these are in my hand".
   // Board-PLACED cards are player-owned but already committed, so they carry no rim.

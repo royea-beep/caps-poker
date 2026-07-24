@@ -78,4 +78,9 @@ export const CARD_THEMES: Record<CardThemeId, CardThemeConfig> = {
   v3: V3_MODERN,
 };
 
-export const DEFAULT_CARD_THEME: CardThemeId = 'v1';
+// CARD-FACE MERGE (v3.2 ship): default flipped 'v1' -> 'v3' so every user gets the upgraded face.
+// The render gate in Card.tsx pins the LEGACY face to the explicit id 'v1' (isUpgraded = cardTheme
+// !== 'v1'), NOT to this constant — so 'v3' (and 'v2') render upgraded, and 'v1' stays the reachable
+// Classic face for a future "Card Style" settings row. Existing devices persisted 'v1' are moved to
+// 'v3' by the store's persist migrate (version 1); fresh installs init to this value.
+export const DEFAULT_CARD_THEME: CardThemeId = 'v3';
