@@ -28,19 +28,33 @@ export function createDeck(): Card[] {
   return deck;
 }
 
-/** Deterministic float in [0,1) for shuffle step `counter`, derived from the seed. Same seed -> same stream. */
-function seededFloat(seedHex: string, counter: number): number {
+/** Deterministic uint32 for stream position `counter`, from SHA-256(seed:counter). */
+function seededUint32(seedHex: string, counter: number): number {
   const h = createHash('sha256').update(`${seedHex}:${counter}`).digest();
-  const u = h[0] * 0x1000000 + h[1] * 0x10000 + h[2] * 0x100 + h[3]; // first 4 bytes -> uint32
-  return u / 0x100000000; // / 2^32 -> [0,1)
+  return (h[0] * 0x1000000 + h[1] * 0x10000 + h[2] * 0x100 + h[3]) >>> 0; // first 4 bytes -> uint32
 }
 
-/** Identical descending Fisher-Yates to utils/deck.ts:13-20, but j is drawn from the seeded stream. */
+/**
+ * Uniform integer in [0, n) from the seeded stream with REJECTION SAMPLING — NO modulo/multiply bias.
+ * (The old `floor(u/2^32 * n)` mapped 2^32 values into n buckets that are not all equal-sized, so some
+ * card positions were very slightly more likely — biased, provably fair but provably unfair.) Here we
+ * reject the top `2^32 mod n` values so every bucket is exactly equal. Deterministic: same seed -> same
+ * draws (rejections included); `state.counter` advances the stream past any rejected words.
+ */
+function seededIntBelow(seedHex: string, state: { counter: number }, n: number): number {
+  const limit = Math.floor(0x100000000 / n) * n; // largest multiple of n that is <= 2^32
+  for (;;) {
+    const u = seededUint32(seedHex, state.counter++);
+    if (u < limit) return u % n;
+  }
+}
+
+/** Identical descending Fisher-Yates to utils/deck.ts:13-20, but j is an UNBIASED rejection-sampled draw. */
 export function seededShuffle(deck: Card[], seedHex: string): Card[] {
   const shuffled = [...deck];
-  let counter = 0;
+  const state = { counter: 0 };
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(seededFloat(seedHex, counter++) * (i + 1));
+    const j = seededIntBelow(seedHex, state, i + 1); // uniform in [0, i]
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;

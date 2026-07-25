@@ -42,22 +42,17 @@ export interface PlayerDealPayload {
  */
 export async function fetchServerDeal(args: {
   handId: string;
-  roomId?: string;
-  playerCount: 2 | 3 | 4;
-  seatDeviceIds: string[]; // device_ids in seat order (fixed at deal creation)
-  deviceId: string;
+  roomId: string;
 }): Promise<PlayerDealPayload | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
   try {
+    // Body carries ONLY the hand + room. Caller identity is NOT sent — it rides the session JWT that
+    // supabase.functions.invoke attaches (Authorization header); the EF derives auth.uid() from it and
+    // looks the seat up server-side from room_players. PREREQUISITE: the caller must have an auth
+    // session (see the anon-session prerequisite in FAIRNESS_PHASE_A_AUDIT.md) or the EF rejects it.
     const { data, error } = await supabase.functions.invoke('deal_hand', {
-      body: {
-        hand_id: args.handId,
-        room_id: args.roomId ?? null,
-        player_count: args.playerCount,
-        seats: args.seatDeviceIds,
-        device_id: args.deviceId,
-      },
+      body: { hand_id: args.handId, room_id: args.roomId },
     });
     if (error || !data?.ok) return null;
     return data.deal as PlayerDealPayload;

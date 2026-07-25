@@ -2,23 +2,29 @@
 //
 // Server-authoritative deal. The server generates a CSPRNG seed, deals deterministically (see deal.ts),
 // stores the FULL deck + every seat's hole cards + closed board cards in dealt_hands (RLS-locked,
-// service-role only), and returns to EACH caller ONLY their own slice (own hole cards + open board
-// cards + a closed COUNT). This closes the current cheating vector where the host client holds the
-// whole deck in memory.
+// service-role only), and returns to EACH caller ONLY their own slice.
 //
-// Contract (POST JSON):
-//   { hand_id: string, room_id?: string, player_count: 2|3|4, seats: string[], device_id: string }
-//   - `seats` = device_ids in seat order (fixed at deal creation by the first/host call).
-//   - The caller receives sliceForPlayer for the seat whose device_id === caller device_id.
-// Response: { ok: true, deal: PlayerDealPayload } | { ok:false, error }
+// AUTHZ (the audit fix): the EF runs as service_role and BYPASSES the dealt_hands RLS, so RLS is
+// decorative — this function is the SOLE authz boundary for the full deck. Therefore:
+//   - Caller identity comes ONLY from the VERIFIED JWT (auth.uid()), never from a request-body field.
+//   - The seat is looked up from the SERVER-SIDE roster (room_players, snapshotted onto the deal row),
+//     never from a client-supplied seats array. A caller can only ever get its OWN seat, and only if
+//     it is actually seated — there is no request field that selects a seat.
+//   - Deploy with verify_jwt=TRUE (see supabase/config.toml). Do NOT inherit the verify_jwt=false
+//     default some other EFs in this project use; that would let anyone with the shipped anon key call it.
 //
-// ANON CAVEAT (documented, Phase-A limitation): CAPS is device-anonymous (auth.uid() is NULL), so the
-// EF authenticates by the client-supplied device_id. A caller who knows another player's (opaque)
-// device_id could request that seat's slice. Hardening = signed device tokens; out of Phase-A scope.
-// The deck / opponents' hole cards / closed cards still NEVER leave the server regardless.
+// PREREQUISITE (Rule-9 finding, must be resolved before flag-on): CAPS device-anon players have
+// auth.uid() = NULL (no anonymous session; Google login is prompted only after games 3-5), and
+// room_players.user_id is NULL for them. Such callers are REJECTED here by design. MP must first adopt
+// an anonymous Supabase session (signInAnonymously) so every player has a stable auth.uid() that
+// join_table records into room_players.user_id. That client change is part of the 2-device cutover.
+//
+// Contract (POST JSON): { hand_id: string, room_id: string }  — NO identity/seat/roster in the body.
+// Response: { ok:true, deal: PlayerDealPayload } | { ok:false, error }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { dealFromSeed, sliceForPlayer, type ServerDeal } from './deal.ts';
+import { authorizeDealRequest, type RosterEntry } from './authz.ts';
 
 const CORS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -41,33 +47,49 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405);
 
   try {
-    const { hand_id, room_id, player_count, seats, device_id } = await req.json();
-    if (
-      typeof hand_id !== 'string' || !hand_id ||
-      typeof device_id !== 'string' || !device_id ||
-      ![2, 3, 4].includes(player_count) ||
-      !Array.isArray(seats) || seats.length !== player_count
-    ) {
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const { hand_id, room_id } = await req.json();
+    if (typeof hand_id !== 'string' || !hand_id || typeof room_id !== 'string' || !room_id) {
       return json({ ok: false, error: 'bad_request' }, 400);
     }
 
-    const sb = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
+    const url = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-    // Create-or-get the authoritative deal for this hand_id (idempotent under concurrent joins).
+    // 1) VERIFIED caller identity — from the JWT, NEVER the body. null => no session -> rejected below.
+    const asCaller = createClient(url, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+    const { data: userData } = await asCaller.auth.getUser();
+    const callerUserId = userData?.user?.id ?? null;
+
+    // service-role client (bypasses RLS) for dealt_hands + room_players
+    const sb = createClient(url, serviceKey, { auth: { persistSession: false } });
+
+    // 2) Create-or-get the authoritative deal for this hand_id. The roster snapshot (user_id per seat)
+    //    is taken from the SERVER-SIDE room_players — never from the request body.
     let row = (await sb.from('dealt_hands').select('*').eq('hand_id', hand_id).maybeSingle()).data;
     if (!row) {
+      const { data: players } = await sb
+        .from('room_players')
+        .select('user_id, seat_index')
+        .eq('room_id', room_id)
+        .order('seat_index', { ascending: true });
+      const seated = (players ?? []) as { user_id: string | null; seat_index: number }[];
+      const pc = seated.length;
+      if (![2, 3, 4].includes(pc)) return json({ ok: false, error: 'bad_roster' }, 409);
+
       const seed = newSeedHex();
-      const deal = dealFromSeed(seed, player_count as 2 | 3 | 4);
+      const deal = dealFromSeed(seed, pc as 2 | 3 | 4);
       const ins = await sb
         .from('dealt_hands')
         .insert({
           hand_id,
-          room_id: room_id ?? null,
-          player_count,
-          seat_device_ids: seats,
+          room_id,
+          player_count: pc,
+          seat_user_ids: seated.map((r) => r.user_id), // snapshot: user_id per seat, in seat order
           seed_hex: seed,
           deck: deal.deck,
           player_hands: deal.playerHands,
@@ -75,19 +97,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
         })
         .select('*')
         .single();
-      if (ins.error) {
-        // lost the race to another caller -> re-read the row they inserted
-        row = (await sb.from('dealt_hands').select('*').eq('hand_id', hand_id).single()).data;
-      } else {
-        row = ins.data;
-      }
+      row = ins.error ? (await sb.from('dealt_hands').select('*').eq('hand_id', hand_id).single()).data : ins.data;
     }
     if (!row) return json({ ok: false, error: 'deal_unavailable' }, 500);
 
-    const seat = (row.seat_device_ids as string[]).indexOf(device_id);
-    if (seat < 0) return json({ ok: false, error: 'not_in_seats' }, 403);
+    // 3) AUTHORIZE off the STORED roster snapshot: identity from the JWT, seat from the server roster.
+    const roster: RosterEntry[] = ((row.seat_user_ids as (string | null)[]) ?? []).map((uid, seatIndex) => ({
+      userId: uid,
+      seatIndex,
+    }));
+    const authz = authorizeDealRequest(callerUserId, roster);
+    if (!authz.ok) return json({ ok: false, error: authz.error }, authz.error === 'unauthenticated' ? 401 : 403);
 
-    // Reconstruct the ServerDeal from storage and return ONLY this caller's non-leaking slice.
+    // 4) Return ONLY this caller's non-leaking slice.
     const deal: ServerDeal = {
       deck: row.deck,
       playerHands: row.player_hands,
@@ -95,7 +117,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       discarded: [],
       seedHex: row.seed_hex,
     };
-    return json({ ok: true, deal: sliceForPlayer(deal, seat, hand_id) }, 200);
+    return json({ ok: true, deal: sliceForPlayer(deal, authz.seat, hand_id) }, 200);
   } catch (e) {
     return json({ ok: false, error: String(e) }, 500);
   }

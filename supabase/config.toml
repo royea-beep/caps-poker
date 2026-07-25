@@ -1,0 +1,12 @@
+# SERVER-DEAL-PHASE-A — Edge Function deploy config.
+#
+# deal_hand MUST be deployed with verify_jwt = TRUE. The audit found 6 of 11 existing EFs run
+# verify_jwt = false; do NOT inherit that default here. With verify_jwt = false, anyone holding the
+# shipped anon key could invoke deal_hand directly (flag on or off), and "dark" would end at deploy,
+# not at flag-on. With verify_jwt = true the platform validates the JWT before the function runs, and
+# the function derives the caller identity from auth.uid() — never from a request-body field.
+#
+# Deploy: `supabase functions deploy deal_hand`  (default is verify_jwt=true — do NOT pass --no-verify-jwt).
+
+[functions.deal_hand]
+verify_jwt = true

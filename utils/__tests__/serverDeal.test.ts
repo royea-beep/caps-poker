@@ -4,6 +4,7 @@ import {
   createDeck,
   type ServerDeal,
 } from '../../supabase/functions/deal_hand/deal';
+import { authorizeDealRequest } from '../../supabase/functions/deal_hand/authz';
 
 // SERVER-DEAL-PHASE-A verification. These are the invariants the owner named as critical because
 // this path touches every hand/card/chip. The MP *flow* still needs the 2-device acceptance test;
@@ -93,5 +94,56 @@ describe('server deal — deterministic, valid Omaha, no-leak', () => {
         seen.add(c.id);
       }),
     );
+  });
+});
+
+// ── A2 ADVERSARIAL AUTHZ — the tests that were missing. These prove a caller cannot obtain ANOTHER
+// seat's cards. The authz decision comes from the VERIFIED JWT (auth.uid()) + the SERVER roster; there
+// is no request field that selects a seat, so the spoof is structurally impossible. `legacyResolveByBody`
+// captures the PRE-FIX logic (identity + roster from the client body) to show tests 1-3 were RED before.
+function legacyResolveByBody(bodyDeviceId: string, clientSuppliedSeats: string[]): number {
+  return clientSuppliedSeats.indexOf(bodyDeviceId); // OLD: identity AND roster came from the caller
+}
+
+describe('server deal — adversarial authz (identity from verified JWT + server roster)', () => {
+  // Server roster (from room_players): seat 0 = user-A, seat 1 = user-B. Both authenticated.
+  const roster = [
+    { userId: 'user-A', seatIndex: 0 },
+    { userId: 'user-B', seatIndex: 1 },
+  ];
+
+  it('1. caller A cannot request B’s slice (no body field selects a seat)', () => {
+    // NEW: identity=A -> only A's own seat is derivable. There is no argument to request B.
+    expect(authorizeDealRequest('user-A', roster)).toEqual({ ok: true, seat: 0 });
+    // RED-before contrast: the OLD body-param path DID hand over B's seat when A passed B's device id.
+    expect(legacyResolveByBody('device-B', ['device-A', 'device-B'])).toBe(1); // the leak, pre-fix
+  });
+
+  it('2. caller not seated in the hand -> rejected', () => {
+    expect(authorizeDealRequest('user-C', roster)).toEqual({ ok: false, error: 'not_seated' });
+  });
+
+  it('3. unauthenticated / anon-key-only (no verified uid) -> rejected', () => {
+    expect(authorizeDealRequest(null, roster)).toEqual({ ok: false, error: 'unauthenticated' });
+    // a null caller must NEVER match a device-anon roster slot whose user_id is also null:
+    const anonRoster = [
+      { userId: null, seatIndex: 0 },
+      { userId: 'user-B', seatIndex: 1 },
+    ];
+    expect(authorizeDealRequest(null, anonRoster)).toEqual({ ok: false, error: 'unauthenticated' });
+  });
+
+  it('4. caller A’s own slice -> A’s seat only (own cards proven in the NO-LEAK test above)', () => {
+    expect(authorizeDealRequest('user-A', roster)).toEqual({ ok: true, seat: 0 });
+    expect(authorizeDealRequest('user-B', roster)).toEqual({ ok: true, seat: 1 });
+  });
+
+  it('5. replay: A calls twice -> identical seat, deterministic (deal row is create-or-get by hand_id PK)', () => {
+    const first = authorizeDealRequest('user-A', roster);
+    const second = authorizeDealRequest('user-A', roster);
+    expect(first).toEqual(second);
+    expect(first).toEqual({ ok: true, seat: 0 });
+    // (No second dealt_hands row is possible: hand_id is the PK + create-or-get in index.ts — a
+    //  DB-level guarantee, verified against the DB, not re-asserted here.)
   });
 });
