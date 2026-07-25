@@ -524,10 +524,12 @@ export const currentPaint = {
       boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
       boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
 
-      // ── S76-BOARD-LITERALS/PANEL pin. Today's values. ──
-      boardPanelTop: '#1C1F26',                    // OBSIDIAN.bgTop
-      boardPanelBottom: '#101218',                 // OBSIDIAN.bgBottom
-      boardPanelFallback: '#161922',               // OBSIDIAN.bgFallback
+      // ── PANEL-FELT batch: board panel -> ~0.55 alpha (0x8C) so the root felt reads through
+      //    the play area. fallback -> transparent so native's fallback+gradient stack does NOT
+      //    double the opacity (the gradient is the sole 0.55 paint on both native and web). ──
+      boardPanelTop: '#1C1F268C',                  // OBSIDIAN.bgTop @ ~0.55
+      boardPanelBottom: '#1012188C',               // OBSIDIAN.bgBottom @ ~0.55
+      boardPanelFallback: 'rgba(22,25,34,0)',      // was #161922 — alpha 0 (transparent) so alpha isn't doubled on native; kept as an rgba() colour, not 'transparent', for the colour-invariant guard
       boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
       boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
       boardChipFloat: '#FFD700',                   // raw literal — NOT boardGold (#c9a84c)
@@ -579,9 +581,10 @@ export const currentPaint = {
       //    panel reads OBSIDIAN.* (theme-independent — fiveo has never had its own
       //    panel colour) and the other three are raw literals. Both themes render
       //    these exact pixels today, so pinning them equal is a proof, not a choice.
-      boardPanelTop: '#1C1F26',                    // OBSIDIAN.bgTop
-      boardPanelBottom: '#101218',                 // OBSIDIAN.bgBottom
-      boardPanelFallback: '#161922',               // OBSIDIAN.bgFallback
+      // PANEL-FELT batch: fiveo panel matches classic — ~0.55 alpha + transparent fallback.
+      boardPanelTop: '#1C1F268C',                  // OBSIDIAN.bgTop @ ~0.55
+      boardPanelBottom: '#1012188C',               // OBSIDIAN.bgBottom @ ~0.55
+      boardPanelFallback: 'rgba(22,25,34,0)',      // was #161922 — alpha 0 (transparent) so alpha isn't doubled on native; kept as an rgba() colour, not 'transparent', for the colour-invariant guard
       boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
       boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
       boardChipFloat: '#FFD700',                   // raw literal — NOT boardGold (#c9a84c)
@@ -727,3 +730,20 @@ export function getPaint(id: PaintThemeId | null | undefined): PaintTokens {
 // types (e.g. '#c9a84c' → string) and churn every downstream consumer. Reading from
 // the `as const` object keeps the exports byte-identical in type AND value to today.
 export const activePaint = currentPaint;
+
+// PANEL-FELT batch (mechanism proof) — a MINIMAL dark felt gradient painted at the screen root so
+// the newly ~0.55-alpha board panels read over "a table, not a void". Deliberately NOT a ThemeTokens
+// field (kept a standalone const) so it adds zero keys to the visual paint records — no fidelity-count
+// or Record<VisualTheme> ripple. The rich atmosphere batch will fold this into proper theme tokens.
+// Plain two-stop linear gradient only — NO texture / vignette / pattern / blur. streetStencil stays
+// dormant; its entry keeps it from breaking if ever selected.
+export const FELT_GRADIENT: Record<'classic' | 'fiveo' | 'streetStencil', readonly [string, string]> = {
+  // FELT-FIX: classic lifted from #14231D->#0A0F0C (faded to near-black — read as a void, not a
+  // table). Now a near-uniform visible green in the owner's #0E2418–#10281A range (~rgb(14,36,24)):
+  // dark and tasteful but actually reads as green felt through the 0.55 panels. The "buried under
+  // rgb(10,10,10)" the panel saw was navigator/WebContainer chrome BEHIND the felt (contentStyle
+  // #0a0a0a + WebContainer #050f0a gutter), not a layer over it — the felt was simply too dark.
+  classic:       ['#10281A', '#0E2418'], // top rgb(16,40,26) -> bottom rgb(14,36,24), visible green felt
+  fiveo:         ['#28101A', '#0C070A'], // dark maroon felt (harmonises with fiveo's #5A1520 lean) — UNTOUCHED
+  streetStencil: ['#4E4E54', '#42424A'], // dormant — concrete-grey, matches its existing bg/feltLight
+};

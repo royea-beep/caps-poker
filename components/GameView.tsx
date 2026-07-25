@@ -14,6 +14,8 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { FriendsBg } from './FriendsBg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FELT_GRADIENT } from '../constants/paintThemes';
 import { BoardArrangement } from './BoardArrangement';
 import BoardReveal from './BoardReveal';
 import { TimerBar } from './TimerController';
@@ -186,6 +188,18 @@ export function GameView({
         Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any,
       ]}
     >
+      {/* PANEL-FELT batch — MINIMAL dark felt gradient at the screen root, behind all content
+          (absolute-fill, pointerEvents none = zero layout impact). The ~0.55-alpha board panels
+          read this through the play area so it reads as a table, not a void. Plain two-stop linear
+          gradient, NO blur (perf on older iPhones). Keyed by the resolved theme (null -> classic,
+          matching getTheme). streetStencil dormant. This replaces the job of the now-null FriendsBg. */}
+      <LinearGradient
+        colors={FELT_GRADIENT[(visualTheme ?? 'classic') as 'classic' | 'fiveo' | 'streetStencil']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       <FriendsBg />
       {preChrome}
       <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>

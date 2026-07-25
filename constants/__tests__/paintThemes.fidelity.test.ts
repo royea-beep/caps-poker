@@ -360,9 +360,11 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     boardAutoText: '#4FD6A8',
     boardAutoBolt: '#4FD6A8',
     // S76-BOARD-LITERALS/PANEL — panel backdrop + the 3 live raw literals.
-    boardPanelTop: '#1C1F26',
-    boardPanelBottom: '#101218',
-    boardPanelFallback: '#161922',
+    // PANEL-FELT batch: classic===fiveo panel dropped to ~0.55 alpha (0x8C) + transparent fallback
+    // so the root felt gradient reads through the play area (values changed by design this batch).
+    boardPanelTop: '#1C1F268C',
+    boardPanelBottom: '#1012188C',
+    boardPanelFallback: 'rgba(22,25,34,0)',
     boardHintIcon: 'rgba(201,168,76,0.7)',
     boardTieBg: 'rgba(79,214,168,0.92)',
     boardChipFloat: '#FFD700',
