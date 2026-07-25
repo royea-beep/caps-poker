@@ -29,6 +29,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS, setCompleteBonusPctByBoards, setMpBoardRevealEnabled } from '../constants/gameConfig';
+import { setServerDealEnabled } from '../utils/serverDeal.client';
 import { useGameStore } from '../store/gameStore';
 import { setLanguage, Language, applyHtmlLocale } from '../utils/i18n';
 import * as Updates from 'expo-updates';
@@ -507,6 +508,25 @@ export default function RootLayout() {
           .single();
         if (typeof data?.value === 'boolean') setMpBoardRevealEnabled(data.value);
       } catch { /* fallback: client default (true) */ }
+    })();
+  }, []);
+
+  // SERVER-DEAL-PHASE-A — remote flag for the server-authoritative deal (deal_hand EF). Default FALSE
+  // (ships dark); can be enabled per-test via app_config.server_deal_enabled. Nothing consumes it yet
+  // (the MP cutover is 2-device-gated), so this read is inert until that wiring lands — but it plumbs
+  // the toggle now. Read failure keeps the safe default (false = today's client-side deal).
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data } = await supabase
+          .from('app_config')
+          .select('value')
+          .eq('key', 'server_deal_enabled')
+          .single();
+        if (typeof data?.value === 'boolean') setServerDealEnabled(data.value);
+      } catch { /* fallback: default false (client-side deal) */ }
     })();
   }, []);
 
