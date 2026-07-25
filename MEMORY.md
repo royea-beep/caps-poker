@@ -1,5 +1,42 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-25 RECAP — final state after the autonomous hardening session
+
+LIVE: main `921c4e3`, OTA group `6f51338e` (branch production, runtime 2.7.0), web caps.ftable.co.il.
+Build 507 device (external Xcode, not EAS). Field: ~98 devices on 2.7.0 receiving OTA (confirmed).
+jest suite = 2614+ (the long-tracked "2505" was stale).
+
+SHIPPED THIS SESSION (all live): mp reveal (mpBoardReveal via app_config kill-switch
+`mp_board_reveal_enabled=true`, confirmed on 2 devices), practice-to-live jump (`PRACTICE_LIVE_ENABLED`),
+OTA-COSMETIC (chips hidden in practice / lobby >=11pt no-wrap / Auto-Place 11pt + 44pt-hitSlop),
+auto-learn friction heatmap (rage_tap / stuck_dwell / screen_abandon / error_boundary_hit + views
+friction_heatmap / top_rage_tap_targets / top_abandon_screens / top_stuck_screens), games_played
+practice-guard, discoverable bug-report button, native-layout-fix + web-mobile-layout (dvh / safe-area,
+GameView reactive dims, font floors), panel-felt (classic green #10281A->#0E2418 lifted, Five-O
+byte-identical), get_poker_shop 409 idempotent fix (DB migration), friction screen auto-tag on every
+route + null-screen boundary close.
+
+KEY LEARNINGS: (1) `rs()`/`rf()` at `StyleSheet.create()` module scope are FROZEN on web (capture 393)
+— use `useWindowDimensions()` inside components. (2) The narrow-device layout bug is
+REAL-MOBILE-SAFARI-only: web preview, 320px iframe, and Cowork simulation ALL miss it (dvh / URL-bar /
+env() safe-area differ) — only a real mobile browser on a narrow iPhone reproduces it. (3) MP has ONE
+acceptance test = 2 real devices; unit tests and single-device "it worked" are NOT verification (Iron
+Rule 10). (4) When DB contradicts a confirmed real-world observation, the DB read is suspect
+(rooms_2p_playing_ever=0 was misleading — cleanup_expired_rooms hard-deletes finished rooms;
+analytics_events is the durable record). (5) Independent verification catches bugs BOTH agents miss for
+different reasons (null vs '?' screen).
+
+OPEN / BLOCKED ON PHYSICAL DEVICE (cannot close from code/web/DB — do NOT claim fixed without hardware):
+(1) Board 2 card overflow on narrow iOS, (2) MP face-down turn/river cards missing vs solo, (3) MP
+2-device sync/parity. All three have best-effort code fixes shipped or branched, NONE device-confirmed.
+
+OPEN / NEEDS OWNER: economy is inflationary — 7d ~48k credits / ~0 debits. rake is vestigial (fired
+once ever, -12). daily_streak dominates faucets. Real fix = server-computed-amounts refactor -> working
+rake -> reconnect a sink to multiboard/MP results. Touches every real chip; needs owner present +
+testers. NOT started.
+
+BRANCHES: main is truth. feat/panel-felt-transparency MERGED. ~20 stale cruft branches, no pending work.
+
 ### 2026-07-10 — Economy single-writer refactor (strategist-verified vs live DB)
 LIVE BUNDLE = e0a78cd8aeb48d34b509d3d81cb56436 (S62 ship). Runtime 2.7.0.
 
