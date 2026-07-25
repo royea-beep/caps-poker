@@ -738,7 +738,12 @@ export const activePaint = currentPaint;
 // Plain two-stop linear gradient only — NO texture / vignette / pattern / blur. streetStencil stays
 // dormant; its entry keeps it from breaking if ever selected.
 export const FELT_GRADIENT: Record<'classic' | 'fiveo' | 'streetStencil', readonly [string, string]> = {
-  classic:       ['#14231D', '#0A0F0C'], // dark teal-green felt (harmonises with the mint accent)
-  fiveo:         ['#28101A', '#0C070A'], // dark maroon felt (harmonises with fiveo's #5A1520 lean)
+  // FELT-FIX: classic lifted from #14231D->#0A0F0C (faded to near-black — read as a void, not a
+  // table). Now a near-uniform visible green in the owner's #0E2418–#10281A range (~rgb(14,36,24)):
+  // dark and tasteful but actually reads as green felt through the 0.55 panels. The "buried under
+  // rgb(10,10,10)" the panel saw was navigator/WebContainer chrome BEHIND the felt (contentStyle
+  // #0a0a0a + WebContainer #050f0a gutter), not a layer over it — the felt was simply too dark.
+  classic:       ['#10281A', '#0E2418'], // top rgb(16,40,26) -> bottom rgb(14,36,24), visible green felt
+  fiveo:         ['#28101A', '#0C070A'], // dark maroon felt (harmonises with fiveo's #5A1520 lean) — UNTOUCHED
   streetStencil: ['#4E4E54', '#42424A'], // dormant — concrete-grey, matches its existing bg/feltLight
 };
