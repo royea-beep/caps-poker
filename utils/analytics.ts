@@ -13,6 +13,7 @@
  */
 import { getDeviceId } from './leaderboard';
 import { addBreadcrumb } from './breadcrumbs';
+import { getCurrentScreen } from './crash-evidence';
 
 let cachedDeviceId: string | null = null;
 let cachedUserId: string | null = null;
@@ -71,7 +72,12 @@ export function track(event: string, properties?: Record<string, unknown>, scree
         session_id: cachedSessionId,
         app_version: cachedAppVersion,
       },
-      p_screen: screen ?? null,
+      // FRICTION-NULL-SCREEN 2026-07-25 — never transmit a null/empty screen. When a caller omits it
+      // (the cold-start window before the route tag initialises), fall back to the globally-maintained
+      // route (crash-evidence, kept current per-route since f7a66f7). getCurrentScreen() defaults to
+      // 'unknown' — never null/empty — so p_screen is ALWAYS a real screen. Guarantees every
+      // stuck_dwell/rage_tap/any event carries a screen, at the transmission boundary itself.
+      p_screen: screen || getCurrentScreen(),
     }).then(() => {}).catch(() => {});
   } catch {
     // never throw from analytics
