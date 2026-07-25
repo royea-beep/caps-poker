@@ -287,7 +287,10 @@ export default function RootLayout() {
   useEffect(() => { addBreadcrumb(currentPath); }, [currentPath]);
   // AUTO-LEARN 2026-07-06 — passive friction signals (screen_abandon / stuck_dwell) key
   // off this same pathname change.
-  useEffect(() => { onScreenChanged(currentPath); }, [currentPath]);
+  // AUTONOMOUS-HARDENING 2026-07-25 — also drive the crash-evidence screen context off the SAME
+  // router pathname, so EVERY route auto-tags (was set manually by only 3 of ~33 routes -> the rest
+  // recorded screen='?' in crash_reports). Metadata only; no behaviour/render impact.
+  useEffect(() => { onScreenChanged(currentPath); if (currentPath) setCurrentScreen(currentPath); }, [currentPath]);
 
   // Crash detection + session init — ORDER MATTERS:
   // checkDirtyShutdown MUST run before initCrashSession (which overwrites CLEAN_EXIT_KEY).
