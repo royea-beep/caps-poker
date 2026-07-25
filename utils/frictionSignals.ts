@@ -76,9 +76,14 @@ export function onScreenChanged(newScreen: string): void {
   screenEnteredAt = t;
   screenHadInteraction = false;
 
-  stuckDwellTimer = setTimeout(() => {
-    if (!screenHadInteraction && currentScreen === newScreen) {
-      track('stuck_dwell', { dwellMs: STUCK_DWELL_MS }, newScreen);
-    }
-  }, STUCK_DWELL_MS);
+  // AUTONOMOUS-HARDENING — never arm/emit against an empty screen (cold-start window before the
+  // first usePathname resolves). The server coalesces an empty screen to '?', so this defensively
+  // guarantees every stuck_dwell carries a real route.
+  if (newScreen) {
+    stuckDwellTimer = setTimeout(() => {
+      if (!screenHadInteraction && currentScreen === newScreen) {
+        track('stuck_dwell', { dwellMs: STUCK_DWELL_MS }, newScreen);
+      }
+    }, STUCK_DWELL_MS);
+  }
 }
