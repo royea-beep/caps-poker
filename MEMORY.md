@@ -32,7 +32,17 @@ uid deadlocks a table forever), `promote_starting_to_playing` (CAS), `reap_stuck
 `dealt_hands` + 24h TTL. Gate on the branch (MEASURED clean 2026-07-31): tsc 0, 39/39 suites, **2635/2635**.
 (An earlier 2630 was stale — serverDeal went 13 -> 18 with the H1 deadlock tests.)
 
-**MIGRATION ORDERING HAZARD (read before applying anything here):** these 4 migrations are timestamped
+**⚠️ BLOCKER — verify against the live `join_table` before applying:**
+`20260801092000_join_table_autostart_deal.sql` does CREATE OR REPLACE on the WHOLE function. It was
+REBASED 2026-07-31 onto the live definition and now preserves, verbatim: the gated-identity block, the
+join_identity instrumentation, and the M1 CLUB GUARD (club tables always require a verified session;
+membership matched on the verified uid only — this closed a PROVEN impersonation bypass). Anything
+applied to production AFTER 2026-07-31 must be folded in again before this file is pushed, or it will
+silently UN-SHIP a live security fix. The other dormant migrations only CREATE OR REPLACE functions that
+do not exist in production (cleanup_dealt_hands, reap_stuck_starting_rooms, promote_starting_to_playing,
+request_next_hand, begin_next_hand) — no clobber risk there.
+
+**MIGRATION ORDERING — RESOLVED 2026-07-31 (renamed):** these 4 migrations are timestamped
 20260725120000 / 20260726090000 / 20260726091000 / 20260726092000, but production has since applied
 20260731014755 (rls_write_lockdown), 20260731014835 (join_table_identity_hardening_gated) and
 20260731015819 (join_table_identity_instrumentation). No exact collisions, but every file here sorts
