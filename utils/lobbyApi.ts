@@ -15,6 +15,7 @@
  */
 import { getSupabase } from './supabase';
 import { ensureAnonymousAuth } from './auth';
+import { resolveJoinIdentity } from './joinIdentity';
 
 export type PlayerCount = 2 | 3 | 4;
 
@@ -140,10 +141,11 @@ export async function joinTable(roomCode: string, playerId?: string | null, disp
     // has run anonymous auth since 2026-04-27), so auth.uid() is non-null by the time the RPC fires.
     // This is also the PREREQUISITE for flipping app_config.join_requires_session — with the flag off
     // it simply repairs the NULL, so it is safe and beneficial standalone.
-    const sessionUid = await ensureAnonymousAuth();
+    // J2: BOUNDED — never block the join on auth (2.5s cap, falls back to the device identity).
+    const sessionUid = await resolveJoinIdentity(ensureAnonymousAuth, playerId ?? null);
     const { data, error } = await sb.rpc('join_table', {
       p_room_code: roomCode.trim().toUpperCase(),
-      p_player_id: sessionUid ?? playerId ?? null,
+      p_player_id: sessionUid,
       p_display_name: displayName ?? 'Player',
       p_device_id: deviceId ?? null,
     });
