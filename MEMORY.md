@@ -29,7 +29,7 @@ hole independent of dealing.
 **Also on the dormant branch (correct, unused):** `hand_seq` monotonic anchor, `begin_next_hand` +
 `request_next_hand` (unanimity over LIVE seats, acked by seat PK — user_id is nullable and acking by
 uid deadlocks a table forever), `promote_starting_to_playing` (CAS), `reap_stuck_starting_rooms(45s)`,
-`dealt_hands` + 24h TTL. Gate on the branch: tsc 0, 39/39 suites, 2630/2630.
+`dealt_hands` + 24h TTL. Gate on the branch (MEASURED clean 2026-07-31): tsc 0, 39/39 suites, **2635/2635**. (An earlier 2630 was stale — serverDeal went 13 -> 18 with the H1 deadlock tests.)
 
 ### 2026-07-25 RECAP — final state after the autonomous hardening session
 
