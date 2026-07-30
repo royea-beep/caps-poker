@@ -16,6 +16,7 @@
 import { getSupabase } from './supabase';
 import { ensureAnonymousAuth } from './auth';
 import { resolveJoinIdentity } from './joinIdentity';
+import { track } from './analytics';
 
 export type PlayerCount = 2 | 3 | 4;
 
@@ -142,7 +143,23 @@ export async function joinTable(roomCode: string, playerId?: string | null, disp
     // This is also the PREREQUISITE for flipping app_config.join_requires_session — with the flag off
     // it simply repairs the NULL, so it is safe and beneficial standalone.
     // J2: BOUNDED — never block the join on auth (2.5s cap, falls back to the device identity).
-    const sessionUid = await resolveJoinIdentity(ensureAnonymousAuth, playerId ?? null);
+    // M2 — telemetry on the timeout path ONLY. The DB cannot see this: server-side auth.uid() is
+    // non-null whenever a session JWT is attached, so it cannot tell "auth was fast" from "auth timed
+    // out but a session already existed". `had_session` is resolved AFTER the join decision, so it
+    // never delays the join; the whole callback is fire-and-forget and swallows its own errors.
+    const sessionUid = await resolveJoinIdentity(ensureAnonymousAuth, playerId ?? null, undefined, (info) => {
+      void (async () => {
+        try {
+          const { data } = await sb.auth.getSession();
+          track('join_auth_timeout', {
+            elapsed_ms: info.elapsedMs,
+            reason: info.reason,
+            had_session: !!data?.session,      // TRUE => auth existed but was slow; FALSE => genuinely sessionless
+            had_fallback: info.hadFallback,
+          }, 'lobby');
+        } catch { /* telemetry must never affect the join */ }
+      })();
+    });
     const { data, error } = await sb.rpc('join_table', {
       p_room_code: roomCode.trim().toUpperCase(),
       p_player_id: sessionUid,

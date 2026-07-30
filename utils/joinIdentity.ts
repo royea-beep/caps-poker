@@ -29,15 +29,29 @@ export async function resolveJoinIdentity(
   ensureAuth: () => Promise<string | null>,
   fallbackPlayerId: string | null,
   timeoutMs: number = JOIN_AUTH_TIMEOUT_MS,
+  /**
+   * M2 — fired ONLY when the bound actually expires (or auth rejects). The DB cannot measure this:
+   * server-side `auth.uid()` is non-null whenever a session JWT is attached, so it cannot distinguish
+   * "auth resolved fast" from "auth timed out but a session already existed". This is the only way to
+   * know whether the 2500 ms bound ever fires in the field. Fire-and-forget: it must never block or
+   * fail the join, so it is called without await and any throw is swallowed.
+   */
+  onTimeout?: (info: { elapsedMs: number; reason: 'timeout' | 'error'; hadFallback: boolean }) => void,
 ): Promise<string | null> {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const started = Date.now();
+  const notify = (reason: 'timeout' | 'error') => {
+    try { onTimeout?.({ elapsedMs: Date.now() - started, reason, hadFallback: fallbackPlayerId != null }); } catch { /* never block the join */ }
+  };
   try {
     const uid = await Promise.race([
       ensureAuth(),
       new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), timeoutMs); }),
     ]);
+    if (uid == null) notify('timeout'); // the bound fired (or auth returned no uid)
     return uid ?? fallbackPlayerId ?? null;
   } catch {
+    notify('error');
     return fallbackPlayerId ?? null;
   } finally {
     if (timer) clearTimeout(timer);
