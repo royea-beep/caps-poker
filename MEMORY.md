@@ -1,5 +1,49 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 (N) — **PHASE 0 = REALTIME CHANNEL AUTHORISATION.** The fairness roadmap was solving the right problem in the wrong order.
+
+**PROVEN ON LIVE, not inferred.** From a context holding ONLY the anon key — no session, no seat, no
+club membership — I subscribed to `caps-room-<code>` and received the host's broadcasts verbatim:
+
+- `attacker_session: "none"` · `attacker_subscribe_status: SUBSCRIBED` · `messages_received_count: 2`
+- Received `BOARD_REVEAL` in full: `closedCards` **and** `playerHands` for **every seat**.
+- Received `CARDS_DEALT` **addressed to a different player** (`targetId: 'some-other-player'`).
+
+**Why:** channels are created as `supabase.channel('caps-room-'+roomCode, { config: { presence: {...} } })`
+(`utils/realtimeMultiplayer.ts:209` host, `:911` client) — **no `private: true`**, so Realtime
+Authorization is off and `realtime.messages` RLS is never consulted. That table has RLS enabled with
+**ZERO policies**, which is irrelevant while the channels are public.
+
+**`targetId` is CLIENT-SIDE FILTERING ONLY** (`realtimeMultiplayer.ts:932`:
+`if (targetId && targetId !== this.playerId) return;`). Per-player messages are broadcast to the whole
+channel and merely *ignored* by well-behaved clients. So every player's hole cards travel to every
+listener at deal time.
+
+**Channel name has no entropy.** `caps-room-{roomCode}`, room code = 4 chars over a 32-char alphabet
+(32^4 ≈ 1.05M). Public codes are returned in plaintext by `list_public_tables` — zero guessing needed;
+private codes are trivially enumerable.
+
+**ROADMAP CONSEQUENCE — state it plainly:** Phase A (server-authoritative shuffle) and Phase B
+(server-authoritative evaluation/reveal) both assume the transport is private. It is not. An observer
+reads the cards off the wire regardless of who shuffled them or who evaluated the showdown, so those
+phases protect nothing on their own. **Channel authorisation is PHASE 0 and precedes both.** It is not a
+tightening of Phase A — it is the precondition that makes Phase A meaningful.
+
+**NOT FIXED THIS SPRINT, deliberately.** The fix (private channels + `realtime.messages` RLS keyed on
+room membership) is a protocol change touching every client; half-applied it would break live MP for
+everyone. Needs its own plan. Also note it interacts with the seat/identity work: RLS on
+`realtime.messages` would key off room membership, which is exactly what `room_players.user_id` +
+`join_requires_session` make trustworthy — so the identity work is a prerequisite for a real channel
+policy, not a competitor to it.
+
+**ALSO FIXED TODAY (N1, applied live — `join_table_club_idempotency_uid_only`):** the `already_joined`
+early-return sat after the club guard but BEFORE the membership check and matched on
+`device_id` too, so an AUTHENTICATED non-member replaying a seated member's (world-readable)
+`device_id` got `ok:true, already_joined:true` plus `room_code`/`status`/`game_config` — without the
+membership check ever running. Club rooms now match idempotency on the verified uid ONLY; public rooms
+keep the permissive uid-or-device match (unchanged). Verified live: replay → `not_a_member`,
+`leaked_game_config=false`; genuine member still idempotent; public idempotency unchanged.
+
 ### 2026-07-31 (later) — CLUB SPOOF CLOSED + join identity instrumentation + client timeout telemetry
 
 **PROVEN EXPLOITABLE, THEN CLOSED.** An apikey-only caller (never authenticated) had `auth.uid() = NULL`,
