@@ -147,3 +147,52 @@ describe('server deal — adversarial authz (identity from verified JWT + server
     //  DB-level guarantee, verified against the DB, not re-asserted here.)
   });
 });
+
+// ── H1 REGRESSION: the next-hand unanimity guard must not deadlock on a NULL-uid seat ─────────────
+// room_players.user_id is NULLABLE (live schema: is_nullable=YES) and join_requires_session defaults
+// FALSE, so a legacy seat can carry user_id = NULL. Acking by uid makes unanimity UNREACHABLE forever
+// -> the table plays exactly one hand and locks, with no reaper coverage. Acking by seat PK fixes it.
+import {
+  isUnanimousBySeatId,
+  isUnanimousByUid,
+  liveSeats,
+  type SeatRow,
+} from '../../supabase/functions/deal_hand/handAcks';
+
+describe('next-hand unanimity — NULL-uid seat must not deadlock the table (H1)', () => {
+  const NOW = 1_000_000;
+  const fresh = NOW - 1_000;
+  // a 2-seat table where seat B is a LEGACY seat with user_id = NULL
+  const seats: SeatRow[] = [
+    { id: 'seat-A', userId: 'user-A', lastSeenMs: fresh },
+    { id: 'seat-B', userId: null, lastSeenMs: fresh },
+  ];
+
+  it('RED (old rule): acking by uid can NEVER reach unanimity with a NULL-uid seat', () => {
+    // both players ack; the NULL-uid seat is simply not expressible in the ack array
+    expect(isUnanimousByUid(seats, ['user-A', null], NOW)).toBe(false);
+    expect(isUnanimousByUid(seats, ['user-A'], NOW)).toBe(false);
+  });
+
+  it('GREEN (new rule): acking by seat PK reaches unanimity -> hand 2 can start', () => {
+    expect(isUnanimousBySeatId(seats, ['seat-A', 'seat-B'], NOW)).toBe(true);
+  });
+
+  it('one missing ack is still not unanimous (the anti-grief property survives)', () => {
+    expect(isUnanimousBySeatId(seats, ['seat-A'], NOW)).toBe(false);
+  });
+
+  it('a dropped player (stale last_seen) does not hold the table hostage', () => {
+    const withDrop: SeatRow[] = [
+      { id: 'seat-A', userId: 'user-A', lastSeenMs: fresh },
+      { id: 'seat-B', userId: 'user-B', lastSeenMs: NOW - 60_000 }, // stale: >45s, <90s eviction
+    ];
+    expect(liveSeats(withDrop, NOW)).toHaveLength(1);
+    expect(isUnanimousBySeatId(withDrop, ['seat-A'], NOW)).toBe(true);
+  });
+
+  it('an empty table is never unanimous (cannot advance a dead room)', () => {
+    expect(isUnanimousBySeatId([], [], NOW)).toBe(false);
+    expect(isUnanimousBySeatId(seats, ['seat-A','seat-B'], NOW + 10_000_000)).toBe(false);
+  });
+});

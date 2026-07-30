@@ -89,36 +89,58 @@ END; $function$;
 -- the engine is in memory (see the Phase-A scope statement), so unanimity raises the bar from "any one
 -- player" to "the whole table" but cannot prove the hand truly ended. A real completion signal requires
 -- server-side evaluation = Phase B.
-CREATE OR REPLACE FUNCTION public.request_next_hand(p_room_id uuid)
+-- H1 — ACK IDENTITY IS THE SEAT PK, **NOT** THE uid. `room_players.user_id` is NULLABLE (verified:
+-- information_schema is_nullable=YES) and join_requires_session defaults FALSE, so the legacy path
+-- COALESCE(auth.uid(), p_player_id) can still seat a player with user_id = NULL. Acking by uid would
+-- make `next_hand_acks @> to_jsonb(rp.user_id::text)` compare against JSON `null`, which the ack array
+-- can never contain -> v_have < v_seated FOREVER -> ONE legacy seat DEADLOCKS the table after a single
+-- hand, permanently, with no reaper coverage (status='playing' and the players are live, so
+-- finish_wedged_playing_rooms never fires).
+-- `room_players.id` (PK) is NOT NULL for every seat by construction, so it is ackable regardless of
+-- uid — chosen over device_id, which is ALSO nullable and is not guaranteed unique per seat.
+-- The CALLER is still identified by verified uid OR device_id (matching join_table/leave_table), then
+-- resolved to their own seat row; a caller can only ever ack their own seat.
+CREATE OR REPLACE FUNCTION public.request_next_hand(p_room_id uuid, p_device_id text DEFAULT NULL)
   RETURNS jsonb
   LANGUAGE plpgsql
   SECURITY DEFINER
   SET search_path TO 'public'
 AS $function$
-DECLARE v_uid uuid; v_room game_rooms; v_acks jsonb; v_seated int; v_have int;
+DECLARE v_uid uuid; v_room game_rooms; v_acks jsonb; v_seat_id uuid; v_seated int; v_have int;
+  STALE_SECONDS constant int := 45;
 BEGIN
   v_uid := auth.uid();
-  IF v_uid IS NULL THEN RETURN jsonb_build_object('ok',false,'error','no_session'); END IF;
   SELECT * INTO v_room FROM game_rooms WHERE id=p_room_id FOR UPDATE;
   IF v_room.id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','no_room'); END IF;
-  IF NOT EXISTS (SELECT 1 FROM room_players WHERE room_id=p_room_id AND user_id=v_uid) THEN
-    RETURN jsonb_build_object('ok',false,'error','not_seated');
-  END IF;
   IF v_room.status <> 'playing' THEN
     RETURN jsonb_build_object('ok',false,'error','not_playing','status',v_room.status);
   END IF;
 
-  -- idempotent per uid: re-requesting cannot inflate the ack set
+  -- resolve the CALLER to their own seat (uid OR device — mirrors join_table/leave_table)
+  SELECT rp.id INTO v_seat_id FROM room_players rp
+    WHERE rp.room_id=p_room_id
+      AND ((v_uid IS NOT NULL AND rp.user_id = v_uid)
+        OR (p_device_id IS NOT NULL AND rp.device_id = p_device_id))
+    LIMIT 1;
+  IF v_seat_id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','not_seated'); END IF;
+
+  -- idempotent per SEAT: re-requesting cannot inflate the ack set
   v_acks := v_room.next_hand_acks;
-  IF NOT (v_acks @> to_jsonb(v_uid::text)) THEN
-    v_acks := v_acks || to_jsonb(v_uid::text);
+  IF NOT (v_acks @> to_jsonb(v_seat_id::text)) THEN
+    v_acks := v_acks || to_jsonb(v_seat_id::text);
     UPDATE game_rooms SET next_hand_acks = v_acks WHERE id = p_room_id;
   END IF;
 
-  SELECT count(*) INTO v_seated FROM room_players WHERE room_id=p_room_id;
+  -- Only LIVE seats count toward unanimity. A player who drops mid-hand keeps a room_players row until
+  -- evict_ghost_seats clears it at 90s; without this the table would stall for that whole window.
+  -- 45s < 90s, so play resumes at 45s and the 90s eviction is then a no-op cleanup — the two agree
+  -- (a seat stale past 45s is ignored here, and simply ceases to exist at 90s).
+  SELECT count(*) INTO v_seated FROM room_players rp
+    WHERE rp.room_id=p_room_id AND rp.last_seen > now() - make_interval(secs => STALE_SECONDS);
   SELECT count(*) INTO v_have FROM room_players rp
-    WHERE rp.room_id=p_room_id AND v_acks @> to_jsonb(rp.user_id::text);
-  RETURN jsonb_build_object('ok',true,'acks',v_have,'seated',v_seated,'unanimous',(v_have >= v_seated));
+    WHERE rp.room_id=p_room_id AND rp.last_seen > now() - make_interval(secs => STALE_SECONDS)
+      AND v_acks @> to_jsonb(rp.id::text);
+  RETURN jsonb_build_object('ok',true,'acks',v_have,'seated',v_seated,'unanimous',(v_seated > 0 AND v_have >= v_seated));
 END; $function$;
 
 CREATE OR REPLACE FUNCTION public.begin_next_hand(p_room_id uuid)
@@ -145,10 +167,14 @@ BEGIN
     RETURN jsonb_build_object('ok',false,'error','too_soon');
   END IF;
 
-  -- G1.1 UNANIMITY: every seated player must have acked at this hand_seq
-  SELECT count(*) INTO v_seated FROM room_players WHERE room_id=p_room_id;
+  -- G1.1 UNANIMITY over LIVE seats, acked by SEAT PK (H1: user_id is nullable — acking by uid would
+  -- deadlock the table forever on a single legacy NULL-uid seat). Stale seats (>45s, i.e. a player who
+  -- dropped) are excluded so the table is not held hostage until the 90s evict_ghost_seats sweep.
+  SELECT count(*) INTO v_seated FROM room_players rp
+    WHERE rp.room_id=p_room_id AND rp.last_seen > now() - make_interval(secs => 45);
   SELECT count(*) INTO v_have FROM room_players rp
-    WHERE rp.room_id=p_room_id AND v_room.next_hand_acks @> to_jsonb(rp.user_id::text);
+    WHERE rp.room_id=p_room_id AND rp.last_seen > now() - make_interval(secs => 45)
+      AND v_room.next_hand_acks @> to_jsonb(rp.id::text);
   IF v_seated = 0 OR v_have < v_seated THEN
     RETURN jsonb_build_object('ok',false,'error','not_unanimous','acks',v_have,'seated',v_seated);
   END IF;
