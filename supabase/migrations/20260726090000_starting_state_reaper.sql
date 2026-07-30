@@ -1,59 +1,60 @@
--- SERVER-DEAL-PHASE-A — 'starting'-state reaper (D1).  BRANCH ONLY — NOT APPLIED TO THE SHARED
--- PROJECT (Iron Rule 11). Ships with the deal cutover; inert until then.
+-- SERVER-DEAL-PHASE-A — 'starting'-state reaper (D1/E2). BRANCH ONLY — NOT APPLIED (Iron Rule 11).
 --
--- WHY THIS EXISTS (verified against live DB 2026-07-25, correcting a FALSE claim I made earlier):
--- I claimed a dealless room "never enters 'playing', so cleanup_expired_rooms / evict_ghost_seats
--- catch it". That is wrong. Read the live bodies:
---   * cleanup_expired_rooms : UPDATE ... WHERE expires_at < NOW() AND status IN ('waiting','starting')
---       -> ensure_public_lobby inserts EVERY pool room with expires_at = NULL, and `NULL < NOW()` is
---          NULL (never true), so pool rooms are STRUCTURALLY unreachable by this reaper.
---          PROOF: 9 pool rooms still status='waiting', all expires_at NULL, oldest 2026-06-26, while
---          the cron has run every 2 minutes for a month. Its only other branch needs status='playing'.
---   * evict_ghost_seats(90)  : WHERE gr.is_public AND gr.status = 'waiting'  -> 'waiting' ONLY, and it
---          deletes SEATS, never the room.
---   * finish_wedged_playing_rooms(120) : WHERE gr.status = 'playing'         -> 'playing' ONLY.
--- => status='starting' has ZERO reaper coverage, permanently. Nothing writes 'starting' TODAY (no DB
---    function does; the client's 'starting' is local React state), so this hole is created the moment
---    the deal cutover parks a room in 'starting' for the EF round-trip. On EF timeout/cold-start/500
---    the room would sit in 'starting' forever.
--- LEAK AMPLIFIER: ensure_public_lobby counts ONLY status='waiting', so a stuck 'starting' pool room
---    silently drops out of the pool count -> the pool tops itself up and the poisoned room lingers.
+-- WHY 'starting' NEEDS ITS OWN REAPER (verified on live):
+--   cleanup_expired_rooms : WHERE expires_at < NOW() AND status IN ('waiting','starting') — but
+--     ensure_public_lobby inserts pool rooms with expires_at = NULL and `NULL < NOW()` is never true,
+--     so pool rooms are STRUCTURALLY unreachable. PROOF: 9 pool rooms still 'waiting', all expires_at
+--     NULL, oldest 2026-06-26, cron running every 2 min for a month.
+--   evict_ghost_seats(90)             : gr.status='waiting' ONLY, and deletes SEATS, not rooms.
+--   finish_wedged_playing_rooms(120)  : gr.status='playing' ONLY.
+--   => 'starting' has ZERO coverage. Nothing writes it today, so the hole appears the moment the
+--      deal cutover parks a room there (see 20260726091000_join_table_autostart_deal.sql).
+--
+-- E2 CORRECTION — my first version was WRONG and would have created zombie tables.
+-- It reverted to 'waiting' WITHOUT touching the roster. But a room only reaches 'starting' by FILLING
+-- (autostart fires at current_players == max_players), so "revert to waiting" produced a room that is
+-- 'waiting' AND FULL:
+--   * join_table rejects every joiner (current_players >= max_players -> 'table_full_or_gone');
+--   * autostart never re-fires, because it only runs INSIDE a join that is now impossible;
+--   * ensure_public_lobby counts status='waiting' regardless of fullness, so the dead room OCCUPIES
+--     one of the 2 pool slots per size and SUPPRESSES a joinable replacement;
+--   * evict_ghost_seats only clears seats whose last_seen is stale, so live-but-stuck clients keep it
+--     full indefinitely.
+-- Net: un-joinable, un-startable and pool-blocking — strictly worse than the leak it avoided.
+--
+-- DISPOSITION NOW: a FULL stuck room is ABANDONED (roster deleted), mirroring
+-- finish_wedged_playing_rooms' existing DELETE-then-mark pattern. Rationale:
+--   * 'starting' implies full, so revert-to-waiting is never the good case here.
+--   * ensure_public_lobby counts ONLY status='waiting' -> abandoning frees the pool slot IMMEDIATELY
+--     and the */2 cron mints a clean, joinable replacement. Starvation is impossible (proof below).
+--   * cleanup_expired_rooms deletes abandoned rooms after a day, so nothing leaks.
+--   * players get a clean "room is gone" signal instead of a zombie table.
+-- A non-full room in 'starting' (shouldn't happen; defensive) is reverted to 'waiting' — safe because
+-- it is still joinable and therefore cannot starve the pool.
+--
+-- DOUBLE-DECREMENT SAFETY vs evict_ghost_seats (both run every minute): this reaper NEVER touches
+-- current_players — it deletes the roster and abandons the row, so there is no decrement to double.
+-- And evict_ghost_seats' scan is `gr.is_public AND gr.status='waiting'`, so an 'abandoned' room is
+-- invisible to it. The two can run in the same minute with no interaction.
 
 -- ── 1. ANCHOR ────────────────────────────────────────────────────────────────────────────────────
--- game_rooms has created_at / started_at / finished_at / expires_at but NO 'starting' anchor.
--- started_at is DELIBERATELY NOT reused: two LIVE reapers already key on it
--- (finish_wedged_playing_rooms: started_at < now()-120s; cleanup_expired_rooms: COALESCE(started_at,
--- created_at) < NOW()-2h). Setting it at 'starting' would shift their semantics under them. A
--- dedicated column keeps this change additive and side-effect free.
+-- started_at is DELIBERATELY NOT reused: finish_wedged_playing_rooms (started_at < now()-120s) and
+-- cleanup_expired_rooms (COALESCE(started_at,created_at) < NOW()-2h) already key on it.
 ALTER TABLE public.game_rooms ADD COLUMN IF NOT EXISTS starting_at timestamptz;
 
 COMMENT ON COLUMN public.game_rooms.starting_at IS
-  'Set when the room enters status=''starting'' (deal in flight). Anchor for reap_stuck_starting_rooms. NOT started_at — that one means ''playing began'' and two live reapers key on it.';
+  'Set when autostart parks the room in status=''starting'' (deal in flight). Anchor for reap_stuck_starting_rooms AND the deterministic hand_id. NOT started_at — that means ''playing began'' and two live reapers key on it.';
 
--- Partial index: the reaper only ever scans rooms currently in 'starting'.
 CREATE INDEX IF NOT EXISTS game_rooms_starting_at_idx
   ON public.game_rooms (starting_at) WHERE status = 'starting';
 
 -- ── 2. REAPER ────────────────────────────────────────────────────────────────────────────────────
--- TIMEOUT = 45s (provisional, MUST be re-validated against the measured EF p95 at deploy — Rule 10):
---   lower bound  : worst-case deal sequence = cold start (~1-3s) + the bounded 2x retry (~5-6s) ≈ 10s.
---                  45s is ~4x that, so the reaper can never race a legitimately in-flight deal.
---   upper bound  : < the 90s host deal-clock, so a dead room is recovered BEFORE any other timer.
--- COVERAGE: keys ONLY on status + starting_at. It deliberately does NOT reference expires_at, so
--- expires_at IS NULL pool rooms (i.e. all of them) are covered — that NULL blind spot is the exact
--- bug that made cleanup_expired_rooms useless here.
--- DISPOSITION:
---   public pool room -> REVERT to 'waiting'. A pool room is SHARED: abandoning it removes a table
---     from the pool (ensure_public_lobby then mints a replacement) and the dead row leaks, whereas
---     reverting returns the table to service, restores it to the pool count, and re-enables
---     evict_ghost_seats coverage (which only sees 'waiting') for its stale seats.
---   non-public OR already expired -> 'abandoned'. Private rooms are single-use and carry a real
---     expires_at, so cleanup_expired_rooms already deletes abandoned rows after a day.
--- NO PARTIAL DEAL STATE SURVIVES A REVERT — the guarantee: any dealt_hands row for the room is
---   DELETED here. dealt_hands is keyed by hand_id (PK) with create-or-get semantics, so a surviving
---   row could otherwise be re-served as a STALE deal if a hand_id were reused. Deleting the row makes
---   the next attempt mint a fresh seed + deck by construction. (Belt and braces: the 24h TTL in
---   cleanup_dealt_hands would eventually drop it anyway.)
+-- TIMEOUT 45s — PROVISIONAL, must be re-validated against the measured EF p95 at deploy (Rule 10):
+--   > worst-case deal (cold start ~1-3s + bounded 2x retry ~5-6s ~= 10s), ~4x margin so it can never
+--     race an in-flight deal;  < the 90s host deal-clock so recovery precedes every other timer.
+-- COVERAGE: keys ONLY on status + starting_at. It never filters on expires_at, so expires_at IS NULL
+-- pool rooms (i.e. all of them) ARE covered — that NULL blind spot is what makes cleanup_expired_rooms
+-- useless here. (expires_at is read only to classify, never to select.)
 CREATE OR REPLACE FUNCTION public.reap_stuck_starting_rooms(p_stale_seconds integer DEFAULT 45)
   RETURNS jsonb
   LANGUAGE plpgsql
@@ -61,45 +62,56 @@ CREATE OR REPLACE FUNCTION public.reap_stuck_starting_rooms(p_stale_seconds inte
   SET search_path TO 'public'
 AS $function$
 DECLARE
-  v_reverted  int := 0;
   v_abandoned int := 0;
+  v_reverted  int := 0;
   v_rec       record;
   v_has_deals boolean := to_regclass('public.dealt_hands') IS NOT NULL;
 BEGIN
   FOR v_rec IN
-    SELECT gr.id, gr.room_code, gr.is_public, gr.expires_at
+    SELECT gr.id, gr.room_code, gr.current_players, gr.max_players
     FROM game_rooms gr
     WHERE gr.status = 'starting'
-      -- anchor ONLY on starting_at; COALESCE to created_at so a row that somehow reached 'starting'
-      -- without an anchor can still be reaped instead of becoming immortal.
+      -- COALESCE so a row that somehow reached 'starting' without an anchor cannot become immortal
       AND COALESCE(gr.starting_at, gr.created_at) < now() - make_interval(secs => p_stale_seconds)
+    FOR UPDATE SKIP LOCKED
   LOOP
-    -- purge any authoritative deal for this room so nothing stale can be re-served on retry
+    -- Purge the authoritative deal so a retry can NEVER be served a stale deck. dealt_hands is PK'd on
+    -- hand_id with create-or-get semantics; the hand_id is derived from starting_at, so a fresh attempt
+    -- mints a new id anyway — this is belt-and-braces, and it reclaims the row immediately.
     IF v_has_deals THEN
       DELETE FROM dealt_hands WHERE room_id = v_rec.id::text;
     END IF;
 
-    IF v_rec.is_public AND (v_rec.expires_at IS NULL OR v_rec.expires_at > now()) THEN
+    IF v_rec.current_players >= v_rec.max_players THEN
+      -- FULL (the real case): retire it. Roster deleted first, mirroring finish_wedged_playing_rooms.
+      DELETE FROM room_players WHERE room_id = v_rec.id;
       UPDATE game_rooms
-        SET status = 'waiting', starting_at = NULL
-        WHERE id = v_rec.id;
-      v_reverted := v_reverted + 1;
-    ELSE
-      UPDATE game_rooms
-        SET status = 'abandoned', starting_at = NULL
+        SET status = 'abandoned', starting_at = NULL, finished_at = now()
         WHERE id = v_rec.id;
       v_abandoned := v_abandoned + 1;
+    ELSE
+      -- NOT full (defensive): still joinable, so reverting cannot starve the pool.
+      UPDATE game_rooms SET status = 'waiting', starting_at = NULL WHERE id = v_rec.id;
+      v_reverted := v_reverted + 1;
     END IF;
   END LOOP;
 
-  RETURN jsonb_build_object('ok', true, 'reverted', v_reverted, 'abandoned', v_abandoned);
+  -- Top the pool back up in the same tick so an abandoned table is replaced immediately rather than
+  -- waiting for the next */2 lobby cron.
+  IF v_abandoned > 0 THEN PERFORM public.ensure_public_lobby(); END IF;
+
+  RETURN jsonb_build_object('ok', true, 'abandoned', v_abandoned, 'reverted', v_reverted);
 END;
 $function$;
 
+-- POOL-SLOT STARVATION PROOF:
+--   ensure_public_lobby counts `is_public AND status='waiting' AND max_players=pc AND table_kind=...`.
+--   A reaped full room is set to 'abandoned', so it is NOT counted -> the count drops below the target
+--   -> a replacement is minted (immediately by the PERFORM above, and again by the */2 cron).
+--   A reaped non-full room stays 'waiting' but is joinable, so it is a legitimate pool member.
+--   => no stuck room can ever occupy a pool slot. QED.
+
 -- ── 3. CRON ──────────────────────────────────────────────────────────────────────────────────────
--- Every minute, matching caps_evict_ghost_seats / caps_finish_wedged_playing. Worst-case recovery is
--- 45s (stale) + <=60s (cron granularity) ~= 105s; the room is out of service only for that window and
--- no other timer ever touches a 'starting' room.
 DO $$
 BEGIN
   PERFORM cron.unschedule('caps_reap_stuck_starting');
