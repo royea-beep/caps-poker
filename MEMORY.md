@@ -1,5 +1,29 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 (later) — CLUB SPOOF CLOSED + join identity instrumentation + client timeout telemetry
+
+**PROVEN EXPLOITABLE, THEN CLOSED.** An apikey-only caller (never authenticated) had `auth.uid() = NULL`,
+so `v_identity := COALESCE(v_uid, p_player_id)` took a CLIENT-SUPPLIED uuid. The FK to auth.users only
+forces the uuid to be REAL — and real uids are publicly harvestable (`room_players` and `club_members`
+both carry `SELECT ... TO public USING (true)`). I reproduced the full chain on live: harvest a uid ->
+replay it -> seat written under an identity the caller never proved it owned (impersonation SUCCEEDED),
+then cleaned up. The **device branch was equally broken** (club_members.device_id is readable the same way).
+
+**FIX (migration `join_table_club_requires_verified_session`, applied live):** a club table ALWAYS
+requires a verified session — `IF v_room.club_id IS NOT NULL AND v_uid IS NULL THEN return no_session` —
+and club membership is matched on the **verified uid ONLY** (no client identity, no device branch).
+Asymmetry is deliberate: public tables stay permissive (`join_requires_session` remains FALSE while the
+48h measurement runs) because a spoofed identity there costs a seat and nothing more; a club table is an
+access-control boundary and this check is the only thing enforcing it. Safe: all club members have uids
+(2/2), zero device-only members, so nobody who works today is excluded.
+Verified live: uid-spoof -> `no_session` · device-spoof -> `no_session` · genuine member -> joins ·
+authed non-member -> `not_a_member` · public 9-check smoke byte-identical. Test club deleted afterwards.
+
+**MEASUREMENT RUNNING (do not conclude yet):** `join_identity` rows (source uid/device/none) written
+inside join_table, non-blocking. Client-side `join_auth_timeout` shipped via **OTA group
+4869f1f0-2c23-4d64-a23f-8e3e219ab1fb** (runtime 2.7.0, from main 00b3686) — the DB cannot measure the
+2500 ms bound because `auth.uid()` is non-null whenever a session JWT is attached. NOTE the client
+numbers start LATER than the server ones (OTA rollout), so judge the window with that offset.
 ### 2026-07-31 — RLS WRITE LOCKDOWN + gated join_table identity hardening — **APPLIED TO LIVE**
 
 Merge `422ee3b` -> main. Live bundle `index-2e9455b7e30ac350baa6ef716725006f`, verified new by fetching
