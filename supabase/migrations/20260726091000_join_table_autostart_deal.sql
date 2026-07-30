@@ -119,7 +119,9 @@ BEGIN
   IF v_room.current_players >= v_room.max_players THEN
     IF v_server_deal THEN
       -- Deal-gated: park in 'starting' and let the deal + CAS promote finish the transition.
-      UPDATE game_rooms SET status='starting', starting_at=now() WHERE id=v_room.id RETURNING * INTO v_room;
+      -- hand_seq increments here — it is the hand_id anchor and SURVIVES promote (starting_at does not).
+      UPDATE game_rooms SET status='starting', starting_at=now(), hand_seq = hand_seq + 1
+        WHERE id=v_room.id RETURNING * INTO v_room;
       v_deal_required := true;
     ELSE
       -- Today's behaviour, untouched while the flag is off.
@@ -128,11 +130,12 @@ BEGIN
     IF v_room.is_public THEN PERFORM public.ensure_public_lobby(); END IF;
   END IF;
 
-  -- DETERMINISTIC hand id: every seated client derives the identical value from the room row, so a
-  -- backup caller converges on the SAME create-or-get deal. A reaped+retried hand gets a new
-  -- starting_at and therefore a brand-new id (and a fresh deck) by construction.
-  IF v_room.starting_at IS NOT NULL THEN
-    v_hand_id := v_room.id::text || ':' || floor(extract(epoch from v_room.starting_at))::text;
+  -- DETERMINISTIC hand id, anchored on hand_seq (NOT starting_at — promote nulls that out, which would
+  -- destroy the anchor for hand #2). Every seated client derives the identical value from the room row,
+  -- so a backup caller converges on the SAME create-or-get deal. A reaped+retried hand increments
+  -- hand_seq again, so the retry gets a brand-new id and a fresh deck by construction.
+  IF v_deal_required THEN
+    v_hand_id := v_room.id::text || ':' || v_room.hand_seq::text;
   END IF;
 
   RETURN jsonb_build_object('ok',true,'id',v_room.id,'room_code',v_room.room_code,'current_players',v_room.current_players,

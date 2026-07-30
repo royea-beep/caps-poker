@@ -42,6 +42,20 @@
 -- cleanup_expired_rooms (COALESCE(started_at,created_at) < NOW()-2h) already key on it.
 ALTER TABLE public.game_rooms ADD COLUMN IF NOT EXISTS starting_at timestamptz;
 
+-- F1 — PER-HAND ANCHOR. game_rooms has NO hand/seq/round column today (verified: information_schema
+-- returns none) and no live per-hand table (shared_hands/hand_history are archives). Hands 2+ never
+-- touch the DB at all — RealtimeServer.startNewHand() -> startGame() just does `this.handId++`
+-- IN MEMORY (utils/realtimeMultiplayer.ts:534-540, 556) while the room sits at status='playing'.
+-- My first design anchored hand_id on starting_at, which promote then set to NULL — so the anchor
+-- was destroyed by the very first promote and hand #2 had nothing to derive an id from.
+-- hand_seq is a MONOTONIC per-room counter: it is the anchor for BOTH the hand_id and the promote
+-- guard, it survives promote, and it is never reused (a reaped+retried hand increments again, so the
+-- retry mints a brand-new deck by construction).
+ALTER TABLE public.game_rooms ADD COLUMN IF NOT EXISTS hand_seq integer NOT NULL DEFAULT 0;
+
+COMMENT ON COLUMN public.game_rooms.hand_seq IS
+  'Monotonic per-room hand counter. hand_id = room_id || '':'' || hand_seq. Incremented when a hand enters ''starting'' (autostart or begin_next_hand); NEVER decremented or reused, so every attempt gets a fresh deck.';
+
 COMMENT ON COLUMN public.game_rooms.starting_at IS
   'Set when autostart parks the room in status=''starting'' (deal in flight). Anchor for reap_stuck_starting_rooms AND the deterministic hand_id. NOT started_at — that means ''playing began'' and two live reapers key on it.';
 

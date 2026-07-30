@@ -74,6 +74,50 @@ has been failing silently for ~3 months.** Fix belongs in a `push_tokens` policy
 not in this sprint. (This also explains why `record_hand_net`'s `SELECT user_id FROM push_tokens` is
 always NULL — the same empty table, not "no auth".)
 
+## SCOPE STATEMENT — what Phase A does and does NOT cover (F1/F2, do not read this as a complete deal path)
+
+**As first built, Phase A covered only the FIRST deal of a table.** The anchor was
+`hand_id = room_id:epoch(starting_at)` while `promote` set `starting_at = NULL` — so the anchor was
+destroyed by the very first promote, and hand #2 had nothing to derive an id from. Verified: `game_rooms`
+has **no** hand/seq/round column, and there is no live per-hand table (`shared_hands` / `hand_history`
+are archives). Hands 2+ never reach the DB at all today —
+`RealtimeServer.startNewHand() -> startGame()` just does `this.handId++` **in memory**
+(`utils/realtimeMultiplayer.ts:534-540, 556`) while the room stays `status='playing'`.
+
+**Fixed:** a monotonic per-room `game_rooms.hand_seq` is now the anchor for BOTH the `hand_id` and the
+promote guard. It is incremented when a hand enters `'starting'`, **survives promote**, and is never
+reused — so a reaped+retried hand mints a fresh deck by construction. `begin_next_hand(room_id)` is the
+hands-2+ entry point: a CAS `'playing' -> 'starting'` callable by **any seated player** (not the host —
+`is_host` is the first joiner on a pool table and can be evicted mid-table), where the CAS makes the
+election deterministic and single-valued and every loser reads the same `hand_seq`, hence the same
+`hand_id`, hence the same create-or-get deal.
+
+**STILL NOT COVERED (2-device cutover work):** wiring `startNewHand()` to call `begin_next_hand` +
+`deal_hand` + `promote`, and the reveal-release of closed cards. The migrations make the server side
+correct; the client protocol inversion is unchanged and unverified.
+
+## F3 — `'starting'` visibility: nothing breaks, but nothing surfaces either
+
+- **Lobby:** `list_public_tables` filters `WHERE is_public AND status='waiting'`, so a room in
+  `'starting'` disappears from the lobby for the ~deal window. That is *correct* (it must not be
+  joinable mid-deal) but it is a real UX consequence of the 45s worst case.
+- **Client status branches: THERE ARE NONE.** Grepped `app/ utils/ components/` — no client code
+  branches on the room's DB status. `app/lobby/table.tsx`'s `status` is **local React state**
+  (`'connecting' | 'waiting' | 'starting' | 'error'`), unrelated to the DB column, and it already has a
+  `'starting'` branch for its own UI (`:381`). The only consumption of the RPC's returned status is
+  `res.autostarted` (`app/lobby/index.tsx:167`). So an unrecognised `'starting'` **cannot hang, bounce
+  or throw — it is simply never inspected.**
+- **Consequence (honest gap):** a `'starting' -> 'abandoned'` reap surfaces **NO user-visible message
+  today**, because nothing subscribes to the room row and the game flow is driven by the realtime
+  `CARDS_DEALT` message rather than by DB status. Making the reap visible (poll/subscribe + an error
+  state) is REQUIRED cutover work, not something the migrations can provide.
+- **`leave_table` during `'starting'`:** it does **not** guard on status — it deletes the player's row
+  and decrements `current_players` unconditionally. That is **safe, and actually desirable**: the room
+  is no longer full, so the reaper's `current_players >= max_players` test fails and it takes the
+  REVERT branch instead of abandoning — leaving a genuinely joinable `'waiting'` room with a free seat.
+  The stale deal is deleted by the reaper and `hand_seq` has already advanced, so the next fill deals a
+  fresh deck. (It also skips the `host_id` reset, which is guarded on `status='waiting'` — harmless.)
+
 ## Seed / deck leakage (A3) — checked, none
 Grep of every response/console/error path in `index.ts` + `serverDeal.client.ts`: the `seed_hex` and
 `deck` are written to the `dealt_hands` row and read back into the server-side `ServerDeal`, but the
