@@ -49,8 +49,10 @@ export async function fetchServerDeal(args: {
   try {
     // Body carries ONLY the hand + room. Caller identity is NOT sent — it rides the session JWT that
     // supabase.functions.invoke attaches (Authorization header); the EF derives auth.uid() from it and
-    // looks the seat up server-side from room_players. PREREQUISITE: the caller must have an auth
-    // session (see the anon-session prerequisite in FAIRNESS_PHASE_A_AUDIT.md) or the EF rejects it.
+    // looks the seat up server-side from room_players. CAPS already runs anonymous auth
+    // (utils/auth.ts signInAnonymously), so a signed-in caller resolves a real auth.uid() — invoke()
+    // (unlike a raw fetch) sends the session token. The cutover must only ensure the anon session is
+    // resolved BEFORE join_table so room_players.user_id is populated (see FAIRNESS_PHASE_A_AUDIT.md).
     const { data, error } = await supabase.functions.invoke('deal_hand', {
       body: { hand_id: args.handId, room_id: args.roomId },
     });

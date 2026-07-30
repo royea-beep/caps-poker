@@ -32,15 +32,47 @@ merged; flag off.** Fixes below are code-on-branch only.
 - **Row growth:** ~52+32+20 ≈ 104 card objects × ~40 B ≈ **~5 KB/row → ~500 KB per 100 hands**; the 24h
   TTL caps total at one day's hand volume.
 
-## Prerequisite surfaced (Rule 9 — DB ground truth, do NOT paper over)
-The correct authz (verified JWT + `room_players.user_id` match) requires every player to have a stable
-`auth.uid()`. **Verified against the live DB + client code:** CAPS has **no `signInAnonymously`**;
-`auth.getUser()` is always `?? null`; `touch_room_player` is called with `p_user_id: userId ?? null`.
-So device-anon players (the majority — Google login is prompted only after games 3–5) have
-`auth.uid() = NULL` and `room_players.user_id = NULL`, and are **rejected** by the fixed EF by design.
-**Before the flag can go on, MP must adopt an anonymous Supabase session** (`signInAnonymously`) so
-every player has a `user_id` that `join_table` records into `room_players`. That client change is part
-of the 2-device cutover and is a hard blocker for flag-on — not an EF bug.
+## RETRACTED premise (Rule 14 — I inferred, the strategist verified me wrong, 2026-07-25)
+A prior version of this doc claimed **"CAPS has no `signInAnonymously`, so `auth.uid()` is NULL and the
+EF rejects everyone → MP must adopt anonymous sessions before flag-on."** **That was a Rule-14
+violation — inferred from `room_players.user_id` being empty, never verified.** Corrected with evidence:
+
+- **Anonymous auth HAS been running in prod for ~3 months.** `utils/auth.ts:43` calls
+  `sb.auth.signInAnonymously()` (+ `:41 getSession`, `:163 onAuthStateChange`, `:24 is_anonymous`).
+  Live `auth.users`: **1798 `is_anonymous=true`** rows, first 2026-04-27, latest **today**, 430
+  active/30d. So signed-in clients DO have a stable `auth.uid()`.
+- **The client attaches the token.** `serverDeal.client.ts` calls `supabase.functions.invoke('deal_hand')`
+  — invoke() attaches `Authorization: Bearer <session.access_token>`. (The raw-`fetch` failure mode —
+  apikey only, no user token — does NOT apply here; we use invoke.) So the EF's `getUser()` resolves
+  `auth.uid()` for a signed-in caller.
+- **`join_table` records the identity.** It `INSERT`s `room_players.user_id = p_player_id`, and the
+  client passes `p_player_id = auth.getUser().id` (`app/lobby/table.tsx:132` → `userIdRef` → `joinTable`).
+  So the roster's `seat_user_ids` snapshot carries the anon uid the EF sees → authz grants the seat.
+
+**Corrected diagnosis: the JWT+roster authz is usable NOW for anon-authed clients — NOT blocked on
+"adopting sessions" (already adopted) and NOT a missing token (invoke attaches it).** The one real
+residual prerequisite is a **timing/population** concern, fixable in the join flow, not an auth rewrite:
+`table.tsx:132` fetches `getUser()` **async** and sets `userIdRef` after; a player who reaches
+`join_table` before that resolves passes `p_player_id = null` → `room_players.user_id = NULL` → that
+seat's slice is unreachable and the EF correctly returns `unauthenticated`. **The cutover must ensure
+the anon session is resolved (await `getUser`/`getSession`) before `join_table`, and reject/repair any
+seat left with a NULL `user_id` before dealing.** (`room_players` is empty on live right now only
+because rooms are hard-deleted on finish — that is NOT evidence the column stays NULL in play.)
+
+Runtime confirmation that `auth.uid()` resolves end-to-end (invoke → verify_jwt → getUser) is the
+**deploy-step gate** on a Supabase branch (Rule 10) — see the note in A5; not run this sprint (branch
+creation replays the qa_* migrations, Rule 12, and the diagnosis above is settled by direct evidence,
+not inference).
+
+### Separate live bug found (C3 — report only, not fixed here)
+`push_tokens` has ONE INSERT policy — `anon_insert_device_token TO anon WITH CHECK (user_id IS NULL AND
+device_id IS NOT NULL)` — and **no `authenticated` INSERT policy.** Once a device signs in anonymously
+its role is `authenticated`, so the `TO anon` policy no longer applies → its `push_tokens` INSERT is
+denied. Live `push_tokens`: **3 rows total (2 in 2026-03, 1 in 2026-04), all `user_id` NULL, none since
+April** — i.e. registration stalled right when anon auth was adopted (Apr 27). **Push-token registration
+has been failing silently for ~3 months.** Fix belongs in a `push_tokens` policy for `authenticated`,
+not in this sprint. (This also explains why `record_hand_net`'s `SELECT user_id FROM push_tokens` is
+always NULL — the same empty table, not "no auth".)
 
 ## Seed / deck leakage (A3) — checked, none
 Grep of every response/console/error path in `index.ts` + `serverDeal.client.ts`: the `seed_hex` and

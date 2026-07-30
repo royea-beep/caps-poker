@@ -13,11 +13,16 @@
 //   - Deploy with verify_jwt=TRUE (see supabase/config.toml). Do NOT inherit the verify_jwt=false
 //     default some other EFs in this project use; that would let anyone with the shipped anon key call it.
 //
-// PREREQUISITE (Rule-9 finding, must be resolved before flag-on): CAPS device-anon players have
-// auth.uid() = NULL (no anonymous session; Google login is prompted only after games 3-5), and
-// room_players.user_id is NULL for them. Such callers are REJECTED here by design. MP must first adopt
-// an anonymous Supabase session (signInAnonymously) so every player has a stable auth.uid() that
-// join_table records into room_players.user_id. That client change is part of the 2-device cutover.
+// AUTH REALITY (Rule-14 correction, DB+code verified 2026-07-25 — a prior comment here claimed the
+// opposite and was wrong): CAPS DOES run anonymous Supabase auth (utils/auth.ts:43 signInAnonymously;
+// 1798 is_anonymous users live, one created today), the client calls this EF via
+// supabase.functions.invoke() which attaches the session JWT, and join_table records the caller's
+// auth.uid() (p_player_id) into room_players.user_id. So getUser() below resolves a real auth.uid() for
+// a signed-in caller and the roster match succeeds — no "adopt sessions" blocker. The one real
+// prerequisite for the cutover is a join-time RACE, not missing auth: a player who reaches join_table
+// before their anon session resolves lands in room_players with user_id = NULL; such a seat is
+// correctly rejected ('unauthenticated') here, so the client must await the session before join and
+// repair any NULL-user_id seat before dealing.
 //
 // Contract (POST JSON): { hand_id: string, room_id: string }  — NO identity/seat/roster in the body.
 // Response: { ok:true, deal: PlayerDealPayload } | { ok:false, error }
