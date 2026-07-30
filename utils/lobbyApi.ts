@@ -14,6 +14,7 @@
  *    Private tables never appear in the public lobby.
  */
 import { getSupabase } from './supabase';
+import { ensureAnonymousAuth } from './auth';
 
 export type PlayerCount = 2 | 3 | 4;
 
@@ -131,9 +132,20 @@ export async function joinTable(roomCode: string, playerId?: string | null, disp
   try {
     const sb = getSupabase();
     if (!sb) return null;
+    // SERVER-DEAL-PHASE-A (D3) — AWAIT the session before seating. Every call site passes a
+    // `userIdRef.current` that is populated by a FIRE-AND-FORGET `getUser()` (app/lobby/table.tsx:132
+    // and friends), so a fast joiner reached this RPC with playerId = null and got seated with
+    // room_players.user_id = NULL — an unattributable seat that the hardened deal EF then correctly
+    // rejects as 'unauthenticated'. Resolving it HERE fixes all four call sites at one choke point.
+    // ensureAnonymousAuth() returns the existing session's uid, or signs in anonymously first (CAPS
+    // has run anonymous auth since 2026-04-27), so by the time the RPC fires auth.uid() is non-null.
+    // NOTE: the hardened join_table (migration 20260726091000) IGNORES p_player_id and derives the
+    // identity from auth.uid() — a client-supplied identity is not trusted. We still pass the resolved
+    // uid so this change is also correct against the CURRENT live RPC, where it repairs the NULL.
+    const sessionUid = await ensureAnonymousAuth();
     const { data, error } = await sb.rpc('join_table', {
       p_room_code: roomCode.trim().toUpperCase(),
-      p_player_id: playerId ?? null,
+      p_player_id: sessionUid ?? playerId ?? null,
       p_display_name: displayName ?? 'Player',
       p_device_id: deviceId ?? null,
     });
