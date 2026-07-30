@@ -29,7 +29,18 @@ hole independent of dealing.
 **Also on the dormant branch (correct, unused):** `hand_seq` monotonic anchor, `begin_next_hand` +
 `request_next_hand` (unanimity over LIVE seats, acked by seat PK — user_id is nullable and acking by
 uid deadlocks a table forever), `promote_starting_to_playing` (CAS), `reap_stuck_starting_rooms(45s)`,
-`dealt_hands` + 24h TTL. Gate on the branch: tsc 0, 39/39 suites, 2630/2630.
+`dealt_hands` + 24h TTL. Gate on the branch (MEASURED clean 2026-07-31): tsc 0, 39/39 suites, **2635/2635**.
+(An earlier 2630 was stale — serverDeal went 13 -> 18 with the H1 deadlock tests.)
+
+**MIGRATION ORDERING HAZARD (read before applying anything here):** these 4 migrations are timestamped
+20260725120000 / 20260726090000 / 20260726091000 / 20260726092000, but production has since applied
+20260731014755 (rls_write_lockdown), 20260731014835 (join_table_identity_hardening_gated) and
+20260731015819 (join_table_identity_instrumentation). No exact collisions, but every file here sorts
+EARLIER than what is already applied, so they MUST be renamed to a later timestamp before pushing.
+Worse than ordering: `20260726091000_join_table_autostart_deal.sql` does CREATE OR REPLACE on
+`join_table` and would CLOBBER the live function — removing the join_identity instrumentation and the
+gated-identity block. Rebase that file onto the live definition; do not apply it as-is.
+`20260726092000` also re-DROPs the 5 RLS policies already dropped in production (harmless, IF EXISTS).
 
 ### 2026-07-25 RECAP — final state after the autonomous hardening session
 
