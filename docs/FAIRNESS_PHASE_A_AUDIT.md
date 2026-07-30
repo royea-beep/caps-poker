@@ -96,6 +96,41 @@ election deterministic and single-valued and every loser reads the same `hand_se
 `deal_hand` + `promote`, and the reveal-release of closed cards. The migrations make the server side
 correct; the client protocol inversion is unchanged and unverified.
 
+## G3 — **PHASE A IS SERVER-AUTHORITATIVE *SHUFFLE*, CLIENT-AUTHORITATIVE *ENGINE*.** It does NOT close the host advantage on its own.
+
+**This is the honest scope line and it must not be softened:** Phase A moves *who shuffles*, not *who
+can see*. With the flag ON exactly as built, the host advantage — the thing Phase A exists to remove —
+**survives intact**. The "NO-LEAK payload" property is true of the Edge Function and **false of the
+system**.
+
+Evidence (`utils/realtimeMultiplayer.ts`, host's in-memory `RealtimeServer`):
+- **Showdown is evaluated on the host, from full state:**
+  `const boardResults = evaluateAllBoards(this.boards, clientArray.length);` (`:662`) →
+  `calculateChipDeltas(boardResults, ...)` (`:663-667`). `this.boards` includes `closedCards`.
+- **The host broadcasts the closed cards and every seat's hole cards at reveal:**
+  `sendBoardReveal(boardIndex, closedCards: Card[], playerHands, winnerIndex, winnerName)` (`:676-689`).
+- The flow is driven by broadcast (`CARDS_DEALT`), not by DB status, and the host still holds
+  `this.playerHands` (all seats) + `this.boards[].closedCards` from `startGame()`.
+
+So the engine **cannot run a hand without full state**. Under flag-ON there are only two possibilities
+and both are unacceptable as an end state:
+1. the EF hands the host the full deck — which *is* the vector, re-created deliberately; or
+2. the host keeps dealing locally for everything except the initial deal — i.e. the deal is
+   server-authoritative but the reveal/showdown are not.
+
+**What Phase B must move server-side for the property to actually hold:** (a) staged **board reveal**
+(the server releases each board's closed cards only at that board's reveal point, to every client
+equally), (b) **showdown evaluation** (`evaluateAllBoards`) and (c) **chip settlement**
+(`calculateChipDeltas`) — which is the same server-authority the rake needs. Betting is not a factor
+(CAPS has no betting round; the hand is placement → reveal → settle).
+
+**Does `dealt_hands` support a staged reveal today? NO.** It stores `boards` as one jsonb blob with all
+`closedCards` present, and there is no per-board reveal state, no reveal cursor and no
+release-authorisation. A staged reveal needs at minimum a per-board reveal index (or a `revealed_boards`
+counter) plus an RPC/EF endpoint that releases board *n*'s closed cards only when the hand has actually
+reached board *n*, authorised by hand state — never by "the caller is the host", which is exactly the
+vector. That schema change is Phase B scope. **Not designed or wired this sprint.**
+
 ## F3 — `'starting'` visibility: nothing breaks, but nothing surfaces either
 
 - **Lobby:** `list_public_tables` filters `WHERE is_public AND status='waiting'`, so a room in

@@ -72,13 +72,63 @@ END; $function$;
 --     for hand #1.
 -- (Host departure remains a pre-existing weakness of the realtime layer itself — the RealtimeServer
 --  object is what actually broadcasts — but it is no longer able to strand the DEAL path.)
+-- G1 — GRIEFING GUARD (this RPC was UNSAFE as first written). "Any seated player may call" + a CAS
+-- proves exactly one caller WINS; it does NOT ask whether that caller may call AT ALL. A player staring
+-- at a losing board could call it, advance hand_seq, orphan the in-flight hand_id and destroy the hand
+-- everyone was playing — repeatable at will, at no cost. That is worse than the peeking it replaces.
+-- Guards now required to advance:
+--   1. UNANIMITY — every seated player must have requested the next hand (request_next_hand below).
+--      This mirrors RealtimeServer's existing in-memory rule (nextHandRequests.size >= connected.length,
+--      realtimeMultiplayer.ts:526-531) but ENFORCES it server-side, so one player cannot reset a hand.
+--   2. MIN INTERVAL — at least MIN_HAND_SECONDS (10s) since the hand started, as a cheap secondary
+--      guard against rapid-fire resets even with collusion.
+--   3. RATE LIMIT — at most one advance per room per MIN_HAND_SECONDS window (implied by 2, since
+--      started_at only moves on promote), and request_next_hand is idempotent per uid so spamming it
+--      cannot inflate the ack set.
+-- HONEST LIMIT: completion is still CLIENT-ASSERTED. The DB has no notion of a finished hand because
+-- the engine is in memory (see the Phase-A scope statement), so unanimity raises the bar from "any one
+-- player" to "the whole table" but cannot prove the hand truly ended. A real completion signal requires
+-- server-side evaluation = Phase B.
+CREATE OR REPLACE FUNCTION public.request_next_hand(p_room_id uuid)
+  RETURNS jsonb
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path TO 'public'
+AS $function$
+DECLARE v_uid uuid; v_room game_rooms; v_acks jsonb; v_seated int; v_have int;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('ok',false,'error','no_session'); END IF;
+  SELECT * INTO v_room FROM game_rooms WHERE id=p_room_id FOR UPDATE;
+  IF v_room.id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','no_room'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM room_players WHERE room_id=p_room_id AND user_id=v_uid) THEN
+    RETURN jsonb_build_object('ok',false,'error','not_seated');
+  END IF;
+  IF v_room.status <> 'playing' THEN
+    RETURN jsonb_build_object('ok',false,'error','not_playing','status',v_room.status);
+  END IF;
+
+  -- idempotent per uid: re-requesting cannot inflate the ack set
+  v_acks := v_room.next_hand_acks;
+  IF NOT (v_acks @> to_jsonb(v_uid::text)) THEN
+    v_acks := v_acks || to_jsonb(v_uid::text);
+    UPDATE game_rooms SET next_hand_acks = v_acks WHERE id = p_room_id;
+  END IF;
+
+  SELECT count(*) INTO v_seated FROM room_players WHERE room_id=p_room_id;
+  SELECT count(*) INTO v_have FROM room_players rp
+    WHERE rp.room_id=p_room_id AND v_acks @> to_jsonb(rp.user_id::text);
+  RETURN jsonb_build_object('ok',true,'acks',v_have,'seated',v_seated,'unanimous',(v_have >= v_seated));
+END; $function$;
+
 CREATE OR REPLACE FUNCTION public.begin_next_hand(p_room_id uuid)
   RETURNS jsonb
   LANGUAGE plpgsql
   SECURITY DEFINER
   SET search_path TO 'public'
 AS $function$
-DECLARE v_uid uuid; v_room game_rooms;
+DECLARE v_uid uuid; v_room game_rooms; v_seated int; v_have int;
+  MIN_HAND_SECONDS constant int := 10;
 BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN RETURN jsonb_build_object('ok',false,'error','no_session'); END IF;
@@ -86,9 +136,26 @@ BEGIN
     RETURN jsonb_build_object('ok',false,'error','not_seated');
   END IF;
 
-  -- CAS 'playing' -> 'starting' + bump the anchor. Only the first caller transitions.
+  SELECT * INTO v_room FROM game_rooms WHERE id=p_room_id FOR UPDATE;
+  IF v_room.id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','no_room'); END IF;
+
+  -- G1.2 minimum inter-hand interval (started_at only moves on promote, so this also rate-limits
+  -- advances to one per window per room)
+  IF v_room.started_at IS NOT NULL AND v_room.started_at > now() - make_interval(secs => MIN_HAND_SECONDS) THEN
+    RETURN jsonb_build_object('ok',false,'error','too_soon');
+  END IF;
+
+  -- G1.1 UNANIMITY: every seated player must have acked at this hand_seq
+  SELECT count(*) INTO v_seated FROM room_players WHERE room_id=p_room_id;
+  SELECT count(*) INTO v_have FROM room_players rp
+    WHERE rp.room_id=p_room_id AND v_room.next_hand_acks @> to_jsonb(rp.user_id::text);
+  IF v_seated = 0 OR v_have < v_seated THEN
+    RETURN jsonb_build_object('ok',false,'error','not_unanimous','acks',v_have,'seated',v_seated);
+  END IF;
+
+  -- CAS 'playing' -> 'starting' + bump the anchor + clear the acks for the new hand.
   UPDATE game_rooms
-    SET status='starting', starting_at=now(), hand_seq = hand_seq + 1
+    SET status='starting', starting_at=now(), hand_seq = hand_seq + 1, next_hand_acks='[]'::jsonb
     WHERE id=p_room_id AND status='playing'
     RETURNING * INTO v_room;
 

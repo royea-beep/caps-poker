@@ -53,6 +53,14 @@ ALTER TABLE public.game_rooms ADD COLUMN IF NOT EXISTS starting_at timestamptz;
 -- retry mints a brand-new deck by construction).
 ALTER TABLE public.game_rooms ADD COLUMN IF NOT EXISTS hand_seq integer NOT NULL DEFAULT 0;
 
+-- G1 — ANTI-GRIEF STATE. begin_next_hand must not let ONE player abort a hand they are losing, so the
+-- advance requires UNANIMITY (mirroring the in-memory `nextHandRequests.size >= connected.length` rule
+-- that RealtimeServer already uses at realtimeMultiplayer.ts:526-531) plus a minimum inter-hand gap.
+-- next_hand_acks holds the uids that have asked for the next hand at the CURRENT hand_seq.
+ALTER TABLE public.game_rooms ADD COLUMN IF NOT EXISTS next_hand_acks jsonb NOT NULL DEFAULT '[]'::jsonb;
+COMMENT ON COLUMN public.game_rooms.next_hand_acks IS
+  'uids that requested the next hand at the current hand_seq. begin_next_hand requires EVERY seated player to be present (unanimity) so no single player can reset a hand in progress. Cleared on each advance.';
+
 COMMENT ON COLUMN public.game_rooms.hand_seq IS
   'Monotonic per-room hand counter. hand_id = room_id || '':'' || hand_seq. Incremented when a hand enters ''starting'' (autostart or begin_next_hand); NEVER decremented or reused, so every attempt gets a fresh deck.';
 
