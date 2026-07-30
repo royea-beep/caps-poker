@@ -1,5 +1,57 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 — RLS WRITE LOCKDOWN + gated join_table identity hardening — **APPLIED TO LIVE**
+
+Merge `422ee3b` -> main. Live bundle `index-2e9455b7e30ac350baa6ef716725006f`, verified new by fetching
+the JS and confirming it contains `resolveJoinIdentity` + the literal "Couldn't sign you in" — a hash
+change alone is not proof.
+
+**APPLIED (two separate migrations, in this order):**
+
+1. `rls_write_lockdown_game_rooms_room_players` — DROPPED 5 permissive write policies:
+   - `rooms_host_or_player_update` — membership-only UPDATE, and RLS cannot scope columns, so ANY
+     seated authenticated player could rewrite status / game_config / current_players / max_players /
+     is_public / host_id of their room.
+   - `players_update_own` — rewritable `seat_index` / `is_host` = a seat-swap primitive.
+   - `"Anyone can join rooms"` — INSERT room_players TO public WITH CHECK true: anyone could seat
+     themselves in ANY room, unauthenticated.
+   - `players_leave_own` — a direct DELETE bypasses leave_table's `current_players` decrement, leaving
+     a room that reads FULL with an empty seat (un-joinable, un-startable).
+   - `game_rooms_authenticated_insert` — mint arbitrary rooms, bypassing create_table.
+   SELECT policies RETAINED: "Anyone can read rooms", "Anyone can read room_players".
+   Safe because NO client build has EVER written these tables directly (`git log -S` across all
+   branches, 6 spelling variants, zero hits); every write goes through SECURITY DEFINER RPCs, all
+   `prosecdef=true`.
+   **Why it still mattered even though the app never used them:** the anon key ships inside the web
+   bundle, so an attacker never needed the app — a seated session plus a crafted REST call was enough.
+   Dead weight to the app, live attack surface.
+
+2. `join_table_identity_hardening_gated` — `join_table` derives identity from `auth.uid()` and IGNORES
+   the client-supplied `p_player_id`, **gated on `app_config.join_requires_session`**.
+   **The key is ABSENT => default FALSE => the migration is INERT.** Legacy identity
+   `COALESCE(auth.uid(), p_player_id)` is byte-identical to prior behaviour. Flipping it TRUE is a
+   SEPARATE decision with its own report. The `device_id` OR-branch is preserved in both modes
+   (idempotent rejoin after restart + device-identified club members).
+   Client half: `joinTable` now bounds the anon-auth wait at 2500 ms (`utils/joinIdentity.ts`) and falls
+   back to the device identity on timeout/reject, so it can never hang a join.
+
+**VERIFIED ON LIVE after each step** — real anonymous session, real RPCs, run three times (before the
+migrations / after the lockdown / after the hardening) with identical results:
+lobby list (9 tables) · join (seat 0, is_host) · seat visible with `user_id=SET` (previously NULL — the
+identity fix demonstrably working) · heartbeat · leave · seat released · create · finish.
+
+**MONITORING since merge:** `bug_reports` 0 in 24h and 0 since merge; friction views show 1
+`stuck_dwell` (background noise, no new signal).
+
+**ROLLBACK — restores all 5 policies in one statement:**
+
+```sql
+CREATE POLICY rooms_host_or_player_update ON public.game_rooms FOR UPDATE TO authenticated USING (host_id=(SELECT auth.uid()) OR EXISTS(SELECT 1 FROM room_players WHERE room_id=game_rooms.id AND user_id=(SELECT auth.uid()))) WITH CHECK (host_id=(SELECT auth.uid()) OR EXISTS(SELECT 1 FROM room_players WHERE room_id=game_rooms.id AND user_id=(SELECT auth.uid()))); CREATE POLICY game_rooms_authenticated_insert ON public.game_rooms FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) IS NOT NULL); CREATE POLICY players_update_own ON public.room_players FOR UPDATE TO authenticated USING (user_id=(SELECT auth.uid())) WITH CHECK (user_id=(SELECT auth.uid())); CREATE POLICY players_leave_own ON public.room_players FOR DELETE TO authenticated USING (user_id=(SELECT auth.uid())); CREATE POLICY "Anyone can join rooms" ON public.room_players FOR INSERT TO public WITH CHECK (true);
+```
+
+**STILL OFF / NOT DONE:** `join_requires_session` FALSE (key absent) · `server_deal_enabled` absent ·
+`deal_hand` Edge Function NOT deployed · `feat/server-deal-phase-a` dormant and untouched at `6352843`.
+
 ### 2026-07-26 — SERVER-DEAL PHASE A: **DORMANT / PHASE-B PREREQUISITE** (branch feat/server-deal-phase-a)
 
 **STATUS: frozen, not shippable alone, NOT a dark feature awaiting a cutover.** Nothing applied,
