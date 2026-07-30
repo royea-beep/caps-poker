@@ -1,5 +1,36 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-26 — SERVER-DEAL PHASE A: **DORMANT / PHASE-B PREREQUISITE** (branch feat/server-deal-phase-a)
+
+**STATUS: frozen, not shippable alone, NOT a dark feature awaiting a cutover.** Nothing applied,
+deployed, merged or flag-enabled. `server_deal_enabled` and `join_requires_session` both default FALSE.
+
+**SCOPE STATEMENT (the sprint's key output):** *Phase A is server-authoritative SHUFFLE,
+client-authoritative ENGINE. It moves who shuffles, not who can see.* The host's `RealtimeServer` holds
+`this.playerHands` (all seats) + `this.boards[].closedCards`, evaluates showdown in memory
+(`evaluateAllBoards` :662, `calculateChipDeltas` :663-667) and broadcasts closed cards + every seat's
+holes (`sendBoardReveal` :676-689). So with the flag ON the host advantage **survives intact** — and
+worse, the engine cannot run at all, because the EF correctly refuses to hand it the deck. The
+"NO-LEAK payload" property is true of the Edge Function and **false of the system**.
+
+**CONSEQUENCE — the 2-device client cutover is CANCELLED (wasted work).** `dealt_hands.boards` is a
+single jsonb blob with no reveal cursor and no release authorisation, so Phase B replaces that schema;
+wiring clients against it now means wiring twice. EF deploy + p50/p95 measurement are DEFERRED to
+Phase B, not near-term gates.
+
+**PHASE B must move server-side:** staged board reveal (release board *n*'s closed cards only at board
+*n*, equally to all clients), showdown evaluation, chip settlement — the same server authority the rake
+needs. `dealt_hands` does NOT support staged reveal today.
+
+**What was split OUT and is going live separately:** the RLS write lockdown + gated `join_table`
+identity hardening → branch `fix/rls-hardening` (off main, no deal machinery). That fixes a real live
+hole independent of dealing.
+
+**Also on the dormant branch (correct, unused):** `hand_seq` monotonic anchor, `begin_next_hand` +
+`request_next_hand` (unanimity over LIVE seats, acked by seat PK — user_id is nullable and acking by
+uid deadlocks a table forever), `promote_starting_to_playing` (CAS), `reap_stuck_starting_rooms(45s)`,
+`dealt_hands` + 24h TTL. Gate on the branch (MEASURED clean 2026-07-31): tsc 0, 39/39 suites, **2635/2635**. (An earlier 2630 was stale — serverDeal went 13 -> 18 with the H1 deadlock tests.)
+
 ### 2026-07-25 RECAP — final state after the autonomous hardening session
 
 LIVE: main `921c4e3`, OTA group `6f51338e` (branch production, runtime 2.7.0), web caps.ftable.co.il.
