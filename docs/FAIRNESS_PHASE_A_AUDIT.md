@@ -254,8 +254,10 @@ after the host leaves **no seat has `is_host`** until a new joiner claims it
 A client that fetches before the host has stored gets nothing. The ordering is therefore fixed:
 
 1. Host deals in memory, **stores** the deck (upload returns success), and only then
-2. **signals** on the channel (`CARDS_READY{hand_id}` — an ordinary coordination message, no card
-   data), and
+2. **signals** on the channel — ⚠️ **SUPERSEDED BY X2: the signal must carry NO `hand_id`.** As
+   originally written (`CARDS_READY{hand_id}`) this was a client-supplied field used for a decision,
+   forgeable by any anon stranger. It is now a **contentless doorbell**; the hand identity comes from
+   the server on the fetch. See X2 below before implementing this step, and
 3. clients **fetch on the signal**, not on a timer.
 
 - **Retry:** on a failed or empty fetch, retry with backoff (~250 ms, 500 ms, 1 s, 2 s, capped ~4
@@ -295,3 +297,95 @@ labelled **prerequisite-for-minting**: the moment the EF ever deals (the eventua
 server-authoritative step), it needs `decideOrdinal`, and the retention-door analysis — a high-water
 cursor that outlives the TTL, returning `hand_expired` rather than re-minting — is the non-obvious
 half that would otherwise be rediscovered the hard way.
+
+### X2 — `CARDS_READY{hand_id}` WAS THE SAME BUG AGAIN. The signal must carry NO hand_id.
+
+W2.2 specified `store -> signal CARDS_READY{hand_id} -> clients fetch on the signal`. The signal
+rides the **unauthenticated** broadcast channel, so any anon stranger can forge it, and clients would
+act on the `hand_id` inside it. That is the **fourth** instance of one defect class — a client-supplied
+field used to make a decision — after client-side `targetId` filtering, client-supplied
+`p_player_id`, and the `test-` prefix. I wrote the governing rule in V1 ("clients must DERIVE the
+ordinal, never accept it from the host") and then violated it one section later.
+
+**Two consequences, the second worse than the first:**
+1. **After step 3 it is a table-killing DoS.** A forged `CARDS_READY` naming a hand_id that will never
+   exist sends every client into retry → exhaustion → error state, with no broadcast fallback left.
+   Any stranger, any table, repeatable, no session required.
+2. **During step 1 it poisons the step-3 gate.** The gate is "ship when the fallback rate is ~0". An
+   attacker forging signals inflates that rate indefinitely and blocks step 3 **forever, from outside,
+   with no seat** — attacker-controlled, exactly like the lockout alarm was.
+
+#### The fix: the signal is a contentless DOORBELL
+
+> **`CARDS_READY` carries NO payload at all.** It means "something changed, go look". The client then
+> makes ONE authenticated HTTPS call that asks the server *"what is the current hand for this room,
+> and what is my slice?"* — and the **server** answers with the hand identity.
+
+`hand_id` therefore becomes a server **output**, never a client **input**. This is strictly better than
+"each client derives the ordinal locally", which I considered and rejected: a late joiner or a
+reconnecting client has no way to know the current ordinal without asking someone, and if it asks the
+channel we are back where we started. Anchoring to the server removes the question instead of
+answering it.
+
+**What each client "derives" is therefore nothing** — and that is the point. The server resolves the
+current hand from room state it already owns (`game_rooms.hand_seq` from `20260801091000`, or the
+room's newest stored deck). **Disagreement is structurally impossible**, because there is only one
+source of truth and no client opinion to disagree with it. A forged doorbell costs exactly one HTTPS
+request that returns the same answer the client would have got anyway.
+
+**Cost of a forged doorbell, precisely:** one authenticated request, rate-limited below; it can never
+point a client at a wrong or non-existent hand, and it can never produce an error state.
+
+#### Rate-limit and de-duplication
+
+- **At most ONE in-flight deal fetch per client per room.** A doorbell arriving while a fetch is in
+  flight is dropped, not queued.
+- **Dedupe by result, not by signal:** once the client holds a slice for the hand the server named,
+  further doorbells are no-ops until the hand advances. A flood of 1,000 forged signals costs **one**
+  fetch, not 1,000.
+- **Ceiling:** max 3 doorbell-triggered fetches per 10 s per client, then ignore until the next hand
+  boundary. Retry/backoff (~250 ms → 4 s, ~4 attempts) applies only to a fetch the client itself
+  initiated, never to one a signal triggered — so a forged signal can never start a retry storm.
+
+#### Attacker-resistant fallback metric (the step-3 gate)
+
+The gate must not be inflatable from outside:
+
+- **Count a fallback ONLY when the client legitimately expected a hand** — it is seated, and the
+  server confirmed a current hand exists — and the fetch still failed. That is the number that gates
+  step 3.
+- **Count separately** fetches triggered for a hand the server says does not exist:
+  `deal_signal_no_hand`. That number is not a fallback and never touches the gate.
+- **`deal_signal_no_hand` is itself an attack indicator.** Suggested alert: **> 20 in an hour for a
+  single room, or > 50 across all rooms**, using the same daily-cap + single-transaction probe
+  discipline as the other tripwires. In normal play it should be ~0: a legitimate doorbell only ever
+  follows a successful store.
+
+#### X2.6 — INVENTORY: every channel field ACTED UPON rather than merely displayed
+
+The point of the list is that this class of bug is structural, not incidental. Message types are the
+live `case` labels in `utils/realtimeMultiplayer.ts`.
+
+| Message / field | Acted upon → effect if forged | Class |
+|---|---|---|
+| `senderId` (every message) | routing + identity; **nothing binds it to the authenticated sender** (proven live in N2) | **INSTRUCTION** |
+| `targetId` (`CARDS_DEALT`) | client-side filtering only; forging redirects who *believes* a message is theirs | **INSTRUCTION** |
+| `type` (dispatch key) | selects the handler — the root of all of the below | **INSTRUCTION** |
+| `CARDS_DEALT` payload | the actual cards a client renders and plays | **INSTRUCTION** |
+| `BOARD_REVEAL` (`closedCards`, `winnerIndex`) | drives reveal + who won | **INSTRUCTION** |
+| `HAND_COMPLETE` / `_ACK` | ends the hand, triggers settlement | **INSTRUCTION** |
+| `NEXT_HAND_REQUEST` | starts a new hand | **INSTRUCTION** |
+| `PLAYER_READY` / `READY_PRESSED` / `ALL_READY` | unanimity → hand start; forgeable consent | **INSTRUCTION** |
+| `JUMP_COUNTDOWN{deadline}` | sets a client-side timer from a client-supplied timestamp | **INSTRUCTION** |
+| `JUMP_CANCELLED` | aborts the jump | **INSTRUCTION** |
+| `GAME_STATE_SNAPSHOT` / `ROOM_STATE` | wholesale state adoption — the broadest one on the list | **INSTRUCTION** |
+| `CARDS_DEALT_ACK` / `BOARD_REVEAL_ACK` | flow control / progression | **INSTRUCTION** |
+| ~~`CARDS_READY{hand_id}`~~ | **would have been** — removed by this design | fixed here |
+| `CHAT` | displayed only | INFORMATION |
+| presence / spectator counts | displayed only | INFORMATION |
+
+**The inventory's real finding:** almost the entire channel is instructions, and *none* of it is
+bound to a verified sender. Fixing them one at a time will not converge — that is why Q2's principle
+("no client message may be TRUSTED to mutate game state merely because it arrived on the channel")
+plus the Phase B server-side turn/phase move is the actual answer, and why this design keeps the
+doorbell contentless rather than adding a fifth field to trust.

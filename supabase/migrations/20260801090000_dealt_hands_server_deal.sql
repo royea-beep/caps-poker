@@ -46,10 +46,17 @@ BEGIN
 END;
 $$;
 
--- Idempotent cron registration (safe to re-apply on a branch).
-DO $$
+
+-- X3: cron scheduling is OPTIONAL. A fresh Supabase branch does NOT inherit the parent's
+-- extensions, so `cron.schedule` fails with 'schema "cron" does not exist' and takes the whole
+-- migration with it. The DDL above must not depend on pg_cron being pre-installed. Schedule where
+-- pg_cron exists; skip (loudly, via NOTICE) where it does not.
+DO $cronblk$
 BEGIN
-  PERFORM cron.unschedule('caps_cleanup_dealt_hands');
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
-SELECT cron.schedule('caps_cleanup_dealt_hands', '17 * * * *', $$ SELECT public.cleanup_dealt_hands(); $$);
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    BEGIN PERFORM cron.unschedule('caps_cleanup_dealt_hands'); EXCEPTION WHEN OTHERS THEN NULL; END;
+    PERFORM cron.schedule('caps_cleanup_dealt_hands', '17 * * * *', 'SELECT public.cleanup_dealt_hands();');
+  ELSE
+    RAISE NOTICE 'pg_cron not installed - skipping schedule of caps_cleanup_dealt_hands (schedule it manually where cron exists)';
+  END IF;
+END $cronblk$;

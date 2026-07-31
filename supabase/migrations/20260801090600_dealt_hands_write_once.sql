@@ -49,9 +49,16 @@ CREATE TRIGGER dealt_hands_write_once_trg
   BEFORE UPDATE OR DELETE ON public.dealt_hands
   FOR EACH ROW EXECUTE FUNCTION public.dealt_hands_write_once();
 
--- Defence in depth: remove the client-role grants outright. RLS already denies anon/authenticated
--- (no policies), but a future policy added in haste should not silently hand out UPDATE.
-REVOKE UPDATE, DELETE ON TABLE public.dealt_hands FROM anon, authenticated;
+-- X1.5 — REVOKE ALL, not just UPDATE/DELETE. The public-schema DEFAULT ACL grants
+-- anon=arwdDxtm and authenticated=arwdDxtm (INSERT, SELECT, UPDATE, DELETE, TRUNCATE, REFERENCES,
+-- TRIGGER, MAINTAIN) on EVERY new table, from two separate default-ACL entries (postgres and
+-- supabase_admin). So dealt_hands is created with full client write access and the earlier
+-- "REVOKE UPDATE, DELETE" left INSERT and TRUNCATE in place — a client could have inserted a deck
+-- (injection) or TRUNCATEd every stored deck the moment RLS was disabled.
+--
+-- dealt_hands gets NO client access of any kind, SELECT included: the row holds the full deck and
+-- every seat's hole cards. Only the deal_hand EF (service_role) may touch it.
+REVOKE ALL ON TABLE public.dealt_hands FROM anon, authenticated;
 
 COMMENT ON FUNCTION public.dealt_hands_write_once() IS
   'W1: dealt_hands is append-only. UPDATE is always refused; DELETE only past the 24h retention age '
