@@ -1,5 +1,57 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AB) — DESTRUCTIVE RPCs REVOKED. Delete-account flow is DOWN, deliberately.
+
+**`delete_user_account(text,uuid)` and `merge_guest_to_user(text,uuid)`: EXECUTE revoked from
+PUBLIC, anon, authenticated.** Both were callable by anyone holding the anon key that ships in the
+public web bundle. The guard had THREE ANDed conditions and therefore TWO independent bypasses —
+pass `p_user_id => NULL` (works even authenticated), or call with no session at all — and the delete
+keys on `p_device_id`, all 319 of which are harvestable in one anon SELECT from `leaderboard`.
+
+**Revoked BEFORE checking whether the client calls it, deliberately.** A destructive function must
+fail CLOSED: a broken delete button is recoverable in minutes with one GRANT; a stranger wiping real
+players across 22 tables is not.
+
+> ⚠️ **THE APP DOES CALL BOTH. Both are now broken, and the grant is NOT restored.**
+> - `app/settings.tsx:882` — the in-app delete-account button. Degrades CLEANLY: shows
+>   "We could not delete your account. Please try again later." and fires `account_deletion_failed`.
+> - `utils/auth.ts:62` — Google sign-in guest merge. Degrades SILENTLY: the call sits inside
+>   `try {} catch {}`, so sign-in still returns success while guest progress fails to link.
+>   **A player signing in with Google right now keeps their chips in the DB but the account link is
+>   not made.** This is the more urgent of the two to replace.
+>
+> **REPLACEMENT NEEDED (next sprint): an Edge Function that derives identity from the JWT and
+> deletes/merges ONLY `auth.uid()`'s rows** — no `p_device_id` parameter at all, since accepting a
+> device id is the whole vulnerability. App Store account-deletion compliance matters; a few days of
+> a manual path is survivable, a mass deletion is not.
+
+**Existing `account_deletion` audit row: NOT a real player.** 2026-04-23 13:39, device
+`FAKE_TEST_DEVICE_XYZ`, actor NULL, metadata just a timestamp. No real account was ever deleted
+through this path.
+
+**`redeem_starter_offer`: STILL ANON-CALLABLE, reported not revoked** (not destructive, so it does
+not get the automatic treatment). Confirmed reachable — an anon call reached a NOT NULL constraint on
+`chip_purchases.user_id`, i.e. it executed past the guard. Same unvalidated-receipt shape as
+`record_chip_purchase` (Y2). Queue it with the AA step-4 batch.
+
+**ROLLBACK (only after a safe replacement exists):**
+`GRANT EXECUTE ON FUNCTION public.delete_user_account(text,uuid), public.merge_guest_to_user(text,uuid) TO authenticated;`
+
+### 2026-08-01 (AB2) — THE 48h econ_authz WINDOW COVERED A SUBSET. IT RESTARTS.
+
+Three real players entered `leaderboard` last evening and produced ZERO `econ_authz` rows. Cause
+found: they came through **`claim_daily_streak` (500) + `claim_daily_reward` (30)** — both
+anon-callable, both call `ensure_leaderboard_row`, **neither instrumented**. The six probed functions
+were not the real new-player entry point.
+
+Now instrumented: **10 functions** (added `claim_daily_reward`, `claim_daily_streak`,
+`get_poker_shop`, `claim_share_reward`), all verified PROBE-FIRST ahead of every RETURN/RAISE and
+byte-identical apart from the probe line. All ten demonstrably log.
+
+**THE WINDOW RESTARTS FROM 2026-08-01 02:36 IST.** A partial window must not justify a flip: a probe
+that misses the real entry point reads LOW, and LOW is exactly what would persuade us to enforce.
+`ensure_leaderboard_row` itself is NOT anon-executable, so it is reachable only through callers.
+
 ### 2026-08-01 (Z4) — **ROOT CAUSE: THE SERVER HAS NO AUTHORITATIVE MODEL OF A HAND.**
 
 Four items on the roadmap are being tracked as independent projects. They are **one hole**:
