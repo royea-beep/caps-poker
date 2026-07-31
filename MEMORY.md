@@ -1,5 +1,39 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 (S) — `join_requires_session` = **TRUE** (flipped). ROLLBACK IS ONE ROW.
+
+```sql
+UPDATE app_config SET value='false' WHERE key='join_requires_session';
+```
+
+**One row. No migration, no deploy, no OTA, no build.** Takes effect on the next `join_table` call —
+the flag is read at the top of the function on every invocation.
+
+**Why flipped now, on ZERO traffic (this was the argument, and it is the right one):** there has been
+no real MP join since 2026-07-12. Waiting for "enough real observations" is not a gate, it is an
+indefinite hold — the measurement cannot complete until traffic returns, and traffic returning is
+exactly when a breaking change becomes expensive. Zero traffic is the cheapest window this project
+will ever get to find out whether strict mode breaks a join path. If it breaks, it breaks for nobody.
+
+**Observability shipped FIRST (the flip would otherwise be invisible):**
+- `join_rejected` analytics event on **every** `no_session` rejection, at **both** sites:
+  `stage='strict_pre_room'` (strict mode, fires BEFORE the room lookup — which is why the existing
+  `join_identity` row does NOT cover it) and `stage='club_guard'`. Non-blocking subtransaction
+  (`BEGIN … EXCEPTION WHEN OTHERS THEN NULL`), same pattern as `join_identity`.
+- `phase0_mp_traffic_tripwire()` extended: alerts on ANY `no_session` rejection in the last 65 min,
+  own suppression key (`JOIN-STRICT LOCKOUT`), and the alert text **contains the rollback SQL above**.
+  Placed BEFORE the phase0 self-disarm on purpose — shipping channel authz must not silence a lockout
+  alarm. Verified end-to-end: synthetic rejection → `lockout_fired: true` → `whatsapp_outbound` row
+  `pending` → reverted inside the same transaction (never visible to the `*/2` flush cron) → re-armed.
+
+**What strict mode changes:** `join_table` no longer falls back to the client-supplied `p_player_id`.
+No verified `auth.uid()` → `{"ok":false,"error":"no_session"}`. The client already handles this and
+shows `JOIN_NO_SESSION_MESSAGE`. This closes the device-id impersonation branch for **public** tables
+(club tables were already closed by the M1 guard on 2026-07-31).
+
+**If a real player is ever locked out:** the WhatsApp alert arrives within the hour and carries the
+rollback. Roll back first, diagnose after.
+
 ### 2026-07-31 (P) — PHASE 0 DESIGN + **MP IS KNOWN-EXPLOITABLE UNTIL PHASE 0 SHIPS**
 
 **VERBATIM, DO NOT SOFTEN:** *Multiplayer is known-exploitable until Phase 0 (realtime channel

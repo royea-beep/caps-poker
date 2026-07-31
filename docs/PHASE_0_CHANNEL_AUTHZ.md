@@ -293,3 +293,107 @@ Verified live 2026-07-31, both expose every seat identity to anyone holding the 
 Once the channel policy is decoupled (above), narrowing these becomes possible. **Do not narrow them
 yet:** `list_public_tables` and the lobby may read them, and that needs its own audit with a
 legitimate-player regression test. Recorded as a separate follow-on, sequenced *after* Phase 0.
+
+## S2 — PHASE 0 ROLLOUT PLAN (planning only; nothing in this section is shipped)
+
+**The dangerous part of Phase 0 is the CUTOVER, not the policy.** Public and private are separate
+delivery domains, so a mixed fleet is a fleet where players in the same room cannot hear each other.
+And a private channel with no policy denies everyone. The plan is built around those two facts.
+
+### The failure mode we are designing against, stated first
+
+**A half-flipped fleet is a SILENT HANG, not an error.** Player A on a new client (private) and player B
+on an old client (public) both join room `ABCD`. Both subscribe *successfully* — to different delivery
+domains. Neither sees the other in presence. Each sees an empty seat that never fills, a "waiting for
+players" that never resolves, a ready-ack that never arrives, and eventually a timer that expires for
+no visible reason. **No error is raised anywhere.** That is worse than a crash: it is unreportable by
+the player and invisible in error logs. Every step below exists to make this state impossible or brief.
+
+### Step order (each step is independently revertible)
+
+| # | Step | Rollback |
+|---|---|---|
+| 0 | **DB first.** Create `is_room_member` + both `realtime.messages` policies on the shared project. No client is private yet, so the policy is inert — `realtime.messages` RLS is only consulted for private channels. | `drop policy` ×2, `drop function`. Inert either way. |
+| 1 | **Ship dual-mode client, flag FALSE.** Client reads `app_config.phase0_channel_authz_shipped` and chooses `{ config: { private: <flag> } }` at channel construction. With the flag false, behaviour is byte-identical to today. Ship via `npm run ota` (branch `production`). | OTA rollback; behaviour was already unchanged. |
+| 2 | **Wait for fleet reach** (threshold below). Nothing to roll back — this step is only waiting. | — |
+| 3 | **Flip `phase0_channel_authz_shipped` = true.** One row. All clients that have the new bundle go private together on their next channel construction. | `UPDATE app_config SET value='false'` — one row, no deploy. Same shape as the S1 rollback. |
+| 4 | **Verify**, then let the MP tripwire self-disarm (it keys on this same flag). | — |
+
+**Step 0 before step 3 is non-negotiable and is the single easiest way to break this:** a private
+channel with no matching policy denies *everyone*, including legitimate players. Policy first, always.
+
+**Note the flag does double duty and that is deliberate:** `phase0_channel_authz_shipped` already
+self-disarms the MP tripwire. Using the same key to gate the client means the tripwire cannot disarm
+while clients are still public — the alarm stays armed exactly as long as the exposure exists.
+
+### S2.3 — How we know the OTA reached the fleet, and the clients that never relaunch
+
+**Clients take an OTA on relaunch.** So "shipped" and "arrived" are different events and only the
+second one matters here.
+
+*Evidence threshold (all three, not any one):*
+1. A version-stamped client event (e.g. `app_open`) shows **≥99% of devices active in the trailing 7
+   days are on the new bundle**, sustained for 7 consecutive days.
+2. **Zero** MP-entry events (`table_joined` / `mp_game_started`) from a pre-cutover bundle in the
+   trailing 7 days — this is the population that actually matters, since only MP clients touch the
+   channel. A stale solo-only client is harmless.
+3. The counting query is run against `analytics_events` directly (DB ground truth), not an OTA
+   dashboard — `eas update:list` proves *publication*, never *adoption*.
+
+*The clients that never relaunch:* **they never get it, and no flag can rescue them** — a bundle
+without the dual-mode code has no private branch to switch on. Being honest about that:
+
+- Once step 3 flips, a never-updated MP client is **permanently unable to play with updated players**,
+  and its symptom is the silent hang above.
+- **Mitigation (should ship with step 1): a server-side minimum-bundle gate on the MP entry path.**
+  Refuse MP entry for pre-cutover bundles with an explicit "update to keep playing online" result,
+  converting an unreportable silent hang into one clear instruction. Solo play stays untouched.
+- **And the decisive practical point: that population is currently EMPTY.** No MP session since
+  2026-07-12. The same zero-traffic argument that justified flipping `join_requires_session` applies
+  with more force here, because the cutover cost scales with the number of players mid-session — which
+  is, right now, zero. **Cut over while the fleet is idle.**
+
+### S2.5 — Sequencing P2 against the channel flip
+
+Two possible intermediate states. **They are not equally safe.**
+
+| Intermediate state | What an attacker gets | Verdict |
+|---|---|---|
+| **(a) Secrets OFF the channel, channel still PUBLIC** | Coordination traffic only — turn order, timers, presence, ready-acks. **No hole cards.** The actual N2 finding is closed. Remaining: injection/forgery and metadata. | **SAFER** |
+| **(b) Channel PRIVATE, secrets still ON it** | Strangers excluded — but every *seated opponent* still receives every seat's hole cards, because `targetId` filtering is client-side only. The table is still cheatable by the people at it. | Weaker |
+
+**(a) is safer, and for a second reason that matters more than the first: it is the only one that is
+safe to ROLL BACK.** If the channel flip has to be reverted from state (a), nothing secret returns to
+the wire — the secrets already left. Reverting from state (b) instantly re-exposes every hole card to
+any anon listener. A rollback should never re-open the original vulnerability.
+
+**Therefore P2 lands FIRST**, and P2 has its own three-step because it faces the same mixed-fleet
+problem:
+
+1. Ship clients that **prefer** the per-caller `deal_hand` HTTPS slice but still accept a `CARDS_DEALT`
+   broadcast as fallback. Old and new clients coexist — this step is fleet-mixing-safe, unlike the
+   channel flip, which is a hard partition with no coexistence at all.
+2. Wait for fleet reach (same threshold).
+3. **Stop broadcasting `CARDS_DEALT`.** Only now are the secrets actually off the channel — step 1
+   alone does not achieve it, because the host is still broadcasting.
+
+Staged `BOARD_REVEAL` follows the same shape but needs the reveal cursor `dealt_hands` lacks, so it is
+the last piece before the channel flip.
+
+**Full order: P2 steps 1→3 · then channel step 0 (policy) → 1 (dual-mode OTA) → 2 (wait) → 3 (flip).**
+
+**What Phase 0 still will NOT buy, restated so it is not forgotten:** authenticity against a *seated*
+opponent. `senderId` remains an unbound payload field. That needs the Phase B turn-logic move (Q2).
+
+### Known branch artifact — `MissingPartition` (seen on TWO consecutive fresh branches)
+
+`CHANNEL_ERROR: "MissingPartition: Realtime was unable to find the expected messages partition"` on a
+newly created Supabase branch is a **provisioning race, not a design failure**. Realtime's
+`realtime.messages_YYYY_MM_DD` partitions are created asynchronously after the branch reports healthy.
+
+- **Workaround:** wait ~2-5 minutes after branch creation and re-run. It cleared on the retry both times.
+- **Do NOT try to create the partitions by hand** — `permission denied for schema realtime`, the owner
+  is `supabase_admin`. That is a dead end; an hour was nearly lost to it once already.
+- **Do NOT read it as a policy failure.** In the R2 run, listener B reported `MissingPartition` at
+  subscribe and *still received* the control broadcast — the error is transient and can coexist with a
+  working channel. Judge the run by delivery, not by the first subscribe status.
