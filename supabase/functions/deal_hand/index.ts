@@ -24,12 +24,21 @@
 // correctly rejected ('unauthenticated') here, so the client must await the session before join and
 // repair any NULL-user_id seat before dealing.
 //
-// Contract (POST JSON): { hand_id: string, room_id: string }  — NO identity/seat/roster in the body.
+// Contract (POST JSON): { hand_id: string, room_id: string, hand_ordinal: int >= 1 }
+//   — NO identity/seat/roster in the body.
 // Response: { ok:true, deal: PlayerDealPayload } | { ok:false, error }
+//
+// V1 (hand_ordinal): create-or-get keyed on hand_id alone let a seated HOST shop for decks — mint
+// N+1, peek its own slice, mint N+2, and announce whichever it preferred. Every such request is a
+// legitimately seated player asking for its own cards, so authz passes on all of them. The ordinal is
+// now gated against a per-room cursor (room_hand_cursor) that outlives the 24h dealt_hands TTL.
+// NOTE: this is necessary but NOT sufficient — see handOrdinal.ts and docs/PHASE_0_CHANNEL_AUTHZ.md
+// (V1) for the two remaining conditions (client-derived ordinal; K-1 completion gate).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { dealFromSeed, sliceForPlayer, type ServerDeal } from './deal.ts';
 import { authorizeDealRequest, type RosterEntry } from './authz.ts';
+import { decideOrdinal } from './handOrdinal.ts';
 
 const CORS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -53,9 +62,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   try {
     const authHeader = req.headers.get('Authorization') ?? '';
-    const { hand_id, room_id } = await req.json();
+    const { hand_id, room_id, hand_ordinal } = await req.json();
     if (typeof hand_id !== 'string' || !hand_id || typeof room_id !== 'string' || !room_id) {
       return json({ ok: false, error: 'bad_request' }, 400);
+    }
+    // V1: the ordinal is REQUIRED and is checked against a server-side per-room cursor. Without it
+    // a seated host can mint N+1, peek its own slice, then mint N+2 and announce whichever it likes.
+    if (!Number.isInteger(hand_ordinal) || hand_ordinal < 1) {
+      return json({ ok: false, error: 'bad_ordinal' }, 400);
     }
 
     const url = Deno.env.get('SUPABASE_URL')!;
@@ -76,6 +90,53 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // 2) Create-or-get the authoritative deal for this hand_id. The roster snapshot (user_id per seat)
     //    is taken from the SERVER-SIDE room_players — never from the request body.
     let row = (await sb.from('dealt_hands').select('*').eq('hand_id', hand_id).maybeSingle()).data;
+
+    // V1 — AUTHORIZE BEFORE MINTING. Previously authz ran only after the create-or-get, so any
+    // caller who knew a room_id could trigger a mint and burn an ordinal before being rejected.
+    // With monotonicity that is a griefing vector: burn the room's next ordinal from outside.
+    {
+      const { data: liveRoster } = await sb
+        .from('room_players')
+        .select('user_id, seat_index')
+        .eq('room_id', room_id)
+        .order('seat_index', { ascending: true });
+      const preRoster: RosterEntry[] = ((liveRoster ?? []) as { user_id: string | null; seat_index: number }[])
+        .map((r) => ({ userId: r.user_id, seatIndex: r.seat_index }));
+      const pre = authorizeDealRequest(callerUserId, preRoster);
+      if (!pre.ok) return json({ ok: false, error: pre.error }, pre.error === 'unauthenticated' ? 401 : 403);
+    }
+
+    // V1 — ORDINAL GATE. The cursor is a per-room high-water mark that OUTLIVES the 24h dealt_hands
+    // TTL; deriving it from max(stored ordinal) would let a burned ordinal be re-minted with a fresh
+    // deck once retention dropped the row (the retention-door re-roll).
+    const { data: cursorRow } = await sb
+      .from('room_hand_cursor')
+      .select('last_ordinal')
+      .eq('room_id', room_id)
+      .maybeSingle();
+    const decision = decideOrdinal({
+      requested: hand_ordinal,
+      cursor: cursorRow ? (cursorRow.last_ordinal as number) : null,
+      storedExists: !!row,
+    });
+    if (decision.action === 'reject') {
+      return json({ ok: false, error: decision.error }, decision.error === 'hand_expired' ? 410 : 409);
+    }
+
+    if (!row) {
+      // Claim the ordinal FIRST, atomically. `claim_hand_ordinal` bumps the cursor ONLY when the
+      // requested ordinal is exactly last_ordinal + 1, so two seats racing to be first-caller
+      // cannot produce two decks for one ordinal, and a loser never mints.
+      const claim = await sb.rpc('claim_hand_ordinal', { p_room_id: room_id, p_ordinal: hand_ordinal });
+      if (claim.error || claim.data !== true) {
+        // Lost the race — another seat claimed this ordinal in the gap. Read THEIR row; never mint
+        // a second deck for the same ordinal.
+        const existing = (await sb.from('dealt_hands').select('*').eq('hand_id', hand_id).maybeSingle()).data;
+        if (!existing) return json({ ok: false, error: 'ordinal_out_of_order' }, 409);
+        row = existing;
+      }
+    }
+
     if (!row) {
       const { data: players } = await sb
         .from('room_players')
@@ -94,6 +155,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           hand_id,
           room_id,
           player_count: pc,
+          hand_ordinal,
           seat_user_ids: seated.map((r) => r.user_id), // snapshot: user_id per seat, in seat order
           seed_hex: seed,
           deck: deal.deck,
