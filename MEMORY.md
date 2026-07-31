@@ -1,5 +1,48 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 (V) — STANDING RULE + the deck-shopping hole in P2 step 1
+
+**RULE (permanent, no exceptions): a dormant branch may NEVER carry a whole-function
+`CREATE OR REPLACE` of a live, actively-changing function.**
+
+Express the change as an additive delta plus a regenerate-from-live procedure, and make the file
+**fail loudly** if applied blind. `20260801092000_join_table_autostart_deal.sql` went stale **twice in
+one week** — first missing the M1 club guard, then missing the N1 club idempotency fix *and* the S1
+rejection logging. Applying it would have re-opened a proven impersonation bypass and deleted the
+observability the live `join_requires_session=true` flip depends on. Both times it was caught only by
+a hand diff. **A hand diff is not a control.** That file now contains no function body at all; it is a
+procedure ending in `RAISE EXCEPTION`, listing the five markers whose absence proves a stale start.
+
+**Why this class of file rots:** the dormant copy is written once and the live function keeps moving.
+The staleness is invisible — the file still applies cleanly, it just silently un-ships whatever landed
+after it was written. The blast radius is exactly the security fixes we shipped most recently.
+
+---
+
+**V1 — P2 step 1 had a deck-shopping hole, found before shipping.** `deal_hand` is create-or-get keyed
+on `hand_id`, so the first authorised caller mints the deal. The step-1 plan had the HOST broadcasting
+the hand ordinal. Together those let a malicious host mint N+1, read its **own** slice, dislike it,
+mint N+2, and announce whichever dealt it better — every call a legitimately seated player asking for
+its own cards, so authz passes on all of them. **Step 1 as scoped would have moved card DELIVERY off
+the wire while introducing a NEW host advantage in place of the old one.** Same trap as "Phase A moves
+who shuffles, not who can see", in a new costume.
+
+Shipped on the dormant branch (not live): `handOrdinal.ts` (pure, tested) + `room_hand_cursor` +
+`claim_hand_ordinal()`, and authz moved **before** the mint (previously any caller knowing a `room_id`
+could burn an ordinal before being rejected).
+
+**Three conditions are required; only the first is built.** Stated so nobody mistakes partial for done:
+1. ✅ **Server-side monotonicity** — mint only `cursor + 1`.
+2. ❌ **Clients must DERIVE the ordinal, never accept it from the host.** Without this, monotonicity
+   alone does not close it: burning is free, so the host just skips forward and plays a later ordinal.
+3. ❌ **Minting K requires K-1 complete** (`handAcks` unanimity). Without this the host can mint ahead
+   and preview its own future hands.
+
+**The retention door:** the cursor must OUTLIVE the 24h `dealt_hands` TTL. If "expected next" were
+`max(stored ordinal)`, deleting decks would lower the max and a burned ordinal could be re-minted with
+a fresh deck — the re-roll returns through retention. Hence a separate `room_hand_cursor`, cleaned by
+room lifetime, never by a clock.
+
 ### 2026-07-31 (S) — `join_requires_session` = **TRUE** (flipped). ROLLBACK IS ONE ROW.
 
 ```sql
