@@ -182,3 +182,116 @@ sprint).** Estimate only: warm ~150–400 ms (1 JWT verify + 1–2 `room_players
 deal compute + 1 insert), cold start ~1–3 s (Deno EF boot). Rematch and next-hand also traverse this
 path. **Measuring real p50/p95 is a required gate at the deploy step** (on a Supabase branch), not
 something to assert now (Rule 10).
+
+## W — P2 STEP 1 IS **STORE-AND-SERVE** (design; built on the dormant branch, nothing applied)
+
+Supersedes the U3 shape. The host keeps dealing in memory and **uploads** the deck; each client
+fetches **only its own slice**. Both transports then carry the *same* deck, which is what makes the
+rollout fleet-mixing-safe.
+
+**Why not let the EF deal (the U3 shape):** the EF deals from its own seed, so an updated client
+reading its EF slice and a stale client reading the host's `CARDS_DEALT` broadcast would be **playing
+different cards in the same hand** — a correctness bug wearing a security change's clothes. And the
+host cannot bridge it, because `sliceForPlayer` never hands the host the full deal. That turns step 1
+into a hard per-room cutover, destroying the exact property that justified sequencing P2 first.
+Store-and-serve also makes the V1 shopping attack **vanish rather than be mitigated**: the server
+never mints, so the host's ability to re-deal is exactly what it is today — neither better nor worse.
+
+### ⚠️ W2.1 — STEP 1 DELIVERS **ZERO CONFIDENTIALITY**. Say it out loud.
+
+> **During step 1 the broadcast still carries every seat's cards. Nothing is hidden from anyone.
+> Step 1 is PLUMBING. The security win lands at STEP 3, when the broadcast stops.**
+
+A reader who believes step 1 fixed the leak is precisely the person who never ships step 3 — and the
+leak stays open forever behind a task marked done. Step 1's only deliverable is that step 3 becomes
+possible without a flag-day cutover.
+
+### W1 — the upload path has its own authz problem: DECK INJECTION
+
+Create-or-get + an unchecked writer means **first writer wins**, and nothing said the first writer
+must be the host. A seated **non-host** who uploads a deck of its own choosing for the expected
+`hand_id` before the host does makes every client fetch **its** deck. Shopping let the host pick among
+*honest* decks; injection lets any seat **choose the cards**. Two independent controls:
+
+1. **Writer must be the host**, resolved from the server-side roster — `is_room_host(room_id, uid)`
+   (`SECURITY DEFINER`, returns boolean only), never a request field. Pure decision in
+   `storeDeal.ts::decideStore`, checked identity → seated → host → already-stored. `already_stored` is
+   evaluated **last** so the response never reveals to an outsider whether a hand has been dealt.
+   *Why `is_host` is trustworthy:* it is written only by SECURITY DEFINER RPCs (`join_table`,
+   `create_table`, `leave_table`, `evict_ghost_seats`); `room_players` has RLS **enabled** with a
+   SELECT-only policy, so a client cannot promote itself even though the legacy table grants still
+   list UPDATE.
+2. **WRITE-ONCE, enforced in the schema** — `dealt_hands_write_once_trg`. UPDATE is always refused;
+   DELETE is refused for any row younger than the 24h retention age, because delete-then-insert is an
+   overwrite by another name. This lives in a trigger rather than the EF because the EF runs as
+   `service_role` and **bypasses RLS** — an EF-only check is a promise, not a control. Without it the
+   host could swap the deck *after* clients had fetched, which is worse than a pre-hand re-roll: the
+   victims have already acted on the first deck.
+
+### W1.4 — the host leaves mid-hand (the elector problem, arriving through a new door)
+
+`leave_table` deletes the departing seat's `room_players` row and clears `host_id` on public rooms. So
+after the host leaves **no seat has `is_host`** until a new joiner claims it
+(`join_table`: `v_is_host := (v_room.is_public AND NOT EXISTS (... is_host))`).
+
+- **Does an uploaded deck outlive its uploader? YES, and it must.** `dealt_hands` rows key on
+  `hand_id`, not on the uploader, and the trigger forbids deletion of a live hand. The hand in flight
+  continues to serve slices correctly to the remaining players. Tying deck lifetime to the uploader
+  would let a losing host destroy a hand in progress by quitting — a griefing vector we must not
+  create.
+- **The next hand with no host: the table WEDGES.** Nobody satisfies `is_host`, so nobody may upload,
+  so no client can fetch. This is the same elector gap the F-sprint hit from the autostart side.
+  **Design answer (not built): elect the lowest live `seat_index` as the uploader when no seat holds
+  `is_host`**, decided server-side inside `is_room_host` — never announced by a client, or the
+  election itself becomes the injection vector we just closed. Liveness must use the existing
+  `ACK_STALE_MS`/`evict_ghost_seats` staleness notion so a disconnected seat cannot hold the election.
+- **Until that is built, step 1 must not ship for rooms that can outlive their host.** Concretely: the
+  fetch path needs the broadcast fallback (which step 1 has by construction) and step 3 **must not**
+  ship before the elector exists, or a host quitting between hands strands the table permanently.
+
+### W2.2 — ordering: store → signal → fetch
+
+A client that fetches before the host has stored gets nothing. The ordering is therefore fixed:
+
+1. Host deals in memory, **stores** the deck (upload returns success), and only then
+2. **signals** on the channel (`CARDS_READY{hand_id}` — an ordinary coordination message, no card
+   data), and
+3. clients **fetch on the signal**, not on a timer.
+
+- **Retry:** on a failed or empty fetch, retry with backoff (~250 ms, 500 ms, 1 s, 2 s, capped ~4
+  attempts). A fetch that returns "not stored yet" is a *retryable* condition, not an error — a slow
+  upload must not look like a failure.
+- **During step 1, exhaustion is harmless:** fall back to the `CARDS_DEALT` broadcast, which is still
+  being sent. Instrument every fallback — **that count is the step-3 gate.** Step 3 ships when the
+  fallback rate is ~0, not on a date.
+- **After step 3 there is no fallback.** Exhausted retries must surface a real, honest message and
+  leave the hand recoverable rather than silently dealing nothing — the same discipline as
+  `JOIN_NO_SESSION_MESSAGE`. The player must never sit looking at an empty hand with no explanation.
+
+### W2.3 — which messages need store-and-serve, and which just need to be sent LATER
+
+These are different problems and conflating them produces the wrong fix.
+
+**Needs STORE-AND-SERVE (privacy — must never reach the wrong client at all):**
+- `CARDS_DEALT` — a seat's hole cards during play. Broadcast to everyone today, filtered client-side.
+
+**Needs LATER-SEND only (timing — the data is legitimately public once its moment arrives):**
+- `BOARD_REVEAL` `closedCards` — the leak is that they are broadcast **before** their reveal point,
+  not that they are broadcast. Fix the *when*, not the *who*: release board *n*'s closed cards when
+  the hand legitimately reaches board *n*.
+- **Hole cards at showdown are legitimately public.** A stranger who sees them *then* learns nothing
+  that can change a hand already over. Scoping reveal work as a privacy problem would over-build it
+  and slow the thing that actually matters.
+- Post-settlement chip deltas, winner names, hand-rank labels — public by the time they are sent.
+
+**Consequence worth stating:** the reveal cursor is a *timing* mechanism, and it does **not** need the
+per-caller slice machinery. That keeps it cheap and keeps it out of step 1.
+
+### Monotonicity work: RETAINED, relabelled
+
+`handOrdinal.ts` + `room_hand_cursor` + `claim_hand_ordinal()` are **not** part of store-and-serve —
+the server never mints here, so there is no ordinal to shop for. They are kept on the branch and
+labelled **prerequisite-for-minting**: the moment the EF ever deals (the eventual
+server-authoritative step), it needs `decideOrdinal`, and the retention-door analysis — a high-water
+cursor that outlives the TTL, returning `hand_expired` rather than re-minting — is the non-obvious
+half that would otherwise be rediscovered the hard way.
