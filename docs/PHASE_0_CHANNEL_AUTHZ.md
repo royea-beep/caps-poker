@@ -85,3 +85,85 @@ competing track.
   **Intended spectator visibility:** open community cards, player names/ready state, winner name and
   hand-rank labels post-reveal, spectator count. Phase 0 should preserve exactly that and must not
   "upgrade" spectators to card-level data when the reveal moves server-side.
+
+
+## Q1 — BRANCH TEST RESULT: `private` is SERVER-ENFORCED, and the policy keys on MEMBERSHIP
+
+Run on a throwaway Supabase branch (`phase0-injection-test`, deleted; $0.01344/hr, ~35 min ≈ **$0.01**)
+with a membership-keyed `realtime.messages` policy in place.
+
+| Case | Subscribe | Injection landed on a private member? |
+|---|---|---|
+| Member (granted membership) + `private: true` | **SUBSCRIBED** | — |
+| **T1** anon-only, no session, **no** `private` flag | SUBSCRIBED *(to the public topic)* | **NO** |
+| **T2** valid session, **no** membership, `private: true` | **CHANNEL_ERROR — "Unauthorized: You do not have permissions to read from this Channel topic: caps-room-BR01"** | **NO** |
+
+**The policy keys on MEMBERSHIP, not merely on being logged in** — T2 is the decisive case: a fully
+authenticated user was rejected at subscribe because it was not in the membership table.
+
+**On SEND:** `send()` returned `"ok"` for the anon and outsider clients, but that is the client-side
+result of a REST fallback — the message **never reached the private member**. Report it as
+"send call returns ok locally, delivery blocked", never as "SEND: YES".
+
+**Residual, stated honestly:** I did not obtain a paired POSITIVE control (member1 → member2 delivery) —
+self-broadcast is off by default so the single member never saw its own message, and the two-member
+rerun hung on client teardown and was killed. So "injection blocked" rests on the negative observation
+plus the documented public/private domain separation, not on a matched positive control. Re-run the
+two-member control at implementation time.
+
+**IMPLEMENTATION TRAP FOUND (would have broken Phase 0 silently):** the `realtime.messages` policy's
+`EXISTS` subquery is evaluated **as the connecting user**. With RLS enabled on the membership table and
+no SELECT policy, legitimate members are rejected `Unauthorized` — the check silently returns false. I
+hit exactly this and had to add `read own membership`. In CAPS this happens to hold today because
+`room_players` carries `"Anyone can read room_players" SELECT TO public` — but if that policy is ever
+tightened, channel access dies with it. **Couple the two deliberately, and test a legitimate member
+after any change to `room_players` visibility.**
+
+## Q2 — MESSAGE AUTHENTICITY (Phase 0 requirement)
+
+**P2 made the game confidential. It does not make it authentic.** An attacker who cannot read a single
+card can still PUBLISH. `senderId` is just a payload field — `const { type, data, senderId } = payload`
+(`realtimeMultiplayer.ts:230`) — and **nothing binds it to the authenticated sender**. Proven on live in
+N2: a forged payload carrying `senderId: "host"` was received verbatim by a listener that was not the
+host. So after Phase 0's confidentiality work, a *seated* player (legitimately on the channel) can still
+impersonate the host or another seat.
+
+### INSTRUCTIONS (mutate state — must be bound to a verified sender)
+
+| Message | Effect if forged |
+|---|---|
+| `GAME_START` / phase transitions | starts/advances a hand out of band |
+| `PLAYER_READY` / ready-acks | triggers the next hand without consent (the unanimity rule becomes forgeable) |
+| `BOARD_ASSIGNMENT` / placement submissions | commits another player's cards |
+| next-hand / rematch requests | resets a hand in progress (the griefing vector G1 closed server-side — do not re-open it client-side) |
+| turn advance / timer expiry | steals or skips a turn |
+| chip-delta / settlement messages | fabricates an economic outcome |
+
+### INFORMATION (display only — forging is a nuisance, not a state change)
+
+chat / emotes · presence and spectator counts · countdown ticks used purely for rendering ·
+post-settlement result *echoes* (once the server is the record of truth) · reveal *notifications*.
+
+### Binding mechanism, per class
+
+- **Every INSTRUCTION moves to an RPC / Edge Function**, where the server validates `auth.uid()` against
+  the seated player it claims to be *and* against whether that action is legal right now. This is the
+  same shape as the `join_table` / `promote_starting_to_playing` / `begin_next_hand` work already done.
+- **INFORMATION may stay on the channel**, but the client must treat it as advisory and never mutate
+  authoritative state from it.
+- **Signing individual messages is explicitly NOT chosen** — it needs key distribution and still leaves
+  the server ignorant of game state, so it buys authenticity without authority.
+
+### The principle, stated plainly
+
+> **After Phase 0, no client message may be TRUSTED to mutate game state merely because it arrived on
+> the channel. The server is the arbiter of state; the channel is a coordination bus.**
+
+### PHASE B DEPENDENCY — recorded now, not designed here
+
+The current architecture **cannot** satisfy that principle, because turn/phase logic lives in the host's
+in-memory `RealtimeServer`. There is no server-side notion of whose turn it is, so no RPC can validate
+"is this caller allowed to do this now". **Moving turn/phase state server-side is therefore a Phase B
+dependency of Phase 0's authenticity goal.** Not designed this sprint — named and stopped, deliberately.
+Consequence to accept honestly: Phase 0 alone delivers *confidentiality* + *stranger exclusion*; full
+*authenticity against a seated opponent* is not achievable until that Phase B move lands.
