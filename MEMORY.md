@@ -1,5 +1,51 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 (P) — PHASE 0 DESIGN + **MP IS KNOWN-EXPLOITABLE UNTIL PHASE 0 SHIPS**
+
+**VERBATIM, DO NOT SOFTEN:** *Multiplayer is known-exploitable until Phase 0 (realtime channel
+authorisation + private card transport) ships. Any person holding the anon key — which ships inside the
+public web bundle — can subscribe to `caps-room-{roomCode}` and read every seat's hole cards off the
+wire, with no session, no seat and no club membership. Proven on live 2026-07-31.*
+
+***Therefore the leaderboard cannot be treated as trustworthy for any MP result recorded before Phase 0
+ships.*** Every MP hand ever played was fully visible to anyone who asked, so MP-derived standings,
+chip totals and win records from that period must be assumed potentially manipulated. If the
+leaderboard is ever used for anything that matters (prizes, rankings, marketing claims), that caveat
+must travel with it.
+
+**Exposure, not severity:** no MP session since ~2026-07-12 (`mp_game_started` 24 events / 19 devices in
+30d, all older than three weeks), so this is not an emergency shutdown — but that is a statement about
+traffic and must be revisited the instant MP play resumes.
+**Tripwire live:** `phase0_mp_traffic_tripwire()` + hourly cron `caps_phase0_tripwire` → alerts via
+`whatsapp_outbound` if `mp_game_started` fires while Phase 0 is unshipped. Self-disarms once
+`app_config.phase0_channel_authz_shipped` = true. Dry-run verified (`fired:false`, cron active).
+
+**P1 ANSWERED — `private: true` is a REAL control, not theatre.** Supabase docs, verbatim: *"A public
+broadcast only reaches public channels and a private broadcast only reaches private channels."* Public
+and private are separate DELIVERY DOMAINS, not a permission check on one shared topic — an attacker who
+omits the flag lands in the public domain and receives nothing broadcast privately. No project-level
+"force private" setting exists or is needed. NOT empirically branch-tested (would need a paid branch or
+a shared-project policy); run that as the gate before flipping any client to `private: true`.
+
+**P2 — the durable fix is architectural, and channel authz alone is NOT enough.** A seated OPPONENT is
+legitimately authorised on the channel and still receives everyone's cards today (`targetId` filtering
+is client-side only). Secrets must leave the channel entirely:
+- `CARDS_DEALT` → per-caller HTTPS slice from `deal_hand` (**already built in Phase A**).
+- `BOARD_REVEAL` → server-released staged reveal (needs the reveal cursor `dealt_hands` lacks).
+- Channel reduced to coordination: turn order, timers, presence, ready/ack, chat, post-settlement deltas.
+
+**THIS REFRAMES PHASE A: its value is the PRIVATE TRANSPORT, not the shuffle.**
+- Promoted into PHASE 0: `deal_hand` EF + `sliceForPlayer` no-leak boundary + JWT/roster `authz.ts` +
+  `dealt_hands` storage + `private: true` + a `realtime.messages` policy keyed on room membership.
+- Stays PHASE B: staged reveal cursor, server-side `evaluateAllBoards`, `calculateChipDeltas` + rake,
+  HMAC commit–reveal.
+- The identity work (`room_players.user_id`, `join_requires_session`, club guard) is a PREREQUISITE for
+  Phase 0, because the channel policy keys off room membership.
+
+**Spectate channel is CLEAN** — `spectate:{roomCode}` carries open community cards, names/ready state,
+winner name and hand-rank *labels* only. No hole cards, no closed cards. Phase 0 must preserve exactly
+that scope. Full design: `docs/PHASE_0_CHANNEL_AUTHZ.md`.
+
 ### 2026-07-31 (N) — **PHASE 0 = REALTIME CHANNEL AUTHORISATION.** The fairness roadmap was solving the right problem in the wrong order.
 
 **PROVEN ON LIVE, not inferred.** From a context holding ONLY the anon key — no session, no seat, no

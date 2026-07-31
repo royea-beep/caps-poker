@@ -1,0 +1,87 @@
+# PHASE 0 — Channel Authorisation & Private Transport (DESIGN ONLY, nothing shipped)
+
+> 2026-07-31. Design + verification. **No channel change shipped, no `private: true` in shipped code,
+> no `realtime.messages` policy on the shared project.** Written after N2 proved a listener with no
+> session, no seat and no membership receives every seat's hole cards off `caps-room-{code}`.
+
+## P1 — Is `private: true` a real control, or theatre?
+
+**It is a real control.** The concern was that `private` is a client-declared flag an attacker simply
+omits, joining the same topic as a public channel — which would make the whole plan decorative, exactly
+like the "RLS under service_role" trap we already hit. The Supabase docs resolve the mechanism, verbatim:
+
+> "The `realtime.send()` function in the database includes a flag that determines whether the broadcast
+> is private or public, and client channels also have the same configuration. **For broadcasts to work
+> correctly, these settings must match. A public broadcast only reaches public channels and a private
+> broadcast only reaches private channels.**"
+
+> "By default, all database broadcasts are private, meaning clients must authenticate to receive them.
+> If the database sends a public message but the client subscribes to a private channel, the message is
+> not delivered because private channels only accept signed, authenticated messages."
+
+Public and private are **separate delivery domains**, not a permission check layered on one shared
+topic. An attacker who omits `private: true` lands in the *public* domain and receives nothing that was
+broadcast privately. So no project-level "force private topics" setting is required — and none was
+found in the docs (`private_only` / "disable public channels" / "Enable private": zero occurrences).
+
+**Residual, stated honestly:** this is a docs-level (mechanism) answer, not an executed branch test. The
+empirical test — create a `realtime.messages` policy, broadcast privately, attempt a non-private join to
+the same topic — was NOT run: it requires either a shared-project policy (forbidden this sprint) or a
+paid Supabase branch. Given the mechanism is unambiguous **and** P2 below shows the durable fix does not
+depend on this answer, the test is no longer load-bearing. Run it at implementation time as the gate
+before flipping any client to `private: true`.
+
+## P2 — The durable fix: secrets must not traverse a shared channel
+
+**Channel authz alone is insufficient, and this is the key point.** Even with perfect authorisation, a
+seated *opponent* is legitimately authorised on `caps-room-{code}` — and today they receive
+`CARDS_DEALT` for every seat and `BOARD_REVEAL` with all `closedCards`. `targetId` filtering is
+client-side only (`realtimeMultiplayer.ts:932`). So channel authz stops **strangers**, not **the players
+at the table**. Both must be closed.
+
+### What moves OFF the channel
+
+| Message | Carries today | Where it goes |
+|---|---|---|
+| `CARDS_DEALT` | a seat's `yourCards` — broadcast to all, filtered client-side | **HTTPS fetch**: each client calls `deal_hand` and receives ONLY its own slice (own hole cards + open board cards + a closed *count*). Already built in Phase A. |
+| `BOARD_REVEAL` | `closedCards` + `playerHands` for EVERY seat, sent at reveal | **Server-released, staged**: a reveal endpoint releases board *n*'s closed cards only when the hand legitimately reaches board *n*, to every client equally. Requires the reveal cursor that `dealt_hands` lacks. |
+| chip settlement | derived from host-side evaluation | **Server-computed** and returned/settled server-side (same authority the rake needs). |
+
+### What STAYS on the channel
+
+Turn order and phase transitions · timers/countdowns · presence and seat occupancy · ready/ack signals ·
+chat/emotes · **post-settlement** chip deltas (public by then) · reveal *notifications* (not card data).
+Reduced to coordination only: **nothing secret rides the channel.**
+
+### This reframes Phase A
+
+Phase A's value was recorded as "server-authoritative shuffle". That was the wrong headline. Its real
+value is the **private per-caller transport** — `sliceForPlayer` + the JWT/roster authz already deliver
+each client only its own cards over authenticated HTTPS. That is precisely the `CARDS_DEALT` fix.
+
+- **Promoted from Phase A into PHASE 0:** the `deal_hand` EF + `sliceForPlayer` no-leak boundary + the
+  JWT-verified/roster authz (`authz.ts`) + `dealt_hands` server-side storage + `private: true` on both
+  channels + a `realtime.messages` policy keyed on room membership.
+- **Remains PHASE B:** staged board reveal (the reveal cursor `dealt_hands` does not have), server-side
+  showdown evaluation (`evaluateAllBoards`), chip settlement (`calculateChipDeltas`) + the working rake,
+  and HMAC commit–reveal provable fairness.
+
+**Dependency worth stating:** a `realtime.messages` policy keys off room membership → it reads
+`room_players` → that is only trustworthy if seats carry a verified identity. So the identity work
+(`user_id` population, `join_requires_session`, the club guard) is a **prerequisite** for Phase 0, not a
+competing track.
+
+## P3 — Interim posture
+
+- **MP is known-exploitable until Phase 0 ships.** Not shut down: no MP session since ~2026-07-12
+  (`mp_game_started` 24/19 devices in 30d, all older than three weeks). That is a judgement about
+  *exposure*, not *severity*, and must be revisited the moment traffic resumes.
+- **Tripwire live:** `phase0_mp_traffic_tripwire()` + hourly cron `caps_phase0_tripwire` alerts through
+  `whatsapp_outbound` if `mp_game_started` fires while Phase 0 is unshipped. Self-disarms when
+  `app_config.phase0_channel_authz_shipped` is set true.
+- **Spectate channel is CLEAN.** `spectate:{roomCode}` carries `SpectatorSnapshot` only:
+  `communityCards` = `b.openCards` (open cards only), and `revealedBoards[].playerHands` =
+  `{ playerName, handRank }` — hand-rank *labels*, never card ids. No hole cards, no closed cards.
+  **Intended spectator visibility:** open community cards, player names/ready state, winner name and
+  hand-rank labels post-reveal, spectator count. Phase 0 should preserve exactly that and must not
+  "upgrade" spectators to card-level data when the reveal moves server-side.
