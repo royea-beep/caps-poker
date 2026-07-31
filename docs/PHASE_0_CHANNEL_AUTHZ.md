@@ -24,7 +24,7 @@ topic. An attacker who omits `private: true` lands in the *public* domain and re
 broadcast privately. So no project-level "force private topics" setting is required — and none was
 found in the docs (`private_only` / "disable public channels" / "Enable private": zero occurrences).
 
-**Residual, stated honestly:** this is a docs-level (mechanism) answer, not an executed branch test. The
+**SUPERSEDED — the branch test WAS subsequently run; see the Q1 section below, which confirms `private` is server-enforced AND that the policy keys on membership. The paragraph below is retained only to show what was known before that test.** Residual as of that moment: this was a docs-level (mechanism) answer, not an executed branch test. The
 empirical test — create a `realtime.messages` policy, broadcast privately, attempt a non-private join to
 the same topic — was NOT run: it requires either a shared-project policy (forbidden this sprint) or a
 paid Supabase branch. Given the mechanism is unambiguous **and** P2 below shows the durable fix does not
