@@ -1,5 +1,96 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (Z4) — **ROOT CAUSE: THE SERVER HAS NO AUTHORITATIVE MODEL OF A HAND.**
+
+Four items on the roadmap are being tracked as independent projects. They are **one hole**:
+
+| Symptom | Tracked as |
+|---|---|
+| the host holds the deck | Phase A / P2 |
+| the channel carries unauthenticated instructions | Phase 0 / Q2 |
+| the client asserts its own score and ELO | Y1 |
+| turn and phase state live in one client's memory | Phase B |
+
+**All four exist because the server never models a hand.** Every fix so far has been a wrapper around
+that absence, and **each wrapper has needed another wrapper**: private transport needed an ordinal;
+the ordinal needed a cursor; the cursor needed a doorbell; the doorbell needed a server-side current-
+hand pointer — which is a hand model, arrived at sideways.
+
+**The consequence, stated honestly: the economy cannot be made TRUE without server-side hand state,
+only ATTRIBUTABLE.** Identity binding (Y1) proves *who* said a score. It cannot prove the score is
+*real*, because `submit_score` and `update_leaderboard_elo` are assertions, not deltas — an
+authenticated player can still say "my total is 7,720 and I won."
+
+**And attributable may be enough.** That is a product decision, not an engineering one.
+
+#### THE DECISION FOR ROYE — three lines
+
+1. **Is the leaderboard something to DEFEND, or a vanity display?**
+2. **If DEFENDED:** the server must own hand results — that is Phase B, and Y1's identity binding is
+   necessary but not sufficient.
+3. **If VANITY:** Y1's identity binding IS sufficient; `submit_score`/`update_leaderboard_elo` stay
+   assertions behind a per-device budget, and Phase B can wait.
+
+### 2026-08-01 (Z1) — uuid economy variants revoked. ROLLBACK IS ONE LINE.
+
+```sql
+GRANT EXECUTE ON FUNCTION public.earn_chips(uuid,text,integer), public.spend_chips(uuid,text,integer),
+  public.add_xp(uuid,integer,text), public.record_chip_purchase(uuid,text,text) TO anon, authenticated;
+```
+
+Four functions the app never calls (it passes `p_device_id` exclusively), that **cannot work anyway**
+— `leaderboard.id` defaults to `gen_random_uuid()` and 0 of 319 rows match any `auth.users` id, so
+`UPDATE leaderboard ... WHERE id = p_user_id` can never match — and that were `EXECUTE`-able by
+`anon` with a NULL-bypassable guard. Device variants deliberately untouched.
+
+> ⚠️ **LESSON — REVOKING FROM anon/authenticated ALONE IS A NO-OP FOR FUNCTIONS.** Postgres grants
+> `EXECUTE` to **PUBLIC** by default (`proacl` shows a leading `=X/postgres`), and anon/authenticated
+> are members of PUBLIC. My first revoke removed only the explicit grants and **changed nothing** —
+> proven empirically: `earn_chips(uuid)` still succeeded from an anon client afterwards. Always
+> `REVOKE EXECUTE ... FROM PUBLIC` as well, then re-`GRANT` to `service_role`. This differs from
+> TABLE grants (X1), where there is no default PUBLIC grant — which is why the table revoke worked
+> first time and this one did not.
+
+### 2026-08-01 (Z2) — **THERE IS NO DEVICE→OWNER MAPPING. ANYWHERE. It has never been recorded.**
+
+Confirmed independently on live: `push_tokens` = 3 rows, **0** with a non-null `user_id`;
+`leaderboard` = 319 rows, **0** whose `id` matches any `auth.users` row; `auth.users` = 1,844
+(1,842 anonymous). **319 devices, 1,844 users, not one recorded link.** Ownership cannot be
+backfilled because it was never captured.
+
+**And device ids are not secret — they are trivially harvestable.** Measured from a real anon client:
+
+| Source | What an unauthenticated caller gets |
+|---|---|
+| `leaderboard` table (SELECT to anon) | **all 319 rows WITH `device_id`**, in one query |
+| `chip_transactions` table (SELECT to anon) | 527 distinct `device_id`s in the first 1,000 rows alone |
+| `get_leaderboard(p_device_id)` RPC | 50 rows, and the returned columns **include `device_id`** |
+| `room_players` (SELECT to anon) | `device_id` for every seated player (0 today — no MP traffic) |
+
+**So the full target list is a single SELECT away, and the device variants have no guard at all.**
+
+#### Options, with honest costs
+
+| | Option | Cost |
+|---|---|---|
+| **(a)** | TOFU, land-grab accepted, window minimised | **Unacceptable here.** Every device is unclaimed simultaneously AND the id list is one query away, so a script claims all 319 accounts in the first minutes. Minimising the window does not help when the attacker can enumerate the whole population instantly. |
+| **(b)** | TOFU gated on a device-held secret | **No such secret exists.** AsyncStorage contents are client-supplied and unverifiable server-side; a device id read from AsyncStorage is exactly what the attacker already has. Would require a real attestation (Play Integrity / App Attest) — weeks, and a native build. |
+| **(c)** | **Forward-only: new economy keys on `auth.uid()`; legacy device rows FROZEN, not claimable** | No land-grab is possible because nothing is claimable. Existing players keep their balance and rank (rows are read, just not credited via the old path). Cost: a device that never signs in stops earning — mitigated because CAPS already signs in anonymously, so in practice a session exists. **Cheapest safe path.** |
+| **(d)** | Fix `push_tokens` first so links start being recorded | Does nothing for the 319 existing devices; it is a prerequisite for (c)'s long tail, not an alternative. Worth doing anyway — registration has been broken since 2026-04-27 (C3). |
+
+#### CHOICE: (c) FORWARD-ONLY, with (d) alongside.
+
+**What it costs the 319 existing players: NOTHING they can see. Nobody loses chips. Nobody loses
+leaderboard position.** Balances and ranks are historical rows; they are read exactly as today. What
+changes is that *future* credits require a session that owns the device — and since the app already
+signs in anonymously, the normal player never notices. The `econ_authz` window is measuring precisely
+the population that would notice.
+
+**The one real loss:** a player who reinstalls and gets a new anonymous uid cannot *claim* an old
+device's balance, because we cannot distinguish them from an attacker doing the same thing. That is
+the honest price of never having recorded ownership, and it is why Google sign-in (which produces a
+stable, verifiable identity) is the real long-term answer.
+
 ### 2026-07-31 (Y) — **THE ECONOMY RPCs ARE OPEN.** Latent, not breached. Outranks Phase 0/A/B.
 
 **13 functions, ZERO exceptions:** every one is `SECURITY DEFINER`, `EXECUTE` granted to **both**
