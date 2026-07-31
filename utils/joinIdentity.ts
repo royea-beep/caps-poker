@@ -78,8 +78,22 @@ export const JOIN_NO_SESSION_MESSAGE =
  *  - `table_full_or_gone` — same reason; the existing per-surface generics are accurate for it.
  * Only errors with no adequate copy anywhere belong in this map.
  */
+/**
+ * U2 — TRANSPORT failure (offline, DNS, 5xx, client not configured), as distinct from the server
+ * saying no. Previously `joinTable` returned `null` here and every call site fell through to its
+ * `table_full_or_gone` wording, so an OFFLINE player was told their code was "wrong, full, or no
+ * longer open" — a confidently wrong diagnosis about the table when the real problem was the network.
+ * Deliberately says nothing about the code or the table.
+ */
+export const JOIN_NETWORK_MESSAGE =
+  "Couldn't reach the server. Check your connection and try again.";
+
+/** Synthetic error code for a transport failure — never returned by the `join_table` RPC itself. */
+export const JOIN_NETWORK_ERROR = 'network_error';
+
 const JOIN_ERROR_COPY: Readonly<Record<string, string>> = {
   no_session: JOIN_NO_SESSION_MESSAGE,
+  [JOIN_NETWORK_ERROR]: JOIN_NETWORK_MESSAGE,
 };
 
 /** Copy for a server join error, or undefined when the call site's own wording is better. */

@@ -1,4 +1,4 @@
-import { resolveJoinIdentity, JOIN_AUTH_TIMEOUT_MS, joinErrorMessage, JOIN_NO_SESSION_MESSAGE } from '../joinIdentity';
+import { resolveJoinIdentity, JOIN_AUTH_TIMEOUT_MS, joinErrorMessage, JOIN_NO_SESSION_MESSAGE, JOIN_NETWORK_ERROR, JOIN_NETWORK_MESSAGE } from '../joinIdentity';
 
 // J2 — joinTable must NEVER hang on auth. Today's client does not wait on auth before joining;
 // awaiting ensureAnonymousAuth() unconditionally would turn an auth outage / slow network / offline
@@ -72,5 +72,24 @@ describe('join error copy mapping (T1)', () => {
   it('copy names the cause and the remedy (it is the only hard-fail a player can hit)', () => {
     expect(JOIN_NO_SESSION_MESSAGE).toMatch(/sign you in/i);
     expect(JOIN_NO_SESSION_MESSAGE).toMatch(/try again/i);
+  });
+});
+
+// U2 — a TRANSPORT failure is not the server saying no. joinTable used to return null for it, and
+// every call site fell through to its `table_full_or_gone` wording, so an OFFLINE player was told
+// their code was "wrong, full, or no longer open" — confidently wrong, and unreadable as a support
+// report. These lock in the distinction and the copy's focus on connectivity.
+describe('transport failure copy (U2)', () => {
+  it('maps the synthetic network_error code to network copy', () => {
+    expect(joinErrorMessage(JOIN_NETWORK_ERROR)).toBe(JOIN_NETWORK_MESSAGE);
+  });
+
+  it('network copy points at the connection, never at the code or the table', () => {
+    expect(JOIN_NETWORK_MESSAGE).toMatch(/connection/i);
+    expect(JOIN_NETWORK_MESSAGE).not.toMatch(/code|table|full|wrong/i);
+  });
+
+  it('is distinct from the no-session copy — they are different failures', () => {
+    expect(JOIN_NETWORK_MESSAGE).not.toBe(JOIN_NO_SESSION_MESSAGE);
   });
 });

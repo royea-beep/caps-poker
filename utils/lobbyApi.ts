@@ -15,7 +15,7 @@
  */
 import { getSupabase } from './supabase';
 import { ensureAnonymousAuth } from './auth';
-import { resolveJoinIdentity, joinErrorMessage } from './joinIdentity';
+import { resolveJoinIdentity, joinErrorMessage, JOIN_NETWORK_ERROR, JOIN_NETWORK_MESSAGE } from './joinIdentity';
 import { track } from './analytics';
 
 export type PlayerCount = 2 | 3 | 4;
@@ -136,10 +136,17 @@ export async function createTable(playerCount: PlayerCount, hostId?: string | nu
 }
 
 /** Claim a seat (adds a room_players roster row; idempotent per player). Auto-starts when full. */
-export async function joinTable(roomCode: string, playerId?: string | null, displayName?: string, deviceId?: string | null): Promise<JoinResult | null> {
+export async function joinTable(roomCode: string, playerId?: string | null, displayName?: string, deviceId?: string | null): Promise<JoinResult> {
+  // U2: a TRANSPORT failure is not the server saying no. Returning `null` here made every call site
+  // fall through to its `table_full_or_gone` wording, telling an offline player the code was "wrong,
+  // full, or no longer open". Transport failures now return a JoinResult carrying network copy, so
+  // call sites stay uniform (`res?.message ?? <their generic>`) and no longer misdiagnose.
+  const networkFailure = (): JoinResult => ({
+    ok: false, error: JOIN_NETWORK_ERROR, message: JOIN_NETWORK_MESSAGE,
+  });
   try {
     const sb = getSupabase();
-    if (!sb) return null;
+    if (!sb) return networkFailure();
     // IDENTITY: await the anon session before seating. Every call site passes a `userIdRef.current`
     // populated by a FIRE-AND-FORGET `getUser()` (app/lobby/table.tsx:132 and friends), so a fast
     // joiner reached this RPC with playerId = null and was seated with room_players.user_id = NULL —
@@ -172,14 +179,17 @@ export async function joinTable(roomCode: string, playerId?: string | null, disp
       p_display_name: displayName ?? 'Player',
       p_device_id: deviceId ?? null,
     });
-    if (error) return null;
+    // A PostgREST-level error is a transport/infrastructure failure, not a seat decision.
+    if (error) return networkFailure();
+    // Defensive: a 2xx with no body is also not a seat decision.
+    if (!data) return networkFailure();
     // T1: attach the user-facing copy HERE, once, so no call site can forget it. Immutable —
     // never mutate the RPC payload.
     const result = data as JoinResult;
     const copy = result?.ok === false ? joinErrorMessage(result.error) : undefined;
     return copy ? { ...result, message: copy } : result;
   } catch {
-    return null;
+    return networkFailure();
   }
 }
 
