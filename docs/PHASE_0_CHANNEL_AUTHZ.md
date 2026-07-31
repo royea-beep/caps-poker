@@ -105,19 +105,25 @@ authenticated user was rejected at subscribe because it was not in the membershi
 result of a REST fallback — the message **never reached the private member**. Report it as
 "send call returns ok locally, delivery blocked", never as "SEND: YES".
 
-**Residual, stated honestly:** I did not obtain a paired POSITIVE control (member1 → member2 delivery) —
-self-broadcast is off by default so the single member never saw its own message, and the two-member
-rerun hung on client teardown and was killed. So "injection blocked" rests on the negative observation
-plus the documented public/private domain separation, not on a matched positive control. Re-run the
-two-member control at implementation time.
+**~~Residual~~ — CLOSED by R2 below.** At the time of Q1 I did not obtain a paired POSITIVE control
+(member1 → member2 delivery): self-broadcast is off by default so the single member never saw its own
+message, and the two-member rerun hung on client teardown and was killed. **That control was
+subsequently obtained — see R2: member A → member B `RECEIVED`, in the same run as both blocked
+injections.** The Q1 negatives are therefore interpretable in hindsight; they were not, on their own,
+at the time.
 
 **IMPLEMENTATION TRAP FOUND (would have broken Phase 0 silently):** the `realtime.messages` policy's
 `EXISTS` subquery is evaluated **as the connecting user**. With RLS enabled on the membership table and
 no SELECT policy, legitimate members are rejected `Unauthorized` — the check silently returns false. I
 hit exactly this and had to add `read own membership`. In CAPS this happens to hold today because
 `room_players` carries `"Anyone can read room_players" SELECT TO public` — but if that policy is ever
-tightened, channel access dies with it. **Couple the two deliberately, and test a legitimate member
-after any change to `room_players` visibility.**
+tightened, channel access dies with it.
+
+> ⚠️ **This paragraph's original conclusion — "couple the two deliberately" — is SUPERSEDED and was
+> WRONG.** Coupling channel access to a permissive `room_players` SELECT preserves the very policy the
+> impersonation chain exploited. The correct resolution is to **DECOUPLE** via a `SECURITY DEFINER`
+> predicate. See **R1** below, verified on a branch with `room_players` and `game_rooms` at RLS-on and
+> zero SELECT policies.
 
 ## Q2 — MESSAGE AUTHENTICITY (Phase 0 requirement)
 
@@ -167,3 +173,123 @@ in-memory `RealtimeServer`. There is no server-side notion of whose turn it is, 
 dependency of Phase 0's authenticity goal.** Not designed this sprint — named and stopped, deliberately.
 Consequence to accept honestly: Phase 0 alone delivers *confidentiality* + *stranger exclusion*; full
 *authenticity against a seated opponent* is not achievable until that Phase B move lands.
+
+
+## R1 — DECOUPLING: the channel policy must not depend on any table's SELECT policy
+
+The Q1 "implementation trap" is not merely a trap — it is a **direct conflict between two correct
+security fixes**, and it had to be designed out before either ships.
+
+- The `realtime.messages` policy's `EXISTS` is evaluated **as the connecting user**. A policy that
+  reads `room_players` directly therefore depends on `room_players` being readable by that user.
+- CAPS satisfies that today only by accident: `room_players` carries
+  `"Anyone can read room_players" SELECT TO public USING (true)` (verified live 2026-07-31).
+- But **that permissive policy is exactly what made the impersonation chain possible** — it is where
+  the attacker harvested the `user_id` (N) and then the `device_id` (N1). Narrowing it is work this
+  project should do anyway.
+- Ship both naively and they destroy each other: tightening `room_players` SELECT would silently
+  reject **every legitimate player** from their own game channel, failing closed with no diagnosable
+  client error (just `Unauthorized`).
+
+### The fix: a SECURITY DEFINER predicate
+
+```sql
+create or replace function public.is_room_member(p_topic text)
+returns boolean
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_code text;
+  v_ok boolean;
+begin
+  if v_uid is null then return false; end if;                              -- no verified identity, ever
+  if p_topic is null or p_topic !~ '^caps-room-[A-Za-z0-9]{4}$' then return false; end if;
+  v_code := upper(right(p_topic, 4));
+  select exists (
+    select 1
+    from public.room_players rp
+    join public.game_rooms gr on gr.id = rp.room_id
+    where gr.room_code = v_code
+      and rp.user_id = v_uid          -- ALWAYS the caller; cannot probe anyone else
+  ) into v_ok;
+  return coalesce(v_ok, false);
+end $$;
+
+revoke all on function public.is_room_member(text) from public, anon;
+grant execute on function public.is_room_member(text) to authenticated;
+
+create policy "phase0 room members read"  on realtime.messages
+  for select to authenticated using ( public.is_room_member((select realtime.topic())) );
+create policy "phase0 room members write" on realtime.messages
+  for insert to authenticated with check ( public.is_room_member((select realtime.topic())) );
+```
+
+**Non-negotiable properties of this function** — a definer function that leaks is worse than the
+policy it replaces:
+
+1. **Returns ONLY a boolean.** Never rows, never seat lists, never identities. There is no output
+   channel through which it can leak what the tables hold.
+2. **Compares `auth.uid()` itself.** The caller cannot pass a user id, so it can only ever ask *"am I
+   in this room"* — a question the caller already knows the answer to. It is not an identity oracle.
+3. **Device ids are not accepted.** A verified session or nothing.
+4. **Topic is validated** against the CAPS room-topic shape before use.
+5. `stable` + `set search_path` — standard definer hygiene.
+
+### R1.4 — `game_rooms` has the SAME dependency, and it is easy to miss
+
+The channel topic is `caps-room-{room_code}`, but `room_players` keys on `room_id`. **Any membership
+check must therefore read `game_rooms` too**, to map code → id. Written as a naive inline policy that
+is a *second* silent dependency on a *second* table's SELECT policy. Resolving `room_code` **inside**
+the definer function decouples both tables at once. That is why the function takes the topic rather
+than a room id.
+
+### R2 — VERIFIED ON A BRANCH, WITH THE TABLES LOCKED DOWN
+
+Branch `phase0-membership-decouple` (deleted; $0.01344/hr, ~25 min ≈ **$0.01**). The fixture
+deliberately set the **future hardened state**: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` on **both**
+`room_players` and `game_rooms` with **zero** SELECT policies (verified: `relrowsecurity=true`,
+`policies=0` on each). Under the Q1-style inline policy this configuration rejects every member; the
+decoupled design must survive it.
+
+| Client | Subscribe | Did member B receive its message? |
+|---|---|---|
+| **Member A** (seated, `private: true`) | **SUBSCRIBED** | — (the broadcaster) |
+| **Member B** (seated, `private: true`) — the listener | **SUBSCRIBED** | — |
+| **POSITIVE CONTROL**: A → B | — | **RECEIVED** ✅ |
+| anon-only, no session, no `private` flag | SUBSCRIBED *(public topic)* | **blocked** |
+| authenticated **non-member**, `private: true` | **CHANNEL_ERROR — "Unauthorized: You do not have permissions to read from this Channel topic: caps-room-RB01"** | **blocked** |
+
+**The positive control is now matched:** the same listener B, in the same run, received the legitimate
+member's broadcast and neither injection. "Injection blocked" no longer rests on negatives that could
+equally mean "the fixture delivers nothing to anyone". Reproduced twice; teardown bounded by an
+explicit timeout (the Q1 hang did not recur; `teardown: clean`, exit 0).
+
+**And it worked with both tables at RLS-on / zero-SELECT-policies** — which is the proof that channel
+access is decoupled. `room_players` SELECT can now be narrowed without killing the game channel.
+
+**One honest note on flakiness:** the first run recorded B's subscribe as a transient
+`MissingPartition: Realtime was unable to find the expected messages partition` — the same
+branch-provisioning race seen in Q1 — yet B still received the control message. The second run was
+clean (`SUBSCRIBED`). This is a *branch* artifact, not a design finding.
+
+**`senderId` is still unbound**, re-confirmed here: member A's payload claiming
+`senderId: "CLAIMED-TO-BE-HOST"` arrived at B verbatim. Channel authz decides *who may speak*, never
+*who they are*. That is Q2's problem, and it is not solved by this policy.
+
+### FUTURE ITEM (NOT this sprint) — narrow `room_players` / `club_members` SELECT
+
+Verified live 2026-07-31, both expose every seat identity to anyone holding the anon key:
+
+| Table | Policy | Exposes |
+|---|---|---|
+| `room_players` | `"Anyone can read room_players"` — `SELECT TO public USING (true)` | `user_id`, `device_id` |
+| `club_members` | `"club_members_read"` — `SELECT TO public USING (true)` | `user_id`, `device_id` |
+
+**This is precisely what both spoofs used** — N harvested `user_id`, N1 harvested `device_id`.
+Once the channel policy is decoupled (above), narrowing these becomes possible. **Do not narrow them
+yet:** `list_public_tables` and the lobby may read them, and that needs its own audit with a
+legitimate-player regression test. Recorded as a separate follow-on, sequenced *after* Phase 0.
