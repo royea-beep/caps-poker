@@ -1,5 +1,116 @@
 # CAPS POKER — Project Memory
 
+### 2026-07-31 (Y) — **THE ECONOMY RPCs ARE OPEN.** Latent, not breached. Outranks Phase 0/A/B.
+
+**13 functions, ZERO exceptions:** every one is `SECURITY DEFINER`, `EXECUTE` granted to **both**
+`anon` and `authenticated`, and takes a **client-supplied identity**. **Not one rejects a NULL
+`auth.uid()`.** Two shapes:
+
+| Shape | Functions | Defect |
+|---|---|---|
+| **uuid variants** (4) | `earn_chips(uuid)`, `spend_chips(uuid)`, `add_xp(uuid)`, `record_chip_purchase` | Guard is `IF auth.uid() IS NOT NULL AND auth.uid() <> p_user_id THEN RAISE`. **NULL passes straight through.** Same `COALESCE(v_uid, p_player_id)` shape we closed in `join_table`. |
+| **device variants** (9) | `earn_chips(text)`, `spend_chips(text)`, `add_xp(text)`, `submit_score`, `update_leaderboard_elo`, `record_hand_net`, `record_hand_result_d`, `record_club_result`, `record_reward` | **No `auth.uid()` reference at all.** Credits whatever `device_id` it is handed; `device_id` is world-readable from `room_players`/`leaderboard`. |
+
+The `[-500,1500]` clamp and the `event_type` allowlist bound **one call**, not an attacker: no rate
+limit, no per-device budget. `submit_score` and `update_leaderboard_elo` need no loop at all — the
+client asserts the score and asserts whether it won.
+
+**Exposure (live): `leaderboard` 318 rows, max `total_chips` 7,720, `chip_transactions` 3,959.
+Nothing anomalous. LATENT, not breached — which is exactly when it is cheap to fix.**
+
+**INSTRUMENTED (shipped, behaviour unchanged):** `econ_authz_probe(fn, device, claimed_uid)` logs an
+`econ_authz` analytics row on `no_session` or `uid_mismatch`, wrapped in
+`BEGIN … EXCEPTION WHEN OTHERS THEN NULL`. Injected as ONE line into the 6 client-called functions
+(`earn_chips`, `spend_chips`, `record_hand_net`, `record_reward`, `submit_score`,
+`update_leaderboard_elo`), verified byte-identical apart from that line. Pre-instrumentation
+definitions are in `_econ_fn_backup` (6 rows) — the exact rollback.
+
+**CLIENT CALLS THE DEVICE VARIANTS EXCLUSIVELY** (`utils/supabaseEconomy.ts` passes `p_device_id`
+everywhere). The uuid variants are **not called by the app at all**. That inverts the fix difficulty:
+the device variants have no user identity to match against, so the guard cannot be a simple
+`auth.uid() = p_user_id`.
+
+#### THE FIX (planned, NOT shipped) — flag `econ_requires_session`, default FALSE
+
+1. Add a **device→owner binding** the server can trust. `push_tokens(user_id, device_id)` already
+   exists and `earn_chips(uuid)` uses it, but it is push-registration-shaped, not an ownership
+   record. Prefer an explicit `device_owners(device_id PK, user_id, bound_at)` written **only** by a
+   DEFINER RPC at first authenticated launch (first-writer-wins, then immutable — same write-once
+   discipline as `dealt_hands`).
+2. Guard becomes, in every function: **reject unless `auth.uid()` IS NOT NULL AND it owns the claimed
+   `device_id`** (uuid variants: AND it equals `p_user_id`). Gated on
+   `app_config.econ_requires_session`; with the flag FALSE the migration is **inert on apply**.
+3. **Rollout:** apply inert → watch `econ_authz` for 48h → backfill `device_owners` from existing
+   `leaderboard`/`push_tokens` pairs → flip the flag **only if** the `no_session` count is ~0 →
+   watch. Exactly the `join_requires_session` staging, for the same reason.
+4. **Rollback:** `UPDATE app_config SET value='false' WHERE key='econ_requires_session';` — one row,
+   no deploy. Instrumentation rollback is separate: re-EXECUTE the 6 defs in `_econ_fn_backup`.
+5. **Tripwire:** alert on any `no_session` economy call after the flip, mirroring the JOIN-STRICT
+   LOCKOUT alarm (returning-device escalation, daily cap, `test_devices` allowlist).
+
+#### RATE LIMIT / IDEMPOTENCY (planned)
+
+- **`p_hand_id` IS a real idempotency key**, not a comment: partial unique index
+  `uq_hand_net_ref ON chip_transactions (device_id, reference_id) WHERE event_type='hand_net'`.
+  `uq_share_reward_ref` does the same for `share_hand`. **Caveat: it is keyed on `(device_id, …)`,
+  so it stops replay by ONE device, not the same hand replayed under many device ids.**
+- **Everything else has none.** Needed: a per-device daily credit budget (a `SUM(amount)` ceiling per
+  rolling 24h, checked inside the DEFINER function), and a `reference_id` + partial unique index for
+  every crediting `event_type`, not just two.
+- `submit_score`/`update_leaderboard_elo` cannot be fixed by budgets — they are **assertions**, not
+  deltas. They must eventually be derived server-side or retired.
+
+### 2026-07-31 (Y2) — `record_chip_purchase` CREDITS NOTHING. Confirmed, but NOT a paying customer.
+
+`record_chip_purchase` does `PERFORM earn_chips(p_user_id, 'chip_purchase', ...)`, and
+`'chip_purchase'` is **not** in `earn_chips`' allowlist → returns `unknown_event_type`, credits **0**.
+Worse than the wrong allowlist entry: **`PERFORM` discards the return value**, so the function returns
+`{"ok": true, "chips": N}` regardless. The failure is invisible to every layer.
+Live: `chip_purchases` = 1 row, `chip_transactions WHERE event_type='chip_purchase'` = **0**.
+
+> **CORRECTION to the sprint brief: no real person is out of pocket.** The single row is
+> `receipt_id = 'test-receipt-001'`, package `medium`, 5,000 chips, user
+> `d0cc66b9-e71d-4e5c-8e19-100c3f2b2cdb`, dated **2026-04-13** — a development test row, not a
+> purchase. **Compensation owed: none.** The bug is real and would burn the first real buyer.
+
+**RECEIPT VALIDATION: NONE.** No store verification, and **no uniqueness on `receipt_id`** —
+`chip_purchases` carries only `chip_purchases_pkey` and a user FK. The same receipt can be submitted
+repeatedly.
+
+**ORDER IS LOAD-BEARING — do NOT add `'chip_purchase'` to the allowlist before the Y1 authz fix.**
+Doing so converts a broken-but-harmless path into a working AND exploitable one: any anon caller could
+mint free chip packages for any `p_user_id`, unlimited, because the guard is NULL-bypassable, there is
+no receipt validation and no receipt uniqueness. **Fix order: Y1 authz → receipt uniqueness + store
+validation → then the allowlist entry.**
+
+### 2026-07-31 (Y3) — step 1 grew; branch fidelity is the standing gap
+
+**`room_hand_cursor` IS part of step 1 after all — you were right and I was wrong.** The doorbell has
+the SERVER name the current hand, and the server can only do that from a per-room pointer. Restated
+**step 1 size: 3 migrations** (`dealt_hands` · `hand_ordinal`+`room_hand_cursor` · write-once) + the
+EF + the client fetch + the flag. **Who writes the pointer: the HOST, on successful upload**, inside
+the same DEFINER call that stores the deck — never a separate client call, or the pointer becomes the
+injection vector.
+**If the host stores N+1 while a client is still on N:** the server answers that client with **its
+own current hand**, not the newest — the pointer is *"latest stored"*, and the fetch resolves *"the
+hand this caller is entitled to"*. A client that has not finished N keeps getting N; it advances only
+when its own hand completes. Otherwise the host could yank a client into the next hand by uploading
+early, which is the doorbell bug wearing a different hat.
+
+**Branch fidelity: SEED FROM A SCHEMA-ONLY DUMP OF LIVE.** Not retiring the `qa_*` migrations —
+there are **22 of them out of 286**, and Iron Rule 12 says they are throwaway, but deleting 22
+historical migrations rewrites the replay for every future branch and risks breaking the one thing
+that still works (production, which is already past them). A schema-only dump seeds a branch with
+*production's actual schema* rather than a replay that has failed **three times running**, and it
+makes branch results comparable to live by construction. Until that lands, **every branch result
+carries an unquantified fixture gap** — X3's five migrations were validated against a hand-built
+`game_rooms`/`room_players`, including a `finished_at` column I added that is not in the migration.
+
+**Also record (X3 lesson):** `LANGUAGE sql` bodies are parsed at `CREATE`; `plpgsql` bodies are not
+parsed until first execution. A migration set can therefore "apply cleanly" while full of functions
+that fail on first call. **DDL success is not proof the code runs** — execute the call paths, not just
+the DDL.
+
 ### 2026-07-31 (V) — STANDING RULE + the deck-shopping hole in P2 step 1
 
 **RULE (permanent, no exceptions): a dormant branch may NEVER carry a whole-function
