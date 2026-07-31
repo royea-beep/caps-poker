@@ -40,7 +40,9 @@ jest.mock('../realtimeMultiplayer', () => {
 });
 
 jest.mock('../lobbyApi', () => ({
-  joinTable: jest.fn(async () => ({ room_code: 'Z8VM', is_host: true })),
+  // NOTE: no joinTable mock. This module does not call joinTable — the seat is held by the CALLER
+  // (app/lobby/index.tsx) before beginPracticeLive runs. A mock here previously kept a dead import
+  // alive and made the module look like a joinTable caller in greps; it is not one.
   leaveTable: jest.fn(async () => {}),
   touchRoomPlayer: jest.fn(async () => {}),
 }));

@@ -28,7 +28,7 @@ import {
   RealtimeClient,
   isOnlineMultiplayerAvailable,
 } from './realtimeMultiplayer';
-import { joinTable, leaveTable, touchRoomPlayer } from './lobbyApi';
+import { leaveTable, touchRoomPlayer } from './lobbyApi';
 import { getDeviceId } from './leaderboard';
 import { getSupabase } from './supabase';
 import { getMatchCost, canAffordMatch } from './economy';
