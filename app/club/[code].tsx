@@ -129,7 +129,8 @@ export default function ClubDetail() {
         setJoinError('You are no longer a member of this club.');
         await load();
       } else {
-        setJoinError('Table unavailable — it may have just filled. Try another.');
+        // T1: prefer server-mapped copy (no_session) over the generic wording.
+        setJoinError(res?.message ?? 'Table unavailable — it may have just filled. Try another.');
         await load();
       }
     } finally {

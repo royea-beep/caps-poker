@@ -1,4 +1,4 @@
-import { resolveJoinIdentity, JOIN_AUTH_TIMEOUT_MS } from '../joinIdentity';
+import { resolveJoinIdentity, JOIN_AUTH_TIMEOUT_MS, joinErrorMessage, JOIN_NO_SESSION_MESSAGE } from '../joinIdentity';
 
 // J2 — joinTable must NEVER hang on auth. Today's client does not wait on auth before joining;
 // awaiting ensureAnonymousAuth() unconditionally would turn an auth outage / slow network / offline
@@ -44,5 +44,33 @@ describe('joinTable identity resolution never blocks the join (J2)', () => {
   it('the timeout is bounded to a sane default', () => {
     expect(JOIN_AUTH_TIMEOUT_MS).toBeGreaterThan(0);
     expect(JOIN_AUTH_TIMEOUT_MS).toBeLessThanOrEqual(3000);
+  });
+});
+
+// T1 — JOIN_NO_SESSION_MESSAGE shipped as dead code: defined, never referenced. joinTable returned
+// the RPC payload unmapped and every call site branched only on `ok` / `not_a_member`, so a
+// no_session rejection surfaced as a generic "table unavailable". These lock the mapping in place.
+describe('join error copy mapping (T1)', () => {
+  it('maps no_session to the written copy', () => {
+    expect(joinErrorMessage('no_session')).toBe(JOIN_NO_SESSION_MESSAGE);
+  });
+
+  it('returns undefined for errors whose call-site copy is better', () => {
+    // not_a_member has three context-specific strings (public lobby / private code / club screen).
+    // Centralising it would REPLACE good copy with worse copy.
+    expect(joinErrorMessage('not_a_member')).toBeUndefined();
+    expect(joinErrorMessage('table_full_or_gone')).toBeUndefined();
+  });
+
+  it('returns undefined for absent/unknown errors rather than throwing', () => {
+    expect(joinErrorMessage(undefined)).toBeUndefined();
+    expect(joinErrorMessage(null)).toBeUndefined();
+    expect(joinErrorMessage('')).toBeUndefined();
+    expect(joinErrorMessage('something_new_from_the_server')).toBeUndefined();
+  });
+
+  it('copy names the cause and the remedy (it is the only hard-fail a player can hit)', () => {
+    expect(JOIN_NO_SESSION_MESSAGE).toMatch(/sign you in/i);
+    expect(JOIN_NO_SESSION_MESSAGE).toMatch(/try again/i);
   });
 });

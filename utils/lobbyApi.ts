@@ -15,7 +15,7 @@
  */
 import { getSupabase } from './supabase';
 import { ensureAnonymousAuth } from './auth';
-import { resolveJoinIdentity } from './joinIdentity';
+import { resolveJoinIdentity, joinErrorMessage } from './joinIdentity';
 import { track } from './analytics';
 
 export type PlayerCount = 2 | 3 | 4;
@@ -37,6 +37,12 @@ export interface OpenTable {
 export interface JoinResult {
   ok: boolean;
   error?: string;
+  /**
+   * T1 — user-facing copy for errors that have no adequate wording at the call site (today: only
+   * `no_session`). Resolved in `joinTable` so all four call sites get it from one place. Call sites
+   * should prefer it and fall back to their own context-specific string: `res?.message ?? '…'`.
+   */
+  message?: string;
   id?: string;
   room_code?: string;
   current_players?: number;
@@ -167,7 +173,11 @@ export async function joinTable(roomCode: string, playerId?: string | null, disp
       p_device_id: deviceId ?? null,
     });
     if (error) return null;
-    return data as JoinResult;
+    // T1: attach the user-facing copy HERE, once, so no call site can forget it. Immutable —
+    // never mutate the RPC payload.
+    const result = data as JoinResult;
+    const copy = result?.ok === false ? joinErrorMessage(result.error) : undefined;
+    return copy ? { ...result, message: copy } : result;
   } catch {
     return null;
   }

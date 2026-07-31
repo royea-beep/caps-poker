@@ -397,3 +397,32 @@ newly created Supabase branch is a **provisioning race, not a design failure**. 
 - **Do NOT read it as a policy failure.** In the R2 run, listener B reported `MissingPartition` at
   subscribe and *still received* the control broadcast — the error is transient and can coexist with a
   working channel. Judge the run by delivery, not by the first subscribe status.
+## T2 — MONITORING CONVENTION: reserved `test-` device prefix (adopt this, do not delete rows)
+
+**Rule: any probe or synthetic event MUST carry a `device_id` beginning `test-`.**
+`phase0_mp_traffic_tripwire()` excludes those rows (`device_id NOT LIKE 'test-%'`), so probes are
+**inert by construction** and nothing ever needs deleting afterwards.
+
+*Why this replaced the previous habit:* the S1 sprint deleted its own `join_rejected` probe rows to
+stop them paging the owner. That worked, but it establishes "delete instrumentation rows" as the
+routine — and the day a real row goes with them, the only signal the strict-mode flip depends on is
+gone. Probes should be invisible to the alarm, not cleaned up after it.
+
+**The alarm's trigger is attacker-controlled** — anyone can replay the sessionless join that is
+correctly rejected, so an uncapped alarm is a WhatsApp/Twilio flood vector paid for by us. Bounds:
+
+| Control | Value |
+|---|---|
+| Hourly suppression | 1 lockout alert per 60 min |
+| **Daily cap** | **4 lockout alerts per 24h** |
+| Test rows | excluded entirely (`test-` prefix) |
+
+**Signal vs noise — escalate on either condition, and the message says which fired:**
+1. **A returning device is rejected** — a `device_id` with an earlier successful `join_identity` row
+   that now gets `no_session`. Highest signal: this is a real player who used to be able to play.
+2. **≥5 distinct never-before-seen devices** rejected in the hour — looks like a broad auth outage
+   rather than one prober. This second clause exists so a genuine outage hitting **brand-new** players
+   is not silently swallowed: a new player has no prior `join_identity` by definition, so rule 1 alone
+   would treat a real outage as probe noise.
+
+A single never-seen device is counted and returned but **never pages** — that is the flood case.

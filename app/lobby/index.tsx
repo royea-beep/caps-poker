@@ -175,7 +175,8 @@ export default function PublicLobby() {
       } else {
         // res is null (RPC error) or {ok:false}. Inline surface, not Alert.alert
         // (silent on web). This is the visible feedback the silent-fail lacked.
-        setJoinError('Table unavailable — try another.');
+        // T1: prefer server-mapped copy (no_session) over the generic wording.
+        setJoinError(res?.message ?? 'Table unavailable — try another.');
         await load();
       }
     } finally {

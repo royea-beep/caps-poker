@@ -64,3 +64,25 @@ export async function resolveJoinIdentity(
  */
 export const JOIN_NO_SESSION_MESSAGE =
   "Couldn't sign you in, so we can't reserve your seat. Check your connection and try again.";
+
+/**
+ * T1 — server `error` code -> user-facing copy, resolved at ONE choke point (`joinTable`) rather than
+ * at each call site. This constant existed from the day the strict path was written but had NO
+ * consumer: `joinTable` returned the RPC payload unmapped and every call site branched only on `ok`
+ * and `not_a_member`, so a `no_session` rejection fell through to a generic "table unavailable".
+ * Strict mode was live server-side with no user-facing story.
+ *
+ * Deliberately NOT listed here:
+ *  - `not_a_member` — each surface already has better, context-specific copy (public lobby vs private
+ *    code vs club screen). Centralising it would REPLACE good copy with worse copy.
+ *  - `table_full_or_gone` — same reason; the existing per-surface generics are accurate for it.
+ * Only errors with no adequate copy anywhere belong in this map.
+ */
+const JOIN_ERROR_COPY: Readonly<Record<string, string>> = {
+  no_session: JOIN_NO_SESSION_MESSAGE,
+};
+
+/** Copy for a server join error, or undefined when the call site's own wording is better. */
+export function joinErrorMessage(error?: string | null): string | undefined {
+  return error ? JOIN_ERROR_COPY[error] : undefined;
+}

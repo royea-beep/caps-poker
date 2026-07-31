@@ -101,7 +101,8 @@ export default function PrivateLobby() {
         track('table_join_rejected', { table_kind: 'private', reason: 'not_a_member', room_code: roomCode }, 'lobby-private');
         setJoinError('Members only — that table belongs to a club. Join the club to play there.');
       } else {
-        setJoinError('That code is wrong, full, or no longer open.');
+        // T1: prefer server-mapped copy (no_session) over the generic wording.
+        setJoinError(res?.message ?? 'That code is wrong, full, or no longer open.');
       }
     } finally {
       setBusy(false);
