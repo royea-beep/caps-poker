@@ -397,11 +397,17 @@ newly created Supabase branch is a **provisioning race, not a design failure**. 
 - **Do NOT read it as a policy failure.** In the R2 run, listener B reported `MissingPartition` at
   subscribe and *still received* the control broadcast — the error is transient and can coexist with a
   working channel. Judge the run by delivery, not by the first subscribe status.
-## T2 — MONITORING CONVENTION: reserved `test-` device prefix (adopt this, do not delete rows)
+## T2 — MONITORING CONVENTION ⚠️ SUPERSEDED BY U1 — the prefix rule below was EVASIBLE
 
-**Rule: any probe or synthetic event MUST carry a `device_id` beginning `test-`.**
-`phase0_mp_traffic_tripwire()` excludes those rows (`device_id NOT LIKE 'test-%'`), so probes are
-**inert by construction** and nothing ever needs deleting afterwards.
+> **Do not implement the prefix rule in this section.** `device_id` is client-supplied, so excluding
+> rows by a `test-` prefix let an attacker switch the alarm off by renaming themselves. Replaced by a
+> server-side allowlist — see **U1 CORRECTION** below. The "do not delete instrumentation rows"
+> principle and the alert-budget table in this section still stand; only the exclusion MECHANISM changed.
+
+~~**Rule: any probe or synthetic event MUST carry a `device_id` beginning `test-`.**~~
+`phase0_mp_traffic_tripwire()` excluded those rows (`device_id NOT LIKE 'test-%'`) so probes were
+inert by construction and nothing needed deleting afterwards. **The goal was right; the mechanism was
+not.** The allowlist achieves the same thing without trusting the caller.
 
 *Why this replaced the previous habit:* the S1 sprint deleted its own `join_rejected` probe rows to
 stop them paging the owner. That worked, but it establishes "delete instrumentation rows" as the
@@ -426,3 +432,130 @@ correctly rejected, so an uncapped alarm is a WhatsApp/Twilio flood vector paid 
    would treat a real outage as probe noise.
 
 A single never-seen device is counted and returned but **never pages** — that is the flood case.
+
+### U1 CORRECTION — the `test-` prefix was CLIENT-CONTROLLED (evasion path, now closed)
+
+The T2 convention above is **superseded**. `device_id` comes from the client, so excluding rows by a
+`test-` prefix let any attacker turn the lockout alarm off by naming themselves `test-anything` and
+probe freely, forever, with no page. Same defect class as client-side `targetId` filtering and
+client-supplied `p_player_id`: **a security decision keyed on a field the caller controls.**
+
+**Replacement: server-side allowlist `public.test_devices`.** The tripwire excludes a device ONLY if
+it is present there (`NOT EXISTS (SELECT 1 FROM test_devices t WHERE t.device_id = e.device_id)`). The
+`LIKE 'test-%'` filter is **removed entirely** — leaving both in place would keep the evasion open.
+
+- RLS enabled, **zero policies**, and `REVOKE ALL ... FROM anon, authenticated`. Verified from a real
+  client: anon and authenticated, insert and select, all four return
+  `permission denied for table test_devices`. Only `service_role` (the bot) can register a device.
+- Naming a probe `test-…` is now only a human convention; it grants nothing.
+- **Grep note:** searching the function body for `test-` still matches the COMMENT that documents the
+  removal. Check the executable predicate (`test_devices`), not the string — a substring grep here
+  false-positives, and did for me once.
+
+**Residual, stated plainly:** the flood ceiling is now the **4/day cap**. An attacker can still mint 5
+distinct never-seen `device_id`s to trip the outage clause and burn up to 4 alerts a day. I would err
+**toward keeping the alarm noisy**: 4 attacker-triggered messages a day is a nuisance with a known
+cause and a documented rollback in every message, whereas raising the outage threshold to suppress it
+would blind us to the real case it exists for — a genuine auth outage locking out brand-new players,
+who are indistinguishable from probes by construction. A missed lockout costs a real player; a false
+page costs the owner ten seconds. Revisit only if it actually fires in anger.
+## U3 — P2 STEP 1 IMPLEMENTATION PLAN (planning only; no P2 code shipped)
+
+Step 1 of the three P2 steps established earlier: **ship clients that PREFER the per-caller HTTPS
+slice but still accept the `CARDS_DEALT` broadcast**. Fleet-mixing-safe by construction — old and new
+clients coexist, because the host keeps broadcasting until step 3.
+
+### U3.1 — Exactly what ships
+
+| Artifact | Source | Note |
+|---|---|---|
+| **EF `deal_hand`** | `supabase/functions/deal_hand/{index,deal,authz,handAcks}.ts` (dormant branch) | Deploy only. Identity from the **verified JWT**, seat from the **server-side** `room_players` — no request field selects a seat, so the spoof is structurally impossible. |
+| **Migration `20260801090000_dealt_hands_server_deal.sql`** | dormant branch | `dealt_hands` table + `cleanup_dealt_hands()`. **The only migration step 1 needs.** |
+| **Client fetch** | `utils/serverDeal.client.ts` (dormant branch) | `POST { hand_id, room_id }`, returns this caller's slice only. |
+| **Flag** | new `app_config.server_deal_enabled` (currently ABSENT = false) | Selects HTTPS slice vs broadcast. Ship FALSE. |
+
+**Prerequisite already met, and worth naming:** the EF resolves the caller's seat from
+`room_players.user_id`. That column is only trustworthy because `join_requires_session = true`
+shipped today — with the device fallback still open, a seat's `user_id` could be a client-supplied
+value and the EF's authz would inherit the impersonation. **S1 was a hard prerequisite for P2 step 1**,
+not a parallel track.
+
+### U3.4 — Is the autostart machinery required? **NO.** And this is the decisive finding.
+
+The EF is **create-or-get keyed on `hand_id`** (`index.ts:78-105`): the first authorised caller for a
+given `hand_id` triggers the deal and stores it; every later caller reads the same row and receives
+only its own slice. **There is no "a hand has begun" event for the server to learn about.** So step 1
+does NOT need autostart, the `starting` reaper, `promote_starting_to_playing`, or the `join_table`
+deal-gate. Hands can keep being dealt/ordered by the in-memory engine; only CARD DELIVERY moves.
+
+**The one real dependency this creates:** all seats must agree on the same `hand_id` without a server
+round trip, because hands 2+ never touch the DB today (`handId++` in memory,
+`realtimeMultiplayer.ts:534-556`). Resolution: the host broadcasts the hand ordinal on the channel and
+every client derives `hand_id = f(room_id, ordinal)`. **A `hand_id` is not a secret** — it is a
+coordination value, exactly what the channel is for after P2. No new server machinery.
+
+### U3.2 — Fallback semantics
+
+**Flag OFF:** byte-identical to today. The client must not even call the EF — no probe, no latency, no
+new failure surface. The HTTPS path is dead code until the flag flips.
+
+**Flag ON, HTTPS fetch fails: RETRY briefly, then FALL BACK TO THE BROADCAST, and never fail the hand.**
+
+Justification, and the distinction that matters: falling back to a client-side **DEAL** was ruled out
+and stays ruled out — that would let a client invent its own cards. Falling back to the broadcast
+**TRANSPORT** is a different question, because during step 1 the host is broadcasting the *same*
+authoritative cards anyway; the fallback changes only *how the bytes arrive*, not *who decided them*.
+
+- Failing the hand instead would mean one player's flaky connection kills a live table for everyone —
+  trading a confidentiality improvement for an availability regression, on the exact population we are
+  trying to bring back.
+- The fallback is **safe precisely because it is temporary**: at step 3 the broadcast stops, so the
+  fallback disappears on its own rather than needing to be removed.
+- **Instrument it.** Emit an event on every fallback. That count IS the step-3 gate: while clients are
+  still falling back, stopping the broadcast would break them. Step 3 ships when the fallback rate is
+  ~0, not on a calendar date.
+
+### U3.3 — Dormant Phase A migrations: what wakes, what sleeps
+
+There are **4** migrations on `feat/server-deal-phase-a` (the "6" is the number of
+`CREATE OR REPLACE` statements across them, not the file count).
+
+| Migration | Step 1? |
+|---|---|
+| `20260801090000_dealt_hands_server_deal.sql` | **NEEDED** — the only one |
+| `20260801091000_starting_state_reaper.sql` | stays dormant |
+| `20260801092000_join_table_autostart_deal.sql` | stays dormant — **and is STALE, see below** |
+| `20260801093000_promote_and_rls_lockdown.sql` | stays dormant |
+
+### ⚠️ `20260801092000` IS STALE AGAIN — reported, NOT fixed this sprint
+
+Its own header says to diff it against live before applying. Done, and it has drifted twice over:
+
+1. **Missing the N1 club idempotency fix.** The file still carries the pre-N1 block
+   `((v_identity IS NOT NULL AND user_id=v_identity) OR (p_device_id IS NOT NULL AND device_id=p_device_id))`.
+   Live matches club rooms on `rp.user_id = v_uid` **only**, with no device branch. Applying this file
+   would **re-open the device-identity branch for club rooms** — a live security regression, the exact
+   bypass N1 closed.
+2. **Missing the S1 `join_rejected` rejection logging** (0 occurrences). Applying it would silently
+   delete the observability that the live `join_requires_session = true` flip depends on — the strict
+   rejection would go back to emitting nothing at all.
+
+It is dormant and not needed for step 1, so this is not urgent — but it must be re-rebased before it
+is ever applied. **This is the second consecutive time this file has gone stale**, which is itself the
+finding: a dormant migration that `CREATE OR REPLACE`s a live, actively-changing function is a
+standing landmine. Recommend it be split so the deal-gate is an ALTER-style addition rather than a
+whole-function replacement, or regenerated from live at apply time.
+
+### U3.5 — Rollback per sub-step
+
+| Sub-step | Rollback |
+|---|---|
+| Apply `dealt_hands` migration | `drop table dealt_hands cascade; drop function cleanup_dealt_hands();` Inert while nothing calls the EF. |
+| Deploy `deal_hand` EF | Delete the function. Nothing calls it while the flag is false. |
+| Ship dual-mode client (flag FALSE) | OTA rollback; behaviour was already unchanged. |
+| Flip `server_deal_enabled = true` | `UPDATE app_config SET value='false' WHERE key='server_deal_enabled';` One row, no deploy. Clients return to the broadcast they are still receiving. |
+| (step 3, later) Stop broadcasting | Re-enable the broadcast — the reason step 3 is gated on a ~0 fallback rate. |
+
+**Every sub-step before the flag flip is invisible to players**, and the flip itself is a one-row
+revert while the broadcast is still running. That is the whole point of doing P2 before the channel
+flip: at no point does a rollback re-expose hole cards that had already left the wire.
