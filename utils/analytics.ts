@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * Supabase-based analytics. Uses track_event RPC — no external SDK.
  * Fire-and-forget: never blocks UI, never throws.
@@ -41,6 +42,7 @@ export async function initAnalytics(): Promise<void> {
   try {
     cachedDeviceId = await getDeviceId();
     cachedSessionId = generateSessionId();
+    await loadPendingFailures();
     try {
       cachedAppVersion = require('expo-constants').default?.expoConfig?.version ?? 'unknown';
     } catch {}
@@ -84,6 +86,59 @@ function clientFingerprint(): Record<string, unknown> {
   return _fp;
 }
 
+
+// AV1 — SELF-DIAGNOSING TRANSPORT. `.catch(() => {})` below swallows every delivery failure by
+// design (analytics must never break the app), which means a device whose sends never arrive looks
+// identical to a device that is simply idle. That is exactly the ambiguity blocking the iOS
+// diagnosis: 41 of 43 devices emit four events from one mount and nothing after.
+//
+// So: count failures, PERSIST the count, and attach it to the next SUCCESSFUL send. No new request,
+// one extra field on an event already going out.
+//
+// PERSISTED, not in-memory, deliberately: the case we care about is an app killed with sends
+// outstanding, and an in-memory counter dies with it.
+const FAILED_SENDS_KEY = 'caps_failed_sends';
+const LAST_FAILURE_KEY = 'caps_last_send_failure';
+let pendingFailures = 0;   // mirror, so a success can attach without awaiting a read
+let lastFailureAt = 0;     // ms epoch mirror, so ms_since_last_failure is computable synchronously
+
+function noteSendFailure(): void {
+  pendingFailures += 1;
+  // Fire-and-forget write. PROCESS-DEATH CAVEAT: if the app is killed between the failed send and
+  // this write completing, the increment is lost — we under-count rather than over-count, which is
+  // the safe direction (we never invent failures). The mirror above also dies, so the loss is one
+  // count, not a corrupted total.
+  try {
+    AsyncStorage.setItem(FAILED_SENDS_KEY, String(pendingFailures)).catch(() => {});
+    lastFailureAt = Date.now();
+    AsyncStorage.setItem(LAST_FAILURE_KEY, String(lastFailureAt)).catch(() => {});
+  } catch { /* never throw from analytics */ }
+}
+
+/** Load any counter that survived a previous process. Called from initAnalytics. */
+async function loadPendingFailures(): Promise<void> {
+  try {
+    const v = await AsyncStorage.getItem(FAILED_SENDS_KEY);
+    const n = v ? parseInt(v, 10) : 0;
+    if (Number.isFinite(n) && n > 0) pendingFailures = n;
+    const t = await AsyncStorage.getItem(LAST_FAILURE_KEY);
+    const ts = t ? parseInt(t, 10) : 0;
+    if (Number.isFinite(ts) && ts > 0) lastFailureAt = ts;
+  } catch { /* ignore */ }
+}
+
+function drainFailureReport(): Record<string, unknown> {
+  if (pendingFailures <= 0) return {};
+  const n = pendingFailures;
+  pendingFailures = 0;
+  const out: Record<string, unknown> = {
+    failed_sends: n,
+    ms_since_last_failure: lastFailureAt ? Date.now() - lastFailureAt : null,
+  };
+  try { AsyncStorage.setItem(FAILED_SENDS_KEY, '0').catch(() => {}); } catch { /* ignore */ }
+  return out;
+}
+
 export function track(event: string, properties?: Record<string, unknown>, screen?: string): void {
   // Feed the shared breadcrumb trail (utils/breadcrumbs) that crash/bug reports
   // already attach — record even if the network call below later fails.
@@ -101,6 +156,7 @@ export function track(event: string, properties?: Record<string, unknown>, scree
         session_id: cachedSessionId,
         app_version: cachedAppVersion,
         ...clientFingerprint(),
+        ...drainFailureReport(),
       },
       // FRICTION-NULL-SCREEN 2026-07-25 — never transmit a null/empty screen. When a caller omits it
       // (the cold-start window before the route tag initialises), fall back to the globally-maintained
@@ -108,7 +164,7 @@ export function track(event: string, properties?: Record<string, unknown>, scree
       // 'unknown' — never null/empty — so p_screen is ALWAYS a real screen. Guarantees every
       // stuck_dwell/rage_tap/any event carries a screen, at the transmission boundary itself.
       p_screen: screen || getCurrentScreen(),
-    }).then(() => {}).catch(() => {});
+    }).then(() => {}).catch(() => { noteSendFailure(); });
   } catch {
     // never throw from analytics
   }

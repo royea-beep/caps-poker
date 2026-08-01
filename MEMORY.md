@@ -1,5 +1,38 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AV2) — ⚠️ CAVEAT ON THIS ENTIRE WEEK'S DATASET: `track_event` is anon-writable
+
+`track_event` is SECURITY DEFINER with EXECUTE to `anon`, taking `p_device_id`, `p_user_id`,
+`p_event`, `p_data`, `p_screen` — **all client-supplied, no `auth.uid()` anywhere.** So any holder of
+the anon key (which ships in the public web bundle) can write arbitrary rows into
+`analytics_events` under any `device_id`, and into `funnel_snapshots` for certain event names.
+
+**Every number in the AF-AU investigations rests on a table any anon caller can write to.** Nothing
+suggests anyone has, and the patterns are too self-consistent to be forged noise — the 29-second
+iOS sessions, the identical four-event shapes, the 46s mount bands — but the caveat belongs on the
+dataset permanently, not on one report.
+
+**Priority, stated honestly: this corrupts ANALYTICS, not chips, seats or accounts.** It is shape
+(A) from the inventory but materially less serious than anything in T1, and analytics is not a
+money-decision surface. **DO NOT revoke or guard it while the iOS diagnosis is open** — `track_event`
+is the live path for every event we are relying on to diagnose it, and breaking it mid-investigation
+would be self-defeating.
+
+### AV1 — self-diagnosing transport (built, ships with the next OTA)
+
+`track()` counts delivery failures, PERSISTS the count to AsyncStorage, and attaches
+`failed_sends` + `ms_since_last_failure` to the next SUCCESSFUL send, then resets. No new request.
+Persisted rather than in-memory because the case that matters is an app killed with sends
+outstanding.
+
+**Process-death handling:** if the app dies between the failed send and the counter write
+completing, that increment is lost — we UNDER-count, never over-count. Losing a count is safe;
+inventing one is not.
+
+**What it CANNOT see:** a device whose very first send fails and which never returns will never
+report anything. This NARROWS the blind spot; it does not eliminate it. The 41 iOS devices that
+already left are unreachable by it — it only helps from the next OTA forward.
+
 ### 2026-08-01 (AR1) — FIVE CORRECTIONS TO EARLIER RECORDS IN THIS FILE
 
 Iron Rule 13: these were WRONG above, not merely missing. Corrected here; treat this section as

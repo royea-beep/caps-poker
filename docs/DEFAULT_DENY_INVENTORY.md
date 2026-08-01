@@ -115,3 +115,13 @@ Fixing functions first would be fixing the lock while the window is open.
 
 **Rollback for every step is one line** (`GRANT ...` / `CREATE POLICY ...`), recorded per step at
 execution time.
+
+---
+
+## AV2 — track_event: T3 (telemetry write), anon-writable
+
+`track_event(p_event, p_user_id, p_device_id, p_data, p_screen)` — SECURITY DEFINER, EXECUTE to `anon`, NO `auth.uid()`. Shape (A): client-supplied identity used as the identity. Writes `analytics_events` and, for some event names, `funnel_snapshots`.
+
+**Tier T3 — telemetry write, NOT economy.** Forging it corrupts analytics only; it cannot move chips, seats or accounts. Listed so it is not lost, at the tier it deserves rather than inflated to T1.
+
+⚠️ **DO NOT revoke or guard while the iOS diagnosis is open** — it is the live path for every event being used to diagnose it.
