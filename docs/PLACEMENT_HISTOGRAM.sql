@@ -90,3 +90,9 @@ FROM analytics_events d
 WHERE d.event_name = 'hand_dealt'
   AND d.created_at > now() - interval '7 days'
   AND NOT EXISTS (SELECT 1 FROM test_devices t WHERE t.device_id = d.device_id);
+
+-- AW1.4 STANDING CONVENTION (added 2026-08-01): every analytics query MUST also exclude automated
+-- traffic, not just test devices. Add to BOTH CTEs above:
+--     AND coalesce(e.properties->>'webdriver','') <> 'true'
+-- Web traffic was found to be substantially headless Chrome (our own Playwright sweeps). This filter
+-- only works FORWARD - devices predating the UA capture are permanently unclassifiable.

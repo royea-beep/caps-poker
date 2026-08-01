@@ -1,5 +1,55 @@
 # CAPS POKER — Project Memory
 
+## ⚠️⚠️ 2026-08-01 (AW) — READ THIS BEFORE ANY FINDING BELOW: MOST "TRAFFIC" WAS OUR OWN QA
+
+**The web population is substantially headless Chrome — our own automated testing.** Confirmed
+within fifteen minutes of the UA capture shipping. Two non-test devices reproduced the exact
+eleven-sprint pattern and carried:
+
+```
+9c26-b9a4-af31   webdriver=true  HeadlessChrome/127  800x600
+                 webdriver=true  HeadlessChrome/147  1280x720
+                 webdriver=true  HeadlessChrome/147  393x852     (iPhone-14-Pro emulation)
+b553-8b0c-fae8   identical three profiles
+```
+
+Three viewport profiles under ONE device_id = a Playwright responsive sweep. Fresh storage per run
+mints a NEW device_id, so **every run looked like a new user**.
+
+### FINDINGS THIS INVALIDATES — treat every one below as measured on instrumentation measuring itself
+
+- "215 devices dealt hands and never placed a card" — **headless browsers do not tap.**
+- The 44-51 second mount band — script rhythm, not human hesitation.
+- The 01:44 / 02:29 / 03:31 IST sessions — scheduled runs, not insomniac Israelis.
+- The remount pattern, the ~4% retention, the zero-placement signal, the funnel collapse.
+
+### THE ACTUAL LESSON, which outlives the findings
+
+**Nothing captured a user agent, so for eleven sprints the composition of our own dataset was
+unanswerable.** Every hypothesis — bots, remount loops, comprehension failure, workload — was built
+on a population we had never identified. The fix was one line at the `track()` choke point and it
+answered the question in fifteen minutes. **Identify the population before analysing its behaviour.**
+
+### STANDING QUERY CONVENTION (mandatory, all future analytics work)
+
+```sql
+AND coalesce(e.properties->>'webdriver','') <> 'true'
+AND NOT EXISTS (SELECT 1 FROM test_devices t WHERE t.device_id = e.device_id)
+```
+
+⚠️ **This only works FORWARD.** Of 354 devices in the last 30 days, **only 8 carry any UA data** —
+the rest predate the capture and are **permanently unclassifiable**. Do not estimate what fraction
+of them were bots; the honest answer is that it cannot be known.
+
+### WHAT SURVIVES: iOS, AND ONLY iOS
+
+Headless Chrome cannot emit an iOS event. **43 iOS devices on real phones: 41 emit
+`app_opened` + `home_screen_loaded` + `daily_bonus_auto_claimed` + `stuck_dwell`@29s, then are never
+seen again. 2 have full working vocabularies** including tutorial completion and multiplayer.
+**That 29-second dead-end is now the ONLY unexplained real-user signal in the project.**
+It needs a physical iPhone: open, note build, tap Play, place a card, open Profile, report the
+device_id and whether the UI responded.
+
 ### 2026-08-01 (AV2) — ⚠️ CAVEAT ON THIS ENTIRE WEEK'S DATASET: `track_event` is anon-writable
 
 `track_event` is SECURITY DEFINER with EXECUTE to `anon`, taking `p_device_id`, `p_user_id`,
