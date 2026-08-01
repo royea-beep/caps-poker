@@ -1,5 +1,42 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AF) — THE FUNNEL DIES AT PLACEMENT. Not a crash, not dead telemetry. **RE-SEQUENCED.**
+
+**VERDICT: PLAYERS ARE QUITTING.** The game works and the telemetry works; the interaction is too
+long before anything happens.
+
+**Evidence that decides it — my own live playthrough (device `84e4-5c47-6833`):**
+`hand_dealt 08:52:45.899` -> `cards_placed 08:54:27.501` = **101 SECONDS**, with me knowing exactly
+what to do and driving it by script. Tap-to-place worked first try (hand 12 -> 11). Auto-Place
+worked. Ready correctly refused until every board was full (the `allBoardsFull` guard), then the
+showdown ran and bot hands revealed. **Nothing is broken.**
+
+**What real players do:** 23 devices got `hand_dealt` in 7 days; for **20 of them the next event is a
+`screen_view` at 10-11 seconds** — a suspiciously tight band. One placed cards. None completed.
+So: dealt a hand, faced "PLACE 12 CARDS" across 3 boards, left in ten seconds. I needed 101.
+
+**Ruled out, each with evidence:**
+- **Dead telemetry — NO.** `cards_placed` fires at `app/game.tsx:957` and it fired for me.
+  ⚠️ But note what it MEANS: it sits *after* `if (!allBoardsFull) return;` inside `handleReady`, so
+  it is a **placement-COMPLETED** event, not a per-tap one. "3 events / 1 device" = one player
+  finished placing, not three taps. `hand_completed` (`app/results.tsx:513`) and the `hand_history`
+  insert (`app/results.tsx:316`) are both alive too — they live on the RESULTS screen, which nobody
+  reaches.
+- **Crash — NO.** 0 `crash_reports` and 0 `error_boundary_hit` in 7d; 0 `rage_tap` in 7d.
+- **The 10s exit is not an auto-navigation.** No timer fires there; the tab `screen_view`s are the
+  navigator, and the later `app_opened` is a second session, not a restart.
+
+### RE-SEQUENCING (deliberate, recorded)
+
+1. **Destructive revokes + RLS/grant lockdown STAY.** They cost nothing to keep and closed real holes.
+2. **`econ_requires_session` DEFERRED.** It would protect a gameplay path nobody reaches, while the
+   live exposure — fresh device ids each collecting 530 chips — is untouched by it.
+3. **`feat/appopen-auth-gate` stays BUILT and UNSHIPPED.** If the app loses players at tap-to-place,
+   an auth-timing OTA is not what ships next.
+4. **THE LESSON, plainly: we spent weeks on threat models without checking whether the threatened
+   behaviour occurs.** A funnel query on day one would have caught it. Read the DB for BEHAVIOUR
+   before reading it for THREATS — the threat model is only worth what the usage makes it worth.
+
 ### 2026-08-01 (AD1) — DIAGNOSIS: it IS the J2 race, not a token-propagation bug. Awaiting auth WOULD fix it.
 
 **Proven, three ways:**
