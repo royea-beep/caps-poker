@@ -905,6 +905,8 @@ export default function HomeScreen() {
     }
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
+      // AK3 read-side: existing installs may already carry the bad "99" (written before the
+      // guard above). Sanitised at the point of use below.
       AsyncStorage.getItem(NUDGE_DISMISSED_KEY),
       AsyncStorage.getItem(DAILY_REWARD_POPUP_SESSION_KEY),
     ]).then(([gamesVal, dismissedVal, popupShownVal]) => {
@@ -1112,7 +1114,13 @@ export default function HomeScreen() {
 
   const handleNudgeLater = useCallback(() => {
     setShowNudge(false);
-    AsyncStorage.setItem(NUDGE_DISMISSED_KEY, String(gamesPlayed)).catch(() => {});
+    // AK3 — NEVER persist the sentinel. `gamesPlayed` starts at 99 meaning "not loaded", and if
+    // this fires before rehydration it writes the literal "99" into durable storage, where it
+    // outlives the session and reads back as a real games-played count forever after. That is the
+    // sentinel escaping to disk — worse than the in-memory misreads, because it cannot self-correct.
+    if (gamesPlayed !== 99) {
+      AsyncStorage.setItem(NUDGE_DISMISSED_KEY, String(gamesPlayed)).catch(() => {});
+    }
   }, [gamesPlayed]);
 
   // Referral: show toast helper

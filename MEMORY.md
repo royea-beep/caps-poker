@@ -1,5 +1,42 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AK) — REMOUNT: `app_opened` is a HOME-TAB MOUNT, not a launch. 85% of deals are followed by one.
+
+**`app_opened` is emitted from `app/(tabs)/index.tsx:827` — the home TAB SCREEN's effect, not the
+root layout.** Each tab's `screen_view` fires from its own mount effect. So the trace that looked
+like "three sessions" is **the home tab mounting three times**, and the identical four-tab sequence
+(profile, play, friends, cups) is the tabs navigator instantiating its screens — not a person
+browsing. I read it correctly in AF and then wrongly in AJ; the identical ORDERING across both
+occurrences is what settles it.
+
+**Measured, 7 days, non-test devices:**
+- `app_opened` per device-hour: **1 → 19 device-hours (17 devices); 2 → 2; 3-5 → 19 device-hours
+  (19 devices); 6+ → 0.** Roughly half of all active device-hours contain 3-5 home mounts.
+- **35 of 41 `hand_dealt` events (85%) are followed by an `app_opened` within 60 seconds.**
+
+That is the direct measure of "the game screen does not survive". It is widespread, not one device.
+
+**NOT YET A CAUSE.** `app_opened` firing on home-tab mount means a plain back-navigation from /game
+also produces it — so 85% is consistent BOTH with a remount bug AND with players simply leaving.
+What it does establish is that the earlier "three launches in 84 seconds" reading was wrong, and any
+hypothesis must explain the 211ms case (`hand_dealt` 18:11:24.051 → `home_screen_loaded` .262),
+which is far too fast for a human. **Unexplained pending reproduction.**
+
+### DEBT — `useState(99)` sentinel refactor (named, queued, NOT done)
+
+Replace the sentinel with `null` + an explicit loaded flag across the three declaration sites
+(`app/(tabs)/index.tsx:550`, `app/game.tsx:182`, `app/multiplayer-game.tsx:203`). Misread sites:
+1. `index.tsx:1016` first-run override — FIXED in AI1 (bounded resolve at the Play tap).
+2. `index.tsx:1115` NUDGE_DISMISSED_KEY disk write — GUARDED in AK3.
+3. `index.tsx:1249` `gamesPlayed < 5` tutorial gate — fails closed, safe by luck.
+4. `game.tsx:1295` / `multiplayer-game.tsx:1257` hint gating — deliberate fail-closed.
+
+⚠️ **Severity correction on #2:** I previously called the disk write "worse than the in-memory
+misreads because it outlives the session". That overstated it. The read side is `void dismissedVal;`
+— the nudge banner was removed and **nothing consumes the value**. A stored `"99"` is inert today.
+The guard is still correct (do not write garbage), but no user was affected, and no read-side
+migration is needed for existing installs.
+
 ### 2026-08-01 (AF) — THE FUNNEL DIES AT PLACEMENT. Not a crash, not dead telemetry. **RE-SEQUENCED.**
 
 **VERDICT: PLAYERS ARE QUITTING.** The game works and the telemetry works; the interaction is too
