@@ -1,0 +1,15 @@
+# AC2 — Edge Function deploy config.
+#
+# verify_jwt = true is NOT the default in this project: 6 of the 11 currently deployed EFs run with
+# it FALSE. These two are destructive account operations and must never join that group — with
+# verify_jwt false an unauthenticated request reaches the handler, and the only thing standing
+# between a stranger and a delete is the in-handler getUser() check.
+#
+# Defence in depth: the handlers ALSO reject a NULL uid as their first statement (identity.ts).
+# Both layers, deliberately.
+
+[functions.account_delete]
+verify_jwt = true
+
+[functions.account_merge]
+verify_jwt = true

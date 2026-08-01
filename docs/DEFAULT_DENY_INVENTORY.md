@@ -115,3 +115,54 @@ Fixing functions first would be fixing the lock while the window is open.
 
 **Rollback for every step is one line** (`GRANT ...` / `CREATE POLICY ...`), recorded per step at
 execution time.
+
+---
+
+## AC3 — THE TWO SHAPES. Every authz defect this week is one of these.
+
+Naming them once so they can be detected mechanically instead of rediscovered function by function.
+
+### Shape (A) — a client-supplied identity parameter used AS the identity
+
+The function takes `p_device_id` / `p_user_id` / `p_player_id` and acts on it. Whoever calls it
+chooses whose data is affected. Device ids are world-readable (all 319 in one anon SELECT), so the
+target list is free.
+
+**Detection:** `pg_get_function_identity_arguments(oid) ~ 'p_(device_id|user_id|player_id)'`
+on a `SECURITY DEFINER` function that is `EXECUTE`-able by `anon`.
+
+### Shape (B) — the NULL-passes-through guard
+
+```sql
+IF <client field> IS NOT NULL AND auth.uid() IS NOT NULL AND auth.uid() <> <client field> THEN
+  RAISE EXCEPTION ...
+END IF;
+```
+
+ANDed conditions, so the RAISE fires only when **every** term is true. Pass the field as NULL, or
+call with no session, and the guard is skipped. It reads like a check and behaves like a comment.
+
+**Detection:** `prosrc ~* 'IS NOT NULL\s+AND\s+auth\.uid\(\)\s+IS NOT NULL'`
+
+### The fix template (used by `account_delete` / `account_merge`)
+
+1. **Derive** identity from `auth.uid()` — never accept it.
+2. **Reject a NULL uid as the FIRST statement**, standalone. Never as one term of an AND-chain;
+   that shape is what creates (B).
+3. **Accept no target parameter at all.** If there is no field naming a victim, there is nothing to
+   spoof. Refuse a target parameter *loudly* if one ever appears, rather than ignoring it silently.
+4. Where two identities genuinely must be related (merge), require the caller to **present both
+   verified JWTs** — a caller can only act on identities it can currently authenticate as.
+
+### Detection run over the T1 economy functions not previously read in full — 27 functions
+
+| Shape | Count | Functions |
+|---|---|---|
+| **BOTH (A) and (B)** | **5** | `accept_friend_challenge`, `claim_emergency_chips`, `claim_mission`, `create_friend_challenge`, `redeem_starter_offer` |
+| **(A) only** — no guard at all | **18** | `check_achievements`, `check_cups`, `claim_daily_reward`, `claim_daily_streak`, `claim_low_chip_rescue`, `claim_mission_d`, `claim_share_reward`, `claim_winback_rescue`, `create_club_table`, `create_table`, `get_player_level`, `get_poker_shop`, `join_sit_n_go`, `join_sit_n_go_solo`, `join_table`, `redeem_referral`, `start_quick_poker`, `submit_feedback` |
+| neither | 4 | `ensure_public_lobby`, `phase0_mp_traffic_tripwire`, `security_posture_tripwire`, `update_elo` (no client identity arg) |
+
+**23 of 27 carry shape (A); 5 of those also carry shape (B).** Note `join_table` appears under (A)
+by the mechanical rule but is the one function already hardened — it derives `v_uid := auth.uid()`
+and gates on `join_requires_session`. **The detection rule flags the parameter, not the behaviour**;
+treat a hit as "read this function", not "this function is broken".
