@@ -527,7 +527,10 @@ function GameScreenInner() {
     hasNavigatedRef.current = false;
     CapsHooks.gameStarted('solo');
     dealtAtRef.current = Date.now();
-    track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount }, 'game');
+    // AR2 — tag every deal with whether it came from the autoSim marathon path. Without this an
+    // autoSim deal and a human deal were INDISTINGUISHABLE in every query, for six sprints.
+    track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount,
+      auto_sim: autoSim === 'true' }, 'game');
 
     // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
     const buyIn = getMatchCost(config.potPerBoard, boardCount);
