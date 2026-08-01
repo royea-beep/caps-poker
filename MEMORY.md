@@ -1,5 +1,31 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AR1) — FIVE CORRECTIONS TO EARLIER RECORDS IN THIS FILE
+
+Iron Rule 13: these were WRONG above, not merely missing. Corrected here; treat this section as
+authoritative over any earlier statement it contradicts.
+
+1. **The double-deal is WITHDRAWN as bot evidence.** Two `hand_dealt` in quick succession was cited
+   (AL) as an automation tell. It is not: `45bf-df1f-d8d8`, the one CONFIRMED engaged human, produces
+   it too (07-02 16:33:34 and 16:33:53, then placed cards and completed the hand). What remains
+   unexplained is the NARROWNESS of the 44-51s band across sixteen sessions, not the doubling.
+
+2. **`C:\Projects\Caps\.env` DOES NOT EXIST.** That path appeared in a sprint brief from a stale
+   note. The repo env is `C:\Projects\POKER\Caps\.env`, and it contains **no `VERCEL_TOKEN`**.
+
+3. **`hand_dealt` COUNTS MOUNTS, NOT HANDS.** It is emitted from a `useEffect(..., [])` in
+   `app/game.tsx` — mount-only. Every per-session "deal count" in AF/AJ/AL is a MOUNT count.
+   "Sixteen devices, two deals each" means sixteen devices whose game screen mounted twice.
+
+4. **RETENTION: ten non-test devices out of ~215 appear on more than one calendar day in 30 days.**
+   One of them (`45bf-df1f-d8d8`) accounts for 318 events across 10 days. Everything else is a
+   single visit.
+
+5. **`app_opened` fires on HOME LOAD specifically, not on app load.** It is emitted from
+   `app/(tabs)/index.tsx:827` — the home TAB screen's mount effect, not the root layout. Every
+   `app_opened` count in prior reports measures home visits. A session that deep-links straight to
+   `/game` emits none at all (verified in the AP1 run: zero `app_opened` across the whole reproduction).
+
 ### 2026-08-01 (AM) — TRAFFIC COMPOSITION: **UNRESOLVED.** Vercel is unreachable from here.
 
 **AM1 could not be answered, and the reason is structural, not a permissions hiccup:**
