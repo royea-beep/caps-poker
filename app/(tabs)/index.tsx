@@ -1027,7 +1027,7 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamesPlayed]);
 
-  const handleNewHand = useCallback(() => {
+  const handleNewHand = useCallback(async () => {
     // The primary Home button is labelled "Practice vs Bots" — so it MUST be practice:
     // zero real chips, no buy-in gate. (Previously it ran the real-chip economy path, which
     // charged a match cost / drained the bankroll on a button that says "practice" — deceptive.)
@@ -1042,8 +1042,39 @@ export default function HomeScreen() {
     // First-run beginner default (3P / guided) is applied ONCE on mount via the GUIDED_FORCED_KEY
     // effect above — not here — so the selector reflects it up front and this tap doesn't change
     // the dealt config underfoot (VAMOS QA-BATCH Issue B).
-    router.push(`/game?practice=true&players=${config.numberOfPlayers}&fresh=1` as any);
-  }, [config, router]);
+    // AI1 — SENTINEL RACE FIX. `gamesPlayed` starts at the sentinel 99 ("not loaded"), and the
+    // first-run override effect (numberOfPlayers: 3) only fires once it resolves to 0. A player who
+    // taps Play before rehydration fell through to DEFAULT_CONFIG (2P / 4 boards / 16 cards) — a
+    // HARDER first hand than onboarding intends, purely by timing. ~26% of first deals landed there.
+    // Third instance of this shape this week (joinTable vs ensureAnonymousAuth; app-open economy
+    // calls; now Play vs store rehydration).
+    //
+    // BOUNDED, not unbounded, for the same reason we rejected an unbounded await at app launch: a
+    // stuck rehydrate must leave Play DEGRADED (proceeds on the current config) rather than DEAD.
+    // 600ms — rehydration is local AsyncStorage, so this is generous; the user is mid-tap, not
+    // behind a splash, so the bound is much tighter than the 3000ms app-open gate.
+    let resolvedPlayers = config.numberOfPlayers;
+    if (gamesPlayed === 99) {
+      const forced = await Promise.race([
+        AsyncStorage.getItem(GUIDED_FORCED_KEY).catch(() => null),
+        new Promise<string | null>((r) => setTimeout(() => r('__timeout__'), 600)),
+      ]);
+      // Never run before AND resolution succeeded => this IS a first run; apply the intended variant.
+      if (forced === null) {
+        resolvedPlayers = 3;
+        updateConfig({ numberOfPlayers: 3 });
+        AsyncStorage.setItem(GUIDED_FORCED_KEY, 'true').catch(() => {});
+      }
+    }
+    // AI1.4 — verifiable from data, not from the diff.
+    track('onboarding_variant_applied', {
+      resolved_players: resolvedPlayers,
+      board_count: getBoardCount(resolvedPlayers as 2 | 3 | 4),
+      override_ran: resolvedPlayers !== config.numberOfPlayers,
+      sentinel_unresolved: gamesPlayed === 99,
+    }, 'home');
+    router.push(`/game?practice=true&players=${resolvedPlayers}&fresh=1` as any);
+  }, [config, router, gamesPlayed, updateConfig]);
 
   // HOTFIX 2026-07-02 — manual pill fallback routes through the SAME server-gated
   // claim (no local reward math). The strip's inline ack is the success feedback;
