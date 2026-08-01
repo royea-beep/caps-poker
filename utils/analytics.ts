@@ -55,6 +55,35 @@ export async function initAnalytics(): Promise<void> {
  * Fire an analytics event (fire-and-forget). Writes to analytics_events via the
  * track_event RPC and records a breadcrumb. Never throws, never blocks the UI.
  */
+
+// AN1 — CLIENT FINGERPRINT. We spent three sprints unable to answer "who is visiting" because
+// nothing captured it: analytics_events has no UA/referrer/IP, and caps-poker-web is a STATIC Expo
+// export with no serverless functions, so Vercel runtime logs never contain user agents either.
+// This is the cheapest instrument we fully control. Computed ONCE (module scope, lazy) so it costs
+// nothing per event, and wrapped so a missing global can never break analytics.
+let _fp: Record<string, unknown> | null = null;
+function clientFingerprint(): Record<string, unknown> {
+  if (_fp) return _fp;
+  try {
+    const nav: any = typeof navigator !== 'undefined' ? navigator : null;
+    const scr: any = typeof screen !== 'undefined' ? screen : null;
+    _fp = {
+      // Truncated: this rides in properties, not a column, and full UAs are long and noisy.
+      ua: nav?.userAgent ? String(nav.userAgent).slice(0, 180) : null,
+      // navigator.webdriver is TRUE for Playwright/Puppeteer/Selenium — the most direct bot tell
+      // available to a client, and the single field this whole change exists for.
+      webdriver: nav?.webdriver === true,
+      sw: scr?.width ?? null,
+      sh: scr?.height ?? null,
+      // Headless defaults (800x600, DPR 1) are distinctive against real devices.
+      dpr: typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : null,
+    };
+  } catch {
+    _fp = { ua: null, webdriver: null, sw: null, sh: null, dpr: null };
+  }
+  return _fp;
+}
+
 export function track(event: string, properties?: Record<string, unknown>, screen?: string): void {
   // Feed the shared breadcrumb trail (utils/breadcrumbs) that crash/bug reports
   // already attach — record even if the network call below later fails.
@@ -71,6 +100,7 @@ export function track(event: string, properties?: Record<string, unknown>, scree
         // session_id/app_version travel in properties: the RPC has no dedicated args.
         session_id: cachedSessionId,
         app_version: cachedAppVersion,
+        ...clientFingerprint(),
       },
       // FRICTION-NULL-SCREEN 2026-07-25 — never transmit a null/empty screen. When a caller omits it
       // (the cold-start window before the route tag initialises), fall back to the globally-maintained
