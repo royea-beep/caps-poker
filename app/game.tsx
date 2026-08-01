@@ -219,6 +219,11 @@ function GameScreenInner() {
   const boardsRef = useRef(boards);
   const [showContinueButton, setShowContinueButton] = useState(false);
   const [autoPlaceToastVisible, setAutoPlaceToastVisible] = useState(false);
+  // AG1 — anchor for card_placed.ms_since_deal. Ref, not state: it must never trigger a render
+  // in the placement hot path.
+  const dealtAtRef = useRef<number>(0);
+  // 'tap' | 'auto' — set by the auto-place path around its placement calls.
+  const placementSourceRef = useRef<'tap' | 'auto'>('tap');
   const [showSafeReveal, setShowSafeReveal] = useState(false);
   const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
     winner: 'player'|'bot'|'tie';
@@ -521,6 +526,7 @@ function GameScreenInner() {
     isDealingRef.current = false;
     hasNavigatedRef.current = false;
     CapsHooks.gameStarted('solo');
+    dealtAtRef.current = Date.now();
     track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount }, 'game');
 
     // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
@@ -813,6 +819,25 @@ function GameScreenInner() {
 
       if (cardsToPlace.length === 0) return;
 
+      // AG1 — PER-TAP telemetry. `cards_placed` (plural) fires only after the allBoardsFull
+      // guard in handleReady, i.e. on COMPLETION, so we have never had visibility into partial
+      // progress. This fires per placement. Fire-and-forget: `track` is non-blocking and every
+      // value below is already computed, so nothing is added to the placement hot path.
+      {
+        const alreadyPlaced = boards.reduce((n, b) => n + b.playerCards.length, 0);
+        for (let k = 0; k < cardsToPlace.length; k++) {
+          track('card_placed', {
+            placed_index: alreadyPlaced + k + 1,
+            total_required: boardCount * CARDS_PER_BOARD,
+            board_count: boardCount,
+            player_count: numberOfPlayers,
+            ms_since_deal: dealtAtRef.current ? Date.now() - dealtAtRef.current : null,
+            source: placementSourceRef.current,
+            mode: isPractice ? 'practice' : 'solo',
+          }, 'game');
+        }
+      }
+
       haptic(Haptics?.ImpactFeedbackStyle?.Medium);
       playSound('cardPlace');
       const placedIds = new Set(cardsToPlace.map((c) => c.id));
@@ -857,6 +882,14 @@ function GameScreenInner() {
         return updated;
       });
       setPlayerHand((prev) => [...prev, card]);
+      // AG1.2 — emit on REMOVAL too, otherwise a player who places and un-places repeatedly
+      // looks identical to one who never started.
+      track('card_removed', {
+        board_count: boardCount,
+        player_count: numberOfPlayers,
+        ms_since_deal: dealtAtRef.current ? Date.now() - dealtAtRef.current : null,
+        mode: isPractice ? 'practice' : 'solo',
+      }, 'game');
     },
     [isArranging]
   );
@@ -892,6 +925,22 @@ function GameScreenInner() {
         return updated;
       });
       setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+      // AG1 — auto-place path emits with source:'auto'. If players who FIND auto-place finish
+      // and players who do not give up, the fix is discoverability, not board count.
+      {
+        const alreadyPlaced = boards.reduce((n, b) => n + b.playerCards.length, 0);
+        for (let k = 0; k < cardsToPlace.length; k++) {
+          track('card_placed', {
+            placed_index: alreadyPlaced + k + 1,
+            total_required: boardCount * CARDS_PER_BOARD,
+            board_count: boardCount,
+            player_count: numberOfPlayers,
+            ms_since_deal: dealtAtRef.current ? Date.now() - dealtAtRef.current : null,
+            source: 'auto',
+            mode: isPractice ? 'practice' : 'solo',
+          }, 'game');
+        }
+      }
       setSelectedCardIds([]);
     },
     [isArranging, boards, isCardOnAnyBoard]

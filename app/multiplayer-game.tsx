@@ -285,6 +285,8 @@ function MultiplayerGameScreenInner() {
   // instant the countdown auto-fills a stalled player's boards; MP had no equivalent,
   // so a timed-out MP hand went silent/still where SOLO gives clear visual feedback.
   const autoPlaceFlashAnim = useRef(new AnimatedRN.Value(0)).current;
+  // AG1 — anchor for card_placed.ms_since_deal (MP).
+  const mpDealtAtRef = useRef<number>(0);
 
   // Collected reveal data for guest
   const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
@@ -1057,6 +1059,19 @@ function MultiplayerGameScreenInner() {
       return updated;
     });
     setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
+      // AG1 — per-tap telemetry, MP path. Mirrors solo (game.tsx). Fire-and-forget.
+      {
+        const alreadyPlaced = boards.reduce((n: number, b: any) => n + b.playerCards.length, 0);
+        track('card_placed', {
+          placed_index: alreadyPlaced + 1,
+          total_required: boardCount * CARDS_PER_BOARD,
+          board_count: boardCount,
+          player_count: playerCount,
+          ms_since_deal: mpDealtAtRef.current ? Date.now() - mpDealtAtRef.current : null,
+          source: 'tap',
+          mode: 'multiplayer',
+        }, 'multiplayer-game');
+      }
     setSelectedCardIds([]);
   }, [isArranging, selectedCardIds]);
 
