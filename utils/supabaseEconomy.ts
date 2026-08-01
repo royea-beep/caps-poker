@@ -4,6 +4,7 @@
  */
 
 import { getSupabase } from './supabase';
+import { ensureSessionBounded } from './authGate';
 import { Alert } from 'react-native';
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,12 @@ export async function callRPC<T = unknown>(
   try {
     const sb = getSupabase();
     if (!sb) return null;
+    // AE2 — THE CHOKE POINT. Every economy RPC inherits the app-open auth gate here rather than at
+    // the three call sites we happened to find, for the same reason joinTable maps its error copy
+    // once: a per-call-site fix is a fix that the next call site will forget. Bounded and shared —
+    // after the first resolve this is a no-op await, so it costs one sign-in per process, not one
+    // per RPC. On timeout it returns null and the call proceeds on the existing device path.
+    await ensureSessionBounded();
     const { data, error } = await sb.rpc(rpcName, params);
     if (error) throw error;
     const d = data as any;

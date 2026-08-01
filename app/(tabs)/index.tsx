@@ -60,7 +60,7 @@ import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
 import { themeAxes } from '../../constants/visualThemes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
-import { fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
+import { fetchCardDisplayConfig, fetchPokerShop, recordReward, callRPC } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
 import { trackEvent } from '../../utils/heatmap';
 import { getSupabase } from '../../utils/supabase';
@@ -931,7 +931,10 @@ export default function HomeScreen() {
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
-        const { data } = await sb.rpc('claim_daily_streak', { p_device_id: deviceId });
+        // AE2 — routed through callRPC so it inherits the app-open auth gate. A direct
+        // sb.rpc here bypassed the choke point and was one of the three RPCs proven to
+        // arrive with auth.uid() = NULL at launch.
+        const data = await callRPC<any>('claim_daily_streak', { p_device_id: deviceId });
         if (!data) return;
         if (data.claimed) {
           const store = useGameStore.getState();
