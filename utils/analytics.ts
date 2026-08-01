@@ -127,16 +127,22 @@ async function loadPendingFailures(): Promise<void> {
   } catch { /* ignore */ }
 }
 
-function drainFailureReport(): Record<string, unknown> {
+/** Peek only — must NOT reset, because we do not yet know whether THIS send will arrive. */
+function peekFailureReport(): Record<string, unknown> {
   if (pendingFailures <= 0) return {};
   const n = pendingFailures;
-  pendingFailures = 0;
   const out: Record<string, unknown> = {
     failed_sends: n,
     ms_since_last_failure: lastFailureAt ? Date.now() - lastFailureAt : null,
   };
-  try { AsyncStorage.setItem(FAILED_SENDS_KEY, '0').catch(() => {}); } catch { /* ignore */ }
   return out;
+}
+
+/** Reset ONLY after a send is confirmed delivered. */
+function commitFailureDrain(reported: Record<string, unknown>): void {
+  if (!('failed_sends' in reported)) return;
+  pendingFailures = 0;
+  try { AsyncStorage.setItem(FAILED_SENDS_KEY, '0').catch(() => {}); } catch { /* ignore */ }
 }
 
 export function track(event: string, properties?: Record<string, unknown>, screen?: string): void {
@@ -146,6 +152,7 @@ export function track(event: string, properties?: Record<string, unknown>, scree
   try {
     const sb = supabaseRef ?? (() => { try { return require('./supabase').getSupabase(); } catch { return null; } })();
     if (!sb) return;
+    const failureReport = peekFailureReport();
     sb.rpc('track_event', {
       p_event: event,
       p_user_id: cachedUserId,
@@ -156,7 +163,7 @@ export function track(event: string, properties?: Record<string, unknown>, scree
         session_id: cachedSessionId,
         app_version: cachedAppVersion,
         ...clientFingerprint(),
-        ...drainFailureReport(),
+        ...failureReport,
       },
       // FRICTION-NULL-SCREEN 2026-07-25 — never transmit a null/empty screen. When a caller omits it
       // (the cold-start window before the route tag initialises), fall back to the globally-maintained
@@ -164,7 +171,14 @@ export function track(event: string, properties?: Record<string, unknown>, scree
       // 'unknown' — never null/empty — so p_screen is ALWAYS a real screen. Guarantees every
       // stuck_dwell/rage_tap/any event carries a screen, at the transmission boundary itself.
       p_screen: screen || getCurrentScreen(),
-    }).then(() => {}).catch(() => { noteSendFailure(); });
+    }).then(({ error }: { error: unknown }) => {
+      // AV1 FIX: supabase-js RESOLVES with { data, error } on a transport failure — it does NOT
+      // reject. The previous `.catch(noteSendFailure)` was therefore DEAD CODE and the counter could
+      // never increment. Same shape as record_chip_purchase's PERFORM discarding earn_chips' result:
+      // a failure path that reported success.
+      if (error) { noteSendFailure(); return; }
+      commitFailureDrain(failureReport);
+    }).catch(() => { noteSendFailure(); });
   } catch {
     // never throw from analytics
   }
