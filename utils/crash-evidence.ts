@@ -433,6 +433,8 @@ async function saveToDB(report: CrashReport): Promise<void> {
       report.error.componentStack?.length ?? 0,
     )
     await supabase.from('crash_reports').insert({
+      // AU2.1 — attribute the crash to a device so it can be joined to analytics_events.
+      device_id: await import('./leaderboard').then(m => m.getDeviceId()).catch(() => null),
       crash_code: report.crashCode,
       project: report.project,
       version: report.version,

@@ -142,6 +142,8 @@ async function logPushFailure(reason: string, detail?: string): Promise<void> {
   if (!client) return;
   try {
     await client.from('crash_reports').insert({
+      // AU2.1 — attribute the crash to a device so it can be joined to analytics_events.
+      device_id: await getDeviceId().catch(() => null),
       project: 'caps',
       crash_code: 'push_registration_failed',
       error_message: reason,
