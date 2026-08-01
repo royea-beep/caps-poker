@@ -1,5 +1,51 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AM) — TRAFFIC COMPOSITION: **UNRESOLVED.** Vercel is unreachable from here.
+
+**AM1 could not be answered, and the reason is structural, not a permissions hiccup:**
+- Vercel MCP `get_web_analytics` and `get_runtime_logs` both return **403 Forbidden** for
+  `prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP` / team `3K9KJNGL9U`.
+- Vercel CLI IS authenticated (`royearguan-9980`), but `vercel logs https://caps.ftable.co.il`
+  returns **"No logs found"** — because caps-poker-web is a **STATIC Expo web export with no
+  serverless functions**. Runtime logs will NEVER contain user agents for it. That route is closed
+  permanently, not temporarily.
+- `C:\Projects\Caps\.env` does not exist; the repo `.env` contains no `VERCEL_TOKEN`.
+
+**So the only remaining route is Web Analytics, and it must be enabled on the project first** (the
+403 is consistent with it being off). That is a five-minute change in the Vercel dashboard and it
+is worth doing regardless — we have spent four sprints reasoning about traffic composition without
+the one tool built to measure it.
+
+### AM2 — TWO CORRECTIONS
+
+1. **The histogram spec is NOT broken.** `analytics_events.session_id` (the COLUMN) is 100% NULL —
+   550/550 events in 7 days, 0 distinct values. But `properties->>'session_id'` is populated in
+   **479/550 (87%)**, and `docs/PLACEMENT_HISTOGRAM.sql` already groups on
+   `e.properties->>'session_id'`, not the column. **No fix required.** The unused column should be
+   dropped or populated so it stops looking authoritative, but the committed query is correct.
+2. **`45bf-df1f-d8d8` IS A REAL, ENGAGED HUMAN** — 318 events over 10 days, with a vocabulary no
+   crawler produces: `cards_placed`, `hand_completed`, `game_started`, `game_ended`,
+   `result_viewed_duration`, `table_joined`, `practice_live_seat_held`, `home_play_online_tapped`,
+   `rage_tap`, `bot_table_play`. So the population is **MIXED, not uniformly automated** — but this
+   is essentially a population of ONE.
+
+### 2026-08-01 — RETENTION HEADLINE
+
+> **Ten non-test devices out of ~215 appear on more than one calendar day in 30 days. One of them
+> (`45bf-df1f-d8d8`) accounts for 318 events across 10 days. Everything else is a single visit.**
+
+Whatever the traffic composition turns out to be, that is the product's actual state.
+
+### AM3 — SECURITY BACKLOG: BOTH BRANCHES, PRE-DECIDED
+
+- **IF automated / near-zero humans:** `econ_requires_session`, the 23 flagged T1 functions, the
+  table-side default-deny and Phase 0 stay **QUEUED and unhurried**. Nothing is exploited because
+  nothing is used. Priority moves to whether there is a product.
+- **IF human:** retention is ~4%, the zero-placement finding stands, and the first-ten-seconds
+  problem outranks everything on the security list except what is already shipped.
+- **EITHER WAY: do NOT unwind any completed security work.** It is all default-deny, all verified,
+  and none of it sits on a live path we have not tested.
+
 ### 2026-08-01 (AK) — REMOUNT: `app_opened` is a HOME-TAB MOUNT, not a launch. 85% of deals are followed by one.
 
 **`app_opened` is emitted from `app/(tabs)/index.tsx:827` — the home TAB SCREEN's effect, not the
