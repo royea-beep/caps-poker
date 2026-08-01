@@ -1,5 +1,64 @@
 # CAPS POKER — Project Memory
 
+### 2026-08-01 (AD1) — DIAGNOSIS: it IS the J2 race, not a token-propagation bug. Awaiting auth WOULD fix it.
+
+**Proven, three ways:**
+1. **One client only.** `createClient(` appears exactly ONCE in the whole app
+   (`utils/supabase.ts:29`) — a singleton with AsyncStorage + `persistSession: true`. **No second
+   instance**, so the "separately constructed client" explanation is dead.
+2. **supabase-js attaches the token correctly.** Patched `fetch` and inspected the outgoing header:
+   after `await signInAnonymously()`, the RPC carries a **USER TOKEN**, not the anon key. The
+   `Authorization` header is built per-request from the auth store, not bound at construction.
+3. **The race reproduces exactly, and awaiting removes it.** Same client, same RPC:
+   - fire-and-forget `void signInAnonymously()` then call -> server logged `econ_authz no_session`
+   - `await signInAnonymously()` then call -> **no row**: the server saw a valid session.
+
+**The 15ms that looked decisive is a red herring.** `auth.users.last_sign_in_at` is a **server**
+timestamp — when the server minted the token, not when the client received it. One mobile RTT is
+comfortably more than 15ms, so at `+15ms` the client had not yet been handed the session. The
+evidence is consistent with a race, not with a lost token.
+
+**Root cause in code:** `app/_layout.tsx:267` bootstraps auth fire-and-forget through a *dynamic
+import* — `import('../utils/auth').then(({ ensureAnonymousAuth }) => { void ensureAnonymousAuth(); })`
+— and the home-screen effects (`app/(tabs)/index.tsx`: `fetchPokerShop` ~:850, `claim_daily_streak`
+:934) fire independently without awaiting it. Same shape as J2 in `joinTable`, in a new place.
+
+**Consequence for the flip:** `econ_requires_session=true` would break the app-open path for
+**every** player, not a few — until the client awaits auth. **Fix the client first, then flip.** The
+fix is the J2 pattern (bounded await with a fallback), NOT an unbounded await, or an auth outage
+becomes a blank home screen. NOT DONE THIS SPRINT — it touches the app-open path and needs its own
+OTA.
+
+### 2026-08-01 (AD2) — **EVERY `user_id` COLUMN IS UNTRUSTED UNTIL PROVEN TO MATCH `auth.users`.**
+
+A populated column is **not** an identity. Measured live 2026-08-01 — rows / non-null `user_id` /
+**distinct values actually matching `auth.users`**:
+
+| Table | Rows | Non-null user_id | Matches auth.users |
+|---|---|---|---|
+| `leaderboard` | 323 | 323 (100%) | **0** — and `user_id = id` for all 323, i.e. a copy of the random PK |
+| `chip_transactions` | 3,971 | 276 (7%) | **1** distinct |
+| `user_missions` | 3,024 | 3,024 (100%) | **1** distinct |
+| `daily_rewards` | 306 | **0** | 0 |
+| `achievements` | 47 | 1 | — |
+| `analytics_events` | 6,966 | 1,880 (27%) | — |
+| `hand_history` | 57 | 51 (89%) | — |
+
+**Two consequences, so nobody re-derives them:**
+
+1. **Forward-only (Z2 option c) is not the safest path — it is the ONLY one.** There is no historical
+   identity to preserve. Anything claiming to link existing data to real users would be *inventing*
+   the link. **This closes the ownership question rather than deferring it.**
+2. **`account_delete` consequence:** an existing player requesting deletion today would have their
+   `auth.users` row removed and their **device-keyed rows left behind** — because those rows carry no
+   real uid to match on.
+
+> **COMPLIANCE QUESTION IS OPEN — FOR ROYE, NOT FOR ENGINEERING.** Whether "auth user deleted,
+> gameplay rows orphaned" satisfies App Store account-deletion requirements is a policy question and
+> I will not guess at it. What I can state: the rows left behind are device-keyed gameplay data
+> (chips, hands, missions, streaks), they contain no email/name/contact PII, and they can be deleted
+> on request through a service_role support path keyed on the device id the user supplies.
+
 ### 2026-08-01 (AB) — DESTRUCTIVE RPCs REVOKED. Delete-account flow is DOWN, deliberately.
 
 **`delete_user_account(text,uuid)` and `merge_guest_to_user(text,uuid)`: EXECUTE revoked from
