@@ -1,0 +1,109 @@
+name: Replicate Signing Vault to Supabase (second system)
+
+# ============================================================================
+# WHY
+#
+# The signing vault's off-machine backup currently lives entirely in GitHub:
+# SIGNING_VAULT_2026_08_06 (encrypted archive) and SIGNING_VAULT_PASSPHRASE
+# (the key to it) are both repository secrets. Losing the GitHub account
+# therefore loses the whole off-machine backup, leaving only the local disk.
+#
+# This job replicates the ENCRYPTED ARCHIVE ONLY to Supabase Storage, so the two
+# halves live in two independent systems:
+#   - Supabase alone yields an OPAQUE BLOB (no passphrase there, ever)
+#   - GitHub alone yields secrets that cannot be read back via UI or API
+#
+# THE PASSPHRASE MUST NEVER BE SENT HERE. If it is, the second system stops
+# being a second system and becomes a full copy of the first.
+#
+# SOURCE OF TRUTH: the archive is read from the GitHub secret, NOT from anyone's
+# disk, so the two copies are byte-identical by construction rather than by
+# someone remembering to re-upload after a change.
+#
+# Bucket `signing-vault-backup` is private (public=false) with NO storage.objects
+# policy naming it. Every existing policy in this project is bucket-scoped, so a
+# bucket with no policy is unreachable by anon and authenticated: RLS denies when
+# no policy matches. Verified from a real anon client, not from the policy list.
+#
+# REQUIRED SECRET (not yet set): SUPABASE_SERVICE_ROLE_KEY.
+# Storage object writes cannot be done over SQL -- the bytes go through the
+# Storage HTTP API, which needs the service role. Until that secret exists this
+# workflow will fail loudly on its first step by design.
+# ============================================================================
+
+on:
+  workflow_dispatch:          # on demand
+  schedule:
+    - cron: '17 4 1 * *'      # 04:17 UTC on the 1st of each month.
+                              # Monthly, not frequent: the archive only changes when
+                              # credentials change, and a job that runs constantly is
+                              # a job whose logs nobody reads.
+
+permissions:
+  contents: read
+
+jobs:
+  replicate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push the encrypted archive to Supabase Storage
+        env:
+          VAULT_B64:    ${{ secrets.SIGNING_VAULT_2026_08_06 }}
+          SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+        run: |
+          set -eu                      # deliberately NOT -x
+
+          if [ -z "${VAULT_B64:-}" ]; then
+            echo "::error::SIGNING_VAULT_2026_08_06 is missing or empty - nothing to replicate."
+            exit 1
+          fi
+          if [ -z "${SERVICE_KEY:-}" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not set."
+            echo "::error::Storage writes need the service role; the anon key must NOT be used here."
+            exit 1
+          fi
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "::error::EXPO_PUBLIC_SUPABASE_URL is not set."
+            exit 1
+          fi
+
+          printf '%s' "$VAULT_B64" | base64 -d > vault.tar.gz.gpg
+          BYTES=$(stat -c%s vault.tar.gz.gpg)
+          if [ "$BYTES" -lt 1024 ]; then
+            echo "::error::Decoded archive is only ${BYTES} bytes - refusing to replicate a corrupt copy."
+            exit 1
+          fi
+          SUM=$(sha256sum vault.tar.gz.gpg | cut -d' ' -f1)
+          echo "bytes  : ${BYTES}"
+          echo "sha256 : ${SUM}"
+
+          # x-upsert so re-runs overwrite rather than 409.
+          CODE=$(curl -s -o upload.out -w '%{http_code}' \
+            -X POST "${SUPABASE_URL}/storage/v1/object/signing-vault-backup/vault.tar.gz.gpg" \
+            -H "Authorization: Bearer ${SERVICE_KEY}" \
+            -H "apikey: ${SERVICE_KEY}" \
+            -H "Content-Type: application/octet-stream" \
+            -H "x-upsert: true" \
+            --data-binary @vault.tar.gz.gpg)
+          echo "upload HTTP ${CODE}"
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Upload failed (HTTP ${CODE})."
+            sed -E 's/(ey[A-Za-z0-9_.-]{6})[A-Za-z0-9_.-]+/\1<redacted>/g' upload.out || true
+            exit 1
+          fi
+
+          # Read it back and prove the stored bytes match what we sent.
+          curl -s -o roundtrip.gpg \
+            "${SUPABASE_URL}/storage/v1/object/signing-vault-backup/vault.tar.gz.gpg" \
+            -H "Authorization: Bearer ${SERVICE_KEY}" -H "apikey: ${SERVICE_KEY}"
+          RT=$(sha256sum roundtrip.gpg | cut -d' ' -f1)
+          echo "readback sha256 : ${RT}"
+          if [ "$RT" != "$SUM" ]; then
+            echo "::error::Round trip MISMATCH - stored copy differs from the source."
+            exit 1
+          fi
+          echo "Round trip verified: Supabase copy is byte-identical to the GitHub secret."
+
+          rm -f vault.tar.gz.gpg roundtrip.gpg upload.out
+          # Deliberately never decrypted here. This copy is meant to be opaque.

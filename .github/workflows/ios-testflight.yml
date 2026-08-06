@@ -1,0 +1,223 @@
+name: iOS TestFlight (Expo-free)
+
+# ============================================================================
+# THE FIRST NATIVE BUILD PATH WITH NO EXPO SERVICES.
+#
+# The Expo account is disabled and is not coming back, so `eas build --local`,
+# `eas build:version:*` and EAS-managed credentials are all gone. This workflow
+# is a copy of ios-testflight-DISABLED.yml -- which was ALREADY prebuild +
+# xcodebuild + altool and was disabled in May 2026 only because its signing
+# certificate had been revoked, not because the approach failed.
+#
+# ios-testflight-DISABLED.yml is deliberately KEPT until this one produces a
+# successful build, so there is a diff to compare against when something breaks.
+#
+# WHAT CHANGED FROM THE DISABLED VERSION
+#   - removed `expo/expo-github-action` and every use of EXPO_TOKEN
+#   - removed `eas build:version:get` / `:set`; the build number now comes from
+#     app.json (eas.json appVersionSource is now "local")
+#   - ExportOptions.plist no longer hardcodes a profile name that does not exist.
+#     It said "Caps Poker App Store (Manual)"; the real rescued profile is
+#     "CAPS Distribution 1782410856319". A hardcoded wrong name fails at export,
+#     after the slowest step in the job.
+#   - MARKETING_VERSION was hardcoded 2.0.1 while the app is 2.7.0; both now come
+#     from app.json so they cannot drift again.
+#   - workspace/scheme are discovered from the prebuild output instead of being
+#     hardcoded, so a rename cannot silently break the archive step.
+#   - dropped the ASC bundle-ID registration and beta-group distribution steps for
+#     this first run: the bundle ID has existed for months, and one variable at a
+#     time. They can come back once this is green.
+#
+# Signing material comes from the rescued vault (see MEMORY.md): cert
+# 2D06E852A4C64DC5B015DE4597EAA3B5, profile 5e450e58-842c-40ea-a2b8-c7ded03b1381,
+# both expiring 2027-06-25 with no EAS to auto-renew them.
+# ============================================================================
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight-expo-free-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-submit:
+    name: Build & Submit to TestFlight (no Expo)
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode (latest stable)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 'latest-stable'
+
+      - name: Verify Xcode
+        run: xcodebuild -version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline=false
+
+      - name: Read version + build number from app.json
+        run: |
+          set -eu
+          VERSION=$(node -p "require('./app.json').expo.version")
+          BUILD=$(node -p "require('./app.json').expo.ios.buildNumber")
+          if [ -z "$VERSION" ] || [ -z "$BUILD" ]; then
+            echo "::error::Could not read version/buildNumber from app.json."
+            exit 1
+          fi
+          echo "MARKETING_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$BUILD"        >> "$GITHUB_ENV"
+          echo "version=$VERSION build=$BUILD"
+
+      - name: Setup App Store Connect API key
+        env:
+          API_KEY_ID:     ${{ secrets.APPLE_API_KEY_ID }}
+          API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        run: |
+          set -eu
+          if [ -z "${API_KEY_ID:-}" ] || [ -z "${API_KEY_BASE64:-}" ]; then
+            echo "::error::APPLE_API_KEY_ID / APPLE_API_KEY_BASE64 missing."
+            exit 1
+          fi
+          mkdir -p ~/private_keys
+          printf %s "$API_KEY_BASE64" | base64 --decode > ~/private_keys/AuthKey_${API_KEY_ID}.p8
+
+      - name: Setup signing (manual cert + provisioning profile)
+        env:
+          P12_BASE64:     ${{ secrets.BUILD_CERT_P12_BASE64 }}
+          P12_PASSWORD:   ${{ secrets.BUILD_P12_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.BUILD_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -eu
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          KEYCHAIN_PW=$(openssl rand -base64 24 | tr -d '/=+' | head -c 32)
+          echo "KEYCHAIN_PATH=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "::add-mask::$KEYCHAIN_PW"
+          security create-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+
+          P12="$RUNNER_TEMP/build.p12"
+          printf %s "$P12_BASE64" | base64 --decode > "$P12"
+          security import "$P12" -k "$KEYCHAIN" -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          rm -f "$P12"
+
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PW" "$KEYCHAIN"
+
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          printf %s "$PROFILE_BASE64" | base64 --decode > "$PROFILES_DIR/caps-build.mobileprovision"
+
+          echo "--- codesigning identities visible to this keychain ---"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
+      - name: Expo Prebuild — generate the native iOS project (local codegen, no account)
+        env:
+          EXPO_PUBLIC_SUPABASE_URL:      ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npx expo prebuild --clean --platform ios --non-interactive
+
+      - name: Install CocoaPods dependencies
+        run: cd ios && pod install --repo-update
+
+      - name: Discover workspace + scheme
+        run: |
+          set -eu
+          WS=$(find ios -maxdepth 1 -name '*.xcworkspace' | head -1)
+          if [ -z "$WS" ]; then echo "::error::No .xcworkspace produced by prebuild."; exit 1; fi
+          SCHEME=$(basename "$WS" .xcworkspace)
+          echo "WORKSPACE=$WS"   >> "$GITHUB_ENV"
+          echo "SCHEME=$SCHEME"  >> "$GITHUB_ENV"
+          echo "workspace=$WS scheme=$SCHEME"
+
+      - name: Write ExportOptions.plist
+        env:
+          PROFILE_NAME: ${{ secrets.BUILD_PROVISIONING_PROFILE_NAME }}
+        run: |
+          set -eu
+          if [ -z "${PROFILE_NAME:-}" ]; then
+            echo "::error::BUILD_PROVISIONING_PROFILE_NAME is empty; export would silently pick the wrong profile."
+            exit 1
+          fi
+          cat > ios/ExportOptions.plist << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>3K9KJNGL9U</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.capspoker.app</key><string>${PROFILE_NAME}</string>
+            </dict>
+            <key>uploadBitcode</key><false/>
+            <key>compileBitcode</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          echo "--- ExportOptions.plist ---"; cat ios/ExportOptions.plist
+
+      - name: Build & archive
+        env:
+          SIGN_IDENTITY: ${{ secrets.BUILD_CERT_CN }}
+          PROFILE_NAME:  ${{ secrets.BUILD_PROVISIONING_PROFILE_NAME }}
+        run: |
+          set -eu
+          xcodebuild archive \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/CapsPoker.xcarchive" \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=3K9KJNGL9U \
+            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            MARKETING_VERSION="$MARKETING_VERSION"
+
+      - name: Export IPA
+        run: |
+          set -eu
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/CapsPoker.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/ipa"
+          IPA=$(find "$RUNNER_TEMP/ipa" -name '*.ipa' | head -1)
+          if [ -z "$IPA" ]; then echo "::error::No .ipa produced."; exit 1; fi
+          echo "IPA_FILE=$IPA" >> "$GITHUB_ENV"
+          echo "ipa: $IPA ($(stat -f%z "$IPA") bytes)"
+
+      - name: Upload to TestFlight (altool)
+        env:
+          API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          set -eu
+          mkdir -p ~/.appstoreconnect/private_keys
+          cp ~/private_keys/AuthKey_${API_KEY_ID}.p8 ~/.appstoreconnect/private_keys/
+          # VAMOS-BUILD-HARDEN: altool can exit 0 even when the upload fails validation,
+          # so the success marker is checked explicitly rather than trusting the exit code.
+          LOG="$RUNNER_TEMP/altool-upload.log"
+          set +e
+          xcrun altool --upload-app --type ios --file "$IPA_FILE" \
+            --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID" 2>&1 | tee "$LOG"
+          RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$RC" -ne 0 ] || ! grep -qi "UPLOAD SUCCEEDED" "$LOG"; then
+            echo "::error::TestFlight upload FAILED (rc=$RC) - the IPA did NOT reach App Store Connect."
+            exit 1
+          fi
+          echo "altool upload confirmed."
