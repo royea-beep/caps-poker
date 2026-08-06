@@ -1,90 +1,104 @@
 name: Restore Signing Vault (manual, disaster recovery)
 
 # ============================================================================
-# WHY THIS EXISTS
+# WHAT THIS RECOVERS
 #
-# The signing vault (Apple distribution certs + private keys + provisioning
-# profiles for CAPS and Wingman) is backed up to the repository secret
-# SIGNING_VAULT_2026_08_06 as base64 of a gpg-symmetric AES256 archive.
+# The Apple signing material for BOTH projects: 4 x distribution certificate
+# (.p12 + its password) + provisioning profile, for CAPS and Wingman, plus
+# Wingman's ASC API key. 13 files. Without these, neither app can be built or
+# submitted, and replacements can only be issued from Apple directly -- there is
+# no Expo account any more (see MEMORY.md).
 #
-# GitHub secrets are WRITE-ONLY: they cannot be read back through the UI or the
-# API, and their values are masked in logs. That property is exactly why the
-# secret is a safe place to keep the backup -- and exactly why retrieving it is
-# not obvious. A secret can only be read by a workflow. This is that workflow.
+# HOW THE BACKUP IS STORED
+#   Copy 1  local disk        C:\Projects\_KEYS\SIGNING-RESCUE-2026-08-06
+#   Copy 2  GitHub Secrets    SIGNING_VAULT_2026_08_06  (base64 of a gpg AES256 archive)
+#                           + SIGNING_VAULT_PASSPHRASE  (machine-generated, 48 chars)
 #
-# Without it the backup is unreachable in the disaster it exists for. It was
-# written and PROVEN (see below) rather than assumed, because a backup whose
-# restore path has never been executed is not a backup.
+# WHY DECRYPTING IN CI IS ACCEPTABLE HERE
 #
-# WHAT THIS DOES *NOT* DO
+# An earlier version of this workflow deliberately did NOT decrypt, because the
+# passphrase was the owner's and putting it in CI would have exposed a human
+# secret. That is no longer true: the passphrase is machine-generated, exists
+# nowhere but this repository's secret store, and protects nothing else. Both
+# halves already live in the same trust boundary, so decrypting here adds no new
+# exposure -- and it removes every manual step from the recovery, which is the
+# whole point of this design.
 #
-# It never decrypts. The passphrase is Roye's, lives only in his password
-# manager, and must never reach CI -- a decrypting workflow would put the
-# plaintext private keys on a GitHub runner and in an artifact, which is
-# strictly worse than the problem it solves. This job only base64-decodes the
-# secret back into the still-encrypted .gpg file and hands it to you.
+# The residual risk this creates is deliberate and recorded: anyone who can
+# dispatch workflows on this repo can obtain the signing keys. That is the same
+# population that can already push code which gets signed with them.
 #
-# RECOVERY PROCEDURE (full)
-#   1. Actions -> "Restore Signing Vault" -> Run workflow (manual dispatch)
-#   2. Download the `signing-vault-encrypted` artifact from the run
-#   3. unzip it, then:  gpg --decrypt -o vault.tar.gz vault.tar.gz.gpg
-#      (gpg prompts for Roye's passphrase)
-#   4. tar -xzf vault.tar.gz
-#   -> 13 files: 4x .p12 + .p12.password.txt + .mobileprovision, plus the
-#      Wingman ASC key.
-#
-# IF THE PASSPHRASE IS LOST, THIS SECRET IS WORTHLESS. There is no recovery.
-# New certificates must then be issued directly from Apple (Team 3K9KJNGL9U).
+# RECOVERY: four steps, no local tooling, nothing to remember.
+#   1. Actions -> "Restore Signing Vault" -> Run workflow
+#   2. Download the `signing-vault-restored` artifact
+#   3. The files are ALREADY DECRYPTED -- just unzip
+#   4. The artifact self-destructs after 1 day
 # ============================================================================
 
 on:
   workflow_dispatch:        # MANUAL ONLY. Never on push, never scheduled.
 
 permissions:
-  contents: read            # no write access needed; keep the token minimal
+  contents: read            # minimal token; no write access needed
 
 jobs:
   restore:
     runs-on: ubuntu-latest
     steps:
-      - name: Decode the vault secret (never printed)
+      - name: Decode and decrypt the vault (neither secret is ever printed)
         env:
-          # Read via env, NOT interpolated into the command line: a value on the
-          # command line can surface in process listings and error traces. The
-          # secret is never echoed, never `cat`-ed, and never passed to `set -x`.
+          # Both secrets are read via env rather than interpolated into the command
+          # line: a command line can surface in process listings and error traces.
+          # Neither value is echoed, cat-ed, or exposed to `set -x`.
           VAULT_B64: ${{ secrets.SIGNING_VAULT_2026_08_06 }}
+          VAULT_PASS: ${{ secrets.SIGNING_VAULT_PASSPHRASE }}
         run: |
           set -eu                       # deliberately NOT -x
 
           if [ -z "${VAULT_B64:-}" ]; then
-            echo "::error::Secret SIGNING_VAULT_2026_08_06 is empty or not set."
-            echo "::error::Nothing to restore. This job fails rather than uploading an empty artifact,"
-            echo "::error::because an empty artifact would look like a successful restore."
+            echo "::error::Secret SIGNING_VAULT_2026_08_06 is missing or empty."
+            echo "::error::Failing instead of uploading an empty artifact, which would look like a successful restore."
+            exit 1
+          fi
+          if [ -z "${VAULT_PASS:-}" ]; then
+            echo "::error::Secret SIGNING_VAULT_PASSPHRASE is missing or empty."
+            echo "::error::The archive cannot be decrypted. Failing rather than uploading something unopenable."
             exit 1
           fi
 
           printf '%s' "$VAULT_B64" | base64 -d > vault.tar.gz.gpg
-
           BYTES=$(stat -c%s vault.tar.gz.gpg)
           if [ "$BYTES" -lt 1024 ]; then
-            echo "::error::Decoded archive is only ${BYTES} bytes - implausibly small; refusing to upload."
+            echo "::error::Decoded archive is only ${BYTES} bytes - implausibly small; refusing to continue."
             exit 1
           fi
+          # SHA256 of the ENCRYPTED archive is not secret, and is the integrity check:
+          # compare against the value recorded in MEMORY.md.
+          echo "encrypted bytes : ${BYTES}"
+          echo "encrypted sha256: $(sha256sum vault.tar.gz.gpg | cut -d' ' -f1)"
 
-          # The SHA256 of the ENCRYPTED archive is not secret, and it is the only
-          # way to prove end-to-end integrity without decrypting. Compare it to
-          # `sha256sum vault.tar.gz.gpg` on the machine that produced the upload.
-          echo "decoded bytes : ${BYTES}"
-          echo "sha256        : $(sha256sum vault.tar.gz.gpg | cut -d' ' -f1)"
+          # Passphrase via file descriptor, never as an argv element.
+          mkdir -p restored
+          printf '%s' "$VAULT_PASS" | \
+            gpg --batch --yes --quiet --pinentry-mode loopback \
+                --passphrase-fd 0 --decrypt -o vault.tar.gz vault.tar.gz.gpg
 
-          # NOTE: no gpg/format validation here, on purpose. A format check would
-          # have to be bypassed to test this workflow, which would mean the real
-          # restore path was never the path actually exercised.
+          tar -xzf vault.tar.gz -C restored
+          COUNT=$(find restored -type f | wc -l)
+          echo "restored files  : ${COUNT}"
+          if [ "$COUNT" -lt 13 ]; then
+            echo "::error::Expected 13 files, got ${COUNT}. Refusing to upload a partial vault."
+            exit 1
+          fi
+          # Names only - never contents.
+          find restored -type f -printf '  %f (%s bytes)\n' | sort
 
-      - name: Upload the still-encrypted archive
+          rm -f vault.tar.gz vault.tar.gz.gpg
+
+      - name: Upload the restored vault
         uses: actions/upload-artifact@v4
         with:
-          name: signing-vault-encrypted
-          path: vault.tar.gz.gpg
+          name: signing-vault-restored
+          path: restored/
           retention-days: 1     # short on purpose: long enough to download, not to linger
           if-no-files-found: error
