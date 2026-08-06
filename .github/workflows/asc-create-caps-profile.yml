@@ -1,23 +1,22 @@
 name: ASC - Create CAPS App Store Profile (one-shot)
 
 # ============================================================================
-# WHY THIS, AND NOT A NEW CERTIFICATE
+# Creates an IOS_APP_STORE provisioning profile for com.capspoker.app bound to
+# the LIVE distribution certificate 8477VM66KY (serial 77BE68C1..., exp
+# 2027-07-17), whose private key we already hold in the vault.
 #
-# The 2026-08-06 audit (asc-cert-audit.yml) showed:
-#   - CAPS's rescued cert 2D06E852... is ABSENT from the team -> revoked. Its
-#     profile 5e450e58... is gone with it. That is why the build failed.
-#   - BUT cert 77BE68C1... (id 8477VM66KY, IOS_DISTRIBUTION, exp 2027-07-17) is
-#     PRESENT AND LIVE, and we already hold its private key in the vault.
-#   - Only 4 of 200 profiles are ACTIVE, and NONE is an App Store profile for
-#     com.capspoker.app.
+# No new certificate is issued: the 2026-08-06 audit showed CAPS's old cert
+# 2D06E852... is ABSENT from the team (revoked) and took its profile with it,
+# but 77BE68C1... is alive. CAPS was missing a PROFILE, not a certificate.
+# Issuing a cert would have consumed one of only two IOS_DISTRIBUTION slots.
 #
-# So CAPS is not missing a certificate. It is missing a PROFILE. Issuing a new
-# certificate would have consumed one of only two IOS_DISTRIBUTION slots and
-# possibly required revoking a live cert that Wingman and 9Soccer depend on --
-# for no reason. Creating a profile consumes no scarce resource, revokes nothing,
-# and is reversible.
-#
-# One-shot: run it, take the output, delete the workflow.
+# ⚠️ EXACT-MATCH ASSERTION. The first attempt used
+# `GET /v1/bundleIds?filter[identifier]=com.capspoker.app` and Apple returned the
+# record for com.capspoker.app.DEV, producing a profile whose
+# application-identifier was 3K9KJNGL9U.com.capspoker.app.dev. That would have
+# failed the archive after the slowest step in the build. The filter is NOT
+# reliably exact, so every bundleId is now listed and matched in code, and the
+# job aborts if the match is not character-for-character.
 # ============================================================================
 
 on:
@@ -30,7 +29,7 @@ jobs:
   create:
     runs-on: ubuntu-latest
     steps:
-      - name: Create IOS_APP_STORE profile for com.capspoker.app
+      - name: Create the profile (exact bundle match enforced)
         env:
           KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
           ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
@@ -42,8 +41,9 @@ jobs:
           const fs=require('fs'),https=require('https'),{createSign}=require('crypto');
           const keyId=process.env.KEY_ID, issuer=process.env.ISSUER_ID;
           const pk=fs.readFileSync('/tmp/asc.p8','utf8');
-          const CERT_ID='8477VM66KY';            // live IOS_DISTRIBUTION, serial 77BE68C1...
+          const CERT_ID='8477VM66KY';
           const BUNDLE='com.capspoker.app';
+          const STALE_PROFILE='864b3067-e14b-477b-a37f-bf8161b4ba0d'; // wrong-bundle profile from attempt 1
           function token(){
             const h=Buffer.from(JSON.stringify({alg:'ES256',kid:keyId,typ:'JWT'})).toString('base64url');
             const now=Math.floor(Date.now()/1000);
@@ -57,16 +57,26 @@ jobs:
               const r=https.request({hostname:'api.appstoreconnect.apple.com',path,method,
                 headers:Object.assign({Authorization:`Bearer ${token()}`},data?{'Content-Type':'application/json','Content-Length':Buffer.byteLength(data)}:{})},
                 resp=>{let b='';resp.on('data',d=>b+=d);resp.on('end',()=>{
-                  if(resp.statusCode>=300) return rej(new Error(`HTTP ${resp.statusCode} ${path}: ${b.slice(0,600)}`));
-                  res(JSON.parse(b));});});
+                  if(resp.statusCode===204) return res({});
+                  if(resp.statusCode>=300) return rej(new Error(`HTTP ${resp.statusCode} ${path}: ${b.slice(0,500)}`));
+                  res(b?JSON.parse(b):{});});});
               r.on('error',rej); if(data) r.write(data); r.end();
             });
           }
           (async()=>{
-            const bids=await req('GET',`/v1/bundleIds?filter[identifier]=${BUNDLE}&limit=1`);
-            if(!bids.data.length) throw new Error(`bundleId ${BUNDLE} not found on this team`);
-            const bundleId=bids.data[0].id;
-            console.log(`bundleId resource: ${bundleId} (${bids.data[0].attributes.name})`);
+            // Clean up the wrong-bundle profile from the first attempt.
+            try { await req('DELETE',`/v1/profiles/${STALE_PROFILE}`); console.log('deleted stale profile '+STALE_PROFILE); }
+            catch(e){ console.log('stale profile cleanup skipped: '+e.message.slice(0,120)); }
+
+            const all=await req('GET','/v1/bundleIds?limit=200');
+            const caps=all.data.filter(b=>/capspoker/i.test(b.attributes.identifier));
+            console.log('=== capspoker bundleIds on team ===');
+            for(const b of caps) console.log(`  ${b.id} | ${b.attributes.identifier} | ${JSON.stringify(b.attributes.name)}`);
+            const exact=all.data.filter(b=>b.attributes.identifier===BUNDLE);
+            if(exact.length!==1){ throw new Error(`expected exactly 1 bundleId equal to "${BUNDLE}", found ${exact.length}`); }
+            const bundleId=exact[0].id;
+            console.log(`EXACT MATCH -> ${bundleId} (${exact[0].attributes.identifier})`);
+
             const name=`CAPS AppStore ExpoFree ${Date.now()}`;
             const out=await req('POST','/v1/profiles',{data:{type:'profiles',
               attributes:{name,profileType:'IOS_APP_STORE'},
