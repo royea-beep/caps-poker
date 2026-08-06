@@ -6,6 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FriendsBg } from '../components/FriendsBg';
+import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { useGameStore } from '../store/gameStore';
 import { COLORS, Card, CARDS_PER_BOARD, getCardDimensions, isMpBoardRevealEnabled } from '../constants/gameConfig';
 import { getTheme } from '../constants/visualThemes';
@@ -120,7 +121,14 @@ interface BoardDisplay {
 
 function MultiplayerGameScreenInner() {
   const router = useRouter();
-  const { height: SCREEN_H, width: SCREEN_W } = useWindowDimensions();
+  // BC1 — same raw-width bug as app/game.tsx:130, same clamp. MP placement would otherwise blow
+  // out identically on desktop web: card width tracked the raw browser window (~0.102x) while the
+  // app column stays capped at WEB_MAX_WIDTH. Identity below 430, so phones are unchanged.
+  // Defined here so BOTH consumers (useGameLayout below and the BoardArrangement screenW prop)
+  // get the clamped value from one place.
+  // ⚠️ Verify on a FRESH MOUNT — this layout is memoized and does not re-lay-out on resize.
+  const { height: SCREEN_H, width: _rawScreenW } = useWindowDimensions();
+  const SCREEN_W = Platform.OS === 'web' ? Math.min(_rawScreenW, WEB_MAX_WIDTH) : _rawScreenW;
   const insets = useSafeAreaInsets();
   // MP-RENDER-PARITY — use the same theme the SOLO screen uses, so MP picks up
   // FriendsBg + the visualTheme the player chose in settings (classic vs fiveo).

@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Board from '../components/Board';
 import PlayerHand from '../components/PlayerHand';
+import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
@@ -127,7 +128,19 @@ function GameScreenInner() {
   // The boards region is now flex-measured anyway, so live dimensions are the
   // safer choice and remove a class of per-device drift.
   const { height: SCREEN_H, width: SCREEN_W } = useWindowDimensions();
-  const screenW = SCREEN_W;
+  // BC1 — THE fix. This was `= SCREEN_W`, the RAW browser window, threaded into useGameLayout
+  // and every card size below. But on web the app renders inside WebContainer, hard-capped at
+  // WEB_MAX_WIDTH, so card width came out at ~0.102 x the WINDOW while the column stayed 430:
+  // measured on fresh mounts 375->39px, 1280->130, 1706->174, 2560->261, cards spilling far
+  // outside the column. This is what a desktop player actually sees for the whole arrangement
+  // phase. Identity below 430 — phones are bit-for-bit unchanged. Same clamp as results.tsx,
+  // PlayerHand.tsx, BoardReveal.tsx and both lobbies.
+  //
+  // ⚠️ MEASUREMENT TRAP: verify this on a FRESH MOUNT (reload at the target size). This layout
+  // is memoized and does NOT re-lay-out on window resize — resizing a mounted /game to compare
+  // widths produces one stale layout and reads as "identical at every width". That artifact
+  // produced two wrong conclusions in two sprints.
+  const screenW = Platform.OS === 'web' ? Math.min(SCREEN_W, WEB_MAX_WIDTH) : SCREEN_W;
   const insets = useSafeAreaInsets();
   const config = useGameStore((s) => s.config);
   const chips = useGameStore((s) => s.chips);
