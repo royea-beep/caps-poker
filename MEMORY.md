@@ -903,6 +903,50 @@ repo — passwords and key contents are NOT in this file and must never be paste
   - EAS-held build numbers at rescue time: **CAPS iOS 507**, **Wingman iOS 439** (`appVersionSource:
     remote`, so these must be continued manually once EAS is gone).
 
+(9) **⛔ HARD DEADLINE — THE RESCUED CERTS EXPIRE AND CANNOT BE RENEWED THROUGH EAS.**
+  - **CAPS: 2027-06-25** (cert `2D06E852A4C64DC5B015DE4597EAA3B5`, profile
+    `5e450e58-842c-40ea-a2b8-c7ded03b1381` — both expire the same day).
+  - **Wingman: 2027-07-17** (cert `77BE68C15C9F02A9142BE167E1364939`, profile
+    `b78e291a-db3e-45b8-a1c9-7d09a8bb8d87`). That cert is **shared** — it is also CAPS's AD_HOC dev
+    cert, so its expiry hits both apps.
+  - **Before those dates** a new distribution certificate + provisioning profile must be issued
+    **directly from Apple** (Team `3K9KJNGL9U`) using the ASC API key, and wired into the restored
+    `ios-testflight-DISABLED.yml`. There is no Expo account to auto-refresh them any more — this is
+    exactly what EAS used to do silently and what killed the May 2026 workflow when its cert was
+    revoked. **If both expire with no non-EAS build pipeline in place, neither app can ship at all.**
+  - Signing coherence **verified 2026-08-06**, not assumed: the certificate embedded in each
+    profile's `DeveloperCertificates` array has the **same serial** as the matching `.p12`, for both
+    apps. Team `3K9KJNGL9U` and `application-identifier` `3K9KJNGL9U.com.capspoker.app` both match.
+
+(10) **VAULT DURABILITY — method chosen, ONE STEP LEFT AND IT IS ROYE'S.**
+  - Method: **`tar -czf` + `gpg --symmetric --cipher-algo AES256`**. Chosen because gpg 2.4.9 is
+    already installed (`age` is not, and nothing may be installed), it prompts for the passphrase
+    interactively so the passphrase is never written to disk or shell history, and it produces one
+    portable file. Measured: 60.8 KB raw → **29,711 bytes encrypted → 39,614 bytes base64**.
+  - Destination: **GitHub Secrets on `royea-beep/caps-poker`**, secret name `SIGNING_VAULT_2026_08_06`.
+    Access story: GitHub secrets are **write-only** — they cannot be read back through the UI or API,
+    only injected into workflow runs, and are masked in logs. That is why this was chosen over a
+    Supabase private bucket: a bucket's safety depends on a policy being correct, and this project has
+    a documented history of `WITH CHECK true` policies, with the anon key shipped inside the app.
+    A backup whose safety rests on a policy nobody re-checks is the weaker option.
+  - **Size limit verified empirically** (48 KB / 49,152 bytes): a 39,616-byte random-bytes probe
+    secret was accepted and then deleted. Random data was used deliberately — the real archive was
+    never uploaded under a test passphrase.
+  - **Round trip verified**: encrypt → decrypt to a separate path → reopen
+    `caps_com.capspoker.app_APP_STORE.p12` with its password → serial
+    `2D06E852A4C64DC5B015DE4597EAA3B5` matched. All 13 files recovered. Temp copies deleted.
+  - ⚠️ **NOT DONE — needs Roye.** The passphrase must be one he chooses and keeps in his own password
+    manager; it must never be invented or stored here. Until he runs the command, **the vault still
+    exists on exactly one disk on one machine.**
+
+(11) **⚠️ `C:\Users\royea` IS AN ACCIDENTAL GIT REPO — mitigated, not fixed.** Created **2026-02-28**
+(`.git/config` mtime), remote `github.com/royea-beep/whale-tracker.git`, **zero commits** — which is
+the only reason nothing has ever leaked. Untracked there: `.ssh`, `.expo/state.json` (a live session
+secret), `.npmrc`, `.gitconfig` — **140 entries** a single `git add -A` would have staged.
+A `C:\Users\royea\.gitignore` containing `*` was added 2026-08-06; verified `git add -A` now stages
+**0** files. That is a **safety net, not a fix** — `git add -f` still overrides it. **The real fix is
+`Remove-Item -Recurse -Force C:\Users\royea\.git`, deliberately left for the owner.**
+
 OPEN / BLOCKED ON PHYSICAL DEVICE (cannot close from code/web/DB — do NOT claim fixed without hardware):
 (1) Board 2 card overflow on narrow iOS, (2) MP face-down turn/river cards missing vs solo, (3) MP
 2-device sync/parity. All three have best-effort code fixes shipped or branched, NONE device-confirmed.
