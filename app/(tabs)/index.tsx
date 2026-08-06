@@ -20,6 +20,7 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
+import { WEB_MAX_WIDTH } from '../../components/WebContainer';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -1248,8 +1249,11 @@ export default function HomeScreen() {
     ? ({ background: 'linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #9a7a2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as any)
     : {};
 
-  // Cap play button width at effective web content width (WEB_MAX_WIDTH=430) to avoid overflow
-  const _effectiveW = (Platform.OS === 'web' && screenW > 430) ? 430 : screenW;
+  // Cap play button width at effective web content width to avoid overflow.
+  // BD3 — was the literal `430` twice, duplicating WEB_MAX_WIDTH by hand. Iron Rule #3: a literal
+  // that silently drifts from the constant is exactly how this class of bug comes back. Now
+  // imported, so changing WEB_MAX_WIDTH moves this with it.
+  const _effectiveW = (Platform.OS === 'web' && screenW > WEB_MAX_WIDTH) ? WEB_MAX_WIDTH : screenW;
   // RESPONSIVE-FIX 2026-07-06 — was 0.75. At narrow widths (320-375pt), 0.75 combined
   // with the old fixed rs(32) horizontal padding left too little room for "Practice vs
   // Bots" and it truncated on a real tester device. 0.82 gives ~9% more width at every

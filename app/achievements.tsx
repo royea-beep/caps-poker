@@ -9,6 +9,7 @@ import {
   Animated,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,6 +17,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -325,7 +327,9 @@ function DetailModal({
 
 export default function AchievementsScreen() {
   const router = useRouter();
-  const { width: screenWidth } = useWindowDimensions();
+  // BD3 — same source clamp as game.tsx:130 and friends; identity below 430. See WebContainer.
+  const { width: rawW } = useWindowDimensions();
+  const screenWidth = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
 
   const [achievements, setAchievements]     = useState<AchievementItem[]>([]);
   const [loading, setLoading]               = useState(true);

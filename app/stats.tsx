@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getHandHistory } from '../utils/handHistory';
@@ -159,7 +161,11 @@ interface DbStats {
 
 export default function StatsScreen() {
   const router = useRouter();
-  const { width: screenW } = useWindowDimensions();
+  // BD3 — same source clamp as game.tsx:130 / results.tsx / PlayerHand.tsx / BoardReveal.tsx.
+  // The app renders inside WebContainer (capped at WEB_MAX_WIDTH on web), so sizing against the
+  // raw browser window computes for a column that does not exist. Identity below 430.
+  const { width: rawW } = useWindowDimensions();
+  const screenW = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const [allHands, setAllHands] = useState<Awaited<ReturnType<typeof getHandHistory>>>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
