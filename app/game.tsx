@@ -972,6 +972,27 @@ function GameScreenInner() {
     });
     setBoards(updated);
     setPlayerHand((h) => h.filter((c) => !placed.has(c.id)));
+    // BB2 — the THIRD placement path, and the one real players actually use. AG1 instrumented
+    // handleBoardPress ('tap') and the per-board ⚡ handleAutoFill ('auto') but missed this one,
+    // which is behind the "⚡ Auto-Place ALL" button AND the auto-sim driver. Consequence: since
+    // card_placed shipped it has NEVER fired for a real user (15 events, all our own probes, all
+    // 2026-08-01), and PLACEMENT_HISTOGRAM.sql bucketed everyone who used this button as
+    // max_placed = 0, "dealt, never placed" — reading the most engaged users as instant quitters.
+    // 'auto_all' is kept DISTINCT from 'auto' so the three paths stay separable.
+    {
+      const alreadyPlaced = cur.reduce((n, b) => n + b.playerCards.length, 0);
+      for (let k = 0; k < placed.size; k++) {
+        track('card_placed', {
+          placed_index: alreadyPlaced + k + 1,
+          total_required: boardCount * CARDS_PER_BOARD,
+          board_count: boardCount,
+          player_count: numberOfPlayers,
+          ms_since_deal: dealtAtRef.current ? Date.now() - dealtAtRef.current : null,
+          source: 'auto_all',
+          mode: isPractice ? 'practice' : 'solo',
+        }, 'game');
+      }
+    }
   }, []);
 
   const allBoardsFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);

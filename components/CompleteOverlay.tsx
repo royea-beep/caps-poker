@@ -6,6 +6,7 @@ import { playSound } from '../utils/sounds';
 import ProQuoteBanner from './ProQuoteBanner';
 import { rv, rf, rs } from '../utils/responsive';
 import { shouldShowCompleteBonus } from './completeOverlayGate';
+import { WEB_MAX_WIDTH } from './WebContainer';
 
 // Lazy-load expo-haptics
 let Haptics: any = null;
@@ -35,7 +36,11 @@ const PARTICLE_COLORS = [
 ];
 
 export default function CompleteOverlay({ winner, bonusAmount, duration, onDone, isPractice = false }: CompleteOverlayProps) {
-  const { width: screenW } = useWindowDimensions();
+  // BB1 — same source clamp as BoardReveal/results/PlayerHand: the particle burst below spreads
+  // across `screenW`, so on desktop it scattered across the whole browser window while the app
+  // column is only WEB_MAX_WIDTH wide. Identity below 430 — phones are unaffected.
+  const { width: rawW } = useWindowDimensions();
+  const screenW = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   debugLog('C1 CompleteOverlay mounted');
 
   // Title: scale 0 → 1.2 → 1.0

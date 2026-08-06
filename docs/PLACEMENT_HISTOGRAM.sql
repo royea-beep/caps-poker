@@ -17,6 +17,31 @@
 --
 -- ⚠️ card_removed is SHIPPED BUT UNPROVEN on live. Any churn conclusion drawn from it is
 -- unvalidated until a real tap on a placed card is observed.
+--
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- ⚠️⚠️ CORRECTED 2026-08-06 (BB2). THIS FILE WAS LIVE AND WRONG. It was not born right.
+--
+-- Between 2026-08-01 and 2026-08-06 this query silently under-counted the MOST ENGAGED users.
+-- `card_placed` had THREE emit sites but only TWO were instrumented: `handleBoardPress`
+-- ('tap', game.tsx:850) and the per-board ⚡ `handleAutoFill` ('auto', game.tsx:918). The
+-- THIRD — `autoFillAllBoards` (game.tsx:973), behind the "⚡ Auto-Place ALL" button and the
+-- auto-sim driver — emitted NOTHING. Anyone who used that one button produced zero card_placed
+-- rows, so the LEFT JOIN below gave them COALESCE(max_placed, 0) = 0 and they landed in the
+-- '0 — dealt, never placed' bucket: a one-tap power user, filed as an instant quitter.
+--
+-- That is the single most damaging failure mode this query has, because the bucket it corrupts
+-- is the one any reader will treat as the headline "players give up immediately" number. The
+-- defect was invisible in the data — the query returned clean, plausible rows the whole time.
+-- It was found by USING the app (clicking the button and watching the DB stay empty), not by
+-- reading either the SQL or the client. Lifetime card_placed at the moment of the fix: 15
+-- events, 5 devices, all 2026-08-01, all our own probes — ZERO from a real user, ever.
+--
+-- ⚠️ STILL UNINSTRUMENTED — A FOURTH PATH. game.tsx:446 auto-places the remaining cards when
+-- the arrangement COUNTDOWN EXPIRES. It emits `arrangement_timeout` (carrying `cards_remaining`)
+-- but no `card_placed`. Those sessions therefore STILL bucket as '0 — dealt, never placed'.
+-- Until that path is instrumented, cross-check the 0 bucket against `arrangement_timeout`
+-- before concluding anything about it. Do not read the 0 bucket as "gave up" on its own.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
 
 WITH sessions AS (
   SELECT
@@ -25,7 +50,12 @@ WITH sessions AS (
     MAX((e.properties->>'placed_index')::int)                    AS max_placed,   -- MAX, deliberately
     MAX((e.properties->>'total_required')::int)                  AS total_required,
     MAX((e.properties->>'board_count')::int)                     AS board_count,
-    BOOL_OR(e.properties->>'source' = 'auto')                    AS used_auto,
+    -- BB2: 'auto_all' MUST be included here. It is a distinct source value, not a variant of
+    -- 'auto' — matching only 'auto' would leave every one-tap Auto-Place-ALL user flagged as a
+    -- manual placer, which is the same class of error this file was just corrected for.
+    BOOL_OR(e.properties->>'source' IN ('auto', 'auto_all'))     AS used_auto,
+    -- Keep the paths separable: per-board ⚡ and one-tap ALL are different user intents.
+    string_agg(DISTINCT e.properties->>'source', '+')            AS sources,
     MIN((e.properties->>'ms_since_deal')::int)                   AS ms_to_first_placement,
     MAX((e.properties->>'ms_since_deal')::int)                   AS ms_to_last_placement
   FROM analytics_events e
@@ -52,6 +82,7 @@ joined AS (
     COALESCE(s.max_placed, 0)                AS max_placed,
     COALESCE(s.total_required, d.board_count * 4) AS total_required,
     COALESCE(s.used_auto, false)             AS used_auto,
+    s.sources,
     s.ms_to_first_placement, s.ms_to_last_placement
   FROM dealt d
   LEFT JOIN sessions s
@@ -70,6 +101,7 @@ SELECT
   END                                                          AS bucket,
   COUNT(*)                                                     AS sessions,
   COUNT(DISTINCT device_id)                                    AS devices,
+  string_agg(DISTINCT sources, ' | ')                          AS placement_sources,
   ROUND(AVG(ms_to_first_placement) / 1000.0, 1)                AS avg_secs_to_FIRST_placement,
   ROUND(AVG(ms_to_last_placement - ms_to_first_placement) / 1000.0, 1) AS avg_secs_SPENT_placing
 FROM joined

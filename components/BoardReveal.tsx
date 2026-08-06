@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CardComponent from './Card';
+import { WEB_MAX_WIDTH } from './WebContainer';
 import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { rf, rs, rv } from '../utils/responsive';
@@ -83,7 +84,16 @@ interface Props {
 }
 
 export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false, isPractice = false }: Props) {
-  const { width: screenW } = useWindowDimensions();
+  // BB1 — the app renders inside WebContainer, hard-capped at WEB_MAX_WIDTH (430) on web.
+  // useWindowDimensions() reports the RAW browser window, so on desktop every size derived from
+  // it was computed for a column that does not exist: the `commOverlap` term below asks whether
+  // 5 cards exceed the WINDOW when they actually have to fit the 430px COLUMN, so it collapsed
+  // to 0 and the cards rendered at full size with no fan-compression — measured 261x330 spanning
+  // 1193px inside a 430px column at a 1706px window (~70% of the screen). Clamping the SOURCE is
+  // identity below 430, so it cannot change anything on phones. Same clamp as results.tsx,
+  // PlayerHand.tsx and both lobbies. NOT a scale cap — do not "improve" it into one.
+  const { width: rawW } = useWindowDimensions();
+  const screenW = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
   const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
   const opponentName = useGameStore((s) => s.opponentName);
