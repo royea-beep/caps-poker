@@ -939,6 +939,33 @@ repo — passwords and key contents are NOT in this file and must never be paste
     manager; it must never be invented or stored here. Until he runs the command, **the vault still
     exists on exactly one disk on one machine.**
 
+(10b) **RECOVERY PROCEDURE — how to get the vault back out of GitHub Secrets.**
+Write-only storage is what makes the backup safe and is also why the restore is not obvious: a secret
+can only be read by a workflow, and logs mask secret values. The workflow is
+**`.github/workflows/restore-signing-vault.yml`** (`workflow_dispatch` ONLY; `permissions: contents:
+read`). Steps:
+  1. GitHub → **Actions** → *"Restore Signing Vault"* → **Run workflow**
+  2. Download the **`signing-vault-encrypted`** artifact from that run (**1-day retention** — grab it
+     promptly or just re-dispatch)
+  3. `gpg --decrypt -o vault.tar.gz vault.tar.gz.gpg`  ← prompts for Roye's passphrase
+  4. `tar -xzf vault.tar.gz` → the 13 files
+  - The workflow **never decrypts**. Putting the passphrase in CI would place plaintext Apple private
+    keys on a runner and inside an artifact — worse than the problem it solves.
+  - The job **prints the SHA256 of the ENCRYPTED archive**. That is not secret, and it is the only way
+    to prove integrity end-to-end without decrypting: compare it to `sha256sum vault.tar.gz.gpg` on
+    the machine that produced the upload.
+  - ⛔ **THE PASSPHRASE IS A SINGLE POINT OF FAILURE. If it is lost, this secret is worthless and there
+    is no recovery** — new certificates must then be issued directly from Apple (Team `3K9KJNGL9U`),
+    which is only possible while the Apple account and ASC key remain valid.
+  - **Proven / not proven (2026-08-06):** the **fail-loudly guard is PROVEN in CI** — dispatched with
+    the secret absent, run `31098017304` failed with the intended error and uploaded nothing. The
+    **decode step is PROVEN locally**, byte-for-byte, running the workflow's exact shell body against
+    a 29,711-byte random probe (sha256 `f0c6a11d…` in == out). **NOT yet proven: the CI leg reading
+    the real secret and producing a downloadable artifact** — setting a secret under this name was
+    blocked by the sandbox permission classifier, and it was not worked around. **Roye's first
+    dispatch after uploading the real vault IS that test**: if the artifact downloads and its SHA256
+    matches his local `vault.tar.gz.gpg`, the restore path is fully verified.
+
 (11) **⚠️ `C:\Users\royea` IS AN ACCIDENTAL GIT REPO — mitigated, not fixed.** Created **2026-02-28**
 (`.git/config` mtime), remote `github.com/royea-beep/whale-tracker.git`, **zero commits** — which is
 the only reason nothing has ever leaked. Untracked there: `.ssh`, `.expo/state.json` (a live session
