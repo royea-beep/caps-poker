@@ -861,6 +861,26 @@ stable were a *different component's* (already capped by `Math.min(70, …)`), w
 belonged to the layer behind the overlay, hit-testing `visible: false`. Check WHICH component owns an
 element before treating it as a control.
 
+(7) **OTA PUBLISHING IS BLOCKED — THE EAS ACCOUNT IS DISABLED (2026-08-06).** `eas update` fails at
+the *publish* step with **"Account has been disabled. Email support@expo.dev if you believe this was
+in error."** Reproduced twice. This is NOT the source-map/hermesc problem and no CLI flag works around
+it — **only Roye can resolve it** (Expo support / billing).
+  - **Reads still work, writes do not.** `eas whoami` succeeds (royea / royearguan@gmail.com, owner of
+    `royea` + `ftable`) and `eas update:list` returns fine. That asymmetry is the trap: every check
+    short of an actual publish looks healthy, so this will read as "OTA fine" until someone ships.
+  - **Last production update: 2026-08-02**, group `1a5ffe5a-3fff-422e-a725-c08d5bb2f4f3`, runtime
+    `2.7.0`. Native has received nothing since.
+  - **Separately and genuinely broken:** `hermesc.exe … -O -output-source-map` exits `0xC0000005`, so
+    a normal `eas update` (which always passes `--source-maps`) cannot even bundle. Workaround is
+    `expo export` without source maps then `eas update --skip-bundler --input-dir dist` — that path
+    bundles and uploads fine (2 app bundles uploaded) and then dies on the disabled account. **Two
+    independent blockers stacked; fixing either alone still ships nothing.**
+  - **No unsymbolicated-crash window exists** — because no OTA shipped. If a future one does go out
+    via `--skip-bundler`, record the date range here, since native crashes in `crash_reports` during
+    that window will have minified frames.
+  - See `fix-defender.ps1` for the hermesc/Defender angle (rewritten 2026-08-06; the pre-BD2 version
+    of that script and its `.bat` were destructive — never run an old copy).
+
 OPEN / BLOCKED ON PHYSICAL DEVICE (cannot close from code/web/DB — do NOT claim fixed without hardware):
 (1) Board 2 card overflow on narrow iOS, (2) MP face-down turn/river cards missing vs solo, (3) MP
 2-device sync/parity. All three have best-effort code fixes shipped or branched, NONE device-confirmed.
