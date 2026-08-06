@@ -939,6 +939,57 @@ repo — passwords and key contents are NOT in this file and must never be paste
     manager; it must never be invented or stored here. Until he runs the command, **the vault still
     exists on exactly one disk on one machine.**
 
+(10c) **⭐ CURRENT BACKUP DESIGN (2026-08-06, BI) — SUPERSEDES (10) AND (10b) BELOW. Owner does
+nothing; recovery is one button.** The manual-passphrase design in (10)/(10b) is DEAD — kept below
+only so the reasoning is traceable.
+
+**Copies (2 of the intended 3):**
+  - **Copy 1 — local disk:** `C:\Projects\_KEYS\SIGNING-RESCUE-2026-08-06` (13 files).
+  - **Copy 2 — GitHub Secrets** on `royea-beep/caps-poker`, as TWO secrets:
+    `SIGNING_VAULT_2026_08_06` (base64 of a gpg-AES256 archive) and `SIGNING_VAULT_PASSPHRASE`
+    (machine-generated, 48 chars from a 62-char alphabet, ~285 bits, CSPRNG). **The passphrase is
+    NOT written down anywhere else and does not need to be — nothing manual depends on it.**
+  - **Copy 3 — DOES NOT EXIST.** There is **no Google Drive** on this machine, and the
+    `C:\Users\royea\OneDrive` folder is a **dead leftover, not a sync target**: no accounts under
+    `HKCU:\SOFTWARE\Microsoft\OneDrive\Accounts`, `OneDrive.exe` not installed, process not running.
+    Copying there would have put the archive on the **same physical disk** as Copy 1 while looking
+    like off-site redundancy. Deliberately not done.
+
+**Sizes / integrity:** 62,293 raw → 29,628 tar.gz → **29,711 encrypted** → **39,616 base64**
+(GitHub limit 49,152, verified empirically). **Encrypted archive SHA256:
+`8d41f644191e934da7a7c17a008628f20f8431e6423a00af265d3a5cc9ca4bc3`** — the restore workflow prints
+this; if it ever differs, the secret has been replaced.
+
+**RECOVERY — four lines:**
+  1. GitHub → **Actions** → *"Restore Signing Vault"* → **Run workflow**
+  2. Download the **`signing-vault-restored`** artifact
+  3. **The files are already decrypted** — just unzip (13 files)
+  4. The artifact **expires after 1 day** (re-dispatch any time)
+
+**PROVEN END TO END 2026-08-06, not asserted** — run `31098700611`: encrypted sha256 matched, 13/13
+files restored, artifact downloaded, and `caps_com.capspoker.app_APP_STORE.p12` opened from the
+**restored** copy reading serial **`2D06E852A4C64DC5B015DE4597EAA3B5`** with its private key intact.
+Downloaded copy deleted afterwards.
+
+**⚠️ RESIDUAL RISK — SINGLE SYSTEM.** Both halves live in the **same** GitHub repo, so **losing the
+GitHub account/org loses the entire off-machine backup**, and only the local disk remains. This is a
+deliberate trade for zero manual steps; it is not a safe resting place. A second consequence:
+**anyone who can dispatch workflows on this repo can obtain the signing keys** — the same population
+that can already push code which gets signed with them.
+**Proposed mitigation (NOT implemented, needs a sprint):** replicate `vault.tar.gz.gpg` **only** —
+never the passphrase — to Supabase Storage on `gxrpunvhjcrzqnitbqah` in a private bucket with no anon
+policy, driven by a scheduled workflow using the service-role key. That restores the
+two-independent-systems property: Supabase alone yields an opaque blob, GitHub alone yields secrets
+that cannot be read back through the UI or API.
+
+**⛔ COUPLED DEADLINE, restated because it is one event with two victims:**
+  - `77BE68C15C9F02A9142BE167E1364939` expires **2027-07-17** and serves **BOTH** Wingman App Store
+    **and** CAPS AD_HOC/dev — one expiry, two projects.
+  - `2D06E852A4C64DC5B015DE4597EAA3B5` (CAPS App Store) expires **2027-06-25**.
+
+---
+*(Historical — the manual design, superseded by (10c) above.)*
+
 (10b) **RECOVERY PROCEDURE — how to get the vault back out of GitHub Secrets.**
 Write-only storage is what makes the backup safe and is also why the restore is not obvious: a secret
 can only be read by a workflow, and logs mask secret values. The workflow is
