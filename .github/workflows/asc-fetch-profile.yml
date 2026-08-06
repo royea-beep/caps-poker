@@ -1,0 +1,67 @@
+name: ASC - Fetch a provisioning profile as an artifact (one-shot)
+
+# Fetches a profile's binary content by UUID and uploads it as an artifact.
+# Exists because the profile base64 is ~16k chars and GitHub's log viewer wraps
+# and truncates it, so scraping it out of a run log is unreliable -- an artifact
+# is byte-exact. Read-only against ASC.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile_uuid:
+        description: 'Profile UUID to fetch'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch profile
+        env:
+          KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          KEY_B64:   ${{ secrets.APPLE_API_KEY_BASE64 }}
+          WANT_UUID: ${{ inputs.profile_uuid }}
+        run: |
+          set -eu
+          printf %s "$KEY_B64" | base64 -d > /tmp/asc.p8
+          node - << 'SCRIPT'
+          const fs=require('fs'),https=require('https'),{createSign}=require('crypto');
+          const keyId=process.env.KEY_ID, issuer=process.env.ISSUER_ID, want=process.env.WANT_UUID;
+          const pk=fs.readFileSync('/tmp/asc.p8','utf8');
+          function token(){
+            const h=Buffer.from(JSON.stringify({alg:'ES256',kid:keyId,typ:'JWT'})).toString('base64url');
+            const now=Math.floor(Date.now()/1000);
+            const p=Buffer.from(JSON.stringify({iss:issuer,iat:now,exp:now+900,aud:'appstoreconnect-v1'})).toString('base64url');
+            const s=createSign('SHA256'); s.update(`${h}.${p}`);
+            return `${h}.${p}.${s.sign({key:pk,dsaEncoding:'ieee-p1363'},'base64url')}`;
+          }
+          function get(path){return new Promise((res,rej)=>{
+            https.get({hostname:'api.appstoreconnect.apple.com',path,headers:{Authorization:`Bearer ${token()}`}},r=>{
+              let b='';r.on('data',d=>b+=d);r.on('end',()=>{
+                if(r.statusCode!==200) return rej(new Error(`HTTP ${r.statusCode}: ${b.slice(0,300)}`));
+                res(JSON.parse(b));});}).on('error',rej);});}
+          (async()=>{
+            const all=await get('/v1/profiles?limit=200');
+            const hit=all.data.find(p=>p.attributes.uuid===want);
+            if(!hit) throw new Error(`profile ${want} not found`);
+            const a=hit.attributes;
+            console.log(`name=${a.name} uuid=${a.uuid} state=${a.profileState} expires=${a.expirationDate}`);
+            fs.writeFileSync('profile.mobileprovision', Buffer.from(a.profileContent,'base64'));
+            fs.writeFileSync('profile.name.txt', a.name);
+            console.log('bytes written: '+fs.statSync('profile.mobileprovision').size);
+          })().catch(e=>{console.log('FAILED: '+e.message);process.exit(1);});
+          SCRIPT
+          rm -f /tmp/asc.p8
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: provisioning-profile
+          path: |
+            profile.mobileprovision
+            profile.name.txt
+          retention-days: 1
+          if-no-files-found: error
