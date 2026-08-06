@@ -881,6 +881,28 @@ it — **only Roye can resolve it** (Expo support / billing).
   - See `fix-defender.ps1` for the hermesc/Defender angle (rewritten 2026-08-06; the pre-BD2 version
     of that script and its `.bat` were destructive — never run an old copy).
 
+(8) **SIGNING MATERIAL RESCUED OFF EXPO (2026-08-06) — location only, no secrets recorded here.**
+Vault: **`C:\Projects\_KEYS\SIGNING-RESCUE-2026-08-06`** (13 files: 4 × `.p12` + password +
+`.mobileprovision` for CAPS and Wingman, plus Wingman's ASC key). Deliberately OUTSIDE every git
+repo — passwords and key contents are NOT in this file and must never be pasted into it.
+  - `eas credentials` is a TTY-only TUI with no export command, so this was pulled via Expo's
+    **GraphQL API** (`api.expo.dev/graphql`) using the `sessionSecret` already in `~/.expo/state.json`.
+    **Reads still work on the disabled account** — that is the whole reason this was possible today
+    and may not be tomorrow.
+  - ⚠️ **`C:\Users\royea` IS A GIT REPO** with remote `github.com/royea-beep/whale-tracker`. The vault
+    was first written there and showed as **untracked but NOT ignored** — one `git add -A` would have
+    pushed distribution certs, private keys and passwords to GitHub. Nothing leaked (never staged),
+    and it was moved to `C:\Projects\_KEYS`. **Never write secrets under the home directory on this
+    machine.**
+  - Verified by opening the files, not by trusting the export: all 4 `.p12` open with their password,
+    each carries a private key, subject `iPhone Distribution: Roye Arguan (3K9KJNGL9U)`; all 4
+    profiles parse with correct team, `aps-environment: production`, and App Store profiles have 0
+    `ProvisionedDevices`.
+  - **No private key has EVER been committed** in either repo. The only cert-adjacent file in CAPS
+    history is `certs/req.csr`, a CSR (public key only) — untidy, not a leak, nothing to revoke.
+  - EAS-held build numbers at rescue time: **CAPS iOS 507**, **Wingman iOS 439** (`appVersionSource:
+    remote`, so these must be continued manually once EAS is gone).
+
 OPEN / BLOCKED ON PHYSICAL DEVICE (cannot close from code/web/DB — do NOT claim fixed without hardware):
 (1) Board 2 card overflow on narrow iOS, (2) MP face-down turn/river cards missing vs solo, (3) MP
 2-device sync/parity. All three have best-effort code fixes shipped or branched, NONE device-confirmed.
