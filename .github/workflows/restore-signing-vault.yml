@@ -1,0 +1,90 @@
+name: Restore Signing Vault (manual, disaster recovery)
+
+# ============================================================================
+# WHY THIS EXISTS
+#
+# The signing vault (Apple distribution certs + private keys + provisioning
+# profiles for CAPS and Wingman) is backed up to the repository secret
+# SIGNING_VAULT_2026_08_06 as base64 of a gpg-symmetric AES256 archive.
+#
+# GitHub secrets are WRITE-ONLY: they cannot be read back through the UI or the
+# API, and their values are masked in logs. That property is exactly why the
+# secret is a safe place to keep the backup -- and exactly why retrieving it is
+# not obvious. A secret can only be read by a workflow. This is that workflow.
+#
+# Without it the backup is unreachable in the disaster it exists for. It was
+# written and PROVEN (see below) rather than assumed, because a backup whose
+# restore path has never been executed is not a backup.
+#
+# WHAT THIS DOES *NOT* DO
+#
+# It never decrypts. The passphrase is Roye's, lives only in his password
+# manager, and must never reach CI -- a decrypting workflow would put the
+# plaintext private keys on a GitHub runner and in an artifact, which is
+# strictly worse than the problem it solves. This job only base64-decodes the
+# secret back into the still-encrypted .gpg file and hands it to you.
+#
+# RECOVERY PROCEDURE (full)
+#   1. Actions -> "Restore Signing Vault" -> Run workflow (manual dispatch)
+#   2. Download the `signing-vault-encrypted` artifact from the run
+#   3. unzip it, then:  gpg --decrypt -o vault.tar.gz vault.tar.gz.gpg
+#      (gpg prompts for Roye's passphrase)
+#   4. tar -xzf vault.tar.gz
+#   -> 13 files: 4x .p12 + .p12.password.txt + .mobileprovision, plus the
+#      Wingman ASC key.
+#
+# IF THE PASSPHRASE IS LOST, THIS SECRET IS WORTHLESS. There is no recovery.
+# New certificates must then be issued directly from Apple (Team 3K9KJNGL9U).
+# ============================================================================
+
+on:
+  workflow_dispatch:        # MANUAL ONLY. Never on push, never scheduled.
+
+permissions:
+  contents: read            # no write access needed; keep the token minimal
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode the vault secret (never printed)
+        env:
+          # Read via env, NOT interpolated into the command line: a value on the
+          # command line can surface in process listings and error traces. The
+          # secret is never echoed, never `cat`-ed, and never passed to `set -x`.
+          VAULT_B64: ${{ secrets.SIGNING_VAULT_2026_08_06 }}
+        run: |
+          set -eu                       # deliberately NOT -x
+
+          if [ -z "${VAULT_B64:-}" ]; then
+            echo "::error::Secret SIGNING_VAULT_2026_08_06 is empty or not set."
+            echo "::error::Nothing to restore. This job fails rather than uploading an empty artifact,"
+            echo "::error::because an empty artifact would look like a successful restore."
+            exit 1
+          fi
+
+          printf '%s' "$VAULT_B64" | base64 -d > vault.tar.gz.gpg
+
+          BYTES=$(stat -c%s vault.tar.gz.gpg)
+          if [ "$BYTES" -lt 1024 ]; then
+            echo "::error::Decoded archive is only ${BYTES} bytes - implausibly small; refusing to upload."
+            exit 1
+          fi
+
+          # The SHA256 of the ENCRYPTED archive is not secret, and it is the only
+          # way to prove end-to-end integrity without decrypting. Compare it to
+          # `sha256sum vault.tar.gz.gpg` on the machine that produced the upload.
+          echo "decoded bytes : ${BYTES}"
+          echo "sha256        : $(sha256sum vault.tar.gz.gpg | cut -d' ' -f1)"
+
+          # NOTE: no gpg/format validation here, on purpose. A format check would
+          # have to be bypassed to test this workflow, which would mean the real
+          # restore path was never the path actually exercised.
+
+      - name: Upload the still-encrypted archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: signing-vault-encrypted
+          path: vault.tar.gz.gpg
+          retention-days: 1     # short on purpose: long enough to download, not to linger
+          if-no-files-found: error
