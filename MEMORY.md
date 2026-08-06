@@ -842,6 +842,25 @@ Rule 10). (4) When DB contradicts a confirmed real-world observation, the DB rea
 analytics_events is the durable record). (5) Independent verification catches bugs BOTH agents miss for
 different reasons (null vs '?' screen).
 
+(6) **THE RESIZE MEASUREMENT TRAP (2026-08-06) — same failure family as (1), and it has now produced
+TWO wrong conclusions in two sprints.** *Resizing an already-mounted screen does NOT re-lay-out a
+memoized layout.* `/game`'s layout is memoized, so changing the browser window does not recompute it.
+**Every responsive measurement MUST be taken on a FRESH MOUNT — reload the page at the target size.**
+Both of these were resize-measurement artifacts, and both were reported as findings before being
+caught:
+  - *"placement card size is identical at 2560/1920/1440/1280 (41×57)"* — it was **one stale layout**
+    measured four times. On fresh mounts card width is **0.102 × raw window width**, perfectly
+    proportional: 375→39, 393→54, 1280→130, 1706→174, 2560→261.
+  - *"/game overflows by a constant 129px at every height"* — also stale. Fresh mounts: **−87px at
+    375×667 and −92px at 393×852 (both FIT, no clip)**, but **+699px at 1280×720 and +3542px at
+    2560×1440**. The overhang is width-proportional card height, not a fixed-height element.
+The trap is especially seductive because the stale reading looks like a *clean, stable* result — four
+identical numbers read as "this dimension is width-independent", which is the most confident-sounding
+wrong answer available. A within-screen "control" does not rescue it either: the cards that stayed
+stable were a *different component's* (already capped by `Math.min(70, …)`), while the ones that varied
+belonged to the layer behind the overlay, hit-testing `visible: false`. Check WHICH component owns an
+element before treating it as a control.
+
 OPEN / BLOCKED ON PHYSICAL DEVICE (cannot close from code/web/DB — do NOT claim fixed without hardware):
 (1) Board 2 card overflow on narrow iOS, (2) MP face-down turn/river cards missing vs solo, (3) MP
 2-device sync/parity. All three have best-effort code fixes shipped or branched, NONE device-confirmed.
