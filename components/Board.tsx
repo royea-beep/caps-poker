@@ -963,10 +963,18 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: COLORS.textDim,
-    fontSize: rfBase(7),
+    // BT2 — was rfBase(7). This is the "Bot 1 / Bot 2 / Bot 3" seat label and it rendered at
+    // literally 7px, the smallest text in the app: in a competitive card game, WHO you are
+    // playing was effectively invisible. Raised to the 13px identity floor from the type scale.
+    //
+    // The width had to move with it and that is not incidental: at rsBase(20) the box was 20dp
+    // wide — about five characters at 7px — so raising the font alone would have clipped or
+    // wrapped "Bot 1" and I would have reported a size that never rendered. This is the
+    // container-constraint case: the fix is the box AND the size, not the size alone.
+    fontSize: rfBase(13),
     fontWeight: '700',
     letterSpacing: 0.5,
-    width: rsBase(20),
+    width: rsBase(34),
     textAlign: 'center',
   },
   potArea: {
@@ -1100,7 +1108,15 @@ const styles = StyleSheet.create({
   },
   handName: {
     color: COLORS.textMuted,
-    fontSize: rfBase(8),
+    // BT2 — was rfBase(8). The hand name ("Two Pair", "Flush") is the single most important
+    // string on a poker board and it sat one step above the minimum. Raised to the 16px
+    // primary-information level.
+    //
+    // ⚠️ This is a CAP, not a guarantee: the render site carries `adjustsFontSizeToFit` with
+    // `minimumFontScale={0.65}`, so the box governs and it will shrink toward 10.4px where the
+    // row is tight. That is still strictly better than the old floor of 8 x 0.65 = 5.2px, but
+    // the measured value is what counts — see the before/after table, not this number.
+    fontSize: rfBase(16),
     fontWeight: '600',
   },
   // PR-L Task D — let the rank text shrink within the header row.

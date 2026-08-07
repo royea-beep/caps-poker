@@ -1540,12 +1540,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   breakdownHand: {
-    fontSize: rf(13),
+    // BT2 — your own hand name, raised 13 -> 16 (primary information). breakdownMid is flex:1
+    // with no fixed width, so this has room to render at full size.
+    fontSize: rf(16),
     fontWeight: '600',
     color: '#fff',
   },
   breakdownVs: {
-    fontSize: rf(10),
+    // BT2 — the opponent's hand, raised 10 -> 13. Deliberately NOT 16: it stays one step below
+    // your own hand name above it, so lifting both off the floor does not invert whose result
+    // the screen is about.
+    fontSize: rf(13),
     color: 'rgba(255,255,255,0.8)',
     marginTop: rs(1),
   },
