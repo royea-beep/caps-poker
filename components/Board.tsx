@@ -112,7 +112,15 @@ interface BoardProps {
 // In-file, private component, no external contract → same risk class as the rest of this
 // batch. (BoardArrangement stays deferred: cross-file = a public API change.)
 function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, slotHeight, theme }: { isArrangement?: boolean; hasSelection?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number; theme: ThemeTokens }) {
-  const pulseOpacity = useSharedValue(0.6);
+  // CG1 — TEMPORARY INSTRUMENT, NOT A CHANGE. Revert immediately after measuring.
+  //
+  // The slot read exactly 0.600 on 23/23 samples with KILL_Board disabled, and 0.6 is
+  // ambiguous BY CONSTRUCTION: it is both this initial AND the value the effect's `else`
+  // branch writes. So "the effect never ran" and "the effect ran and took the else branch"
+  // are indistinguishable. 0.137 cannot occur naturally - it is not 0.6 (initial/else), not
+  // 1 or 0.72 (the pulse endpoints), not 0.4 (the pre-CC floor), and appears nowhere in the
+  // emptySlot styles. Whatever the slot reads now names which of the three cases is true.
+  const pulseOpacity = useSharedValue(0.137);
 
   useEffect(() => {
     if (isArrangement) {
