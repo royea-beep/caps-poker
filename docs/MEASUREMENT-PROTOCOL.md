@@ -77,3 +77,75 @@ be duplicated by a coincidence of copy, and does not move when the text is trans
 | 10 | `card-pip` | card face suit glyph | `Card.tsx` | 1 |
 
 **10 elements, ~10 lines.** Six of them have already cost a sprint each.
+
+---
+
+## STATUS: shipped and verified on live (BW1, 2026-08-07)
+
+All ten are in the app. `testID` emits as `data-testid` on this Expo /
+react-native-web version — verified, not assumed.
+
+Measured on `caps.ftable.co.il` at 393×852, fresh mount, solo practice.
+Two hands were needed: a 2-player hand (4 boards) and a 4-player hand
+(2 boards), because three anchors are unreachable in the first.
+
+| testID | Resolves | Count | Text | Rendered |
+|---|---|---|---|---|
+| `seat-label` | yes | 6 | `Bot 1` | **13px** |
+| `reveal-section-label` | yes | 3 | `🤖 Bot 1` | 11px |
+| `hand-badge-normal` | yes | 2 | `STRAIGHT` | **16px** |
+| `hand-badge-small` | yes | 2 | `ONE PAIR` | **13px** |
+| `ready-button` | yes | 1 | `Confirm` → `✓ READY` | 16px |
+| `ready-status-chip` | yes | 1 | `✓ READY` | 10px |
+| `result-headline` | yes | 1 | `PERFECT!` | 24px |
+| `score-numerals` | yes | 1 | `2 — 0` | 41px |
+| `breakdown-hand` | yes | 2 | `Ace-High Flush` | **16px** |
+| `breakdown-vs` | yes | 2 | `vs Ace-High Straight` | **13px** |
+| `board-hand-name` | **no** | 0 | — | MP-only, `revealed` is false in solo |
+
+Bold = a type fix from an earlier sprint, now confirmed live rather than
+inferred from source.
+
+The live scale reads **41 / 24 / 16 / 13 / 11 / 10** — measured end to end
+in one pass for the first time.
+
+### Reachability is a property of game configuration
+
+`hand-badge-small` renders only for **non-first** bots
+(`isFirstBot ? <HandBadge/> : <HandBadge size="small"/>`, `BoardReveal.tsx:653`).
+A 2-player game has exactly one bot, so the branch is dead there. It took a
+4-player game to reach it. Before recording an element as unreachable, vary
+the player count — "absent" and "unreachable" are not the same claim.
+
+### Rule 7 — an anchor is not real until it is in the shipped bundle
+
+`ready-status-chip` was added to the correct-looking element and shipped, and
+it resolved to nothing. `app/game.tsx` renders the bot-status pill **twice**:
+once in the dead `SafeAreaView` header and once in the live path. The dead
+copy compiles out, so the anchor vanished with it.
+
+What caught it was not reading the source again — it was counting the string
+in the deployed bundle:
+
+```js
+const src = [...document.querySelectorAll('script[src]')].map(s=>s.src).find(s=>s.includes('index-'));
+const txt = await (await fetch(src)).text();
+txt.split('my-test-id').length - 1   // 0 means it never shipped
+```
+
+Nine anchors returned 1. One returned 0. Run this before trusting any anchor.
+
+### Rule 8 — a duplicated anchor count can mean a stale mount
+
+Mid-session, every anchor read ×2 — `board-0` twice, `ready-button` twice. That
+was the previous `/game` still mounted under the new one after client-side
+navigation, not two real elements. A count that suddenly doubles is a mount
+artifact until proven otherwise. Hard-reload and re-measure; this is Rule 5
+(fresh mount) in its second disguise.
+
+### Rule 9 — text is an even worse anchor than it looked
+
+Once all boards are placed, `ready-button` **changes its own label** from
+`Confirm` to `✓ READY`. At that moment two elements on screen read `✓ READY`:
+the button (16px, 169×52, y=792) and the status chip (10px, 51×13, y=59).
+The earlier "the primary action is 10px" finding was this exact collision.

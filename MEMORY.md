@@ -1054,6 +1054,22 @@ read`). Steps:
     dispatch after uploading the real vault IS that test**: if the artifact downloads and its SHA256
     matches his local `vault.tar.gz.gpg`, the restore path is fully verified.
 
+(12) **A `testID` CAN SHIP AND STILL RESOLVE TO NOTHING - CHECK THE BUNDLE, NOT THE SOURCE.**
+BW1 added ten anchors. Nine worked. `ready-status-chip` did not, because **`app/game.tsx` renders
+the bot-status pill twice** - once at ~1271 inside the dead `SafeAreaView` header, once at ~1440 in
+the live path. I tagged the dead twin, it compiled out, and the anchor vanished with it. Reading the
+source a second time would *not* have caught this: the code looked correct, and it was correct - it
+was simply never rendered. What caught it was counting the literal string in the deployed bundle
+(`txt.split('ready-status-chip').length-1` -> **0**, while the other nine returned **1**).
+**The dead-render-path trap has now cost three sprints** (native layout, `BoardResultCard`, this).
+Any file with a known dead path - `app/game.tsx` above all - needs the duplicate check *before*
+the edit: `grep` the JSX you are about to touch and confirm there is exactly one of it.
+Corollary now proven live: **`ready-button` renames itself from `Confirm` to `✓ READY`** once all
+boards are placed, so two elements read `✓ READY` simultaneously at 16px and 10px. That collision
+is the whole origin of the "primary action is 10px" misattribution.
+Corollary two: **"absent" is not "unreachable."** `hand-badge-small` looked dead until a 4-player
+game rendered it - it only draws for non-first bots, and a 2-player game has exactly one bot.
+
 (11) **⚠️ `C:\Users\royea` IS AN ACCIDENTAL GIT REPO — mitigated, not fixed.** Created **2026-02-28**
 (`.git/config` mtime), remote `github.com/royea-beep/whale-tracker.git`, **zero commits** — which is
 the only reason nothing has ever leaked. Untracked there: `.ssh`, `.expo/state.json` (a live session
