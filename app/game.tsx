@@ -1269,11 +1269,11 @@ function GameScreenInner() {
             {numberOfBots === 1 ? `🤖 ${t().botSingular}` : t().botEmojiPlural(readyBotCount, numberOfBots)}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]} accessibilityLiveRegion="polite">
-            {/* BW1 — STATUS, NOT THE ACTION. This renders "✓ READY" meaning "the bots are ready".
-                It is not the button (that is testID="ready-button" in BoardArrangement). Reading
-                this one as the primary action is what produced the "primary action is 10px" finding. */}
+            {/* BW1 — DEAD TWIN. This block is in the dead SafeAreaView header; it compiles out
+                entirely (grep of the shipped bundle: 0 occurrences of the anchor I first put
+                here). The pill the user actually sees is the identical block below, ~line 1440.
+                Do not tag this one — a testID here resolves to nothing. */}
             <Text
-              testID="ready-status-chip"
               style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}
               accessibilityLabel={allBotsReady ? t().ready : `Bots thinking, ${readyBotCount} of ${numberOfBots} ready`}
               accessibilityElementsHidden={false}
@@ -1438,7 +1438,13 @@ function GameScreenInner() {
             {numberOfBots === 1 ? `${t().botSingular} 1` : t().botPlural(readyBotCount, numberOfBots)}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>
+            {/* BW1 — STATUS, NOT THE ACTION, and this is the LIVE copy (measured 10px on
+                caps.ftable.co.il; the twin above compiles out). It renders "✓ READY" meaning
+                "the bots are ready" — it is not the button, which is testID="ready-button" in
+                BoardArrangement and measures 16px. Reading this chip as the primary action is
+                what produced the "primary action is 10px" finding. */}
             <Text
+              testID="ready-status-chip"
               style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText]}
               accessibilityLabel={allBotsReady ? t().ready : `Bots thinking, ${readyBotCount} of ${numberOfBots} ready`}
               accessibilityElementsHidden={false}
