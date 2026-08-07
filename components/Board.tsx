@@ -65,6 +65,14 @@ interface BoardProps {
   onRemoveCard?: (card: Card) => void;
   onAutoFill?: () => void;
   isArrangement?: boolean;
+  /**
+   * CD2 — is a card currently selected in hand? `isArrangement` is true for the WHOLE
+   * placement phase, so keying the active slot state off it meant the "invitation" was
+   * permanently on - and a signal that is always on carries no information. This one
+   * changes as the player picks cards up and puts them down, which is the question they
+   * actually have: "where can this go?"
+   */
+  hasSelection?: boolean;
   selected?: boolean;
   flipDuration?: number;
   cardHeight?: number;
@@ -103,19 +111,29 @@ interface BoardProps {
 // Board but sits OUTSIDE its render scope, so it cannot see Board's getTheme() result.
 // In-file, private component, no external contract → same risk class as the rest of this
 // batch. (BoardArrangement stays deferred: cross-file = a public API change.)
-function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight, theme }: { isArrangement?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number; theme: ThemeTokens }) {
+function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, slotHeight, theme }: { isArrangement?: boolean; hasSelection?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number; theme: ThemeTokens }) {
   const pulseOpacity = useSharedValue(0.6);
 
   useEffect(() => {
     if (isArrangement) {
+      // ⚠️ DEAD PATH. `KILL_Board` is a hardcoded `true` in utils/animationKill.ts ("all
+      // repeating animations disabled - crash isolation"), so `if (!KILL_Board)` is `if
+      // (false)` and NOTHING below ever runs. `pulseOpacity` keeps its useSharedValue(0.6)
+      // initial value for the slot's entire life - which is exactly the constant 0.6 measured
+      // on live.
+      //
+      // CC2 changed the floor here from 0.4 to 0.72 believing it was live. It was not, and the
+      // greyscale figures reported that sprint were computed against a pulse floor that never
+      // executes. The real numbers use the constant 0.6: resting outline 2.64x the table,
+      // active 6.57x. FOURTH incident in this class - Board.handName, the landscape branch,
+      // the dead header twin, and now this - and all four were gated by a hardcoded constant.
+      //
+      // Do NOT tune these numbers. Either flip KILL_Board (and find out why it was set) or
+      // change the useSharedValue(0.6) initial, which is the value that actually renders.
       if (!KILL_Board) {
         // FINITE per iron rule
         pulseOpacity.value = withRepeat(
           withSequence(
-            // CC2 — breathing range narrowed from 0.4 to 0.72. At 0.4 the slot sank into the
-            // felt for most of its cycle, which is half of why "olive-muddy" was the right
-            // word: a marked place that keeps disappearing reads as damage, not invitation.
-            // It still breathes, it just never drops out of legibility.
             withTiming(1, { duration: 1000 }),
             withTiming(0.72, { duration: 1000 }),
           ),
@@ -138,7 +156,12 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight, them
     <Pressable onPress={onPress}>
       {/* S76-BOARD-ROUTING — colour overrides only; every geometry value (borderWidth,
           borderStyle, radius, margin, width/height) stays in the StyleSheet untouched. */}
-      <Animated.View style={[styles.emptySlot, { borderColor: theme.boardSlotDash, backgroundColor: theme.boardSlotFill }, { width: slotWidth, height: slotHeight }, isArrangement && styles.dropTarget, isArrangement && { borderColor: theme.boardSlotDashActive, backgroundColor: theme.boardMintGhost }, animStyle]}>
+      {/* CD2 — the ACTIVE state now keys on hasSelection, not isArrangement. It used to say
+          "you are placing cards", which is true for the entire phase and therefore says
+          nothing; it now says "this slot can take the card in your hand", which changes as
+          the player picks up and puts down. The resting outline still says "a card belongs
+          here" on its own. */}
+      <Animated.View style={[styles.emptySlot, { borderColor: theme.boardSlotDash, backgroundColor: theme.boardSlotFill }, { width: slotWidth, height: slotHeight }, hasSelection && styles.dropTarget, hasSelection && { borderColor: theme.boardSlotDashActive, backgroundColor: theme.boardMintGhost }, animStyle]}>
         {false && <Text style={styles.plusText}>tap</Text>}
       </Animated.View>
     </Pressable>
@@ -199,6 +222,7 @@ export default function Board({
   onRemoveCard,
   onAutoFill,
   isArrangement,
+  hasSelection,
   selected,
   flipDuration,
   cardHeight: cardHeightProp,
@@ -776,12 +800,12 @@ export default function Board({
             ))
           ) : (
             Array.from({ length: 4 }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
+              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} hasSelection={hasSelection} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
             ))
           )}
           {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
             Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
+              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} hasSelection={hasSelection} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
             ))
           }
           {/* PR-N 2026-06-02 — hand-strength hint suppressed during arrangement.

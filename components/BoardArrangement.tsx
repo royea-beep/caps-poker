@@ -264,6 +264,7 @@ export function BoardArrangement({
               <Animated.View style={[{ width: '100%' }, boardShakeStyles[i]]}>
                 <Board
                   index={i}
+                  hasSelection={selectedCardIds.length > 0}
                   openCards={board.openCards}
                   closedCards={board.closedCards}
                   playerCards={board.playerCards}
