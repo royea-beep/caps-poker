@@ -851,6 +851,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {winDotAnims.map((dot, i) => (
             <Animated.View
               key={`dot-${i}`}
+              // CL1 — ANCHOR, not geometry. Last sprint's probe selected these by
+              // position/size/border-radius and matched ZERO of them on a winning hand, so E1
+              // shipped unverified. Selecting an element by what it looks like is the mistake
+              // this project has paid for six times; every measured element gets a testID.
+              testID="win-dot"
               style={[
                 styles.winDot,
                 {
