@@ -1112,10 +1112,13 @@ const styles = StyleSheet.create({
     // string on a poker board and it sat one step above the minimum. Raised to the 16px
     // primary-information level.
     //
-    // ⚠️ This is a CAP, not a guarantee: the render site carries `adjustsFontSizeToFit` with
-    // `minimumFontScale={0.65}`, so the box governs and it will shrink toward 10.4px where the
-    // row is tight. That is still strictly better than the old floor of 8 x 0.65 = 5.2px, but
-    // the measured value is what counts — see the before/after table, not this number.
+    // ⚠️ MULTIPLAYER ONLY, AND UNVERIFIED. Corrected 2026-08-07: the render site is gated on
+    // `revealed &&`, and `revealed` is hardcoded `false` at game.tsx:1245 and
+    // BoardArrangement.tsx:260 — only multiplayer-game.tsx:1240 passes it dynamically. So this
+    // style NEVER RENDERS IN SOLO PLAY. The 13px/10px reveal names I originally cited as proof
+    // that this had shrunk were `HandBadge` (rf(13)/rf(10)), a different component entirely.
+    // It does carry `adjustsFontSizeToFit` + `minimumFontScale={0.65}`, so in MP it renders at
+    // most 16 and shrinks toward 10.4 in a tight row — but that has not been measured.
     fontSize: rfBase(16),
     fontWeight: '600',
   },
