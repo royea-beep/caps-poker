@@ -65,3 +65,4 @@ backstop_data/ci_report/
 tests/wcag-report.json
 tests/animation-probe-result.json
 tests/landing-probe-result.json
+tests/confetti-probe-result.json
