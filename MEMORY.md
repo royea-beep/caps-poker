@@ -881,6 +881,26 @@ it — **only Roye can resolve it** (Expo support / billing).
   - See `fix-defender.ps1` for the hermesc/Defender angle (rewritten 2026-08-06; the pre-BD2 version
     of that script and its `.bat` were destructive — never run an old copy).
 
+(6b) **FONT SIZE IS A POOR PROXY FOR HIERARCHY — and the probe usually measures the wrong element.**
+Same family as (6), the resize trap: an instrument measures a property that is *not* the thing being
+claimed, and reports it confidently. This produced **three wrong findings in two days**, all put in
+front of the owner:
+  - *"`/game`'s largest text is a 35px decorative suit glyph"* — it is a **card pip**. Walking the
+    ancestor chain gives `19×41 → 54×70 → 54×70`: it sits inside a card. **Always walk the ancestors
+    before calling an element decorative.**
+  - *"The primary action renders at 10px"* — four elements read `✓ READY`; the 10px one is a header
+    **status chip**. The real button is `Confirm` at 16px and was already the largest interactive
+    text. **A text-matching probe finds the wrong element whenever a string appears more than once.**
+  - *"`rf(11)` renders as 7px, unreconciled"* — no transform, no scaling. `Board.rowLabel` simply
+    declares `rfBase(7)`. I was comparing `BoardReveal.sectionLabel` (`rf(11)`, renders `🤖 Bot`)
+    against `Board.rowLabel` (`rf(7)`, renders `Bot 1`) — two files, two elements. My own regex
+    required an exact `Bot N` match, which the emoji label could never satisfy.
+**Size alone is not hierarchy.** `/results` renders a 31px `—` beside a 24px headline, which looks
+like an inversion until you read the rest of the computed style: `fontWeight: 300` in `textDim`
+against 41px black numerals — it is visually *recessive*. **Weight, colour, position and surrounding
+mass carry as much hierarchy as size.** Before reporting a type defect: walk the ancestors, confirm
+the element is the one you think it is, and read weight and colour alongside the size.
+
 (7b) **THE STRONGEST SINGLE PIECE OF HARDWARE EVIDENCE (2026-08-07): a compiler failed three
 different ways on unchanged input.** Three consecutive `npx tsc --noEmit` runs, same working tree, no
 edits between them:

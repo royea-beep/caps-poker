@@ -51,6 +51,13 @@ to improve the **default** look. None proposes a new toggle.
 
 # SCREEN 1 — `/game` (CARDS #1 + TABLE #2)
 
+> ### ✅ TYPE HIERARCHY AUDITED 2026-08-07 — `/game` IS CORRECT. DO NOT RE-OPEN.
+> Measured on fresh mounts at 393×852 on live: primary action **"Confirm" 16px** (largest
+> interactive text) · card pips 35px (graphics, outside the scale) · instruction "Place 12 cards"
+> 12px · board labels 11px · status chips 10px. Both original type findings on this screen (B-1,
+> B-5) were **withdrawn as false** — see the struck entries below. The verified type defects were on
+> **the reveal and `/results`**, and were fixed in `0dbcb84`.
+
 ### Capture evidence
 | | 393×852 | 1706×960 |
 |---|---|---|
@@ -61,9 +68,14 @@ to improve the **default** look. None proposes a new toggle.
 | Smallest text | **10px — "✓ READY", "YOUR HAND", "12"** | — |
 
 ### BROKEN
-- **B-1. "✓ READY" renders at 10px.** The primary action of the screen is at the minimum type size on
-  the screen, and it sits at `y=59` — the top — while the cards it acts on are at the bottom. Action and
-  content are at opposite ends of the screen.
+- ~~**B-1. "✓ READY" renders at 10px.**~~ **SUPERSEDED 2026-08-07 — FALSE. Do not act on this.**
+  There are **four** elements on `/game` whose text reads `✓ READY`. The 10px one at `y=59` is a
+  **header status chip** meaning *the bots are ready*. The actual button renders **"Confirm" at
+  16px** (it reads `t().confirm` until `allBoardsFull`, then `t().readyCheck`), and at 16px it is
+  the **largest interactive text on the screen** — tied only with Cancel and ✕.
+  **`/game`'s action hierarchy was already correct.** I measured a status indicator and reported it
+  as the primary action. Kept rather than deleted, because the failure mode — a text probe matching
+  the wrong element — recurred three times in two days.
 
 ### ROYE ALREADY ASKED FOR THIS (convergence)
 - **A1 — היד חתוכה.** Confirmed **fixed** at 393 (cards bottom 735 < 852). Panel found no clipping.
@@ -234,8 +246,14 @@ is the least re-engaging possible treatment. Roye already filed this as E2.
 | Fold | no overflow (`scrollH 852 = vh`) | — |
 
 ### BROKEN
-- **B-5. The largest text on the home screen is decoration.** A 32px suit glyph and a 32px avatar
-  emoji outrank the wordmark and the Play button.
+- ~~**B-5. The largest text on the home screen is decoration.**~~ **SUPERSEDED 2026-08-07 — and the
+  same correction retires the `/game` version of this claim.** On `/game` the 35px "decorative suit
+  glyph" is a **card pip**: walking its ancestor chain gives `19×41 → 54×70 → 54×70`, i.e. it sits
+  **inside a 54×70 card**. It is the card's face — the most functional mark in a card game, and the
+  one thing that *should* be large.
+  The home-screen 32px glyphs were never re-verified against their ancestors, so this claim is
+  **unproven either way** and must not be acted on until it is. **Card pips are now explicitly
+  outside the type scale** — they are graphics sized by the card, not type.
 
 ### PANEL
 
