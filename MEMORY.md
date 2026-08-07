@@ -1407,3 +1407,44 @@ PENDING: BoardReveal in MP (flag mpBoardReveal=false, dormant — code wired but
 
 ## Working Style
 Read: docs/ROYE_WORKING_STYLE.md before starting any session
+
+---
+
+## RULE — A HARDCODED BOOLEAN GATE IS A DEAD-CODE SWITCH, NOT CONFIGURATION
+
+Four incidents, one shape. Cost: four sprints. This rule is cheaper than the fifth.
+
+**The shape:** `const X = true/false` used as a gate. It reads like a setting you could flip.
+It is not — it is a branch someone deleted without deleting it, and the value has usually not
+been revisited since the day it was written.
+
+| # | Site | Gate | How it hid |
+|---|---|---|---|
+| 1 | `Board.handName` | `revealed={false}` passed as a literal at both call sites | rendered in MP only; solo never reaches it |
+| 2 | `game.tsx` landscape return (148 lines) | `const isLandscape = false` | **folded out of the bundle entirely** |
+| 3 | dead header twin in `game.tsx` | same landscape gate | a testID added to it resolved to nothing |
+| 4 | every `withRepeat` in `Board`/`TimerController`/`ProQuoteBanner` | `KILL_* = true` in `utils/animationKill.ts` | ships in the bundle, never executes |
+
+### Before editing anything behind a gate, grep the gate's value.
+Not the gate's *name* — its **value**. `if (!KILL_Board)` reads as conditional; `KILL_Board`
+is `true`, so it is `if (false)`. Tuning numbers inside such a block changes nothing, and it
+has produced published measurements computed against states that cannot occur.
+
+### Two kinds of dead, and they need DIFFERENT checks
+
+| | LOCAL const gate (`const isLandscape = false`) | IMPORTED const gate (`import { KILL_Board }`) |
+|---|---|---|
+| Metro folds it | **YES** — branch removed from the artifact | **NO** — cross-module, identifier survives |
+| Bundle string count | **0** — the check works | **> 0** — the check gives a FALSE ALL-CLEAR |
+| How to detect | count the string in the deployed bundle | **read the gate's declared value** |
+
+**This distinction was itself a correction.** Measured on live: `isLandscape` → 0 occurrences,
+while `KILL_Board` → 4 (1 import + 3 checks). The bundle-count check that caught incident 2
+would have cleared incident 4. **Source correctness does not imply the code runs, and bundle
+presence does not imply it runs either.**
+
+### The tell
+When a measurement disagrees with the code you just changed, suspect the gate before the
+style system. Incident 4 announced itself as an unexplained constant `opacity: 0.6` — the
+`useSharedValue` initial, showing through because the animation that would have replaced it
+never started.
