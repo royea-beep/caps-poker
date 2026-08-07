@@ -351,3 +351,47 @@ driver never progresses.
 one deploy. It is the cheapest instrument in this document and it should be reached for the
 moment a measurement is consistent with two explanations. And it is an **instrument, not a
 change** — revert it in the next commit.
+
+---
+
+## Rule 14 — ANIMATION PROGRESSION CANNOT BE MEASURED FROM THIS PANE. AT ALL.
+
+**Measured 2026-08-07, and it voids a whole class of result:**
+
+```
+requestAnimationFrame callbacks in 26.9 seconds : 0
+document.hidden                                 : true
+document.visibilityState                        : "hidden"
+```
+
+The in-app browser pane runs **hidden**. Per spec a hidden document does not run rAF — and
+**Reanimated's web driver runs on rAF**. Therefore **no Reanimated animation can progress in
+this pane, ever**, no matter how the app is written.
+
+### What this invalidates
+
+- **CH1's result.** Two live animations (`KILL_HeroParticles`/`KILL_HeroGlow`, both `false`)
+  showed **0 of 220 elements changing** opacity or transform over 3.5s. That looked like "the
+  driver is dead on web". It is fully explained by rAF never firing. **Neither "the driver
+  works" nor "the driver is dead" is supported.**
+- **CG1's conclusion, retroactively.** The sentinel `0.137` was read as "the effect never
+  wrote". But the `else` branch calls `withTiming(0.6, {duration: 200})`, and **a `withTiming`
+  cannot advance without rAF** — so the value staying at its initial is exactly what a
+  *successfully executed* effect looks like here. "The effect never ran" is **not** supported.
+- Every earlier attempt to watch an animation in this pane, going back to the reveal work.
+
+### What survives
+
+**Static values still measure correctly.** The sentinel proved that: `useSharedValue(0.137)`
+reached `getComputedStyle` exactly. Anything that does not require a frame to advance —
+computed style, geometry, colour, layout, bundle contents — remains valid. Every non-animation
+measurement in this document stands.
+
+### The rule
+
+**Before claiming any animation does or does not run, check `document.hidden` and count rAF
+callbacks.** If rAF is 0, you are measuring the harness. Two sprints produced confident,
+opposite-sounding conclusions from readings that were the instrument all along.
+
+Animation verification needs a **visible browser or a real device**. There is no way around
+this from here, and pretending otherwise has already cost two sprints of misdirected work.

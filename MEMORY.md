@@ -1448,3 +1448,5 @@ When a measurement disagrees with the code you just changed, suspect the gate be
 style system. Incident 4 announced itself as an unexplained constant `opacity: 0.6` — the
 `useSharedValue` initial, showing through because the animation that would have replaced it
 never started.
+
+**2026-08-07 — ANIMATION PROGRESSION IS UNMEASURABLE FROM THE IN-APP PANE.** rAF callbacks = 0 over 26.9s, `document.hidden = true`; Reanimated's web driver runs on rAF, so no animation can advance there. This VOIDS CH1 ("driver dead on web" — unsupported) and CG1's "the effect never ran" (a `withTiming` cannot advance without rAF, so the initial value persisting is what a *working* effect looks like there). Static/computed-style/geometry measurements are unaffected and remain valid. Animation work needs a visible browser or a device — see MEASUREMENT-PROTOCOL Rule 14.
