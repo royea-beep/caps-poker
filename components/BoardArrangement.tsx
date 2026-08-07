@@ -3,7 +3,9 @@ import { View, Text, Pressable, StyleSheet, Platform, ScrollView, useWindowDimen
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (Reanimated animated styles from game.tsx)
 import Board from './Board';
+import BoardSurface from './BoardSurface';
 import PlayerHand from './PlayerHand';
+import { useGameStore } from '../store/gameStore';
 import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS, getCompleteBonusPercent } from '../constants/gameConfig';
@@ -138,6 +140,10 @@ export function BoardArrangement({
   // computing against 393pt regardless of the real viewport. screenW is already a
   // reactive prop (game.tsx's useWindowDimensions()); shadow the imports so every
   // existing rs()/rf()/rb()/rv() call below becomes reactive with no other changes.
+  // CA2 — the surface needs the resolved theme so its felt matches the root felt exactly.
+  // Read here rather than inside BoardSurface so that component stays presentational.
+  const visualTheme = useGameStore((s) => s.visualTheme);
+
   const rs = (v: number) => rsBase(v, screenW);
   const rf = (v: number, min?: number, max?: number) => rfBase(v, min, max, screenW);
   const rb = (v: number) => rbBase(v, screenW);
@@ -193,6 +199,12 @@ export function BoardArrangement({
           region's FRAME never exceeds the space the layout engine says exists, so the
           internal ScrollView below is always the one that scrolls — never the page. */}
       <View style={{ flex: 1, alignSelf: 'stretch', minHeight: Math.min(Math.round(2 * cellH + rs(4)), boardsZoneH) }}>
+        {/* CA2 — THE PLAYING SURFACE. Wrapped INSIDE this View rather than replacing it: this
+            container carries the minHeight/flex contract a previous sprint fixed (the boards
+            region's frame must never exceed the space the layout engine says exists, so the
+            ScrollView is always the thing that scrolls, never the page). Swapping it out would
+            re-open that bug for a cosmetic reason. */}
+        <BoardSurface visualTheme={visualTheme} screenW={screenW}>
         <ScrollView
           style={{ flex: 1 }}
           // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — clean column-stack contentContainer
@@ -290,6 +302,7 @@ export function BoardArrangement({
           );
         })}
         </ScrollView>
+        </BoardSurface>
       </View>
 
       {/* Fallback continue button — shows 3s after both ready if auto-nav failed */}
