@@ -881,6 +881,23 @@ it — **only Roye can resolve it** (Expo support / billing).
   - See `fix-defender.ps1` for the hermesc/Defender angle (rewritten 2026-08-06; the pre-BD2 version
     of that script and its `.bat` were destructive — never run an old copy).
 
+(7b) **THE STRONGEST SINGLE PIECE OF HARDWARE EVIDENCE (2026-08-07): a compiler failed three
+different ways on unchanged input.** Three consecutive `npx tsc --noEmit` runs, same working tree, no
+edits between them:
+  1. `EXIT=-1073741819` — **`0xC0000005` access violation**, no output.
+  2. **tsc crashed inside its own emitter** — `Error: Debug Failure. Unhandled SyntaxKind: Unknown` at
+     `pipelineEmitWithHintWorker` → `typeToString` → `reportImplicitAny`. That is TypeScript's AST
+     printer hitting a node kind that cannot exist in a well-formed tree.
+  3. `EXIT=0` — **clean**.
+**A deterministic compiler cannot produce three outcomes from one input.** Either the source bytes,
+the parsed AST, or the process memory holding them is being corrupted between runs. This is stronger
+than the crash logs, because it isolates the fault to *data in memory* rather than to power delivery
+or a driver: nothing was rebooting, nothing was under load, and the input never changed.
+> **Consequence, and it is the important part: every "passed on retry" in this repo's recent history
+> is a coin flip that landed well, not evidence.** That includes `2632/2632` jest and the clean `tsc`
+> of 2026-08-06. Re-run everything on cleared RAM before trusting any of it. See (7) for the crash-log
+> evidence and the Windows Memory Diagnostic that is still outstanding — **Roye's, still not run**.
+
 (8) **SIGNING MATERIAL RESCUED OFF EXPO (2026-08-06) — location only, no secrets recorded here.**
 Vault: **`C:\Projects\_KEYS\SIGNING-RESCUE-2026-08-06`** (13 files: 4 × `.p12` + password +
 `.mobileprovision` for CAPS and Wingman, plus Wingman's ASC key). Deliberately OUTSIDE every git
