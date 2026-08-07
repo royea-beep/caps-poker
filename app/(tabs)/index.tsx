@@ -25,7 +25,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReportBugButton from '../../components/ReportBugButton';
-import { KILL_HeroParticles, KILL_HeroFan, KILL_HeroGlow } from '../../utils/animationKill';
+import { KILL_HeroParticles, KILL_HeroGlow } from '../../utils/animationKill';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -156,11 +156,12 @@ const FAN_CARDS: Card[] = [
 const FAN_ROTATIONS = [-16, -8, 0, 8, 16];
 const FAN_TRANSLATE_Y = [10, 4, 0, 4, 10];
 
-// PR-C 2026-05-24: hero card fan is STATIC per spec. No per-card loop, no
-// breathe — the layout itself is the visual. KILL_HeroFan gate kept for
-// completeness; setting it to false would be a no-op here (no animations to kill).
+// PR-C 2026-05-24: hero card fan is STATIC per spec. No per-card loop, no breathe — the
+// layout itself is the visual.
+// CF3 2026-08-07: the KILL_HeroFan gate was deleted along with the line `if (KILL_HeroFan &&
+// false) {}` that referenced it. `&& false` made it unreachable by construction, so it was a
+// flag guarding nothing, referenced by a statement that could never run.
 function HeroCardFan() {
-  if (KILL_HeroFan && false) { /* KILL_HeroFan reserved; static fan has no animations to kill */ }
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10, marginBottom: 2 }}>
       {FAN_CARDS.map((card, i) => (
