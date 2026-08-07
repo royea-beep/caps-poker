@@ -661,7 +661,10 @@ export default function Board({
         {!isArrangement && (botCardSets ?? []).map((botCardSet, botIdx) =>
           (botCardSet ?? []).length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.cardRow}>
-              <Text style={[styles.rowLabel, { color: theme.boardTextDim }]}>{`${t().bot} ${botIdx + 1}`}</Text>
+              {/* BW1 — stable anchor. This label reads "Bot 1", which also exists in
+                  BoardResultCard, and is NOT the same control as BoardReveal's "🤖 Bot 1".
+                  Text-matching between them caused two wrong findings. */}
+              <Text testID="seat-label" style={[styles.rowLabel, { color: theme.boardTextDim }]}>{`${t().bot} ${botIdx + 1}`}</Text>
               {(botCardSet ?? []).map((c) => (
                 <Pressable
                   key={c.id}
@@ -688,8 +691,12 @@ export default function Board({
                   <Text style={styles.botTooltipText}>Revealed after River</Text>
                 </View>
               )}
+              {/* BW1 — MP-ONLY. The branch below is gated on `revealed`, hardcoded false in
+                  solo, so it never renders here. This anchor is what lets the two-device MP
+                  pass measure it in a minute and close the deferred item. */}
               {revealed && (allBotHandNames?.[botIdx] || (botIdx === 0 && botHandName)) && (
                 <Text
+                  testID="board-hand-name"
                   style={[styles.handName, styles.handNameShrink, winner === 'bot' && styles.winnerHandName, { color: winner === 'bot' ? theme.boardGoldLight : theme.boardTextMuted }, { marginLeft: 4 }]}
                   numberOfLines={1}
                   adjustsFontSizeToFit

@@ -27,7 +27,9 @@ export function HandBadge({ handName, size = 'normal' }: { handName: string; siz
   const fontSize = size === 'small' ? rf(13) : rf(16);
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
-      <Text style={[styles.text, { color: config.text, fontSize }]}>{label}</Text>
+      {/* BW1 — `size` is exposed on the anchor so the opponent badge (small) and your own
+          (normal) are distinguishable without inferring from the rendered px. */}
+      <Text testID={`hand-badge-${size}`} style={[styles.text, { color: config.text, fontSize }]}>{label}</Text>
     </View>
   );
 }

@@ -450,7 +450,11 @@ export function BoardArrangement({
           >
             <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
           </Pressable>
+          {/* BW1 — THE ACTUAL ACTION BUTTON. Four elements render the text "✓ READY"; the other
+              three are status. Mistaking the header chip for this button produced the "primary
+              action is 10px" finding. Anchor here, never match on the text. */}
           <Pressable
+            testID="ready-button"
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={onReady}
             disabled={!allBoardsFull}

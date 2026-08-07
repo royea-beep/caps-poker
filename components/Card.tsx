@@ -558,7 +558,10 @@ function CardComponent({
             )}
             {/* large center suit — bigger on the UPGRADED face (default keeps *0.55, byte-identical) */}
             <View style={styles.centerDisplay}>
-              <Text allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor, fontSize: isUpgraded ? PRD.card.centerSuitBig(width) : PRD.card.centerSuit(width) }]}>
+              {/* BW1 — this is a CARD PIP: a graphic sized by the card, deliberately outside the
+                  type scale. It was once reported as "the largest decorative text in the app";
+                  the ancestor chain (19x41 -> 54x70 card) is what disproved that. */}
+              <Text testID="card-pip" allowFontScaling={false} style={[styles.v2CenterSuit, { color: v2SuitColor, fontSize: isUpgraded ? PRD.card.centerSuitBig(width) : PRD.card.centerSuit(width) }]}>
                 {SUIT_SYMBOLS[card.suit]}
               </Text>
             </View>

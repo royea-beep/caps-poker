@@ -860,7 +860,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           {/* Title + score */}
           <View style={styles.titleSection}>
-            <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? gameColors.win : playerWins < botWins ? gameColors.lose : COLORS.mint }]}>
+            <Text testID="result-headline" accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? gameColors.win : playerWins < botWins ? gameColors.lose : COLORS.mint }]}>
               {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
             </Text>
             {revealData.isPractice && (
@@ -872,7 +872,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 </Text>
               </View>
             )}
-            <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
+            <Text testID="score-numerals" style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
               <Text style={{ color: gameColors.win }}>{playerWins}</Text>
               <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
               <Text style={{ color: gameColors.lose }}>{botWins}</Text>
@@ -1162,9 +1162,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                       </Text>
                     </View>
                     <View style={styles.breakdownMid}>
-                      <Text style={styles.breakdownHand}>{pHand}</Text>
+                      <Text testID="breakdown-hand" style={styles.breakdownHand}>{pHand}</Text>
                       {bHand ? (
-                        <Text style={styles.breakdownVs}>vs {bHand}</Text>
+                        <Text testID="breakdown-vs" style={styles.breakdownVs}>vs {bHand}</Text>
                       ) : null}
                     </View>
                     {/* OTA-COSMETIC-FIXES 2026-07-09 — this compact list, not BoardResultCard's

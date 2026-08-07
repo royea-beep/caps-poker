@@ -1269,7 +1269,11 @@ function GameScreenInner() {
             {numberOfBots === 1 ? `🤖 ${t().botSingular}` : t().botEmojiPlural(readyBotCount, numberOfBots)}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]} accessibilityLiveRegion="polite">
+            {/* BW1 — STATUS, NOT THE ACTION. This renders "✓ READY" meaning "the bots are ready".
+                It is not the button (that is testID="ready-button" in BoardArrangement). Reading
+                this one as the primary action is what produced the "primary action is 10px" finding. */}
             <Text
+              testID="ready-status-chip"
               style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}
               accessibilityLabel={allBotsReady ? t().ready : `Bots thinking, ${readyBotCount} of ${numberOfBots} ready`}
               accessibilityElementsHidden={false}

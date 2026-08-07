@@ -428,8 +428,23 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     // tap or wait). For the LAST board we collapse the wait — result is
     // visible at t(4100), then onDone fires ~1.5s later. The user sees the
     // result, the COMPLETE flash if any, then the report.
+    // BW2 PHASE 1 — RECLAIM THE DEAD WAIT. Timing only; no new content in this change, so if the
+    // pacing feels wrong we know exactly what caused it.
+    //
+    // The result is fully visible at t(4100). Non-final boards then sat until t(14000) — 9.9
+    // SECONDS behind a depleting progress bar with nothing changing on screen. The June comment
+    // above already named this and fixed it for the LAST board only.
+    //
+    // 8000 chosen, not an adjacent value:
+    //   - it is the per-board budget in REVEAL-SEQUENCE-SPEC.md, so Phase 2's equity/outs beats
+    //     drop into a slot that already exists rather than re-timing the sequence twice;
+    //   - it leaves 3.9s to read the result — ~2.6x the 1.5s the LAST board has always had, which
+    //     is the only dwell anyone has actually validated;
+    //   - 6000 would leave 1.9s, below that validated dwell on the boards that also carry a
+    //     transition; 10000 puts 4 boards at ~36s, past the 25-30s Roye approved.
+    // Totals: 2 boards 13.6s · 3 boards 21.6s · 4 boards 29.6s (was 19.6 / 33.6 / 47.6).
     const isLastBoard = currentIdxRef.current === boards.length - 1;
-    const advanceMs = isLastBoard ? t(5600) : t(14000);
+    const advanceMs = isLastBoard ? t(5600) : t(8000);
     const progressMs = advanceMs - t(4100);
 
     // S114: Progress bar — starts with result at t(4100), depletes over remaining time to auto-advance
@@ -460,12 +475,17 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       }
     }, t(4900)));
 
-    // Auto-advance — 14s for normal boards, ~5.6s for the last board (see comment above)
+    // Auto-advance — 8s for normal boards, ~5.6s for the last board (see comment above)
     timers.current.push(setTimeout(doAdvance, advanceMs));
 
     // Show 'Tap to continue' hint after intermission clears — only when there's room before auto-advance
+    // BW2 — this was the ONE real dependent on the old 14s. Hardcoded at t(6200) it had 7.8s of
+    // runway; against a t(8000) advance that same hardcode would flash for 1.8s and read as a
+    // glitch. Derived now, so it cannot silently desync from advanceMs again. The floor is
+    // intermission-clear (4500 + 1500) — the hint must never be painted under that overlay.
     if (!isLastBoard) {
-      timers.current.push(setTimeout(() => { setShowTapHint(true); }, t(6200)));
+      const tapHintMs = Math.max(t(6000), advanceMs - t(2000));
+      timers.current.push(setTimeout(() => { setShowTapHint(true); }, tapHintMs));
     }
 
     // Guided first-game tooltips (tips 6-8) — only on board 0, only once each
@@ -607,7 +627,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             const botHandName = getHandName(rawBotHandName, lang);
             return (
               <View key={`bot-${botIdx}`} style={styles.section}>
-                <Text style={[styles.sectionLabel, styles.sectionLabelBot]}>{botLabel}</Text>
+                {/* BW1 — renders "🤖 Bot N". NOT the same control as Board's "Bot N" seat label;
+                    confusing the two is what produced the "rf(11) renders as 7px" finding. */}
+                <Text testID="reveal-section-label" style={[styles.sectionLabel, styles.sectionLabelBot]}>{botLabel}</Text>
                 {/* First bot uses animated pulse; additional bots rendered without animation */}
                 {isFirstBot ? (
                   <AnimatedRN.View style={[styles.cardRow, { gap: handGap, transform: [{ scale: botPulseScale }] }]}>
