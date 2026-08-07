@@ -64,3 +64,4 @@ backstop_data/ci_report/
 # axe-core / WCAG audit report — regenerated each CI run
 tests/wcag-report.json
 tests/animation-probe-result.json
+tests/landing-probe-result.json
