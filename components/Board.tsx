@@ -11,6 +11,7 @@ import Animated, {
   withDelay,
   cancelAnimation,
 } from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
 import CardComponent from './Card';
 import { Badge } from './Badge';
 import HandNameOverlay from './HandNameOverlay';
@@ -27,6 +28,11 @@ import { getHandHint } from '../utils/handHint';
 import { getTheme, ThemeTokens } from '../constants/visualThemes';
 import { useGameStore } from '../store/gameStore';
 import { KILL_Board } from '../utils/animationKill';
+
+// CJ1 — landing timings. 120ms because this fires up to twelve times a hand and every added
+// millisecond is friction in the step players already abandon.
+const LAND_MS = 120;
+const LAND_STAGGER_MS = 25;
 
 // Hand hint explanations — always available (not just first game)
 const HINT_EXPLANATIONS: Record<string, { en: string; he: string }> = {
@@ -105,6 +111,32 @@ interface BoardProps {
   // (results, BoardReveal) that omit cellWidth/cellHeight keep the frozen default.
   screenW?: number;
   screenH?: number;
+}
+
+/**
+ * CJ1 — THE LANDING. 120ms, scale 0.92 -> 1 with an opacity fade, as a card lands in a slot.
+ *
+ * ONE SHARED VALUE FOR THE WHOLE BOARD, not one per card. `landT` is a millisecond clock owned
+ * by Board; each card derives its own progress from its index, so twelve simultaneous landings
+ * cost exactly one shared value. MEMORY's Reanimated limit is 5 per screen and twelve
+ * card-owned values would breach it on their own.
+ *
+ * `landFrom` is the index of the first NEWLY placed card. Cards below it are already down and
+ * render at rest immediately - without that, placing card 3 would re-animate cards 1 and 2.
+ *
+ * NOT BEHIND KILL_Board. That flag disables REPEATING animations for crash isolation
+ * (withRepeat); this is a one-shot withTiming, which is not what the switch targets and not
+ * what crashed Hermes. Inheriting a four-month-old kill switch by reflex would be this
+ * project's signature failure, so the omission is deliberate and stated.
+ */
+function LandingCard({ index, landFrom, landT, children }: { index: number; landFrom: number; landT: SharedValue<number>; children: React.ReactNode }) {
+  const style = useAnimatedStyle(() => {
+    if (index < landFrom) return { opacity: 1, transform: [{ scale: 1 }] };
+    const start = (index - landFrom) * LAND_STAGGER_MS;
+    const p = Math.min(1, Math.max(0, (landT.value - start) / LAND_MS));
+    return { opacity: p, transform: [{ scale: 0.92 + 0.08 * p }] };
+  }, [index, landFrom]);
+  return <Animated.View style={style}>{children}</Animated.View>;
 }
 
 // S76-BOARD-ROUTING — `theme` is prop-threaded in because this sibling is rendered by
@@ -520,6 +552,30 @@ export default function Board({
   }));
 
   // Winner gold pulse Â 2s repeating glow when isWinner is true
+  // CJ1 — THE LANDING DRIVER. ONE shared value for every card on this board: a millisecond
+  // clock the cards read their own progress from. Restarted only when the card COUNT GROWS, and
+  // `landFrom` pins the stagger to the first newly-placed card so cards already down do not
+  // re-animate when the next one arrives.
+  const landT = useSharedValue(0);
+  const [landFrom, setLandFrom] = useState(0);
+  const prevCardCount = useRef(playerCards.length);
+  useEffect(() => {
+    const n = playerCards.length;
+    if (n > prevCardCount.current) {
+      const first = prevCardCount.current;
+      const arriving = n - first;
+      const total = LAND_MS + (arriving - 1) * LAND_STAGGER_MS;
+      setLandFrom(first);
+      landT.value = 0;
+      landT.value = withTiming(total, { duration: total });
+    } else if (n < prevCardCount.current) {
+      // a card was removed - leave everything at rest, nothing should replay
+      setLandFrom(0);
+      landT.value = 10000;
+    }
+    prevCardCount.current = n;
+  }, [playerCards.length]);
+
   const winnerPulse = useSharedValue(0);
   useEffect(() => {
     if (isWinner) {
@@ -788,23 +844,25 @@ export default function Board({
         {/* Player cards */}
         <View style={styles.cardRow} testID={`slot-row-${index}`}>
           {playerCards.length > 0 ? (
-            playerCards.map((c) => (
+            playerCards.map((c, ci) => (
               // ALWAYS wrap in Pressable (same key, same component type across renders).
               // When isArrangement is false, onPress is undefined = non-interactive.
               // Previously alternated between <Pressable> and <CardComponent> at the same key,
               // which caused React 19 to call CardComponent's render against Pressable's hook
               // state Â "Rendered fewer hooks than expected" crash (CR-T6CB / CR-6PSY).
               <Pressable key={c.id} onPress={isArrangement && onRemoveCard ? () => onRemoveCard(c) : undefined}>
-                <CardComponent
-                  card={c}
-                  owner="player"
-                  zone="board"
-                  faceDown={false}
-                  cardWidth={cw}
-                  cardHeight={ch}
-                  highlighted={revealed && playerHighlightIds.includes(c.id)}
-                  dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
-                />
+                <LandingCard index={ci} landFrom={landFrom} landT={landT}>
+                  <CardComponent
+                    card={c}
+                    owner="player"
+                    zone="board"
+                    faceDown={false}
+                    cardWidth={cw}
+                    cardHeight={ch}
+                    highlighted={revealed && playerHighlightIds.includes(c.id)}
+                    dimmed={revealed && !playerHighlightIds.includes(c.id) && playerHighlightIds.length > 0}
+                  />
+                </LandingCard>
               </Pressable>
             ))
           ) : (
