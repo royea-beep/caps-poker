@@ -317,3 +317,68 @@ is shown in cards.
    by default. Auto-switching is presumptuous; an offer after the third skip is not.
 6. **A5 first?** The sequence leans on green/red. Fixing the colourblind label before building this
    costs little and makes the whole thing work for more people.
+
+---
+
+# BY — PHASE 3 SHIPPED, 2026-08-07. Per-seat, the gap, and a slower reveal.
+
+Roye, verbatim: *"מספר נפרד לכל יריב ומן הסתם רגע החשיפה יותר לאט כדי שיספיקו להבין
+מה קורה וזה הרגע כביכול הכי מותח של המשחק אז שיהיה מותח"*.
+
+## The beat sheet as SHIPPED (measured on live, not intended)
+
+| t | Beat | Measured |
+|---|---|---|
+| 300 | flop flips | — |
+| ~500 | equity + outs land | 208–539ms across runs |
+| **1300–2600** | **HOLD 1** — outs known, waiting for the card that decides them | — |
+| 2600 | **TURN** flips, alone | — |
+| **3100** | **numbers react** (own timer, BY2) | 3252 / 3653ms observed |
+| **3400–4800** | **HOLD 2** — dead outs strike through, survivors settle | — |
+| 4800 | river squeeze | — |
+| 5300 | river flip; equity block unmounts | 5403 / 5413 / 5205 avg into board |
+| 5600 | hand names | — |
+| 6100 | result | — |
+| 10000 | advance | **10,006 / 10,000 / 9,987ms** |
+
+**Totals measured on live:** 2 boards **17,821ms** · 4 boards **37,813ms**
+(3 boards not run; 27.6s by construction). Inside the ~40s authorisation.
+
+The result dwell is UNCHANGED at 3.9s. All 2.0s added went into HOLD 1 (+1.0), the
+gap (+0.5) and HOLD 2 (+0.5). Nothing added is a depleting bar with nothing to want —
+that is the distinction between this and the 9.9s Phase 1 deleted.
+
+## Per-seat equity — the spec's open question 1 and 2, answered by building it
+
+Cost is unchanged: **119.3 / 123.6 / 128.1ms** at 2/3/4 players, against ~127ms for the
+you-vs-field pair it replaces. Same enumeration, more counters, as predicted.
+
+**Tie rule:** every combination awards exactly **one point**, split equally among the seats
+tied for the best hand — two of three seats chopping take 0.5 each. Raw shares therefore sum
+to 1 by construction, and largest-remainder rounding forces the displayed integers to exactly
+100. Verified live: `45/31/24`, `68/23/6/3`, `84/13/3/0`, `90/6/4`, `67/18/15`, `78/14/8`.
+
+**Layout was the constraint, not compute.** Four figures cannot share one 375px bar, so the
+display forks by seat count — 2 seats keep the split bar, 3–4 seats get stacked labelled
+rows, which is what BP3 already required. Measured at 375 with four seats: block **343×107**,
+right edge **359 of 375**, no overflow, each percentage **34px** wide at **14px**. No
+fallback was needed and nothing was collapsed.
+
+## Two defects that only measurement found
+
+1. **Every fixed-width seat column rendered at ZERO width** (all boxes read `359-359` on a
+   375px screen). React Native defaults `flexShrink` to 0; **react-native-web maps to CSS
+   flexbox where it defaults to 1**, so the `flex:1` bar track took the whole row. `flexShrink: 0`
+   is load-bearing on every labelled column in this file.
+2. **`equity-value-seat-N` meant two different elements** — the 15px percentage in the
+   multi-seat layout, the 11px standing label in the 2-seat one. One selector, two answers,
+   chosen by seat count. Per-seat anchors now belong to the multi-seat layout only.
+
+## What could NOT be measured
+
+The **card→numbers gap** is 500ms by construction (two independent timers at t(2600) and
+t(3100) scheduled in the same effect), and the numbers were observed landing at 3252ms and
+3653ms. But the card flip itself was **not** directly observable in the DOM: `textContent`
+does not change on flip (face-down cards still carry their text) and the community row's
+child transforms returned nothing. Three observables, three failures. The empirical
+card→number delta is therefore **not measured** — only the number's absolute time is.
