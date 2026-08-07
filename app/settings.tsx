@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { debugLog } from '../components/DebugOverlay';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, Switch } from 'react-native';
 import Constants from 'expo-constants';
@@ -891,7 +891,20 @@ export default function SettingsScreen() {
         p_user_id: authState.userId,
       });
       if (error) {
-        Alert.alert('Error', 'We could not delete your account. Please try again later.');
+        // BR2.3 — this path is currently GUARANTEED to fail: `delete_user_account` was revoked
+        // from anon/authenticated because it was exploitable (NULL-passthrough let any holder of
+        // the shipped anon key delete another player's account across 22 tables). The grant is
+        // NOT being restored; the replacement is an Edge Function that resolves identity from a
+        // verified JWT.
+        //
+        // The control is KEPT rather than hidden, deliberately: Apple requires an in-app account
+        // deletion path for apps that support account creation, so removing the button trades a
+        // broken control for a review rejection. What changes is the copy — "try again later"
+        // promised it would start working, which is the one thing we know is false.
+        Alert.alert(
+          'Account deletion unavailable',
+          'Account deletion is temporarily disabled while we finish a security fix. Nothing has been deleted. Email royearguan@gmail.com and we will remove your account manually.'
+        );
         track('account_deletion_failed', { error: error.message }, 'settings');
         return;
       }
@@ -909,8 +922,24 @@ export default function SettingsScreen() {
     }
   };
   const [debugEnabled, setDebugEnabled] = useState(false);
-  const [muteQuotes, setMuteQuotes] = useState(false);
+  // A3 — renamed from muteQuotes to showQuotes so this control reads in the SAME direction as
+  // Sound Volume and Ambient Sound (ON = you get the thing). Roye's complaint was "שני פקדים
+  // בקוטביות הפוכה לאותו נכס"; the pair he named is already gone, but this was the last
+  // inverted control left on the screen. Default true — quotes are on unless turned off.
+  const [showQuotes, setShowQuotes] = useState(true);
   const isBeta = Constants.expoConfig?.extra?.isBeta === true;
+  // B-8 — the DEVELOPER section (Debug Overlay, Max board card, Reset to Defaults) rendered
+  // unconditionally for every player. Gated behind a 7-tap unlock on the Version row.
+  //
+  // Why a tap-gesture and not __DEV__ or an app_config flag:
+  //  - __DEV__ is wrong: testers run a PRODUCTION build and still need the build number.
+  //  - an app_config flag would make a settings screen depend on a network round-trip, and a
+  //    failed fetch has to resolve to "hidden" anyway — so the flag buys nothing over a local
+  //    gesture while adding a failure mode.
+  // FAILS CLOSED: defaults to false, and a rejected AsyncStorage read leaves it false, so the
+  // section is hidden unless someone has explicitly unlocked it on this device.
+  const [devUnlocked, setDevUnlocked] = useState(false);
+  const devTapCount = useRef(0);
   // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
   // Stored in AsyncStorage under 'max_board_card_h_dp' in dp at base 393x852.
   // Range [50, 100], default 70. Stepper UI below adjusts in 5-dp increments.
@@ -924,7 +953,14 @@ export default function SettingsScreen() {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
       setDebugEnabled(v === 'true');
     }).catch(() => {});
-    AsyncStorage.getItem('caps_beta_mute_quotes').then(v => setMuteQuotes(v === 'true')).catch(() => {});
+    // A3 RESIDUAL — REAL BUG, not just polarity. This read 'caps_beta_mute_quotes', which NOTHING
+    // has ever written (0 writers repo-wide). The toggle writes 'caps_show_pro_quotes', which is
+    // what ProQuoteBanner actually reads. So muting worked, but reopening Settings always showed
+    // the control OFF — the UI lied about its own state. Now reads the key the writer writes.
+    // ProQuoteBanner treats absent/anything-but-'false' as enabled, so this matches its default.
+    AsyncStorage.getItem('caps_show_pro_quotes').then(v => setShowQuotes(v !== 'false')).catch(() => {});
+    // B-8 — fails closed: only an explicit 'true' unlocks; a rejected read leaves it hidden.
+    AsyncStorage.getItem('caps_dev_unlocked').then(v => setDevUnlocked(v === 'true')).catch(() => {});
     AsyncStorage.getItem('max_board_card_h_dp').then(v => {
       const n = v ? parseFloat(v) : NaN;
       if (Number.isFinite(n) && n >= BOARD_CAP_MIN && n <= BOARD_CAP_MAX) {
@@ -1045,6 +1081,11 @@ export default function SettingsScreen() {
 
         <AdvancedSection />
 
+        {/* B-8 — everything from here to the Reset to Defaults button is developer tooling and
+            was rendering for every player. Wrapped in `devUnlocked &&` so the nodes are NOT
+            MOUNTED when locked — a visually-hidden control is still in the tree and still
+            reachable by a screen reader or an automated tap. */}
+        {devUnlocked && (<>
         <Text style={styles.sectionTitle} accessibilityRole="header">DEVELOPER</Text>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
@@ -1103,28 +1144,45 @@ export default function SettingsScreen() {
           onPress={resetConfig}
           style={{ marginBottom: 24 }}
         />
+        </>)}
 
         {isBeta && (
           <View>
             <Text style={styles.sectionTitle} accessibilityRole="header">BETA MODE</Text>
-            <View style={styles.row}>
+            {/* B-8 — the Version row stays visible: testers need the build number to report a bug
+                against the right build, and it is not developer TOOLING. It doubles as the unlock:
+                7 taps reveals the DEVELOPER section on this device only. Deliberately undiscoverable
+                by accident and trivially explainable to a tester in one sentence. */}
+            <Pressable
+              style={styles.row}
+              accessibilityRole="button"
+              accessibilityLabel={`Version ${Constants.expoConfig?.version ?? 'unknown'}`}
+              onPress={() => {
+                devTapCount.current += 1;
+                if (devTapCount.current >= 7 && !devUnlocked) {
+                  setDevUnlocked(true);
+                  AsyncStorage.setItem('caps_dev_unlocked', 'true').catch(() => {});
+                  Alert.alert('Developer options', 'Developer section unlocked on this device.');
+                }
+              }}
+            >
               <Text style={styles.rowLabel}>Version</Text>
               <Text style={styles.rowHint}>{Constants.expoConfig?.version ?? '—'} (EAS {Constants.expoConfig?.extra?.buildNumber ?? '—'})</Text>
-            </View>
+            </Pressable>
             {/* A6 (Batch A): "Reset Progress (beta)" REMOVED. It called
                 AsyncStorage.clear() — nuking ALL storage (device/referral/auth state),
                 far beyond progress. The surgical, guarded "Reset All Progress" in the
                 DANGER ZONE below (multiRemove of a specific key list) is the single
                 reset control. */}
             <View style={styles.row}>
-              <Text style={styles.rowLabel}>Mute quotes</Text>
+              <Text style={styles.rowLabel}>Pro Quotes</Text>
               <Switch
-                value={muteQuotes}
+                value={showQuotes}
                 onValueChange={(v) => {
-                  setMuteQuotes(v);
-                  AsyncStorage.setItem('caps_show_pro_quotes', v ? 'false' : 'true').catch(() => {});
+                  setShowQuotes(v);
+                  AsyncStorage.setItem('caps_show_pro_quotes', v ? 'true' : 'false').catch(() => {});
                 }}
-                accessibilityLabel="Mute quotes"
+                accessibilityLabel="Pro quotes"
               />
             </View>
             {/* A3 (Batch A): "Mute sounds" REMOVED. It wrote a dead key
