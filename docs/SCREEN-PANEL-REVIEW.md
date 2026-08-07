@@ -49,6 +49,23 @@ to improve the **default** look. None proposes a new toggle.
 
 ---
 
+> ## TYPE WORK — CLOSED 2026-08-07
+>
+> **Measured** (fresh mounts, 393 and 375, on live): every text site on `/game`, the reveal and
+> `/results`. **Changed:** seat label `Bot N` 7px → 13px with its box widened `rsBase(20)` → `(34)`
+> because 20dp could not hold "Bot 1" at 13px; `HandBadge` normal 13 → 16 and small 10 → 13, the
+> small variant being the *opponent* badge and the hardest text in the app to read; `/results`
+> `breakdownHand` 13 → 16 and `breakdownVs` 10 → 13, the opponent line kept one step below your own
+> so lifting both did not invert whose result the screen is about. **Found unreachable:**
+> `Board.handName` — gated on `revealed &&`, which is hardcoded `false` in solo, so it renders only
+> in multiplayer and was edited twice before anyone checked. **Deliberately outside the scale:** card
+> pips (graphics sized by the card, not type), `/results` score numerals 41px and the 31px `—`
+> (weight 300 in `textDim`, visually recessive), and `BoardReveal.sectionLabel` at 11px — measured,
+> reachable, and **correct for its role** as a secondary section header above a 13px badge.
+> **Still unverified:** `Board.handName`'s rendered size, which needs a two-device MP session.
+> **`/game` was audited and needs nothing.** Five misattributions were made and corrected during this
+> work; the procedure that should prevent a sixth is `docs/MEASUREMENT-PROTOCOL.md`.
+
 # SCREEN 1 — `/game` (CARDS #1 + TABLE #2)
 
 > ### ✅ TYPE HIERARCHY AUDITED 2026-08-07 — `/game` IS CORRECT. DO NOT RE-OPEN.
