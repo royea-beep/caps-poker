@@ -162,9 +162,12 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
             <Text testID={side.tid} style={[styles.pct, { fontSize: rf(20, undefined, undefined, screenW) }]}>
               {pending ? '––' : `${side.pct}%`}
             </Text>
-            {/* Same anchor scheme as the multi-seat layout, so a measurement does not have
-                to know which layout it is looking at. */}
-            <Text testID={`equity-value-seat-${side.seat}`} style={[styles.standing, { fontSize: rf(11, undefined, undefined, screenW) }]}>
+            {/* NO equity-value-seat-N here. It was on this label, which is 11px, while in the
+                multi-seat layout the same anchor is on the 15px percentage - so one selector
+                returned two different elements depending on seat count, which is precisely
+                the ambiguity testIDs exist to remove. The 2-seat layout keeps its own two
+                verified anchors above; per-seat anchors belong to the multi-seat layout. */}
+            <Text style={[styles.standing, { fontSize: rf(11, undefined, undefined, screenW) }]}>
               {side.who} · {side.tag}
             </Text>
           </View>
@@ -200,15 +203,20 @@ const styles = StyleSheet.create({
   divider: { position: 'absolute', top: 0, bottom: 0, backgroundColor: '#FFFFFF' },
 
   // multi-seat
+  // MEASURED BUG, fixed here: every fixed-width column rendered at ZERO width on live (all
+  // three boxes read 359-359 on a 375px screen). React Native defaults flexShrink to 0, but
+  // react-native-web maps to CSS flexbox where it defaults to 1 - so the flex:1 track took the
+  // whole row and the labelled columns collapsed to nothing. flexShrink: 0 is load-bearing on
+  // every one of these; do not drop it because "the width is already set".
   seatRow: { flexDirection: 'row', alignItems: 'center' },
-  ordinal: { color: 'rgba(255,255,255,0.55)', fontWeight: '800', fontVariant: ['tabular-nums'] },
-  seatName: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 0.4 },
+  ordinal: { color: 'rgba(255,255,255,0.55)', fontWeight: '800', fontVariant: ['tabular-nums'], flexShrink: 0 },
+  seatName: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 0.4, flexShrink: 0 },
   seatNameSelf: { color: '#FFFFFF', fontWeight: '900' },
-  seatTrack: { flex: 1, backgroundColor: 'rgba(255,255,255,0.13)', overflow: 'hidden', position: 'relative' },
+  seatTrack: { flex: 1, flexShrink: 1, minWidth: 20, backgroundColor: 'rgba(255,255,255,0.13)', overflow: 'hidden', position: 'relative' },
   seatFill: { position: 'absolute', left: 0, top: 0, bottom: 0, overflow: 'hidden' },
-  seatPct: { color: 'rgba(255,255,255,0.85)', fontWeight: '800', textAlign: 'right', fontVariant: ['tabular-nums'] },
+  seatPct: { color: 'rgba(255,255,255,0.85)', fontWeight: '800', textAlign: 'right', fontVariant: ['tabular-nums'], flexShrink: 0 },
   seatPctSelf: { color: '#FFFFFF', fontWeight: '900' },
-  leadTag: { color: 'rgba(255,255,255,0.6)', fontWeight: '800', letterSpacing: 0.5, textAlign: 'right' },
+  leadTag: { color: 'rgba(255,255,255,0.6)', fontWeight: '800', letterSpacing: 0.5, textAlign: 'right', flexShrink: 0 },
 
   chip: { alignSelf: 'center', marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
   chipText: { color: '#FFFFFF', fontWeight: '800', fontVariant: ['tabular-nums'] },
