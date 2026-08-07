@@ -146,9 +146,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
     return afterPaint(() => {
       const bots = b.allBotCards && b.allBotCards.length ? b.allBotCards : [b.botCards];
-      const flopCards = (b.openCards || []).slice(0, 3);
-      const turnCards = (b.openCards || []).slice(0, 4);
-      if (flopCards.length < 3) return;
+      // `openCards` is the FLOP ONLY - turn and river live in `closedCards`, which is why
+      // lines 389/590 both build the community as [...openCards, ...closedCards]. Slicing
+      // openCards for the turn returned three cards, so turn equity came out identical to
+      // flop equity on every board, the number never moved, and the delta chip could never
+      // fire. Caught by measuring the live timeline, not by re-reading this function.
+      const allComm = [...(b.openCards || []), ...(b.closedCards || [])];
+      const flopCards = allComm.slice(0, 3);
+      const turnCards = allComm.slice(0, 4);
+      if (flopCards.length < 3 || turnCards.length < 4) return;
 
       const flop = computeExactEquity(b.playerCards, bots, flopCards);
       const turn = computeExactEquity(b.playerCards, bots, turnCards);
