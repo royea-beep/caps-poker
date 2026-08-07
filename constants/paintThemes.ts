@@ -514,10 +514,21 @@ export const currentPaint = {
       boardNeonGreen: '#2ecc71',         // COLORS.neonGreen — NOT winColor (#22c55e)
       boardNeonRed: '#c0392b',           // COLORS.neonRed — NOT loseColor (#ef4444)
       boardMintHairline: 'rgba(79,214,168,0.45)',  // OBSIDIAN.mintHairline
-      boardMintGhost: 'rgba(79,214,168,0.10)',     // OBSIDIAN.mintGhost
-      boardSlotFill: 'rgba(79,214,168,0.03)',      // OBSIDIAN.slotFill
-      boardSlotDash: 'rgba(79,214,168,0.30)',      // OBSIDIAN.slotDash
-      boardSlotDashActive: '#4FD6A8',              // OBSIDIAN.slotDashActive
+      // CC2 / D3 — THE EMPTY SLOT IS CHROME, NOT FIELD. Roye: "המשבצות הריקות (זיתי-בוצי) -
+      // הכי לא-אטרקטיביות ודווקא הן יעד הפעולה." Measured, "olive-muddy" is arithmetically
+      // exact: mint fill at 0.10 alpha, inside an element the pulse drives down to 0.4 opacity,
+      // composited over the rgb(40,62,49) table top, renders rgb(42,71,56) - L 0.0528 against
+      // the table's 0.0412. A muddy olive almost indistinguishable from the felt it sits on.
+      //
+      // Two reasons it is now WHITE rather than a brighter mint. First the colour map: mint
+      // means THE FIELD, and community card frames already use it - so a mint empty slot made
+      // one colour mean both "a card that exists" and "a space where none does", which is the
+      // gold collision from C4 wearing different clothes. Second, an empty slot is the ABSENCE
+      // of content; chrome is exactly what it is.
+      boardMintGhost: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
+      boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
+      boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
+      boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
       boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
       boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
@@ -567,10 +578,21 @@ export const currentPaint = {
       boardNeonGreen: '#2ecc71',         // COLORS.neonGreen — NOT winColor (#28A745 here)
       boardNeonRed: '#c0392b',           // COLORS.neonRed — NOT loseColor (#CC0000 here)
       boardMintHairline: 'rgba(79,214,168,0.45)',  // OBSIDIAN.mintHairline
-      boardMintGhost: 'rgba(79,214,168,0.10)',     // OBSIDIAN.mintGhost
-      boardSlotFill: 'rgba(79,214,168,0.03)',      // OBSIDIAN.slotFill
-      boardSlotDash: 'rgba(79,214,168,0.30)',      // OBSIDIAN.slotDash
-      boardSlotDashActive: '#4FD6A8',              // OBSIDIAN.slotDashActive
+      // CC2 / D3 — THE EMPTY SLOT IS CHROME, NOT FIELD. Roye: "המשבצות הריקות (זיתי-בוצי) -
+      // הכי לא-אטרקטיביות ודווקא הן יעד הפעולה." Measured, "olive-muddy" is arithmetically
+      // exact: mint fill at 0.10 alpha, inside an element the pulse drives down to 0.4 opacity,
+      // composited over the rgb(40,62,49) table top, renders rgb(42,71,56) - L 0.0528 against
+      // the table's 0.0412. A muddy olive almost indistinguishable from the felt it sits on.
+      //
+      // Two reasons it is now WHITE rather than a brighter mint. First the colour map: mint
+      // means THE FIELD, and community card frames already use it - so a mint empty slot made
+      // one colour mean both "a card that exists" and "a space where none does", which is the
+      // gold collision from C4 wearing different clothes. Second, an empty slot is the ABSENCE
+      // of content; chrome is exactly what it is.
+      boardMintGhost: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
+      boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
+      boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
+      boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
       boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
       boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder

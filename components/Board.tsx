@@ -112,8 +112,12 @@ function EmptySlotAnimated({ isArrangement, onPress, slotWidth, slotHeight, them
         // FINITE per iron rule
         pulseOpacity.value = withRepeat(
           withSequence(
+            // CC2 — breathing range narrowed from 0.4 to 0.72. At 0.4 the slot sank into the
+            // felt for most of its cycle, which is half of why "olive-muddy" was the right
+            // word: a marked place that keeps disappearing reads as damage, not invitation.
+            // It still breathes, it just never drops out of legibility.
             withTiming(1, { duration: 1000 }),
-            withTiming(0.4, { duration: 1000 }),
+            withTiming(0.72, { duration: 1000 }),
           ),
           200,
           true,
