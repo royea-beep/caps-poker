@@ -47,7 +47,7 @@ import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FELT_GRADIENT } from '../constants/paintThemes';
-import { rs } from '../utils/responsive';
+import { rs, SCREEN_W } from '../utils/responsive';
 
 interface Props {
   children: React.ReactNode;
@@ -55,6 +55,18 @@ interface Props {
   screenW: number;
   /** Rail accent — passed from the theme so the surface never hardcodes a palette. */
   railColor?: string;
+  /**
+   * CB1 — how loudly the table speaks.
+   *   'full'  — the placement screen. The table is the subject; nothing competes with it.
+   *   'muted' — the REVEAL. That screen already carries equity rows, an outs row, per-seat
+   *             numbers, hand badges and a spotlight that drops non-winning cards to 0.35 at
+   *             t(3700). A table at placement brightness would compete with all of it and would
+   *             fight the spotlight directly - the dim exists to remove attention from cards,
+   *             and a bright surface underneath puts it back. Muted keeps the SAME three-plane
+   *             ordering (hand < felt < table) at lower amplitude, so the hierarchy survives
+   *             without the surface joining the conversation.
+   */
+  intensity?: 'full' | 'muted';
 }
 
 /**
@@ -69,7 +81,8 @@ function lift(hex: string, amount: number): string {
   return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 
-export function BoardSurface({ children, visualTheme, screenW, railColor }: Props) {
+export function BoardSurface({ children, visualTheme, screenW, railColor, intensity = 'full' }: Props) {
+  const muted = intensity === 'muted';
   const base = FELT_GRADIENT[(visualTheme ?? 'classic') as 'classic' | 'fiveo' | 'streetStencil']
     ?? FELT_GRADIENT.classic;
 
@@ -82,13 +95,25 @@ export function BoardSurface({ children, visualTheme, screenW, railColor }: Prop
   // room around it, so this is the physically honest direction as well as the legible one. The
   // lift is small and derived from the theme's own felt, so no second palette is introduced and
   // every theme stays internally consistent.
-  const felt: readonly [string, string] = [lift(base[0], 0.10), lift(base[1], 0.055)];
+  const felt: readonly [string, string] = muted
+    ? [lift(base[0], 0.055), lift(base[1], 0.03)]
+    : [lift(base[0], 0.10), lift(base[1], 0.055)];
+
+  // CB4 — GUARD, not a fix. One measurement showed this surface at full-bleed with 0 margin and
+  // 0 radius while a sibling rs(2) in BoardArrangement correctly returned 2 — i.e. screenW
+  // arrived here as 0, and rs() is `value * screenW / BASE_WIDTH`, so every dimension collapsed.
+  // It did not reproduce across four fresh mounts or a full auto-fill cycle, so the cause is NOT
+  // chased (Rule 8: recorded, guarded, not chased). But the failure mode is silent and ugly — a
+  // 0-radius full-bleed rectangle that reads as a background, which is precisely the thing this
+  // component exists to stop being. Falling back to the module base costs one expression and
+  // turns an invisible failure into a correct render.
+  const safeW = screenW && screenW > 0 ? screenW : SCREEN_W;
 
   // The inset IS the design. At 375 with four boards this is the tightest case in the app, so
   // the margin is deliberately small — enough to show that the surface ends, not enough to cost
   // a card row. 8px reads as an edge; 20px would read as a border and eat the board.
-  const inset = rs(8, screenW);
-  const radius = rs(18, screenW);
+  const inset = rs(8, safeW);
+  const radius = rs(18, safeW);
 
   return (
     <View
@@ -97,12 +122,12 @@ export function BoardSurface({ children, visualTheme, screenW, railColor }: Prop
         styles.wrap,
         {
           marginHorizontal: inset,
-          marginTop: rs(4, screenW),
-          marginBottom: rs(6, screenW),
+          marginTop: rs(4, safeW),
+          marginBottom: rs(6, safeW),
           borderRadius: radius,
           // RAIL — the lit top edge. Kept at low alpha so it reads as a highlight, not a border.
           borderWidth: StyleSheet.hairlineWidth * 2,
-          borderColor: railColor ?? 'rgba(255,255,255,0.14)',
+          borderColor: railColor ?? (muted ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.14)'),
         },
       ]}
     >
@@ -118,10 +143,10 @@ export function BoardSurface({ children, visualTheme, screenW, railColor }: Prop
           property that would silently render on one platform and not the other. Platform
           divergence handled by not depending on the divergent thing. */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.38)', 'rgba(0,0,0,0)']}
+        colors={muted ? ['rgba(0,0,0,0.22)', 'rgba(0,0,0,0)'] : ['rgba(0,0,0,0.38)', 'rgba(0,0,0,0)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={[styles.innerTop, { height: rs(14, screenW), borderTopLeftRadius: radius, borderTopRightRadius: radius }]}
+        style={[styles.innerTop, { height: rs(14, safeW), borderTopLeftRadius: radius, borderTopRightRadius: radius }]}
         pointerEvents="none"
       />
       {children}

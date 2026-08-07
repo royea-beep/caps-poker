@@ -286,3 +286,33 @@ so.
 differs by platform, reading the source tells you what one platform does. Only a measurement
 on the platform in question tells you what the user sees — and a mechanism that explains the
 numbers is still a hypothesis until it is tested on its own (Rule 4).
+
+---
+
+## Rule 8, worked example — recorded, guarded, not chased (CB4, 2026-08-07)
+
+`BoardSurface` was measured once at full-bleed: width 375, left 0, `margin-left: 0px`,
+`border-radius: 0px` — while its own `border-width: 2px` and `border-color` from the **same
+inline style object** were applied correctly. Border constants are literals; margin and radius
+go through `rs(v, screenW)`, which is `value * screenW / BASE_WIDTH`. So `screenW` arrived as
+**0** in that render, and every derived dimension collapsed while every literal survived. A
+sibling `rs(2)` inside `BoardArrangement` returned 2 in the same frame, so the app-wide value
+was fine.
+
+**It did not reproduce**: four fresh-mount samples over 3s, then again across a full auto-fill
+→ READY cycle, all returned the correct 359 / left 8 / radius 17.
+
+**What was done, and what was not.** Not done: hunting the cause. An unreproducible single
+sample is not a bug report, and chasing it would have cost the sprint. Done: a one-expression
+defensive default — `screenW && screenW > 0 ? screenW : SCREEN_W` — because the failure mode is
+*silent*. A zero-margin, zero-radius surface does not look broken; it looks like a background,
+which is exactly the thing that component exists to stop being. The guard converts an invisible
+wrong render into a correct one.
+
+**The rule this illustrates:** when a reading contradicts every other reading, record it, guard
+the failure mode if the guard is cheap, and move on. Do not delete the observation, and do not
+build a theory on one sample.
+
+**The diagnostic that made it legible** is worth reusing: *literals rendered, computed values
+did not*. When a subset of one style object applies and the rest does not, suspect the input to
+the computation, not the style system.

@@ -77,7 +77,27 @@ export function boardIdentityGlow(identityColor: string) {
 
 /** VAMOS-PLACEMENT-POLISH D3 (#8) — toned down so face-up cards REST on the board
  *  instead of looking like they float ~6dp above it. Offset+radius+opacity all cut. */
+// CB2 / C2 — ELEVATION INVERTED. Roye: "המידע שלא רואים צועק יותר מהחשוף" - the information
+// you cannot see shouts louder than the information you can. Measured, he was exactly right:
+// the BACK carried 0 4px 10px @0.45 while the FACE carried 0 1px 2px @0.25, so the hidden card
+// was four times more elevated than the readable one.
+//
+// The face is the object that carries information, so it now sits highest. But note the totals
+// went DOWN, not up: the board surface shipped in CA now provides the depth, so the cards need
+// less shadow each, not more. Raising every card would have fought the table.
 export const cardLiftShadow = Platform.select({
+  ios: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.38,
+    shadowRadius: 7,
+  } as const,
+  android: { elevation: 6 } as const,
+  default: { boxShadow: '0 3px 8px rgba(0,0,0,0.38)' as any } as any,
+});
+
+/** Even subtler for small (community/bc=4) cards. */
+export const cardLiftShadowSmall = Platform.select({
   ios: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -85,31 +105,21 @@ export const cardLiftShadow = Platform.select({
     shadowRadius: 5,
   } as const,
   android: { elevation: 4 } as const,
-  default: { boxShadow: '0 2px 6px rgba(0,0,0,0.30)' as any } as any,
-});
-
-/** Even subtler for small (community/bc=4) cards. */
-export const cardLiftShadowSmall = Platform.select({
-  ios: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  } as const,
-  android: { elevation: 2 } as const,
-  default: { boxShadow: '0 1px 4px rgba(0,0,0,0.25)' as any } as any,
+  default: { boxShadow: '0 2px 5px rgba(0,0,0,0.30)' as any } as any,
 });
 
 /** Card-back shadow (close to surface — sits on felt). */
+// A face-down card is a PLACEHOLDER - it says "something is here", nothing more. It should
+// recede beneath the cards that actually say something. Was the heaviest shadow in the app.
 export const cardBackShadow = Platform.select({
   ios: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.30,
+    shadowRadius: 3,
   } as const,
-  android: { elevation: 5 } as const,
-  default: { boxShadow: '0 4px 10px rgba(0,0,0,0.45)' as any } as any,
+  android: { elevation: 2 } as const,
+  default: { boxShadow: '0 1px 3px rgba(0,0,0,0.30)' as any } as any,
 });
 
 // ---------- Helpers ----------

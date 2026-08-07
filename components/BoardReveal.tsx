@@ -32,6 +32,7 @@ import { FloatingChips } from './FloatingChips';
 import { HandBadge } from './HandBadge';
 import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
 import EquityBar from './EquityBar';
+import BoardSurface from './BoardSurface';
 import OutsRow from './OutsRow';
 import { computeSeatEquity, computeOuts, sortOuts, SeatEquity, OutsResult } from '../utils/revealEquity';
 import { afterPaint } from '../utils/afterPaint';
@@ -702,6 +703,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           accessibilityHint="Tap to skip this board, press and hold to skip to the results"
         >
           {/* S110: Animated content wrapper — slides on board transition */}
+          {/* CB1 — THE TABLE, CARRIED INTO THE REVEAL. The surface shipped in CA lived only in
+              BoardArrangement, so the table vanished at the exact moment the hand is decided -
+              the wrong half to have, since this is the screen where the boards matter most.
+              Wrapped OUTSIDE boardContent so the whole play area sits on it, and rendered at
+              'muted' because this screen already carries equity rows, outs, per-seat numbers
+              and a spotlight that drops non-winning cards to 0.35 at t(5700). A table at
+              placement brightness would fight that dim directly. */}
+          <BoardSurface visualTheme={visualTheme} screenW={screenW} intensity="muted">
           <AnimatedRN.View style={[styles.boardContent, { opacity: boardOpacity }]}>
 
           {/* Header — board number (BIG) + score indicator + smart dots */}
@@ -949,6 +958,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           )}
 
           </AnimatedRN.View>
+          </BoardSurface>
 
           {/* FloatingChips — outside slide wrapper, position absolute. Hidden in practice
               (OTA-COSMETIC-FIXES) — no real chips move, so a flying coin animation is misleading. */}

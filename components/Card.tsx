@@ -81,11 +81,28 @@ const CARD_BACK_BORDER = '#C5A028';
 // black/gold (NOT the streetStencil spray-yellow, which would clash on classic and
 // wouldn't match the gold wordmark on Home). Values are local to the back — this
 // batch touches colour/graphics only, no theme wiring.
-const CARD_BACK_C_BG = '#18181c';                     // charcoal
-const CARD_BACK_C_GOLD = '#c9a84c';                   // the "C" + edge ring
-const CARD_BACK_C_RING = 'rgba(201,168,76,0.28)';     // inner circle, low-alpha gold
-const CARD_BACK_C_EDGE = 'rgba(201,168,76,0.5)';      // inset edge ring
-const CARD_BACK_C_GLOW = 'rgba(201,168,76,0.55)';     // soft glow on the C
+// CB2 / C4 — THE GOLD COLLISION, BROKEN. Roye: "קלף חשוף וגב-C שניהם במסגרת זהב. אותו סימון
+// לשני מצבים הפוכים." He is describing this exact pair: a WINNING face-up card renders
+// `borderWidth: 2.5, borderColor: '#c9a84c'` plus a gold glow, and the face-DOWN back rendered a
+// gold edge ring, a gold inner circle and a gold glow. One mark, two opposite states - the best
+// possible outcome and "you cannot see this yet".
+//
+// WHAT GOLD MEANS NOW, and it is only one thing: **won**. The winner highlight keeps it, and so
+// do the places MEMORY already records as semantic gold - medals and currency. Nothing else on a
+// card may wear it.
+//   gold  -> won / valuable
+//   mint  -> the field (community frames already use OBSIDIAN.mint)
+//   white -> neutral chrome, carries no state
+//
+// So the back becomes NEUTRAL. That is right for more than one reason: a face-down card is a
+// placeholder, and the elevation change in obsidianTheme drops it beneath the face for the same
+// reason. Neutral white-alpha is also pure VALUE, so it survives full desaturation, where two
+// hues at similar luminance would not.
+const CARD_BACK_C_BG = '#18181c';                     // charcoal — unchanged
+const CARD_BACK_C_GOLD = 'rgba(255,255,255,0.45)';    // the "C" + edge ring — was #c9a84c
+const CARD_BACK_C_RING = 'rgba(255,255,255,0.16)';    // inner circle — was low-alpha gold
+const CARD_BACK_C_EDGE = 'rgba(255,255,255,0.18)';    // inset edge ring — was gold 0.5
+const CARD_BACK_C_GLOW = 'rgba(255,255,255,0.22)';    // soft glow on the C — was gold 0.55
 // FONT RULING A: Bangers is NOT bundled (0 font files, expo-font never imported).
 // Ship on the platform's heaviest system face now; when the font-infra batch bundles
 // Bangers, this ONE constant becomes 'Bangers' and the C upgrades with a one-line swap.
