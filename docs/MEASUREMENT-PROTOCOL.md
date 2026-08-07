@@ -316,3 +316,38 @@ build a theory on one sample.
 **The diagnostic that made it legible** is worth reusing: *literals rendered, computed values
 did not*. When a subset of one style object applies and the rest does not, suspect the input to
 the computation, not the style system.
+
+---
+
+## Rule 13 — the SENTINEL: separating "it never ran" from "I cannot see it"
+
+When a measured value is **also** a value the code could legitimately write, the reading proves
+nothing. The empty slot read `0.600`, and 0.6 was both the `useSharedValue` initial **and** what
+the effect's `else` branch writes — so "the effect never ran" and "the effect ran and took the
+else branch" were the same observation. Two sprints were spent on that ambiguity.
+
+**The technique:** change the initial to a value nothing else can produce, deploy, measure once.
+
+Choose it so every branch is distinguishable. `0.137` worked because it is not `0.6`
+(initial/else), not `1` or `0.72` (the pulse endpoints), not `0.4` (the previous floor), and
+appears in no style in the file. A round number would not have done — it could plausibly be a
+default.
+
+**Then read the outcome as a decision table:**
+
+| reads | means |
+|---|---|
+| the sentinel | nothing wrote it — the effect never ran, or its write never took effect |
+| a value the code writes | that branch ran; the mechanism works |
+| a moving value | it works and the earlier sample was mistimed |
+
+**Result when first used (CG1, 2026-08-07):** 25/25 samples read `0.137`. That killed the
+"Reanimated is unobservable on web" theory outright — a static shared value set in
+`useSharedValue` **did** reach `getComputedStyle`, so the style bridge works. What remains is
+narrower and testable: either the effect body never runs, or `withTiming` is called and its
+driver never progresses.
+
+**Why this belongs in the protocol:** it converts an unfalsifiable reading into a decision in
+one deploy. It is the cheapest instrument in this document and it should be reached for the
+moment a measurement is consistent with two explanations. And it is an **instrument, not a
+change** — revert it in the next commit.
