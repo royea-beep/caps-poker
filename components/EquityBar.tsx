@@ -1,42 +1,66 @@
 /**
- * BX2 / BP3 — the equity bar.
+ * BX2 / BY1 — the equity display.
  *
- * Two hues side by side is the single case that dies without colour, so per the spec's
- * BP3 section hue is the LAST channel here, never the only one. Four channels carry the
- * same fact:
- *   POSITION — the leader's figure is always on the left. Order is the information.
- *   TEXT     — an explicit LEADING / TRAILING label under each figure.
- *   LENGTH   — segment width, non-hue by nature.
- *   TEXTURE  — the player's segment is solid, the opponents' segment is 45 degree hatch.
- *              Texture survives greyscale; a hue swap does not.
- * Plus a 2px high-contrast divider at the split, so the boundary is still findable when
- * both segments render as the same grey.
+ * TWO LAYOUTS, chosen by seat count, because one layout cannot serve both:
  *
- * The delta chip leads with a triangle glyph and MOVES in the direction of the change,
- * because "+18% green" and "-22% red" are the same chip to a colourblind player and the
- * sign character is easy to miss at 12px.
+ *   2 seats  → a single split bar. The POSITION channel works here: leader left, trailing
+ *              right, one 2px divider at the split. This is the verified BX2 layout and is
+ *              deliberately unchanged.
+ *   3-4 seats → STACKED LABELLED ROWS, sorted leader-first. BP3 says it outright: "never
+ *              encode a third seat by hue alone; at 3-4 players use stacked labelled rows,
+ *              not a three-colour bar." A four-segment bar on a 375px screen is four
+ *              adjacent hues with no room for a number inside any of them - unreadable for
+ *              everyone, not only for colourblind players.
  *
- * Iron Rule #3: every dimension goes through rs()/rf() WITH screenW passed, because a
- * bare rs() freezes at module scope on web and would not respond to 375 vs 393.
+ * Non-colour channels survive the seat count going up, and there are MORE of them, not fewer:
+ *   POSITION — rows sorted by equity, leader on top. Order is the information.
+ *   ORDINAL  — an explicit 1./2./3./4. per row. Hue-free, and it still reads at a glance
+ *              when four bars are all mid-grey.
+ *   NAME     — YOU vs BOT n, so your row is findable without colour.
+ *   TEXT     — LEADING on the top row.
+ *   LENGTH   — bar width per row.
+ *   TEXTURE  — your bar solid, opponents' hatched at 45 degrees.
+ *
+ * Iron Rule #3: every dimension goes through rs()/rf() WITH screenW passed. A bare rs()
+ * freezes at module scope on web and would not respond to 375 vs 393.
  */
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { rf, rs } from '../utils/responsive';
+import { SeatEquity } from '../utils/revealEquity';
 
 interface Props {
-  selfPct: number;
-  oppPct: number;
-  /** Previous street's self%, so the bar can animate the CHANGE rather than just land on a number. */
+  seats: SeatEquity[];
+  /** Previous street's share for YOU, so the delta chip can show the change. */
   prevSelfPct?: number | null;
   screenW: number;
-  /** Null until the exact enumeration resolves — renders a skeleton, never a wrong number. */
   pending?: boolean;
+  seatLabel?: (seat: number) => string;
 }
 
 const HATCH_STRIPES = 14;
 
-export function EquityBar({ selfPct, oppPct, prevSelfPct, screenW, pending }: Props) {
+function Hatch({ barH, screenW }: { barH: number; screenW: number }) {
+  return (
+    <>
+      {Array.from({ length: HATCH_STRIPES }).map((_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.stripe,
+            { left: `${(i / HATCH_STRIPES) * 100}%`, height: barH * 3, width: rs(3, screenW) },
+          ]}
+        />
+      ))}
+    </>
+  );
+}
+
+export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: Props) {
+  const self = seats.find((s) => s.isSelf);
+  const selfPct = self ? self.pct : 50;
+
   const fill = useRef(new Animated.Value(prevSelfPct ?? selfPct)).current;
   const chipY = useRef(new Animated.Value(0)).current;
   const chipOpacity = useRef(new Animated.Value(0)).current;
@@ -58,15 +82,10 @@ export function EquityBar({ selfPct, oppPct, prevSelfPct, screenW, pending }: Pr
       chipY.setValue(0);
       chipOpacity.setValue(0);
       Animated.parallel([
-        Animated.timing(chipY, {
-          toValue: delta > 0 ? -12 : 12,
-          duration: 900,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
+        Animated.timing(chipY, { toValue: delta > 0 ? -12 : 12, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
         Animated.sequence([
           Animated.timing(chipOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
-          Animated.delay(400),
+          Animated.delay(500),
           Animated.timing(chipOpacity, { toValue: 0, duration: 320, useNativeDriver: true }),
         ]),
       ]).start();
@@ -74,87 +93,95 @@ export function EquityBar({ selfPct, oppPct, prevSelfPct, screenW, pending }: Pr
     return () => a.stop();
   }, [selfPct, pending]);
 
-  const playerLeads = selfPct >= oppPct;
-
-  // POSITION CHANNEL — the leader is always rendered first (left).
-  const left = playerLeads
-    ? { pct: selfPct, label: 'LEADING', who: 'YOU', tid: 'equity-value-self' }
-    : { pct: oppPct, label: 'LEADING', who: 'OPP', tid: 'equity-value-opponent' };
-  const right = playerLeads
-    ? { pct: oppPct, label: 'TRAILING', who: 'OPP', tid: 'equity-value-opponent' }
-    : { pct: selfPct, label: 'TRAILING', who: 'YOU', tid: 'equity-value-self' };
-
+  const label = (s: SeatEquity) => (s.isSelf ? 'YOU' : seatLabel ? seatLabel(s.seat) : `BOT ${s.seat}`);
   const barH = rs(14, screenW);
+  const multi = seats.length > 2;
+
+  const deltaChip = hasDelta && !pending ? (
+    <Animated.View testID="delta-chip" style={[styles.chip, { opacity: chipOpacity, transform: [{ translateY: chipY }] }]}>
+      <Text style={[styles.chipText, { fontSize: rf(13, undefined, undefined, screenW) }]}>
+        {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{delta}%
+      </Text>
+    </Animated.View>
+  ) : null;
+
+  // ── 3-4 SEATS — stacked rows ──────────────────────────────────────────────────────
+  if (multi) {
+    const ordered = [...seats].sort((a, b) => b.raw - a.raw || a.seat - b.seat);
+    const rowH = rs(15, screenW);
+    return (
+      <View style={styles.wrap} testID="equity-bar" accessibilityLiveRegion="polite"
+        accessibilityLabel={pending ? 'Calculating odds' : ordered.map((s) => `${label(s)} ${s.pct} percent`).join(', ')}>
+        {ordered.map((s, i) => (
+          <View key={s.seat} style={[styles.seatRow, { marginBottom: rs(3, screenW) }]}>
+            <Text style={[styles.ordinal, { fontSize: rf(11, undefined, undefined, screenW), width: rs(13, screenW) }]}>{i + 1}.</Text>
+            <Text
+              numberOfLines={1}
+              style={[styles.seatName, s.isSelf && styles.seatNameSelf, { fontSize: rf(11, undefined, undefined, screenW), width: rs(40, screenW) }]}
+            >
+              {label(s)}
+            </Text>
+            <View style={[styles.seatTrack, { height: rowH, borderRadius: rowH / 2 }]}>
+              <View style={[styles.seatFill, { width: `${s.pct}%`, borderRadius: rowH / 2, backgroundColor: s.isSelf ? '#4FD6A8' : 'rgba(255,255,255,0.34)' }]}>
+                {!s.isSelf && <Hatch barH={rowH} screenW={screenW} />}
+              </View>
+            </View>
+            <Text
+              testID={`equity-value-seat-${s.seat}`}
+              style={[styles.seatPct, s.isSelf && styles.seatPctSelf, { fontSize: rf(15, undefined, undefined, screenW), width: rs(36, screenW) }]}
+            >
+              {pending ? '––' : `${s.pct}%`}
+            </Text>
+            <Text style={[styles.leadTag, { fontSize: rf(9, undefined, undefined, screenW), width: rs(30, screenW) }]}>
+              {i === 0 && !pending ? 'LEAD' : ''}
+            </Text>
+          </View>
+        ))}
+        {deltaChip}
+      </View>
+    );
+  }
+
+  // ── 2 SEATS — the verified split bar ──────────────────────────────────────────────
+  const opp = seats.find((s) => !s.isSelf);
+  const oppPct = opp ? opp.pct : 100 - selfPct;
+  const playerLeads = selfPct >= oppPct;
+  const left = playerLeads
+    ? { pct: selfPct, tag: 'LEADING', who: 'YOU', seat: self ? self.seat : 0, tid: 'equity-value-self' }
+    : { pct: oppPct, tag: 'LEADING', who: 'OPP', seat: opp ? opp.seat : 1, tid: 'equity-value-opponent' };
+  const right = playerLeads
+    ? { pct: oppPct, tag: 'TRAILING', who: 'OPP', seat: opp ? opp.seat : 1, tid: 'equity-value-opponent' }
+    : { pct: selfPct, tag: 'TRAILING', who: 'YOU', seat: self ? self.seat : 0, tid: 'equity-value-self' };
 
   return (
     <View style={styles.wrap} testID="equity-bar" accessibilityLiveRegion="polite"
       accessibilityLabel={pending ? 'Calculating odds' : `You ${selfPct} percent, opponent ${oppPct} percent`}>
-
       <View style={styles.figureRow}>
         {[left, right].map((side, i) => (
           <View key={i} style={[styles.figureCol, i === 1 && styles.figureColRight]}>
             <Text testID={side.tid} style={[styles.pct, { fontSize: rf(20, undefined, undefined, screenW) }]}>
               {pending ? '––' : `${side.pct}%`}
             </Text>
-            <Text style={[styles.standing, { fontSize: rf(11, undefined, undefined, screenW) }]}>
-              {side.who} · {side.label}
+            {/* Same anchor scheme as the multi-seat layout, so a measurement does not have
+                to know which layout it is looking at. */}
+            <Text testID={`equity-value-seat-${side.seat}`} style={[styles.standing, { fontSize: rf(11, undefined, undefined, screenW) }]}>
+              {side.who} · {side.tag}
             </Text>
           </View>
         ))}
       </View>
 
       <View style={[styles.track, { height: barH, borderRadius: barH / 2 }]}>
-        {/* Player segment — SOLID fill. */}
+        <Animated.View style={[styles.selfFill, { width: fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), borderRadius: barH / 2 }]} />
         <Animated.View
-          style={[
-            styles.selfFill,
-            {
-              width: fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
-              borderRadius: barH / 2,
-            },
-          ]}
-        />
-        {/* Opponent segment — 45 degree HATCH. Drawn as rotated stripes so it works on
-            native and web alike; a CSS repeating-linear-gradient would be web-only. */}
-        <Animated.View
-          style={[
-            styles.hatchClip,
-            // Anchored to the split, so the hatch marks the OPPONENT'S segment only. Left as a
-            // plain full-width overlay it would sit on top of the solid fill too and both
-            // segments would read identically - which is the exact failure this is here to fix.
-            { left: fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) },
-          ]}
+          style={[styles.hatchClip, { left: fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }]}
           pointerEvents="none"
         >
-          {Array.from({ length: HATCH_STRIPES }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.stripe,
-                { left: `${(i / HATCH_STRIPES) * 100}%`, height: barH * 3, width: rs(3, screenW) },
-              ]}
-            />
-          ))}
+          <Hatch barH={barH} screenW={screenW} />
         </Animated.View>
-        {/* 2px divider at the split — the boundary must survive full hue removal. */}
-        <Animated.View
-          style={[
-            styles.divider,
-            { width: rs(2, screenW), left: fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) },
-          ]}
-        />
+        <Animated.View style={[styles.divider, { width: rs(2, screenW), left: fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }]} />
       </View>
-
-      {hasDelta && !pending && (
-        <Animated.View
-          testID="delta-chip"
-          style={[styles.chip, { opacity: chipOpacity, transform: [{ translateY: chipY }] }]}
-        >
-          <Text style={[styles.chipText, { fontSize: rf(13, undefined, undefined, screenW) }]}>
-            {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{delta}%
-          </Text>
-        </Animated.View>
-      )}
+      {deltaChip}
     </View>
   );
 }
@@ -166,21 +193,23 @@ const styles = StyleSheet.create({
   figureColRight: { alignItems: 'flex-end' },
   pct: { color: '#FFFFFF', fontWeight: '800', fontVariant: ['tabular-nums'] },
   standing: { color: 'rgba(255,255,255,0.72)', fontWeight: '700', letterSpacing: 0.8 },
-  track: {
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    overflow: 'hidden',
-    position: 'relative',
-  },
+  track: { width: '100%', backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden', position: 'relative' },
   selfFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#4FD6A8' },
   hatchClip: { position: 'absolute', right: 0, top: 0, bottom: 0, overflow: 'hidden' },
-  stripe: {
-    position: 'absolute',
-    top: -8,
-    backgroundColor: 'rgba(255,255,255,0.30)',
-    transform: [{ rotate: '45deg' }],
-  },
+  stripe: { position: 'absolute', top: -8, backgroundColor: 'rgba(255,255,255,0.30)', transform: [{ rotate: '45deg' }] },
   divider: { position: 'absolute', top: 0, bottom: 0, backgroundColor: '#FFFFFF' },
+
+  // multi-seat
+  seatRow: { flexDirection: 'row', alignItems: 'center' },
+  ordinal: { color: 'rgba(255,255,255,0.55)', fontWeight: '800', fontVariant: ['tabular-nums'] },
+  seatName: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 0.4 },
+  seatNameSelf: { color: '#FFFFFF', fontWeight: '900' },
+  seatTrack: { flex: 1, backgroundColor: 'rgba(255,255,255,0.13)', overflow: 'hidden', position: 'relative' },
+  seatFill: { position: 'absolute', left: 0, top: 0, bottom: 0, overflow: 'hidden' },
+  seatPct: { color: 'rgba(255,255,255,0.85)', fontWeight: '800', textAlign: 'right', fontVariant: ['tabular-nums'] },
+  seatPctSelf: { color: '#FFFFFF', fontWeight: '900' },
+  leadTag: { color: 'rgba(255,255,255,0.6)', fontWeight: '800', letterSpacing: 0.5, textAlign: 'right' },
+
   chip: { alignSelf: 'center', marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
   chipText: { color: '#FFFFFF', fontWeight: '800', fontVariant: ['tabular-nums'] },
 });

@@ -33,7 +33,7 @@ import { HandBadge } from './HandBadge';
 import { HAND_RANK, BIG_HANDS } from '../utils/handColors';
 import EquityBar from './EquityBar';
 import OutsRow from './OutsRow';
-import { computeExactEquity, computeOuts, sortOuts, EquitySplit, OutsResult } from '../utils/revealEquity';
+import { computeSeatEquity, computeOuts, sortOuts, SeatEquity, OutsResult } from '../utils/revealEquity';
 import { afterPaint } from '../utils/afterPaint';
 
 let Haptics: any = null;
@@ -56,6 +56,13 @@ interface RevealBoard {
   playerBestCards?: Card[];
   botBestCards?: Card[];
 }
+
+// BY1 — skeleton seats for the pending state. Module scope so its identity is stable: a
+// fresh array each render would remount the rows and restart their animations.
+const PENDING_SEATS = [
+  { seat: 0, isSelf: true, pct: 50, raw: 0.5 },
+  { seat: 1, isSelf: false, pct: 50, raw: 0.5 },
+];
 
 const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
   fast: 0.4,
@@ -135,7 +142,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   // before the bar has to render anything. Boards 1..N start when the PREVIOUS board takes
   // focus, so each gets the full 8s slot to do a 0.13s job. Until a board resolves its bar
   // shows a skeleton and never a wrong number.
-  type BoardCalc = { flop: EquitySplit; turn: EquitySplit; outsFlop: OutsResult; outsTurn: OutsResult };
+  // BY2 — THE 500ms GAP. The equity used to switch on `turnFaceDown`, the same flag that
+  // flips the card, so card and numbers moved in ONE render and the measured gap was under a
+  // single 110ms sample. Two events competing for one instant is the opposite of "slower, so
+  // players have time to understand". This is the equity's OWN clock: the card lands alone at
+  // t(2600), the player registers WHAT happened, and at t(3100) the numbers say what it MEANT.
+  const [showTurnEquity, setShowTurnEquity] = useState(false);
+
+  type BoardCalc = { flop: SeatEquity[]; turn: SeatEquity[]; outsFlop: OutsResult; outsTurn: OutsResult };
   const [calcs, setCalcs] = useState<Record<number, BoardCalc>>({});
   const calcStarted = useRef<Set<number>>(new Set());
 
@@ -156,8 +170,10 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       const turnCards = allComm.slice(0, 4);
       if (flopCards.length < 3 || turnCards.length < 4) return;
 
-      const flop = computeExactEquity(b.playerCards, bots, flopCards);
-      const turn = computeExactEquity(b.playerCards, bots, turnCards);
+      // BY1 - per seat, not you-vs-field. Same enumeration, more counters: measured
+      // 119/124/128ms at 2/3/4 players against ~127ms for the collapsed pair it replaces.
+      const flop = computeSeatEquity(b.playerCards, bots, flopCards);
+      const turn = computeSeatEquity(b.playerCards, bots, turnCards);
       const outsFlop = computeOuts(b.playerCards, bots, flopCards);
       const outsTurn = computeOuts(b.playerCards, bots, turnCards, outsFlop.outs);
       setCalcs((prev) => (prev[idx] ? prev : { ...prev, [idx]: { flop, turn, outsFlop, outsTurn } }));
@@ -263,6 +279,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setFlopFaceDown(false);
     setTurnFaceDown(false);
     setRiverFaceDown(false);
+    // BY2 - skip jumps to the END state, so the equity must land on the TURN figure too.
+    // Left false, a skipped board would show the flop percentage beside a finished river.
+    setShowTurnEquity(true);
     boardOpacity.setValue(1);
     // S86: botFaceDown is always [false,false,false,false] — no setter needed
     setShowHandNames(true);
@@ -304,6 +323,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setFlopFaceDown(true);
     setTurnFaceDown(true);
     setRiverFaceDown(true);
+    setShowTurnEquity(false);
     // S86: bot cards NEVER reset to face-down — they're always visible in BoardReveal
     setShowHandNames(false);
     setShowResult(false);
@@ -349,7 +369,13 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       setTurnFaceDown(false);
       playSound('turnReveal');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
-    }, t(1600)));
+    }, t(2600)));
+
+    // BY2 — t(3100). The card landed alone 500ms ago; NOW the numbers react. A separate
+    // timer, deliberately not `turnFaceDown`, so the two can never collapse into one render.
+    timers.current.push(setTimeout(() => {
+      setShowTurnEquity(true);
+    }, t(3100)));
 
     // t(2800) — River SQUEEZE: scaleY 1→0.08→1 (dramatic peel before flip)
     timers.current.push(setTimeout(() => {
@@ -363,21 +389,21 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       ]);
       anims.current.push(squeezeAnim);
       squeezeAnim.start();
-    }, t(2800)));
+    }, t(4800)));
 
     // t(3000) — fade out hint
     timers.current.push(setTimeout(() => {
       const a = AnimatedRN.timing(hintOpacity, { toValue: 0, duration: t(400), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(3000)));
+    }, t(5000)));
 
     // t(3300) — River FLIP reveal (after squeeze completes)
     timers.current.push(setTimeout(() => {
       setRiverFaceDown(false);
       playSound('riverReveal');
       Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
-    }, t(3300)));
+    }, t(5300)));
 
     // t(3600) — show hand names + win highlight (gold glow on winning cards)
     timers.current.push(setTimeout(() => {
@@ -386,7 +412,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       const a = AnimatedRN.timing(handNameOpacity, { toValue: 1, duration: t(300), useNativeDriver: true });
       anims.current.push(a);
       a.start();
-    }, t(3600)));
+    }, t(5600)));
 
     // t(3700) — community spotlight: dim non-highlighted cards
     timers.current.push(setTimeout(() => {
@@ -423,7 +449,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           a.start();
         }
       });
-    }, t(3700)));
+    }, t(5700)));
 
     // t(4100) — show win/lose result (scale in) + chip counter animation
     timers.current.push(setTimeout(() => {
@@ -474,7 +500,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           flashAnim.start(() => setShowCompleteFlash(false));
         }, 300);
       }
-    }, t(4100)));
+    }, t(6100)));
 
     // VAMOS-FIX-PREREPORT-DELAY 2026-06-17 — the LAST board's auto-advance
     // used to fire at t(14000) like every other board, leaving ~9.9s of
@@ -491,17 +517,27 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     // SECONDS behind a depleting progress bar with nothing changing on screen. The June comment
     // above already named this and fixed it for the LAST board only.
     //
-    // 8000 chosen, not an adjacent value:
-    //   - it is the per-board budget in REVEAL-SEQUENCE-SPEC.md, so Phase 2's equity/outs beats
-    //     drop into a slot that already exists rather than re-timing the sequence twice;
-    //   - it leaves 3.9s to read the result — ~2.6x the 1.5s the LAST board has always had, which
-    //     is the only dwell anyone has actually validated;
-    //   - 6000 would leave 1.9s, below that validated dwell on the boards that also carry a
-    //     transition; 10000 puts 4 boards at ~36s, past the 25-30s Roye approved.
-    // Totals: 2 boards 13.6s · 3 boards 21.6s · 4 boards 29.6s (was 19.6 / 33.6 / 47.6).
+    // Phase 1 landed on 8000 and it measured 13.8s / 29.8s live.
+    //
+    // BY3 PHASE 3 — 10000. This is NOT Phase 1 in reverse. Phase 1 deleted 3.9s of a
+    // depleting bar with nothing to want; Phase 3 buys 2.0s that are all OCCUPIED. Roye:
+    // "יותר לאט כדי שיספיקו להבין... זה הרגע הכי מותח... אז שיהיה מותח". Slower and more
+    // suspenseful only agree when the added time carries something. Where it went:
+    //
+    //   +1.0s  HOLD 1 — equity and outs are already up (~t500). The turn moved 1600 -> 2600,
+    //          so the player waits KNOWING which card decides it. Wanting a specific card is
+    //          what makes a wait suspense rather than a freeze.
+    //   +0.5s  THE GAP — card lands alone at 2600, numbers react at 3100 (BY2). The card
+    //          says WHAT happened; the numbers then say what it MEANT. They used to collide.
+    //   +0.5s  HOLD 2 — river moved 3300 -> 5300. Dead outs strike through and the survivors
+    //          settle: the draw visibly narrowing.
+    //
+    // The result dwell is UNCHANGED at 3.9s (result 6100 -> advance 10000), so nothing added
+    // here is dead time. Last board 7600 — no focus-out, it resolves into /results.
+    // Totals: 2 boards 17.6s · 3 boards 27.6s · 4 boards 37.6s — inside the ~40s ceiling.
     const isLastBoard = currentIdxRef.current === boards.length - 1;
-    const advanceMs = isLastBoard ? t(5600) : t(8000);
-    const progressMs = advanceMs - t(4100);
+    const advanceMs = isLastBoard ? t(7600) : t(10000);
+    const progressMs = advanceMs - t(6100);
 
     // S114: Progress bar — starts with result at t(4100), depletes over remaining time to auto-advance
     timers.current.push(setTimeout(() => {
@@ -513,14 +549,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       });
       anims.current.push(progressAnim);
       progressAnim.start();
-    }, t(4100)));
+    }, t(6100)));
 
     // t(4500) — Board Score Intermission overlay (shows for 1.5s) — skip on last board (no next board to preview)
     if (!isLastBoard) {
       timers.current.push(setTimeout(() => {
         setShowIntermission(true);
         timers.current.push(setTimeout(() => setShowIntermission(false), t(1500)));
-      }, t(4500)));
+      }, t(6500)));
     }
 
     // FloatingChips — 800ms after result reveal
@@ -529,9 +565,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       if (b && b.potAmount > 0 && b.winner !== 'tie') {
         setShowChipsAnim(true);
       }
-    }, t(4900)));
+    }, t(6900)));
 
-    // Auto-advance — 8s for normal boards, ~5.6s for the last board (see comment above)
+    // Auto-advance — 10s for normal boards, ~7.6s for the last board (see comment above)
     timers.current.push(setTimeout(doAdvance, advanceMs));
 
     // Show 'Tap to continue' hint after intermission clears — only when there's room before auto-advance
@@ -540,7 +576,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     // glitch. Derived now, so it cannot silently desync from advanceMs again. The floor is
     // intermission-clear (4500 + 1500) — the hint must never be painted under that overlay.
     if (!isLastBoard) {
-      const tapHintMs = Math.max(t(6000), advanceMs - t(2000));
+      // BY3 - floor follows the intermission, which now clears at 6500 + 1500 = 8000.
+      const tapHintMs = Math.max(t(8000), advanceMs - t(2000));
       timers.current.push(setTimeout(() => { setShowTapHint(true); }, tapHintMs));
     }
 
@@ -782,9 +819,13 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 <EquityBar
                   screenW={screenW}
                   pending={!calcs[currentIdx]}
-                  selfPct={calcs[currentIdx] ? (turnFaceDown ? calcs[currentIdx].flop.selfPct : calcs[currentIdx].turn.selfPct) : 50}
-                  oppPct={calcs[currentIdx] ? (turnFaceDown ? calcs[currentIdx].flop.oppPct : calcs[currentIdx].turn.oppPct) : 50}
-                  prevSelfPct={!turnFaceDown && calcs[currentIdx] ? calcs[currentIdx].flop.selfPct : null}
+                  seats={calcs[currentIdx]
+                    ? (showTurnEquity ? calcs[currentIdx].turn : calcs[currentIdx].flop)
+                    : PENDING_SEATS}
+                  prevSelfPct={showTurnEquity && calcs[currentIdx]
+                    ? (calcs[currentIdx].flop.find((x) => x.isSelf)?.pct ?? null)
+                    : null}
+                  seatLabel={(seat) => (seat === 0 ? 'YOU' : `${t().bot} ${seat}`)}
                 />
                 {calcs[currentIdx] && (
                   <View style={styles.outsWrap}>
@@ -792,9 +833,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                       screenW={screenW}
                       cardWidth={handCardW}
                       cardHeight={handCardH}
-                      mode={(turnFaceDown ? calcs[currentIdx].outsFlop : calcs[currentIdx].outsTurn).mode}
-                      outs={sortOuts((turnFaceDown ? calcs[currentIdx].outsFlop : calcs[currentIdx].outsTurn).outs)}
-                      dead={turnFaceDown ? [] : sortOuts(calcs[currentIdx].outsTurn.dead)}
+                      mode={(showTurnEquity ? calcs[currentIdx].outsTurn : calcs[currentIdx].outsFlop).mode}
+                      outs={sortOuts((showTurnEquity ? calcs[currentIdx].outsTurn : calcs[currentIdx].outsFlop).outs)}
+                      dead={showTurnEquity ? sortOuts(calcs[currentIdx].outsTurn.dead) : []}
                     />
                   </View>
                 )}

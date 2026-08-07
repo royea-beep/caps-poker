@@ -77,6 +77,84 @@ function remainingDeck(known: Card[]): Card[] {
   return out;
 }
 
+export interface SeatEquity {
+  /** 0 = the player, 1..N = bots in `botHands` order. */
+  seat: number;
+  isSelf: boolean;
+  /** Integer 0-100. The array is guaranteed to sum to exactly 100 — see largestRemainder. */
+  pct: number;
+  /** Unrounded share, kept so ordering never flips between two seats that round the same. */
+  raw: number;
+}
+
+/**
+ * BY1 — per-seat equity. Roye: "מספר נפרד לכל יריב".
+ *
+ * Same enumeration as computeExactEquity, more counters. Every combination awards exactly
+ * ONE point, split equally among the seats tied for the best hand — so a 3-way board where
+ * two seats chop gives each of them 0.5 for that runout. Because each combination
+ * distributes 1.0 and nothing else, the raw shares sum to 1 by construction and the
+ * displayed integers are forced to 100 by largest-remainder rounding. There is no case
+ * where four figures add up to 99 or 101 on screen.
+ */
+export function computeSeatEquity(
+  playerCards: Card[],
+  botHands: Card[][],
+  community: Card[],
+): SeatEquity[] {
+  const live = botHands.filter((b) => b.length >= 2);
+  const hands = [playerCards, ...live];
+  if (playerCards.length < 2 || live.length === 0) {
+    return [{ seat: 0, isSelf: true, pct: 100, raw: 1 }];
+  }
+
+  const deck = remainingDeck([...playerCards, ...live.flat(), ...community]);
+  const need = 5 - community.length;
+  const score = new Array<number>(hands.length);
+  const points = new Array<number>(hands.length).fill(0);
+  let combos = 0;
+
+  const award = (board: Card[]) => {
+    let best = -Infinity;
+    for (let h = 0; h < hands.length; h++) {
+      const s = evaluateOmahaHand(hands[h], board).score;
+      score[h] = s;
+      if (s > best) best = s;
+    }
+    let tied = 0;
+    for (let h = 0; h < hands.length; h++) if (score[h] === best) tied++;
+    const share = 1 / tied;
+    for (let h = 0; h < hands.length; h++) if (score[h] === best) points[h] += share;
+    combos++;
+  };
+
+  if (need <= 0) {
+    award(community);
+  } else if (need === 1) {
+    for (let i = 0; i < deck.length; i++) award([...community, deck[i]]);
+  } else {
+    for (let i = 0; i < deck.length; i++)
+      for (let j = i + 1; j < deck.length; j++) award([...community, deck[i], deck[j]]);
+  }
+
+  const raws = points.map((p) => (combos === 0 ? 0 : p / combos));
+  const pcts = largestRemainder(raws);
+  return raws.map((raw, i) => ({ seat: i, isSelf: i === 0, pct: pcts[i], raw }));
+}
+
+/** Round shares to integers that sum to exactly 100. Plain rounding does not guarantee that. */
+function largestRemainder(raws: number[]): number[] {
+  const scaled = raws.map((r) => r * 100);
+  const floors = scaled.map(Math.floor);
+  let deficit = 100 - floors.reduce((a, b) => a + b, 0);
+  const order = scaled
+    .map((s, i) => ({ i, frac: s - Math.floor(s) }))
+    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  const out = floors.slice();
+  for (let k = 0; k < order.length && deficit > 0; k++, deficit--) out[order[k].i]++;
+  return out;
+}
+
 /** > 0 player ahead, 0 tie, < 0 behind. */
 function compareAtBoard(playerCards: Card[], botHands: Card[][], board: Card[]): number {
   const p = evaluateOmahaHand(playerCards, board).score;
