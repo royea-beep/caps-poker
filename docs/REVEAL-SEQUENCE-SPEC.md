@@ -239,6 +239,69 @@ result.** A 30-second sequence on the twentieth hand must have a one-gesture exi
 
 ---
 
+# BP3 — THE NON-COLOUR CHANNEL (mandatory, not a polish pass)
+
+**Rule for the implementer: every state in this sequence must be readable with hue removed entirely.**
+Colour may reinforce; it may never be the only carrier. This section exists because the default
+implementation of every beat below is colour-only, and a colour-only build would ship a *worse*
+reveal for colourblind players than the one it replaces.
+
+Audit finding that makes this non-negotiable: colourblind mode swaps **green/red → blue/orange**
+(`COLORBLIND_WIN_LOSE`). That is a **hue-for-hue swap with no second channel**. It helps
+deuteranopia and protanopia; it does nothing for tritanopia, total achromatopsia, glare, or a cheap
+screen. Redundant encoding is the only robust answer.
+
+### Who is ahead — three channels, not one
+| Channel | Encoding |
+|---|---|
+| **Position** | The leader's equity figure sits **left**, always. Order is the information. |
+| **Text** | An explicit `LEADING` / `TRAILING` label — 11px, tracked — under each seat's figure. |
+| **Length** | Bar segment length. Already non-hue by nature. |
+| *(Colour)* | *Reinforces only.* |
+
+### The equity bar — the classic failure, and the fix
+Two hues side by side is exactly the case that dies without colour. Required:
+- **A numeric label on each side, inside or adjacent to its own segment** (`34%` / `66%`). The
+  numbers, not the fill, are the primary read.
+- **A 2px high-contrast divider** at the split point, so the boundary is visible when both segments
+  render as the same grey.
+- **Different fill treatment per side** — the player's segment solid, the opponents' segment a
+  45° hatch at 30% opacity. Texture survives hue removal and greyscale printing.
+- Never encode a third seat by hue alone; at 3–4 players use stacked labelled rows, not a
+  three-colour bar.
+
+### The delta chip — `▲` / `▼` is mandatory
+`+18%` in green and `−22%` in red are **the same chip** to a colourblind player at a glance. The
+sign character is small and easily missed at 12px. Required: a **▲ / ▼ glyph** leading the number,
+and the chip **rises 12px on a gain, falls 12px on a loss** — direction of motion is itself a
+channel, and it is free because the chip is already animating.
+
+### Dead outs — fade+shrink alone is **not** sufficient
+The spec fades dead outs to low opacity and shrinks them. That is a genuine non-hue channel and it
+is *nearly* enough — but "dimmed" and "small" also describe a card that is simply further away, and
+at 60% scale in a fanned row the difference is subtle. **Add a strikethrough rule across the dead
+card** (1.5px, high contrast, corner to corner). Unambiguous, hue-free, and it reads instantly as
+"this one is gone".
+
+### Winner resolution
+Already partly solved and worth keeping: the winning five take `scale 1.06` and hold while losing
+hands **desaturate** — desaturation is a hue-free channel by definition. Add the hand name in
+**22px semibold** adjacent to the winning cards, so the outcome is stated in words at the moment it
+is shown in cards.
+
+### What this also helps
+- **A5 / colourblind mode generally** — the reveal stops depending on the palette swap being correct.
+- **Panel B-2 (opponent names at 7px)** — the `LEADING`/`TRAILING` labels and the 13px name floor
+  land in the same pass.
+- **The type-hierarchy inversion** — numerals and hand names become the largest marks in the reveal,
+  displacing the 45px decorative suit glyph.
+- **Requirement 1, "easier and faster to understand"** — every one of these additions is a
+  comprehension aid first and an accessibility feature second. `LEADING`, a labelled percentage and a
+  ▲ are faster to read for *everyone*, which is the argument for doing it in the default rather than
+  behind the toggle.
+
+---
+
 # OPEN QUESTIONS FOR ROYE
 
 1. **Whose outs on a 3–4 player board?** Yours only (clear, but hides the story), or every seat's

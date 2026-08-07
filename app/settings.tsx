@@ -547,7 +547,14 @@ function ColorblindToggle() {
     <View style={styles.row}>
       <View style={styles.rowLeft}>
         <Text style={styles.rowLabel}>Colorblind Mode</Text>
-        <Text style={styles.rowHint}>{colorblindMode ? 'Blue = Win, Orange = Lose' : 'Green = Win, Red = Lose'}</Text>
+        {/* A5 — filed as "the subtitle says Green = Win, Red = Lose on the toggle that REPLACES
+            green and red". The string was NOT wrong: it is a live status line and it already
+            switched to Blue/Orange when the mode was on. But sitting unlabelled under "Colorblind
+            Mode" it reads as a description of what the toggle DOES rather than of what is active
+            now — which is exactly how it came to be filed as a contradiction. The colours are
+            correct; only the framing was ambiguous, so this adds the missing frame rather than
+            changing the mapping. */}
+        <Text style={styles.rowHint}>{colorblindMode ? 'Now: Blue = Win, Orange = Lose' : 'Now: Green = Win, Red = Lose'}</Text>
       </View>
       <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Colorblind mode">
         <Pressable
@@ -1128,7 +1135,13 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle} accessibilityRole="header">DANGER ZONE</Text>
+        {/* B7 — this header inherited styles.sectionTitle, whose colour is COLORS.mint, so the
+            one header that must read as a warning was rendering in the same calm mint as every
+            other section heading (measured live: rgb(79,214,168)) directly above a destructive
+            control. Colour was carrying a meaning that contradicted the words. Overridden to the
+            #C62828 already used by the Reset All Progress control below it, so the warning and the
+            action it guards now speak with one voice. */}
+        <Text style={[styles.sectionTitle, { color: '#C62828' }]} accessibilityRole="header">DANGER ZONE</Text>
         <ResetProgressButton />
 
         <Text style={styles.sectionTitle} accessibilityRole="header">CREDITS</Text>

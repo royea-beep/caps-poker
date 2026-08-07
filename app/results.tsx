@@ -22,6 +22,7 @@ import { getTheme } from '../constants/visualThemes';
 import { CardsDealtPayload } from '../constants/networkConfig';
 import { submitScore } from '../utils/leaderboard';
 import { WEB_MAX_WIDTH } from '../components/WebContainer';
+import { useGameColors } from '../utils/useGameColors';
 import { WAITING_STATE_TIMEOUT_MS } from '../utils/realtimeMultiplayer';
 import { getMatchCost, canAffordMatch } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
@@ -95,6 +96,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const SCREEN_W = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
+  // A5 AUDIT — colorblind mode had only THREE consumers (Board, BoardReveal, HandNameOverlay) and
+  // this screen — the one that actually announces the outcome — was not among them. The headline,
+  // the score pair and the per-board marks were hardcoded green/red, so a player who switched the
+  // mode on still met green/red at the moment the result is delivered. The palette swap reaches
+  // here now.
+  const gameColors = useGameColors();
   const chips = useGameStore((s) => s.chips);
   const practiceSessionNet = useGameStore((s) => s.practiceSessionNet);
   const config = useGameStore((s) => s.config);
@@ -853,7 +860,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           {/* Title + score */}
           <View style={styles.titleSection}>
-            <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? COLORS.neonGreen : playerWins < botWins ? COLORS.neonRed : COLORS.mint }]}>
+            <Text accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? gameColors.win : playerWins < botWins ? gameColors.lose : COLORS.mint }]}>
               {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
             </Text>
             {revealData.isPractice && (
@@ -866,9 +873,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               </View>
             )}
             <Text style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
-              <Text style={{ color: COLORS.neonGreen }}>{playerWins}</Text>
+              <Text style={{ color: gameColors.win }}>{playerWins}</Text>
               <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
-              <Text style={{ color: COLORS.neonRed }}>{botWins}</Text>
+              <Text style={{ color: gameColors.lose }}>{botWins}</Text>
             </Text>
             {playerWins === botWins && netChips > 0 && !revealData.isPractice && (
               <Text style={styles.tieBonusText}>
@@ -1150,7 +1157,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                   <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${pHand}${bHand ? ` vs ${bHand}` : ''}${revealData.isPractice ? '' : `, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}`}>
                     <View style={styles.breakdownLeft}>
                       <Text style={styles.breakdownNum}>Board {i + 1}</Text>
-                      <Text style={[styles.breakdownIcon, { color: playerWon ? '#4CAF50' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
+                      <Text style={[styles.breakdownIcon, { color: playerWon ? gameColors.win : board.winner === 'tie' ? '#aaa' : gameColors.lose }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
                         {playerWon ? '✓' : board.winner === 'tie' ? '=' : '✗'}
                       </Text>
                     </View>
@@ -1164,7 +1171,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                         big-card view, is what actually renders here by default; practice never
                         moves real chips, so the ± delta was misleading, not just noise. */}
                     {!revealData.isPractice && (
-                      <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : '#ef5350' }]} accessibilityLabel={board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}>
+                      <Text style={[styles.breakdownChips, { color: playerWon ? '#c9a84c' : board.winner === 'tie' ? '#aaa' : gameColors.lose }]} accessibilityLabel={board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}>
                         {board.winner === 'tie' ? '±0🪙' : `${playerWon ? '+' : ''}${chipChange}🪙`}
                       </Text>
                     )}
