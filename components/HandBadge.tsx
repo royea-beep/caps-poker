@@ -20,7 +20,10 @@ export function HandBadge({ handName, size = 'normal' }: { handName: string; siz
   // 10 -> 13 (identity floor, and the minimum this app should render anywhere). `size="small"`
   // is the OPPONENT badge, which is exactly the text that was hardest to read.
   //
-  // In-component (not module-scope), so this is the reactive `rf()` path on web.
+  // ⚠️ NOT reactive, despite being in-component. `rf(16)` is called without a `screenW`
+  // argument, so it falls back to the module-level SCREEN_W, which is frozen at 393 on web.
+  // Being inside the component body is not what makes `rf()` reactive — passing screenW is.
+  // Measured: identical 16px/13px at both 375 and 393, which is the proof.
   const fontSize = size === 'small' ? rf(13) : rf(16);
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
