@@ -37,13 +37,30 @@
  * on native evidence.
  */
 
-import { Platform } from 'react-native';
-
 /**
- * Phase 4 web re-enable. `false` = NOT killed, so the animation runs.
- * Web: the five finite gates run. Native: still killed, pending device evidence.
+ * PHASE 4 RESULT — INCONCLUSIVE, AND THEREFORE REVERTED TO KILLED.
+ *
+ * The web re-enable was shipped and measured on live (bundle
+ * index-04a1ace7e92747c56ba17485765a1b31). With `KILL_Board` false on web, the empty slot's
+ * opacity was sampled 23 times over 2.3s at 375 with the placement screen up: it read exactly
+ * 0.600 every time and never moved. The pulse did NOT come back.
+ *
+ * 0.6 is ambiguous by construction - it is BOTH the `else`-branch resting value AND the
+ * `useSharedValue(0.6)` initial - so three explanations survive and none was eliminated:
+ *   1. `isArrangement` was false at sample time (it IS passed, as isArranging),
+ *   2. Reanimated's withRepeat never started on web,
+ *   3. Reanimated drives it somewhere `getComputedStyle` does not observe.
+ *
+ * So the flag is back to killed. An unverified animation re-enable, shipped before a tester
+ * round, on a machine that cannot run a compiler twice, is the sequencing this whole switch
+ * exists to avoid - and "I could not observe it" is not "it is safe".
+ *
+ * WHAT THE NEXT ATTEMPT NEEDS: an instrument that can see Reanimated's applied value on web
+ * (or a device), and a way to distinguish the three cases above BEFORE flipping anything.
+ * Setting the useSharedValue initial to a distinctive number would separate case 1 from 2/3
+ * in a single measurement.
  */
-const KILL_FINITE_ON_THIS_PLATFORM = Platform.OS !== 'web';
+const KILL_FINITE_ON_THIS_PLATFORM = true; // was `Platform.OS !== 'web'` — see above, reverted
 
 /** TimerController — countdown scale pulse (1 → 1.12, withRepeat 100) and the final-3s opacity flash (withRepeat 20). */
 export const KILL_game = KILL_FINITE_ON_THIS_PLATFORM;
