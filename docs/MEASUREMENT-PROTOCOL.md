@@ -395,3 +395,46 @@ opposite-sounding conclusions from readings that were the instrument all along.
 
 Animation verification needs a **visible browser or a real device**. There is no way around
 this from here, and pretending otherwise has already cost two sprints of misdirected work.
+
+---
+
+## Rule 14a — THE PREAMBLE FOR ANIMATION WORK, and the tool that runs it
+
+Rule 14 said animation is unmeasurable from the in-app pane. That is still true **of that
+pane**. The fix is a **headed** browser, and the check is now automated.
+
+**`tests/animation-probe.mjs`** — launches Playwright **headed** (full `chromium-1228`, not the
+`chromium_headless_shell`, which cannot run headed at all) and **refuses to measure until the
+precondition passes**:
+
+```
+document.hidden === false   AND   rAF callbacks > 0 over a 2s window
+```
+
+Run: `node tests/animation-probe.mjs [width] [height]`. Writes `animation-probe-result.json`.
+
+**First run, 2026-08-07, 393×852:**
+
+| | in-app pane | headed probe |
+|---|---|---|
+| `document.hidden` | **true** | **false** |
+| rAF in 2s | **0** | **61** |
+| elements moving | 0 of 220 | **16 of 300** |
+
+**Reanimated works on web.** The particles animate via **transform**, not opacity — their
+opacity is a constant `0.045` while the element reports 40 distinct states across 40 frames.
+Any probe sampling opacity alone would have called them static, which is a second reason the
+old readings were wrong.
+
+### Frame measurement is now possible — with one calibration caveat
+
+`frameStats()` reports 119 frames, **median 33.3ms, max 34.0ms, over-50ms: 0**. That is a
+steady **~30fps**, not a stutter: the spread between median and max is 0.7ms. The `over32ms`
+counter reads 119/119 because it was written for a 60fps budget — **at a 30fps cap it flags
+every frame and means nothing**. Judge dropped frames by the *spread* against the local
+cadence, not against a hardcoded 32ms. Recalibrate the threshold before using it as a gate.
+
+### Also settable exactly
+
+`innerWidth 393 / innerHeight 852 / devicePixelRatio 1.0` — the headed context honours the
+requested viewport exactly, so every measurement held at 375 and 393 remains comparable.
