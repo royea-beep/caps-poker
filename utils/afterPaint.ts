@@ -35,8 +35,13 @@ export function afterPaint(fn: () => void): Cancel {
   };
 
   if (typeof w.requestIdleCallback === 'function') {
-    // timeout caps the wait so a busy thread cannot starve the work indefinitely.
-    const id = w.requestIdleCallback(fn, { timeout: 400 });
+    // Timeout caps the wait so a busy thread cannot starve the work indefinitely.
+    // MEASURED: at 400ms the first board's percentage landed at 1292ms on live - the bar
+    // sat on its skeleton for 1.3s, well past the t(350) wipe-in the spec asks for. The
+    // enumeration itself is only ~130ms, so the wait was almost entirely this timeout.
+    // 120ms puts the number up around t(250), inside the wipe-in, and still yields to any
+    // genuinely busy frame first.
+    const id = w.requestIdleCallback(fn, { timeout: 120 });
     return () => w.cancelIdleCallback?.(id);
   }
 
