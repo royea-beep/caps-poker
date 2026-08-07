@@ -198,3 +198,45 @@ intention.**
 The landscape block and its 67-line `landscapeStyles` sheet were deleted in BX1 — 215 lines
 removed. `multiplayer-game.tsx` was swept the same way and has **no** landscape branch and
 no twins; it did not inherit this.
+
+---
+
+## Rule 10 — know what your instrument cannot see (BX3, 2026-08-07)
+
+Two frame-timing methods were tried and **both returned nothing**, for reasons that are
+properties of the harness, not of the app:
+
+| Method | Result | Why |
+|---|---|---|
+| `requestAnimationFrame` deltas | `n: 0` after 32s | rAF is **suspended** in a hidden browser pane — no compositing, no callbacks |
+| `PerformanceObserver({entryTypes:['longtask']})` | registered, **0 entries** even for a deliberate 120ms main-thread burn | not delivered in this pane either |
+
+So **frame-drop verification is not possible from the in-app pane while it is hidden.**
+Saying "no frames dropped" on the strength of a counter that never incremented would be the
+same error as the geometry probe that reported the reveal was static. What was measured
+instead is the underlying risk — main-thread work per board, timed against the real code:
+**127 / 150 / 133ms** at 2/3/4 players, run off the paint path. Frame verification needs a
+visible browser or a real device.
+
+Two further harness facts, both of which corrupted a run before being identified:
+
+- **Background tabs throttle `setInterval` to ~1Hz.** A recorder sampling at 140ms returned a
+  single sample in 15s. Front the tab (`tabs_select`) before timing anything.
+- **Querying the DOM during an active reveal wedges the hidden renderer.** Every direct probe
+  mid-animation timed out at 30s. The pattern that works: install an interval recorder that
+  writes to a global, let the sequence finish, then read the global in one call.
+
+## Rule 11 — a field name is a claim, and claims get checked
+
+`BoardReveal` receives `openCards` and `closedCards`. "Open" was read as "the community
+cards that are open" — i.e. all five. It is **the flop only**; turn and river are in
+`closedCards`, which is why lines 389 and 590 of that same file both build the community as
+`[...openCards, ...closedCards]`.
+
+Slicing `openCards` for the turn silently produced a **three-card** turn, so turn equity came
+out identical to flop equity on every board, the displayed number never moved, and the delta
+chip was unreachable by construction. The code read as correct. What exposed it was the live
+timeline showing one value per board where two were expected.
+
+**Check what a field contains before slicing it — and prefer the derivation the file already
+uses over the one the name suggests.**
