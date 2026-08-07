@@ -57,9 +57,32 @@ interface Props {
   railColor?: string;
 }
 
+/**
+ * Lift a hex colour toward white by `amount` (0-1). Used to derive the table top from the
+ * ambient felt rather than inventing a second palette.
+ */
+function lift(hex: string, amount: number): string {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const mix = (v: number) => Math.round(v + (255 - v) * amount);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
 export function BoardSurface({ children, visualTheme, screenW, railColor }: Props) {
-  const felt = FELT_GRADIENT[(visualTheme ?? 'classic') as 'classic' | 'fiveo' | 'streetStencil']
+  const base = FELT_GRADIENT[(visualTheme ?? 'classic') as 'classic' | 'fiveo' | 'streetStencil']
     ?? FELT_GRADIENT.classic;
+
+  // MEASURED FIX. The first build reused FELT_GRADIENT unchanged — and the root felt behind
+  // this surface IS that same gradient, so the table top and its surround came out at identical
+  // luminance (0.0170 / 0.0142 on both sides). An inset with no value step is not a table; it
+  // is a rectangle you can only find by its 2px rail, and in greyscale it disappears entirely.
+  //
+  // The table top is now LIFTED off the ambient felt. A real table catches more light than the
+  // room around it, so this is the physically honest direction as well as the legible one. The
+  // lift is small and derived from the theme's own felt, so no second palette is introduced and
+  // every theme stays internally consistent.
+  const felt: readonly [string, string] = [lift(base[0], 0.10), lift(base[1], 0.055)];
 
   // The inset IS the design. At 375 with four boards this is the tightest case in the app, so
   // the margin is deliberately small — enough to show that the surface ends, not enough to cost
