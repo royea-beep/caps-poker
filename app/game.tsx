@@ -151,7 +151,13 @@ function GameScreenInner() {
   const handSortMethod = useGameStore((s) => s.handSortMethod);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const theme = getTheme(visualTheme);
-  const isLandscape = false; // S86: portrait-only — Iron Rule 2
+  // S86/BX1: portrait-only (Iron Rule 2). `const isLandscape = false` used to gate a 148-line
+  // landscape <SafeAreaView> return here. Because the gate was a hardcoded false, Metro
+  // constant-folded the whole branch OUT OF THE BUNDLE - so it was not merely unreachable,
+  // it did not exist at runtime. That is what made a testID added inside it resolve to
+  // NOTHING while looking correct in source (BW1). Block and its landscapeStyles sheet
+  // deleted 2026-08-07. If landscape ever returns, build it fresh - do not resurrect a
+  // branch no one has rendered or tested since S86.
   const addChips = useGameStore((s) => s.addChips);
   // PRACTICE-TO-LIVE — session demo counter (separate from real chips).
   const practiceSessionNet = useGameStore((s) => s.practiceSessionNet);
@@ -1160,154 +1166,6 @@ function GameScreenInner() {
   const TIMER_SIZE = timerPulsing ? rv(64) : rv(52);
 
   // ÂÂ Landscape / widescreen layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
-  if (isLandscape) {
-    return (
-      <SafeAreaView style={[styles.container, landscapeStyles.root, { backgroundColor: theme.background }, Platform.OS === 'web' && visualTheme === 'fiveo' && { background: 'radial-gradient(ellipse at 50% 40%, #5A1520 0%, #161922 70%)' } as any]}>
-        <FriendsBg />
-        {/* watermark removed from game screen */}
-        {/* LEFT — Your hand */}
-        <View style={[landscapeStyles.leftPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
-          <View style={landscapeStyles.panelTitleRow}>
-            <Text style={landscapeStyles.panelAvatarText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{playerAvatar}</Text>
-            <Text style={landscapeStyles.panelTitle} accessibilityRole="header">{playerDisplayName.toUpperCase()}</Text>
-          </View>
-          {isArranging && (
-            <PlayerHand
-              cards={playerHand}
-              selectedCardIds={selectedCardIds}
-              onSelectCard={handleSelectCard}
-            />
-          )}
-          {isArranging && (boardError || selectedCardIds.length > 0) && (
-            <Text style={boardError ? styles.boardErrorText : styles.selectionHint} accessibilityLiveRegion={boardError ? 'assertive' : 'polite'}>
-              {boardError
-                ? boardError
-                : `${selectedCardIds.length} selected`}
-            </Text>
-          )}
-          {isArranging && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Undo last card placement"
-              accessibilityState={{ disabled: boards.every((b) => b.playerCards.length === 0) }}
-              style={[styles.floatingBtn, styles.undoBtn, { marginTop: 8 }]}
-              onPress={() => {
-                for (let i = boards.length - 1; i >= 0; i--) {
-                  if (boards[i].playerCards.length > 0) {
-                    const last = boards[i].playerCards[boards[i].playerCards.length - 1];
-                    handleRemoveCardFromBoard(i, last);
-                    break;
-                  }
-                }
-              }}
-              disabled={boards.every((b) => b.playerCards.length === 0)}
-            >
-              <Text style={[styles.floatingBtnText, boards.every((b) => b.playerCards.length === 0) && styles.floatingBtnDisabled]}>{t().undo}</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* CENTER — boards grid */}
-        <View style={landscapeStyles.centerPanel}>
-          {/* Mini top bar */}
-          <View style={styles.topBar}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Leave game" onPress={handleBack} style={[styles.backButton, { minHeight: 44, minWidth: 44 }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.backText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">{'\u2715'}</Text>
-            </Pressable>
-            <View style={styles.topCenter}>
-              {countdownActive && isArranging && (
-                <TimerController countdown={countdown} total={COUNTDOWN_SECONDS} isActive={countdownActive && isArranging} firstFinisher={firstFinisher} timerSize={timerPulsing ? 54 : 44} timerColor={timerColor} timerPulsing={timerPulsing} />
-              )}
-              {!countdownActive && isArranging && (
-                <Text style={styles.freePlayLabel}>Arrange freely</Text>
-              )}
-              {playerReady && !allBotsReady && (
-                <Text style={styles.waitingText} accessibilityLiveRegion="polite">{t().waitingForBots(numberOfBots)}</Text>
-              )}
-            </View>
-            <View style={styles.headerChips}>
-              <Text style={styles.headerChipsEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰</Text>
-              <Text style={styles.headerChipsAmount}>{(chips ?? 0).toLocaleString()}</Text>
-            </View>
-          </View>
-
-          {/* Boards — 2 columns */}
-          <View style={[landscapeStyles.boardsGrid]}>
-            {(boards ?? []).map((board, i) => (
-              <Animated.View key={i} style={[landscapeStyles.boardCell, boardShakeStyles[i]]}>
-                <Board
-                  index={i}
-                  openCards={board.openCards}
-                  closedCards={board.closedCards}
-                  playerCards={board.playerCards}
-                  botCards={board.allBotCards[0] || board.botCards}
-                  allBotCards={board.allBotCards}
-                  revealed={false}
-                  active={false}
-                  potAmount={config.potPerBoard * numberOfPlayers}
-                  onPress={() => handleBoardPress(i)}
-                  onRemoveCard={(card) => handleRemoveCardFromBoard(i, card)}
-                  onAutoFill={() => handleAutoFill(i)}
-                  isArrangement={isArranging}
-                  selected={isArranging && cardsRemaining > 0 && board.playerCards.length < CARDS_PER_BOARD}
-                  cardHeight={BOARD_CARD_H}
-                  communityScale={communityScale}
-                />
-              </Animated.View>
-            ))}
-          </View>
-        </View>
-
-        {/* RIGHT — bot + ready */}
-        <View style={[landscapeStyles.rightPanel, visualTheme === 'fiveo' && { backgroundColor: theme.surface }]}>
-          <Text
-            style={landscapeStyles.panelTitle}
-            accessibilityRole="header"
-            accessibilityLanguage="he"
-            accessibilityLabel={numberOfBots === 1 ? t().botSingular : t().botPlural(readyBotCount, numberOfBots)}
-          >
-            {numberOfBots === 1 ? `🤖 ${t().botSingular}` : t().botEmojiPlural(readyBotCount, numberOfBots)}
-          </Text>
-          <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill, { marginTop: 4 }]} accessibilityLiveRegion="polite">
-            {/* BW1 — DEAD TWIN. This block is in the dead SafeAreaView header; it compiles out
-                entirely (grep of the shipped bundle: 0 occurrences of the anchor I first put
-                here). The pill the user actually sees is the identical block below, ~line 1440.
-                Do not tag this one — a testID here resolves to nothing. */}
-            <Text
-              style={[styles.botStatusText, allBotsReady ? styles.botReadyText : styles.botThinkingText, { textAlign: 'center' }]}
-              accessibilityLabel={allBotsReady ? t().ready : `Bots thinking, ${readyBotCount} of ${numberOfBots} ready`}
-              accessibilityElementsHidden={false}
-              importantForAccessibility="auto"
-            >
-              {allBotsReady ? `✓ ${t().ready}` : '…'}
-            </Text>
-          </View>
-          {isArranging && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={allBoardsFull ? t().a11yReadyReveal : t().a11yPlaceRemaining}
-              accessibilityState={{ disabled: !allBoardsFull }}
-              style={[styles.floatingBtn, styles.placeBtn, !allBoardsFull && styles.placeBtnDisabled, allBoardsFull && styles.placeBtnReady, landscapeStyles.readyBtn]}
-              onPress={handleReady}
-              disabled={!allBoardsFull}
-            >
-              <Text style={[styles.floatingBtnText, styles.placeBtnText]}>
-                {allBoardsFull ? t().ready : t().placeN(cardsRemaining)}
-              </Text>
-            </Pressable>
-          )}
-          {playerReady && allBotsReady && showContinueButton && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Continue to results" style={[styles.continueBtn, { position: 'relative', bottom: 0 }]} onPress={() => doNavigateRef.current(boardsRef.current)}>
-              <Text style={styles.continueBtnText} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined} accessibilityLabel={t().continueArrow.replace(" →", "")}>{t().continueArrow}</Text>
-            </Pressable>
-          )}
-        </View>
-      {showSafeReveal && (
-        <BoardReveal boards={pendingRevealBoards} onDone={onRevealDone} revealSpeed={config.revealSpeed} />
-      )}
-      </SafeAreaView>
-    );
-  }
   // ÂÂ End landscape layout ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   return (
@@ -1834,73 +1692,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const landscapeStyles = StyleSheet.create({
-  root: {
-    flexDirection: 'row',
-  },
-  leftPanel: {
-    width: '22%',
-    paddingHorizontal: rs(8),
-    paddingVertical: rs(8),
-    alignItems: 'center',
-    borderRightWidth: 1,
-    borderRightColor: COLORS.boardBorder,
-    gap: rs(6),
-  },
-  centerPanel: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  boardsGrid: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: rs(6),
-    gap: rs(4),
-  },
-  boardCell: {
-    width: '49%',
-    flex: undefined,
-    minHeight: 120,
-  },
-  rightPanel: {
-    width: '18%',
-    paddingHorizontal: rs(8),
-    paddingVertical: rs(8),
-    alignItems: 'center',
-    borderLeftWidth: 1,
-    borderLeftColor: COLORS.boardBorder,
-    gap: rs(8),
-  },
-  panelTitle: {
-    color: COLORS.gold,
-    fontSize: rf(10),
-    fontWeight: '900',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-  },
-  panelTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: rs(4),
-  },
-  panelAvatarText: {
-    fontSize: rf(14),
-  },
-  panelLvl: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: rf(9),
-    fontWeight: '500',
-  },
-  readyBtn: {
-    marginTop: 'auto' as any,
-    width: '100%',
-    paddingHorizontal: rs(8),
-    alignItems: 'center',
-  },
-});
 
 
 export default function GameScreen() {

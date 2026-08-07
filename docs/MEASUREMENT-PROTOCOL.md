@@ -149,3 +149,52 @@ Once all boards are placed, `ready-button` **changes its own label** from
 `Confirm` to `✓ READY`. At that moment two elements on screen read `✓ READY`:
 the button (16px, 169×52, y=792) and the status chip (10px, 51×13, y=59).
 The earlier "the primary action is 10px" finding was this exact collision.
+
+---
+
+## Rule 7, completed — the MECHANISM, now known (BX1, 2026-08-07)
+
+Rule 7 said an anchor is not real until it is in the shipped bundle, and gave the
+bundle-string count as the check. That was right, but it left *why* open. The cause is
+now identified exactly, and it is worse than "someone edited the wrong copy".
+
+`app/game.tsx:154` read:
+
+```ts
+const isLandscape = false;   // S86: portrait-only — Iron Rule 2
+```
+
+and line 1163 read `if (isLandscape) {` followed by a **148-line** landscape
+`<SafeAreaView>` return. Because the gate is a **hardcoded constant**, Metro constant-folds
+`if (false)` and **eliminates the entire branch from the bundle**. So the block was not
+merely unreachable at runtime — it did not exist in the artifact at all. A `testID` added
+inside it could never resolve, no matter how correct the source looked.
+
+**This is the third dead-render-path incident**, and all three share the hardcoded-gate
+shape:
+
+| # | Site | Gate |
+|---|---|---|
+| 1 | `Board.handName` | `revealed={false}` passed as a literal at both call sites |
+| 2 | `RevealSequence.tsx` | component never imported |
+| 3 | `game.tsx` landscape return | `const isLandscape = false` |
+
+**The check, in order:**
+
+1. `grep` the JSX you are about to edit and confirm there is exactly **one** of it.
+2. Trace the gate to a *variable*, not a literal. A gate that is `false` at the top of the
+   file is a deleted feature wearing a conditional.
+3. After deploy, count the string in the artifact:
+
+```js
+const src = [...document.querySelectorAll('script[src]')].map(s=>s.src).find(s=>s.includes('index-'));
+const txt = await (await fetch(src)).text();
+txt.split('my-test-id').length - 1   // 0 means it never shipped
+```
+
+Source correctness does not imply the element renders. **Test the artifact, not the
+intention.**
+
+The landscape block and its 67-line `landscapeStyles` sheet were deleted in BX1 — 215 lines
+removed. `multiplayer-game.tsx` was swept the same way and has **no** landscape branch and
+no twins; it did not inherit this.
