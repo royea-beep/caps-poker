@@ -43,6 +43,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # BZ1 — TYPECHECK ON CLEAN HARDWARE.
+      # The dev machine has produced 21 tsc attempts across 7 sprints for 7 answers, and one
+      # commit shipped with no verdict at all after four consecutive 0xC0000005 crashes. A
+      # yes/no question should not depend on that machine's RAM.
+      #
+      # DELIBERATELY NON-BLOCKING. `exit 0` plus continue-on-error, belt and braces. Turning
+      # this into a gate the same day it lands means the first false positive costs a deploy
+      # we needed; blocking is a policy change and is Roye's call, not a side effect of adding
+      # the check. Flip `exit 0` to `exit $code` when he approves it.
+      #
+      # Result goes to the JOB SUMMARY, not just the log — the summary renders on the run page
+      # without expanding any step, which is the difference between a check that is read and a
+      # check that is technically present.
+      - name: TypeScript check (non-blocking)
+        id: tsc
+        continue-on-error: true
+        run: |
+          set +e
+          npx tsc --noEmit -p tsconfig.json > tsc-output.txt 2>&1
+          code=$?
+          set -e
+          count=$(grep -c "error TS" tsc-output.txt || true)
+          if [ "$code" -eq 0 ]; then
+            echo "## TypeScript: clean" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`tsc --noEmit\` found no errors on CI hardware." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## TypeScript: ${count} error(s) — NOT blocking this deploy" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            head -40 tsc-output.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Full output in the \`tsc-output\` artifact." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
+
+      - name: Upload tsc output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsc-output
+          path: tsc-output.txt
+          if-no-files-found: ignore
+
       - name: Export Expo web bundle
         env:
           CI: 'true'

@@ -270,6 +270,21 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     setCurrentIdx(prev => prev + 1);
   }, [boards.length, screenW]);
 
+  // BZ3 — LONG-PRESS SKIP-ALL. At 37.8s a four-board hand costs four separate taps to
+  // escape, and the per-tap saving grew with the sequence. `doAdvance` already routes to
+  // /results once it runs out of boards, so skipping the whole reveal is that same exit taken
+  // early: stop every timer and animation, then hand off. No board state is needed on the way
+  // out because the reveal is a presentation of an already-completed hand.
+  const handleSkipAll = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    anims.current.forEach(a => a.stop());
+    anims.current = [];
+    playSound('boardTransition');
+    Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Heavy)?.catch?.(() => {});
+    onDoneRef.current();
+  }, []);
+
   const handleSkip = useCallback(() => {
     timers.current.forEach(clearTimeout);
     timers.current = [];
@@ -677,8 +692,14 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
     <Modal visible animationType="fade" transparent={false} statusBarTranslucent>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: revealBg }]}>
         <Pressable
+          testID="reveal-skip-surface"
           style={[styles.container, { backgroundColor: revealBg }]}
           onPress={() => (showResult ? doAdvance() : handleSkip())}
+          // BZ3 — hold to leave the whole reveal. RN suppresses onPress once onLongPress
+          // fires, so the two gestures cannot both run on one press.
+          onLongPress={handleSkipAll}
+          delayLongPress={500}
+          accessibilityHint="Tap to skip this board, press and hold to skip to the results"
         >
           {/* S110: Animated content wrapper — slides on board transition */}
           <AnimatedRN.View style={[styles.boardContent, { opacity: boardOpacity }]}>
@@ -910,8 +931,18 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
               {t().tapToReveal}
             </AnimatedRN.Text>
           ) : showTapHint ? (
-            <Text style={[styles.hint, styles.hintContinue]}>
-              {currentIdx + 1 < totalBoards ? 'Tap to continue →' : '▶ TAP FOR RESULTS'}
+            // BZ3 — DISCOVERABILITY, without a new permanent control. A 37.8s sequence with a
+            // hidden escape is the same problem with an extra step, but a button competing with
+            // the content is a worse trade. So the hold is taught in the hint slot that already
+            // exists, and only from the SECOND board onward with at least two still to come: on
+            // board 1 nobody wants out yet, and by board 2 the player has felt a full 10s board
+            // so the offer answers a question they now actually have.
+            <Text testID="reveal-tap-hint" style={[styles.hint, styles.hintContinue]}>
+              {currentIdx + 1 < totalBoards
+                ? (currentIdx >= 1 && totalBoards - currentIdx > 1
+                    ? 'Tap to continue →   ·   hold to skip all'
+                    : 'Tap to continue →')
+                : '▶ TAP FOR RESULTS'}
             </Text>
           ) : (
             <Text style={styles.hint}>{' '}</Text>

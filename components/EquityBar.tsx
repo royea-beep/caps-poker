@@ -203,11 +203,22 @@ const styles = StyleSheet.create({
   divider: { position: 'absolute', top: 0, bottom: 0, backgroundColor: '#FFFFFF' },
 
   // multi-seat
-  // MEASURED BUG, fixed here: every fixed-width column rendered at ZERO width on live (all
-  // three boxes read 359-359 on a 375px screen). React Native defaults flexShrink to 0, but
-  // react-native-web maps to CSS flexbox where it defaults to 1 - so the flex:1 track took the
-  // whole row and the labelled columns collapsed to nothing. flexShrink: 0 is load-bearing on
-  // every one of these; do not drop it because "the width is already set".
+  // BZ2 CORRECTION - I previously wrote that these columns collapsed because react-native-web
+  // defaults flex-shrink to 1. THAT EXPLANATION IS WRONG FOR THIS ROW, and the correction is
+  // recorded here rather than quietly dropped.
+  //
+  // The divergence is real and was measured directly in the browser:
+  //     fixed 36px child, row does NOT overflow            -> 36px  (no shrink)
+  //     fixed 36px child, row DOES overflow, no flexShrink -> 29px  (shrinks)
+  //     same, with flexShrink: 0                           -> 36px  (holds)
+  // flex-shrink only fires when the row OVERFLOWS. This row's fixed basis is
+  // 13 + 40 + 36 + 30 = 119px against a 343px track (flex:1 contributes basis 0), so it cannot
+  // overflow and therefore cannot shrink. flexShrink: 0 here is a NO-OP.
+  //
+  // Kept because it is free, correct on both platforms, and makes the row immune if the labels
+  // ever grow. It is NOT what fixed the zero-width reading - that reading came from a DOM with
+  // two EquityBars mounted at once (it reported 3 seats while showing the 11px label that only
+  // exists in the 2-seat layout, which is impossible in one consistent render). Protocol Rule 8.
   seatRow: { flexDirection: 'row', alignItems: 'center' },
   ordinal: { color: 'rgba(255,255,255,0.55)', fontWeight: '800', fontVariant: ['tabular-nums'], flexShrink: 0 },
   seatName: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 0.4, flexShrink: 0 },

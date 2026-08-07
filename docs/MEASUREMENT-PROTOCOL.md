@@ -240,3 +240,49 @@ timeline showing one value per board where two were expected.
 
 **Check what a field contains before slicing it — and prefer the derivation the file already
 uses over the one the name suggests.**
+
+---
+
+## Rule 12 — a style that behaves differently on web and native cannot be verified by reading it
+
+`flexShrink` defaults to **0** in React Native and to **1** in CSS, which is what
+react-native-web compiles to. A fixed-`width` child beside a `flex: 1` sibling therefore
+behaves differently on the two platforms — and only one of them is in front of you.
+
+**But the divergence is conditional, and that matters more than the divergence.** Measured
+directly in the browser rather than assumed:
+
+| case | fixed 36px child renders |
+|---|---|
+| row does **not** overflow | **36px** — no shrink |
+| row **overflows**, no `flexShrink` set | **29px** — shrinks |
+| row **overflows**, `flexShrink: 0` | **36px** — holds |
+
+`flex-shrink` only fires when the row **overflows**. So the pattern "fixed width beside
+flex:1" is *necessary but not sufficient*; without overflow it is harmless.
+
+### What the sweep actually found
+
+An AST sweep of 91 `.tsx` files / 278 row containers found **34 rows matching the pattern**
+and **zero that can overflow** — the largest fixed basis in any of them is 144px against a
+343px track. So there are **no confirmed instances of this bug in the codebase**, and none
+were "fixed", because there was nothing to fix.
+
+### The correction that matters
+
+The one instance previously reported — seat columns in `EquityBar` measuring `359-359`
+(zero width) — is **not explained by this mechanism**. That row's fixed basis is 119px
+against 343px; it cannot overflow, so it cannot shrink. The reading came from a DOM with two
+`EquityBar`s mounted at once: it reported **three** seats while showing the **11px** label
+that exists only in the **two**-seat layout, which is impossible in one consistent render.
+That is **Rule 8** (a stale mount), and I applied Rule 8 to other people's measurements and
+not to my own.
+
+`flexShrink: 0` was left in place: it is free, correct on both platforms, and makes the row
+immune if the labels ever grow. It is not load-bearing and the comment in that file now says
+so.
+
+**The general rule stands even though this instance dissolved:** when a style's behaviour
+differs by platform, reading the source tells you what one platform does. Only a measurement
+on the platform in question tells you what the user sees — and a mechanism that explains the
+numbers is still a hypothesis until it is tested on its own (Rule 4).
