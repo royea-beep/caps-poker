@@ -16,6 +16,7 @@ import fs from 'fs';
 const TARGET = 'https://caps.ftable.co.il/';
 const W = Number(process.argv[2] || 375);
 const H = Number(process.argv[3] || 812);
+const PLAYERS = Number(process.argv[4] || 2); // 2 players = 4 boards = tightest case
 
 const fire = `(el)=>{const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
 const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
@@ -50,7 +51,7 @@ async function frames(page, ms) {
   }, ms);
 }
 
-const out = { viewport: { W, H }, ts: new Date().toISOString() };
+const out = { viewport: { W, H }, players: PLAYERS, ts: new Date().toISOString() };
 const browser = await chromium.launch({ headless: false, args: [`--window-size=${W + 20},${H + 140}`] });
 try {
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
@@ -65,9 +66,18 @@ try {
     [...document.querySelectorAll('script[src]')].map(s => s.src.split('/').pop()).filter(x => x.startsWith('index-'))[0]);
 
   // BASELINE frames on the placement screen, before any landing fires
+  // CK1 — SELECT PLAYER COUNT. 2 players = 4 boards = the tightest case at 375, which the
+  // previous run missed because it inherited whatever the persisted config happened to be.
+  // The selector is a leaf text node ("2P" / "✓ 2P"), so climb to the pressable ancestor.
   await page.evaluate(`(()=>{window.__f=${fire};
+    const pick=[...document.querySelectorAll('*')].find(e=>e.children.length===0&&/^(✓ )?${PLAYERS}P$/.test((e.textContent||'').trim()));
+    if(pick){let n=pick;for(let i=0;i<3&&n;i++){window.__f(n);n=n.parentElement;}}})()`);
+  await page.waitForTimeout(700);
+  await page.evaluate(`(()=>{
     const p=[...document.querySelectorAll('button,[role="button"]')].find(x=>/^Play$/.test((x.getAttribute('aria-label')||x.textContent||'').trim()));
-    if(p)window.__f(p);})()`);
+    if(p)window.__f(p);
+    const c=[...document.querySelectorAll('*')].find(e=>e.children.length===0&&(e.textContent||'').trim()==='Continue');
+    if(c)window.__f(c.parentElement||c);})()`);
   await page.waitForTimeout(2500);
   out.boards = await page.evaluate(() => document.querySelectorAll('[data-testid^="community-row-"]').length);
   out.framesBaseline = await frames(page, 2500);

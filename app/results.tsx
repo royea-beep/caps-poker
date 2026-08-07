@@ -174,7 +174,17 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const handNetPersistedRef = useRef(false);
   // Colored dots for win animation (RN Animated only — no confetti library, Hermes-safe)
   const WIN_DOT_COLORS = ['#FFD700', '#4CAF50', '#00BFFF', '#FF6B6B', '#c9a84c', '#39FF14', '#FF69B4', '#FFD700'];
-  const WIN_DOT_COUNT = 8;
+  // CK2 / E1 — Roye: "קונפטי/חלקיקים כבר יורים... אבל עדינים מדי. להגביר." Measured baseline:
+  // 8 dots, 12x12px, 80-140px across a full 360 degrees, 600ms. Eight dots over 360 degrees is
+  // ONE PER 45 DEGREES - a scatter, not a burst - and 600ms is gone before the eye settles. So
+  // the deficient dimensions are COUNT and DURATION. Size (12px) and opacity were already fine
+  // and are left alone; raising everything at once is how you get a stutter and learn nothing.
+  //
+  // DELIBERATELY NOT MAXIMISED, and this is the E1<->E2 interaction: the loss moment (E2) is
+  // still a flat static red. Every notch added here widens the gap between winning and losing
+  // on the same screen, which IS the E3 contradiction. 20 reads as a real celebration; 60 would
+  // read as a slot machine and would make the untouched loss feel worse by contrast.
+  const WIN_DOT_COUNT = 20;
   const winDotAnims = useRef<{ x: Animated.Value; y: Animated.Value; opacity: Animated.Value }[]>(
     Array.from({ length: WIN_DOT_COUNT }, () => ({
       x: new Animated.Value(0),
@@ -567,16 +577,21 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         dot.x.setValue(0);
         dot.y.setValue(0);
         dot.opacity.setValue(1);
-        const angle = (i / WIN_DOT_COUNT) * 2 * Math.PI;
-        const dist = 80 + Math.random() * 60;
+        // Jitter the angle so 20 dots do not read as a clock face; keep the upward bias so the
+        // burst rises rather than spilling sideways.
+        const angle = ((i + Math.random() * 0.6) / WIN_DOT_COUNT) * 2 * Math.PI;
+        const dist = 90 + Math.random() * 90;
         const tx = Math.cos(angle) * dist;
-        const ty = Math.sin(angle) * dist - 40;
+        const ty = Math.sin(angle) * dist - 50;
+        // 600ms -> 950ms. The dots now travel further and linger long enough to be READ, which
+        // was the other half of "too subtle". Still under a second: this fires on every win.
+        const travel = 950;
         Animated.parallel([
-          Animated.timing(dot.x, { toValue: tx, duration: 600, useNativeDriver: true }),
-          Animated.timing(dot.y, { toValue: ty, duration: 600, useNativeDriver: true }),
+          Animated.timing(dot.x, { toValue: tx, duration: travel, useNativeDriver: true }),
+          Animated.timing(dot.y, { toValue: ty, duration: travel, useNativeDriver: true }),
           Animated.sequence([
             Animated.timing(dot.opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
-            Animated.timing(dot.opacity, { toValue: 0, duration: 500, delay: 100, useNativeDriver: true }),
+            Animated.timing(dot.opacity, { toValue: 0, duration: travel - 250, delay: 150, useNativeDriver: true }),
           ]),
         ]).start();
       });
