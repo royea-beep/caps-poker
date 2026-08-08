@@ -30,15 +30,41 @@ Common gap: Roye sends 3 screenshots of the placement phase only. The build then
 
 If a screen isn't covered, **flag it as unverified** in the report, don't assume it works.
 
+## Current architecture — CORRECTED 2026-08-08 (was written at b372/b373)
+
+This block exists because the checklist below was drifting into fiction. Verify against these,
+not against memory of the b372 app.
+
+| fact | current truth |
+|---|---|
+| Home screen | **`app/index.tsx`**. `app/(tabs)/index.tsx` is dead/legacy — editing it changes nothing. |
+| Card rendering | `Card.tsx` has **three** branches: faceDown, **V2 Minimalist (ACTIVE — `cardConfig.card_layout === 'v2'`)**, Classic (dead). Any card check must name the branch it exercises. |
+| Reveal | `BoardReveal` is a **Modal showing ONE board at a time** via `currentIdx`. NOT a scroll. A "half screen / scrolling" report during reveal is a **placement-phase** symptom, not a reveal bug. |
+| Reveal transition | **INSTANT swap**, not a slide. The slide was removed (VAMOS-FIX-REVEAL-TRANSITION-V2) because it passed through opacity 0 and flashed black. |
+| Layout | **STACKED-ONLY** at every board count. Scale ladder 2 boards = 1.0× / 3 = 0.85× / 4 = 0.69×. Community card height floor **50pt**. **4 boards is a hard max.** |
+| Board count | **DYNAMIC**: 2 players = 4 boards, 3 = 3, 4 = 2. Four cards per board per player, 5 community per board, one 52-card deck, max 4 players. Never hardcode. |
+| Practice mode | **XP-ONLY. No chips move.** COMPLETE pays **200 XP** (`BATTLE_PASS_CONFIG.xpPerComplete`), NOT chips. **Any chip or "+50% bonus" figure shown in practice is a bug.** |
+| Build number | Settings reads the **native** build (`Application.nativeBuildVersion`). `app.json` `extra.buildNumber` is deliberately left stale — **never use it as a source of truth.** |
+| `build_history` | **DEAD.** Last write 2026-05-08; row `451` stuck `in_progress` for three months. Do NOT gate anything on it and do NOT write to it. |
+| Palette | The "dark maroon" values in section H are **STALE**. Live theming is per-theme felt (classic green `#10281A`→`#0E2418`, fiveo maroon) resolved through `constants/paintThemes.ts`. Judge contrast and legibility, not a specific hex. |
+
+**Marking convention below:** `[CODE]` = verifiable by reading code or querying the DB, no device
+needed. `[DEVICE]` = requires a physical phone; these are the ones a human must run.
+
 ## Mandatory checks per build
 
 ### A. Build identification
 
 ```
-☐ Pink pill shows expected version (e.g., v2.7.0 b<N> • V21 • EMBED)
-☐ build_history row exists with status=in_progress
-☐ HEAD commit SHA matches the latest expected fix
+☐ [DEVICE] Settings → Version row shows the NATIVE build number (not "EAS 330")
+☐ [CODE]   The commit the build was made from — read the checkout SHA from the GitHub
+           Actions run log, NOT from app.json. Build 508 was 5205bd2, not the app.json bump.
+☐ [CODE]   List commits on the branch NOT in the build, so known gaps are not filed as bugs:
+           git log --oneline <build-sha>..main
 ```
+
+REMOVED 2026-08-08: the "pink pill" no longer exists, and `build_history` is dead — a row
+there proves nothing and writing one revives a table that lied for three months.
 
 ### B. Home screen
 
@@ -113,16 +139,18 @@ For each of 2P/3P/4P modes:
 ### F. Reveal phase
 
 ```
-☐ Modal opens (full screen takeover)
-☐ Big "Board N" header
-☐ Score indicator above
-☐ Dots row showing progress (filled = done, white = current)
-☐ Single board displayed (slide animation between boards)
-☐ Community cards reveal one by one
-☐ Hand strength shown for player and bot
-☐ Winner indicator
-☐ Advance via tap or auto-advance
-☐ Final summary after last board
+☐ [DEVICE] Modal opens (full screen takeover)
+☐ [DEVICE] Big "Board N" header
+☐ [DEVICE] Score indicator above
+☐ [DEVICE] Dots row showing progress (filled = done, white = current)
+☐ [DEVICE] ONE board displayed at a time, swapped INSTANTLY (no slide, no black flash,
+           no scrolling — scrolling here means you are still in placement)
+☐ [DEVICE] Community cards reveal one by one
+☐ [DEVICE] Hand strength shown for player and each opponent
+☐ [DEVICE] Winner indicator
+☐ [DEVICE] Advance via tap; long-press exits the whole reveal (builds after db8038c only)
+☐ [DEVICE] Final summary after last board
+☐ [CODE]   Practice: NO chip figure anywhere in the reveal (counter, flying chips, pot line)
 ```
 
 ### G. Hand cards layout (CRITICAL — has been bug-prone)
@@ -139,13 +167,18 @@ For each of 2P/3P/4P modes:
 ### H. Color/visual quality
 
 ```
-☐ Background dark maroon (#1C0508 or close), not pink
-☐ Board surface darker maroon (#6B1520), brighter than bg
-☐ Board border gold/brown (#8B6914)
-☐ Cards warm cream (#FFFEF8), not pure white
-☐ Suits: red for ♥♦, black for ♠♣ (NOT 4-color unless toggled)
-☐ Gold accents (#c9a84c) on labels, controls
+☐ [DEVICE] Felt reads as the SELECTED theme's colour (classic = deep green, fiveo = maroon)
+           and is visibly darker than the board panels sitting on it
+☐ [DEVICE] Board panels are distinguishable from the felt at arm's length
+☐ [DEVICE] Cards warm cream (#FFFEF8), not pure white
+☐ [DEVICE] Suits: red for ♥♦, black for ♠♣ (NOT 4-color unless toggled)
+☐ [DEVICE] Gold accents on labels/controls, legible against the felt
+☐ [DEVICE] Nothing reads PINK. Colours look 2-3x lighter on screen than in a hex picker.
 ```
+
+The old fixed hexes (#1C0508 / #6B1520 / #8B6914) were REMOVED 2026-08-08: theming is now
+per-theme via `constants/paintThemes.ts`, so a single expected hex is wrong for most themes.
+Judge contrast and legibility instead.
 
 ## Critical bugs that block status=live
 
