@@ -71,13 +71,38 @@ try {
     setTimeout(()=>['pointerup','mouseup'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent))),700);})()`);
   await page.waitForTimeout(2500);
 
-  out.onResults = await page.evaluate(() => ({
-    headline: (document.querySelector('[data-testid="result-headline"]') || {}).textContent || null,
-    dots: [...document.querySelectorAll('div')].filter(d => {
-      const s = getComputedStyle(d);
-      return s.borderRadius === '6px' && s.width === '12px' && s.height === '12px' && s.position === 'absolute';
-    }).length,
-  }));
+  // CL1 — anchored by testID now, not geometry. Also samples TRANSFORM over a window so
+  // "the dots exist" and "the dots move" are separate, provable claims.
+  out.onResults = await page.evaluate(async () => {
+    const headline = (document.querySelector('[data-testid="result-headline"]') || {}).textContent || null;
+    const series = [];
+    const t0 = performance.now();
+    await new Promise((res) => {
+      const loop = () => {
+        const d = [...document.querySelectorAll('[data-testid="win-dot"]')];
+        if (d.length) series.push({ t: +(performance.now() - t0).toFixed(0), n: d.length,
+          tf: getComputedStyle(d[0]).transform, op: +parseFloat(getComputedStyle(d[0]).opacity).toFixed(3) });
+        performance.now() - t0 < 1600 ? requestAnimationFrame(loop) : res();
+      };
+      requestAnimationFrame(loop); setTimeout(res, 2200);
+    });
+    // E2 BASELINE — what the loss screen is made of, and whether anything moves on it
+    const headlineEl = document.querySelector('[data-testid="result-headline"]');
+    const hs = headlineEl ? getComputedStyle(headlineEl) : null;
+    const buttons = [...document.querySelectorAll('button,[role="button"]')]
+      .map(b => (b.getAttribute('aria-label') || b.textContent || '').trim().slice(0, 26)).filter(Boolean);
+    return {
+      headline,
+      dotCount: series.length ? Math.max(...series.map(s => s.n)) : 0,
+      dotSamples: series.length,
+      distinctDotTransforms: [...new Set(series.map(s => s.tf))].length,
+      dotOpacityRange: series.length ? [Math.min(...series.map(s => s.op)), Math.max(...series.map(s => s.op))] : null,
+      headlineColor: hs ? hs.color : null,
+      headlineFontSize: hs ? hs.fontSize : null,
+      headlineTransform: hs ? hs.transform : null,
+      buttons,
+    };
+  });
   out.framesOnResults = await frames(page, 3000);
 } catch (e) { out.error = String(e && e.message || e); }
 finally { await browser.close(); }
