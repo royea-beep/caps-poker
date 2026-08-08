@@ -14,7 +14,7 @@
 import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 import { getBreadcrumbs } from './breadcrumbs';
-import { getAppVersion } from './analytics';
+import { getAppVersion, getBuildIdentity } from './analytics';
 
 let installed = false;
 let lastSentAt = 0;
@@ -78,7 +78,10 @@ function report(message: string, stack?: string): void {
         last_action: crumbs.length ? crumbs[crumbs.length - 1].screen : 'unknown',
         step_log: crumbs,
         console_errors: [],
-        device: { platform: 'web', userAgent: ua },
+        // G2 2026-08-08 — `version` above is "2.7.0" on every build ever shipped, so a crash
+        // row could not be traced to a build. The native build number rides in `device`, which
+        // is an existing jsonb column, so this needs no migration.
+        device: { platform: 'web', userAgent: ua, ...getBuildIdentity() },
         status: 'new',
       })
       .then(() => {}, () => {});

@@ -38,6 +38,41 @@ export function getAppVersion(): string {
   return cachedAppVersion;
 }
 
+/**
+ * G2 / BUILD TRACEABILITY 2026-08-08 — WHICH BUILD produced this row.
+ *
+ * `app_version` is `expoConfig.version` = "2.7.0" on EVERY row across three months and 100+
+ * builds, so no crash or analytics row could be attributed to a build. This adds the number
+ * that actually differs.
+ *
+ * READ FROM THE NATIVE LAYER, NOT THE JS BUNDLE. `Application.nativeBuildVersion` is the
+ * installed binary's CFBundleVersion, so a JS bundle that outlives its build (OTA, or a stale
+ * cached bundle) still reports the build it is RUNNING ON. The JS-side alternatives are both
+ * known-wrong: `expoConfig.ios.buildNumber` is what the bundle THINKS, and
+ * `expoConfig.extra.buildNumber` is a hand-maintained field that is currently "330" while the
+ * shipped binary is 508 — the exact drift that made the in-app build number unreliable.
+ *
+ * Web has no native build, so this is null there and says so rather than substituting
+ * something plausible-looking.
+ *
+ * Memoised; expo-application reads are synchronous constants.
+ */
+let _buildIdentity: Record<string, unknown> | null = null;
+export function getBuildIdentity(): Record<string, unknown> {
+  if (_buildIdentity) return _buildIdentity;
+  try {
+    const App = require('expo-application');
+    _buildIdentity = {
+      // iOS CFBundleVersion / Android versionCode, from the installed binary.
+      native_build: App?.nativeBuildVersion ?? null,
+      native_version: App?.nativeApplicationVersion ?? null,
+    };
+  } catch {
+    _buildIdentity = { native_build: null, native_version: null };
+  }
+  return _buildIdentity;
+}
+
 export async function initAnalytics(): Promise<void> {
   try {
     cachedDeviceId = await getDeviceId();
@@ -162,6 +197,8 @@ export function track(event: string, properties?: Record<string, unknown>, scree
         // session_id/app_version travel in properties: the RPC has no dedicated args.
         session_id: cachedSessionId,
         app_version: cachedAppVersion,
+        // G2 — app_version alone cannot identify a build (it is "2.7.0" everywhere).
+        ...getBuildIdentity(),
         ...clientFingerprint(),
         ...failureReport,
       },

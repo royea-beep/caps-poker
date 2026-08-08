@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { debugLog } from '../components/DebugOverlay';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, Switch } from 'react-native';
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
 import { t } from '../utils/i18n';
@@ -1167,7 +1168,17 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={styles.rowLabel}>Version</Text>
-              <Text style={styles.rowHint}>{Constants.expoConfig?.version ?? '—'} (EAS {Constants.expoConfig?.extra?.buildNumber ?? '—'})</Text>
+              {/* G2 2026-08-08 — WAS `extra.buildNumber`, a HAND-MAINTAINED field that had
+                  drifted: it still reads "330" while the binary shipped on 2026-08-06 is
+                  CFBundleVersion 508 (commit e346e70 bumped ios.buildNumber and left extra
+                  behind). This row is the ONLY place a tester reads a build number, so it was
+                  reporting a number 178 behind reality — every "I'm on build X" report was
+                  unusable. Now reads the INSTALLED BINARY via expo-application, which a stale
+                  JS bundle cannot misreport. Falls back to the old field only on web, which
+                  has no native build. */}
+              <Text style={styles.rowHint}>
+                {Constants.expoConfig?.version ?? '—'} (build {Application.nativeBuildVersion ?? Constants.expoConfig?.extra?.buildNumber ?? '—'})
+              </Text>
             </Pressable>
             {/* A6 (Batch A): "Reset Progress (beta)" REMOVED. It called
                 AsyncStorage.clear() — nuking ALL storage (device/referral/auth state),

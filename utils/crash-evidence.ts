@@ -7,6 +7,7 @@ import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { debugLog } from '../components/DebugOverlay'
 import { getSupabase } from './supabase'
+import { getBuildIdentity } from './analytics'
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -220,7 +221,11 @@ export async function checkDirtyShutdown(
       project: 'Caps',
       version,
       timestamp: new Date().toISOString(),
-      device: { platform: Platform.OS, os: Platform.Version?.toString() },
+      // G2 2026-08-08 — `version` above is the marketing version ("2.7.0" on every build ever
+      // shipped), so a crash row could not be traced to a build. The native build number rides
+      // in this existing jsonb column, so no migration is needed. THIS is the path that runs on
+      // device — webErrorReporter is web-only, where the value is always null.
+      device: { platform: Platform.OS, os: Platform.Version?.toString(), ...getBuildIdentity() },
       frames: [],
       stepLog: stepLogFromDB,
       lastScreen: lastStep.screen ?? 'unknown',
@@ -338,6 +343,8 @@ export async function generateCrashReport(error: {
     device: {
       platform: Platform.OS,
       os: Platform.Version?.toString(),
+      // G2 — see the note on the other device payload above; same reason, same column.
+      ...getBuildIdentity(),
     },
     frames: [...frameBuffer],
     stepLog: [...stepLog],
