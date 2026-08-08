@@ -545,6 +545,31 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       net_chips: revealData.netChips,
     }, 'results');
 
+    // CN-COVERAGE 2026-08-08 — how much equity actually survives to /results IN THE FIELD.
+    // Lab numbers are 4/4 on a full walkthrough and 2/4 on a long-press skip-all, but the value
+    // of an equity UI depends entirely on the real distribution: if most hands arrive partially
+    // covered, that UI is a mostly-empty UI. This is the gate for the UI sprint, and it is a
+    // number rather than an opinion.
+    //
+    // Counts and enums only — no card values, no hand contents, no PII.
+    // `track` is fire-and-forget by construction (utils/analytics.ts:148): it returns void, the
+    // rpc promise is never awaited, the body is wrapped in try/catch and it returns early when
+    // there is no client. Every probe run in this sprint had Supabase aborted at the network
+    // layer and /results still mounted, which is the empirical half of that claim.
+    //
+    // exit_path is deliberately shallow: the reveal-disabled setting is readable from the store
+    // for free, but distinguishing a full walk from a BZ3 long-press skip-all would mean
+    // threading new state through the reveal. Coverage counts are the point, so the rest is
+    // reported as 'unknown' rather than paid for with plumbing.
+    const boardsWithEquity = revealData.boards.filter((b) => b.equity).length;
+    track('reveal_equity_coverage', {
+      boards_total: revealData.boards.length,
+      boards_with_equity: boardsWithEquity,
+      exit_path: useGameStore.getState().skipBoardReveal ? 'reveal_disabled' : 'unknown',
+      is_practice: revealData.isPractice === true,
+      player_count: revealData.numberOfPlayers,
+    }, 'results');
+
   }, []);
 
   // B3: result_viewed_duration — track how long player spends on results screen

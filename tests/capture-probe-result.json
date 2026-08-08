@@ -1,19 +1,20 @@
 {
- "ts": "2026-08-08T19:12:45.984Z",
+ "ts": "2026-08-08T19:32:49.762Z",
  "viewport": {
   "W": 375,
   "H": 812
  },
  "scenarios": [
   {
-   "mode": "walk",
+   "mode": "fast-walk",
+   "cpuThrottle": 6,
    "precondition": {
     "hidden": false,
     "rafCount": 46,
     "ok": true
    },
    "mounted": true,
-   "headline": "TIE GAME",
+   "headline": "YOU WIN",
    "total": 4,
    "captured": 4,
    "boards": [
@@ -21,16 +22,16 @@
      "i": 0,
      "hasEquity": true,
      "hasOuts": true,
-     "selfFlopPct": 21,
-     "selfTurnPct": 10,
-     "outsFlopCount": 4,
-     "outsTurnCount": 4
+     "selfFlopPct": 0,
+     "selfTurnPct": 0,
+     "outsFlopCount": 0,
+     "outsTurnCount": 0
     },
     {
      "i": 1,
      "hasEquity": true,
      "hasOuts": true,
-     "selfFlopPct": 20,
+     "selfFlopPct": 15,
      "selfTurnPct": 10,
      "outsFlopCount": 4,
      "outsTurnCount": 4
@@ -39,32 +40,137 @@
      "i": 2,
      "hasEquity": true,
      "hasOuts": true,
-     "selfFlopPct": 37,
-     "selfTurnPct": 18,
-     "outsFlopCount": 9,
-     "outsTurnCount": 7
+     "selfFlopPct": 81,
+     "selfTurnPct": 95,
+     "outsFlopCount": 2,
+     "outsTurnCount": 2
     },
     {
      "i": 3,
      "hasEquity": true,
      "hasOuts": true,
-     "selfFlopPct": 33,
-     "selfTurnPct": 45,
+     "selfFlopPct": 73,
+     "selfTurnPct": 78,
      "outsFlopCount": 7,
-     "outsTurnCount": 18
+     "outsTurnCount": 9
     }
    ],
    "errs": []
   },
   {
-   "mode": "skip-all",
+   "mode": "fast-walk",
+   "cpuThrottle": 6,
    "precondition": {
     "hidden": false,
     "rafCount": 46,
     "ok": true
    },
    "mounted": true,
-   "headline": "TIE GAME",
+   "headline": "PERFECT!",
+   "total": 4,
+   "captured": 4,
+   "boards": [
+    {
+     "i": 0,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 71,
+     "selfTurnPct": 80,
+     "outsFlopCount": 9,
+     "outsTurnCount": 8
+    },
+    {
+     "i": 1,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 95,
+     "selfTurnPct": 100,
+     "outsFlopCount": 0,
+     "outsTurnCount": 0
+    },
+    {
+     "i": 2,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 66,
+     "selfTurnPct": 80,
+     "outsFlopCount": 8,
+     "outsTurnCount": 8
+    },
+    {
+     "i": 3,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 90,
+     "selfTurnPct": 95,
+     "outsFlopCount": 2,
+     "outsTurnCount": 2
+    }
+   ],
+   "errs": []
+  },
+  {
+   "mode": "walk",
+   "cpuThrottle": 6,
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "mounted": true,
+   "headline": "YOU LOSE",
+   "total": 4,
+   "captured": 4,
+   "boards": [
+    {
+     "i": 0,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 5,
+     "selfTurnPct": 3,
+     "outsFlopCount": 1,
+     "outsTurnCount": 1
+    },
+    {
+     "i": 1,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 65,
+     "selfTurnPct": 70,
+     "outsFlopCount": 11,
+     "outsTurnCount": 12
+    },
+    {
+     "i": 2,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 20,
+     "selfTurnPct": 5,
+     "outsFlopCount": 4,
+     "outsTurnCount": 2
+    },
+    {
+     "i": 3,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 48,
+     "selfTurnPct": 0,
+     "outsFlopCount": 15,
+     "outsTurnCount": 0
+    }
+   ],
+   "errs": []
+  },
+  {
+   "mode": "skip-all",
+   "cpuThrottle": 6,
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "mounted": true,
+   "headline": "YOU WIN",
    "total": 4,
    "captured": 2,
    "boards": [
@@ -72,18 +178,18 @@
      "i": 0,
      "hasEquity": true,
      "hasOuts": true,
-     "selfFlopPct": 79,
-     "selfTurnPct": 90,
-     "outsFlopCount": 4,
-     "outsTurnCount": 4
+     "selfFlopPct": 100,
+     "selfTurnPct": 100,
+     "outsFlopCount": 0,
+     "outsTurnCount": 0
     },
     {
      "i": 1,
      "hasEquity": true,
      "hasOuts": true,
-     "selfFlopPct": 18,
+     "selfFlopPct": 12,
      "selfTurnPct": 10,
-     "outsFlopCount": 4,
+     "outsFlopCount": 2,
      "outsTurnCount": 4
     },
     {

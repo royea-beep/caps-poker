@@ -27,7 +27,8 @@ import fs from 'fs';
 import http from 'http';
 import path from 'path';
 
-const DIR = path.resolve('web-fixture-dist');
+const DIR = path.resolve(process.env.PROBE_DIR || 'web-fixture-dist');
+const MODES = (process.env.PROBE_MODES || 'walk,skip-all').split(',');
 const PORT = Number(process.env.PROBE_PORT || 8126);
 const W = 375, H = 812;
 
@@ -63,6 +64,18 @@ async function runScenario(browser, mode) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push('PAGEERROR: ' + String(e).slice(0, 200)));
+
+  // CPU THROTTLE for the fast paths. Tapping faster is not the realistic way to lose a board —
+  // this desktop's main thread is idle enough that requestIdleCallback's 120ms timeout always
+  // wins, and fast-walk measured 4/4 three times unthrottled. The realistic condition is a
+  // mid-range phone: the same human tap cadence against a thread busy enough that the idle
+  // callback is starved to its timeout while the previous board's ~120ms enumeration is still
+  // running. That is what CPU throttling models.
+  const throttle = Number(process.env.PROBE_CPU_THROTTLE || (mode.startsWith('fast') ? 6 : 1));
+  if (throttle > 1) {
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
+  }
 
   await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'load', timeout: 120000 });
   await page.waitForTimeout(3500);
@@ -102,11 +115,19 @@ async function runScenario(browser, mode) {
   }
 
   // Tap through whatever reveal remains until /results is up (each board needs skip-then-advance).
-  for (let i = 0; i < 26; i++) {
+  //
+  // `fast-walk` is the case the lab walkthrough could not see. afterPaint on web is
+  // requestIdleCallback with a 120ms timeout (utils/afterPaint.ts), so a user who advances
+  // inside that window leaves the next board's compute pending — and before the CN-RETRY fix
+  // the effect cleanup cancelled it while the index was already marked started, so it was
+  // never retried. `walk` at 1100ms/tap is an unhurried user; real users hurry.
+  const tapGap = mode === 'fast-walk' ? Number(process.env.PROBE_TAP_GAP || 70) : 1100;
+  const maxTaps = mode === 'fast-walk' ? 90 : 26;
+  for (let i = 0; i < maxTaps; i++) {
     const done = await page.evaluate(() => !!document.querySelector('[data-testid="result-headline"]'));
     if (done) break;
     await page.evaluate(`(()=>{const el=document.elementFromPoint(${Math.floor(W / 2)},${Math.floor(H / 2)});if(el)window.__f(el);})()`);
-    await page.waitForTimeout(1100);
+    await page.waitForTimeout(tapGap);
   }
   await page.waitForTimeout(1500);
 
@@ -121,16 +142,16 @@ async function runScenario(browser, mode) {
   const captured = mounted && Array.isArray(r.boards) ? r.boards.filter((b) => b.hasEquity && b.hasOuts).length : 0;
   const total = Array.isArray(r.boards) ? r.boards.length : 0;
   await ctx.close();
-  return { mode, precondition: pre, mounted, headline: r.headline, total, captured, boards: r.boards, errs: errs.slice(0, 4) };
+  return { mode, cpuThrottle: throttle, precondition: pre, mounted, headline: r.headline, total, captured, boards: r.boards, errs: errs.slice(0, 4) };
 }
 
 const out = { ts: new Date().toISOString(), viewport: { W, H }, scenarios: [] };
 const browser = await chromium.launch({ headless: false, args: [`--window-size=${W + 20},${H + 140}`] });
 try {
-  for (const mode of ['walk', 'skip-all']) {
+  for (const mode of MODES) {
     const s = await runScenario(browser, mode);
     out.scenarios.push(s);
-    console.log(`${mode.padEnd(9)} mounted=${s.mounted} headline=${JSON.stringify(s.headline)} captured=${s.captured}/${s.total} raf=${s.precondition.rafCount}`);
+    console.log(`${mode.padEnd(9)} cpu=${s.cpuThrottle}x mounted=${s.mounted} headline=${JSON.stringify(s.headline)} captured=${s.captured}/${s.total} raf=${s.precondition.rafCount}`);
     if (s.boards) for (const b of s.boards) console.log(`   board ${b.i}: equity=${b.hasEquity} outs=${b.hasOuts} selfFlop=${b.selfFlopPct} selfTurn=${b.selfTurnPct} outsFlop=${b.outsFlopCount} outsTurn=${b.outsTurnCount}`);
   }
 } finally {

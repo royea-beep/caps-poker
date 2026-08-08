@@ -25,6 +25,7 @@ import { rf, rs, rv } from '../utils/responsive';
 import { t, getLanguage } from '../utils/i18n';
 import { getHandName, getSpecificHandName, getComparisonText } from '../utils/handNames';
 import { useGameStore } from '../store/gameStore';
+import { BATTLE_PASS_CONFIG } from '../constants/battlePassConfig';
 import { useGameColors } from '../utils/useGameColors';
 import { getTheme } from '../constants/visualThemes';
 import GuidedTooltip from './GuidedTooltip';
@@ -152,14 +153,27 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
   type BoardCalc = { flop: SeatEquity[]; turn: SeatEquity[]; outsFlop: OutsResult; outsTurn: OutsResult };
   const [calcs, setCalcs] = useState<Record<number, BoardCalc>>({});
-  const calcStarted = useRef<Set<number>>(new Set());
+  // CN-RETRY 2026-08-08 — TWO STATES, because one Set could not express both.
+  // `calcStarted` used to mean "started" but was read as if it meant "done": the prefetch
+  // effect's cleanup cancelled the pending afterPaint while the index stayed in the Set, so
+  // computeBoard() returned early forever and that board was never computed. In-flight work
+  // must be retryable; completed work must not be redone. `calcPending` is in-flight (and
+  // doubles as the cancel handle), `calcDone` is finished.
+  const calcPending = useRef<Map<number, () => void>>(new Map());
+  const calcDone = useRef<Set<number>>(new Set());
 
   const computeBoard = useCallback((idx: number) => {
     const b = boards[idx];
-    if (!b || calcStarted.current.has(idx)) return undefined;
-    calcStarted.current.add(idx);
+    // CHURN GUARD: a board is scheduled only when it is neither finished nor already in
+    // flight, so repeated currentIdx churn re-requests the same indices as no-ops. At most one
+    // pending afterPaint per index, ever.
+    if (!b || calcDone.current.has(idx) || calcPending.current.has(idx)) return;
 
-    return afterPaint(() => {
+    const cancel = afterPaint(() => {
+      calcPending.current.delete(idx);
+      // Marked done BEFORE the guard below: a board whose community cards are short will never
+      // gain more, so retrying it every transition would be pure churn.
+      calcDone.current.add(idx);
       const bots = b.allBotCards && b.allBotCards.length ? b.allBotCards : [b.botCards];
       // `openCards` is the FLOP ONLY - turn and river live in `closedCards`, which is why
       // lines 389/590 both build the community as [...openCards, ...closedCards]. Slicing
@@ -188,19 +202,34 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
         outs: { flop: outsFlop, turn: outsTurn },
       });
     });
+    calcPending.current.set(idx, cancel);
   }, [boards]);
 
-  // Board 0 on mount (the READY runway).
+  // The board on screen, plus a prefetch of the next one. On mount (currentIdx 0) this is the
+  // same pair the two previous effects requested — board 0 for the READY runway and board 1
+  // ahead of the first advance — so the schedule is unchanged.
+  //
+  // CN-RETRY: THERE IS NO CLEANUP HERE ON PURPOSE. The old prefetch effect cancelled its
+  // pending compute every time currentIdx changed — which is exactly when the board it had
+  // scheduled was about to come on screen — and nothing re-requested it. Cancelling is only
+  // correct on UNMOUNT (a 120ms enumeration must not resolve into a dead tree); that is the
+  // separate effect below.
+  //
+  // Requesting `currentIdx` as well as the prefetch is the retry: whatever the reason board N
+  // has no result by the time it is displayed, arriving at it asks again. With calcDone/
+  // calcPending distinguishing finished from in-flight, that ask is a no-op unless it is
+  // genuinely needed.
   useEffect(() => {
-    const cancel = computeBoard(0);
-    return () => cancel?.();
-  }, [computeBoard]);
-
-  // Board N+1 while board N is on screen.
-  useEffect(() => {
-    const cancel = computeBoard(currentIdx + 1);
-    return () => cancel?.();
+    computeBoard(currentIdx);
+    computeBoard(currentIdx + 1);
   }, [currentIdx, computeBoard]);
+
+  // Unmount only — the reveal exits on skip, and afterPaint's contract is that every caller
+  // cancels so a resolving enumeration cannot setState on an unmounted tree.
+  useEffect(() => () => {
+    calcPending.current.forEach((cancel) => cancel());
+    calcPending.current.clear();
+  }, []);
   // Progress bar: 1→0 over remaining time after result (useNativeDriver:false — width)
   const advanceProgress = useRef(new AnimatedRN.Value(1)).current;
   // River squeeze: scaleY 1→0.08→1 (useNativeDriver:true)
@@ -926,17 +955,26 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                   <Text style={styles.completeBannerText}>COMPLETE!</Text>
                   {/* CN-LEAK 2026-08-08 — this sub-line was gated ONLY on sweeping every board,
                       with no isPractice guard, while the same component guards the chip counter
-                      (:889), FloatingChips (:974) and the pot line (:1014). Practice is XP-only,
-                      so "+50% bonus" promised a payout that never arrives — the same false-claim
-                      class PRACTICE-CHIP-GATE-SWEEP (2026-07-09) was run to remove. It survived
-                      that sweep because it names a BONUS rather than quoting netChips.
-                      The COMPLETE event itself is real in practice, so only the chip figure is
-                      dropped — matching ShareCard.tsx:406, which already splits it this way. */}
+                      (:889), FloatingChips (:974) and the pot line (:1014). "+50% bonus" is a
+                      CHIP claim and practice moves no chips, so it promised a payout that never
+                      arrives.
+                      CORRECTED 2026-08-08 (same day): the first fix dropped the word "bonus"
+                      outright, which was an OVER-correction. A complete DOES pay in practice —
+                      BATTLE_PASS_CONFIG.xpPerComplete (200 XP) at results.tsx:459, awarded
+                      outside the isPracticeGame guard, and /results already itemises
+                      "Complete: +200" in its XP banner (results.tsx:1006). So the bonus is real;
+                      only its CURRENCY differs. Naming the currency keeps this consistent with
+                      the REVEAL_TIPS line at :78 ("Watch for COMPLETE bonus!"), which is
+                      truthful in practice for the same reason and therefore stands. */}
                   <Text
                     style={styles.completeBannerSub}
-                    accessibilityLabel={isPractice ? 'You won ALL boards!' : 'You won ALL boards! +50% bonus'}
+                    accessibilityLabel={isPractice
+                      ? `You won ALL boards! +${BATTLE_PASS_CONFIG.xpPerComplete} XP bonus`
+                      : 'You won ALL boards! +50% bonus'}
                   >
-                    {isPractice ? 'You won ALL boards! 🏆' : 'You won ALL boards! +50% bonus 🏆'}
+                    {isPractice
+                      ? `You won ALL boards! +${BATTLE_PASS_CONFIG.xpPerComplete} XP bonus 🏆`
+                      : 'You won ALL boards! +50% bonus 🏆'}
                   </Text>
                 </View>
               )}

@@ -100,13 +100,30 @@ jobs:
       #
       # BLOCKING on purpose, unlike the tsc check above: this is not a quality signal, it is the
       # difference between shipping a debug backdoor and not.
+      # MATCHES THE RUNTIME GUARD EXACTLY. The source test is
+      # `process.env.EXPO_PUBLIC_CAPS_FIXTURE === '1'`, so ONLY the literal string '1' arms the
+      # harness. An earlier version of this step used `[ -n "$VAR" ]` and blocked on '0' and
+      # 'true' as well — builds that are provably safe. Verified by executing this exact block
+      # (tests/ci-gate-probe.mjs pulls the run: body out of this YAML and runs it), so the
+      # false positive was measured, not imagined. A gate that fails for the wrong reason costs
+      # a deploy we needed — the same reasoning as the tsc step above.
+      #
+      # Any OTHER non-empty value is warned about but does not block: it cannot arm the harness,
+      # yet it has no business being set on a release build either.
       - name: Assert probe harness is disabled
         run: |
-          if [ -n "$EXPO_PUBLIC_CAPS_FIXTURE" ]; then
-            echo "::error::EXPO_PUBLIC_CAPS_FIXTURE is set ('$EXPO_PUBLIC_CAPS_FIXTURE') — that ships the revealData fixture override. It must never be set on a release build."
-            exit 1
-          fi
-          echo "EXPO_PUBLIC_CAPS_FIXTURE unset — probe harness will be compiled out."
+          case "$EXPO_PUBLIC_CAPS_FIXTURE" in
+            1)
+              echo "::error::EXPO_PUBLIC_CAPS_FIXTURE=1 — that ships the revealData fixture override, which lets game state be replaced from the page. It must never be set on a release build."
+              exit 1
+              ;;
+            "")
+              echo "EXPO_PUBLIC_CAPS_FIXTURE unset — probe harness will be compiled out."
+              ;;
+            *)
+              echo "::warning::EXPO_PUBLIC_CAPS_FIXTURE is set to '$EXPO_PUBLIC_CAPS_FIXTURE'. Only '1' arms the harness so this build is safe, but the variable should not be set on a release build at all."
+              ;;
+          esac
 
       - name: Export Expo web bundle
         env:
