@@ -1,4 +1,5 @@
 import type { Card, GameConfig } from '../constants/gameConfig';
+import type { SeatEquity, OutsResult } from '../utils/revealEquity';
 
 export type GamePhase =
   | { type: 'idle' }
@@ -54,6 +55,40 @@ export interface RevealBoardData {
   // game.tsx, captured ONCE per hand during the navigation calc.
   playerBestCards?: Card[];
   botBestCards?: Card[];
+  /**
+   * CN-CAPTURE 2026-08-08 — equity/outs CAPTURED from the reveal, never recomputed.
+   *
+   * BoardReveal already computes both (components/BoardReveal.tsx:176-180, ~119-128ms per
+   * board) and then throws them away when it unmounts. /results recomputing them would cost
+   * ~1s of main thread for numbers the app already had. So the reveal now writes each board's
+   * result into the store as it finishes computing it, and these fields carry it here.
+   *
+   * OPTIONAL AND OFTEN ABSENT — do not treat a missing value as zero. `calcs` only covers
+   * boards the reveal actually reached, and several paths reach /results with gaps (settings
+   * "skip board reveal", auto-sim, long-press skip-all, MP with the reveal flag off, and a
+   * fast advance that cancels the pending prefetch). A wrong equity number is worse than no
+   * equity number: render nothing when these are undefined.
+   */
+  equity?: RevealBoardEquity;
+  outs?: RevealBoardOuts;
+}
+
+/** Per-seat equity at each street the reveal computes. Seats sum to exactly 100. */
+export interface RevealBoardEquity {
+  flop: SeatEquity[];
+  turn: SeatEquity[];
+}
+
+/** Outs as cards, per street. `turn` carries the `dead` set the flop's outs lost. */
+export interface RevealBoardOuts {
+  flop: OutsResult;
+  turn: OutsResult;
+}
+
+/** What the reveal hands to the store for a single board. */
+export interface RevealBoardCalcCapture {
+  equity: RevealBoardEquity;
+  outs: RevealBoardOuts;
 }
 
 export interface RevealData {

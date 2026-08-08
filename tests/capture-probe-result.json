@@ -1,0 +1,111 @@
+{
+ "ts": "2026-08-08T19:12:45.984Z",
+ "viewport": {
+  "W": 375,
+  "H": 812
+ },
+ "scenarios": [
+  {
+   "mode": "walk",
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "mounted": true,
+   "headline": "TIE GAME",
+   "total": 4,
+   "captured": 4,
+   "boards": [
+    {
+     "i": 0,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 21,
+     "selfTurnPct": 10,
+     "outsFlopCount": 4,
+     "outsTurnCount": 4
+    },
+    {
+     "i": 1,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 20,
+     "selfTurnPct": 10,
+     "outsFlopCount": 4,
+     "outsTurnCount": 4
+    },
+    {
+     "i": 2,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 37,
+     "selfTurnPct": 18,
+     "outsFlopCount": 9,
+     "outsTurnCount": 7
+    },
+    {
+     "i": 3,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 33,
+     "selfTurnPct": 45,
+     "outsFlopCount": 7,
+     "outsTurnCount": 18
+    }
+   ],
+   "errs": []
+  },
+  {
+   "mode": "skip-all",
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "mounted": true,
+   "headline": "TIE GAME",
+   "total": 4,
+   "captured": 2,
+   "boards": [
+    {
+     "i": 0,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 79,
+     "selfTurnPct": 90,
+     "outsFlopCount": 4,
+     "outsTurnCount": 4
+    },
+    {
+     "i": 1,
+     "hasEquity": true,
+     "hasOuts": true,
+     "selfFlopPct": 18,
+     "selfTurnPct": 10,
+     "outsFlopCount": 4,
+     "outsTurnCount": 4
+    },
+    {
+     "i": 2,
+     "hasEquity": false,
+     "hasOuts": false,
+     "selfFlopPct": null,
+     "selfTurnPct": null,
+     "outsFlopCount": null,
+     "outsTurnCount": null
+    },
+    {
+     "i": 3,
+     "hasEquity": false,
+     "hasOuts": false,
+     "selfFlopPct": null,
+     "selfTurnPct": null,
+     "outsFlopCount": null,
+     "outsTurnCount": null
+    }
+   ],
+   "errs": []
+  }
+ ]
+}

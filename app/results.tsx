@@ -16,7 +16,7 @@ import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
 import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
-import { applyDevRevealFixture } from '../utils/devRevealFixture';
+import { applyDevRevealFixture, publishProbeSnapshot } from '../utils/devRevealFixture';
 import { getSpecificHandName } from '../utils/handNames';
 import { COLORS } from '../constants/gameConfig';
 import { getTheme } from '../constants/visualThemes';
@@ -741,6 +741,24 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const playerWins = boards.filter((b) => b.winner === 'player').length;
   const botWins = boards.filter((b) => b.winner === 'bot').length;
   const isPerfectGame = playerWins === boards.length && boards.length > 0;
+
+  // CN-CAPTURE 2026-08-08 — READ the equity/outs the reveal captured, and publish what we got
+  // for the probe. No UI this sprint: this proves reachability only. Coverage is PARTIAL by
+  // design — `equity`/`outs` are undefined for any board the reveal never reached (skip-reveal
+  // setting, auto-sim, long-press skip-all, MP with the reveal flag off, fast advance). When a
+  // UI is built it must render nothing for those boards rather than substitute a default; a
+  // wrong equity number is worse than no equity number.
+  React.useEffect(() => {
+    publishProbeSnapshot('resultsBoards', boards.map((b, i) => ({
+      i,
+      hasEquity: !!b.equity,
+      hasOuts: !!b.outs,
+      selfFlopPct: b.equity?.flop.find((s) => s.isSelf)?.pct ?? null,
+      selfTurnPct: b.equity?.turn.find((s) => s.isSelf)?.pct ?? null,
+      outsFlopCount: b.outs?.flop.outs.length ?? null,
+      outsTurnCount: b.outs?.turn.outs.length ?? null,
+    })));
+  }, [boards]);
   // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — the COMPLETE celebration must gate on the
   // LOCAL player completing (won every board), NOT on isComplete. isComplete is
   // true whenever EITHER player sweeps (gameLogic computes completeWinner but

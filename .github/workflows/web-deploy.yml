@@ -87,12 +87,48 @@ jobs:
           path: tsc-output.txt
           if-no-files-found: ignore
 
+      # CN-CAPTURE 2026-08-08 — the probe harness (utils/devRevealFixture.ts) can substitute
+      # revealData and publish internals. It is guarded by `__DEV__ ||
+      # EXPO_PUBLIC_CAPS_FIXTURE === '1'`. `__DEV__` cannot be switched on in a release build,
+      # but an env var CAN: one copy-pasted build command would ship a bundle where game state
+      # is overridable from the page.
+      #
+      # With the variable UNSET, the minifier folds the guard and emits an unconditional early
+      # `return` — measured on a real export, the fixture branch is statically unreachable. That
+      # is exactly why this gate exists: the protection is a property of the BUILD ENVIRONMENT,
+      # not of the source, so it has to be asserted where the build happens.
+      #
+      # BLOCKING on purpose, unlike the tsc check above: this is not a quality signal, it is the
+      # difference between shipping a debug backdoor and not.
+      - name: Assert probe harness is disabled
+        run: |
+          if [ -n "$EXPO_PUBLIC_CAPS_FIXTURE" ]; then
+            echo "::error::EXPO_PUBLIC_CAPS_FIXTURE is set ('$EXPO_PUBLIC_CAPS_FIXTURE') — that ships the revealData fixture override. It must never be set on a release build."
+            exit 1
+          fi
+          echo "EXPO_PUBLIC_CAPS_FIXTURE unset — probe harness will be compiled out."
+
       - name: Export Expo web bundle
         env:
           CI: 'true'
           NODE_OPTIONS: '--max-old-space-size=8192'
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx expo export --platform web --output-dir dist --clear
+
+      # Artifact-side observation, INFORMATIONAL ONLY — never blocks.
+      # The symbol string does survive minification (it sits after the folded `return`), so
+      # "is it present" cannot distinguish dead from live. Deciding that from CI would mean
+      # pattern-matching minified identifiers, which change build to build — a gate that fails
+      # for the wrong reason costs a deploy we needed. The environment assertion above is the
+      # real protection; this just records what shipped.
+      - name: Report fixture symbol in bundle (informational)
+        continue-on-error: true
+        run: |
+          if grep -rlq '__CAPS_REVEAL_FIXTURE__' dist/_expo/static/js/web/ 2>/dev/null; then
+            echo "note: fixture symbol present in bundle (expected — it follows a folded early return)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "note: fixture symbol fully stripped from bundle." >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Patch index.html + write vercel.json
         run: node scripts/fix-web-html.js

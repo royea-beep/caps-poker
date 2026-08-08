@@ -178,6 +178,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
       const outsFlop = computeOuts(b.playerCards, bots, flopCards);
       const outsTurn = computeOuts(b.playerCards, bots, turnCards, outsFlop.outs);
       setCalcs((prev) => (prev[idx] ? prev : { ...prev, [idx]: { flop, turn, outsFlop, outsTurn } }));
+      // CN-CAPTURE 2026-08-08 — hand the result to the store as well. These numbers cost
+      // ~119-128ms each and were previously discarded when this Modal unmounted, so /results
+      // could only have them by recomputing (~1s of main thread). Captured HERE rather than on
+      // unmount so the store is populated before /results mounts — no navigation race.
+      // Presentation is unchanged: nothing below reads the store back.
+      useGameStore.getState().captureRevealBoardCalc(idx, {
+        equity: { flop, turn },
+        outs: { flop: outsFlop, turn: outsTurn },
+      });
     });
   }, [boards]);
 
@@ -915,7 +924,20 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
               {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
                 <View style={styles.completeBanner}>
                   <Text style={styles.completeBannerText}>COMPLETE!</Text>
-                  <Text style={styles.completeBannerSub}>You won ALL boards! +50% bonus 🏆</Text>
+                  {/* CN-LEAK 2026-08-08 — this sub-line was gated ONLY on sweeping every board,
+                      with no isPractice guard, while the same component guards the chip counter
+                      (:889), FloatingChips (:974) and the pot line (:1014). Practice is XP-only,
+                      so "+50% bonus" promised a payout that never arrives — the same false-claim
+                      class PRACTICE-CHIP-GATE-SWEEP (2026-07-09) was run to remove. It survived
+                      that sweep because it names a BONUS rather than quoting netChips.
+                      The COMPLETE event itself is real in practice, so only the chip figure is
+                      dropped — matching ShareCard.tsx:406, which already splits it this way. */}
+                  <Text
+                    style={styles.completeBannerSub}
+                    accessibilityLabel={isPractice ? 'You won ALL boards!' : 'You won ALL boards! +50% bonus'}
+                  >
+                    {isPractice ? 'You won ALL boards! 🏆' : 'You won ALL boards! +50% bonus 🏆'}
+                  </Text>
                 </View>
               )}
               {showShare && (

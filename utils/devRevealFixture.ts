@@ -48,8 +48,28 @@
  * In production (`__DEV__ === false`) this is the identity function.
  */
 export function applyDevRevealFixture<T>(actual: T): T {
-  const enabled = __DEV__ || process.env.EXPO_PUBLIC_CAPS_FIXTURE === '1';
-  if (!enabled) return actual;
+  if (!probeEnabled()) return actual;
   const fixture = (globalThis as any).__CAPS_REVEAL_FIXTURE__;
   return fixture ? (fixture as T) : actual;
+}
+
+function probeEnabled(): boolean {
+  return __DEV__ || process.env.EXPO_PUBLIC_CAPS_FIXTURE === '1';
+}
+
+/**
+ * CN-CAPTURE — publish a read-side snapshot for the probe. NOT UI, and not a fallback path:
+ * nothing in the app reads this back.
+ *
+ * It exists because "the field is typed and the writer runs" is not evidence that /results can
+ * READ the captured value — that is the exact class of claim this project has shipped wrong
+ * before. This lets the probe assert on what the results screen actually holds, without
+ * rendering an equity UI (explicitly out of scope this sprint).
+ *
+ * Dead in the shipped bundle: same guard as the fixture override.
+ */
+export function publishProbeSnapshot(key: string, snapshot: unknown): void {
+  if (!probeEnabled()) return;
+  const g = globalThis as any;
+  g.__CAPS_PROBE__ = { ...(g.__CAPS_PROBE__ || {}), [key]: snapshot };
 }

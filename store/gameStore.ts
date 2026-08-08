@@ -3,7 +3,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
-import { ConnectedPlayerInfo, GameSession, RevealData } from '../types/gameTypes';
+import { ConnectedPlayerInfo, GameSession, RevealData, RevealBoardCalcCapture } from '../types/gameTypes';
 import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
 import { HomeThemeId, DEFAULT_HOME_THEME, ButtonStyle } from '../constants/homeThemes';
 import { FriendsBgId } from '../constants/friendsBgs';
@@ -120,6 +120,8 @@ interface GameStore {
   // Reveal actions
   setRevealData: (data: RevealData) => void;
   clearRevealData: () => void;
+  /** CN-CAPTURE — store the equity/outs the reveal already computed for one board. */
+  captureRevealBoardCalc: (boardIndex: number, calc: RevealBoardCalcCapture) => void;
 
   // Language version (NOT persisted — runtime counter to force re-renders on language change)
   languageVersion: number;
@@ -278,6 +280,28 @@ export const useGameStore = create<GameStore>()(
         debugLog('S4 setRevealData DONE');
       },
       clearRevealData: () => set({ revealData: null }),
+
+      // CN-CAPTURE 2026-08-08 — the reveal computes equity/outs per board (~119-128ms each)
+      // and used to discard them on unmount, which left /results with two bad options:
+      // recompute (~1s of main thread) or show nothing. This is the third option — keep what
+      // was already paid for. Written as each board finishes computing, NOT on unmount, so the
+      // data is in the store well before /results mounts and there is no navigation race.
+      //
+      // Deliberately a no-op when revealData is absent or the index is out of range: this is
+      // opportunistic capture, and a board the reveal never reached simply has no entry.
+      captureRevealBoardCalc: (boardIndex, calc) => {
+        const current = get().revealData;
+        if (!current || boardIndex < 0 || boardIndex >= current.boards.length) return;
+        const existing = current.boards[boardIndex];
+        if (existing.equity && existing.outs) return; // write-once, mirrors BoardReveal's calcs
+        set({
+          revealData: {
+            ...current,
+            boards: current.boards.map((b, i) =>
+              i === boardIndex ? { ...b, equity: calc.equity, outs: calc.outs } : b),
+          },
+        });
+      },
 
       // Multiplayer actions
       setMultiplayerMode: (mode) => set({ multiplayerMode: mode }),
