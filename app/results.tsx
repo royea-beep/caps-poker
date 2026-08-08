@@ -16,6 +16,7 @@ import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
 import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
+import { applyDevRevealFixture } from '../utils/devRevealFixture';
 import { getSpecificHandName } from '../utils/handNames';
 import { COLORS } from '../constants/gameConfig';
 import { getTheme } from '../constants/visualThemes';
@@ -75,7 +76,11 @@ try { Haptics = require('expo-haptics'); } catch {}
 // pre-existing Rules-of-Hooks violation (early return used to sit before two useMemos),
 // a real "Rendered fewer hooks than expected" source when revealData flipped to null.
 export default function ResultsScreen() {
-  const revealData = useGameStore((s) => s.revealData);
+  // AUDIT B — DEV/PROBE-ONLY fixture substitution, so the celebration gate can be tested on
+  // cases the dealer will not reliably deal. Identity function in the shipped bundle: both of
+  // its guards (`__DEV__`, and an EXPO_PUBLIC_ var never set in CI) are false there. This
+  // swaps the INPUT the gate reads — it does not touch the gate. See utils/devRevealFixture.ts.
+  const revealData = applyDevRevealFixture(useGameStore((s) => s.revealData));
   const visualTheme = useGameStore((s) => s.visualTheme);
   if (!revealData) {
     const theme = getTheme(visualTheme);

@@ -1,0 +1,233 @@
+{
+ "viewport": {
+  "W": 375,
+  "H": 812
+ },
+ "ts": "2026-08-08T18:51:11.710Z",
+ "rows": [
+  {
+   "n": 1,
+   "isPractice": true,
+   "playerWins": 3,
+   "botWins": 1,
+   "netChips": 100,
+   "expectDots": 20,
+   "expectCopy": "Hand won! 🎉",
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "maxDots": 20,
+   "distinctMatrices": 140,
+   "firstSeenMs": 32,
+   "lastSeenMs": 2531,
+   "headline": "YOU WIN",
+   "overlayCopy": "Hand won! 🎉",
+   "overlayLabel": "Hand won!",
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  },
+  {
+   "n": 2,
+   "isPractice": true,
+   "playerWins": 1,
+   "botWins": 3,
+   "netChips": 100,
+   "expectDots": 0,
+   "expectCopy": null,
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "maxDots": 0,
+   "distinctMatrices": 0,
+   "firstSeenMs": null,
+   "lastSeenMs": null,
+   "headline": "YOU LOSE",
+   "overlayCopy": null,
+   "overlayLabel": null,
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  },
+  {
+   "n": 3,
+   "isPractice": true,
+   "playerWins": 2,
+   "botWins": 2,
+   "netChips": 100,
+   "expectDots": 0,
+   "expectCopy": null,
+   "precondition": {
+    "hidden": false,
+    "rafCount": 45,
+    "ok": true
+   },
+   "maxDots": 0,
+   "distinctMatrices": 0,
+   "firstSeenMs": null,
+   "lastSeenMs": null,
+   "headline": "TIE GAME",
+   "overlayCopy": null,
+   "overlayLabel": null,
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  },
+  {
+   "n": 4,
+   "isPractice": true,
+   "playerWins": 4,
+   "botWins": 0,
+   "netChips": 100,
+   "expectDots": 20,
+   "expectCopy": "Hand won! 🎉",
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "maxDots": 20,
+   "distinctMatrices": 140,
+   "firstSeenMs": 32,
+   "lastSeenMs": 2565,
+   "headline": "PERFECT!",
+   "overlayCopy": "Hand won! 🎉",
+   "overlayLabel": "Hand won!",
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  },
+  {
+   "n": 5,
+   "isPractice": false,
+   "playerWins": 1,
+   "botWins": 3,
+   "netChips": 150,
+   "expectDots": 20,
+   "expectCopy": "You won 150 chips! 🎉",
+   "precondition": {
+    "hidden": false,
+    "rafCount": 45,
+    "ok": true
+   },
+   "maxDots": 20,
+   "distinctMatrices": 160,
+   "firstSeenMs": 31,
+   "lastSeenMs": 2598,
+   "headline": "YOU LOSE",
+   "overlayCopy": "You won 150 chips! 🎉",
+   "overlayLabel": "You won 150 chips!",
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  },
+  {
+   "n": 6,
+   "isPractice": false,
+   "playerWins": 3,
+   "botWins": 1,
+   "netChips": 0,
+   "expectDots": 0,
+   "expectCopy": null,
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "maxDots": 0,
+   "distinctMatrices": 0,
+   "firstSeenMs": null,
+   "lastSeenMs": null,
+   "headline": "YOU WIN",
+   "overlayCopy": null,
+   "overlayLabel": null,
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  },
+  {
+   "n": 7,
+   "isPractice": false,
+   "playerWins": 3,
+   "botWins": 1,
+   "netChips": -80,
+   "expectDots": 0,
+   "expectCopy": null,
+   "precondition": {
+    "hidden": false,
+    "rafCount": 46,
+    "ok": true
+   },
+   "maxDots": 0,
+   "distinctMatrices": 0,
+   "firstSeenMs": null,
+   "lastSeenMs": null,
+   "headline": "YOU WIN",
+   "overlayCopy": null,
+   "overlayLabel": null,
+   "bodyMounted": true,
+   "mountedOk": true,
+   "errs": [
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: TypeError: Failed to fetch\n    at http://localhost:8123/_expo/static/js/web/index-a0fc9a88c6abf096ea29028a864ff10c.js:862:5619\n    at _handleRequest (http://loc",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED",
+    "CONSOLE: Failed to load resource: net::ERR_FAILED"
+   ],
+   "PASS": true,
+   "verdict": "PASS"
+  }
+ ]
+}
