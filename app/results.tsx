@@ -559,11 +559,25 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     };
   }, []);
 
-  // Win celebration overlay (FIX 3) — shown for 3s when player wins chips
-  // PRACTICE-CHIP-GATE-SWEEP 2026-07-09 — netChips is real pot arithmetic, nonzero-looking
-  // even in practice (XP-only, no chips actually move) — this overlay quotes it directly.
+  // Win celebration overlay (FIX 3) — shown for 3s when the player wins.
+  //
+  // CN1 — THE SECOND GATE. Changing only the render condition below was HALF A FIX: this
+  // effect is what sets showWinOverlay, and it carried the same practice exclusion, so the
+  // state was never true and the burst still never rendered. Measured, not assumed - four
+  // full-reveal runs with the render gate already open still counted zero dots.
+  //
+  // AND THE REASON PRACTICE WAS EXCLUDED IN THE FIRST PLACE, which is a trap worth naming:
+  // PRACTICE-CHIP-GATE-SWEEP (2026-07-09) noted that netChips is real pot arithmetic and looks
+  // nonzero in practice even though XP-only means no chips move — and this overlay QUOTES IT:
+  // "You won N chips!". Opening the gate without touching that sentence would re-introduce the
+  // exact false claim that sweep removed. So the copy is now practice-aware below.
   useEffect(() => {
-    if (!revealData || revealData.netChips <= 0 || revealData.isPractice) return;
+    if (!revealData) return;
+    const wonHand = revealData.isPractice
+      ? revealData.boards.filter((b) => b.winner === 'player').length >
+        revealData.boards.filter((b) => b.winner === 'bot').length
+      : revealData.netChips > 0;
+    if (!wonHand) return;
     // Delay slightly so the results screen fade-in finishes first
     const showTimer = setTimeout(() => {
       setShowWinOverlay(true);
@@ -880,7 +894,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               ]}
             />
           ))}
-          <Text style={styles.winOverlayText} accessibilityLabel={`You won ${revealData.netChips} chips!`}>You won {revealData.netChips} chips! 🎉</Text>
+          <Text
+            style={styles.winOverlayText}
+            accessibilityLabel={revealData.isPractice ? 'Hand won!' : `You won ${revealData.netChips} chips!`}
+          >
+            {/* Practice is XP-only — never quote a chip figure here. See the effect above. */}
+            {revealData.isPractice ? 'Hand won! 🎉' : `You won ${revealData.netChips} chips! 🎉`}
+          </Text>
         </Animated.View>
       )}
 
