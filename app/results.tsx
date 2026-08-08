@@ -838,7 +838,21 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       )}
 
       {/* Win celebration overlay (FIX 3) — "You won X chips!" for 3s */}
-      {showWinOverlay && revealData && revealData.netChips > 0 && !revealData.isPractice && (
+      {/* CN1 — THE CELEBRATION GATE. Roye's ruling, 2026-08-08: option A, RESTRAINED.
+          Practice was excluded outright, and practice is XP-only so `netChips > 0` failed there
+          too - which meant a new player winning their FIRST hand saw nothing at all, because
+          the Home Play button opens practice. Three sprints of "why can't I measure the dots"
+          ended here.
+
+          WHY IT IS RESTRAINED RATHER THAN "any win": at 4 players you take a board in roughly
+          half of all hands, so celebrating every BOARD would fire every other hand and stop
+          being an event by the tenth. Winning a single board is already shown by that board's
+          own win state. So practice celebrates winning the HAND - playerWins > botWins, the
+          exact rule the headline at the top of this screen already uses for "YOU WIN".
+
+          Real-chip hands are UNCHANGED: `netChips > 0` still gates them and is doing real work
+          there (it also excludes a net-zero hand, which a board count would not). */}
+      {showWinOverlay && revealData && (revealData.isPractice ? playerWins > botWins : revealData.netChips > 0) && (
         <Animated.View
           pointerEvents="none"
           accessibilityLiveRegion="assertive"
