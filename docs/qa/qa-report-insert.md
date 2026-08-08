@@ -73,6 +73,34 @@ where project = 'Caps'
 order by created_at desc;
 ```
 
+## Matching a repro attempt to a crash row
+
+Part ו' of the protocol records a wall-clock time per attempt. Paste this straight in,
+replacing the window with the run's start/end (Asia/Jerusalem). It returns anything
+`crash_reports` received in that window, newest first.
+
+```sql
+select id,
+       created_at at time zone 'Asia/Jerusalem' as local_time,
+       last_screen,
+       last_action,
+       left(error_message, 120) as error_message,
+       jsonb_array_length(coalesce(step_log, '[]'::jsonb)) as steps,
+       status,
+       device
+from crash_reports
+where created_at >= timestamptz '2026-08-09 10:00+03'
+  and created_at <  timestamptz '2026-08-09 11:00+03'
+order by created_at desc;
+```
+
+Nothing returned is a real result — write "not reproduced" rather than leaving it blank.
+A row whose `steps` is 2 and whose `last_action` is `-> Splash` is the 83-row cluster.
+
+**Reading `device`:** builds from `fa2ddb6` onward carry `native_build` inside that jsonb
+(the G2 work). Build 508 predates it, so these rows will not have it — which is exactly why
+the attempt timestamp is the only link available for this run.
+
 ## Why the numbers are worth keeping separate from the jsonb
 
 `compliance`, `total_issues` and `critical_issues` are real columns so a trend across builds is

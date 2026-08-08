@@ -51,6 +51,42 @@ not against memory of the b372 app.
 **Marking convention below:** `[CODE]` = verifiable by reading code or querying the DB, no device
 needed. `[DEVICE]` = requires a physical phone; these are the ones a human must run.
 
+## `crash_reports` — the real numbers, CORRECTED 2026-08-08
+
+Queried directly, whole table, no date filter:
+
+| figure | value |
+|---|---|
+| rows total | **251** |
+| `dirty-shutdown` rows | **135** — not 3. The "3" came from a query filtered to 45 days and grouped by a truncated `error_message`, which split one cluster into many. |
+| browser-autoplay noise (`play() interrupted…`) | 50 — web-only, not a device signal |
+| everything else | 66 |
+| status | **all 135 dirty-shutdown rows are `dismissed`**, and all 135 carry an `error_stack` |
+| `device_id` | **NULL on all 135** — affected-device count is unknowable, and these rows can never be attributed. The G2 build identifier fixes this going forward only. |
+
+**135 IS NOT 135 CRASHES.** `dirty-shutdown` is reconstructed on the *next* launch from a
+`step_log` that was never closed. A user force-quitting from the app switcher and an iOS
+background kill produce exactly the same row as a real native crash. An unknown share of the
+135 is noise — quoting 135 as confirmed crashes is a different error, not a correction.
+
+Two clusters are not shaped like noise and are worth chasing (repro steps: part ו' of
+`docs/qa/device-pass-508.md`):
+
+| cluster | rows | window | note |
+|---|---|---|---|
+| `Splash` / `-> Splash` | 83 | 2026-03-24 → 2026-06-21 | 92 of the 135 have **≤2 steps** logged |
+| `Game` / `deal_pressed` | 19 | 2026-04-03 → 2026-06-22 | one specific point in the flow, not a spread |
+| `Home` / `-> Home` | 21 | 2026-03-26 → **2026-07-23** | the ONLY cluster still appearing after June |
+
+**Do not read the June cut-off as "fixed."** The Splash and `deal_pressed` clusters stop on
+21–22 June while Home continues to 23 July. A fix and an instrumentation change that stopped
+the detector firing look identical from this table. Unresolved.
+
+Superseded: `2026-03-28_0619_CAPS_caps-bible-audit.md` records "74 reports, all false
+positives". The count has since grown to 251/135, and that document's claim that a DB trigger
+auto-dismisses dirty-shutdown does not hold today — `crash_reports` currently has **no
+triggers at all**, so "all dismissed" is not evidence of automated triage.
+
 ## Mandatory checks per build
 
 ### A. Build identification
