@@ -37,7 +37,8 @@ not against memory of the b372 app.
 
 | fact | current truth |
 |---|---|
-| Home screen | **`app/index.tsx`**. `app/(tabs)/index.tsx` is dead/legacy — editing it changes nothing. |
+| Home screen | **`app/(tabs)/index.tsx`** (110KB). ⚠️ CORRECTED 2026-08-08 — an earlier revision of this table claimed home was `app/index.tsx` and that `(tabs)/index.tsx` was dead. **`app/index.tsx` DOES NOT EXIST.** That claim came from a brief and was written here without being checked; CLAUDE.md also names `app/(tabs)/index.tsx` as Home. Verify before repeating. |
+| Layout direction | **LTR IS DELIBERATE.** `app/_layout.tsx:20-21` calls `I18nManager.allowRTL(false)` and `forceRTL(false)`, so the layout stays LTR even on a Hebrew device. Hebrew text is **right-aligned within an LTR layout** — a mirrored layout is NOT the target and must not be reported as a bug. |
 | Card rendering | `Card.tsx` has **three** branches: faceDown, **V2 Minimalist (ACTIVE — `cardConfig.card_layout === 'v2'`)**, Classic (dead). Any card check must name the branch it exercises. |
 | Reveal | `BoardReveal` is a **Modal showing ONE board at a time** via `currentIdx`. NOT a scroll. A "half screen / scrolling" report during reveal is a **placement-phase** symptom, not a reveal bug. |
 | Reveal transition | **INSTANT swap**, not a slide. The slide was removed (VAMOS-FIX-REVEAL-TRANSITION-V2) because it passed through opacity 0 and flashed black. |

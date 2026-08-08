@@ -18,6 +18,9 @@ import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { getSupabase } from '../utils/supabase';
+import { getBuildIdentity, getSessionId } from '../utils/analytics';
+import { getBreadcrumbs } from '../utils/breadcrumbs';
+import { getConsoleLogs } from '../utils/logBuffer';
 import { useGameStore } from '../store/gameStore';
 import { rf, rs } from '../utils/responsive';
 
@@ -56,6 +59,19 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
       if (!sb) { setStatus('error'); return; }
       const tester = name.trim() || 'Anonymous';
       const firstLine = desc.split('\n')[0].slice(0, 80);
+      // G6 2026-08-08 — ATTACH THE CONTEXT THE TESTER SHOULD NEVER HAVE TO SUPPLY.
+      // The tester types one thing: what went wrong. Everything below is collected for them.
+      //
+      // Every column used here ALREADY EXISTED and was simply never filled — breadcrumbs,
+      // console_logs and session_id are all in bug_reports already, so this needs no migration
+      // and no new table. (This project's standing failure is parallel half-built systems;
+      // build_history, qa_reports and error_logs are all empty or dead. Not adding a fourth.)
+      //
+      // WHY THIS MATTERS MORE THAN THE AUTOMATIC PIPELINE: every one of the 135 automatic
+      // dirty-shutdown rows carries the SAME synthesized error_stack shape
+      // ("N steps recovered from DB. Session: X") — not a native stack. The automatic path is
+      // weak evidence by construction, so the manual report has to carry what it cannot.
+      const buildId = getBuildIdentity();
       const { error } = await sb.from('bug_reports').insert({
         project: PROJECT,
         title: `[Tester] ${tester}: ${firstLine}`,
@@ -65,12 +81,22 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
         report_type: 'text',
         app_version: APP_VERSION,
         status: 'open',
+        // Joins this report to analytics_events and crash_reports for the same session.
+        session_id: getSessionId(),
+        // The same trail the crash reporter uses — where the tester had been, in order.
+        breadcrumbs: getBreadcrumbs(),
+        // Already captured by utils/logBuffer; last 20 lines only, to stay a payload not a dump.
+        console_logs: getConsoleLogs().slice(-20),
         device_info: {
           platform: Platform.OS,
           osVersion: String(Platform.Version ?? ''),
           appVersion: APP_VERSION,
           otaUpdateId: Updates.updateId ?? 'embedded',
           source: 'tester_report_button',
+          // G2 — `appVersion` is "2.7.0" on every build ever shipped and cannot identify one.
+          // This is the installed binary's build number, read from the native layer.
+          ...buildId,
+          reportedAtLocal: new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jerusalem' }),
         },
       });
       if (error) { setStatus('error'); return; }
@@ -103,7 +129,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           testID="report-bug-row"
         >
           <Text style={styles.rowIcon}>🐛</Text>
-          <Text style={styles.rowLabel}>Report a bug</Text>
+          <Text style={styles.rowLabel}>דיווח על תקלה</Text>
           <Text style={styles.rowChevron}>›</Text>
         </TouchableOpacity>
       )}
@@ -116,29 +142,32 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           <View style={styles.sheet}>
             {status === 'done' ? (
               <View style={styles.doneWrap}>
-                <Text style={styles.doneTitle}>✅ Thanks!</Text>
-                <Text style={styles.doneBody}>Your report was sent to the team.</Text>
-                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Close">
-                  <Text style={styles.sendText}>Done</Text>
+                <Text style={styles.doneTitle}>✅ תודה!</Text>
+                <Text style={styles.doneBody}>הדיווח נשלח לצוות.</Text>
+                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel="סגירה">
+                  <Text style={styles.sendText}>סגור</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={styles.title}>🐛 Report a bug</Text>
-                <Text style={styles.hint}>What went wrong? The more detail, the faster we fix it.</Text>
+                <Text style={styles.title}>🐛 דיווח על תקלה</Text>
+                {/* G6 — the tester supplies ONE thing: what went wrong. Build number, screen,
+                    breadcrumbs, console and session are attached automatically on send. The
+                    name field is pre-filled from the profile, so it is not a second ask. */}
+                <Text style={styles.hint}>מה קרה? ככל שיהיו יותר פרטים, כך נתקן מהר יותר.</Text>
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Your name (so we can follow up)"
+                  placeholder="השם שלך (כדי שנוכל לחזור אליך)"
                   placeholderTextColor="#8A8A8A"
                   value={name}
                   onChangeText={setName}
                   maxLength={40}
-                  accessibilityLabel="Your name"
+                  accessibilityLabel="השם שלך"
                 />
                 <TextInput
                   style={[styles.input, styles.textarea]}
-                  placeholder="Describe the bug — what you did, what you expected, what happened…"
+                  placeholder="תאר את התקלה — מה עשית, למה ציפית, ומה קרה בפועל…"
                   placeholderTextColor="#8A8A8A"
                   value={description}
                   onChangeText={setDescription}
@@ -146,25 +175,27 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
                   numberOfLines={5}
                   maxLength={1000}
                   textAlignVertical="top"
-                  accessibilityLabel="Bug description"
+                  accessibilityLabel="תיאור התקלה"
                   testID="report-bug-description"
                 />
-                <Text style={styles.screenNote}>Screen: {pathname || 'unknown'}</Text>
-                {status === 'error' && <Text style={styles.errorText}>Couldn't send — check your connection and try again.</Text>}
+                <Text style={styles.screenNote}>מסך: {pathname || 'לא ידוע'}</Text>
+                {/* FAILURE MUST BE VISIBLE. A tester who believes a report was sent when it
+                    was not is worse off than one with no button at all. */}
+                {status === 'error' && <Text style={styles.errorText}>השליחה נכשלה — בדוק את החיבור לאינטרנט ונסה שוב.</Text>}
 
                 <View style={styles.actions}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Cancel">
-                    <Text style={styles.cancelText}>Cancel</Text>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="ביטול">
+                    <Text style={styles.cancelText}>ביטול</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.sendBtn, (!description.trim() || status === 'sending') && styles.sendBtnDisabled]}
                     onPress={send}
                     disabled={!description.trim() || status === 'sending'}
                     accessibilityRole="button"
-                    accessibilityLabel="Send report"
+                    accessibilityLabel="שליחת דיווח"
                     testID="report-bug-send"
                   >
-                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>Send</Text>}
+                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>שלח</Text>}
                   </TouchableOpacity>
                 </View>
               </>
@@ -204,9 +235,14 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: '#1B1410', borderTopLeftRadius: rs(20), borderTopRightRadius: rs(20), padding: rs(20), paddingBottom: rs(32), gap: rs(10) },
   title: { color: '#F5B546', fontSize: rf(20), fontWeight: '800' },
   hint: { color: '#B7ADA0', fontSize: rf(13), marginBottom: rs(4) },
+  // G6 — Hebrew copy, RIGHT-ALIGNED, inside an LTR layout. The app calls
+  // I18nManager.allowRTL(false) + forceRTL(false) at app/_layout.tsx:20-21, so the layout
+  // direction is deliberately LTR even on a Hebrew device. Flipping direction here would
+  // fight that decision; aligning the text is the convention the rest of the app uses.
   input: {
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: rs(10), paddingHorizontal: rs(14), paddingVertical: rs(12),
     color: '#F3ECDD', fontSize: rf(15), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    textAlign: 'right',
   },
   textarea: { minHeight: rs(110) },
   screenNote: { color: '#7C736A', fontSize: rf(12) },
