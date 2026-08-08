@@ -15,6 +15,7 @@ import fs from 'fs';
 const TARGET = 'https://caps.ftable.co.il/';
 const W = Number(process.argv[2] || 375);
 const H = Number(process.argv[3] || 812);
+const PATH = (process.argv[4] || 'full'); // 'full' | 'skip' — CM1.2: skip is a candidate cause
 
 const fire = `(el)=>{const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
 const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
@@ -63,13 +64,56 @@ try {
   await page.evaluate(`(()=>{const rb=document.querySelector('[data-testid="ready-button"]');if(rb)window.__f(rb);})()`);
   await page.waitForTimeout(3000);
 
-  // long-press the reveal surface to reach /results fast
-  await page.evaluate(`(()=>{const el=document.querySelector('[data-testid="reveal-skip-surface"]');
-    if(!el)return; const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
-    const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
-    ['pointerdown','mousedown'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent)));
-    setTimeout(()=>['pointerup','mouseup'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent))),700);})()`);
-  await page.waitForTimeout(2500);
+  // CM1 — ARM THE SAMPLER BEFORE ARRIVING, then poll from the instant /results mounts.
+  // The previous probe waited a fixed 2.5s AFTER arrival; the win overlay lives ~3s, so that
+  // caught its tail at best. This installs a rAF watcher that starts recording the moment
+  // result-headline appears and keeps recording for 4s, so the burst cannot be missed.
+  await page.evaluate((path) => {
+    window.__W = { armedAt: performance.now(), arrivedAt: null, series: [], path };
+    const loop = () => {
+      const hl = document.querySelector('[data-testid="result-headline"]');
+      if (hl) {
+        if (window.__W.arrivedAt === null) window.__W.arrivedAt = performance.now();
+        const since = performance.now() - window.__W.arrivedAt;
+        const d = [...document.querySelectorAll('[data-testid="win-dot"]')];
+        window.__W.series.push({ t: Math.round(since), n: d.length,
+          tf: d.length ? getComputedStyle(d[0]).transform : null,
+          op: d.length ? +parseFloat(getComputedStyle(d[0]).opacity).toFixed(3) : null });
+        if (since > 4000) return;
+      }
+      if (performance.now() - window.__W.armedAt < 70000) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }, PATH);
+
+  if (PATH === 'skip') {
+    await page.evaluate(`(()=>{const el=document.querySelector('[data-testid="reveal-skip-surface"]');
+      if(!el)return; const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
+      const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
+      ['pointerdown','mousedown'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent)));
+      setTimeout(()=>['pointerup','mouseup'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent))),700);})()`);
+    await page.waitForTimeout(6000);
+  } else {
+    // FULL reveal: 4 boards x ~10s + results transition. Wait it out.
+    await page.waitForTimeout(46000);
+  }
+
+  out.arrival = await page.evaluate(() => {
+    const W = window.__W;
+    const withDots = W.series.filter(s => s.n > 0);
+    return {
+      path: W.path,
+      arrived: W.arrivedAt !== null,
+      samples: W.series.length,
+      framesWithDots: withDots.length,
+      maxDots: W.series.length ? Math.max(...W.series.map(s => s.n)) : 0,
+      firstDotAtMs: withDots.length ? withDots[0].t : null,
+      lastDotAtMs: withDots.length ? withDots[withDots.length - 1].t : null,
+      distinctTransforms: [...new Set(withDots.map(s => s.tf))].length,
+      opacityRange: withDots.length ? [Math.min(...withDots.map(s => s.op)), Math.max(...withDots.map(s => s.op))] : null,
+      head: withDots.slice(0, 6),
+    };
+  });
 
   // CL1 — anchored by testID now, not geometry. Also samples TRANSFORM over a window so
   // "the dots exist" and "the dots move" are separate, provable claims.
