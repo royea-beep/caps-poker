@@ -76,11 +76,16 @@ console.log(`samples=${samples.length} interval=250ms duration=16s unfiltered=YE
 
 // 1 — BOARD n OF m
 const boardOf = [];
-for (const s of samples) for (const n of s.nodes) if (/BOARD\s+\d+\s+OF\s+\d+/i.test(n.x)) boardOf.push({ t: s.t, ...n });
+// NAME COLLISION FIX (iteration 33): the old form was { t: s.t, ...n } — but a node also has
+// `t` (its box top), so the spread OVERWROTE the timestamp. The handoff then printed
+// "t range 368..368", which was the box top mislabelled as time, and it cost a whole capture
+// aimed at the wrong window. Timestamp is `ms`; box top stays `t`.
+for (const s of samples) for (const n of s.nodes) if (/BOARD\s+\d+\s+OF\s+\d+/i.test(n.x)) boardOf.push({ ms: s.t, ...n });
 console.log(`\n1) /BOARD \\d+ OF \\d+/i -> ${boardOf.length ? 'FOUND' : 'NOT FOUND'}`);
 if (boardOf.length) {
   console.log(`   text="${boardOf[0].x}" box ${boardOf[0].t}-${boardOf[0].b} class=${boardOf[0].c}`);
-  console.log(`   t range ${boardOf[0].t}..${boardOf[boardOf.length-1].t} (${boardOf.length} samples)`);
+  console.log(`   PRESENT AT ms: ${boardOf.map(v => v.ms).join(', ')}`);
+  console.log(`   window: first ${boardOf[0].ms}ms .. last ${boardOf[boardOf.length-1].ms}ms (${boardOf.length} samples)`);
 } else {
   const near = new Set();
   for (const s of samples) for (const n of s.nodes) if (/board/i.test(n.x)) near.add(n.x);
