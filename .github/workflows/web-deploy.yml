@@ -130,6 +130,11 @@ jobs:
           CI: 'true'
           NODE_OPTIONS: '--max-old-space-size=8192'
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # WEB BUILD ID 2026-08-09 — Metro inlines EXPO_PUBLIC_* at build time. Web is the
+          # tester delivery channel now, and Application.nativeBuildVersion is always null
+          # there, so without this a tester bug report carries no version at all. Costs
+          # nothing: no extra step, no runner change.
+          EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
         run: npx expo export --platform web --output-dir dist --clear
 
       # Artifact-side observation, INFORMATIONAL ONLY — never blocks.

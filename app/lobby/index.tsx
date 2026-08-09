@@ -238,17 +238,19 @@ export default function PublicLobby() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <Text style={styles.back}>‹ Back</Text>
+        {/* LOBBY-LABEL 2026-08-09 — the destination of the home "משחק אונליין" CTA was itself
+            all-English. Same path, same problem, fixed together. */}
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="חזרה">
+          <Text style={styles.back}>‹ חזרה</Text>
         </Pressable>
-        <Text style={styles.title} accessibilityRole="header">LOBBY</Text>
+        <Text style={styles.title} accessibilityRole="header">לובי</Text>
         <View style={{ width: rs(40) }} />
       </View>
-      <Text style={styles.sub}>Public tables · auto-start when full</Text>
+      <Text style={styles.sub}>שולחנות פומביים · מתחילים אוטומטית כשמתמלאים</Text>
       {onlineCount > 0 && (
         <View style={styles.liveRow} accessibilityRole="text" accessibilityLabel={`${onlineCount} players online now`}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>{onlineCount} {onlineCount === 1 ? 'player' : 'players'} online now</Text>
+          <Text style={styles.liveText}>{onlineCount} {onlineCount === 1 ? 'שחקן' : 'שחקנים'} מחוברים עכשיו</Text>
         </View>
       )}
 

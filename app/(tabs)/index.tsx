@@ -1551,12 +1551,15 @@ export default function HomeScreen() {
               AnimatedRN.timing(playOnlineScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
             }
             accessibilityRole="button"
-            accessibilityLabel="Play online, open the multiplayer lobby"
+            accessibilityLabel="משחק אונליין, פתיחת לובי מרובה משתתפים"
           >
+            {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
+                English inside a Hebrew app, on the highest-traffic route to multiplayer.
+                The emoji stays as decoration; the TEXT is what names the destination. */}
             <Text style={styles.playOnlineEmoji}>🎮</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.playOnlineTitle}>Play Online</Text>
-              <Text style={styles.playOnlineSub}>Multiplayer lobby · real players & instant bot tables</Text>
+              <Text style={styles.playOnlineTitle}>משחק אונליין</Text>
+              <Text style={styles.playOnlineSub}>לובי מרובה משתתפים · שחקנים אמיתיים ושולחנות בוט מיידיים</Text>
             </View>
             <Text style={styles.playOnlineGo}>›</Text>
           </Pressable>

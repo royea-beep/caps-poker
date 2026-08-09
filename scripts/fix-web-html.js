@@ -71,6 +71,27 @@ if (!html.includes('window.onerror')) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// FAIL LOUD. This is the single point of total failure in the web deploy.
+//
+// The bundle uses `import.meta`. Without type="module" the browser throws
+// `SyntaxError: Cannot use 'import.meta' outside a module`, #root stays empty, and the site
+// is a WHITE PAGE. Every replace above is String.replace — a regex that stops matching (an
+// Expo exporter change to the script tag is all it takes) is a SILENT NO-OP, and this script
+// would still print "patched" and exit 0. The deploy would then ship the blank page, and the
+// post-deploy axe-core audit would NOT catch it: a page with no content has no accessibility
+// violations, so it passes.
+//
+// So: assert the outcome, not the intent. Cheapest possible guard, blocking on purpose.
+if (!/<script type="module" src="\/_expo\/static\/js\/web\/[^"]+"><\/script>/.test(html)) {
+  console.error('::error::fix-web-html.js: index.html has NO type="module" script tag after patching.');
+  console.error('The exported script tag did not match the expected pattern, so the patch was a no-op.');
+  console.error('Deploying this would serve a WHITE PAGE (import.meta outside a module).');
+  console.error('Actual script tags found:');
+  for (const m of html.matchAll(/<script[^>]*>/g)) console.error('  ' + m[0]);
+  process.exit(1);
+}
+
 fs.writeFileSync(htmlPath, html);
 console.log('✓ index.html patched (type="module", error handler, dvh viewport fix)');
 

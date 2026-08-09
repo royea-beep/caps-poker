@@ -60,16 +60,40 @@ export function getAppVersion(): string {
 let _buildIdentity: Record<string, unknown> | null = null;
 export function getBuildIdentity(): Record<string, unknown> {
   if (_buildIdentity) return _buildIdentity;
+  let native_build: string | null = null;
+  let native_version: string | null = null;
   try {
     const App = require('expo-application');
-    _buildIdentity = {
-      // iOS CFBundleVersion / Android versionCode, from the installed binary.
-      native_build: App?.nativeBuildVersion ?? null,
-      native_version: App?.nativeApplicationVersion ?? null,
-    };
-  } catch {
-    _buildIdentity = { native_build: null, native_version: null };
-  }
+    // iOS CFBundleVersion / Android versionCode, from the installed binary.
+    native_build = App?.nativeBuildVersion ?? null;
+    native_version = App?.nativeApplicationVersion ?? null;
+  } catch { /* not available on web */ }
+
+  // WEB BUILD ID 2026-08-09 — native_build is ALWAYS null on web (proven twice), and web is
+  // now the delivery channel for testers, so without this a tester's bug report carries no
+  // version at all and G2 is unsolved where it actually matters.
+  //
+  // TWO SOURCES, because they fail in different ways:
+  //   web_build  — the commit sha, injected at build time by web-deploy.yml (EXPO_PUBLIC_* is
+  //                inlined by Metro). This is the one you can act on: it maps straight to code.
+  //                Null if a build did not set it, which is itself worth seeing.
+  //   web_bundle — the emitted bundle hash, read off the live <script> tag at runtime. Needs
+  //                NO build-time cooperation, so it still identifies the deploy even if the
+  //                env var is missing or a build bypassed CI.
+  let web_bundle: string | null = null;
+  try {
+    const d: any = (globalThis as any).document;
+    const src: string | undefined = d?.querySelector?.('script[src*="/_expo/static/js/web/"]')?.getAttribute?.('src');
+    const m = src ? /index-([a-f0-9]+)\.js/.exec(src) : null;
+    web_bundle = m ? m[1] : null;
+  } catch { /* native, or no DOM */ }
+
+  _buildIdentity = {
+    native_build,
+    native_version,
+    web_build: process.env.EXPO_PUBLIC_COMMIT_SHA ?? null,
+    web_bundle,
+  };
   return _buildIdentity;
 }
 
