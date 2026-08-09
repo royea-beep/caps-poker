@@ -825,8 +825,16 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
 
           {/* Community cards — flop face-up, turn+river flip in sequence (middle) */}
           <View style={styles.section}>
+            {/* BUG-1 ANCHOR 2026-08-09 — TEST HOOK ONLY. No behaviour, styling or layout.
+                The bot rows carry testID="reveal-section-label" (:791) but this row carried
+                nothing, so a probe had no structural anchor for the community cards. Four
+                attempts to measure the "text over the cards" overlap failed because of it —
+                most visibly a 64-sample series whose overlap column was `null` throughout,
+                since the community box was never matched and the comparison never ran.
+                Anchored on the ROW rather than the label, because the overlap question is
+                about where the CARDS are. */}
             <Text style={styles.sectionLabel}>Community</Text>
-            <View style={styles.cardRow}>
+            <View style={styles.cardRow} testID="community-row">
               {allCommunity.map((c, i) => {
                 const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);
                 const isRiver = i === 4;
