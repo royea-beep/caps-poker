@@ -34,6 +34,7 @@ import { t, getLanguage } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkAchievements, getAchievement, Achievement } from '../utils/achievements';
 import { playSound } from '../utils/sounds';
+import { playHaptic } from '../utils/haptics';
 import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
@@ -262,8 +263,27 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     if (revealData.netChips > 0) {
       incrementHandsWon();
       updateBiggestWin(revealData.netChips);
-      // Win sound — delayed slightly so it plays after screen fade-in
-      setTimeout(() => { void playSound('chipsWin'); }, 500);
+      // CELEBRATION AUDIO, TIERED BY HOW MUCH WAS WON (was: one flat 'chipsWin' for every win).
+      //
+      // Ratio, not raw board count. The board count is DYNAMIC — 2P=4, 3P=3, 4P=2 — so "3 of 3"
+      // and "3 of 4" are different achievements and a raw count ranks them wrongly.
+      //
+      // This sits strictly INSIDE the existing netChips>0 branch. It re-ranks a win that has
+      // already qualified; it can never turn a non-win into a celebration. The celebration gate
+      // (results.tsx:566/:841, playerWins > botWins) is untouched — tiering must never widen the
+      // thing that stops a single board won during a LOST hand from being celebrated.
+      const totalBoardsHere = revealData.boards.length;
+      const boardsWonHere = revealData.boards.filter((b) => b.winner === 'player').length;
+      const wonRatio = totalBoardsHere > 0 ? boardsWonHere / totalBoardsHere : 0;
+      // Sweeps keep 'chipsWin' as their base layer and gain a fanfare below, so no path
+      // loses the sound it has today.
+      setTimeout(() => { void playSound(wonRatio >= 0.6 ? 'chipsWin' : 'boardWin'); }, 500);
+      // A win with no sweep still deserves to be FELT — the only haptics in the app today are
+      // CompleteOverlay's, which renders on a sweep alone, so an ordinary win was silent to
+      // the hands. Single medium tap; the sweep's Heavy->Medium->Light triple stays the top tier.
+      if (!(totalBoardsHere > 0 && boardsWonHere === totalBoardsHere)) {
+        setTimeout(() => { playHaptic('medium'); }, 500);
+      }
     } else if (revealData.netChips < 0) {
       setTimeout(() => { void playSound('lose'); }, 500);
     }
@@ -281,6 +301,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       revealData.boards.length,
     );
     if (localSwept && revealData.completeBonusAmount > 0) {
+      // SWEEP — different in KIND, not merely louder. An ordinary win is a single hit at
+      // t+500; a sweep becomes a three-part rising sequence: chipsWin (t+500, above) ->
+      // revealStart 0.3 (t+650) -> complete 0.7 (t+800). Ascent is what reads as reward;
+      // the same sound at a higher volume does not.
+      setTimeout(() => { void playSound('revealStart'); }, 650);
       setTimeout(() => { void playSound('complete'); }, 800);
     }
 

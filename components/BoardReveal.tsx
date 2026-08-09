@@ -1061,15 +1061,17 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
         {showIntermission && (
           <View style={styles.intermissionOverlay} pointerEvents="none">
             <Text style={styles.intermissionBoard}>Board {currentIdx + 1} of {boards.length}</Text>
-            <Text style={[styles.intermissionResult, { color: resultColor }]}>
-              {opponentName
-                ? (board.winner === 'player'
-                    ? `YOU WIN vs ${opponentName}!`
-                    : board.winner === 'bot'
-                    ? `${opponentName} wins this board`
-                    : resultText)
-                : resultText}
-            </Text>
+            {/* DUPLICATE RESULT STRING REMOVED 2026-08-09. This rendered the SAME literal
+                string as the persistent result row at :925, both on screen simultaneously,
+                300px apart, with no styling distinction — measured on live at y 391-444 here
+                vs y 695-727 there. The persistent row is the one that survives because it
+                sits clear of the community cards; this one washed over them, which is what
+                Roye photographed and reported as text over the cards.
+                Note for whoever revisits: the MP-specific phrasing ("YOU WIN vs <name>!") went
+                with it — the persistent row shows the plain resultText in both solo and MP. If
+                that phrasing is wanted back, put it on :925; do not restore a second
+                simultaneous copy here. `opponentName` itself is still live — it feeds the bot
+                seat label at :786 — so it is NOT now unused. */}
             {!isPractice && board.potAmount > 0 && board.winner !== 'tie' && (
               <Text style={[styles.intermissionChip, { color: chipColor }]}>
                 {chipSign}{board.potAmount} chips

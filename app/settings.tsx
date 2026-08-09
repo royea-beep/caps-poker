@@ -22,7 +22,7 @@ if (Platform.OS !== 'web') {
 function hapticLight() {
   if (!Haptics) return;
   try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    playHaptic('medium');
   } catch {}
 }
 import { useRouter } from 'expo-router';
@@ -36,6 +36,7 @@ import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/
 // folded into Visual Style (Background+Home derived via VISUAL_THEME_AXES; Button dead; Card
 // Design picker removed, cardTheme MECHANISM retained in the store for the card-face batch).
 import { CapsHooks } from '../utils/learning';
+import { playHaptic } from '../utils/haptics';
 import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
 import { getAuthState, logout } from '../utils/auth';
@@ -261,6 +262,34 @@ function RevealSpeedSelector() {
           </Pressable>
         ))}
       </View>
+    </View>
+  );
+}
+
+// Haptics had no off switch at all: soundEnabled/soundVolume have never covered vibration,
+// so haptics fired with sound fully muted. Deliberately a SEPARATE channel from sound, not a
+// second control over it — settings.tsx:1199-1203 records that a genuinely conflicting
+// "Mute sounds" toggle was removed in Batch A, and this must not become another one.
+function HapticsToggle() {
+  const hapticsEnabled = useGameStore((s) => s.config.hapticsEnabled !== false);
+  const updateConfig = useGameStore((s) => s.updateConfig);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel}>Vibration</Text>
+      </View>
+      <Pressable
+        onPress={() => { updateConfig({ hapticsEnabled: !hapticsEnabled }); CapsHooks.settingsChanged('hapticsEnabled', !hapticsEnabled); }}
+        style={[styles.toggleBtn, hapticsEnabled && styles.toggleBtnActive]}
+        accessibilityRole="switch"
+        accessibilityLabel="Vibration enabled"
+        accessibilityState={{ checked: hapticsEnabled }} aria-checked={hapticsEnabled}
+      >
+        <Text style={[styles.toggleText, hapticsEnabled && styles.toggleTextActive]}>
+          {hapticsEnabled ? 'ON' : 'OFF'}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -1028,6 +1057,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle} accessibilityRole="header">AUDIO & NOTIFICATIONS</Text>
         <SoundToggle />
+        <HapticsToggle />
         <AmbientToggle />
         <NotificationsToggle />
 

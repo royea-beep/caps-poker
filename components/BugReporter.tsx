@@ -30,6 +30,7 @@ import { getConsoleLogs, getGameLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
 import { track } from '../utils/analytics';
 import { readFileAsBytes } from '../utils/fileReader';
+import { playHaptic } from '../utils/haptics';
 import { withTimeout } from '../utils/withTimeout';
 import { sendBugReportToWhatsApp, buildBugFixPrompt } from '../utils/bugWhatsApp';
 
@@ -452,7 +453,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     if (phase !== 'idle') return;
     track('bug_reporter_opened', {}, 'bug_reporter');
     console.log('[BUG-PIPE] Step 1: User triggered bug report — showing pill...');
-    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium)?.catch?.(() => {});
+    playHaptic('medium');
     setNote('');
     setPhase('recording');
 
@@ -477,7 +478,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     capturedLogs.current = getGlobalLogs();
     capturedElapsed.current = elapsed;
     console.log('[BUG-PIPE] Step 3c: Submit dialog shown. audioUri:', audioUri ? 'SET' : 'NULL', 'frames:', frames.length);
-    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle.Light)?.catch?.(() => {});
+    playHaptic('light');
     setPhase('review');
   }, [stopAudio, elapsed]);
 
@@ -609,7 +610,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         capturedElapsed.current = 0;
         console.log('[BUG-PIPE] Step 7: ✅ Cleanup complete');
 
-        Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success)?.catch?.(() => {});
+        playHaptic('success');
         showToast(reportId ? 'Report sent ✅' : 'Sent (upload issue) ⚠️');
       } catch (err) {
         console.error('[BUG-PIPE] ❌ handleSend failed:', err);

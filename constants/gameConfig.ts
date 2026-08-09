@@ -49,6 +49,13 @@ export const DEFAULT_CONFIG = {
   botSpeedMax: 4000,
   soundEnabled: true as boolean,
   soundVolume: 0.8 as number,
+  // Haptics had NO off switch: soundEnabled/soundVolume never covered them, so vibration
+  // fired with sound fully muted. On mobile — where most people play muted — that made
+  // haptics the only feedback channel AND the only unmutable one. Default on: it is a
+  // feature until someone turns it off. This is NOT a second mute control; it owns a
+  // different channel from the sound settings (see settings.tsx:1199-1203, where a
+  // genuinely conflicting "Mute sounds" toggle was removed in Batch A).
+  hapticsEnabled: true as boolean,
   revealSpeed: 'normal' as 'fast' | 'normal' | 'cinematic',
   botDifficulty: 'easy' as 'easy' | 'medium' | 'hard',
   /**

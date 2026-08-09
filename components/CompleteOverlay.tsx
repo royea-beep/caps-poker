@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Platform, Animated, useWindowDimensions } from 
 import { debugLog } from './DebugOverlay';
 import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
+import { playHaptic } from '../utils/haptics';
 import ProQuoteBanner from './ProQuoteBanner';
 import { rv, rf, rs } from '../utils/responsive';
 import { shouldShowCompleteBonus } from './completeOverlayGate';
@@ -83,13 +84,13 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone,
     playSound('complete');
 
     if (Haptics) {
-      Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Heavy)?.catch?.(() => {});
-      const t1 = setTimeout(() => {
-        Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Medium)?.catch?.(() => {});
-      }, 300);
-      const t2 = setTimeout(() => {
-        Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light)?.catch?.(() => {});
-      }, 600);
+      // This overlay renders ONLY on a sweep (:196/:201 — "COMPLETE!" / "You won ALL boards!"),
+      // so the Heavy -> Medium -> Light decay is already the top haptic tier and is correct as
+      // written. It needed a gate, not a rewrite: routed through playHaptic so the new
+      // hapticsEnabled setting actually turns it off.
+      playHaptic('heavy');
+      const t1 = setTimeout(() => { playHaptic('medium'); }, 300);
+      const t2 = setTimeout(() => { playHaptic('light'); }, 600);
       const done = setTimeout(() => { debugLog('C6 onDone called'); onDone(); }, duration * 1000);
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(done); };
     }
