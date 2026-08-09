@@ -1057,28 +1057,28 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           />
         )}
 
-        {/* S114: Board Score Intermission overlay */}
-        {showIntermission && (
-          <View style={styles.intermissionOverlay} pointerEvents="none">
-            <Text style={styles.intermissionBoard}>Board {currentIdx + 1} of {boards.length}</Text>
-            {/* DUPLICATE RESULT STRING REMOVED 2026-08-09. This rendered the SAME literal
-                string as the persistent result row at :925, both on screen simultaneously,
-                300px apart, with no styling distinction — measured on live at y 391-444 here
-                vs y 695-727 there. The persistent row is the one that survives because it
-                sits clear of the community cards; this one washed over them, which is what
-                Roye photographed and reported as text over the cards.
-                Note for whoever revisits: the MP-specific phrasing ("YOU WIN vs <name>!") went
-                with it — the persistent row shows the plain resultText in both solo and MP. If
-                that phrasing is wanted back, put it on :925; do not restore a second
-                simultaneous copy here. `opponentName` itself is still live — it feeds the bot
-                seat label at :786 — so it is NOT now unused. */}
-            {!isPractice && board.potAmount > 0 && board.winner !== 'tie' && (
-              <Text style={[styles.intermissionChip, { color: chipColor }]}>
-                {chipSign}{board.potAmount} chips
-              </Text>
-            )}
-          </View>
-        )}
+        {/* S114 Board Score Intermission overlay — REMOVED 2026-08-09.
+            It was a full-screen 75% wash over the community cards, and every element it showed
+            already exists elsewhere on the same screen:
+              "BOARD n OF m"   -> the persistent header at :757
+              chip amount      -> the animated counter on the persistent row at :932-940
+              result string    -> removed the iteration before this one (it was rendering the
+                                  SAME literal string as :925, both on screen simultaneously)
+            So this closes the last of the text-over-the-community-cards report, which is the
+            element Roye originally photographed.
+
+            TIMING IS DELIBERATELY UNTOUCHED. The timers at :609-614 still run — they now set a
+            state nobody reads. That is intentional, not an oversight: it makes this change
+            provably pacing-neutral and one-line reversible. It is also safe because the
+            intermission NEVER drove the reveal's duration — the board advance is an
+            independent timer (`setTimeout(doAdvance, advanceMs)`, :625), so the overlay was
+            painted DURING an already-scheduled 10s slot rather than adding 1.5s to it.
+            Removing it therefore shortens the reveal by ZERO. Delete :609-614 and the
+            showIntermission state whenever someone wants the cleanup; the pacing will not move.
+
+            NOTE, two stale comments found while doing this: :608 says the overlay fires at
+            t(4500) and :631 repeats "4500 + 1500" — the code has fired at t(6500) since BY3
+            (:633 has it right at 6500 + 1500 = 8000). */}
 
         {/* Guided first-game tooltips (tips 6-8) */}
         {isFirstGame && (
