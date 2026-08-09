@@ -506,7 +506,20 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
-        await sb.rpc('record_hand_result', {
+        // BUG-3 2026-08-09 — was `record_hand_result`, which returns PGRST202 (not in schema
+        // cache) because that function was DROPPED on 2026-07-20 as an anon-granted UNBOUNDED
+        // chip writer. The client call had in fact been dead even BEFORE the drop: the only
+        // overload took `p_user_id uuid` while this call sends `p_device_id`. So hand_history
+        // has had no writes since 2026-05-14 — three months — and every tester who opens the
+        // HAND HISTORY menu item sees an empty screen.
+        //
+        // `record_hand_result_d` is the safe successor and takes THESE EXACT FOUR PARAMS, so
+        // this is a one-string rename with no arity change. Verified against the live
+        // definition before switching: it ONLY inserts into hand_history. `chips_delta` there
+        // is a computed display value (100/board won, -50/board lost), NOT a balance mutation —
+        // no earn_chips, no leaderboard, no chip path revived. Roye's "do NOT revive the chip
+        // path" ruling is respected.
+        await sb.rpc('record_hand_result_d', {
           p_device_id: deviceId,
           p_won: revealData.netChips > 0,
           p_boards_won: boardsWon,
