@@ -1,0 +1,34 @@
+{
+ "url": "https://caps.ftable.co.il",
+ "ts": "2026-08-09T07:10:34.348Z",
+ "steps": {
+  "mount": {
+   "rootKids": 1,
+   "textLen": 719,
+   "sample": "♠ ♦ ♣ ♥ ♠ ♦ ♥ ♣ ♠ ♦ ♥ ♣ ♠ ♥ ♦ SKIP ✕ C A ♠ ♠ C K ♥ ♥ C Q ♦ ♦ C J ♣ ♣ Place 4 cards on each board Continue 👤 Player 💰 2",
+   "scriptType": "module",
+   "bundle": "index-9d183656f778f4be3b664aa86fcd7a56.js"
+  },
+  "hebrew": {
+   "homeCta": true,
+   "anyHebrew": true
+  },
+  "game": {
+   "rootKids": 1,
+   "sample": "✕ PLACE 16 CARDS 🤖 BOT 1 … BOARD 1 ⚡ Auto-Place C Q ♠ ♠ C 8 ♦ ♦ C 2 ♥ ♥ C Q ♣ ♣ C 10 ♣ ♣ "
+  },
+  "reveal": {
+   "equityBar": true,
+   "outsRow": false,
+   "outsCount": null,
+   "anyEquityValue": true,
+   "rootKids": 1
+  },
+  "placementToResultsSec": 9.8,
+  "results": {
+   "headline": "PERFECT!",
+   "rootKids": 1
+  }
+ },
+ "pageErrors": []
+}
