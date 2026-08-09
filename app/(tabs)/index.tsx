@@ -180,24 +180,17 @@ function HeroCardFan() {
   );
 }
 
-// HEBREW-FIRST-RUN 2026-08-09 — THIS is the tagline a tester actually reads. The one in
-// app/_layout.tsx is the pre-mount splash, which is gone within a second; a render probe
-// found "Every card counts. Every board matters." on screen while the splash string was
-// nowhere in the DOM. Translating only the splash would have looked done and changed nothing.
-//
-// Written as taglines rather than word-for-word: short, two-beat, imperative where the
-// English is imperative. "Omaha, multiplied." keeps "אומהה" because it is the game's name.
 const TAGLINES = [
-  "הנח את הקלפים. כבוש כל לוח.",
-  "כל קלף נחשב. כל לוח קובע.",
-  "פצל את היד. קח את השולחן.",
-  "ארבעה קלפים. ארבעה לוחות. מנצח אחד.",
-  "אומהה, כפול.",
-  "חשוב לעומק. שחק חכם.",
-  "בנה את הלוחות. קח את הז'יטונים.",
-  "חלק. הנח. שלוט.",
-  "משחק הפוקר שלא נרדם.",
-  "כאן כל לוח הוא קרב.",
+  "Place your cards. Own every board.",
+  "Every card counts. Every board matters.",
+  "Split your hand. Win the table.",
+  "Four cards. Four boards. One winner.",
+  "Omaha, multiplied.",
+  "Think deeper. Play smarter.",
+  "Stack the boards. Take the chips.",
+  "Deal. Place. Dominate.",
+  "The poker game that never sleeps.",
+  "Where every board is a battle.",
 ];
 const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
 
@@ -1348,11 +1341,11 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
-                accessibilityLabel="קבלת ז'יטונים"
+                accessibilityLabel="Get chips"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipGetBtn}
               >
-                <Text style={styles.topChipGetText}>+ ז'יטונים</Text>
+                <Text style={styles.topChipGetText}>GET CHIPS</Text>
               </Pressable>
             ) : (
               <Pressable
@@ -1558,15 +1551,15 @@ export default function HomeScreen() {
               AnimatedRN.timing(playOnlineScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
             }
             accessibilityRole="button"
-            accessibilityLabel="משחק אונליין, פתיחת לובי מרובה משתתפים"
+            accessibilityLabel="Play online, open the multiplayer lobby"
           >
             {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
                 English inside a Hebrew app, on the highest-traffic route to multiplayer.
                 The emoji stays as decoration; the TEXT is what names the destination. */}
             <Text style={styles.playOnlineEmoji}>🎮</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.playOnlineTitle}>משחק אונליין</Text>
-              <Text style={styles.playOnlineSub}>לובי מרובה משתתפים · שחקנים אמיתיים ושולחנות בוט מיידיים</Text>
+              <Text style={styles.playOnlineTitle}>Play Online</Text>
+              <Text style={styles.playOnlineSub}>Multiplayer lobby · real players &amp; instant bot tables</Text>
             </View>
             <Text style={styles.playOnlineGo}>›</Text>
           </Pressable>
@@ -1710,10 +1703,10 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push('/achievements' as any)}
               accessibilityRole="button"
-              accessibilityLabel="ההתקדמות שלי"
+              accessibilityLabel="My Progress"
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>ההתקדמות שלי</Text>
+              <Text style={homeDataCardStyles.label}>My Progress</Text>
               <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
               <Text style={homeDataCardStyles.sub}>Achievements · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} win rate</Text>
             </Pressable>
@@ -1723,10 +1716,10 @@ export default function HomeScreen() {
               // display; tap now goes to the leaderboard, never to the broken claim screen.
               onPress={() => router.push('/leaderboard' as any)}
               accessibilityRole="button"
-              accessibilityLabel="תחרות"
+              accessibilityLabel="Competition"
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>תחרות</Text>
+              <Text style={homeDataCardStyles.label}>Competition</Text>
               <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
               <Text style={homeDataCardStyles.sub}>Missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} Rank` : 'Play to be ranked'}</Text>
             </Pressable>
@@ -1792,7 +1785,7 @@ export default function HomeScreen() {
         <View style={styles.referralRow}>
           {myReferralCode ? (
             <View style={styles.referralCard}>
-              <Text style={styles.referralCardLabel}>הקוד שלך</Text>
+              <Text style={styles.referralCardLabel}>YOUR CODE</Text>
               <Text style={styles.referralCardCode}>{myReferralCode}</Text>
               <View style={styles.referralCardButtons}>
                 <Pressable
@@ -1922,7 +1915,7 @@ export default function HomeScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginTop: rs(8) }}
             >
-              <Text style={styles.modalCancelText}>ביטול</Text>
+              <Text style={styles.modalCancelText}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>

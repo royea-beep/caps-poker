@@ -153,13 +153,7 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
       <Animated.View style={[splashStyles.content, animStyle]}>
         <Text style={splashStyles.suits}>♠ ♥ ♦ ♣</Text>
         <Text style={splashStyles.title}>CAPS POKER</Text>
-        {/* HEBREW-FIRST-RUN 2026-08-09 — the FIRST text a tester ever sees. This is a
-            tagline, not a UI label, so it is written to read as one rather than translated
-            word for word: two short imperatives that keep the English rhythm, and "כבוש"
-            (conquer) for "own", which carries the same claim in Hebrew where a literal
-            "בעלות" would read like a property deed. "CAPS POKER" above stays English — it
-            is the brand mark. */}
-        <Text style={splashStyles.sub}>הנח את הקלפים. כבוש כל לוח.</Text>
+        <Text style={splashStyles.sub}>Place Your Cards. Own Every Board.</Text>
         <View style={splashStyles.divider} />
       </Animated.View>
     </View>

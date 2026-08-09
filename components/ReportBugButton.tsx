@@ -129,7 +129,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           testID="report-bug-row"
         >
           <Text style={styles.rowIcon}>🐛</Text>
-          <Text style={styles.rowLabel}>דיווח על תקלה</Text>
+          <Text style={styles.rowLabel}>Report a bug</Text>
           <Text style={styles.rowChevron}>›</Text>
         </TouchableOpacity>
       )}
@@ -142,32 +142,32 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           <View style={styles.sheet}>
             {status === 'done' ? (
               <View style={styles.doneWrap}>
-                <Text style={styles.doneTitle}>✅ תודה!</Text>
-                <Text style={styles.doneBody}>הדיווח נשלח לצוות.</Text>
-                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel="סגירה">
-                  <Text style={styles.sendText}>סגור</Text>
+                <Text style={styles.doneTitle}>✅ Thanks!</Text>
+                <Text style={styles.doneBody}>Your report was sent to the team.</Text>
+                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Close">
+                  <Text style={styles.sendText}>Done</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={styles.title}>🐛 דיווח על תקלה</Text>
+                <Text style={styles.title}>🐛 Report a bug</Text>
                 {/* G6 — the tester supplies ONE thing: what went wrong. Build number, screen,
                     breadcrumbs, console and session are attached automatically on send. The
                     name field is pre-filled from the profile, so it is not a second ask. */}
-                <Text style={styles.hint}>מה קרה? ככל שיהיו יותר פרטים, כך נתקן מהר יותר.</Text>
+                <Text style={styles.hint}>What went wrong? The more detail, the faster we fix it.</Text>
 
                 <TextInput
                   style={styles.input}
-                  placeholder="השם שלך (כדי שנוכל לחזור אליך)"
+                  placeholder="Your name (so we can follow up)"
                   placeholderTextColor="#8A8A8A"
                   value={name}
                   onChangeText={setName}
                   maxLength={40}
-                  accessibilityLabel="השם שלך"
+                  accessibilityLabel="Your name"
                 />
                 <TextInput
                   style={[styles.input, styles.textarea]}
-                  placeholder="תאר את התקלה — מה עשית, למה ציפית, ומה קרה בפועל…"
+                  placeholder="Describe the bug — what you did, what you expected, what happened…"
                   placeholderTextColor="#8A8A8A"
                   value={description}
                   onChangeText={setDescription}
@@ -175,27 +175,27 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
                   numberOfLines={5}
                   maxLength={1000}
                   textAlignVertical="top"
-                  accessibilityLabel="תיאור התקלה"
+                  accessibilityLabel="Bug description"
                   testID="report-bug-description"
                 />
-                <Text style={styles.screenNote}>מסך: {pathname || 'לא ידוע'}</Text>
+                <Text style={styles.screenNote}>Screen: {pathname || 'unknown'}</Text>
                 {/* FAILURE MUST BE VISIBLE. A tester who believes a report was sent when it
                     was not is worse off than one with no button at all. */}
-                {status === 'error' && <Text style={styles.errorText}>השליחה נכשלה — בדוק את החיבור לאינטרנט ונסה שוב.</Text>}
+                {status === 'error' && <Text style={styles.errorText}>Couldn't send — check your connection and try again.</Text>}
 
                 <View style={styles.actions}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="ביטול">
-                    <Text style={styles.cancelText}>ביטול</Text>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Cancel">
+                    <Text style={styles.cancelText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.sendBtn, (!description.trim() || status === 'sending') && styles.sendBtnDisabled]}
                     onPress={send}
                     disabled={!description.trim() || status === 'sending'}
                     accessibilityRole="button"
-                    accessibilityLabel="שליחת דיווח"
+                    accessibilityLabel="Send report"
                     testID="report-bug-send"
                   >
-                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>שלח</Text>}
+                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>Send</Text>}
                   </TouchableOpacity>
                 </View>
               </>
@@ -235,14 +235,9 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: '#1B1410', borderTopLeftRadius: rs(20), borderTopRightRadius: rs(20), padding: rs(20), paddingBottom: rs(32), gap: rs(10) },
   title: { color: '#F5B546', fontSize: rf(20), fontWeight: '800' },
   hint: { color: '#B7ADA0', fontSize: rf(13), marginBottom: rs(4) },
-  // G6 — Hebrew copy, RIGHT-ALIGNED, inside an LTR layout. The app calls
-  // I18nManager.allowRTL(false) + forceRTL(false) at app/_layout.tsx:20-21, so the layout
-  // direction is deliberately LTR even on a Hebrew device. Flipping direction here would
-  // fight that decision; aligning the text is the convention the rest of the app uses.
   input: {
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: rs(10), paddingHorizontal: rs(14), paddingVertical: rs(12),
     color: '#F3ECDD', fontSize: rf(15), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-    textAlign: 'right',
   },
   textarea: { minHeight: rs(110) },
   screenNote: { color: '#7C736A', fontSize: rf(12) },

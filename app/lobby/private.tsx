@@ -115,10 +115,10 @@ export default function PrivateLobby() {
         <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
-        <Text style={styles.title} accessibilityRole="header">שולחן פרטי</Text>
+        <Text style={styles.title} accessibilityRole="header">PRIVATE TABLE</Text>
         <View style={{ width: rs(40) }} />
       </View>
-      <Text style={styles.sub}>שחק מול חברים עם קוד משותף</Text>
+      <Text style={styles.sub}>Play your friends with a shared code</Text>
 
       {joinError && (
         <View style={styles.errorBanner} accessibilityLiveRegion="polite">

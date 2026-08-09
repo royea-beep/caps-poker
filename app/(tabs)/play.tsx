@@ -45,29 +45,29 @@ export default function PlayScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: rs(24) }} showsVerticalScrollIndicator={false}>
         {/* Single Player vs bots — the unified game screen (Home has the player-count picker) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="שחקן יחיד. אימון מול בוטים" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#F5B546' }]} onPress={playSinglePlayer}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Single Player. Practice vs bots" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#F5B546' }]} onPress={playSinglePlayer}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🤖</Text>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>שחקן יחיד</Text>
-            <Text style={styles.cardSub}>אימון מול בוטים · {getBoardCount(config.numberOfPlayers)} לוחות</Text>
+            <Text style={styles.cardTitle}>Single Player</Text>
+            <Text style={styles.cardSub}>Practice vs bots · {getBoardCount(config.numberOfPlayers)} boards</Text>
           </View>
         </Pressable>
 
         {/* Multiplayer lobby (public 6-table pool) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="לובי מרובה משתתפים. הצטרפות לשולחן פומבי פתוח" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open public table" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>לובי מרובה משתתפים</Text>
-            <Text style={styles.cardSub}>הצטרף לשולחן פומבי · מתחיל אוטומטית כשמתמלא</Text>
+            <Text style={styles.cardTitle}>Multiplayer Lobby</Text>
+            <Text style={styles.cardSub}>Join an open public table · auto-start when full</Text>
           </View>
         </Pressable>
 
         {/* Quick private table (one-off invite code) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="שולחן פרטי מהיר. יצירת שולחן חד-פעמי לשיתוף, או הצטרפות עם קוד" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/private' as any)}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Quick Private Table. Create a one-off table to share, or join by code" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/private' as any)}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>שולחן פרטי מהיר</Text>
-            <Text style={styles.cardSub}>שולחן חד-פעמי · שתף קוד או הצטרף לאחד</Text>
+            <Text style={styles.cardTitle}>Quick Private Table</Text>
+            <Text style={styles.cardSub}>One-off table · share a code or join one</Text>
           </View>
         </Pressable>
 
