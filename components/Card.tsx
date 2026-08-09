@@ -537,7 +537,7 @@ function CardComponent({
               left: 1,
               right: 1,
               height: 1,
-              backgroundColor: 'rgba(255,254,248,0.22)',
+              backgroundColor: 'rgba(255,254,248,0.9)',
               borderTopLeftRadius: OBSIDIAN_GEOM.cardRadius,
               borderTopRightRadius: OBSIDIAN_GEOM.cardRadius,
               opacity: isUpgraded ? 0.95 : 0.7,
