@@ -1,32 +1,30 @@
 {
- "base": "http://localhost:8141",
- "ts": "2026-08-09T07:49:14.283Z",
+ "base": "https://caps.ftable.co.il",
+ "ts": "2026-08-09T08:03:55.500Z",
  "steps": {
-  "splashEarly": [],
   "mounted": true,
-  "home": [],
-  "playMenu": [
-   {
-    "text": "לובי מרובה משתתפים · שחקנים אמיתיים ושולחנות בוט מיידיים",
-    "w": 203,
-    "scrollW": 203,
-    "clipped": false,
-    "lines": null
+  "pastOnboarding": true,
+  "home": {
+   "+ ז'יטונים": {
+    "found": false
+   },
+   "ההתקדמות שלי": {
+    "found": false
+   },
+   "תחרות": {
+    "found": false
+   },
+   "הקוד שלך": {
+    "found": true,
+    "text": "הקוד שלך",
+    "clientW": 49,
+    "scrollW": 49,
+    "clipped": false
    }
-  ],
-  "profile": [
-   {
-    "text": "לובי מרובה משתתפים · שחקנים אמיתיים ושולחנות בוט מיידיים",
-    "w": 203,
-    "scrollW": 203,
-    "clipped": false,
-    "lines": null
-   }
-  ],
-  "englishOnScreen": [
+  },
+  "homeEnglish": [
    "Caps Poker",
-   "You need to enable JavaScript to run thi",
-   "Continue",
+   "You need to enable JavaScript to run this ap",
    "Player",
    "PLAY ONLINE",
    "BATTLE PASS",
@@ -40,6 +38,77 @@
    "CAPS",
    "POKER",
    "Players"
+  ],
+  "playMenu": {
+   "שחקן יחיד": {
+    "found": true,
+    "text": "שחקן יחיד",
+    "clientW": 246,
+    "scrollW": 246,
+    "clipped": false
+   },
+   "לובי מרובה משתתפים": {
+    "found": true,
+    "text": "לובי מרובה משתתפים",
+    "clientW": 246,
+    "scrollW": 246,
+    "clipped": false
+   },
+   "שולחן פרטי מהיר": {
+    "found": true,
+    "text": "שולחן פרטי מהיר",
+    "clientW": 246,
+    "scrollW": 246,
+    "clipped": false
+   }
+  },
+  "playEnglish": [
+   "Caps Poker",
+   "You need to enable JavaScript to run this ap",
+   "PLAY",
+   "Choose your game mode",
+   "Leaderboard",
+   "See where you rank globally",
+   "Invite Friends"
+  ],
+  "profile": {
+   "פרופיל": {
+    "found": true,
+    "text": "פרופיל",
+    "clientW": 375,
+    "scrollW": 375,
+    "clipped": false
+   },
+   "ידיים": {
+    "found": true,
+    "text": "ידיים",
+    "clientW": 27,
+    "scrollW": 27,
+    "clipped": false
+   },
+   "אחוז ניצחון": {
+    "found": true,
+    "text": "אחוז ניצחון",
+    "clientW": 61,
+    "scrollW": 61,
+    "clipped": false
+   },
+   "רצף": {
+    "found": true,
+    "text": "רצף",
+    "clientW": 22,
+    "scrollW": 22,
+    "clipped": false
+   }
+  },
+  "profileEnglish": [
+   "Caps Poker",
+   "You need to enable JavaScript to run this ap",
+   "Player",
+   "Achievements",
+   "Hand History",
+   "Detailed Stats",
+   "Settings"
   ]
  }
 }

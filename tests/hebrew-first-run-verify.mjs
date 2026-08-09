@@ -1,13 +1,18 @@
 /**
- * ITERATION 8 — did the Hebrew actually RENDER, and does it fit at 375px?
+ * ITERATION 9 — assert Hebrew on the surfaces BEHIND onboarding.
  *
- * tsc-clean is not evidence a string reached a screen. Iteration 7 shipped Hebrew that was
- * tsc-clean and never seen; one string (the lobby header) is still unrendered because the
- * walk never reached multiplayer. So this reads the DOM, and it also measures each element's
- * box against its scrollWidth — a translated label that clips is worse than an English one.
+ * THE HARNESS WAS THE BLOCKER, NOT THE STRINGS. Four surfaces across two iterations were
+ * shipped tsc-clean and never once observed rendering, every time with the same sentence:
+ * "probe never left onboarding". This seeds the persisted flags before the page loads, so
+ * the probe lands on the tab bar.
+ *
+ * The keys are NOT invented — they are the ones tests/visual/caps_unify3_proof2.spec.ts
+ * already uses (`caps_onboarding_done`, `caps_tutorial_seen`,
+ * `has_seen_interactive_tutorial`). NO app code was added for this; there is no skip flag in
+ * the bundle.
  *
  *   PROBE_DIR=web-heb-dist node tests/hebrew-first-run-verify.mjs
- *   CAPS_URL=https://caps.ftable.co.il node tests/hebrew-first-run-verify.mjs   (live)
+ *   CAPS_URL=https://caps.ftable.co.il node tests/hebrew-first-run-verify.mjs
  */
 import { chromium } from 'playwright';
 import fs from 'fs';
@@ -16,11 +21,10 @@ import path from 'path';
 
 const LIVE = process.env.CAPS_URL || null;
 const DIR = path.resolve(process.env.PROBE_DIR || 'web-heb-dist');
-const PORT = Number(process.env.PROBE_PORT || 8140);
+const PORT = Number(process.env.PROBE_PORT || 8142);
 const W = 375, H = 812;
 
-let base = LIVE;
-let server = null;
+let base = LIVE, server = null;
 if (!LIVE) {
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
     '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.woff': 'font/woff',
@@ -40,59 +44,68 @@ if (!LIVE) {
   base = `http://localhost:${PORT}`;
 }
 
+const SEED = {
+  caps_tutorial_seen: 'true',
+  caps_onboarding_done: 'true',
+  has_seen_interactive_tutorial: 'true',
+  caps_games_played: '99',
+};
+
 const fire = `(el)=>{const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
 const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
 ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent)));}`;
 
-// Reports every element containing `txt`, with its rendered box vs its content width.
-// clipped = the text is wider than the box it sits in, i.e. truncated on screen.
-const measure = `(txt)=>{const out=[];
+// For each wanted string: is it on screen, and does it FIT? clientWidth vs scrollWidth at 375px.
+// A clipped Hebrew label is worse than the English one it replaced, so this is the real test.
+const check = `(wanted)=>{const res={};
+for(const wtxt of wanted){res[wtxt]={found:false};
+  for(const el of document.querySelectorAll('*')){
+    if(el.children.length) continue;
+    const t=(el.textContent||'').trim();
+    if(t!==wtxt && !t.startsWith(wtxt+' ') && !t.startsWith(wtxt+'·')) continue;
+    const r=el.getBoundingClientRect();
+    res[wtxt]={found:true, text:t.slice(0,70), clientW:Math.round(r.width), scrollW:el.scrollWidth,
+               clipped: el.scrollWidth > Math.ceil(r.width)+1};
+    break;}}
+return res;}`;
+
+const englishSweep = `()=>{const bad=[];
 for(const el of document.querySelectorAll('*')){
   if(el.children.length) continue;
   const t=(el.textContent||'').trim();
-  if(!t.includes(txt)) continue;
-  const r=el.getBoundingClientRect();
-  out.push({text:t.slice(0,60), w:Math.round(r.width), scrollW:el.scrollWidth,
-            clipped: el.scrollWidth > Math.ceil(r.width)+1, lines: Math.round(r.height/parseFloat(getComputedStyle(el).lineHeight||'0'))||null});
-}
-return out;}`;
+  if(/^[A-Za-z][A-Za-z0-9 ,.'!?&%:+-]{2,}$/.test(t)) bad.push(t.slice(0,44));}
+return [...new Set(bad)];}`;
+
+const tap = async (page, label) => {
+  await page.evaluate(`(()=>{const el=[...document.querySelectorAll('*')].find(e=>e.children.length===0&&(e.textContent||'').trim()===${JSON.stringify(label)});if(el)window.__f(el);})()`);
+  await page.waitForTimeout(2500);
+};
 
 const out = { base, ts: new Date().toISOString(), steps: {} };
 const browser = await chromium.launch({ headless: false, args: [`--window-size=${W + 20},${H + 140}`] });
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+// SEED BEFORE ANY PAGE SCRIPT RUNS — this is what gets us past onboarding.
+await ctx.addInitScript((seed) => {
+  for (const [k, v] of Object.entries(seed)) { try { localStorage.setItem(k, v); } catch {} }
+}, SEED);
+
 const page = await ctx.newPage();
 await page.goto(base + '/', { waitUntil: 'load', timeout: 120000 });
-await page.evaluate(`window.__m=${measure}; window.__f=${fire}`);
-
-// 1 — splash. It repaints fast, so sample immediately and again after settle.
-await page.waitForTimeout(1200);
-out.steps.splashEarly = await page.evaluate(`window.__m('כבוש כל לוח')`);
-await page.waitForTimeout(9000);
+await page.waitForTimeout(11000);
+await page.evaluate(`window.__c=${check}; window.__f=${fire}; window.__e=${englishSweep}`);
 
 out.steps.mounted = await page.evaluate(() => (document.getElementById('root')?.children.length ?? 0) > 0);
-// 2 — home CTAs
-out.steps.home = await page.evaluate(`[].concat(window.__m('ז\\'יטונים'), window.__m('ההתקדמות שלי'), window.__m('תחרות'))`);
+out.steps.pastOnboarding = await page.evaluate(() => !/Continue/.test(document.body.innerText || ''));
+out.steps.home = await page.evaluate(`window.__c(["+ ז'יטונים","ההתקדמות שלי","תחרות","הקוד שלך"])`);
+out.steps.homeEnglish = await page.evaluate(`window.__e()`);
 
-// 3 — play menu (tab 2)
-await page.evaluate(`(()=>{const el=[...document.querySelectorAll('*')].find(e=>e.children.length===0&&(e.textContent||'').trim()==='שחק');if(el)window.__f(el);})()`);
-await page.waitForTimeout(2500);
-out.steps.playMenu = await page.evaluate(`[].concat(window.__m('שחקן יחיד'), window.__m('לובי מרובה משתתפים'), window.__m('שולחן פרטי מהיר'))`);
+await page.goto(base + '/play', { waitUntil: 'load', timeout: 60000 }); await page.waitForTimeout(6000); await page.evaluate(`window.__c=${check}; window.__f=${fire}; window.__e=${englishSweep}`);
+out.steps.playMenu = await page.evaluate(`window.__c(["שחקן יחיד","לובי מרובה משתתפים","שולחן פרטי מהיר"])`);
+out.steps.playEnglish = await page.evaluate(`window.__e()`);
 
-// 5 — profile tab
-await page.evaluate(`(()=>{const el=[...document.querySelectorAll('*')].find(e=>e.children.length===0&&(e.textContent||'').trim()==='פרופיל');if(el)window.__f(el);})()`);
-await page.waitForTimeout(2500);
-out.steps.profile = await page.evaluate(`[].concat(window.__m('פרופיל'), window.__m('אחוז ניצחון'), window.__m('רצף'), window.__m('ידיים'))`);
-
-// English still visible anywhere on the surfaces walked
-out.steps.englishOnScreen = await page.evaluate(() => {
-  const bad = [];
-  for (const el of document.querySelectorAll('*')) {
-    if (el.children.length) continue;
-    const t = (el.textContent || '').trim();
-    if (/^[A-Za-z][A-Za-z ,.'!?&%-]{3,}$/.test(t)) bad.push(t.slice(0, 40));
-  }
-  return [...new Set(bad)].slice(0, 20);
-});
+await page.goto(base + '/profile', { waitUntil: 'load', timeout: 60000 }); await page.waitForTimeout(6000); await page.evaluate(`window.__c=${check}; window.__f=${fire}; window.__e=${englishSweep}`);
+out.steps.profile = await page.evaluate(`window.__c(["פרופיל","ידיים","אחוז ניצחון","רצף"])`);
+out.steps.profileEnglish = await page.evaluate(`window.__e()`);
 
 console.log(JSON.stringify(out, null, 1));
 fs.writeFileSync('tests/hebrew-first-run-result.json', JSON.stringify(out, null, 1));
