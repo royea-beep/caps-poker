@@ -1,0 +1,45 @@
+{
+ "base": "http://localhost:8141",
+ "ts": "2026-08-09T07:49:14.283Z",
+ "steps": {
+  "splashEarly": [],
+  "mounted": true,
+  "home": [],
+  "playMenu": [
+   {
+    "text": "לובי מרובה משתתפים · שחקנים אמיתיים ושולחנות בוט מיידיים",
+    "w": 203,
+    "scrollW": 203,
+    "clipped": false,
+    "lines": null
+   }
+  ],
+  "profile": [
+   {
+    "text": "לובי מרובה משתתפים · שחקנים אמיתיים ושולחנות בוט מיידיים",
+    "w": 203,
+    "scrollW": 203,
+    "clipped": false,
+    "lines": null
+   }
+  ],
+  "englishOnScreen": [
+   "Caps Poker",
+   "You need to enable JavaScript to run thi",
+   "Continue",
+   "Player",
+   "PLAY ONLINE",
+   "BATTLE PASS",
+   "STATS",
+   "HAND HISTORY",
+   "COACHING",
+   "SPECTATOR",
+   "SETTINGS",
+   "TUTORIAL",
+   "SIGN OUT",
+   "CAPS",
+   "POKER",
+   "Players"
+  ]
+ }
+}

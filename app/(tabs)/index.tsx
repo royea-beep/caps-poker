@@ -180,17 +180,24 @@ function HeroCardFan() {
   );
 }
 
+// HEBREW-FIRST-RUN 2026-08-09 — THIS is the tagline a tester actually reads. The one in
+// app/_layout.tsx is the pre-mount splash, which is gone within a second; a render probe
+// found "Every card counts. Every board matters." on screen while the splash string was
+// nowhere in the DOM. Translating only the splash would have looked done and changed nothing.
+//
+// Written as taglines rather than word-for-word: short, two-beat, imperative where the
+// English is imperative. "Omaha, multiplied." keeps "אומהה" because it is the game's name.
 const TAGLINES = [
-  "Place your cards. Own every board.",
-  "Every card counts. Every board matters.",
-  "Split your hand. Win the table.",
-  "Four cards. Four boards. One winner.",
-  "Omaha, multiplied.",
-  "Think deeper. Play smarter.",
-  "Stack the boards. Take the chips.",
-  "Deal. Place. Dominate.",
-  "The poker game that never sleeps.",
-  "Where every board is a battle.",
+  "הנח את הקלפים. כבוש כל לוח.",
+  "כל קלף נחשב. כל לוח קובע.",
+  "פצל את היד. קח את השולחן.",
+  "ארבעה קלפים. ארבעה לוחות. מנצח אחד.",
+  "אומהה, כפול.",
+  "חשוב לעומק. שחק חכם.",
+  "בנה את הלוחות. קח את הז'יטונים.",
+  "חלק. הנח. שלוט.",
+  "משחק הפוקר שלא נרדם.",
+  "כאן כל לוח הוא קרב.",
 ];
 const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
 
@@ -1341,11 +1348,11 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
-                accessibilityLabel="Get chips"
+                accessibilityLabel="קבלת ז'יטונים"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipGetBtn}
               >
-                <Text style={styles.topChipGetText}>GET CHIPS</Text>
+                <Text style={styles.topChipGetText}>+ ז'יטונים</Text>
               </Pressable>
             ) : (
               <Pressable
@@ -1703,10 +1710,10 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push('/achievements' as any)}
               accessibilityRole="button"
-              accessibilityLabel="My Progress"
+              accessibilityLabel="ההתקדמות שלי"
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>My Progress</Text>
+              <Text style={homeDataCardStyles.label}>ההתקדמות שלי</Text>
               <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
               <Text style={homeDataCardStyles.sub}>Achievements · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} win rate</Text>
             </Pressable>
@@ -1716,10 +1723,10 @@ export default function HomeScreen() {
               // display; tap now goes to the leaderboard, never to the broken claim screen.
               onPress={() => router.push('/leaderboard' as any)}
               accessibilityRole="button"
-              accessibilityLabel="Competition"
+              accessibilityLabel="תחרות"
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>Competition</Text>
+              <Text style={homeDataCardStyles.label}>תחרות</Text>
               <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
               <Text style={homeDataCardStyles.sub}>Missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} Rank` : 'Play to be ranked'}</Text>
             </Pressable>
@@ -1785,7 +1792,7 @@ export default function HomeScreen() {
         <View style={styles.referralRow}>
           {myReferralCode ? (
             <View style={styles.referralCard}>
-              <Text style={styles.referralCardLabel}>YOUR CODE</Text>
+              <Text style={styles.referralCardLabel}>הקוד שלך</Text>
               <Text style={styles.referralCardCode}>{myReferralCode}</Text>
               <View style={styles.referralCardButtons}>
                 <Pressable
@@ -1915,7 +1922,7 @@ export default function HomeScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginTop: rs(8) }}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>ביטול</Text>
             </Pressable>
           </Pressable>
         </Pressable>

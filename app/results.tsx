@@ -86,7 +86,7 @@ export default function ResultsScreen() {
     const theme = getTheme(visualTheme);
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={styles.loadingContainer} accessibilityLiveRegion="polite"><Text style={styles.loadingText}>Loading...</Text></View>
+        <View style={styles.loadingContainer} accessibilityLiveRegion="polite"><Text style={styles.loadingText}>טוען…</Text></View>
       </SafeAreaView>
     );
   }
@@ -998,8 +998,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           {/* Chips earned + shop CTA — hidden in practice (no chips actually moved) */}
           {netChips > 0 && !revealData.isPractice && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Visit Shop" onPress={() => router.push('/shop' as any)} style={styles.shopCta} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.shopCtaText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="מעבר לחנות" onPress={() => router.push('/shop' as any)} style={styles.shopCta} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.shopCtaText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰 הרווחת {netChips} ז'יטונים | <Text style={styles.shopCtaLink}>לחנות</Text></Text>
             </Pressable>
           )}
 
@@ -1161,7 +1161,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {!revealData.isPractice && (
             <View style={styles.netSection}>
               <View style={styles.netRow}>
-                <Text style={styles.netLabel} accessibilityRole="header">Net Result</Text>
+                <Text style={styles.netLabel} accessibilityRole="header">תוצאה נטו</Text>
                 {netChips > 0 ? (
                   <Animated.Text style={[styles.netAmount, { color: chipsFlashAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: ['#FFD700', '#FFD700', '#4CAF50'] }) }]}>
                     +{netChips}
@@ -1230,7 +1230,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* S115: Session stats — shows when 2+ games in session */}
           {sessionHistory.length >= 2 && (
             <View style={styles.sessionRow}>
-              <Text style={styles.sessionLabel}>This session</Text>
+              <Text style={styles.sessionLabel}>הסשן הנוכחי</Text>
               <Text style={styles.sessionStats} accessibilityLabel={`${sessionWins} wins, ${sessionLosses} losses, ${sessionChips >= 0 ? '+' : ''}${sessionChips} chips`}>
                 {sessionWins}W / {sessionLosses}L
                 <Text style={{ color: sessionChips >= 0 ? '#c9a84c' : '#ef5350' }}>
@@ -1243,7 +1243,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* S115: Board breakdown — compact one-row-per-board summary */}
           {boards.length > 0 && (
             <View style={styles.breakdownSection}>
-              <Text style={styles.breakdownTitle} accessibilityRole="header">Board by board</Text>
+              <Text style={styles.breakdownTitle} accessibilityRole="header">לוח אחרי לוח</Text>
               {boards.map((board, i) => {
                 const playerWon = board.winner === 'player';
                 const chipChange = playerWon ? potPerBoardTotal : -potPerBoardTotal;
