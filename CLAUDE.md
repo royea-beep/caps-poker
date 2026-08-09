@@ -80,6 +80,20 @@ npm run visual-qa
 ```
 
 If the test fails, the diff is in `test-results/` showing exact pixel differences.
+**WHICH BASELINES? There are TWO systems — do not confuse them (corrected 2026-08-09).**
+`npm run visual-qa:update` is `playwright test --update-snapshots`; it refreshes **Playwright**
+snapshots and does NOT touch the gate that actually fails in CI. The CI gate is **BackstopJS**
+(`npx backstop test`, `.github/workflows/web-deploy.yml:199-213`, non-blocking, artifact
+`backstop-report`). Its references live in `backstop_data/bitmaps_reference/` — NOT in
+`tests/visual/baselines/`, which is empty and dead. Regenerate on **Linux**, never on Windows,
+or different font rendering is baked into every scenario:
+```bash
+gh workflow run backstop-baseline.yml
+```
+Then review and commit `backstop_data/bitmaps_reference/`. Confirm the diff is only what you
+intended — a baseline commit that silently absorbs an unrelated regression is worse than a
+failing check.
+
 After intentional UI changes, update baselines:
 ```bash
 npm run visual-qa:update
