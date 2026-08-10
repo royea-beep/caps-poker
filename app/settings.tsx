@@ -306,7 +306,9 @@ function SoundToggle() {
       <View style={styles.rowLeft}>
         <Text style={styles.rowLabel}>Sound Volume</Text>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(4) }}>
+      {/* flexShrink+minWidth:0 so the volume readout stops running off a 320px screen — this
+          row measured 219px wide in 150px of space, pushing "80%" to x 328 past a 320 edge. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(4), flexShrink: 1, minWidth: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <Pressable
           onPress={() => { updateConfig({ soundEnabled: !soundEnabled }); CapsHooks.settingsChanged('soundEnabled', !soundEnabled); }}
           style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
@@ -319,7 +321,7 @@ function SoundToggle() {
           </Text>
         </Pressable>
         {soundEnabled && (
-          <View style={{ flexDirection: 'row', gap: rs(2), marginLeft: rs(6) }}>
+          <View style={{ flexDirection: 'row', gap: rs(2), marginLeft: rs(6), flexShrink: 1, minWidth: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {Array.from({ length: STEPS }).map((_, i) => (
               <Pressable
                 key={i}
