@@ -1486,7 +1486,17 @@ const styles = StyleSheet.create({
   practiceSessionPill: {
     position: 'absolute',
     top: rs(6),
-    alignSelf: 'center',
+    // Was `alignSelf: 'center'`, which centred this pill on the FULL viewport width — but the
+    // header's "PLACE N CARDS" pill (freePlayLabel, :1434) is right-aligned and reaches back to
+    // x 236 at 390px, while a centred practice pill spans x 132-258. Measured 22px of horizontal
+    // overlap at EVERY board count (2P/3P/4P), with the teal pill drawn across "no chips".
+    // Anchored into the free band between the ✕ (ends x 41) and the PLACE pill (starts x 236)
+    // instead — 195px that nothing else occupies.
+    // NOT fixed with zIndex: raising this above would just hide "PLACE N CARDS" instead, and
+    // that string is the actual instruction during placement. That trades down, not up.
+    // NOT stacked onto its own row: the gap between the header row (bottom y 39) and the bot
+    // status row (top y 57) is 18px for a 16px pill. 1px of clearance is not a fix.
+    left: rs(46),
     backgroundColor: 'rgba(245,181,70,0.16)',
     borderWidth: 1,
     borderColor: 'rgba(245,181,70,0.5)',
