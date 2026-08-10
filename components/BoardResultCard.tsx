@@ -296,10 +296,19 @@ const styles = StyleSheet.create({
   cardsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2 },
   cardSeparator: { width: 4 },
   handRowVertical: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
-  handLabel: { color: COLORS.textDim, fontSize: rf(9), fontWeight: '700', letterSpacing: 1, width: 28 },
+  // Audited on /results 2026-08-10: this rendered at 9px ("YOU", "Bot"). rf(v) clamps to
+  // [v*0.75, v*1.25] so rf(9) can floor at 7 — well under a legible minimum for copy.
+  handLabel: { color: COLORS.textDim, fontSize: rf(10, 10), fontWeight: '700', letterSpacing: 1, width: 30 },
   handLabelWin: { color: COLORS.neonGreen },
   handLabelLose: { color: COLORS.neonRed },
-  handName: { color: COLORS.textMuted, fontSize: rf(9), fontWeight: '600', marginLeft: rs(4) },
+  // Two defects here, both measured on /results at 320px:
+  //  - 9px copy, same clamp as handLabel above.
+  //  - NO flex bound beside a fixed-width sibling, so long hand names ran OFF SCREEN:
+  //    "Full House, Kings over Sixes" at x 228..353 and "Two Pair, Nines and Fours" at
+  //    x 226..331, both past a 320px edge and unreadable at any scroll position.
+  // flexShrink needs minWidth:0 to do anything — without it the box floors at content size
+  // and the shrink is a no-op (the lesson from the settings overflow).
+  handName: { color: COLORS.textMuted, fontSize: rf(10, 10), fontWeight: '600', marginLeft: rs(4), flex: 1, flexShrink: 1, minWidth: 0 },
   handNameWin: { color: COLORS.goldLight, fontWeight: '800' },
   shareBtn: { paddingHorizontal: rs(8), paddingVertical: 3, borderRadius: rv(8), backgroundColor: 'rgba(255,215,0,0.12)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)' },
   shareBtnText: { fontSize: rf(13) },
@@ -314,5 +323,5 @@ const styles = StyleSheet.create({
   comparisonWin: { color: COLORS.neonGreen },
   comparisonLose: { color: COLORS.neonRed },
   comparisonTie: { color: COLORS.textDim },
-  bestSelectedLabel: { fontSize: rf(9), color: '#8B6914', fontWeight: '600', letterSpacing: 0.5 },
+  bestSelectedLabel: { fontSize: rf(10, 10), color: '#8B6914', fontWeight: '600', letterSpacing: 0.5 },
 });
