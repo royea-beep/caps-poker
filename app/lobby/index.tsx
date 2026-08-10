@@ -356,6 +356,12 @@ export default function PublicLobby() {
                     </View>
                     <Pressable
                       style={[styles.joinBtn, (full || busy) && styles.joinBtnFull]}
+                      // Measured 64x31 at 390px and 52x26 at 320px — both under the 44px
+                      // minimum on the vertical axis, on the primary action of this screen,
+                      // repeated once per table. hitSlop rather than bigger padding: it takes
+                      // the touch area to 51px / 46px without changing the pill's appearance
+                      // or reflowing the row (the width already clears 44).
+                      hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
                       disabled={full || busy}
                       onPress={() => handleJoin(tbl)}
                       accessibilityRole="button"
@@ -395,10 +401,14 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   // so it wears the same green identity (#22C55E) instead of the old amber, which read as a
   // different feature.
   botTitle: { color: '#4ADE80', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
-  botMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10) },
+  // rf(v) clamps to [v*0.75, v*1.25], so every rf(10) here rendered at 9px on a 320px phone —
+  // measured, 8 separate strings, i.e. essentially the whole lobby. That is the screen a friend
+  // opens to join a game. The second argument is an explicit floor: 10px minimum regardless of
+  // width. Copy only; decorative glyphs are left alone.
+  botMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10, 10) },
   botRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), backgroundColor: 'rgba(34,197,94,0.10)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.45)', borderRadius: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(12), marginBottom: rv(6) },
   botBadge: { backgroundColor: 'rgba(34,197,94,0.20)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.55)', borderRadius: rv(7), paddingHorizontal: rs(8), paddingVertical: rv(3) },
-  botBadgeText: { color: '#4ADE80', fontSize: rf(10), fontWeight: '900', letterSpacing: 0.5 },
+  botBadgeText: { color: '#4ADE80', fontSize: rf(10, 10), fontWeight: '900', letterSpacing: 0.5 },
   botRowTitle: { color: '#fff', fontSize: rf(14), fontWeight: '700' },
   // OTA-COSMETIC-FIXES 2026-07-09 — explicit 11pt floor (was rf(10), which floors to 9
   // via the default v-3 floor) so the shortened subtitle never drops below 11pt at 320.
@@ -407,7 +417,7 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   botPlayText: { color: '#ffffff', fontSize: rf(13), fontWeight: '900' },
   humanHead: { marginHorizontal: rs(16), marginTop: rv(4), marginBottom: rv(2) },
   humanTitle: { color: '#4FD6A8', fontSize: rf(13), fontWeight: '900', letterSpacing: 1 },
-  humanSub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(10), marginTop: rv(2) },
+  humanSub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(10, 10), marginTop: rv(2) },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   soloBtn: { flexDirection: 'row', alignItems: 'center', gap: rs(12), marginHorizontal: rs(16), marginBottom: rv(8), backgroundColor: 'rgba(245,181,70,0.12)', borderWidth: 1.5, borderColor: 'rgba(245,181,70,0.55)', borderRadius: rv(14), paddingVertical: rv(12), paddingHorizontal: rs(16) },
   soloEmoji: { fontSize: rf(24) },
@@ -417,7 +427,7 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   section: { marginBottom: rv(18) },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(6) },
   sectionTitle: { color: '#fff', fontSize: rf(13), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
-  sectionMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10) },
+  sectionMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10, 10) },
   table: { flexDirection: 'row', alignItems: 'center', gap: rs(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: rv(12), padding: rs(12), marginBottom: rv(8) },
   tablePlaceholder: { opacity: 0.5 },
   seats: { flexDirection: 'row', gap: rs(5) },
@@ -426,7 +436,7 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   tableInfo: { flex: 1 },
   tableCount: { color: '#fff', fontSize: rf(14), fontWeight: '700' },
   tableCountMuted: { color: 'rgba(255,255,255,0.5)', fontSize: rf(13), fontStyle: 'italic' },
-  tableSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10) },
+  tableSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10, 10) },
   joinBtn: { backgroundColor: '#4FD6A8', borderRadius: rv(10), paddingHorizontal: rs(16), paddingVertical: rv(8), minWidth: rs(64), alignItems: 'center' },
   joinBtnFull: { backgroundColor: 'rgba(255,255,255,0.08)' },
   joinText: { color: '#08130f', fontWeight: '800', fontSize: rf(13) },

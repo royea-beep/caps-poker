@@ -757,7 +757,9 @@ const vtStyles = StyleSheet.create({
   },
   tileTag: {
     color: COLORS.textMuted,
-    fontSize: rf(9),
+    // Was rf(9) — 9px at 390px and no larger anywhere, the only sub-10px COPY in settings
+    // ("Timeless", "Arcade"). Floored at 10 for legibility.
+    fontSize: rf(10, 10),
     fontWeight: '600',
   },
   check: {
@@ -1430,6 +1432,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: rs(6),
+    // Measured on live at 390px: this box was x 139..472 (w 333) inside a row ending at x 359,
+    // pushing "× 4 boards = 100" to x 379..472 — 82px past the viewport, unreadable at any
+    // scroll position. Its computed grow/shrink was 0/0, so it could not give the width back.
+    // flexShrink alone is not enough in a flex row: minWidth defaults to auto, which floors the
+    // box at its content size and makes the shrink a no-op. Both are required.
+    flexShrink: 1,
+    minWidth: 0,
   },
   input: {
     backgroundColor: COLORS.background,
@@ -1439,7 +1448,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(12),
     paddingVertical: rs(6),
     borderRadius: rv(6),
-    minWidth: rv(70),
+    // Was `minWidth: rv(70)` alone. On web a TextInput renders as an <input>, which takes the
+    // BROWSER DEFAULT width (~173px) unless capped — minWidth is a floor, not a cap, so it
+    // never constrained anything. That default is most of the 333px overflow above. Pinned to
+    // the width the design already asked for; 4 digits at rf(16) plus padding fit inside it.
+    width: rv(70),
+    flexShrink: 0,
     textAlign: 'center',
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
@@ -1451,10 +1465,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: rf(12),
     fontWeight: '600',
+    // Lets the long suffix ("× 4 boards = 100") wrap inside the row instead of running off the
+    // edge once rowRight can shrink.
+    flexShrink: 1,
   },
   selectorRow: {
     flexDirection: 'row',
     gap: rs(6),
+    // At 320px the three reveal-speed buttons did not fit and "Cinematic" landed at x 294..371
+    // — off-screen and UNTAPPABLE, i.e. a feature unreachable on a small phone. Wrapping keeps
+    // every option on screen without resizing the buttons (which would shrink the hit area,
+    // and several are already under the 44px minimum).
+    flexWrap: 'wrap',
   },
   // VAMOS-QA-VISUAL-FIX 2026-06-19 — was a hard width: rv(40); "Cinematic"
   // (9 chars) overflowed and read as "Normainematic" alongside "Normal".
