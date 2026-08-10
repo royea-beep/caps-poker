@@ -52,6 +52,10 @@ const page = await ctx.newPage();
 await page.goto(`${URL}/settings`, { waitUntil: 'load', timeout: 120000 });
 await page.waitForTimeout(8000);
 
+// A "0 overflows" result is also what a blank page returns, so capture the paint too.
+await page.screenshot({ path: `tests/screenshots/settings-${VW}.png`, fullPage: false });
+console.log(`screenshot -> tests/screenshots/settings-${VW}.png`);
+
 let d;
 try { d = await measure(page, expr, { label: 'overflow' }); }
 catch (e) { console.error('HARNESS:', e instanceof HarnessError ? e.message : String(e)); await browser.close(); process.exit(2); }
