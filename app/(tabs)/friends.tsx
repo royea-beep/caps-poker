@@ -174,7 +174,8 @@ const styles = StyleSheet.create({
   blockTitle: { color: '#fff', fontSize: rf(13), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', marginTop: rv(16), marginBottom: rv(8) },
   row: { flexDirection: 'row', gap: rs(8) },
   input: { flex: 1, backgroundColor: '#0d0f15', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: rv(10), color: '#fff', paddingHorizontal: rs(12), paddingVertical: rv(10), fontSize: rf(15) },
-  actBtn: { backgroundColor: 'rgba(79,214,168,0.15)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.35)', borderRadius: rv(10), paddingHorizontal: rs(18), justifyContent: 'center' },
+  // Create 82x39 / Join 67x39 — both 5px under the minimum.
+  actBtn: { minHeight: 44, backgroundColor: 'rgba(79,214,168,0.15)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.35)', borderRadius: rv(10), paddingHorizontal: rs(18), justifyContent: 'center' },
   actBtnText: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(14) },
   btnDisabled: { opacity: 0.5 },
 });

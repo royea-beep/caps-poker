@@ -1415,7 +1415,11 @@ const styles = StyleSheet.create({
   buttons: { width: '100%', gap: rs(10), marginTop: rs(4) },
   rematchRow: { flexDirection: 'row', gap: rs(10) },
   shareRow: { width: '100%', alignItems: 'center' },
-  shareBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: rv(16), backgroundColor: 'rgba(255,255,255,0.06)' },
+  // Measured 163x40 on /results at both widths — 4px under the 44px minimum, on a primary CTA.
+  // minHeight rather than more paddingVertical: rs() scales with width, so padding alone would
+  // pass at 390 and fail again at 320. minHeight is the floor at every width. justifyContent
+  // keeps the label centred once the box is taller than its text.
+  shareBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), minHeight: 44, justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: rv(16), backgroundColor: 'rgba(255,255,255,0.06)' },
   shareBtnText: { color: 'rgba(255,255,255,0.7)', fontSize: rf(14), fontWeight: '700', letterSpacing: 0.5 },
   coachingBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: COLORS.mint, borderRadius: rv(16), backgroundColor: 'rgba(255,215,0,0.08)' },
   coachingBtnText: { color: COLORS.mint, fontSize: rf(14), fontWeight: '800', letterSpacing: 1.5 },

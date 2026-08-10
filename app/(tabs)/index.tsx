@@ -480,6 +480,10 @@ const dailyRewardModalStyles = StyleSheet.create({
     marginTop: rs(8),
     width: '100%',
     alignItems: 'center',
+    // Measured 260x39 / 256x39 — 5px under the 44px minimum. minHeight, not more padding:
+    // rs() scales with width, so padding alone passes at one width and fails at another.
+    minHeight: 44,
+    justifyContent: 'center',
     ...Platform.select({
       ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12 },
       android: { elevation: 8 },
@@ -2584,6 +2588,9 @@ const styles = StyleSheet.create({
     borderRadius: rv(20),
     paddingVertical: rs(8),
     paddingHorizontal: rs(20),
+    // Measured 151x33 — 11px under the minimum.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   inviteBtnText: {
     color: '#c9a84c',

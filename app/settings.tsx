@@ -1322,6 +1322,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: rs(4),
+    // Measured 61x25. This one is a header control on its own row with nothing beside it, so
+    // growing it does not compress a neighbour — the brief expected it might, and it does not.
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
   },
   backText: {
     color: COLORS.textSecondary,

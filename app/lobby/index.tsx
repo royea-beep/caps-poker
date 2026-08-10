@@ -437,7 +437,12 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   tableCount: { color: '#fff', fontSize: rf(14), fontWeight: '700' },
   tableCountMuted: { color: 'rgba(255,255,255,0.5)', fontSize: rf(13), fontStyle: 'italic' },
   tableSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10, 10) },
-  joinBtn: { backgroundColor: '#4FD6A8', borderRadius: rv(10), paddingHorizontal: rs(16), paddingVertical: rv(8), minWidth: rs(64), alignItems: 'center' },
+  // Measured 64x31 at 390px and 52x26 at 320px — under the 44px minimum on the primary action
+  // of this screen, once per table. hitSlop was tried first and is retained for native, but
+  // react-native-web does not implement it, so on the channel testers actually use the box was
+  // still 31px. Real height now. minHeight/minWidth rather than padding: rs()/rv() scale with
+  // width, so padding alone passes at 390 and fails again at 320.
+  joinBtn: { backgroundColor: '#4FD6A8', borderRadius: rv(10), paddingHorizontal: rs(16), paddingVertical: rv(8), minWidth: 64, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   joinBtnFull: { backgroundColor: 'rgba(255,255,255,0.08)' },
   joinText: { color: '#08130f', fontWeight: '800', fontSize: rf(13) },
   joinTextFull: { color: 'rgba(255,255,255,0.6)' },
