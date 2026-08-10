@@ -73,7 +73,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   textSmall: {
-    fontSize: 9,
+    // Was a hardcoded 9 — the "WIN"/"LOSS"/"TIE" badges on /results, measured at 9px. Not an
+    // rf() clamp like the others; just below the legible floor at every width.
+    fontSize: 10,
     letterSpacing: 0,
   },
 });

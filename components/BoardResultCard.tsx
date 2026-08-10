@@ -295,7 +295,10 @@ const styles = StyleSheet.create({
   chipAmount: { fontSize: rf(15), fontWeight: '900' },
   cardsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2 },
   cardSeparator: { width: 4 },
-  handRowVertical: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
+  // minWidth:0 so the handName child can actually shrink — a flex row floors at its content
+  // size by default, which left "Three of a Kind, Fives" 5px past a 320px edge even after the
+  // child was made shrinkable.
+  handRowVertical: { flexDirection: 'row', alignItems: 'center', gap: rs(6), minWidth: 0, flexShrink: 1 },
   // Audited on /results 2026-08-10: this rendered at 9px ("YOU", "Bot"). rf(v) clamps to
   // [v*0.75, v*1.25] so rf(9) can floor at 7 — well under a legible minimum for copy.
   handLabel: { color: COLORS.textDim, fontSize: rf(10, 10), fontWeight: '700', letterSpacing: 1, width: 30 },
