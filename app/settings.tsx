@@ -1477,6 +1477,13 @@ const styles = StyleSheet.create({
     // every option on screen without resizing the buttons (which would shrink the hit area,
     // and several are already under the 44px minimum).
     flexWrap: 'wrap',
+    // flexWrap alone did NOT fix it — verified on the deployed build, "Cinematic" was still at
+    // x 290..365 on a 320px viewport. The row's computed grow/shrink was 0/0, so it kept its
+    // full 237px content width and never reached a width that would force a wrap. Wrapping
+    // only does anything once the container can actually shrink; same pairing as rowLeft.
+    flexShrink: 1,
+    minWidth: 0,
+    justifyContent: 'flex-end',
   },
   // VAMOS-QA-VISUAL-FIX 2026-06-19 — was a hard width: rv(40); "Cinematic"
   // (9 chars) overflowed and read as "Normainematic" alongside "Normal".
