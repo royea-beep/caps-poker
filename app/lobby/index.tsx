@@ -240,7 +240,18 @@ export default function PublicLobby() {
       <View style={styles.header}>
         {/* LOBBY-LABEL 2026-08-09 — the destination of the home "משחק אונליין" CTA was itself
             all-English. Same path, same problem, fixed together. */}
-        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
+        {/* Measured 60x21 at 390px and 49x17 at 320px — the smallest control found anywhere in
+            the app, and the only way back out of the lobby. hitSlop={10} was already here and
+            does nothing on web (react-native-web ignores it), which is exactly how it stayed
+            this small unnoticed. Real height now; hitSlop kept for native. This sits alone at
+            the left of the header row, so growing it compresses no neighbour. */}
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">LOBBY</Text>

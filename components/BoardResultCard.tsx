@@ -293,7 +293,14 @@ const styles = StyleSheet.create({
   boardHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
   boardLabel: { color: COLORS.textMuted, fontSize: rf(12), fontWeight: '800', letterSpacing: 1.5 },
   chipAmount: { fontSize: rf(15), fontWeight: '900' },
-  cardsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2 },
+  // THE MISSING ANCESTOR. handName (:191) is rendered INSIDE this row, not as a sibling of it,
+  // so making handName and handRowVertical shrinkable was never enough — this row sat between
+  // them at content size and floored the whole chain. A flex row floors at its content unless
+  // it gets minWidth:0 too, which is the same lesson as the settings overflow, one level deeper.
+  // flexWrap so the longest names drop to a second line UNDER the cards rather than being
+  // truncated: "Full House, Threes over Queens" is information a player wants at the end of a
+  // hand, so wrapping beats an ellipsis here.
+  cardsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2, minWidth: 0, flexShrink: 1, flexWrap: 'wrap' },
   cardSeparator: { width: 4 },
   // minWidth:0 so the handName child can actually shrink — a flex row floors at its content
   // size by default, which left "Three of a Kind, Fives" 5px past a 320px edge even after the
