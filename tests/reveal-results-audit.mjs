@@ -107,6 +107,31 @@ const placement = await measure(page, audit, { label: 'placement' });
 const showLater = [];
 showLater.push(['PLACEMENT', placement]);
 
+// PARTIAL PLACEMENT — blind spot #6. This probe went straight from "before placement" to
+// Auto-Place ALL, and that shortcut places EVERY card, which HIDES Auto-Place ALL. So the audit
+// only ever sampled the two states in which the Auto-Place-vs-Cancel/Confirm collision cannot
+// exist, and reported them clean. The collision is real: 10px of pill overlap at 320 wide.
+// The general rule this encodes — wherever a shortcut exists (Auto-Place ALL, skip-reveal,
+// auto-advance) the probe must ALSO take the slow path at least once, because the fast path is
+// precisely what skips the intermediate states where defects live.
+// Note the chips are DIVs, not buttons: a button-only query finds zero of them, which reads as
+// "this route does not exist" rather than "I did not look properly".
+let partialAudit = null;
+const partialHit = await measure(page, `(() => {
+  const leaves = [...document.querySelectorAll('div,span')].filter((x) =>
+    x.children.length === 0 && /^\\s*auto.?place\\s*$/i.test(x.textContent || ''));
+  if (!leaves.length) return false;
+  let n = leaves[0];
+  for (let up = 0; up < 4 && n; up++) { window.__f(n); n = n.parentElement; }
+  return true;
+})()`, { label: 'partial' });
+await page.waitForTimeout(2000);
+if (partialHit) {
+  partialAudit = await measure(page, audit, { label: 'partial-audit' });
+} else {
+  console.log('PARTIAL PLACEMENT: no per-board chip found — stage NOT MEASURED (which is not the same as clean)');
+}
+
 const placed = await measure(page, `(()=>{const b=[...document.querySelectorAll('button,[role="button"]')].find(x=>/auto-place all/i.test(x.getAttribute('aria-label')||x.textContent||''));if(b){window.__f(b);return true;}return false;})()`, { label: 'ap' });
 await page.waitForTimeout(1500);
 const ready = await measure(page, `(()=>{const r=document.querySelector('[data-testid="ready-button"]');if(r){window.__f(r);return true;}return false;})()`, { label: 'rb' });
@@ -124,6 +149,8 @@ const show = (label, r) => {
 };
 
 show(`PLACEMENT ${PLAYERS}P @${VW}`, placement);
+if (partialAudit) show(`PARTIAL PLACEMENT ${PLAYERS}P @${VW}`, partialAudit);
+else console.log(`\n### PARTIAL PLACEMENT ${PLAYERS}P @${VW} — NOT MEASURED (no per-board chip found; not a clean result)`);
 
 // Sample mid-reveal (worst case), then /results.
 await page.waitForTimeout(8000);
