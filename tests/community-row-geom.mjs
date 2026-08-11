@@ -62,6 +62,35 @@ let d;
 try { d = await measure(page, expr, { label: 'row' }); }
 catch (e) { console.error('HARNESS:', e instanceof HarnessError ? e.message : String(e)); await browser.close(); process.exit(2); }
 if (!d.found) { console.error('community-row NOT FOUND — the reveal was not reached. FAILED MEASUREMENT, not a pass.'); await browser.close(); process.exit(2); }
+// PIXEL SCAN — geometry says the gap is +4, but only paint proves nothing cream or gold sits
+// in it. Sample every pixel column of each inter-card gap at the row's mid-height.
+const rowMidY = await page.evaluate(`(()=>{const r=document.querySelector('[data-testid="community-row"]').getBoundingClientRect();return Math.round(r.top + r.height/2)})()`);
+const buf = await page.screenshot();
+const scan = await page.evaluate(async ({ b64, kids, midY }) => {
+  const img = await createImageBitmap(await (await fetch('data:image/png;base64,' + b64)).blob());
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  const at = (x, y) => { const d = g.getImageData(x, y, 1, 1).data; return [d[0], d[1], d[2]]; };
+  const out = [];
+  for (let i = 1; i < kids.length; i++) {
+    const cols = [];
+    for (let x = kids[i-1].r; x < kids[i].l; x++) cols.push({ x, rgb: at(x, midY) });
+    out.push({ between: `${i}-${i+1}`, cols });
+  }
+  return out;
+}, { b64: buf.toString('base64'), kids: d.kids, midY: rowMidY });
+
+// A gap column is CLEAN if it is dark (card faces are ~250 lum, gold border ~168, board ~45).
+const lum = (c) => 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2];
+let dirty = 0;
+for (const gp of scan) {
+  const bad = gp.cols.filter((c) => lum(c.rgb) > 120);
+  if (bad.length) { dirty++; console.log(`  gap ${gp.between}: ${bad.length}/${gp.cols.length} NON-BOARD cols e.g. (${bad[0].rgb.join(',')})`); }
+}
+console.log(`  PIXEL SCAN: ${dirty === 0 ? 'CLEAN — only dark board between adjacent cards' : `${dirty} gap(s) contain cream/gold`}`);
+
 await page.screenshot({ path: `tests/screenshots/commrow-${PLAYERS}p-${VW}.png`, clip: { x: 0, y: 0, width: VW, height: 400 } });
 await browser.close();
 
