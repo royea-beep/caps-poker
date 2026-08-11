@@ -1494,7 +1494,22 @@ const styles = StyleSheet.create({
   // Win celebration overlay (FIX 3)
   winOverlay: {
     position: 'absolute',
-    top: '30%',
+    // Was `top: '30%'` — a viewport fraction with no knowledge of where anything else sits. At
+    // 812px it resolves to y≈244, which is inside the XP breakdown block (measured ~y195-320),
+    // so the banner covered Tier, the progress bar and Total XP — the one thing the player is
+    // meant to read at that exact moment.
+    //
+    // Anchored to a real offset from the top of the results container instead of a fraction.
+    // That places it over the RESULT HEADLINE, which is the only element whose information the
+    // banner already duplicates ("YOU WIN" above, "Hand won! 🎉" in the banner) — so the
+    // ~1.5s it is on screen costs nothing.
+    //
+    // Why it clears the XP block at 390 AND 320: the order of the results column is headline →
+    // practice pill → score → XP card, and that order does not change with width. Anchoring to
+    // the top keeps the banner over the headline whatever the screen height, whereas a
+    // percentage slides down into the XP card as the viewport grows. Height, not width, was
+    // what broke it — which is why a fixed dp offset is the fix and a different fraction is not.
+    top: rs(8),
     left: '10%',
     right: '10%',
     backgroundColor: 'rgba(28,5,8,0.92)',
