@@ -2583,6 +2583,10 @@ const styles = StyleSheet.create({
     borderRadius: rv(16),
     paddingVertical: rs(4),
     paddingHorizontal: rs(14),
+    // 📋 Copy 77x25 and 📤 Share 80x25 at both widths. These are NOT topChipBtn — my first pass
+    // raised the chip counter and left these two, which the post-deploy re-measure caught.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   referralActionBtnText: {
     color: '#c9a84c',
