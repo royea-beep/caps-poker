@@ -99,6 +99,14 @@ const page = await ctx.newPage();
 await page.goto(`${URL}/game?practice=true&players=${PLAYERS}&fresh=1`, { waitUntil: 'load', timeout: 120000 });
 await page.waitForTimeout(9000);
 await page.evaluate(`window.__f=${fire}`);
+
+// PLACEMENT — sampled BEFORE auto-place, i.e. the state a real player actually sees. It was
+// never part of this probe: earlier runs went straight to the reveal, so placement has never
+// had the four-check sweep despite being the screen players spend the most input time on.
+const placement = await measure(page, audit, { label: 'placement' });
+const showLater = [];
+showLater.push(['PLACEMENT', placement]);
+
 const placed = await measure(page, `(()=>{const b=[...document.querySelectorAll('button,[role="button"]')].find(x=>/auto-place all/i.test(x.getAttribute('aria-label')||x.textContent||''));if(b){window.__f(b);return true;}return false;})()`, { label: 'ap' });
 await page.waitForTimeout(1500);
 const ready = await measure(page, `(()=>{const r=document.querySelector('[data-testid="ready-button"]');if(r){window.__f(r);return true;}return false;})()`, { label: 'rb' });
@@ -114,6 +122,8 @@ const show = (label, r) => {
   one('tap<44',   r.targets,  (t)=>`"${t.t}" ${t.w}x${t.h}`);
   one('gaps>70',  r.gaps,     (g)=>`${g.px}px @${g.from}-${g.to}`);
 };
+
+show(`PLACEMENT ${PLAYERS}P @${VW}`, placement);
 
 // Sample mid-reveal (worst case), then /results.
 await page.waitForTimeout(8000);
