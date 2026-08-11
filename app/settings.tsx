@@ -42,7 +42,7 @@ import { getDeviceId } from '../utils/leaderboard';
 import { getAuthState, logout } from '../utils/auth';
 import { track } from '../utils/analytics';
 import { OrientationType, VisualTheme } from '../store/gameStore';
-import { VersionBadge } from '../components/VersionBadge';
+import { VersionBadge, getDisplayBuild } from '../components/VersionBadge';
 import ReportBugButton from '../components/ReportBugButton';
 
 // Lazy-load screen orientation (not available on web)
@@ -1214,7 +1214,13 @@ export default function SettingsScreen() {
                   JS bundle cannot misreport. Falls back to the old field only on web, which
                   has no native build. */}
               <Text style={styles.rowHint}>
-                {Constants.expoConfig?.version ?? '—'} (build {Application.nativeBuildVersion ?? Constants.expoConfig?.extra?.buildNumber ?? '—'})
+                {/* G2 FOLLOW-UP 2026-08-10 — the native fix at :1208-1215 was right, but on web
+                    `nativeBuildVersion` is null so this still fell through to the abandoned
+                    `extra.buildNumber` and printed 330. Web is the channel testers actually get.
+                    getDisplayBuild() keeps the native path byte-identical and, on web, returns
+                    the SAME commit sha that getBuildIdentity() puts in the bug_report payload —
+                    so the screen and the report agree. */}
+                {Constants.expoConfig?.version ?? '—'} (build {getDisplayBuild()})
               </Text>
             </Pressable>
             {/* A6 (Batch A): "Reset Progress (beta)" REMOVED. It called
