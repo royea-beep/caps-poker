@@ -4,7 +4,14 @@ import { rf, rs } from '../utils/responsive';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 
-const version = Constants.expoConfig?.version ?? '?';
+// SINGLE SOURCE for the app version string. There were FOUR hand-maintained fallbacks —
+// BugReporter.tsx:41 and utils/heatmap.ts:12/14 said '1.9.4', ReportBugButton.tsx:28 said
+// '2.7.0' — and on web `expoConfig.version` is unavailable, so each wrote its own literal.
+// That is why bug_reports.version read 1.9.4 while app_version read 2.7.0 on the same row:
+// not one stale field, two different fallbacks disagreeing. Same family as extra.buildNumber
+// being 330. '?' rather than a number: an honest unknown beats a misleadingly precise stale one.
+export const APP_VERSION = Constants.expoConfig?.version ?? '?';
+const version = APP_VERSION;
 // Application.nativeBuildVersion reads from native binary's Info.plist — correct even with OTA
 // Constants.expoConfig.ios.buildNumber reads bundled app.json — stays at 116 even when binary is 198
 // WEB BUILD ID 2026-08-10 — on web `nativeBuildVersion` is null (there is no native binary), so

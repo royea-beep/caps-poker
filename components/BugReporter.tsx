@@ -21,6 +21,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, K
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
+import { APP_VERSION } from './VersionBadge';
 import * as Updates from 'expo-updates';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
@@ -38,7 +39,11 @@ let Haptics: typeof import('expo-haptics') | null = null;
 if (Platform.OS !== 'web') { try { Haptics = require('expo-haptics'); } catch {} }
 
 const PROJECT = 'caps-poker';
-const VERSION = Constants.expoConfig?.version ?? '1.9.4';
+// Was `Constants.expoConfig?.version ?? '1.9.4'`. On web the config value is unavailable, so
+// this wrote the stale literal into bug_reports.version while app_version (ReportBugButton's
+// own `?? '2.7.0'`) wrote the current one — the same row disagreeing with itself. Now reads the
+// single APP_VERSION source so the two cannot drift again.
+const VERSION = APP_VERSION;
 const MAX_AUTO_STOP_S = 60;
 type Phase = 'idle' | 'recording' | 'review';
 

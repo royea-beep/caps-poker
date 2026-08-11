@@ -9,9 +9,12 @@ import { getSupabase } from './supabase';
 function getAppVersion(): string {
   try {
     const Constants = require('expo-constants').default;
-    return Constants.expoConfig?.version ?? '1.9.4';
+    // '1.9.4' was a hand-maintained fallback, months stale, and it is what wrote the wrong
+    // version into telemetry on web where expoConfig.version is unavailable. '?' is an honest
+    // unknown; a stale number reads as fact and misdirects triage.
+    return Constants.expoConfig?.version ?? '?';
   } catch {
-    return '1.9.4';
+    return '?';
   }
 }
 
