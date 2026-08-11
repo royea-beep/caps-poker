@@ -126,6 +126,27 @@ export function BoardArrangement({
   universalCardW,
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
+
+  // PARTIAL-PLACEMENT COLLISION — measured, not inferred. In the partial-placement state (some
+  // cards down, so Cancel/Confirm has appeared while "Auto-Place ALL" is still on screen) the
+  // Auto-Place pill lies ACROSS the tops of both action buttons: 10px of overlap at 320 wide, and
+  // exactly 0px — touching — at 390.
+  //
+  // Cause: this offset was rs(56) + rs(4), i.e. PRD.zone.actionBarH. The comment at the handZone
+  // below already records that rs(56) UNDER-COUNTS the rendered action bar (~71dp at 390, because
+  // of inner padding + button minHeight + border) and the handZone was bumped to rs(72) + rs(8)
+  // for exactly that reason. The Auto-Place bar never got the same correction — one geometry
+  // written down twice, and only one copy fixed.
+  //
+  // And a scaled constant cannot express it anyway: the action row measures ~60dp above the
+  // viewport bottom at BOTH 320 and 390 (its height comes from an unscaled touch-target minHeight
+  // plus rsBase padding), while rs() shrinks with width — rs(60) is 60 at 390 but 49 at 320. That
+  // is the whole 10px. Hence a FLOOR: scale up on roomy screens, never below what the row
+  // actually occupies.
+  //
+  // ACTION_BAR_CLEARANCE is now the single source for both the Auto-Place bar and the handZone
+  // lift above it, so the two cannot drift apart again. (Defined just below, once `rs` exists.)
+
   // GAME-SCREEN-FIT 2026-07-07 — screenW is already a reactive prop from game.tsx;
   // screenH isn't passed down today, and Board needs it for its own rh()-equivalent
   // math. Adding one more useWindowDimensions() subscription here (BoardArrangement
@@ -148,6 +169,11 @@ export function BoardArrangement({
   const rf = (v: number, min?: number, max?: number) => rfBase(v, min, max, screenW);
   const rb = (v: number) => rbBase(v, screenW);
   const rv = (v: number) => rvBase(v, screenW);
+
+  // See the PARTIAL-PLACEMENT COLLISION note above. Declared here because `rs` is block-scoped to
+  // this component and only exists from this line down.
+  const ACTION_BAR_CLEARANCE = Math.max(rs(56) + rs(4), 68);   // 60dp measured row + 8dp gap
+  const AUTO_BAR_H = 33;                                        // measured pill height, both widths
 
   return (
     <>
@@ -355,7 +381,14 @@ export function BoardArrangement({
               // native. Cost: the boards region (flex:1) gives up ≤rs(24) on roomy
               // screens; on tight screens the hand flexShrinks instead — both keep the
               // last row clear.
-              marginBottom: (rs(72) + insets.bottom + rs(8)) + ((!allBoardsFull && onAutoFillAll) ? rs(24) : 0),
+              // The rs(24) lift keeps the hand's last row clear of the Auto-Place bar. Now that the
+              // bar is floored at ACTION_BAR_CLEARANCE, the lift is floored to match — otherwise
+              // raising the bar would simply move the collision from the buttons up into the hand.
+              // Derived from the SAME constant as the bar, so the two cannot drift.
+              marginBottom: (!allBoardsFull && onAutoFillAll)
+                ? Math.max(rs(72) + insets.bottom + rs(8) + rs(24),
+                           insets.bottom + ACTION_BAR_CLEARANCE + AUTO_BAR_H + rs(4))
+                : (rs(72) + insets.bottom + rs(8)),
             },
           ]}
         >
@@ -439,7 +472,7 @@ export function BoardArrangement({
           (above the action bar), shown only while boards still have empty slots. */}
       {isArranging && !allBoardsFull && onAutoFillAll && (
         <View
-          style={[baStyles.autoAllBar, { bottom: insets.bottom + rs(56) + rs(4) }]}
+          style={[baStyles.autoAllBar, { bottom: insets.bottom + ACTION_BAR_CLEARANCE }]}
           pointerEvents="box-none"
         >
           <Pressable
