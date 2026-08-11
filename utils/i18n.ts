@@ -518,7 +518,10 @@ const en: Translations = {
   friendsLeaderboardCard: 'Leaderboard',
   friendsLeaderboardCardSub: 'See where you rank globally',
   cupsTitle: 'Cups',
-  cupsSubtitle: (e, t) => `${e}/${t} cups · 4 cards. 4 boards. 1 winner.`,
+  // BOARD-COUNT FIX 2026-08-11 — was "4 cards. 4 boards. 1 winner." on the Cups tab. Same false
+  // claim as the home tagline and the five pro quotes: the board count is dynamic (2P=4, 3P=3,
+  // 4P=2). This is a SIXTH site the first grep missed — "two renderers, not one" again.
+  cupsSubtitle: (e, t) => `${e}/${t} cups · 4 cards. Every board. 1 winner.`,
   playChooseMode: 'Choose your game mode',
   shopBuy: 'Buy',
   shopCantAfford: "Can't afford",
