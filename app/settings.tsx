@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { debugLog } from '../components/DebugOverlay';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, Switch } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking } from 'react-native';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import AvatarPicker from '../components/AvatarPicker';
@@ -956,11 +956,9 @@ export default function SettingsScreen() {
     }
   };
   const [debugEnabled, setDebugEnabled] = useState(false);
-  // A3 — renamed from muteQuotes to showQuotes so this control reads in the SAME direction as
-  // Sound Volume and Ambient Sound (ON = you get the thing). Roye's complaint was "שני פקדים
-  // בקוטביות הפוכה לאותו נכס"; the pair he named is already gone, but this was the last
-  // inverted control left on the screen. Default true — quotes are on unless turned off.
-  const [showQuotes, setShowQuotes] = useState(true);
+  // A3's showQuotes state REMOVED 2026-08-11 with the duplicate Pro Quotes row that was its
+  // only consumer. The polarity fix it records still stands — ProQuotesToggle (:773) reads
+  // ON = you get the thing — it is just owned by one control now instead of two.
   const isBeta = Constants.expoConfig?.extra?.isBeta === true;
   // B-8 — the DEVELOPER section (Debug Overlay, Max board card, Reset to Defaults) rendered
   // unconditionally for every player. Gated behind a 7-tap unlock on the Version row.
@@ -987,12 +985,10 @@ export default function SettingsScreen() {
     AsyncStorage.getItem('debug_overlay_enabled').then(v => {
       setDebugEnabled(v === 'true');
     }).catch(() => {});
-    // A3 RESIDUAL — REAL BUG, not just polarity. This read 'caps_beta_mute_quotes', which NOTHING
-    // has ever written (0 writers repo-wide). The toggle writes 'caps_show_pro_quotes', which is
-    // what ProQuoteBanner actually reads. So muting worked, but reopening Settings always showed
-    // the control OFF — the UI lied about its own state. Now reads the key the writer writes.
-    // ProQuoteBanner treats absent/anything-but-'false' as enabled, so this matches its default.
-    AsyncStorage.getItem('caps_show_pro_quotes').then(v => setShowQuotes(v !== 'false')).catch(() => {});
+    // A3 RESIDUAL hydration REMOVED 2026-08-11 along with the duplicate Pro Quotes row it fed.
+    // Its only consumer was that row; ProQuotesToggle (:773) does its own read via the exported
+    // PRO_QUOTES_ENABLED_KEY. Leaving a write-only state behind is the same dead-key shape this
+    // very comment block was written to fix.
     // B-8 — fails closed: only an explicit 'true' unlocks; a rejected read leaves it hidden.
     AsyncStorage.getItem('caps_dev_unlocked').then(v => setDevUnlocked(v === 'true')).catch(() => {});
     AsyncStorage.getItem('max_board_card_h_dp').then(v => {
@@ -1228,17 +1224,19 @@ export default function SettingsScreen() {
                 far beyond progress. The surgical, guarded "Reset All Progress" in the
                 DANGER ZONE below (multiRemove of a specific key list) is the single
                 reset control. */}
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Pro Quotes</Text>
-              <Switch
-                value={showQuotes}
-                onValueChange={(v) => {
-                  setShowQuotes(v);
-                  AsyncStorage.setItem('caps_show_pro_quotes', v ? 'true' : 'false').catch(() => {});
-                }}
-                accessibilityLabel="Pro quotes"
-              />
-            </View>
+            {/* DUPLICATE "Pro Quotes" REMOVED 2026-08-11. This was the SAME setting as the
+                ProQuotesToggle in TOOLS (:773, rendered :1074), not a second control — both
+                write `caps_show_pro_quotes`, which is exactly what PRO_QUOTES_ENABLED_KEY
+                (ProQuoteBanner.tsx:18) resolves to and what ProQuoteBanner.tsx:106 reads.
+                Established by grepping the KEY, not by assuming from the matching label.
+                Worse than merely redundant: each row held its OWN local state (`enabled` here
+                vs `showQuotes` there), so toggling one left the other displaying the opposite
+                until a remount.
+                The TOOLS one survives because it uses the exported constant rather than a raw
+                string literal, carries a hint ("Show fictional poker pro reactions"), and sits
+                beside its companion Pro Voices row.
+                Same reasoning as the "Mute sounds" removal recorded immediately below — a
+                second, conflicting control over a setting another row already owns. */}
             {/* A3 (Batch A): "Mute sounds" REMOVED. It wrote a dead key
                 (caps_beta_mute_sounds — 0 readers) AND flipped the real
                 config.soundEnabled, making it a second, conflicting control over the
