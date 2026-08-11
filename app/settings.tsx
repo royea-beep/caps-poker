@@ -1084,7 +1084,10 @@ export default function SettingsScreen() {
           }}
           style={{ marginBottom: 12 }}
         />
-        <Button title={t().simulationMode} variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />
+        {/* B-8 PARITY — developer tooling that was rendering for every player, in TOOLS rather
+            than DEVELOPER. Same `devUnlocked` gate as :1123 and :1303, so the node is not
+            mounted when locked. Gated, not deleted. */}
+        {devUnlocked && <Button title={t().simulationMode} variant="secondary" onPress={navigateToSimulation} style={{ marginBottom: 12 }} />}
         {__DEV__ && (
           <>
             <Button
