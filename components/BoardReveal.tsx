@@ -847,7 +847,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 Anchored on the ROW rather than the label, because the overlap question is
                 about where the CARDS are. */}
             <Text style={styles.sectionLabel}>Community</Text>
-            <View style={styles.cardRow} testID="community-row">
+            <View style={[styles.cardRow, styles.commGroupFrame]} testID="community-row">
               {allCommunity.map((c, i) => {
                 const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);
                 const isRiver = i === 4;
@@ -1179,10 +1179,26 @@ const styles = StyleSheet.create({
   },
   // MP-PARITY-DEEP 2026-07-09 — frame border for community cards at the reveal; keeps
   // each card visually distinct where it overlaps its neighbor (see commOverlap).
+  // GROUP FRAME 2026-08-11 — the gold moved from here to commGroupFrame (one outline around the
+  // whole row) because at the +4px gap two adjacent 2px frames nearly touched and the gap read
+  // gold instead of dark board.
+  // The border is KEPT at 2px and merely made transparent, deliberately: it is load-bearing
+  // geometry, not decoration. The card-sizing formula derives commCardW from a rendered box of
+  // commCardW + 4 (:713-716) — dropping the border would shrink every card by 4px, which is a
+  // card-size change and would invalidate the glyph stop rule that passed at 68/58 and 54/44.
   commCardFrame: {
     borderWidth: 2,
-    borderColor: COLORS.goldBright,
+    borderColor: 'transparent',
     borderRadius: rs(10), // >= Card.tsx's own cardRadius(8) so the frame fully encloses the card's rounded corners
+  },
+  // One outline around the community row. Same gold as before (COLORS.goldBright), so the row
+  // stays visually marked as "not your cards" — the reason Roye required the frame to survive.
+  commGroupFrame: {
+    borderWidth: 2,
+    borderColor: COLORS.goldBright,
+    borderRadius: rs(12),
+    paddingVertical: rs(4),
+    paddingHorizontal: rs(4),
   },
   handNameBadge: {
     color: COLORS.textPrimary,
