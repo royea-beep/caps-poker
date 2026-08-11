@@ -48,9 +48,41 @@ await page.goto(`${URL}/game?practice=true&players=${PLAYERS}&fresh=1`, { waitUn
 await page.waitForTimeout(9000);
 await page.evaluate(`window.__f=${fire}`);
 
-const placed = await measure(page, `(()=>{const b=[...document.querySelectorAll('button,[role="button"]')].find(x=>/auto-place all/i.test(x.getAttribute('aria-label')||x.textContent||''));if(b){window.__f(b);return true;}return false;})()`, { label: 'ap' });
-if (!placed) { console.error('AUTO-PLACE NOT FOUND — cannot reach the post-placement state. FAILED MEASUREMENT.'); await browser.close(); process.exit(2); }
+// PARTIAL PLACEMENT — deliberately NOT "Auto-Place ALL". That shortcut places every card, which
+// HIDES Auto-Place ALL, landing in the one state where the collision cannot exist. That is how
+// the previous run produced a false all-clear. The per-board ⚡ chips fill ONE board and leave
+// the rest, so Cancel/Confirm appears while Auto-Place ALL is still on screen — both layers
+// coexisting, which is the state Roye photographed.
+const chips = await measure(page, `(() => {
+  const all = [...document.querySelectorAll('button,[role="button"]')];
+  const perBoard = all.filter((x) => {
+    const t = (x.getAttribute('aria-label') || '') + ' ' + (x.textContent || '');
+    return /auto.?fill|auto.?place/i.test(t) && !/all/i.test(t);
+  });
+  const n = Math.min(${Number(process.env.CHIPS || 1)}, perBoard.length);
+  for (let i = 0; i < n; i++) window.__f(perBoard[i]);
+  return { found: perBoard.length, clicked: n,
+           labels: perBoard.slice(0, 3).map((x) => ((x.getAttribute('aria-label') || x.textContent || '').trim().slice(0, 30))) };
+})()`, { label: 'chips' });
+console.log(`per-board fill chips found: ${chips.found}, clicked: ${chips.clicked} ${JSON.stringify(chips.labels)}`);
 await page.waitForTimeout(2500);
+
+// ASSERT THE STATE before measuring anything. A clean reading from the wrong screen is worse
+// than no reading — it is exactly what produced the false all-clear last round.
+const state = await measure(page, `(() => {
+  const all = [...document.querySelectorAll('button,[role="button"]')];
+  const lbl = (x) => ((x.getAttribute('aria-label') || '') + ' ' + (x.textContent || '')).trim();
+  return { autoPlaceAll: all.some((x) => /auto-place all/i.test(lbl(x))),
+           actionRow: all.some((x) => /^cancel|confirm|ready/i.test(lbl(x))) };
+})()`, { label: 'state' });
+console.log(`state check — Auto-Place ALL present: ${state.autoPlaceAll} | Cancel/Confirm row present: ${state.actionRow}`);
+if (!state.autoPlaceAll || !state.actionRow) {
+  console.error('\nNOT IN THE TARGET STATE — both must be present. This is a FAILED MEASUREMENT,');
+  console.error('not a clean result. Adjust CHIPS= or the placement route and re-run.');
+  await page.screenshot({ path: `tests/screenshots/actionbar-WRONGSTATE-${VW}.png` });
+  await browser.close();
+  process.exit(2);
+}
 
 let d;
 try { d = await measure(page, expr, { label: 'bar' }); }
