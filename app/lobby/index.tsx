@@ -401,10 +401,12 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingTop: rv(8) },
   back: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '600', width: rs(60) },
   title: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900', letterSpacing: 3 },
-  sub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(11), textAlign: 'center', marginTop: rv(2), marginBottom: rv(10) },
+  // rf(11) clamps to [8.25, 13.75] and rendered 9px at 320px. The earlier sweep floored the
+  // rf(10) styles but missed these two, because rf(11) looks safe until you do the arithmetic.
+  sub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(11, 10), textAlign: 'center', marginTop: rv(2), marginBottom: rv(10) },
   liveRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(6), marginTop: rv(-4), marginBottom: rv(10) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: rs(4), backgroundColor: '#3DDC84' },
-  liveText: { color: '#3DDC84', fontSize: rf(11), fontWeight: '700', letterSpacing: 0.3 },
+  liveText: { color: '#3DDC84', fontSize: rf(11, 10), fontWeight: '700', letterSpacing: 0.3 },
   // LOBBY-BOT-PRACTICE — amber bot palette, visually distinct from the mint human tables
   botSection: { marginHorizontal: rs(16), marginBottom: rv(8) },
   botHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(6) },
