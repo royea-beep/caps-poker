@@ -85,5 +85,10 @@ for (const route of ROUTES) {
   console.log(`  gaps>70: ${r.gaps.length ? r.gaps.map(g=>`${g.px}px @${g.from}-${g.to} before "${g.next}"`).join(' | ') : 'none'}`);
   console.log(`  scrollers: ${r.scrollers.length ? r.scrollers.map(s=>`h${s.h} scrollH${s.sh} jc=${s.jc} grow=${s.fg}`).join(' | ') : 'none'}`);
   console.log(`  chain (leaf->root): ${r.chain.map(c=>`${c.tag}[h${c.h} ${c.dir} jc=${c.jc} grow=${c.fg}]`).join(' < ')}`);
+  // A gap going 455 -> 218/256 says nothing about whether it LOOKS right. That is Roye's call
+  // to make with his eyes, so every measured screen gets a screenshot.
+  const f = `tests/screenshots/empty-${route.replace(/\//g,'') || 'home'}-${VW}.png`;
+  await page.screenshot({ path: f });
+  console.log(`  screenshot -> ${f}`);
 }
 await browser.close();
