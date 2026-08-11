@@ -73,7 +73,23 @@ const audit = `(() => {
   const rows = texts.map(t => [Math.round(t.tp), Math.round(t.b)]).sort((a,b)=>a[0]-b[0]);
   const gaps = []; let cur = 0;
   for (const [tp, b] of rows) { if (tp - cur > 70) gaps.push({ from: cur, to: tp, px: tp - cur }); cur = Math.max(cur, b); }
-  return { url: location.pathname, n: texts.length, overlaps, clipped, offscreen, tiny, targets, gaps };
+  // DOES THE PAGE SCROLL? The DEAL ME IN finding at 4P turns on exactly this: a sticky CTA
+  // over scrollable content is normal, over a page that cannot scroll it permanently hides
+  // text. Report every scrollable container plus the two boxes in question.
+  const scrollers = [];
+  for (const el of document.querySelectorAll('*')) {
+    const cs = getComputedStyle(el);
+    if (!/auto|scroll/.test(cs.overflowY)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.height < 120) continue;
+    scrollers.push({ ch: el.clientHeight, sh: el.scrollHeight, scrollable: el.scrollHeight > el.clientHeight + 2 });
+  }
+  const boxOf = (re) => { const t = texts.find(x => re.test(x.t));
+    return t ? { t: t.t.slice(0,30), tp: Math.round(t.tp), b: Math.round(t.b) } : null; };
+  const pair = { cta: boxOf(/DEAL ME IN/i), best: boxOf(/Best hand/i), loss: boxOf(/^(LOSS|WIN|TIE)$/) };
+
+  return { url: location.pathname, n: texts.length, overlaps, clipped, offscreen, tiny, targets, gaps,
+           scrollers, pair, pageScrolls: document.documentElement.scrollHeight > innerHeight + 2 };
 })()`;
 
 const browser = await chromium.launch({ headless: false, args: [`--window-size=${VW+20},900`] });
@@ -116,6 +132,20 @@ const res = await measure(page, audit, { label: 'results' });
 if (!/results/.test(res.url)) console.error(`NEVER REACHED /results (stuck on ${res.url}) — FAILED MEASUREMENT.`);
 else {
   show(`RESULTS ${PLAYERS}P @${VW}`, res);
+  const sc = res.scrollers.filter((s) => s.scrollable);
+  console.log(`  SCROLL: page ${res.pageScrolls ? 'SCROLLS' : 'does NOT scroll'} | scrollable containers: ` +
+    (sc.length ? sc.map((s) => `${s.ch} -> ${s.sh}`).join(', ') : 'NONE'));
+  console.log(`  BOXES: cta ${JSON.stringify(res.pair.cta)} | best ${JSON.stringify(res.pair.best)} | badge ${JSON.stringify(res.pair.loss)}`);
+  // If anything scrolls, drive it to the bottom and re-ask: does the covered text clear?
+  if (sc.length || res.pageScrolls) {
+    await page.evaluate(`(() => { window.scrollTo(0, 1e6);
+      for (const el of document.querySelectorAll('*')) { const cs = getComputedStyle(el);
+        if (/auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 2) el.scrollTop = el.scrollHeight; } })()`);
+    await page.waitForTimeout(1200);
+    const after = await measure(page, audit, { label: 'afterScroll' });
+    console.log(`  AFTER SCROLLING TO BOTTOM: overlaps ${after.overlaps.length}` +
+      (after.overlaps.length ? '  ' + after.overlaps.slice(0,2).map(o=>`"${o.a}"/"${o.b}" ${o.pct}%`).join(' | ') : ' — text clears the CTA'));
+  }
   // An overlap against a sticky CTA is exactly the case geometry cannot settle: the button may
   // be opaque and genuinely hiding content, or the two boxes may merely intersect. Paint decides.
   await page.screenshot({ path: `tests/screenshots/results-${PLAYERS}p-${VW}.png` });
