@@ -114,5 +114,11 @@ for (let i = 0; i < 12; i++) { await page.waitForTimeout(3000);
   const u = await measure(page, `(()=>location.pathname)()`, { label: 'u' }); if (/results/.test(u)) break; }
 const res = await measure(page, audit, { label: 'results' });
 if (!/results/.test(res.url)) console.error(`NEVER REACHED /results (stuck on ${res.url}) — FAILED MEASUREMENT.`);
-else show(`RESULTS ${PLAYERS}P @${VW}`, res);
+else {
+  show(`RESULTS ${PLAYERS}P @${VW}`, res);
+  // An overlap against a sticky CTA is exactly the case geometry cannot settle: the button may
+  // be opaque and genuinely hiding content, or the two boxes may merely intersect. Paint decides.
+  await page.screenshot({ path: `tests/screenshots/results-${PLAYERS}p-${VW}.png` });
+  console.log(`  screenshot -> tests/screenshots/results-${PLAYERS}p-${VW}.png`);
+}
 await browser.close();
