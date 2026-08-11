@@ -184,7 +184,12 @@ const TAGLINES = [
   "Place your cards. Own every board.",
   "Every card counts. Every board matters.",
   "Split your hand. Win the table.",
-  "Four cards. Four boards. One winner.",
+  // FACTUAL FIX 2026-08-11 — was "Four cards. Four boards. One winner." The board count is
+  // DYNAMIC (2P=4, 3P=3, 4P=2), so "four boards" is true only at 2 players, and the home screen
+  // showed this line directly above "3 boards · 3 players". Four cards per board per player is
+  // always right; the board count is not. "Every board" is true at every player count and keeps
+  // the original cadence. The other eight taglines make no board-count claim and are untouched.
+  "Four cards. Every board. One winner.",
   "Omaha, multiplied.",
   "Think deeper. Play smarter.",
   "Stack the boards. Take the chips.",
