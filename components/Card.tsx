@@ -528,23 +528,26 @@ function CardComponent({
         {Platform.OS !== 'web' && (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000', opacity: 0.025, top: '65%', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }]} pointerEvents="none" />
         )}
-        {/* VAMOS-VISUAL-C — 1px inset top highlight for lift cue */}
-        {isV2 && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 1,
-              right: 1,
-              height: 1,
-              backgroundColor: 'rgba(255,254,248,0.9)',
-              borderTopLeftRadius: OBSIDIAN_GEOM.cardRadius,
-              borderTopRightRadius: OBSIDIAN_GEOM.cardRadius,
-              opacity: isUpgraded ? 0.95 : 0.7,
-            }}
-            pointerEvents="none"
-          />
-        )}
+        {/* VAMOS-VISUAL-C 1px inset top highlight — DELETED 2026-08-10.
+            Reported as "an annoying line above the cards" roughly twenty times and never once
+            reported as helping, which is a poor return for a "lift cue".
+
+            TWO ATTEMPTS TO RECOLOUR IT BOTH FAILED, and both failures were mine:
+              1. Dropped the alpha to 0.22 — that exposed the darker base underneath and turned
+                 a bright bar into a dim one. Worse, not better.
+              2. Retinted to #FFFEF8 (255,254,248), the design token for "card colour". But the
+                 card actually PAINTS (253,252,246), so this was still brighter than the face.
+                 Calibrating against a token instead of the painted pixel.
+            Measured from Roye's screenshot of the reveal: the bar spans 2 device rows at
+            (255,254,248) against a (253,252,246) face. Two units brighter, full card width,
+            against a dark board — the eye resolves an edge far better than a flat patch, which
+            is why a "delta 1" measurement kept passing while a human kept seeing it.
+
+            Deleted rather than recoloured a third time: there is no value that makes a bright
+            line at a card's edge invisible except not drawing one. If the cards need depth,
+            that is a deliberate design decision, not a 1px bar.
+            The identical copy in StaticCard.tsx (which is what /results renders) is deleted too
+            — fixing only one of the two is how the bar survived the last round. */}
         {suitsOnly ? (
           <View style={styles.suitBottomLeft}>
             <Text style={[styles.suitOnlyText, {

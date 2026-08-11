@@ -85,25 +85,11 @@ function StaticCard({ card, cardWidth, cardHeight, highlighted, dimmed, isCommun
       {Platform.OS !== 'web' && (
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000', opacity: 0.025, top: '65%', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }]} pointerEvents="none" />
       )}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 1,
-          right: 1,
-          height: 1,
-          // Same 1px top highlight as Card.tsx:531-547, and it was left at pure white when that
-          // one was fixed — so the "annoying line above the cards" survived everywhere
-          // StaticCard renders, which is why Roye still saw it in the browser after the fix was
-          // called verified. Pure white over a #FFFEF8 face reads as a hard bar, not a gloss.
-          // Retinted to the card face, exactly as Card.tsx was.
-          backgroundColor: 'rgba(255,254,248,0.9)',
-          borderTopLeftRadius: OBSIDIAN_GEOM.cardRadius,
-          borderTopRightRadius: OBSIDIAN_GEOM.cardRadius,
-          opacity: 0.7,
-        }}
-        pointerEvents="none"
-      />
+      {/* 1px inset top highlight — DELETED 2026-08-10, together with the identical element in
+          Card.tsx:531-547. This is the copy /results renders, and it is why the bar survived
+          the round where only Card.tsx was changed. See Card.tsx for the full reasoning:
+          recolouring failed twice, the second time because the design token #FFFEF8 is not what
+          the card actually paints (253,252,246). Deleted rather than calibrated a third time. */}
       <View style={styles.cornerTopLeft} pointerEvents="none">
         <Text allowFontScaling={false} style={[styles.v2CornerRank, { color: v2SuitColor, fontSize: PRD.card.cornerRank(width), lineHeight: Math.round(PRD.card.cornerRank(width) * 1.1) }]}>{card.rank}</Text>
         <Text allowFontScaling={false} style={[styles.v2CornerSuit, { color: v2SuitColor, fontSize: PRD.card.cornerSuit(width), lineHeight: Math.round(PRD.card.cornerSuit(width) * 1.1) }]}>{SUIT_SYMBOLS[card.suit]}</Text>
