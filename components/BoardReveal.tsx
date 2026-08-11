@@ -694,8 +694,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   // Card sizing — maximize use of screen width
   const pad = 32;
   const handGap = 8;
-  const handCardW = Math.min(70, Math.floor((screenW - pad - handGap * 3) / 4));
-  const handCardH = Math.round(handCardW * 1.4);
+  // handCardW is derived from commCardW below (it must stay SMALLER, so the community row
+  // remains the visual focus) — declared after it rather than here.
 
   // MP-PARITY-DEEP 2026-07-09 — owner design call: community cards are the visual focus
   // of the reveal moment, so they render deliberately LARGER than hand cards (+10pt)
@@ -706,8 +706,21 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   // card visually distinct even where it overlaps its neighbor. On wide screens the
   // overlap shrinks toward 0 automatically; it never goes negative-into-overflow since
   // it's clamped at 0.
-  const commCardW = handCardW + 10;
+  // OWNER DESIGN CHANGE 2026-08-10 (Roye): shrink BOTH card sets so the community row gets a
+  // REAL positive gap instead of the fan. Not a bug fix — the overlap above was deliberate and
+  // measured uniform (all five children 84px, gaps -11). This trades size for separation.
+  //
+  // Derived, not guessed. The rendered box is commCardW + 4: commCardFrame's borderWidth 2 sits
+  // on the WRAPPER (:846), outside the card, which is why commCardW 80 measured 84. So fitting
+  // five gapped cards is  5*(c + 4) + 4*commGap <= screenW - pad, giving c <= 64 at 390px and
+  // c <= 50 at 320px. The 72 cap only binds on wide screens.
+  const commGap = 4;
+  const commCardW = Math.min(72, Math.floor((screenW - pad - commGap * 4 - 20) / 5));
   const commCardH = Math.round(commCardW * 1.4);
+  // Hand cards sit BELOW community so the community row stays the visual focus. Also capped by
+  // the row's own fit (4 cards + 3 gaps), so the hand can never overflow its width either.
+  const handCardW = Math.min(commCardW - 6, Math.floor((screenW - pad - handGap * 3) / 4));
+  const handCardH = Math.round(handCardW * 1.4);
   // RN's flexbox `gap` can't go negative, so overlap is applied per-card via marginLeft
   // (see the community card map below) instead of a row-level gap.
   const commOverlap = Math.max(0, Math.round((commCardW * 5 - (screenW - pad)) / 4));
@@ -843,7 +856,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                     key={c.id}
                     style={[
                       styles.commCardFrame,
-                      { opacity: communitySpotlightOpacities[i], marginLeft: i === 0 ? 0 : -commOverlap, zIndex: i },
+                      // commOverlap now clamps to 0 at both widths (the cards were shrunk to
+                      // fit), so this resolves to a REAL +commGap separation. The clamp logic
+                      // is deliberately left intact: on a narrow-enough screen it still
+                      // engages and the row fans rather than overflowing.
+                      { opacity: communitySpotlightOpacities[i], marginLeft: i === 0 ? 0 : commGap - commOverlap, zIndex: i },
                       isRiver && { transform: [{ scaleY: riverSqueezeAnim }] },
                       isHighlighted && styles.winGlow,
                     ]}
