@@ -41,7 +41,7 @@ const findCards = `(() => {
       }
       n = n.parentElement; d++;
     }
-    if (out.length >= 3) break;
+    if (out.length >= 8) break;
   }
   return out;
 })()`;
@@ -52,6 +52,40 @@ await ctx.addInitScript((s) => { for (const [k,v] of Object.entries(s)) { try { 
 const page = await ctx.newPage();
 await page.goto(`${URL}/game?practice=true&players=${PLAYERS}&fresh=1`, { waitUntil: 'load', timeout: 120000 });
 await page.waitForTimeout(9000);
+
+// RESULTS=1 scans the /results screen instead of placement. That is where StaticCard renders
+// (BoardResultCard is its only consumer), and where the white bar survived after Card.tsx was
+// fixed — so scanning placement alone could never have caught it.
+// REVEAL=1 stops mid-reveal — the surface Roye actually screenshotted (bot rows + community
+// row, both Card.tsx). Verifying only placement and /results would again be checking where I
+// chose to look rather than where the defect was reported.
+if (process.env.REVEAL === '1') {
+  const fire2 = `(el)=>{const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
+const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
+['pointerdown','mousedown','pointerup','mouseup','click'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent)));}`;
+  await page.evaluate(`window.__f=${fire2}`);
+  await page.evaluate(`(()=>{const b=[...document.querySelectorAll('button,[role="button"]')].find(x=>/auto-place all/i.test(x.getAttribute('aria-label')||x.textContent||''));if(b)window.__f(b);})()`);
+  await page.waitForTimeout(1300);
+  await page.evaluate(`(()=>{const r=document.querySelector('[data-testid="ready-button"]');if(r)window.__f(r);})()`);
+  await page.waitForTimeout(8000);
+  const u = await measure(page, `(()=>location.pathname)()`, { label: 'u' });
+  if (/results/.test(u)) { console.error('OVERSHOT INTO /results — reveal NOT captured. FAILED MEASUREMENT.'); await browser.close(); process.exit(2); }
+}
+
+if (process.env.RESULTS === '1') {
+  const fire = `(el)=>{const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;
+const mk=(t,C)=>new C(t,{bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',button:0,buttons:t.includes('up')?0:1,isPrimary:true});
+['pointerdown','mousedown','pointerup','mouseup','click'].forEach(t=>el.dispatchEvent(mk(t,t.startsWith('pointer')?PointerEvent:MouseEvent)));}`;
+  await page.evaluate(`window.__f=${fire}`);
+  await page.evaluate(`(()=>{const b=[...document.querySelectorAll('button,[role="button"]')].find(x=>/auto-place all/i.test(x.getAttribute('aria-label')||x.textContent||''));if(b)window.__f(b);})()`);
+  await page.waitForTimeout(1300);
+  await page.evaluate(`(()=>{const r=document.querySelector('[data-testid="ready-button"]');if(r)window.__f(r);})()`);
+  let ok = false;
+  for (let i = 0; i < 14; i++) { await page.waitForTimeout(3000);
+    const u = await measure(page, `(()=>location.pathname)()`, { label: 'u' }); if (/results/.test(u)) { ok = true; break; } }
+  if (!ok) { console.error('NEVER REACHED /results — FAILED MEASUREMENT, not a pass.'); await browser.close(); process.exit(2); }
+  await page.waitForTimeout(2500);
+}
 
 let cards;
 try { cards = await measure(page, findCards, { label: 'cards' }); }
@@ -71,7 +105,20 @@ const rows = await page.evaluate(async ({ b64, pts }) => {
     for (let dy = -8; dy <= 10; dy++) ladder.push({ dy, y: p.top + dy, rgb: at(p.x, p.top + dy) });
     return { x: p.x, top: p.top, w: p.w, h: p.h, ladder };
   });
-}, { b64: buf.toString('base64'), pts: cards.slice(0, 2) });
+}, { b64: buf.toString('base64'), pts: cards.slice(0, 8) });
+
+// A card mid-animation paints as board colour, and its ladder would read "no bright row" while
+// proving nothing. Only cards whose FACE is actually light count as measured.
+const painted = rows.filter((r) => {
+  const f = r.ladder.find((s) => s.dy === 6);
+  return f && (0.2126*f.rgb[0] + 0.7152*f.rgb[1] + 0.0722*f.rgb[2]) > 200;
+});
+if (!painted.length) {
+  console.error(`NO PAINTED CARD FACES among ${rows.length} candidates — cards were still`);
+  console.error('animating or had not rendered. FAILED MEASUREMENT, not a clean result.');
+  process.exit(2);
+}
+rows.length = 0; rows.push(...painted.slice(0, 2));
 await page.screenshot({ path: `tests/screenshots/cardline-${VW}.png`, clip: { x: 0, y: Math.max(0, cards[0].top - 24), width: VW, height: 90 } });
 await browser.close();
 
