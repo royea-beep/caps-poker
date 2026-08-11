@@ -2062,6 +2062,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(8),
     borderRadius: rs(12),
     backgroundColor: 'rgba(255,255,255,0.08)',
+    // 🪙 2,530 / 📋 Copy / 📤 Share measured 73x24, 78x24, 82x24 at both widths — the last
+    // three sub-44 controls Roye approved raising. minHeight, not padding: rs() scales with
+    // width, so padding alone passes at one width and fails at another. These sit in a row
+    // with their own space, so growing them compresses nothing.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   topChipText: {
     fontSize: rf(14),
@@ -2553,7 +2559,9 @@ const styles = StyleSheet.create({
   },
   referralCardLabel: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: rf(9),
+    // "YOUR CODE" — the last 9px copy in the app. rf(9) clamps to [6.75, 11.25], so it renders
+    // 9 at both widths. Floored the same way as the lobby's rf(10, 10) / rf(11, 10).
+    fontSize: rf(10, 10),
     fontWeight: '600' as const,
     letterSpacing: 1.2,
   },

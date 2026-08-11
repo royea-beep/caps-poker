@@ -419,7 +419,10 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   // opens to join a game. The second argument is an explicit floor: 10px minimum regardless of
   // width. Copy only; decorative glyphs are left alone.
   botMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10, 10) },
-  botRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), backgroundColor: 'rgba(34,197,94,0.10)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.45)', borderRadius: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(12), marginBottom: rv(6) },
+  // 294x41 at 320px — 3px short, and only at 320 (rv(8) padding scales down with width, so it
+  // passed at 390 and failed on a small phone). These rows are the primary way into a solo game
+  // from the lobby. minHeight rather than more padding, so the fix cannot scale away again.
+  botRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), backgroundColor: 'rgba(34,197,94,0.10)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.45)', borderRadius: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(12), marginBottom: rv(6), minHeight: 44 },
   botBadge: { backgroundColor: 'rgba(34,197,94,0.20)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.55)', borderRadius: rv(7), paddingHorizontal: rs(8), paddingVertical: rv(3) },
   botBadgeText: { color: '#4ADE80', fontSize: rf(10, 10), fontWeight: '900', letterSpacing: 0.5 },
   botRowTitle: { color: '#fff', fontSize: rf(14), fontWeight: '700' },

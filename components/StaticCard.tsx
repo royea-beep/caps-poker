@@ -92,7 +92,12 @@ function StaticCard({ card, cardWidth, cardHeight, highlighted, dimmed, isCommun
           left: 1,
           right: 1,
           height: 1,
-          backgroundColor: 'rgba(255,255,255,0.9)',
+          // Same 1px top highlight as Card.tsx:531-547, and it was left at pure white when that
+          // one was fixed — so the "annoying line above the cards" survived everywhere
+          // StaticCard renders, which is why Roye still saw it in the browser after the fix was
+          // called verified. Pure white over a #FFFEF8 face reads as a hard bar, not a gloss.
+          // Retinted to the card face, exactly as Card.tsx was.
+          backgroundColor: 'rgba(255,254,248,0.9)',
           borderTopLeftRadius: OBSIDIAN_GEOM.cardRadius,
           borderTopRightRadius: OBSIDIAN_GEOM.cardRadius,
           opacity: 0.7,
