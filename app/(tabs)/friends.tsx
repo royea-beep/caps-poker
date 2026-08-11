@@ -104,7 +104,24 @@ export default function FriendsScreen() {
       <Text style={styles.title} accessibilityRole="header">CLUBS</Text>
       <Text style={styles.sub}>Your circle · play only your friends</Text>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: rs(30) }} showsVerticalScrollIndicator={false}>
+      {/* EMPTY-STATE CENTRING. Measured at 390px: content ended at y=307 with 455px of nothing
+          below it before the tab bar — the largest empty band in the app, and what Roye
+          reported as "unnecessary spacing". Diagnosed, not assumed: the scroller's
+          scrollHeight equals its clientHeight, so nothing is clipped or scrollable and no
+          content is being pushed off — the screen genuinely has little content and pins it to
+          the top.
+          So the fix is CENTRING, never filler: flexGrow makes the content container fill the
+          scroll frame, and justifyContent centres what little there is inside it. Applied ONLY
+          while the club list is empty — once a member has clubs the list must read top-down
+          like any list, so this must not become unconditional.
+          The "CLUBS" title and subtitle (:104-105) sit OUTSIDE this ScrollView and stay put. */}
+      <ScrollView
+        contentContainerStyle={[
+          { paddingBottom: rs(30) },
+          !loading && clubs.length === 0 && { flexGrow: 1, justifyContent: 'center' },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* My clubs */}
         {loading ? (
           <View style={styles.center}><ActivityIndicator color="#4FD6A8" /></View>
