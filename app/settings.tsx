@@ -1294,12 +1294,20 @@ export default function SettingsScreen() {
 
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <VersionBadge />
+          {/* B-8 PARITY — these two lines are raw OTA diagnostics ("OTA: none | Ch: | RT:",
+              "Embedded: NO | unknown") and were rendering for every player at the very bottom
+              of Settings. Gated on the SAME `devUnlocked` condition as the DEVELOPER section
+              (:1123) so the nodes are not mounted when locked — a visually-hidden node is still
+              in the tree and still reachable by a screen reader. Gated, not deleted: they are
+              useful in development. */}
+          {devUnlocked && (<>
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), marginTop: 4 }}>
             OTA: {Updates.updateId?.slice(0, 8) ?? 'none'} | Ch: {Updates.channel ?? '?'} | RT: {Updates.runtimeVersion ?? '?'}
           </Text>
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), marginTop: 2 }}>
             Embedded: {Updates.isEmbeddedLaunch ? 'YES' : 'NO'} | {Updates.createdAt?.toISOString().slice(0, 10) ?? 'unknown'}
           </Text>
+          </>)}
         </View>
       </ScrollView>
     </SafeAreaView>
