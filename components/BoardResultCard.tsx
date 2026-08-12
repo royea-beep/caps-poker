@@ -53,6 +53,12 @@ interface BoardResultCardProps {
   completeBonusAmount: number;
   /** OTA-COSMETIC-FIXES — practice is XP-only, no chips actually move; hide the per-board ± chip delta. */
   isPractice?: boolean;
+  /**
+   * VAMOS-BOT-LABEL — labels for the opposing hands, one per entry in `allBotCards`.
+   * Multiplayer opponents arrive through the SAME allBotCards array as bots, so without this
+   * the row called a human "Bot". Omit for solo and the bot labels are used unchanged.
+   */
+  opponentLabels?: string[];
 }
 
 // VAMOS-FIX-RESULTS-RENDER 2026-06-17 — memo'd. Renders up to 9 cards per
@@ -63,7 +69,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
   board, boardIndex, pot, cardW, cardH, translateY,
   commCardW, commCardH, botCardW, botCardH,
   winBorderColor, winBadgeAnim, shareData, autoShareUrl,
-  isComplete, completeBonusAmount, isPractice,
+  isComplete, completeBonusAmount, isPractice, opponentLabels,
 }: BoardResultCardProps) {
   const cW = commCardW ?? cardW;
   const cH = commCardH ?? cardH;
@@ -175,7 +181,9 @@ export const BoardResultCard = React.memo(function BoardResultCard({
           botCards && botCards.length > 0 ? (
             <View key={`bot-${botIdx}`} style={styles.handRowVertical}>
               <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
-                {multiBot ? `Bot ${botIdx + 1}` : 'Bot'}
+                {/* VAMOS-BOT-LABEL — never call a human "Bot". A supplied label always wins;
+                    the bot wording is only the solo default. */}
+                {opponentLabels?.[botIdx] ?? (multiBot ? `Bot ${botIdx + 1}` : 'Bot')}
               </Text>
               <View style={styles.cardsRow}>
                 {botCards.map((c: any) => (

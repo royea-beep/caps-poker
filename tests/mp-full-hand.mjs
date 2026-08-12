@@ -89,6 +89,17 @@ const outcome = `(() => {
            perBoardLoss: (txt.match(/\\bLOSS\\b/g) || []).length,
            perBoardTie:  (txt.match(/\\bTIE\\b/g)  || []).length,
            bodyLen: txt.length,
+           // Opponent-identity forensics. NOTE: no backticks in this comment — it lives inside
+           // a template literal, and one backtick here ends the probe string mid-object.
+           // The "You beat X" header is gated on isMultiplayer AND storeOpponentName, so its
+           // absence has TWO possible causes and one observation cannot separate them.
+           // REMATCH is gated on !isMultiplayer (results.tsx:1383), so its presence proves
+           // isMultiplayer is FALSE at /results — explaining the missing header without the
+           // name being empty.
+           hasBeatHeader: /You beat|Defeated by/i.test(txt),
+           hasRematch: /REMATCH/i.test(txt),
+           hasBotLabel: /\\bBot\\b/.test(txt),
+           botLabelCount: (txt.match(/\\bBot\\b/g) || []).length,
            // When no verdict renders, the screen ITSELF is the finding — capture it rather
            // than reporting a length. A 676-char page with an "✕" is a state, not a result.
            body: txt.slice(0, 700).replace(/\\n+/g, ' | ') };
@@ -221,6 +232,10 @@ try {
       rec('4 a comparable score rendered on both clients', false, 'neither a score line nor a board line rendered');
     }
     console.log(`chips  A ${idA.chips} -> ${oa.chips}   B ${idB.chips} -> ${ob.chips}`);
+    for (const [who, o] of [['A', oa], ['B', ob]]) {
+      console.log(`  ${who} identity: "You beat/Defeated by" ${o.hasBeatHeader} | REMATCH ${o.hasRematch} | "Bot" x${o.botLabelCount}`);
+    }
+    console.log(`  => isMultiplayer at /results is ${oa.hasRematch ? 'FALSE (REMATCH rendered)' : 'TRUE (REMATCH hidden)'}`);
   }
 
   const allErrs = [...new Set([...A.errs, ...B.errs])].filter((e) => !/play\(\) failed/.test(e));

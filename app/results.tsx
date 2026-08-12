@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Alert, Pressable, Animated, TouchableOpacity, Share } from 'react-native';
 // ZERO Reanimated on results screen — game.tsx has 7 active shared values during transition
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -146,6 +146,27 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const multiplayerMode = useGameStore((s) => s.multiplayerMode);
   const isMultiplayer = mpServer !== null || mpClient !== null;
   const isMpHost = multiplayerMode === 'host';
+
+  // VAMOS-BOT-LABEL — in multiplayer the opposing hands are PEOPLE, but they arrive through the
+  // same `allBotCards` array as bots, so BoardResultCard called them "Bot" on every row. A player
+  // told their opponent is a bot when it is their friend is a trust problem, and the tester round
+  // is friends playing each other.
+  //
+  // The fallback matters more than the wiring here: `opponentName` is only set from a roster
+  // lookup gated on a truthy name (multiplayer-game.tsx:685 host / :814 guest), and across four
+  // observed MP hands it was never populated — the "You beat X" header at :1273 never rendered.
+  // So `Player N` is what players will actually see, and it must be honest. Never "Bot".
+  //
+  // Only the 2-player case gets a real name: there is exactly one opponent, so `opponentName`
+  // unambiguously belongs to them. With 3-4 players there is no established mapping from seat to
+  // position in allBotCards, and guessing would put one human's name on another human's hand —
+  // worse than a neutral label. Memoised because BoardResultCard is memo'd on prop identity.
+  const opponentLabels = useMemo(() => {
+    if (!isMultiplayer) return undefined; // solo keeps the bot wording
+    const opponentCount = Math.max(1, (revealData.numberOfPlayers ?? 2) - 1);
+    if (opponentCount === 1) return [storeOpponentName || 'Player 2'];
+    return Array.from({ length: opponentCount }, (_, i) => `Player ${i + 2}`);
+  }, [isMultiplayer, revealData.numberOfPlayers, storeOpponentName]);
 
   const updateConfig = useGameStore((s) => s.updateConfig);
   const handsPlayed = useGameStore((s) => s.handsPlayed);
@@ -1124,6 +1145,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 isComplete={localComplete}
                 completeBonusAmount={completeBonusAmount}
                 isPractice={revealData.isPractice}
+                opponentLabels={opponentLabels}
               />
             );
           })}

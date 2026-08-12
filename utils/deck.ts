@@ -1,4 +1,4 @@
-import { Card, SUITS, RANKS } from '../constants/gameConfig';
+import { Card, SUITS, RANKS, getBoardCount, getCardsPerPlayer } from '../constants/gameConfig';
 
 export function createDeck(): Card[] {
   const deck: Card[] = [];
@@ -38,8 +38,12 @@ export interface MultiDealResult {
  * - 4 players: 8 cards each, 2 boards (42 used, 10 discarded)
  */
 export function dealCardsMultiplayer(playerCount: 2 | 3 | 4): MultiDealResult {
-  const cardsPerPlayer = playerCount === 2 ? 16 : playerCount === 3 ? 12 : 8;
-  const boardCount = playerCount === 2 ? 4 : playerCount === 3 ? 3 : 2;
+  // VAMOS-DEDUPE 2026-08-12 — these two lines used to inline the mapping (16/12/8 and 4/3/2).
+  // The values were correct, but this is the dealer: a second copy of the project's most
+  // error-prone rule, in the one place a divergence would silently deal the wrong hand.
+  // getBoardCount/getCardsPerPlayer are now the only source.
+  const cardsPerPlayer = getCardsPerPlayer(playerCount);
+  const boardCount = getBoardCount(playerCount);
 
   const deck = shuffleDeck(createDeck());
   let idx = 0;
