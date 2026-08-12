@@ -83,11 +83,33 @@ export default function ResultsScreen() {
   // swaps the INPUT the gate reads — it does not touch the gate. See utils/devRevealFixture.ts.
   const revealData = applyDevRevealFixture(useGameStore((s) => s.revealData));
   const visualTheme = useGameStore((s) => s.visualTheme);
+  // Declared here, NOT reused from ResultsContent's `router` (:98) — that one is inside the
+  // inner component and is out of scope in this outer gate. Both hooks run unconditionally,
+  // above the early return, so the Rules-of-Hooks fix recorded at :73-77 still holds.
+  const router = useRouter();
   if (!revealData) {
     const theme = getTheme(visualTheme);
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={styles.loadingContainer} accessibilityLiveRegion="polite"><Text style={styles.loadingText}>Loading...</Text></View>
+        {/* DEAD END FIXED 2026-08-12. Reloading on /results loses the in-memory revealData, so
+            this branch renders — and it rendered "Loading..." and NOTHING ELSE. Measured on
+            BOTH engines: `controls on stuck /results: []`. Zero buttons, zero links. A player
+            who reloaded here could not leave without the browser's back button or editing the
+            URL, neither of which exists in a standalone/home-screen launch.
+            It also never stops saying "Loading" — there is nothing still loading; the data is
+            gone and will not arrive. Honest copy plus one way out. */}
+        <View style={styles.loadingContainer} accessibilityLiveRegion="polite">
+          <Text style={styles.loadingText}>This hand is no longer available.</Text>
+          <Pressable
+            onPress={() => router.replace('/')}
+            accessibilityRole="button"
+            accessibilityLabel="Back to home"
+            style={{ marginTop: rs(16), minHeight: 44, justifyContent: 'center', paddingHorizontal: rs(24),
+                     borderRadius: rv(12), borderWidth: 1, borderColor: COLORS.mint }}
+          >
+            <Text style={{ color: COLORS.mint, fontSize: rf(15), fontWeight: '700' }}>Back to home</Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
     );
   }
