@@ -100,6 +100,7 @@ const outcome = `(() => {
            hasRematch: /REMATCH/i.test(txt),
            hasBotLabel: /\\bBot\\b/.test(txt),
            botLabelCount: (txt.match(/\\bBot\\b/g) || []).length,
+           playerNLabelCount: (txt.match(/\\bPlayer [2-4]\\b/g) || []).length,
            // When no verdict renders, the screen ITSELF is the finding — capture it rather
            // than reporting a length. A 676-char page with an "✕" is a state, not a result.
            body: txt.slice(0, 700).replace(/\\n+/g, ' | ') };
@@ -192,6 +193,16 @@ try {
   }
   const settled = done(A.p) && done(B.p);
   console.log(`reveal taps issued: ${taps} | A done ${done(A.p)} | B done ${done(B.p)}`);
+
+  // The board cards stagger in AFTER /results mounts. Reading too early gives a ~450-char page
+  // with no board rows at all — which scores "Bot" x0 and reads exactly like a fixed label.
+  // Wait for the rows themselves before judging anything about them.
+  for (let i = 0; i < 20; i++) {
+    const ready = await Promise.all([A.p, B.p].map((p) =>
+      p.evaluate(`(() => /BOARD 1/i.test(document.body.innerText || '') && (document.body.innerText || '').length > 800)()`).catch(() => false)));
+    if (ready.every(Boolean)) break;
+    await A.p.waitForTimeout(1500);
+  }
   console.log(`hand settled: ${settled}  (A=${path(A.p)} B=${path(B.p)})`);
   await A.p.waitForTimeout(7000);
 
@@ -233,7 +244,11 @@ try {
     }
     console.log(`chips  A ${idA.chips} -> ${oa.chips}   B ${idB.chips} -> ${ob.chips}`);
     for (const [who, o] of [['A', oa], ['B', ob]]) {
-      console.log(`  ${who} identity: "You beat/Defeated by" ${o.hasBeatHeader} | REMATCH ${o.hasRematch} | "Bot" x${o.botLabelCount}`);
+      // Judge on whether the BOARD ROWS rendered, not on which label appeared. Counting only
+      // Bot/"Player N" called a real opponent name ("Host") inconclusive, and would equally have
+      // scored an empty screen as clean. Rows present + zero "Bot" is the actual pass.
+      const judged = /BOARD 1/i.test(o.body || '') && o.bodyLen > 800;
+      console.log(`  ${who} identity: header ${o.hasBeatHeader} | REMATCH ${o.hasRematch} | "Bot" x${o.botLabelCount} | "Player N" x${o.playerNLabelCount} | bodyLen ${o.bodyLen} | ${judged ? (o.botLabelCount === 0 ? 'NO BOT LABEL — good' : 'STILL SAYS BOT') : 'INCONCLUSIVE (rows not rendered)'}`);
     }
     console.log(`  => isMultiplayer at /results is ${oa.hasRematch ? 'FALSE (REMATCH rendered)' : 'TRUE (REMATCH hidden)'}`);
   }
