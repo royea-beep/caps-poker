@@ -62,20 +62,29 @@ const outcome = `(() => {
   // MP renders a running score instead: "Leading 1-0 · 3 left" / "Trailing 0-1 · 3 left".
   // Its mirror across the two clients is the cross-client agreement signal that matters.
   const mS = /(Leading|Trailing|Tied)\\s*(\\d+)\\s*-\\s*(\\d+)/i.exec(txt);
+  // The finished screen leads with the verdict then the score, e.g. "YOU WIN | 3 — 1".
+  const head = (txt.split('\\n').slice(0, 2).join(' ') || '');
+  const mF = /(\\d+)\\s*[—\\-]\\s*(\\d+)/.exec(head);
   let chips = null;
   try { chips = JSON.parse(localStorage.getItem('caps-poker-storage')).state.chips; } catch {}
   return { url: location.pathname,
            device: localStorage.getItem('caps-device-id'),
            chips,
            headline: (txt.split('\\n').find(l => l.trim()) || '').slice(0, 30),
-           claimsWin:  /YOU WIN|YOU WON/i.test(txt),
-           claimsLoss: /YOU LOSE|YOU LOST/i.test(txt),
-           claimsTie:  /\\bTIE\\b|SPLIT|DRAW/i.test(txt),
+           // Judge the HEADLINE ONLY. The finished screen lists every board with its own
+           // "✅ YOU WIN" / "❌ YOU LOSE" badge, so a body-wide test reports that both
+           // clients claimed the win on any hand where each side took at least one board —
+           // which is nearly all of them. It flagged a disagreement on a hand that was in
+           // fact a perfect mirror (A "YOU LOSE 1 — 3" / B "YOU WIN 3 — 1").
+           claimsWin:  /YOU WIN|YOU WON/i.test(head),
+           claimsLoss: /YOU LOSE|YOU LOST/i.test(head),
+           claimsTie:  /\\bTIE\\b|SPLIT|DRAW/i.test(head),
            boardsWon:   mB ? Number(mB[1]) : null,
            boardsTotal: mB ? Number(mB[2]) : null,
-           scoreWord: mS ? mS[1].toLowerCase() : null,
-           scoreMine: mS ? Number(mS[2]) : null,
-           scoreTheirs: mS ? Number(mS[3]) : null,
+           // Prefer the FINAL score in the headline; fall back to the in-reveal running score.
+           scoreWord: mS ? mS[1].toLowerCase() : (mF ? 'final' : null),
+           scoreMine: mF ? Number(mF[1]) : (mS ? Number(mS[2]) : null),
+           scoreTheirs: mF ? Number(mF[2]) : (mS ? Number(mS[3]) : null),
            perBoardWin:  (txt.match(/\\bWIN\\b/g)  || []).length,
            perBoardLoss: (txt.match(/\\bLOSS\\b/g) || []).length,
            perBoardTie:  (txt.match(/\\bTIE\\b/g)  || []).length,
@@ -159,16 +168,19 @@ try {
     return true;
   })()`).catch(() => false);
 
-  let settled = false, taps = 0;
-  for (let i = 0; i < 40; i++) {
-    await B.p.waitForTimeout(2500);
-    if (/results/.test(A.p.url()) || /results/.test(B.p.url())) { settled = true; break; }
-    const ta = await tapReveal(A.p), tb = await tapReveal(B.p);
-    if (ta || tb) taps++;
-    const prompt = await A.p.evaluate(`(() => /tap to reveal|left\\b/i.test(document.body.innerText || ''))()`).catch(() => true);
-    if (!prompt && taps > 0) { settled = true; break; }
+  // Wait for BOTH clients, not either: the whole point is comparing two finished screens, and
+  // an earlier run broke out on the first one and sampled the other mid-reveal. 4 boards at one
+  // manual tap each, on two clients, needs a generous budget.
+  let taps = 0;
+  const done = (p) => /results/.test(p.url());
+  for (let i = 0; i < 90; i++) {
+    await B.p.waitForTimeout(2000);
+    if (done(A.p) && done(B.p)) break;
+    if (!done(A.p) && await tapReveal(A.p)) taps++;
+    if (!done(B.p) && await tapReveal(B.p)) taps++;
   }
-  console.log(`reveal taps issued: ${taps}`);
+  const settled = done(A.p) && done(B.p);
+  console.log(`reveal taps issued: ${taps} | A done ${done(A.p)} | B done ${done(B.p)}`);
   console.log(`hand settled: ${settled}  (A=${path(A.p)} B=${path(B.p)})`);
   await A.p.waitForTimeout(7000);
 
