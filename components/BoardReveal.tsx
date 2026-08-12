@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CardComponent from './Card';
+import ChipCountUp from './ChipCountUp';
 import { WEB_MAX_WIDTH } from './WebContainer';
 import { Card, COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
@@ -946,19 +947,22 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 <Text style={[styles.chipDelta, { color: chipColor }]}>—</Text>
               ) : (
                 <AnimatedRN.View style={{ opacity: chipFadeIn }}>
-                  <AnimatedRN.Text style={[styles.chipDelta, { color: chipColor }]}>
-                    {chipCounterAnim.interpolate({
-                      // VAMOS-FIX-RESULTS-CRASH 2026-06-17 — outputRange entries
-                      // MUST have identical non-numeric structure for RN's pattern
-                      // interpolation. Was: "-0" vs "-100 🪙" (mismatched suffix)
-                      // → "invalid pattern -0 and -100 🪙" ErrorBoundary on every
-                      // loss (negative chipSign). Both entries now carry the 🪙
-                      // suffix → same pattern → no crash.
-                      inputRange: [0, board.potAmount],
-                      outputRange: [`${chipSign}0 🪙`, `${chipSign}${board.potAmount} 🪙`],
-                      extrapolate: 'clamp',
-                    })}
-                  </AnimatedRN.Text>
+                  {/* VAMOS-FLOATS — was chipCounterAnim.interpolate() with a STRING
+                      outputRange. RN interpolates the numeric substring and formats it
+                      unrounded, so every frame of the count-up rendered ~16 decimals
+                      ("15.342293749999996 🪙", caught on two live clients) and only
+                      settled at t=1. ChipCountUp animates the number and rounds on
+                      render instead — presentation only, potAmount untouched.
+
+                      This also retires the 2026-06-17 crash workaround: the string
+                      patterns had to share identical non-numeric structure ("-0" vs
+                      "-100 🪙" threw "invalid pattern" on every loss), which is moot
+                      now that nothing interpolates a string. */}
+                  <ChipCountUp
+                    anim={chipCounterAnim}
+                    sign={chipSign}
+                    style={[styles.chipDelta, { color: chipColor }]}
+                  />
                 </AnimatedRN.View>
               )}
               {/* VAMOS-HAND-TIEBREAK 2026-06-22 — show the SPECIFIC hand matchup on EVERY

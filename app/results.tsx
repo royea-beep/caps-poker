@@ -566,11 +566,17 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // is a computed display value (100/board won, -50/board lost), NOT a balance mutation —
         // no earn_chips, no leaderboard, no chip path revived. Roye's "do NOT revive the chip
         // path" ruling is respected.
+        // VAMOS-SESSION-TYPE — this block is NOT gated on isPracticeGame (the ELO block above
+        // is), so real hands reach it too. The RPC used to hardcode session_type='practice',
+        // which meant every real hand was filed as practice and, because chips_delta derives
+        // from that flag, could never report a chip movement. The gate was right; it just had
+        // no way to know what kind of hand this was. Now it is told.
         await sb.rpc('record_hand_result_d', {
           p_device_id: deviceId,
           p_won: revealData.netChips > 0,
           p_boards_won: boardsWon,
           p_boards_total: revealData.boards.length,
+          p_session_type: isPracticeGame ? 'practice' : 'quick_poker',
         });
       } catch {}
     })();
