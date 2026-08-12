@@ -71,8 +71,11 @@ for (let h = 1; h <= HANDS; h++) {
   let reached = false;
   for (let i = 0; i < 18; i++) {
     await page.waitForTimeout(2500);
-    const u = await page.evaluate(`(()=>location.pathname)()`);
-    if (/results/.test(u)) { reached = true; break; }
+    // page.url() reads from Playwright's side and needs NO execution context. Polling
+    // location.pathname via evaluate races the reveal -> results navigation and throws
+    // "Execution context was destroyed" — which killed the whole run, losing three good hands
+    // to a status check.
+    if (/results/.test(page.url())) { reached = true; break; }
   }
   if (!reached) { console.log(`hand ${h}: NEVER REACHED /results — not counted`); continue; }
   await page.waitForTimeout(6000);   // let the celebration overlay clear before reading
