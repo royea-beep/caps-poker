@@ -67,6 +67,17 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
 
   const delta = prevSelfPct == null ? 0 : selfPct - prevSelfPct;
   const hasDelta = Math.abs(delta) >= 1;
+  // A11Y 2026-08-11 — the delta chip was announced NOWHERE. Its sighted meaning is carried
+  // entirely by motion: it fades in and physically rises (chipY -12) or falls (+12) over 900ms
+  // on your own bar. None of that reaches a screen reader, so a non-sighted player never learnt
+  // the equity moved at all — not merely in a still, but ever.
+  //
+  // Gated on EXACTLY the chip's own render condition (`hasDelta && !pending`, :100) so the
+  // spoken and visual states can never disagree: if the chip is suppressed, this is silent.
+  // Direction in WORDS — "▲" does not read aloud, "up" does.
+  const deltaSpeech = hasDelta && !pending
+    ? `, your odds ${delta > 0 ? 'up' : 'down'} ${Math.abs(delta)} percent since the last street`
+    : '';
 
   useEffect(() => {
     if (pending) return;
@@ -111,7 +122,7 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
     const rowH = rs(15, screenW);
     return (
       <View style={styles.wrap} testID="equity-bar" accessibilityLiveRegion="polite"
-        accessibilityLabel={pending ? 'Calculating odds' : ordered.map((s) => `${label(s)} ${s.pct} percent`).join(', ')}>
+        accessibilityLabel={pending ? 'Calculating odds' : ordered.map((s) => `${label(s)} ${s.pct} percent`).join(', ') + deltaSpeech}>
         {ordered.map((s, i) => (
           <View key={s.seat} style={[styles.seatRow, { marginBottom: rs(3, screenW) }]}>
             <Text style={[styles.ordinal, { fontSize: rf(11, undefined, undefined, screenW), width: rs(13, screenW) }]}>{i + 1}.</Text>
@@ -155,7 +166,7 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
 
   return (
     <View style={styles.wrap} testID="equity-bar" accessibilityLiveRegion="polite"
-      accessibilityLabel={pending ? 'Calculating odds' : `You ${selfPct} percent, opponent ${oppPct} percent`}>
+      accessibilityLabel={pending ? 'Calculating odds' : `You ${selfPct} percent, opponent ${oppPct} percent${deltaSpeech}`}>
       <View style={styles.figureRow}>
         {[left, right].map((side, i) => (
           <View key={i} style={[styles.figureCol, i === 1 && styles.figureColRight]}>
