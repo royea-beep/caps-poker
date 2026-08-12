@@ -373,31 +373,23 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       setSavedHandId(handRecord.id);
     }
 
-    // Supabase hand_history sync — non-blocking backup (AsyncStorage is primary)
-    void (async () => {
-      try {
-        if (isPracticeGame) return; // practice games never touch server stats
-        const deviceId = await getDeviceId();
-        const sb = getSupabase();
-        if (!sb) return;
-        const bWon = revealData.boards.filter((b) => b.winner === 'player').length;
-        const effPct = Math.round(bWon / revealData.boards.length * 100);
-        await sb.from('hand_history').insert({
-          device_id: deviceId,
-          boards_data: revealData.boards.map((b) => ({
-            community: [...(b.openCards ?? []), ...(b.closedCards ?? [])].map((c) => ({ rank: c.rank, suit: c.suit })),
-            player: (b.playerCards ?? []).map((c) => ({ rank: c.rank, suit: c.suit })),
-            won: b.winner === 'player',
-            hand_name: b.playerHandName,
-          })),
-          boards_won: bWon,
-          boards_total: revealData.boards.length,
-          efficiency_pct: effPct,
-          bot_difficulty: config.botDifficulty ?? 'easy',
-          player_count: revealData.numberOfPlayers,
-        });
-      } catch {} // Non-blocking — AsyncStorage is the primary store
-    })();
+    // VAMOS-403 2026-08-12 — REMOVED: a direct `sb.from('hand_history').insert({...})` that
+    // 403'd on every real hand and was swallowed by an empty catch.
+    //
+    // Mechanism: the only policy on hand_history is `users_own_hh` (auth.uid() = user_id, ALL
+    // commands). CAPS is device-anonymous, so auth.uid() is NULL, `NULL = user_id` is never
+    // true, and the anon insert was always rejected. The RPC at :569 is SECURITY DEFINER, which
+    // is why that row lands while this one never did.
+    //
+    // Nothing was lost by deleting it. `boards_data` was non-null in 0 of 146 rows — the insert
+    // has never once succeeded — and nothing reads the column: get_hand_history selects
+    // hole_cards/community_cards/result/winning_hand/pot_size/chips_delta/opponent_name/
+    // is_all_in/created_at and never boards_data, and no client code references it either.
+    // AsyncStorage (saveHandToHistory above) is the primary store, as the old comment said.
+    //
+    // Not replaced with an RLS policy: that would widen anon's direct table access to store
+    // data no consumer wants. If per-board replay data is ever actually needed, add it to
+    // record_hand_result_d so hand_history keeps a single writer.
 
     // Auto-save to shared_hands (ensures rows exist even if user never taps share)
     const autoShareData: ShareData = {
