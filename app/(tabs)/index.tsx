@@ -1696,11 +1696,23 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/hand-history' as any)}
             accessibilityRole="button"
-            accessibilityLabel={`Hand history, ${totalHandCount} hands played`}
+            accessibilityLabel={`Hand history, ${totalHandCount} hands saved`}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.statsBtn}
           >
-            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands played</Text>
+            {/* COPY FIX 2026-08-12, NOT a logic fix. This counter reads the length of the LOCAL
+                hand history (getHandHistory -> AsyncStorage 'caps_hand_history'), and
+                results.tsx:371 saves to it only `if (!isPracticeGame)`. Practice hands are
+                deliberately excluded, so after three practice hands the number correctly does
+                not move — but "hands played" reads as ALL hands, so the label was the thing
+                lying, not the number.
+                Traced before touching anything: the store's `handsPlayed` DOES increment
+                (measured 0→1→2→3→4→5 across a session on both engines) and is a different
+                counter used for progressive disclosure. Three counters exist here — store
+                handsPlayed, AsyncStorage caps_games_played, and this history length — and only
+                this one is displayed. Same shape as "+75 chips" and the 2,530 balance: correct
+                behaviour, misleading presentation. */}
+            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands saved</Text>
           </Pressable>
         )}
 
