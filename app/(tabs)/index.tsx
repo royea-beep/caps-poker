@@ -26,6 +26,7 @@ import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReportBugButton from '../../components/ReportBugButton';
 import { KILL_HeroParticles, KILL_HeroGlow } from '../../utils/animationKill';
+import HomeCupRings from '../../components/HomeCupRings';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -1275,6 +1276,14 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* WebLandingHero removed (DEDUPE-QA) — web users land straight in the app + the one onboarding. */}
       <FriendsBg />
+
+      {/* HOME-ALIVE 2026-08-13 — cup rings. CAPS reads as CUPS, and the game came off a real
+          table; a cup set down leaves a ring, and a night of play leaves several. Sits directly
+          on the felt, beneath the particle field and everything interactive. Placed here rather
+          than lower in the tree so nothing can ever render between a ring and the background.
+          Measured first: home already moves (16 elements) but at opacity 0.03-0.055, which is
+          invisible — this clears that floor at 0.13 peak. See components/HomeCupRings.tsx. */}
+      <HomeCupRings />
 
       {/* Floating suit particles — decorative background (PR-C: 1 driver SV + phase) */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
