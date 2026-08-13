@@ -29,11 +29,16 @@ both engines, where behaviour rather than source was the question.
 
 | | |
 |---|---|
-| Items reconciled this pass | **28** |
-| **OPEN** | **7** |
-| **CLOSED** | **17** |
+| Items reconciled | **33 of 35** |
+| **OPEN** | **9** |
+| **CLOSED** | **20** |
 | **UNVERIFIABLE** | **4** |
-| Not yet reconciled (see the end) | 7 |
+| Not yet reconciled (see the end) | **2** |
+
+**Second pass, 2026-08-13 (same day).** The seven marked DO-NOT-SCHEDULE were reconciled. Three
+more closures came out of it — **including E6, which the first pass had listed as OPEN**. Two
+new OPEN items came out of it as well, so the list moved in both directions, which is what a
+reconciliation is supposed to do.
 
 ---
 
@@ -43,8 +48,10 @@ both engines, where behaviour rather than source was the question.
 |---|---|---|
 | **C4** | *"מסגרת לא מבדילה — קלף חשוף וגב-C שניהם במסגרת זהב. אותו סימון לשני מצבים הפוכים."* | `components/Card.tsx:84` — the code itself says so: *"CB2 / C4 — THE GOLD COLLISION, BROKEN."* `CARD_BACK_BORDER = '#C5A028'` (L77) is still gold. |
 | **C5** | *"מונוטוניות 5 גבים זהים ברצף."* | One `CARD_BACK_BG`/`CARD_BACK_BORDER` pair; no per-card variation exists. |
-| **E6** | *"'DEAL ME IN' נראה כמו באנר פרסומת מודבק; ו-3 יציאות מוערמות (REMATCH/HOME/DEAL ME IN)."* | String present 3× across `app/`. |
-| **E2** | *"רגע ההפסד — 'YOU LOSE' אדום סטטי; צריך להיות רך ומעודד כדי שישחק שוב."* | `YOU LOSE` present 4× and still static. |
+| **E2** | *"רגע ההפסד — 'YOU LOSE' אדום סטטי; צריך להיות רך ומעודד כדי שישחק שוב."* | `results.tsx:1045` renders the headline; still static. |
+| **C2** | *"היררכיה הפוכה של הגב — הגב השחור הוא האלמנט הכי בולט; המידע שלא רואים צועק יותר מהחשוף."* | `Card.tsx:76` `CARD_BACK_BG = '#1A1A2E'` against a gold border — same surface as C4/C5, fix together. |
+| **`card_placed` 4th path** | bot | **Confirmed OPEN by reading the block.** `game.tsx:456-468` — the countdown-expiry path emits `track('arrangement_timeout')` at `:458`, then `autoFillPlayerCards`, and **never emits `card_placed`**. Three other sites do (`:851`, `:955`, `:1004`). This is the instrument we read the tester round with. |
+| **"Best possible hand" as text** | *"'Best possible hand' מציג קלפים כטקסט (Q♦ 4♠) ולא כקלפים."* | 12 live references; still rendered as text. |
 | **E4** | *"אנימציות כניסה/היפוך/תגובה למגע לקלפים."* | No enter/flip/touch animation on `Card.tsx`. |
 | **A7** | *"17+ בוטל ב-Apple ב-31.1.2026. Simulated Gambling מחייב 18+. חוסם אישור App Store."* | App Store Connect setting; no code. Blocks submission, not testers. |
 | **8px pips / 9px `LEAD`** | bot | Measured live 2026-08-13, both engines, both widths. Explicitly *outside* the closed TYPE WORK scope (pips are graphics sized by the card). |
@@ -99,13 +106,18 @@ both engines, where behaviour rather than source was the question.
 
 ---
 
-## NOT YET RECONCILED — 7 items, stated rather than guessed
+## SECOND-PASS CLOSURES — from the seven marked DO-NOT-SCHEDULE
 
-`D3` (empty slots) · `E3` (YOU LOSE / ✅ YOU WIN contradiction — may be closed by `685c83b`) ·
-`E5` ("Tap to reveal" — the string is now absent, so the item may be moot or may have moved) ·
-the three not-a-batch items (hand-as-text, orange XP bar, three board-label colours) ·
-`card_placed` 4th path (3 track sites now exist at `game.tsx:851/955/1004` plus
-`arrangement_timeout` at `:458` — whether the timeout path now emits `card_placed` was not
-established).
+| Item | Roye's text | Evidence |
+|---|---|---|
+| **E3** | *"סתירה רגשית — 'YOU LOSE' ענק בראש ומיד '✅ YOU WIN' בבורד 1."* | **CLOSED.** The per-board `✅ YOU WIN` banner lives in `components/BoardResultCard.tsx:263`, and that component was **proven dead** in S53-VERIFY-DETERMINISTIC (instrumented, `visibleBoardCount = 0`). The contradiction needs both strings on screen at once; the second never renders. |
+| **E5** | *"'Tap to reveal' — הקריאה לפעולה המרכזית היא הטקסט הכי חלש במסך."* | **CLOSED BY OBSOLESCENCE.** The string exists nowhere in the codebase. The reveal auto-advances (BW sprint, `advanceMs` 14000 → 8000) with long-press to skip. The weak CTA was not restyled — it was removed with the interaction it belonged to. |
+| **E6** | *"'DEAL ME IN' נראה כמו באנר פרסומת מודבק; ו-3 יציאות מוערמות (REMATCH/HOME/DEAL ME IN)."* | **CLOSED — and the first pass had this one wrong.** `results.tsx:1404-1419`: `rematchRow` holds **two** controls, REMATCH (⚡ REMATCH in MP) then HOME. `:192` records the banner: *"(Was: 20s → 5s → now gone entirely.)"* Three stacked exits are two, and play-again already leads. **Residual:** "Deal me in" survives at `:795` as practice re-entry copy — a different control on a different path. |
+| **D3** | *"המשבצות הריקות (זיתי-בוצי) — הכי לא-אטרקטיביות ודווקא הן יעד הפעולה."* | **CLOSED.** `Board.tsx:205` — `EmptySlotAnimated` now draws from `theme.boardSlotDash` / themed background rather than the fixed olive. Per-theme felt shipped `1653310`. |
+
+## NOT YET RECONCILED — 2 items
+
+`XP bar orange = 7th colour in the system` · `three board labels in three unexplained colours`.
+Both are colour-system judgements that need a live palette sample across screens, not a grep.
 
 **Do not schedule these until they are checked.** That is the whole lesson of this file.
