@@ -1,165 +1,111 @@
-# PRE-TESTER BACKLOG — reconstructed 2026-08-06
+# PRE-TESTER BACKLOG — RECONCILED against code 2026-08-13
 
-**Read-only reconstruction.** Nothing was built, tested, signed or generated to produce this file.
-Items are **presented, not prioritised** — grouping is by what blocks what, never by preference.
-Roye's requests are kept **verbatim in the language he wrote them**; paraphrasing a product request
-is how it drifts.
+> ## ⚠️ THE CLOSURE RULE — read before editing this file
+>
+> **An item is not closed until THIS FILE says so. A code comment is not a closure record.**
+>
+> Every sprint that closes an item updates this file **in the same commit** that closes it.
+> Not the next sprint, not the handoff, not a comment in the source.
+>
+> **Why this rule exists, specifically.** On 2026-08-13 a sprint was scheduled to fix nine
+> settings items. All nine were already fixed. The fixes were recorded — meticulously — in
+> `app/settings.tsx`'s own comments, which no plan reads. The sprint before it found nine more
+> stale entries. Roughly twenty items across two sprints were listed as OPEN while being
+> already done, and a full sprint was planned against work that did not exist.
+>
+> A sprint that ships changes to already-correct code is **worse** than a sprint that ships
+> nothing: it adds risk to a working screen for no gain.
+>
+> **Iron Rule #14 applies to our own comments.** A comment saying "FIXED" is a claim. The
+> evidence column below holds code locations and measurements, not assertions.
 
----
-
-## ⚠️ PROVENANCE — READ THIS FIRST, IT CHANGES WHAT THIS FILE IS WORTH
-
-**The "ZMANAGER" archive does NOT contain the backlog.** It was found, and it is real, but it does
-not hold what we believed it held.
-
-- **Path:** `C:\Projects\META\ZProjectManager` — 35,739 files, 782 MB, mtimes 2026-03-06 → 2026-07-22.
-- **CAPS records:** `Projects_SHAREDmemory\reports\cap-\` — **1,126 JSON files, 4.9 MB**, named
-  `YYYY-MM-DD_12-00_{dev|qa|ux|publish}-session.json`, dated 2026-03-25 → 2026-07-21.
-- **Measured across all 1,126 files:**
-
-  | Field | Non-empty |
-  |---|---|
-  | `prompt_hebrew_input` (would hold Roye's requests) | **0** |
-  | `decisions_made` | **0** |
-  | `blockers_hit` | **0** |
-  | `gems_discovered` | **0** |
-  | `commit_hash` | **0** |
-
-- The 598 non-boilerplate `tasks[].description` entries are **agent system-prompts** ("You are
-  checking game flow integrity for the CAPS POKER Expo project…") — instructions *to* bots. A further
-  164 are the literal string "Hello memory agent, you are continuing to observe the primary Claude
-  session." **None of it is Roye asking for anything.**
-- These are auto-generated (`prompt_file: synclog_…​.auto`), one per day at exactly 12:00, and they are
-  **internally contradictory**: `2026-07-19_dev` reports `completed_tasks: 5, failed_tasks: 0` while
-  three of its five tasks carry `"status":"partial"`, and `files_changed: 12` alongside
-  `lines_added: 0, lines_removed: 0`. Each carries a self-assigned `grade` of 9.5 with
-  `accuracy: 10, completeness: 10` on a record containing no content.
-
-**Mining that archive for requirements would have produced a fabricated backlog** made of bot
-system-prompts — the exact "suggestion mistaken for decision" failure this reconstruction exists to
-prevent, in its most extreme form.
-
-**The real record is the Claude Code transcripts:** `C:\Users\royea\.claude\projects\C--Projects-POKER-Caps\`
-— `d85141ce…jsonl` (56 MB) and `ffb18d74…jsonl` (25 MB), plus the current session `613fb75a…jsonl`.
-Streaming those yielded **263 human-authored messages over 2026-06-29 → 2026-07-31 (23 active days)**.
-Of those, **184 are VAMOS sprint prompts — the strategist's words, not Roye's.**
-
-⚠️ **Coverage gap:** the transcripts start **2026-06-29**. Anything Roye asked for before that date is
-not in this reconstruction and is not represented below.
+**Reconciliation method:** every entry checked against the code that would exhibit it, not
+against the comment claiming it was fixed. Live measurements anchored by `testID`, fresh mounts,
+both engines, where behaviour rather than source was the question.
 
 ---
 
-## BLOCKS SHIPPING
+## COUNTS
 
-| Item | Source | Status |
-|---|---|---|
-| **A7 — דירוג 17+ → 18+** — *"17+ בוטל ב-Apple ב-31.1.2026. Simulated Gambling מחייב 18+. חוסם אישור App Store."* | Panel plan relayed by Roye, 2026-07-18 | **OPEN.** No age-rating field exists in `app.json`; this is an App Store Connect setting and cannot be confirmed from the repo. Explicitly self-described as blocking App Store approval. |
-| **iOS cannot be shipped at all** — rescued distribution cert `2D06E852…` is ABSENT from the Apple team (revoked); its profile `5e450e58…` died with it. | Bot-discovered, 2026-08-06 | **RESOLVED IN PRINCIPLE, UNPROVEN.** Live cert `77BE68C1…` exists and we hold its private key; a new App Store profile `7905c170-f5aa-4b09-9f56-541156857ee9` was created against it. The rebuild that would prove it was interrupted by the machine crash. |
-| **Machine suspected of failing RAM** | Bot-diagnosed, 2026-08-06 | **OPEN — gates everything.** 11 silent hard stops in 10 days. All build/signing paused pending Windows Memory Diagnostic. |
-
-## BLOCKS TESTERS
-
-| Item | Source | Status |
-|---|---|---|
-| **MP hole cards broadcast on an unauthenticated channel** — anyone with the anon key and a 4-char room code can watch every player's hand. | Bot-proven live | **OPEN.** Phase 0 channel authz designed (`docs/PHASE_0_CHANNEL_AUTHZ.md`), never shipped. Tolerable for testers, fatal once results matter. |
-| **41 of 43 real iOS devices open the app and emit nothing further** | Bot-observed | **OPEN, cause unknown.** Layout ruled out (Play button visible/tappable 375–440). Telemetry transport ruled out. |
-| **A3 — פקדי קול סותרים** — *"'Mute sounds' מול 'Sound Volume ON' + 'Ambient ON'. שני פקדים בקוטביות הפוכה לאותו נכס → באג לוגיקה מחכה."* | Panel plan relayed by Roye, 2026-07-18 | **UNVERIFIED.** |
-| **A6 — שני כפתורי reset** — *"'Reset Progress (beta)' + 'Reset All Progress'. מה ההבדל? סכנת מחיקה בטעות."* | Panel plan relayed by Roye, 2026-07-18 | **UNVERIFIED.** Data-loss risk. |
-
-## WANTED BEFORE TESTERS
-
-Roye's own stated priority order, from the 2026-07-18 plan: **Batch C (cards) = #1 · Batch D (table) = #2 · Batch E = #3–#4.**
-
-**BATCH A — באגים חוסמים** (remaining)
-- **A2** — *"`â` על כפתור — כפתור המינוס ב'Max board card' מציג תו שבור (mojibake). זה על כפתור פעולה, לא בטקסט."*
-- **A4** — *"כפילויות — 'Pro Quotes' פעמיים; 'Privacy Policy' פעמיים."*
-- **A5** — *"תווית Colorblind שגויה — 'Green = Win, Red = Lose' הוא תיאור המצב הרגיל; המצב הזה בדיוק מבטל אותו (כחול/כתום)."*
-
-**BATCH B — איחוד המראה לקול אחד** — *"היום: 5 בוררי מראה = 1,080 שילובים, אף אחד לא תוכנן. זו הסיבה המרכזית לחוסר 'וואו'."*
-- **B1** — *"לאחד 5 בוררים לאחד: Visual Style(3) + Background Theme(4) + Home Theme(10) + Button Style(3) + Card Design(3)."*
-- **B3** — *"Background Theme מת (או חלקי) — 'Vegas · Strip lights' מסומן פעיל אבל מסכי המשחק אפורים שטוחים. לאמת ולתקן/להסיר."*
-- **B4** — *"'Dev preview' גלוי למשתמש — תווית פנימית שדלפה."*
-- **B5** — *"סקשן DEVELOPER פתוח לרווחה בזמן ש-ADVANCED מקופל — היררכיה הפוכה. להסתיר."*
-- **B6** — *"צבעי Home Theme הורסי-מותג — Neon סגול / Rose ורוד / Matrix ירוק מתנגשים חזיתית עם זהות ה-CAPS הזהוב. Emerald ו-Matrix כמעט זהים."*
-- **B7** — *"'DANGER ZONE' בירוק-מנטה מעל כפתור אדום — הכותרת סותרת את משמעותה."*
-- **B8** — *"שתי פרדיגמות toggle באותו מסך — מתגי iOS מול כפתורי ON/OFF מלבניים."*
-
-**BATCH C — הקלפים (עדיפות #1 שלך)**
-- **C2** — *"היררכיה הפוכה של הגב — הגב השחור הוא האלמנט הכי בולט; המידע שלא רואים צועק יותר מהחשוף."*
-- **C3** — *"בעלוּת ויזואלית — הקלפים שלך והבוטים זהים לחלוטין. במשחק תחרותי חייבים לדעת מיד מה שלך."*
-- **C4** — *"מסגרת לא מבדילה — קלף חשוף וגב-C שניהם במסגרת זהב. אותו סימון לשני מצבים הפוכים."*
-- **C5** — *"מונוטוניות 5 גבים זהים ברצף."*
-
-**BATCH D — שולחן / אווירה (עדיפות #2 שלך)**
-- **D1** — *"לבדוק מה Felt/Vegas באמת עושים ואיפה הם נעצרים (למה לא מגיעים למסכי המשחק)."*
-- **D3** — *"המשבצות הריקות (זיתי-בוצי) — הכי לא-אטרקטיביות ודווקא הן יעד הפעולה."*
-
-## NICE TO HAVE
-
-**BATCH E — עסיסיות ואנימציה (עדיפויות #3 ו-#4)**
-- **E1** — *"רגע הניצחון — קונפטי/חלקיקים כבר יורים (results.tsx:557) אבל עדינים מדי. להגביר."*
-- **E2** — *"רגע ההפסד — 'YOU LOSE' אדום סטטי; צריך להיות רך ומעודד כדי שישחק שוב."*
-- **E3** — *"סתירה רגשית — 'YOU LOSE' ענק בראש ומיד '✅ YOU WIN' בבורד 1."*
-- **E4** — *"אנימציות כניסה/היפוך/תגובה למגע לקלפים."*
-- **E5** — *"'Tap to reveal' — הקריאה לפעולה המרכזית היא הטקסט הכי חלש במסך."*
-- **E6** — *"'DEAL ME IN' נראה כמו באנר פרסומת מודבק; ו-3 יציאות מוערמות (REMATCH/HOME/DEAL ME IN)."*
-
-**ממצאים נוספים לתיעוד** (Roye's plan explicitly filed these as not-a-batch)
-- *"'Best possible hand' מציג קלפים כטקסט (Q♦ 4♠) ולא כקלפים."*
-- *"בר XP כתום = צבע שביעי במערכת; 'Total XP' הוא הטקסט הדהוי ביותר."*
-- *"3 תוויות בורד ב-3 צבעים (צהוב/כחול/ירוק) בלי הסבר."*
-
-**Telemetry**
-- **`card_placed` fourth path uninstrumented** — `game.tsx:446`, countdown-expiry fill, emits
-  `arrangement_timeout` but no `card_placed`. Bot-raised. We cannot see how testers actually play.
-
-## ALREADY DONE (with evidence)
-
-| Item | Evidence |
+| | |
 |---|---|
-| **A1 — היד חתוכה** (2nd card row clipped by floating "Auto-Place ALL") | Shipped `main 1b0a9dd`. MEMORY.md records the first attempt was a **no-op** (paddingBottom inside a ScrollView); real fix was lifting `handZone marginBottom rs(24)`. |
-| **C1 — פני הקלף המשודרג** | Shipped 2026-07-24, `main aa94363`, web `index-f570f712`, OTA `b66c089f`. Default `v3`. |
-| **B2 — Card Design בורר מת** | Likely resolved — `components/Card.tsx` now references `cardTheme` **7×**. Was "Card.tsx כופה isV2 ולא קורא cardTheme". **Verify on device before closing.** |
-| **D2 — רקע משחק עם עומק** (felt) | Shipped 2026-07-25, `main 1653310`, web `index-680592c9`, OTA `4b95aa1b`. Per-theme root felt. |
-| Practice-mode chip UI fully gated (S52–S55) | `main c768fa4`, OTA `b5749ca4`, regression test `completeOverlayGate.ts`. |
-| Desktop-web card blowout | `main 5ee17ca` + `0156bca`. Cards were 0.102 × raw window width; now clamped. |
-
-## STALE OR CONTRADICTED
-
-| Item | What contradicts it |
-|---|---|
-| **"100% Hebrew UI"** | Superseded. UI language is **English**; hand labels English-only since 2026-06-17. Acting on the old instruction causes regressions. |
-| **`CLAUDE.md`: "Visual: maroon felt #5C1818"** | Stale. Live palette is **Obsidian**. `design.ts CAPS_THEME` / `BOARD_IDENTITY` are dead (0 consumers, pre-Obsidian values). |
-| **`CLAUDE.md`: "Build: B458"** / `app.json` buildNumber was 330 | Both wrong. Device truth was **507**; `app.json` now set to **508**. |
-| **"Never suggest App Store submission unless Roye says so"** (`CLAUDE.md`) | Now in tension with **A7**, which Roye's own plan flags as blocking App Store approval. Needs his ruling. |
-| **Wingman path `C:\Projects\wingman`** | Does not exist. Real path `C:\Projects\DATING\Wingman\apps\mobile`. |
-| **Cert `25940834E62D8128F72C50262A8CEF03` / profile `6Z8LSXD297`** | Appear **nowhere** in the Apple team listing. Carried in MEMORY.md and repeated for several sprints as fact. |
-| **"271 iOS devices"** vs "~43" | DB ground truth: **271 native devices in 30 days, 44 active in 7d.** |
+| Items reconciled this pass | **28** |
+| **OPEN** | **7** |
+| **CLOSED** | **17** |
+| **UNVERIFIABLE** | **4** |
+| Not yet reconciled (see the end) | 7 |
 
 ---
 
-## RECONCILIATION AGAINST THE STRATEGIST'S HELD LIST
+## OPEN — the genuinely remaining work
 
-| | Held belief | Archive verdict |
+| Item | Roye's text / description | Evidence it is still live |
 |---|---|---|
-| **a** | iOS unshippable, cert revoked | **CONFIRMED** by Apple's own API (cert absent from team). Not in ZMANAGER — this is Aug work, past its 2026-07-21 cutoff. |
-| **b** | First Expo-free build dies at signing | **CONFIRMED** — steps 1–13 of 16 passed; failure was the revoked cert, now addressed but unproven. |
-| **c** | MP hole cards on unauthenticated channel | **CONFIRMED**, design doc exists, unshipped. |
-| **d** | `card_placed` fourth path missing | **CONFIRMED** — `game.tsx:446`. |
-| **e** | 41/43 iOS devices silent | **CONFIRMED** as still-open; cause remains unknown. |
-| **f** | player chat / video tutorial / screenshot disk persistence | **NOT MENTIONED ANYWHERE** in 263 human messages or 1,126 archive records. No evidence Roye ever asked for these. Treat as unsourced until he confirms. |
+| **C4** | *"מסגרת לא מבדילה — קלף חשוף וגב-C שניהם במסגרת זהב. אותו סימון לשני מצבים הפוכים."* | `components/Card.tsx:84` — the code itself says so: *"CB2 / C4 — THE GOLD COLLISION, BROKEN."* `CARD_BACK_BORDER = '#C5A028'` (L77) is still gold. |
+| **C5** | *"מונוטוניות 5 גבים זהים ברצף."* | One `CARD_BACK_BG`/`CARD_BACK_BORDER` pair; no per-card variation exists. |
+| **E6** | *"'DEAL ME IN' נראה כמו באנר פרסומת מודבק; ו-3 יציאות מוערמות (REMATCH/HOME/DEAL ME IN)."* | String present 3× across `app/`. |
+| **E2** | *"רגע ההפסד — 'YOU LOSE' אדום סטטי; צריך להיות רך ומעודד כדי שישחק שוב."* | `YOU LOSE` present 4× and still static. |
+| **E4** | *"אנימציות כניסה/היפוך/תגובה למגע לקלפים."* | No enter/flip/touch animation on `Card.tsx`. |
+| **A7** | *"17+ בוטל ב-Apple ב-31.1.2026. Simulated Gambling מחייב 18+. חוסם אישור App Store."* | App Store Connect setting; no code. Blocks submission, not testers. |
+| **8px pips / 9px `LEAD`** | bot | Measured live 2026-08-13, both engines, both widths. Explicitly *outside* the closed TYPE WORK scope (pips are graphics sized by the card). |
 
-### THE GAP — in the record but NOT in the held list
+## CLOSED — with the evidence used
 
-The strategist's list is **five infrastructure/security items**. The archive's actual backlog is
-**~30 product/UX items** from Roye's own 2026-07-18 plan, none of which appear in it:
+| Item | Evidence (code, not comment) |
+|---|---|
+| **A2** mojibake on the minus button | `settings.tsx:1161` renders `−` U+2212. Read the glyph. |
+| **A3** contradictory sound controls | 0 live "Mute sounds" controls; `AmbientToggle` + `SoundToggle` are distinct assets. |
+| **A4** duplicate Pro Quotes / Privacy Policy | Both duplicates gone; single Privacy Policy link at :1285. |
+| **A5** wrong colorblind label | `:590` renders `'Now: Blue = Win, Orange = Lose'` when on. |
+| **A6** two reset buttons | One control remains; beta twin removed. **Dialog enumerates: *"This will delete all chips, level, history and streak."*** |
+| **B1** unify five look-pickers | `settings.tsx:1031` — Background/Home/Button/Card-design folded into one **VISUAL STYLE** picker (:692). Button Style was dead; Card Design removed. |
+| **B3** Background Theme dead | Picker no longer exists — subsumed by B1 via `VISUAL_THEME_AXES`. |
+| **B4** "Dev preview" leaked | String absent from the entire codebase. |
+| **B5** DEVELOPER section open | 10 `devUnlocked` gates; 7-tap unlock. |
+| **B6** brand-hostile Home Theme colours | Home Theme picker removed with B1. |
+| **B7** DANGER ZONE in mint | `:1255` `{ color: '#C62828' }`, matching the button below. |
+| **B8** two toggle paradigms | **Zero `<Switch>`** components. *(Residual — see Batch B below.)* |
+| **C1** upgraded card face | Shipped `aa94363`, default v3. |
+| **C3** visual ownership | `Card.tsx:25,58` — always-cyan ownership rim, gated by zone. |
+| **E1** win moment too subtle | Verified 20 dots / 31 distinct transforms. |
+| **MP hole cards on an open channel** | **CLOSED 2026-08-13.** Migration live; 5/5 proven on branch; denials re-proven on prod. |
+| **"41 of 43 iOS devices silent"** | **Never real.** `device_model = "Simulator iOS"`; 66 simulator sessions/0 played vs 4 real iPhones/4 played. |
 
-- The **entire Batch B thesis** — *"5 בוררי מראה = 1,080 שילובים… זו הסיבה המרכזית לחוסר 'וואו'"*. This
-  is the single largest structural product complaint on record and it was absent from planning.
-- **A7 (18+ rating)** — a hard App Store blocker, absent from the blocker list.
-- **A3 / A6** — a waiting logic bug and a data-loss risk, both in Settings.
-- **Roye's stated priority order** (cards #1, table #2, juice #3–4) — the only explicit prioritisation
-  he has given, and it was not reflected anywhere.
+## UNVERIFIABLE — and what each needs
 
-The held list is not wrong; it is **infrastructure-only**. Every item on it is something a bot found.
-Nothing Roye asked for was on it.
+| Item | Needs |
+|---|---|
+| **Card delivery on production** | Two seated players. Denials proven on prod; delivery proven only on a branch. Roye's 3-minute check. |
+| **`Board.handName` rendered size** | MP-only (`revealed &&` is hardcoded false in solo). Two devices. Edited twice before anyone checked. |
+| **A3 as *sound*** | No audio measurement tooling. Verifiable as state, never as audible behaviour. |
+| **Anything native-rendered** | No iOS build until memory test → certificate → build clears. |
+
+---
+
+## THE FOUR PREVIOUSLY-UNRECOVERED ITEMS — verbatim, with true status
+
+- **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.**
+- **D1** — *"לבדוק מה Felt/Vegas באמת עושים ואיפה הם נעצרים (למה לא מגיעים למסכי המשחק)."* →
+  **NO LONGER A LIVE QUESTION.** It asked why the Felt/Vegas *pickers* never reached the game
+  screens. Those pickers no longer exist — B1 folded them into one VISUAL STYLE axis, and the
+  per-theme felt shipped 2026-07-25 (`main 1653310`). The investigation has no subject left.
+  **Reclassified CLOSED-BY-OBSOLESCENCE**, not fixed.
+- **E4** — *"אנימציות כניסה/היפוך/תגובה למגע לקלפים."* → **OPEN.**
+- **Batch B thesis** — *"היום: 5 בוררי מראה = 1,080 שילובים, אף אחד לא תוכנן. זו הסיבה המרכזית
+  לחוסר 'וואו'."* → **CLOSED.** The five pickers are one. The 1,080 combinations are gone.
+  **Residual, filed as a new Batch B item:** `toggleBtn` (ON/OFF) and `selectorBtn` (radio) are
+  still two visual paradigms on one screen — 9 and 11 uses. B8 *as filed* named iOS switches,
+  which are gone; this is the spirit of the same complaint and is not yet addressed.
+
+---
+
+## NOT YET RECONCILED — 7 items, stated rather than guessed
+
+`D3` (empty slots) · `E3` (YOU LOSE / ✅ YOU WIN contradiction — may be closed by `685c83b`) ·
+`E5` ("Tap to reveal" — the string is now absent, so the item may be moot or may have moved) ·
+the three not-a-batch items (hand-as-text, orange XP bar, three board-label colours) ·
+`card_placed` 4th path (3 track sites now exist at `game.tsx:851/955/1004` plus
+`arrangement_timeout` at `:458` — whether the timeout path now emits `card_placed` was not
+established).
+
+**Do not schedule these until they are checked.** That is the whole lesson of this file.
