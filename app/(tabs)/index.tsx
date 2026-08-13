@@ -25,7 +25,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReportBugButton from '../../components/ReportBugButton';
-import { KILL_HeroParticles, KILL_HeroGlow } from '../../utils/animationKill';
+import { KILL_HeroGlow } from '../../utils/animationKill';
 import HomeCupRings from '../../components/HomeCupRings';
 import Animated, {
   useSharedValue,
@@ -98,53 +98,20 @@ const STREAK_POPUP_SESSION_KEY = 'caps_streak_popup_shown';
 
 const isWeb = Platform.OS === 'web';
 
-// ─── Floating suit particles ──────────────────────────────────────────────────
-// PR-C: phases are delay/PARTICLE_DRIVER_PERIOD_MS, precomputed once.
-const PARTICLE_DRIVER_PERIOD_MS = 14000;
-const PARTICLE_CONFIG = [
-  { x: 0.05, suit: '♠', size: 22, opacity: 0.045, dur: 14000, delay: 0 },
-  { x: 0.12, suit: '♦', size: 18, opacity: 0.035, dur: 11000, delay: 2500 },
-  { x: 0.22, suit: '♣', size: 28, opacity: 0.05,  dur: 13000, delay: 1000 },
-  { x: 0.30, suit: '♥', size: 20, opacity: 0.04,  dur: 10000, delay: 4000 },
-  { x: 0.42, suit: '♠', size: 16, opacity: 0.03,  dur: 15000, delay: 700 },
-  { x: 0.55, suit: '♦', size: 24, opacity: 0.055, dur: 12000, delay: 3200 },
-  { x: 0.65, suit: '♥', size: 32, opacity: 0.04,  dur: 16000, delay: 1800 },
-  { x: 0.73, suit: '♣', size: 19, opacity: 0.035, dur: 11500, delay: 5000 },
-  { x: 0.82, suit: '♠', size: 26, opacity: 0.05,  dur: 13500, delay: 400 },
-  { x: 0.88, suit: '♦', size: 21, opacity: 0.04,  dur: 10500, delay: 2100 },
-  { x: 0.95, suit: '♥', size: 18, opacity: 0.03,  dur: 14500, delay: 6000 },
-  { x: 0.38, suit: '♣', size: 15, opacity: 0.025, dur: 12500, delay: 3700 },
-  { x: 0.60, suit: '♠', size: 30, opacity: 0.045, dur: 15500, delay: 900 },
-  { x: 0.18, suit: '♥', size: 23, opacity: 0.035, dur: 11200, delay: 4500 },
-  { x: 0.78, suit: '♦', size: 17, opacity: 0.03,  dur: 13200, delay: 2800 },
-];
+// ─── Floating suit particles — REMOVED 2026-08-13 ─────────────────────────────
+// Measured on live, both engines at 375 and 393: the field genuinely animated (translateY
+// ~108px/s, 15 glyphs) but rendered at opacity 0.025-0.055 — below the threshold at which
+// any eye resolves it — while still paying for 15 animated nodes every frame.
+// Roye's call was remove, not raise, for three reasons worth keeping:
+//   1. HomeCupRings now occupies that layer and does it with the product's own identity.
+//   2. Drifting suit glyphs are generic to every poker app; a cup ring is CAPS's own.
+//   3. Two competing ambient layers is the "too many things at once" problem he diagnosed.
+// Deliberately deleted rather than left at opacity 0 — an invisible element that still
+// renders is exactly the dead-path class that has cost this project four separate sprints.
 
 // PR-C 2026-05-24: 1 shared value at the screen drives all 15 particles via
 // interpolation + phase offset (was 15 per-particle SVs). Same visual drift,
 // fits the ≤5-SV/screen safety budget. Phase derived once at module level.
-function FloatingParticle({ x, suit, size, opacity, phase, driverT, screenW, screenH }: {
-  x: number; suit: string; size: number; opacity: number; phase: number;
-  driverT: SharedValue<number>;
-  screenW: number; screenH: number;
-}) {
-  const startY = screenH + 50;
-  const endY = -80;
-  const animStyle = useAnimatedStyle(() => {
-    "worklet";
-    const t = (driverT.value + phase) % 1;
-    return { transform: [{ translateY: interpolate(t, [0, 1], [startY, endY]) }] };
-  });
-  return (
-    <Animated.Text
-      style={[{ position: 'absolute', left: Math.floor(x * screenW), fontSize: size, color: '#c9a84c', opacity }, animStyle]}
-      pointerEvents="none"
-      accessibilityElementsHidden={true}
-      importantForAccessibility="no-hide-descendants"
-    >
-      {suit}
-    </Animated.Text>
-  );
-}
 
 // ─── Hero card fan ────────────────────────────────────────────────────────────
 const FAN_CARDS: Card[] = [
@@ -676,22 +643,13 @@ export default function HomeScreen() {
   useEffect(() => { taglineOpacity.value = withTiming(1, { duration: 800 }); }, []);
   const taglineAnimStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
 
-  // PR-C 2026-05-24 b153 restore. 2 shared values for the new layers:
-  //   particleDriverT drives all 15 particles via interpolation+phase
+  // PR-C 2026-05-24 b153 restore, reduced 2026-08-13 when the suit field was removed.
   //   glowOpacity drives the PLAY-button halo opacity
-  // Both finite (withRepeat(50)). Plus taglineOpacity (1, one-shot above) = 3 SVs total on this screen.
-  const particleDriverT = useSharedValue(0);
+  // Plus taglineOpacity (1, one-shot above) = 2 SVs total on this screen. The particle driver
+  // and its effect are gone with the field they drove; HomeCupRings deliberately spends ZERO
+  // Reanimated shared values (RN Animated, native driver), so this screen now sits well inside
+  // the ≤5-SV budget instead of at its edge.
   const glowOpacity = useSharedValue(0);
-  useEffect(() => {
-    if (!KILL_HeroParticles) {
-      particleDriverT.value = withRepeat(
-        withTiming(1, { duration: PARTICLE_DRIVER_PERIOD_MS }),
-        50,
-        false,
-      );
-    }
-    return () => { cancelAnimation(particleDriverT); };
-  }, []);
   useEffect(() => {
     if (!KILL_HeroGlow) {
       glowOpacity.value = withDelay(
@@ -1284,23 +1242,6 @@ export default function HomeScreen() {
           Measured first: home already moves (16 elements) but at opacity 0.03-0.055, which is
           invisible — this clears that floor at 0.13 peak. See components/HomeCupRings.tsx. */}
       <HomeCupRings />
-
-      {/* Floating suit particles — decorative background (PR-C: 1 driver SV + phase) */}
-      <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-        {PARTICLE_CONFIG.map((p, i) => (
-          <FloatingParticle
-            key={i}
-            x={p.x}
-            suit={p.suit}
-            size={p.size}
-            opacity={p.opacity}
-            phase={(p.delay / PARTICLE_DRIVER_PERIOD_MS) % 1}
-            driverT={particleDriverT}
-            screenW={screenW}
-            screenH={screenH}
-          />
-        ))}
-      </View>
       {isWeb && <View style={styles.gradientOverlay} />}
       {isWeb && <View style={styles.grainOverlay} />}
 
