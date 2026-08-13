@@ -265,6 +265,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: rs(4),
     minWidth: rv(60),
+    // DD4 2026-08-13 — measured 60x27 live; 44 is the a11y floor.
+    minHeight: rs(44),
   },
   backButtonPressed: { opacity: 0.6 },
   backArrow: {

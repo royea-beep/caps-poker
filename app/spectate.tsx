@@ -153,7 +153,7 @@ export default function SpectateScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable onPress={safeBack} hitSlop={12}>
+          <Pressable onPress={safeBack} hitSlop={12} style={styles.backBtn}>
             <Text style={styles.backText}>← BACK</Text>
           </Pressable>
           <Text style={styles.title}>SPECTATE</Text>
@@ -171,7 +171,7 @@ export default function SpectateScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable onPress={safeBack} hitSlop={12}>
+          <Pressable onPress={safeBack} hitSlop={12} style={styles.backBtn}>
             <Text style={styles.backText}>← BACK</Text>
           </Pressable>
           <Text style={styles.title}>SPECTATE</Text>
@@ -314,6 +314,8 @@ const styles = StyleSheet.create({
     width: 60,
     alignItems: 'flex-end',
   },
+  // DD4 2026-08-13 — the Pressable carried no style; measured 55x17 live. Height only.
+  backBtn: { minHeight: rs(44), justifyContent: 'center' },
   backText: {
     color: COLORS.gold,
     fontSize: rf(13),

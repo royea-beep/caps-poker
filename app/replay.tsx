@@ -258,6 +258,9 @@ const styles = StyleSheet.create({
   },
   headerBack: {
     flex: 1,
+    // DD4 2026-08-13 — measured 51x17 live; 44 is the a11y floor. Height only, no relayout.
+    minHeight: rs(44),
+    justifyContent: 'center',
   },
   headerBackText: {
     fontSize: rf(13),
@@ -482,6 +485,8 @@ const styles = StyleSheet.create({
   backBtn: {
     paddingHorizontal: rs(20),
     paddingVertical: rs(10),
+    minHeight: rs(44),
+    justifyContent: 'center',
     backgroundColor: 'rgba(201,168,76,0.1)',
     borderRadius: rv(8),
     borderWidth: 1,
