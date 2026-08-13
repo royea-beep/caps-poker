@@ -1,6 +1,6 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured } from './supabase';
-import { PrivateChannelHub, PRIVATE_MESSAGE_TYPES, PRIVATE_CHANNELS_ENFORCED, privateTopic } from './privateChannel';
+import { PrivateChannelHub, PRIVATE_MESSAGE_TYPES, isChannelAuthzEnforced, ensureChannelAuthzLoaded, privateTopic } from './privateChannel';
 import { getDeviceId } from './leaderboard';
 import { Card, CARDS_PER_BOARD, GameConfig } from '../constants/gameConfig';
 import {
@@ -162,7 +162,7 @@ export class RealtimeServer {
   /**
    * HOLE-CARD FIX 2026-08-13. CARDS_DEALT and GAME_STATE_SNAPSHOT go here, one channel per
    * player, instead of onto the shared room channel with a client-side targetId filter.
-   * See utils/privateChannel.ts — this half is inert until PRIVATE_CHANNELS_ENFORCED flips in
+   * See utils/privateChannel.ts — gated at runtime by app_config.phase0_channel_authz_enforced,
    * the same merge as the realtime.messages policy.
    */
   private privateHub = new PrivateChannelHub();
@@ -977,9 +977,11 @@ export class RealtimeClient {
     // HOLE-CARD FIX 2026-08-13 — this player's own private channel. CARDS_DEALT and
     // GAME_STATE_SNAPSHOT arrive here and nowhere else. Same handler, so every downstream
     // guard (duplicate-handId suppression, ACK emission, stale-snapshot rejection) is unchanged.
+    // Same ordering rule as the host hub: resolve the runtime flag before building the channel.
+    await ensureChannelAuthzLoaded();
     this.privateChannel = supabase.channel(
       privateTopic(roomCode, this.playerId),
-      PRIVATE_CHANNELS_ENFORCED ? { config: { private: true } } : undefined,
+      isChannelAuthzEnforced() ? { config: { private: true } } : undefined,
     );
     this.privateChannel.on('broadcast', { event: 'game_message' }, ({ payload }) => {
       if (!payload) return;

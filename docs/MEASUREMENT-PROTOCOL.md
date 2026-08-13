@@ -438,3 +438,23 @@ cadence, not against a hardcoded 32ms. Recalibrate the threshold before using it
 
 `innerWidth 393 / innerHeight 852 / devicePixelRatio 1.0` — the headed context honours the
 requested viewport exactly, so every measurement held at 375 and 393 remains comparable.
+
+## Rule 15 — a positive control is MANDATORY for any delivery test
+
+Correct subscribe verdicts with **zero delivery** score as clean and are wrong.
+
+**Cited run, 2026-08-13 (Phase 0 channel proof, branch `phase0-proof-2`).** Run one produced all
+three authorisation verdicts correctly — member A `SUBSCRIBED`, member B `CHANNEL_ERROR
+Unauthorized`, anon `CHANNEL_ERROR` on both topics — and **A received nothing**. Reading the
+statuses alone would have scored 5/5 green while delivery was entirely unproven. The cause was
+the fixture, not the fix (see Rule 16), but the point stands: *subscribing is not receiving*.
+
+Any test that claims a message arrived must show the message. Any test that claims a message was
+blocked must first show an equivalent message arriving for someone entitled to it.
+
+## Rule 16 — Supabase does not echo a broadcast to its sender
+
+`channel.send()` does not deliver back to the sending client unless the channel is created with
+`config: { broadcast: { self: true } }`. A single-client send/receive test therefore reads as
+"nothing was delivered" when delivery is working perfectly. Either set `self: true`, or use a
+second client as the receiver.

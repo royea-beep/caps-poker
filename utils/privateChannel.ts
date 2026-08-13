@@ -20,7 +20,7 @@
  *   is `private: true` AND a `realtime.messages` policy gates the topic. Without the policy, a
  *   per-player topic is obscurity: the topic name embeds the device id, which is not a secret.
  *
- *   So PRIVATE_CHANNELS_ENFORCED must flip to true in the SAME merge that applies
+ *   So channel authz must be ENFORCED (app_config.phase0_channel_authz_enforced) in the SAME merge that applies
  *   supabase/migrations/*_phase0_channel_authz.sql. Flip it without the policy and every guest
  *   fails to subscribe and receives no cards — worse than the leak. Apply the policy without
  *   flipping it and the shared channel stays readable. Neither half is shippable alone.
@@ -30,10 +30,62 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabase } from './supabase';
 
 /**
- * Flip to true ONLY in the merge that applies the realtime.messages policy.
- * Until then the transport is per-player but still public, which changes nothing about exposure.
+ * RUNTIME FLAG — `app_config.phase0_channel_authz_enforced`. Follows utils/iapEnabled.ts.
+ *
+ * WHY THIS IS NOT A `const`. It was one until 2026-08-13. A compile-time constant is
+ * constant-folded by Metro, so reverting it is a code change -> rebuild -> redeploy. On web that
+ * is ~6 minutes through CI. On native it is a whole new TestFlight build, because OTA is dead
+ * (the Expo account is disabled) — and TestFlight is the one thing we get a single shot at. A
+ * security switch whose only native revert is an App Store round trip is not a switch.
+ *
+ * FAIL-SAFE DIRECTION: DEFAULTS TO **ENFORCED** (true). This is the opposite of iapEnabled,
+ * which defaults to hidden, and the reasoning is worth stating because it looks backwards:
+ *
+ *   - Default OPEN on a failed config read => the client silently returns to publishing hole
+ *     cards on the shared room channel. The leak reopens, nothing looks wrong, and nobody finds
+ *     out. A silent security regression is unrecoverable — you cannot fix what you cannot see.
+ *   - Default ENFORCED on a failed config read => at worst players cannot subscribe and report
+ *     "I got no cards" within one hand. Loud, immediate, and fixable in minutes.
+ *
+ * A visible outage is recoverable; a silent leak is not. Security flags fail closed.
+ *
+ * It is also the common case: the realtime.messages policy is already live on production, so
+ * enforced IS the correct steady state. The default is not a compromise, it is the norm.
+ *
+ * To revert without any deploy:
+ *   UPDATE app_config SET value = 'false' WHERE key = 'phase0_channel_authz_enforced';
+ * Clients pick it up on their next room join. Do that ONLY together with dropping the policy —
+ * see the migration header; the two halves revert together exactly as they shipped together.
  */
-export const PRIVATE_CHANNELS_ENFORCED = true;
+let _enforced = true;
+let _loading: Promise<void> | null = null;
+
+/** Synchronous cached read. Defaults to true (enforced) until told otherwise. */
+export function isChannelAuthzEnforced(): boolean {
+  return _enforced;
+}
+
+/** Fetch once per app run, memoised. Never throws, never flips to open on failure. */
+export function ensureChannelAuthzLoaded(): Promise<void> {
+  if (_loading) return _loading;
+  _loading = (async () => {
+    try {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data } = await sb
+        .from('app_config')
+        .select('value')
+        .eq('key', 'phase0_channel_authz_enforced')
+        .maybeSingle();
+      const v = data?.value;
+      // Only an EXPLICIT false disables. Absent key, null, or a failed read all stay enforced.
+      if (v === false || v === 'false') _enforced = false;
+    } catch {
+      /* stay enforced — see FAIL-SAFE DIRECTION above */
+    }
+  })();
+  return _loading;
+}
 
 /** The two message types that carry a single player's hole cards. Nothing else belongs here. */
 export const PRIVATE_MESSAGE_TYPES: ReadonlySet<string> = new Set([
@@ -46,7 +98,7 @@ export function privateTopic(roomCode: string, playerId: string): string {
 }
 
 function channelConfig() {
-  return PRIVATE_CHANNELS_ENFORCED ? { config: { private: true } } : undefined;
+  return isChannelAuthzEnforced() ? { config: { private: true } } : undefined;
 }
 
 /**
@@ -78,6 +130,11 @@ export class PrivateChannelHub {
 
     const supabase = getSupabase();
     if (!supabase || !this.roomCode) return null;
+
+    // Resolve the runtime flag before the FIRST channel is built, not after — a channel created
+    // with the wrong privacy setting lands in the wrong delivery domain and cannot be repaired
+    // without tearing it down. Memoised, so this costs one query per app run.
+    await ensureChannelAuthzLoaded();
 
     const ch = supabase.channel(privateTopic(this.roomCode, playerId), channelConfig());
     const ok = await new Promise<boolean>((resolve) => {

@@ -590,3 +590,25 @@ boundary — the same defect class as the club-table bypass. The cheapest correc
 tripwire that fires if `join_requires_session` ever reads FALSE while this policy exists; it
 costs one config read on an existing cron and cannot itself be bypassed by a client. It also
 fails in the safe direction: a false alarm is noise, a widened predicate is a hole.
+
+## `realtime.messages` is date-partitioned
+
+A **freshly created branch has no partition for today**, and the failure surfaces at the client as:
+
+```
+CHANNEL_ERROR :: "MissingPartition: Realtime was unable to find the expected messages partition"
+```
+
+It looks like an authorisation failure and is not one. Production already has its partitions, so
+this is **not** a migration item and is deliberately absent from
+`supabase/migrations/20260813_phase0_channel_authz.sql`. On a fresh branch, create them first:
+
+```sql
+create table if not exists realtime.messages_YYYY_MM_DD
+  partition of realtime.messages for values from ('YYYY-MM-DD') to ('YYYY-MM-DD+1');
+```
+
+Also worth recording: `CREATE POLICY` on `realtime.messages` succeeds as plain `postgres`. Only
+`ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY` requires ownership — and RLS is already
+enabled, so that statement is never needed. A whole sprint was lost to attributing the ALTER's
+error to the CREATE POLICY.
