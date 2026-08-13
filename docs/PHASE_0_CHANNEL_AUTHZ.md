@@ -559,3 +559,34 @@ whole-function replacement, or regenerated from live at apply time.
 **Every sub-step before the flag flip is invisible to players**, and the flip itself is a one-row
 revert while the broadcast is still running. That is the whole point of doing P2 before the channel
 flip: at no point does a rollback re-expose hole cards that had already left the wire.
+
+---
+
+## COUPLING — the channel policy requires `join_requires_session = TRUE`
+
+**Added 2026-08-13, when the policy was written.**
+
+`join_table` carries two identity branches, both live today:
+
+| `join_requires_session` | branch | seat's `user_id` |
+|---|---|---|
+| **TRUE** (current) | `IF v_uid IS NULL THEN RETURN 'no_session'` … `v_identity := v_uid` | always `auth.uid()` |
+| FALSE | `v_identity := COALESCE(v_uid, p_player_id)` | may be a device-derived value |
+
+The `realtime.messages` policy matches on `room_players.user_id = auth.uid()`. While the flag is
+TRUE this holds **by construction** — a seat cannot be created without a verified uid. Flip the
+flag to FALSE and lax-branch seats get a `user_id` that is not `auth.uid()`; those players sit at
+the table holding cards and receive nothing. It presents as a transport failure, not a policy
+one, which makes it expensive to diagnose.
+
+**Retracted:** an earlier note here warned anonymous seats would be denied. Wrong.
+`signInAnonymously` (utils/auth.ts:43) issues a real session with a real `auth.uid()` — 2,427
+anonymous users live, 529 active in 7 days. Anonymous is not unauthenticated. Identity work is
+**not** a prerequisite for Phase 0.
+
+**Guard — recommended, not built:** alarm on the flag, do not widen the policy. Widening the
+predicate to accept a device id puts a client-supplied, forgeable value inside a security
+boundary — the same defect class as the club-table bypass. The cheapest correct guard is a
+tripwire that fires if `join_requires_session` ever reads FALSE while this policy exists; it
+costs one config read on an existing cron and cannot itself be bypassed by a client. It also
+fails in the safe direction: a false alarm is noise, a widened predicate is a hole.

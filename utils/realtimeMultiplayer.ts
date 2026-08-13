@@ -1,5 +1,6 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured } from './supabase';
+import { PrivateChannelHub, PRIVATE_MESSAGE_TYPES, PRIVATE_CHANNELS_ENFORCED, privateTopic } from './privateChannel';
 import { getDeviceId } from './leaderboard';
 import { Card, CARDS_PER_BOARD, GameConfig } from '../constants/gameConfig';
 import {
@@ -158,6 +159,13 @@ export interface RealtimeClientCallbacks {
 // ===========================================================================
 export class RealtimeServer {
   private channel: RealtimeChannel | null = null;
+  /**
+   * HOLE-CARD FIX 2026-08-13. CARDS_DEALT and GAME_STATE_SNAPSHOT go here, one channel per
+   * player, instead of onto the shared room channel with a client-side targetId filter.
+   * See utils/privateChannel.ts — this half is inert until PRIVATE_CHANNELS_ENFORCED flips in
+   * the same merge as the realtime.messages policy.
+   */
+  private privateHub = new PrivateChannelHub();
   private roomCode: string = '';
   private hostId: string = '';
   private hostName: string = '';
@@ -192,6 +200,7 @@ export class RealtimeServer {
     }
 
     this.roomCode = roomCode;
+    this.privateHub.setRoom(roomCode);
     this.hostId = await getDeviceId();
     this.hostName = hostName;
 
@@ -781,8 +790,33 @@ export class RealtimeServer {
     });
   }
 
-  /** Send to a specific player (broadcast with targetId field) */
+  /**
+   * Send to a specific player.
+   *
+   * HOLE-CARD FIX 2026-08-13. This used to be a single shared-channel broadcast carrying a
+   * targetId that the guest filtered on — i.e. every subscriber received every seat's cards
+   * and was merely asked not to look. Private types now leave via a per-player channel; public
+   * types (BOARD_REVEAL, HAND_COMPLETE) keep the original shared-channel path unchanged.
+   *
+   * Routing lives HERE, at the single transport primitive, rather than at the three call sites.
+   * That is deliberate: the retry path at trackDelivery/flush re-sends CARDS_DEALT through this
+   * same method, so routing per-call-site would have leaked on every retry — precisely what a
+   * flaky connection triggers, and the likeliest case in a real tester round.
+   */
   sendToPlayer(playerId: string, type: string, payload: any): void {
+    if (PRIVATE_MESSAGE_TYPES.has(type)) {
+      void this.privateHub.send(playerId, type, payload, this.hostId).then((delivered) => {
+        if (!delivered) {
+          // Do NOT silently fall back to the shared channel — that would re-open the leak at
+          // exactly the moment it is least observable. A missed deal surfaces through the
+          // existing ACK/retry machinery instead.
+          rtLog('SERVER', `PRIVATE SEND FAILED — ${type} not delivered to ${playerId}`, {
+            handId: this.handId,
+          });
+        }
+      });
+      return;
+    }
     if (!this.channel) return;
     this.channel.send({
       type: 'broadcast',
@@ -856,6 +890,9 @@ export class RealtimeServer {
 
   stop(): void {
     this.clearAllPendingDeliveries();
+    // Per-player channels outlive nothing: a host restart must not leave subscriptions open,
+    // or the next room reuses stale topics for players who are no longer seated.
+    this.privateHub.teardown();
     if (this.spectateChannel) {
       this.spectateChannel.unsubscribe();
       this.spectateChannel = null;
@@ -882,6 +919,8 @@ export class RealtimeServer {
 // ===========================================================================
 export class RealtimeClient {
   private channel: RealtimeChannel | null = null;
+  /** HOLE-CARD FIX 2026-08-13 — this player's own private topic; see utils/privateChannel.ts */
+  private privateChannel: RealtimeChannel | null = null;
   private roomCode: string = '';
   private playerId: string = '';
   private playerName: string = '';
@@ -928,8 +967,23 @@ export class RealtimeClient {
     this.channel.on('broadcast', { event: 'game_message' }, ({ payload }) => {
       if (!payload) return;
       const { type, data, targetId } = payload;
-      // Ignore messages targeted to other players
+      // Ignore messages targeted to other players. Retained for the PUBLIC types only — the
+      // private ones no longer arrive here at all, so this filter is no longer load-bearing
+      // for secrecy. It never was: it ran after delivery.
       if (targetId && targetId !== this.playerId) return;
+      this.handleIncomingMessage(type, data);
+    });
+
+    // HOLE-CARD FIX 2026-08-13 — this player's own private channel. CARDS_DEALT and
+    // GAME_STATE_SNAPSHOT arrive here and nowhere else. Same handler, so every downstream
+    // guard (duplicate-handId suppression, ACK emission, stale-snapshot rejection) is unchanged.
+    this.privateChannel = supabase.channel(
+      privateTopic(roomCode, this.playerId),
+      PRIVATE_CHANNELS_ENFORCED ? { config: { private: true } } : undefined,
+    );
+    this.privateChannel.on('broadcast', { event: 'game_message' }, ({ payload }) => {
+      if (!payload) return;
+      const { type, data } = payload;
       this.handleIncomingMessage(type, data);
     });
 
@@ -955,6 +1009,30 @@ export class RealtimeClient {
 
     if (!subscribed) {
       rtLog('CLIENT', 'Failed to subscribe to channel');
+      this.cleanupChannel();
+      return false;
+    }
+
+    // The private channel must be up BEFORE the host deals, or the first CARDS_DEALT is missed.
+    // Joining the room while unable to receive cards is a dead seat, so this failure is fatal to
+    // connect() and surfaces through the existing "failed to join" path rather than as a player
+    // sitting at a table that never deals to them.
+    const privateOk = await new Promise<boolean>((resolve) => {
+      const timeout = setTimeout(() => resolve(false), SUBSCRIBE_TIMEOUT_MS);
+      this.privateChannel!.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          clearTimeout(timeout);
+          resolve(true);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          clearTimeout(timeout);
+          rtLog('CLIENT', `Private channel subscribe failed: ${status}`);
+          resolve(false);
+        }
+      });
+    });
+
+    if (!privateOk) {
+      rtLog('CLIENT', 'Failed to subscribe to private channel — refusing to join a seat that cannot be dealt to');
       this.cleanupChannel();
       return false;
     }
@@ -1020,6 +1098,10 @@ export class RealtimeClient {
     if (this.channel) {
       this.channel.unsubscribe();
       this.channel = null;
+    }
+    if (this.privateChannel) {
+      this.privateChannel.unsubscribe();
+      this.privateChannel = null;
     }
     this.connected = false;
   }
