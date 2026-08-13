@@ -44,6 +44,7 @@ import { track } from '../utils/analytics';
 import { OrientationType, VisualTheme } from '../store/gameStore';
 import { VersionBadge, getDisplayBuild } from '../components/VersionBadge';
 import ReportBugButton from '../components/ReportBugButton';
+import { safeBack } from '../components/BackControl';
 
 // Lazy-load screen orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -1011,7 +1012,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable onPress={safeBack} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>
             <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">← </Text>
             Back

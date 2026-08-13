@@ -22,6 +22,7 @@ import { getProgressToNextTier, getSeasonTimeRemaining, formatRewardLabel } from
 import XPBar from '../components/XPBar';
 import TierRewardCard from '../components/TierRewardCard';
 import { rf, rs, rv } from '../utils/responsive';
+import { BackControl } from '../components/BackControl';
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 const BG = '#0d0700';
@@ -259,6 +260,13 @@ export default function BattlePassScreen() {
       >
         {/* ── Header ─────────────────────────────────────────── */}
         <View style={styles.header}>
+          {/* DEAD-END FIX 2026-08-13. This screen had NO back control of any kind — not a
+              broken one, none at all. The native Stack header was disabled in 2026-06-19 (see
+              the note above) because it painted a white bar behind this custom header, and
+              nothing replaced the exit it took with it. Measured on the live deploy, both
+              engines: zero back affordances on /battle-pass. On web the browser's back button
+              hides it; on iOS the tester is stuck until they force-quit. */}
+          <BackControl label="‹  Back" />
           <Text style={styles.seasonName}>{BATTLE_PASS_CONFIG.seasonName}</Text>
           <View style={styles.countdownRow}>
             {expired ? (

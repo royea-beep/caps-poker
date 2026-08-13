@@ -7,7 +7,6 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Platform, Clipboard,
 } from 'react-native'
-import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AutoDebugRunner, DebugReport, StepResult } from '../utils/auto-debug'
 import { CAPS_DEBUG_STEPS } from '../utils/debug-suite'
@@ -16,6 +15,7 @@ import { runSimulation, SimulationReport } from '../utils/debug-simulation'
 import { COLORS } from '../constants/gameConfig'
 import Constants from 'expo-constants'
 import * as Application from 'expo-application'
+import { safeBack } from '../components/BackControl';
 
 // ─── QA Checks ───────────────────────────────────────────────────────────────
 interface QACheck {
@@ -99,7 +99,6 @@ type RunStatus = 'idle' | 'running' | 'done'
 type QAStatus = 'idle' | 'running' | 'done'
 
 export default function DebugScreen() {
-  const router = useRouter()
   const [status, setStatus] = useState<RunStatus>('idle')
   const [stepResults, setStepResults] = useState<StepResult[]>([])
   const [report, setReport] = useState<DebugReport | null>(null)
@@ -239,7 +238,7 @@ export default function DebugScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+        <TouchableOpacity onPress={safeBack} hitSlop={12}>
           <Text style={styles.back}>{'\u2190'} Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>AUTO-DEBUG</Text>

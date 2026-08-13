@@ -4,9 +4,9 @@
 // Themed via COLORS tokens, sized via responsive units.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
+import { useSafeBack } from './BackControl';
 
 interface ScreenHeaderProps {
   title: string;
@@ -16,8 +16,14 @@ interface ScreenHeaderProps {
 }
 
 export function ScreenHeader({ title, onBack, right, showBackLabel = true }: ScreenHeaderProps) {
-  const router = useRouter();
-  const handleBack = onBack ?? (() => router.back());
+  // DEAD-END FIX 2026-08-13. This was `onBack ?? (() => router.back())`. Measured on the live
+  // deploy, both engines: navigating DIRECTLY to /shop or /heatmap — which is what a reloaded
+  // tab or a shared link does — leaves the history stack empty, so router.back() silently
+  // no-ops and this chevron does nothing. Entered in-app the same control works, which is why
+  // it read as fine in every previous audit: they all walked in from Home.
+  // On web the browser's own back button still rescues the tester. On iOS there is none.
+  const safeBack = useSafeBack();
+  const handleBack = onBack ?? safeBack;
 
   return (
     <View style={styles.header}>

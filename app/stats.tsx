@@ -26,6 +26,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
 import { getSupabase } from '../utils/supabase';
+import { safeBack } from '../components/BackControl';
 
 // ─── Chip Line Chart (pure RN Views — no SVG library) ──────────────────────
 
@@ -288,7 +289,7 @@ export default function StatsScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+        <Pressable onPress={safeBack} hitSlop={12} style={styles.backBtn}>
           <Text style={styles.backText}>← BACK</Text>
         </Pressable>
         <Text style={styles.title}>STATS</Text>

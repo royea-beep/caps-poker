@@ -18,6 +18,7 @@ import { getSupabase } from '../utils/supabase';
 import { SpectatorSnapshot } from '../utils/realtimeMultiplayer';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
+import { safeBack } from '../components/BackControl';
 
 const SPECTATE_CHANNEL_PREFIX = 'spectate:';
 
@@ -152,7 +153,7 @@ export default function SpectateScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={safeBack} hitSlop={12}>
             <Text style={styles.backText}>← BACK</Text>
           </Pressable>
           <Text style={styles.title}>SPECTATE</Text>
@@ -170,7 +171,7 @@ export default function SpectateScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={safeBack} hitSlop={12}>
             <Text style={styles.backText}>← BACK</Text>
           </Pressable>
           <Text style={styles.title}>SPECTATE</Text>

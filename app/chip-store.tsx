@@ -12,11 +12,11 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
+import { safeBack } from '../components/BackControl';
 
 // --- Types -------------------------------------------------------------------
 
@@ -60,7 +60,6 @@ async function fetchChipStorePackages(): Promise<ChipPackage[]> {
 // --- Component ---------------------------------------------------------------
 
 export default function ChipStoreScreen() {
-  const router = useRouter();
   const chips  = useGameStore((s) => s.chips);
 
   const [packages,       setPackages]       = useState<ChipPackage[]>(DEFAULT_PACKAGES);
@@ -98,7 +97,7 @@ export default function ChipStoreScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={safeBack}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"

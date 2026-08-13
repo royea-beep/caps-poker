@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getHand, HandRecord, HandBoardRecord } from '../utils/handHistory';
+import { safeBack } from '../components/BackControl';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -166,7 +167,7 @@ export default function ReplayScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Hand not found</Text>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
+          <Pressable style={styles.backBtn} onPress={safeBack}>
             <Text style={styles.backBtnText}>← BACK</Text>
           </Pressable>
         </View>
@@ -178,7 +179,7 @@ export default function ReplayScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.headerBack}>
+        <Pressable onPress={safeBack} hitSlop={8} style={styles.headerBack}>
           <Text style={styles.headerBackText}>← HISTORY</Text>
         </Pressable>
         <Text style={styles.headerTitle}>REPLAY</Text>

@@ -9,6 +9,7 @@ import { useGameStore } from '../store/gameStore';
 import { COLORS, getBoardCount, CARDS_PER_BOARD } from '../constants/gameConfig';
 import { CARD_THEMES, CardThemeId } from '../constants/cardThemes';
 import { simulateBatch, BatchSimulationResult, simulateHand, SimulationResult } from '../utils/simulate';
+import { safeBack } from '../components/BackControl';
 
 interface SimResultDisplay extends BatchSimulationResult {
   label: string;
@@ -171,7 +172,7 @@ export default function SimulateScreen() {
         <Button
           title={'\u2190 Back'}
           variant="ghost"
-          onPress={() => router.back()}
+          onPress={safeBack}
           style={{ paddingVertical: 6, paddingHorizontal: 0 }}
         />
         <Text style={styles.title}>SIMULATION</Text>

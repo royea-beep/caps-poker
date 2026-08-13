@@ -14,11 +14,12 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
+import { fetchPokerShop } from '../utils/supabaseEconomy';
+import { getDeviceId } from '../utils/leaderboard';
 
 export default function GameOverScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
-  const config = useGameStore((s) => s.config);
   const setChips = useGameStore((s) => s.setChips);
 
   const [confirming, setConfirming] = useState(false);
@@ -54,8 +55,32 @@ export default function GameOverScreen() {
       }, 3000);
     } else {
       if (timerRef.current) clearTimeout(timerRef.current);
-      setChips(config.startingChips);
-      router.replace('/game');
+      // UNLEDGERED-GRANT FIX 2026-08-13. This was `setChips(config.startingChips)` — a purely
+      // local write of a full 2,000-chip stack, with no server call and no ledger row, every
+      // time a busted player tapped again. Two things were wrong with it:
+      //
+      //   1. It invented chips the server never issued. Home re-adopts the server balance on
+      //      mount (app/(tabs)/index.tsx — fetchPokerShop -> setChips), so the player watched
+      //      a fresh stack appear here and silently evaporate the moment they went home.
+      //   2. The designed rescue is claim_emergency_chips: 200 chips, once per day, capped and
+      //      written to chip_transactions. This path handed out 2,000, unledgered and unlimited.
+      //
+      // The server is the authority, so ask it rather than guess. We do NOT call
+      // claim_emergency_chips here: it takes a uuid leaderboard id, and the majority of CAPS
+      // players are device-anonymous with auth.uid() NULL, so the device->uuid mapping has to
+      // be settled before that RPC can be wired in honestly. Adopting the real balance is
+      // strictly better than fabricating one, and it is the whole of the data-integrity bug.
+      void (async () => {
+        try {
+          const deviceId = await getDeviceId();
+          const shop = await fetchPokerShop(deviceId);
+          if (shop && typeof shop.balance === 'number') setChips(shop.balance);
+        } catch {
+          /* offline — fall through on the balance we already hold; nothing is invented */
+        } finally {
+          router.replace('/game');
+        }
+      })();
     }
   };
 

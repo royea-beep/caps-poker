@@ -227,9 +227,14 @@ export default function CoachingScreen() {
     }, 50);
   };
 
+  // DEAD-END FIX 2026-08-13. The loaded branch below already renders a ScreenHeader, but these
+  // two early returns did not — and the empty branch is exactly what a tester sees when they
+  // open /coaching cold, which is the only way most of them will ever reach it. The screen's
+  // sole exit was the "Play Now" CTA, i.e. forward. On iOS that left no way back at all.
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
+        <ScreenHeader title="Coaching" />
         <ActivityIndicator color={COLORS.gold} size="large" style={{ flex: 1 }} />
       </SafeAreaView>
     );
@@ -238,6 +243,7 @@ export default function CoachingScreen() {
   if (!hand || !result) {
     return (
       <SafeAreaView style={styles.container}>
+        <ScreenHeader title="Coaching" />
         <EmptyState
           icon="💡"
           title="No coaching yet"
