@@ -93,6 +93,25 @@ reconciliation is supposed to do.
 
 - **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.** Measured 2026-08-14: live, cause misfiled (dead constants), fix is per-card variation keyed off card id — a design change, not a constant swap.
 
+#### C5 — the question for Roye, with costs
+
+Variation must be keyed off a **stable hash of card id**, never off rank, suit or value: the back
+is what the opponent looks at for the whole hand, and it turns face-up at the reveal. If anything
+about the back correlates with the face, we have built an information leak that only becomes
+visible once someone notices — the worst failure mode available here. Every option below is
+id-hashed for that reason, and whichever is chosen needs a test asserting no correlation.
+
+| Option | What varies | Cost | Risk |
+|---|---|---|---|
+| **A — ring alpha** | the inner ring's alpha across ~4 steps (0.10–0.22) | one constant → a small hash fn; ~10 lines in `Card.tsx` | lowest. Invisible at hand sizes, which may mean it does not answer the complaint at all |
+| **B — C rotation** | the "C" glyph rotated ±2–6° in ~4 steps | ~10 lines, one `transform` | low. Reads as craft at large sizes; at 44px wide it may read as a rendering fault |
+| **C — ring offset** | the ring's centre offset 1–2px in 4 directions | ~15 lines, touches the back's absolute layout | medium. It is the only one that changes geometry, so it needs a layout re-check |
+| **D — pattern seed** | a subtle repeating mark seeded per card | new artwork inside the back | highest. Real design work; the only option that is unambiguously visible |
+
+The prior question is whether the monotony Roye saw is a **problem at the size the backs actually
+render**, or only in a mock. Worth measuring the rendered back size on device before choosing —
+A and B may be literally invisible there, in which case the honest answer is D or nothing.
+
 ### OPEN QUESTION from the reveal verification, 2026-08-14 — do not lose this
 
 The winner gold border (`Card.tsx` `v2Border`, shipped `694565f`) was **not observed during the
@@ -110,7 +129,50 @@ Two things are unresolved and neither should be guessed at:
    neither `Card` nor `StaticCard` — so that gold may come from a third surface entirely.
    `components/StaticCard.tsx:60` carries its own independent `2.5px #c9a84c`.
 
-Until (1) is settled, treat "the winner border is gold at the reveal" as **unverified**.
+**SETTLED 2026-08-14 (EN1). The winner border cannot render. Mechanism below.**
+
+### Card renderer map — measured, `file:line` for import and render site
+
+| Surface | Component | Import | Render site |
+|---|---|---|---|
+| Arrangement board | `Card` via `Board` | `components/Board.tsx:15` | `BoardArrangement.tsx:~295` → `Board`, **`revealed={false}` at :303** |
+| On-board reveal (solo) | same as above | same | same — it is the same `Board`, never re-mounted with `revealed` true |
+| Reveal overlay | `Card` as `CardComponent` | `components/BoardReveal.tsx:20` | `:816`, `:823` — **`highlighted` is never passed** |
+| `/results` | `StaticCard` via `BoardResultCard` | `app/results.tsx:8` → `BoardResultCard.tsx:11` | `:195`, `:213`, `:220`, `:232` — component is instrumented-dead (S53, `visibleBoardCount=0`) |
+| Player's hand | `Card` as `CardComponent` | `components/PlayerHand.tsx:8` | hand rows |
+
+### Four independent "winner border" implementations
+
+1. `Card.tsx:444` `v2Border` — gold `#c9a84c` **2.5px** (mine, `694565f`). In the bundle, never reached.
+2. `Card.tsx:480` `highlightBorder` — gold `#c9a84c` 2.5px. Dead: `isV2 = true` is a const, so the
+   minifier **folded the branch out of the deployed bundle entirely** — only two `borderWidth:2.5`
+   sites survive, and neither is this one. That is proof, not inference.
+3. `StaticCard.tsx:60` — gold `#c9a84c` 2.5px, else `borderWidth: 0`. Present in the bundle,
+   reachable only through the dead `BoardResultCard`.
+4. `BoardReveal.tsx:1308` `winGlow` — **not a border at all**: `shadowColor: '#FFD700'`,
+   `shadowOpacity: 0.9`, `elevation: 8`. This is the only winner cue that actually renders, and it
+   uses a *fourth* gold (`#FFD700`, not the settled `#c9a84c`).
+
+### Why no gold on the board
+
+`BoardArrangement.tsx:303` passes **`revealed={false}` — hardcoded**. `Board.tsx` gates every
+highlight on it (`highlighted={revealed && …}` at :776, :817, :831, :862), so on the only surface
+where the boards are visible, `highlighted` is false by construction. The reveal overlay does not
+close the gap: it marks winners with its own wrapper glow and never passes `highlighted` down.
+
+There is therefore **no reachable caller that sets `highlighted` true** except
+`InteractiveTutorial.tsx:121` and the dead `BoardResultCard`. Five dead-path instances now, same
+class as `isV2`, `isLandscape = false` and the `KILL_*` flags.
+
+**Fix shape — named, not built.** Two candidates, and the choice is not obvious:
+(a) **one line** — pass the real reveal state at `BoardArrangement.tsx:303` instead of `false`.
+Cheapest, but it turns on a border on a surface that has never had one, and `winGlow` would then
+fire alongside it: two winner cues in two different golds.
+(b) **route the cue through one implementation** — decide whether the winner mark is a border
+(`#c9a84c`, survives greyscale on luminance + width) or a glow (`#FFD700`, adds the elevation the
+table surface was meant to supply), then delete the other three. Larger, and it needs the
+consolidation brief.
+Do not pick before the renderer map above is agreed.
 - **D1** — *"לבדוק מה Felt/Vegas באמת עושים ואיפה הם נעצרים (למה לא מגיעים למסכי המשחק)."* →
   **NO LONGER A LIVE QUESTION.** It asked why the Felt/Vegas *pickers* never reached the game
   screens. Those pickers no longer exist — B1 folded them into one VISUAL STYLE axis, and the
