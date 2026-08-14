@@ -1382,6 +1382,15 @@ function GameScreenInner() {
               visible={tooltipVisible}
               onDismiss={advanceTooltip}
               position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
+              // HINT-OVERLAP FIX 2026-08-13. Tips 1 and 2 are the two anchored 'bottom', and
+              // they are the two ABOUT the hand ("These are your cards", "Tap a card then a
+              // slot") — so the old fixed bottom: rs(110) put each on top of the very cards it
+              // described. Measured live: 6 of 12 cards covered, 57% each at 1706x960, 78% at
+              // 393. Pass the layout's MEASURED hand-zone height (derived from live
+              // useWindowDimensions, not a module-scope rs() which freezes at the 393 base on
+              // web) plus a gap, so the pill clears the hand at every width instead of guessing
+              // a constant that cannot. Every other tip omits the prop and is byte-identical.
+              bottomOffset={tooltipStep <= 2 ? _handZoneActualH + rs(20, screenW) : undefined}
               autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
             />
           )}

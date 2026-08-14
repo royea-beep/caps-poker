@@ -479,3 +479,24 @@ same way: toward confirming the report was wrong.** It was not.
 Corollary: a human looking at the actual screen found a third collision — a hint bubble
 covering six cards — in seconds, where automated sweeps took two sprints and missed it. An eye
 on the running product is an instrument, and this project has been under-using it.
+
+## Rule 18 — the defect class: two heights that do not know about each other
+
+Two independently-computed dimensions that share the same space and neither reads the other.
+Each is individually correct; together they overlap. **No constant fixes it** — a value that
+clears one viewport floats or clips at another, which is the tell.
+
+**Instance 1 — `GuidedTooltip` `posBottom: { bottom: rs(110) }`.** A fixed offset from the
+viewport bottom, while the hand occupies the bottom **194px at 393** and **302px at 1706×960**.
+Covered 6 of 12 cards at 57-78%. Fixed by threading the layout's measured hand-zone height in.
+
+**Instance 2 — the board stack and the hand row.** Heights computed separately and summing past
+the available space: `board-2` ↔ `hand-row` overlap **414×76.7px at 1706×960** and **346×56.7px
+at 393**. Still open — and note it affects BOTH ends, so "give height back on desktop" is wrong.
+
+**How to spot it:** grep for a constant offset from a viewport edge (`bottom:`, `top:` with a
+literal or a bare `rs()`), on any screen where a sibling's height varies with viewport. If the
+value cannot be right at both 375 and 1706, it is this class.
+
+**The fix is always the same shape:** derive one from the other. The dependent one is whichever
+must never be occluded — for the hand, that is everything else.
