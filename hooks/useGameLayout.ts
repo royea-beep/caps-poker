@@ -278,7 +278,26 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
   // BC4-STACK-REBALANCE 2026-06-09 — the bc=4 +rs(40) extra was added when bc=4
   // used a 4x4 hand grid that needed to be pushed above the action bar. The new
   // 2x8 hand is short enough not to need it; drop the special case.
-  const _handMarginB = rs(72) + insets.bottom + rs(8);
+  // LAST-29PX 2026-08-14 — was `rs(72) + insets.bottom + rs(8)` = 80 at 393, and the space
+  // below the hand actually renders at 119. Measured live after the TOP_CHROME_H fix:
+  //   hand bottom 733 -> gap 18 -> ⚡ Auto-Place row 33 -> action bar 71 -> viewport 852
+  //   (Auto-Place and the bar overlap by 3, so 18 + 33 + 71 - 3 = 119)
+  // Short by ~39px, which is MORE than the ~29px of board/hand overlap still on screen. So the
+  // remaining collision is the same defect as the 90px one — a budget that does not believe
+  // what renders — not genuine content pressure. Second wrong premise in the same file.
+  //
+  // BoardArrangement.tsx:354 already recorded this: "PRD.zone.actionBarH=rs(56) under-counted
+  // the ...". It was patched locally in the consumer instead of corrected at the source, which
+  // is why the hook kept allocating from a number nobody had re-measured.
+  //
+  // The two flat parts are flat for real reasons — the action bar and the Auto-Place row
+  // measured identically at 393 and 1706 — so they are written as measured constants, while
+  // the hand→Auto-Place gap does scale (18 at 393, 28 at 1706) and stays behind rs().
+  const ACTION_BAR_H = 71;      // Cancel/Confirm row, measured at 393 AND 1706
+  const AUTO_PLACE_ROW_H = 33;  // ⚡ Auto-Place ALL, measured at 393 AND 1706
+  const AUTO_BAR_OVERLAP = 3;   // the two touch by 3px; do not double-count it
+  const _handMarginB =
+    rs(18) + AUTO_PLACE_ROW_H + ACTION_BAR_H - AUTO_BAR_OVERLAP + insets.bottom;
   const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
   const _gridSidePad = _gridSidePadIfWide;
 

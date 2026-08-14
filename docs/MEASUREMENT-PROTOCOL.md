@@ -518,3 +518,25 @@ would have broken the first-run tutorial for every tester.
 in a separate bucket. An overlay that intersects is doing its job; a sibling in normal flow
 that intersects is not. If a sweep cannot make that distinction it will keep manufacturing
 defects, and each one costs a sprint to disprove.
+
+## Rule 20 — a non-scaling quantity must not sit behind a scaling function
+
+If a value renders identically at 375, 393 and 1706, wrapping it in `rs()` / `rh()` does not
+make it responsive — it makes it **wrong at every width except the base**.
+
+**Cited case, 2026-08-14.** `TOP_CHROME_H = rh(56)` produced 53–56 across viewports while the
+chrome measured **90 at every width on both engines**, because it is floored by the 44px
+accessibility target on the leave button plus fixed paddings. None of those parts scale. The
+budget was ~34px short before a single card was sized, and the fit-search allocated room that
+did not exist — which is what clipped the player's second card row.
+
+The same file then yielded a second instance the same day: `_handMarginB = rs(72) + rs(8)` = 80
+against a measured 119 of bottom chrome.
+
+**Test:** measure the value at 375, 393 and a desktop width. If the three numbers are the same,
+it is a constant and belongs written as the sum of its measured parts, so the next reader can
+see which part is an accessibility floor and must not be trimmed. If they differ, keep `rs()`.
+
+Corollary: when a consumer patches around a source constant — `BoardArrangement.tsx:354`,
+*"PRD.zone.actionBarH=rs(56) under-counted the …"* — that is a report that the source is wrong.
+Fix the source; a local patch leaves every other consumer still reading the bad number.
