@@ -82,12 +82,16 @@ export interface BoardArrangementProps {
   // and hand cards. When provided, Board uses it directly for commW/slotW; the
   // PlayerHand uses it for hand cardW. Strict size-unity instead of count-based.
   universalCardW?: number;
+  /** HINT-OVERLAP 2026-08-13 — passed straight to PlayerHand so game.tsx can position the
+   *  first-run tip above the hand from its MEASURED window top, not a derived height. */
+  onMeasureHandTop?: (y: number) => void;
 }
 
 export function BoardArrangement({
   boards,
   boardShakeStyles,
   playerHand,
+  onMeasureHandTop,
   selectedCardIds,
   isArranging,
   allBoardsFull,
@@ -399,6 +403,7 @@ export function BoardArrangement({
             bounces={false}
           >
             <PlayerHand
+          onMeasureTop={onMeasureHandTop}
               cards={playerHand}
               selectedCardIds={selectedCardIds}
               onSelectCard={onSelectCard}

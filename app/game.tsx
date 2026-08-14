@@ -202,6 +202,11 @@ function GameScreenInner() {
   const [isFirstGame, setIsFirstGame] = useState(false);
   const [tooltipStep, setTooltipStep] = useState(0); // 0 = none shown yet, 1-5 = current tip index
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  // HINT-OVERLAP 2026-08-13 — the hand's MEASURED top in window coordinates, reported by
+  // PlayerHand via measureInWindow. 0 means "not measured yet"; the tooltip falls back to its
+  // rs(110) default in that case rather than positioning against a bogus number, so it cannot
+  // flash at the viewport edge for a frame.
+  const [handTopY, setHandTopY] = useState(0);
   const [boards, setBoards] = useState<BoardState[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -1199,6 +1204,7 @@ function GameScreenInner() {
 
   return (
     <GameView
+            onMeasureHandTop={setHandTopY}
       theme={theme}
       visualTheme={visualTheme}
       onBack={handleBack}
@@ -1399,8 +1405,11 @@ function GameScreenInner() {
               // for one frame is a new defect). Not attempted here rather than shipped
               // unverified for a third time.
               //
-              // The bottomOffset prop stays in GuidedTooltip: it is the right mechanism, it
-              // defaults to rs(110), and it is inert until passed a value.
+              // FIXED PROPERLY 2026-08-13. bottom = viewportH - handTop + gap, from the hand's MEASURED
+              // window top rather than a derived height. A height can disagree with the screen; a top IS
+              // the screen. While handTopY is 0 (not yet measured) we pass undefined, which resolves to
+              // GuidedTooltip's rs(110) default — never a position computed from a bogus zero.
+              bottomOffset={tooltipStep <= 2 && handTopY > 0 ? SCREEN_H - handTopY + rs(20, screenW) : undefined}
               autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
             />
           )}

@@ -16,6 +16,17 @@ interface PlayerHandProps {
   cards: Card[];
   selectedCardIds?: string[];
   onSelectCard: (card: Card) => void;
+  /**
+   * Reports this component's top edge in WINDOW coordinates, so a caller can position
+   * something above the hand without guessing at its height.
+   *
+   * WHY WINDOW AND NOT onLayout's y. `onLayout` reports a position relative to the PARENT,
+   * which is wrong the moment the parent is itself offset — and wrong in a way that looks
+   * plausible, which is exactly how `_handZoneActualH` produced a fix that doubled the
+   * problem it was meant to solve (2026-08-13). `measureInWindow` returns absolute screen
+   * coordinates on both platforms, so the number means the same thing everywhere.
+   */
+  onMeasureTop?: (y: number) => void;
   // FIT-ALL-BOARDS 2026-06-09 — actual rendered hand-zone height. When omitted,
   // falls back to PRD.zone.handMinH for backwards-compat. Game screen passes the
   // boards-first remainder so hand cards size to fit the real container.
@@ -78,7 +89,24 @@ function AnimatedCardSlot({
   );
 }
 
-export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH, universalCardW }: PlayerHandProps) {
+export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH, universalCardW, onMeasureTop }: PlayerHandProps) {
+  const rootRef = React.useRef<View | null>(null);
+  const lastTopRef = React.useRef<number | null>(null);
+
+  // onLayout fires again on rotation, resize and any re-layout. Report only when the value
+  // actually MOVES by more than a pixel — otherwise a caller positioning against this would
+  // be nudged by every incidental re-layout, and a tip that shifts after it has settled reads
+  // as a glitch rather than a correction.
+  const reportTop = React.useCallback(() => {
+    const node = rootRef.current as any;
+    if (!node?.measureInWindow || !onMeasureTop) return;
+    node.measureInWindow((_x: number, y: number) => {
+      if (typeof y !== 'number' || !isFinite(y) || y <= 0) return;
+      if (lastTopRef.current !== null && Math.abs(lastTopRef.current - y) < 1) return;
+      lastTopRef.current = y;
+      onMeasureTop(y);
+    });
+  }, [onMeasureTop]);
   // C-fix 2026-05-22: lock to module-level SCREEN_W (computed once in responsive.ts).
   // Was useWindowDimensions() — re-fired on every focus/keyboard/resize event,
   // causing the 2-row hand layout to shift while the player was placing cards.
@@ -219,7 +247,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.surface, borderTopColor: theme.boardBorder }]}>
+    <View ref={rootRef} onLayout={reportTop} style={[styles.container, { backgroundColor: theme.surface, borderTopColor: theme.boardBorder }]}>
       <View style={styles.labelRow}>
         <Text style={styles.label}>{t().yourHand}</Text>
         <View style={styles.countBadge}>

@@ -1,7 +1,7 @@
 // GameView — VAMOS-UNIFY-GAMEVIEW 2026-06-29.
 // The shared placement-screen shell extracted VERBATIM from SOLO's portrait render
 // (app/game.tsx). SOLO and MP both render THIS so the boards + hand + Auto-Place +
-// action bar (all owned by <BoardArrangement/>) are literally the same component
+// action bar (all owned by BoardArrangement) are literally the same component
 // fed the same props. The two screens differ ONLY in the slots:
 //   - `header`     : the bot/opponent status strip inside the themed botSection View
 //   - `topCenter`  : the top-center status (instruction pill / circular timer / waiting)
@@ -62,6 +62,9 @@ export interface GameViewReveal {
 }
 
 export interface GameViewProps {
+  /** HINT-OVERLAP 2026-08-13 — forwarded to PlayerHand so game.tsx can position the first-run
+   *  tip above the hand from its MEASURED window top rather than a derived height. */
+  onMeasureHandTop?: (y: number) => void;
   // Frame + chrome
   theme: GameViewTheme;
   visualTheme: string | null;
@@ -145,6 +148,7 @@ export function GameView({
   boards,
   boardShakeStyles,
   playerHand,
+  onMeasureHandTop,
   selectedCardIds,
   isArranging,
   allBoardsFull,
@@ -243,6 +247,7 @@ export function GameView({
         )}
 
         <BoardArrangement
+        onMeasureHandTop={onMeasureHandTop}
           boards={boards}
           boardShakeStyles={boardShakeStyles}
           playerHand={playerHand}
