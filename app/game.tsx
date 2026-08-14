@@ -1382,15 +1382,25 @@ function GameScreenInner() {
               visible={tooltipVisible}
               onDismiss={advanceTooltip}
               position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
-              // HINT-OVERLAP FIX 2026-08-13. Tips 1 and 2 are the two anchored 'bottom', and
-              // they are the two ABOUT the hand ("These are your cards", "Tap a card then a
-              // slot") — so the old fixed bottom: rs(110) put each on top of the very cards it
-              // described. Measured live: 6 of 12 cards covered, 57% each at 1706x960, 78% at
-              // 393. Pass the layout's MEASURED hand-zone height (derived from live
-              // useWindowDimensions, not a module-scope rs() which freezes at the 393 base on
-              // web) plus a gap, so the pill clears the hand at every width instead of guessing
-              // a constant that cannot. Every other tip omits the prop and is byte-identical.
-              bottomOffset={tooltipStep <= 2 ? _handZoneActualH + rs(20, screenW) : undefined}
+              // REVERTED 2026-08-13, same day it shipped. This passed
+              // `_handZoneActualH + rs(20, screenW)` and MADE THE SCREEN WORSE: measured live,
+              // coverage went from 6 cards to TWELVE (78% @375, 81% @393, 75% @1706x960). The
+              // pill rose from y783 to y680 at 1706x960 — clearing row two and landing on row
+              // one, which had been clean.
+              //
+              // Why: `_L.handZoneH` is a layout-hook ALLOCATION, not the hand's rendered
+              // extent, and it is smaller than the box actually painted. A height is a derived
+              // quantity that can disagree with the screen; the hand's TOP is the screen.
+              //
+              // The correct input is the rendered top: bottom = viewportH - handTop + gap.
+              // Getting it needs `hand-row`'s onLayout y threaded up through PlayerHand ->
+              // BoardArrangement -> GameView -> here, with a fallback to the rs(110) default
+              // while the measurement is unresolved (a tooltip that flashes at the wrong place
+              // for one frame is a new defect). Not attempted here rather than shipped
+              // unverified for a third time.
+              //
+              // The bottomOffset prop stays in GuidedTooltip: it is the right mechanism, it
+              // defaults to rs(110), and it is inert until passed a value.
               autoDismissMs={tooltipStep === 5 ? 6000 : 5000}
             />
           )}

@@ -964,7 +964,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           accessibilityLiveRegion="polite"
           style={{
             position: 'absolute',
-            bottom: 140,
+            // IRON RULE #3 2026-08-13 — was a raw literal 140 with no rs(). Found during the
+            // fixed-offset sweep for Rule 18. rs() is identity at the 393 base, so this is a
+            // no-op at 375/393 and only scales elsewhere.
+            bottom: rs(140),
             alignSelf: 'center',
             backgroundColor: 'rgba(20,20,20,0.88)',
             borderRadius: 24,
