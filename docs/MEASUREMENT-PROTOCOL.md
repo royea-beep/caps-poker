@@ -514,10 +514,73 @@ only during first-game tips 1–2 — which is precisely the state the reporter'
 captured. A sprint was briefed to *delete* the arrow as a "dead scroll remnant". Deleting it
 would have broken the first-run tutorial for every tester.
 
-**Rule:** exclude `position: absolute` / `fixed` elements from the defect list, or report them
-in a separate bucket. An overlay that intersects is doing its job; a sibling in normal flow
-that intersects is not. If a sweep cannot make that distinction it will keep manufacturing
-defects, and each one costs a sprint to disprove.
+**Rule:** classify every intersecting pair as *normal-flow* or *overlay-kind* and report both,
+in separate buckets. Do not delete the overlay bucket — an overlay that intersects is doing its
+job, but "it is doing its job" is a judgement someone has to make, and it cannot be made about a
+pair that was silently dropped. A sweep that cannot make the distinction manufactures defects,
+and each one costs a sprint to disprove.
+
+**How to classify — the element's own `position` is NOT the test.**
+
+Testing `getComputedStyle(el).position === 'absolute'` misses every overlay whose *visible* box
+is a normal-flow child of an absolute parent. Both of `/game`'s tooltip surfaces are exactly
+that: the `Dismiss tip` pill and the `👆 Tap a card` label are static children inside absolutely
+positioned wrappers, so the own-position test scored them as normal-flow content and they became
+4 of the 6 reported pairs at 375/393 — pure noise, three sprints running.
+
+The naive repair — "overlay-kind if the element *or any ancestor* is absolute" — is worse. Under
+react-native-web a `ScrollView`'s content container is itself `position: absolute`, so *every*
+element on the screen has an absolute ancestor and the filter suppresses everything. Measured
+2026-08-14: it took the true count to **0 at all five viewports**, hiding the board↔hand residual
+that the entire height-collision arc existed to close.
+
+**Overlay-ness is a property of the PAIR, not of either element.** Walk from each element to its
+nearest `absolute`/`fixed` ancestor-or-self — that node is the element's **layer** (`null` = root
+flow):
+
+```js
+const layerOf = e => { let n = e; while (n && n !== document.body) {
+  const p = getComputedStyle(n).position; if (p==='absolute'||p==='fixed') return n; n = n.parentElement; } return null; };
+// same layer -> laid out against each other by normal flow -> a real collision
+// different layer -> painted over each other by design -> overlay-kind
+const isRealCollision = (a, b) => layerOf(a) === layerOf(b);
+```
+
+Boards and hand share the ScrollView's layer, so their overlap stays visible as a defect. The
+tooltip lives in its own layer, so it is bucketed as intentional. Measured on the same build,
+this took the reported count from 41→12 (375), 40→8 (393), 32→2 (1706×960), 35→7 (1706×820),
+13→2 (1920) — and *kept* every board↔hand pair, which is the test of the filter, not the size
+of the reduction.
+
+**Second requirement: intersect CLIPPED rects, not raw ones.**
+
+`getBoundingClientRect` returns an element's full box even when an ancestor with
+`overflow: hidden/scroll/auto` is only painting part of it. Scroll content that runs past its
+viewport therefore reports as an overlap with whatever sits below the viewport — while on screen
+nothing is painted over anything.
+
+Intersect each rect with every clipping ancestor's rect first:
+
+```js
+const clipped = e => { const r = e.getBoundingClientRect();
+  let t=r.top,b=r.bottom,l=r.left,x=r.right, n=e.parentElement;
+  while (n && n !== document.body) { const s = getComputedStyle(n);
+    if (/hidden|scroll|auto|clip/.test(s.overflowY + s.overflowX)) { const q = n.getBoundingClientRect();
+      t=Math.max(t,q.top); b=Math.min(b,q.bottom); l=Math.max(l,q.left); x=Math.min(x,q.right); }
+    n = n.parentElement; }
+  return { top:t, bottom:b, left:l, right:x, width:Math.max(0,x-l), height:Math.max(0,b-t) }; };
+```
+
+**Cited case, 2026-08-14.** With the layer test applied, `/game` still reported a 24px board↔hand
+collision at 1706×820 and 4–9px at the other viewports — the last open item of the
+height-collision arc. Under clipped rects the count is **0 at all five viewports**. The boards
+zone scrolls at four of the five (measured overflow 33px at 1706×820, 13–17px elsewhere; 1920 is
+the only viewport where the fit-search fits outright at overflow 0), and the residual tracked
+that overflow one-for-one. There was never anything to fix: three sweeps' worth of "remaining
+collision" was scroll content being measured outside its own viewport.
+
+Overflow is still worth reporting — it means board content sits below the fold — but it is a
+scroll-affordance finding, not a collision, and it must not be filed as one.
 
 ## Rule 20 — a non-scaling quantity must not sit behind a scaling function
 
