@@ -458,3 +458,24 @@ blocked must first show an equivalent message arriving for someone entitled to i
 `config: { broadcast: { self: true } }`. A single-client send/receive test therefore reads as
 "nothing was delivered" when delivery is working perfectly. Either set `self: true`, or use a
 second client as the receiver.
+
+## Rule 17 — test the thing described, not the name given
+
+When a report names a thing tentatively — *"X או משהו כזה"*, "the button near the bottom",
+"something like that" — **the observation is the evidence and the label is a guess.** Test what
+was described. Verifying the name and reporting it clean is how a real defect survives a sweep.
+
+**Cited case, 2026-08-13.** Roye reported *"AUTO PLACE ALL או משהו כזה שנמצא למטה הוא OVERLAP
+קצת על משהו אחר"*. He flagged his own uncertainty about the name and was certain about the
+collision. Two sprints went into measuring the **Auto-Place-ALL button**, which is genuinely
+clean at every width and height. The actual defect was the **per-board ⚡ Auto-Place row**
+overlapping the hand row by **77px** — a different control, three feet away in the DOM, and
+present in every phase and every animation sample.
+
+The same sweep that returned "zero overlaps" was also comparing buttons against buttons, so
+the colliding plain `<div>` was never a candidate. **Two independent method errors pointed the
+same way: toward confirming the report was wrong.** It was not.
+
+Corollary: a human looking at the actual screen found a third collision — a hint bubble
+covering six cards — in seconds, where automated sweeps took two sprints and missed it. An eye
+on the running product is an instrument, and this project has been under-using it.
