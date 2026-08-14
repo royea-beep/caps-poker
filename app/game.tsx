@@ -462,6 +462,35 @@ function GameScreenInner() {
       }, 'game');
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
       const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, boardsRef.current);
+
+      // AG1 FOURTH PATH 2026-08-13. This branch fills the board when the clock expires and it
+      // emitted `arrangement_timeout` but never `card_placed` — so the single most informative
+      // session type, a player placing under time pressure, produced no placement data at all.
+      // That is the behaviour most likely to answer whether 12 placements is too many.
+      //
+      // `source: 'timeout'` is kept DISTINCT from 'auto' and 'auto_all' for the same reason
+      // those two were separated: collapsing them once made PLACEMENT_HISTOGRAM.sql read the
+      // most engaged users as instant quitters. A player who ran out of time is not a player
+      // who chose auto-place, and the query must be able to tell them apart.
+      //
+      // Emitted BEFORE setBoards so the counts derive from the values already in hand, and
+      // fire-and-forget like the other three — `track` is non-blocking and this is the hot path.
+      {
+        const alreadyPlaced = boardsRef.current.reduce((n, b) => n + b.playerCards.length, 0);
+        const autoFilled = playerHandRef.current.length - remainingHand.length;
+        for (let k = 0; k < autoFilled; k++) {
+          track('card_placed', {
+            placed_index: alreadyPlaced + k + 1,
+            total_required: boardCount * CARDS_PER_BOARD,
+            board_count: boardCount,
+            player_count: numberOfPlayers,
+            ms_since_deal: dealtAtRef.current ? Date.now() - dealtAtRef.current : null,
+            source: 'timeout',
+            mode: isPractice ? 'practice' : 'solo',
+          }, 'game');
+        }
+      }
+
       setBoards(filledBoards);
       setPlayerHand(remainingHand);
       setSelectedCardIds([]);

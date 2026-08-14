@@ -36,7 +36,23 @@
 -- reading either the SQL or the client. Lifetime card_placed at the moment of the fix: 15
 -- events, 5 devices, all 2026-08-01, all our own probes — ZERO from a real user, ever.
 --
--- ⚠️ STILL UNINSTRUMENTED — A FOURTH PATH. game.tsx:446 auto-places the remaining cards when
+-- ✅ FOURTH PATH INSTRUMENTED 2026-08-13 (was: STILL UNINSTRUMENTED). game.tsx:456-468 auto-places
+-- the remaining cards when the countdown expires, and now emits card_placed with source:'timeout'.
+-- It previously emitted arrangement_timeout ONLY, so the most informative session type — a player
+-- placing under time pressure — produced no placement data at all.
+--
+-- ⚠️ 'timeout' IS DELIBERATELY EXCLUDED FROM used_auto BELOW. A player whose clock ran out did NOT
+-- choose Auto-Place; folding them together would repeat the exact 'auto_all' mistake in reverse,
+-- inflating the population that "found the button". The string_agg on sources picks 'timeout' up
+-- automatically, so the paths stay visible without contaminating the used_auto flag.
+--
+-- There is NO FIFTH placement path. Verified 2026-08-13 by enumerating every board-state mutation
+-- in game.tsx: L465 (timeout fill), L540 (initial deal, not a placement), L569 (bot cards),
+-- L869 (tap), L937 (per-board auto), L992 (auto ALL), and L897 — which is
+-- handleRemoveCardFromBoard, a REMOVAL, correctly silent. Card removal is entirely unmeasured;
+-- that is a known gap, not an oversight in this query.
+--
+-- (historical) game.tsx:446 auto-placed the remaining cards when
 -- the arrangement COUNTDOWN EXPIRES. It emits `arrangement_timeout` (carrying `cards_remaining`)
 -- but no `card_placed`. Those sessions therefore STILL bucket as '0 — dealt, never placed'.
 -- Until that path is instrumented, cross-check the 0 bucket against `arrangement_timeout`
