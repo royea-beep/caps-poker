@@ -416,9 +416,35 @@ function CardComponent({
         }),
       ]
     : null;
+  // C4 — the settled map, moved onto the path that actually paints. `isV2` is hardcoded true
+  // (:447), so `highlightBorder` below has never rendered: the gold winner border, the mint
+  // community frame and the mint face-card hairline were all written into the dead branch. What
+  // shipped instead was this — 1.5px black-25% on the winner, borderWidth 0 on everything else.
+  //
+  // That is Roye's C4 exactly, though not for the reason the backlog gives ("קלף חשוף וגב-C
+  // שניהם במסגרת זהב"): the back stopped being gold in the card-face batch, and the constant the
+  // backlog cites as proof (CARD_BACK_BORDER, :77) has zero consumers. The live defect is the
+  // opposite — the border carried almost NO state, so "אותו סימון לשני מצבים הפוכים" had become
+  // "no marking for any state".
+  //
+  //   gold  -> won        (the ONLY thing gold may mean)
+  //   mint  -> the field  (community frames)
+  //   white -> neutral    (carries no state; on the LIGHT face that reads as a dark hairline —
+  //                        white-alpha is the neutral for the dark BACK, and putting it on a
+  //                        cream face would have made the neutral border invisible)
+  //
+  // Widths, not just hues, so it survives desaturation. Greyscale over the cream face, WCAG
+  // relative luminance and contrast: gold #c9a84c L=0.410, 2.22:1, at 2.5px · mint #4FD6A8
+  // L=0.526, 1.77:1, at 2px · neutral black-22% L=0.571, 1.65:1, at 1px. Won is both the darkest
+  // and the thickest, so the ranking survives full desaturation on luminance alone; mint and
+  // neutral sit close in luminance (1.77 vs 1.65) and are separated by the 2:1 width step.
+  // No shadow here on purpose — the table surface supplies the depth now, and `highlightShadow`
+  // (:460, iOS gold glow) stays dead for the same reason.
   const v2Border = highlighted
-    ? { borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' as const }
-    : { borderWidth: 0 };
+    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }                  // WON — gold
+    : isCommunityCard
+    ? { borderWidth: 2, borderColor: OBSIDIAN.mint as const }                // the field — mint
+    : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.22)' as const };         // neutral
 
   if (!card) {
     return (
