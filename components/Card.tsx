@@ -434,14 +434,19 @@ function CardComponent({
   //                        cream face would have made the neutral border invisible)
   //
   // Widths, not just hues, so it survives desaturation. Greyscale over the cream face, WCAG
-  // relative luminance and contrast: gold #c9a84c L=0.410, 2.22:1, at 2.5px · mint #4FD6A8
-  // L=0.526, 1.77:1, at 2px · neutral black-22% L=0.571, 1.65:1, at 1px. Won is both the darkest
-  // and the thickest, so the ranking survives full desaturation on luminance alone; mint and
-  // neutral sit close in luminance (1.77 vs 1.65) and are separated by the 2:1 width step.
+  // relative luminance: gold #c9a84c L=0.410 · mint #4FD6A8 L=0.526 · neutral black-22% L=0.571.
+  //
+  // WHY 3 AND NOT 2.5. Measured on the live build: Chromium rounds border-width to whole DEVICE
+  // pixels, so at DPR 3 a 2.5px border rendered as 2px — byte-identical to the mint field border.
+  // The width channel collapsed exactly where it was needed, leaving gold and mint separated by
+  // luminance alone at 1.25:1, which is below anything usable. WebKit kept it (2.33 / 2 / 1),
+  // so the defect was invisible on one engine and real on the other. 3px survives the rounding
+  // on both. The redundant-encoding rule is not a preference here — two channels or it is not
+  // built — so this is compliance with a standing rule, not a taste change.
   // No shadow here on purpose — the table surface supplies the depth now, and `highlightShadow`
   // (:460, iOS gold glow) stays dead for the same reason.
   const v2Border = highlighted
-    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }                  // WON — gold
+    ? { borderWidth: 3, borderColor: '#c9a84c' as const }                    // WON — gold
     : isCommunityCard
     ? { borderWidth: 2, borderColor: OBSIDIAN.mint as const }                // the field — mint
     : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.22)' as const };         // neutral
@@ -462,8 +467,7 @@ function CardComponent({
   const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
   const activeSuitColors4 = visualTheme === 'fiveo' ? SUIT_COLORS_4_FIVEO : SUIT_COLORS_4;
   const suitColor = fourColorSuits ? (activeSuitColors4[card.suit] ?? BLACK_COLOR) : (isRed ? RED_COLOR : BLACK_COLOR);
-  const suitBorderColor = isRed ? 'rgba(211,47,47,0.28)' : 'rgba(80,80,80,0.22)';
-  const isFaceCard = ['J', 'Q', 'K', 'A'].includes(card.rank);
+  // `suitBorderColor` and `isFaceCard` went with highlightBorder — they had no other consumer.
 
   // 2026-05-23: V2 layout (corner pip + dominant center suit, no center rank) is
   // now the only path — the legacy "3-corner-pip + center-rank+center-suit overlap"
@@ -473,21 +477,11 @@ function CardComponent({
   const isV2 = true;
   const v2SuitColor = isRed ? V2_RED : V2_BLACK;
 
-  // VAMOS-THEME-PROPAGATION C2/C3 — Gold KEPT only for the winning-card highlight.
-  // Community frame → MINT (obsidian inner-detail rule). Face-card prestige border
-  // → mint hairline. Highlighted (winning) stays #c9a84c gold.
-  const highlightBorder = highlighted
-    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }                   // WINNING — gold
-    : isCommunityCard
-    ? { borderWidth: rs(2.5), borderColor: OBSIDIAN.mint }                    // community frame — mint
-    : isFaceCard
-    ? { borderWidth: 1.5, borderColor: OBSIDIAN.mintHairline }                // face-card prestige — mint hairline
-    : { borderWidth: 1, borderColor: suitBorderColor };
-  const highlightShadow = highlighted && Platform.OS === 'ios'
-    ? { shadowColor: '#c9a84c', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 14 }
-    : isCommunityCard && Platform.OS === 'ios'
-    ? { shadowColor: OBSIDIAN.mint, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 }
-    : {};
+  // highlightBorder / highlightShadow DELETED 2026-08-14. `isV2` is a `const true`, so both were
+  // unreachable — and this is confirmed from the DEPLOYED BUNDLE, not from reading the source:
+  // grepping the shipped JS for `borderWidth:2.5,borderColor:'#c9a84c'` returned exactly two
+  // hits, v2Border's and StaticCard's, with this one absent because the minifier had already
+  // folded the branch away. Source can lie about what is live; the bundle cannot.
 
   return (
     // Animated.View (not View) so the ownership rim's shadowOpacity can carry the deal-in pulse.
@@ -522,8 +516,7 @@ function CardComponent({
           // below renders the true cream gradient on native AND web.
           !isV2 && Platform.OS === 'web' && { background: 'linear-gradient(160deg, #ffffff 0%, #f5f5f0 100%)' } as any,
           isV2 ? upgradedDepthShadow : faceUpShadow,
-          isV2 ? v2Border : highlightBorder,
-          !isV2 && highlightShadow,
+          v2Border,
           dimmed && styles.dimmed,
           {
             transform: [

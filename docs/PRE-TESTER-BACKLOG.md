@@ -129,7 +129,54 @@ Two things are unresolved and neither should be guessed at:
    neither `Card` nor `StaticCard` — so that gold may come from a third surface entirely.
    `components/StaticCard.tsx:60` carries its own independent `2.5px #c9a84c`.
 
-**SETTLED 2026-08-14 (EN1). The winner border cannot render. Mechanism below.**
+**CLOSED 2026-08-14.** Fixed at `BoardReveal`'s community row (`258979a`), not at
+`BoardArrangement:303` as the map below proposed — that surface sits *behind* the reveal. Gold
+raised 2.5 → 3px in the follow-up because Chromium rounds border-width to whole device pixels and
+2.5 rendered as 2, identical to mint, collapsing the width channel exactly where it was needed.
+Dead implementations swept in the same pass. Historical mechanism kept below.
+
+### QUESTION FOR ROYE — the bot and player rows have no winner cue
+
+**Before:** `BoardReveal` marked the winning *community* cards with `winGlow` — a `#FFD700` shadow
+plus `elevation: 8`. The bot and player seat rows never had a winner cue at all; they had only the
+spotlight dimming that fades non-highlighted cards.
+
+**Now:** the community row carries the settled gold border and `winGlow` is gone. The seat rows are
+unchanged — still no cue, still only the dimming. So nothing was taken away from them, but the
+contrast is sharper now that the community row is marked more strongly.
+
+**Why this is not obviously "just add the same border".** The community row is *shared* — one board,
+one winning five. The seat rows are *per-player*. Putting the same gold on all three rows at once
+would render four gold-bordered groups on screen simultaneously, which reads as four separate
+winners rather than one shared winning board. The dimming already answers "who won" by leaving the
+winner's cards bright; the border answers "which cards made the hand", and that question only has a
+single answer per board.
+
+| Option | What it does | Cost | Risk |
+|---|---|---|---|
+| **1 — nothing, by design** | seat rows keep the dimming only | zero | the strongest cue sits on the shared row, which may be exactly right |
+| **2 — same gold border on seat rows** | pass `highlighted` at `:816`/`:823` from `playerHighlightIds`/`botHighlightIds` | ~2 lines | four gold groups at once; likely reads as four winners |
+| **3 — lighter variant on seat rows** | e.g. gold at 1.5px, or gold on the winner's row only and not the losers' | ~10 lines + a new width in the map | introduces a fourth border weight; the map currently has exactly three |
+
+Recommendation is **1** until Roye says the seat rows read as unmarked — but it is his call, not a
+defect.
+
+### Dead winner-cue implementations — swept 2026-08-14
+
+Confirmed from the **deployed bundle**, not from source, per the lesson that source can read live
+and not be:
+- `Card.tsx` `highlightBorder` + `highlightShadow` — **DELETED.** Bundle grep for
+  `borderWidth:2.5,borderColor:'#c9a84c'` returned exactly two hits and neither was this one: the
+  minifier had already folded the branch away because `isV2` is a `const true`. `suitBorderColor`
+  and `isFaceCard` went with it, having no other consumer.
+- `BoardReveal` `winGlow` — **DELETED** in `258979a`.
+- `StaticCard.tsx:60` — **LEFT IN PLACE, unconfirmed.** Its gold *is* present in the bundle, so it
+  ships; whether it can be reached is a runtime question about `BoardResultCard`, which S53 proved
+  dead by instrumentation but which I have not re-instrumented this session. `/results` showed no
+  card-shaped gold in two measured runs, which is consistent with dead but does not prove it.
+  Deleting on that evidence is exactly the move that has burned this codebase five times.
+
+**Historical mechanism (kept for the record):**
 
 ### Card renderer map — measured, `file:line` for import and render site
 
