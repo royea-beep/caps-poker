@@ -93,6 +93,19 @@ reconciliation is supposed to do.
 
 - **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.** Measured 2026-08-14: live, cause misfiled (dead constants), fix is per-card variation keyed off card id — a design change, not a constant swap.
 
+#### Type legibility, measured 2026-08-14
+
+- **LEAD label (reveal equity row)** — was `rf(9)`, the smallest type on the reveal. Raised to
+  `rf(11)`, one step of the scale already in use there (11 / 13 / 15), with the label box widened
+  `rs(30)` → `rs(38)`: at 9px the text filled the 30-wide box exactly, so raising the size alone
+  would have clipped the word instead of enlarging it. Already on the reactive path
+  (`screenW` passed), so no module-scope freeze.
+- **8px "pips"** — **not a live condition.** `Card.tsx` `_suitFloor = 8` is a floor that never
+  binds: measured on the live build, the smallest suit glyph that renders is **10px** at 375 and
+  393, in placement and at the reveal, because `width * mainSuitRatio` clears 8 at every card size
+  we ship. Raising the floor would change nothing. Making the pips genuinely larger means raising
+  the ratio or the card width — card sizing, inside the closed layout arc. Measured and stopped.
+
 #### C5 — the question for Roye, with costs
 
 Variation must be keyed off a **stable hash of card id**, never off rank, suit or value: the back

@@ -143,7 +143,12 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
             >
               {pending ? '––' : `${s.pct}%`}
             </Text>
-            <Text style={[styles.leadTag, { fontSize: rf(9, undefined, undefined, screenW), width: rs(30, screenW) }]}>
+            {/* 9 -> 11 (one step of the scale in use here: 11 / 13 / 15). At 9px this was the
+                smallest type on the reveal and below any legibility floor. The width goes with
+                it: measured at 9px the text filled the 30-wide box exactly (textW 30, boxW 30),
+                so raising the size without the box would have clipped "LEAD" rather than
+                enlarged it. The bar beside it is flex and absorbs the 8px. */}
+            <Text style={[styles.leadTag, { fontSize: rf(11, undefined, undefined, screenW), width: rs(38, screenW) }]}>
               {i === 0 && !pending ? 'LEAD' : ''}
             </Text>
           </View>

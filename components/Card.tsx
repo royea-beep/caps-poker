@@ -234,6 +234,13 @@ function CardComponent({
   const mainSuitRatio = cardConfig?.main_suit_size_ratio ?? 0.34;
   // PR-N 2026-06-02 — font floor relaxed for community cards (rank 20->10, suit 14->8)
   // so they fit inside the smaller 24x34 card box without overflowing the rank text.
+  //
+  // MEASURED 2026-08-14: the suit floor of 8 DOES NOT BIND. The smallest suit glyph that
+  // actually renders is 10px, at both 375 and 393, in placement and at the reveal — because
+  // `width * mainSuitRatio` clears 8 at every card size we ship. Raising the floor would change
+  // nothing on screen; "8px pips" is a source value, not a rendered one.
+  // Real legibility here means raising mainSuitRatio or the card width itself, and both are card
+  // sizing — inside the closed layout arc. Measured and stopped rather than shipped into it.
   const _rankFloor = isCommunityCard ? 10 : 20;
   const _suitFloor = isCommunityCard ? 8  : 14;
   const centerRankSize = Math.max(_rankFloor, Math.floor(width * mainRankRatio));
