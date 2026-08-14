@@ -47,9 +47,31 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
 
   // Layout constants — PR-M aggressive vertical budget (2026-05-29). Was PRD.zone.*
   // (itself frozen at module load); now computed with the reactive rh/rs above.
-  const TOP_CHROME_H = rh(56);                        // PRD.zone.topChromeH
-  const TOP_BAR_H = Math.round(TOP_CHROME_H * 36 / 56);  // ~36/56 = top button row
-  const BOT_STATUS_H = Math.round(TOP_CHROME_H * 20 / 56);// ~20/56 = bot pill row
+  // TOP-CHROME-H 2026-08-14 — was `rh(56)`, and the chrome RENDERS AT 90px. Measured on the
+  // live build at 375, 393 and 1706, both engines: 90 on Chromium, 91-92 on WebKit, and
+  // IDENTICAL at every width and height. The budget was ~34px short before a single card was
+  // sized, and :276 `_availForBoardsAndHand` inherits it — so the fit-search was handing the
+  // boards and hand room that does not exist. That is the ~90px deficit; the cards were never
+  // too big.
+  //
+  // This file already records the same defect once: see the note at ~:91 — "Previous mismatch
+  // (game.tsx 120, BoardArrangement 187) was the silent under-allocation that pushed board 3
+  // placement slots off-screen on build 459." Fixed for the hand zone, left standing here.
+  //
+  // WHY A CONSTANT AND NOT rh(). The chrome genuinely does not scale: it is floored by the
+  // 44px accessibility minimum on the leave button (measured h=44 top=4 at EVERY width) plus
+  // fixed paddings. rh() varied it 53-56 across viewports while the real thing sat at 90 —
+  // scaling a value that does not scale is what made it wrong. Written as the sum of its
+  // measured parts so it is checkable rather than magic, and so the next reader can see which
+  // part is the a11y floor and must not be trimmed.
+  const A11Y_TOUCH_MIN = 44;        // leave-button floor, set deliberately 2026-08-10/11
+  const TOP_BAR_PAD_V = 8;          // paddingTop 4 + paddingBottom 4 on the header row
+  const BOT_STATUS_ROW = 28;        // "BOTS n/n ✓READY" strip, measured
+  const CHROME_TO_BOARDS_GAP = 10;  // measured gap between the strip and board 0
+
+  const TOP_BAR_H = A11Y_TOUCH_MIN + TOP_BAR_PAD_V;                 // 52, measured
+  const BOT_STATUS_H = BOT_STATUS_ROW + CHROME_TO_BOARDS_GAP;       // 38, measured
+  const TOP_CHROME_H = TOP_BAR_H + BOT_STATUS_H;                    // 90, measured
   const FLOATING_ACTIONS_H = rs(56);                  // PRD.zone.actionBarH
 
   // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
