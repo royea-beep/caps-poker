@@ -47,7 +47,7 @@ reconciliation is supposed to do.
 | Item | Roye's text / description | Evidence it is still live |
 |---|---|---|
 | **C4** | *"מסגרת לא מבדילה — קלף חשוף וגב-C שניהם במסגרת זהב. אותו סימון לשני מצבים הפוכים."* | **FIXED 2026-08-14.** The cited evidence was wrong: `CARD_BACK_BORDER = '#C5A028'` (L77) has **zero consumers** — a dead constant — and the back stopped being gold in the card-face batch. The live defect was the opposite. `const isV2 = true` (:447) is hardcoded, so `highlightBorder`/`highlightShadow` never rendered and the settled map (gold=won · mint=field) sat entirely in the dead branch; what shipped was black-25% on the winner and `borderWidth: 0` on everything else — no marking for any state. Map moved onto the live `v2Border`: gold 2.5px won · mint 2px field · black-22% 1px neutral. |
-| **C5** | *"מונוטוניות 5 גבים זהים ברצף."* | One `CARD_BACK_BG`/`CARD_BACK_BORDER` pair; no per-card variation exists. |
+| **C5** | *"מונוטוניות 5 גבים זהים ברצף."* | **MEASURED, NOT FIXED 2026-08-14 — still OPEN and still live.** The stated cause was wrong in the same way C2/C4's was: `CARD_BACK_BG`/`CARD_BACK_BORDER` are dead constants. The live back is the "C" back, and it is a single `CARD_BACK_C_*` set consumed once (`Card.tsx:316`, `:346`), so every back is byte-identical — confirmed live on the deployed bundle, which renders 6 identical `2px rgba(255,255,255,0.18)` edge rings in one frame. Fixing it needs deterministic per-card variation keyed off card id (rotation, ring alpha, or C weight), which is a design change, not a constant swap. Larger than it reads — measured and stopped per brief. |
 | **E2** | *"רגע ההפסד — 'YOU LOSE' אדום סטטי; צריך להיות רך ומעודד כדי שישחק שוב."* | `results.tsx:1045` renders the headline; still static. |
 | **C2** | *"היררכיה הפוכה של הגב — הגב השחור הוא האלמנט הכי בולט; המידע שלא רואים צועק יותר מהחשוף."* | **ADDRESSED, NOT EYE-VERIFIED 2026-08-14.** Cited evidence also dead: `CARD_BACK_BG = '#1A1A2E'` (L76) has zero consumers. The live back is already neutral charcoal + white-alpha, and the face now carries a border again (C4), so the exposed card is the marked element and the back is the placeholder — which is the inversion Roye described, corrected from both ends. Needs an owner eye-test on device before closing. |
 | **`card_placed` 4th path** | bot | **Confirmed OPEN by reading the block.** `game.tsx:456-468` — the countdown-expiry path emits `track('arrangement_timeout')` at `:458`, then `autoFillPlayerCards`, and **never emits `card_placed`**. Three other sites do (`:851`, `:955`, `:1004`). This is the instrument we read the tester round with. |
@@ -91,7 +91,26 @@ reconciliation is supposed to do.
 
 ## THE FOUR PREVIOUSLY-UNRECOVERED ITEMS — verbatim, with true status
 
-- **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.**
+- **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.** Measured 2026-08-14: live, cause misfiled (dead constants), fix is per-card variation keyed off card id — a design change, not a constant swap.
+
+### OPEN QUESTION from the reveal verification, 2026-08-14 — do not lose this
+
+The winner gold border (`Card.tsx` `v2Border`, shipped `694565f`) was **not observed during the
+on-board reveal**. A practice 3P hand was driven to completion on the live bundle and sampled at
+6s / 14s / 22s / 30s: the boards revealed (bot hands face-up, hand names shown) and the frame
+carried mint community frames and neutral hand borders throughout, but **no gold appeared at any
+sample**. Gold appeared only after the route changed to `/results`, where 10 elements render
+`2px rgb(201,168,76)`.
+
+Two things are unresolved and neither should be guessed at:
+1. `Board.tsx` passes `highlighted={revealed && boardHighlightIds.includes(c.id)}` (:776, :817,
+   :831, :862) — live-looking, but `revealed={false}` is a documented trap in this codebase and
+   the sampling did not confirm `revealed` was ever true.
+2. The `/results` gold measures **2px**, not the 2.5px in the source, and `results.tsx` imports
+   neither `Card` nor `StaticCard` — so that gold may come from a third surface entirely.
+   `components/StaticCard.tsx:60` carries its own independent `2.5px #c9a84c`.
+
+Until (1) is settled, treat "the winner border is gold at the reveal" as **unverified**.
 - **D1** — *"לבדוק מה Felt/Vegas באמת עושים ואיפה הם נעצרים (למה לא מגיעים למסכי המשחק)."* →
   **NO LONGER A LIVE QUESTION.** It asked why the Felt/Vegas *pickers* never reached the game
   screens. Those pickers no longer exist — B1 folded them into one VISUAL STYLE axis, and the
