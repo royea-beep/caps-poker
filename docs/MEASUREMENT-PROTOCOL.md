@@ -500,3 +500,21 @@ value cannot be right at both 375 and 1706, it is this class.
 
 **The fix is always the same shape:** derive one from the other. The dependent one is whichever
 must never be occluded — for the hand, that is everything else.
+
+## Rule 19 — an all-pairs sweep cannot tell an intentional overlay from a collision
+
+Both are intersecting boxes. A dim layer, an attention pointer, a tooltip and a modal all
+overlap the content beneath them **on purpose**, and `getBoundingClientRect` reports that
+exactly the same way it reports two siblings biting into each other.
+
+**Cited case, 2026-08-14.** A sweep reported three collisions in the header region of `/game`.
+Two were the **guided tutorial**: the full-screen dim overlay and the `↑`/`↓` attention arrow
+(`app/game.tsx:1379`), both `position: absolute`, both `pointerEvents: none`, both rendering
+only during first-game tips 1–2 — which is precisely the state the reporter's screenshot
+captured. A sprint was briefed to *delete* the arrow as a "dead scroll remnant". Deleting it
+would have broken the first-run tutorial for every tester.
+
+**Rule:** exclude `position: absolute` / `fixed` elements from the defect list, or report them
+in a separate bucket. An overlay that intersects is doing its job; a sibling in normal flow
+that intersects is not. If a sweep cannot make that distinction it will keep manufacturing
+defects, and each one costs a sprint to disprove.
