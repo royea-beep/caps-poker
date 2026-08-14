@@ -863,7 +863,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                       // engages and the row fans rather than overflowing.
                       { opacity: communitySpotlightOpacities[i], marginLeft: i === 0 ? 0 : commGap - commOverlap, zIndex: i },
                       isRiver && { transform: [{ scaleY: riverSqueezeAnim }] },
-                      isHighlighted && styles.winGlow,
+                      // winGlow removed 2026-08-14 — see the note on `highlighted` below.
                     ]}
                   >
                     <CardComponent
@@ -872,6 +872,21 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                       flipDuration={400}
                       cardWidth={commCardW}
                       cardHeight={commCardH}
+                      // THE winner cue, and now the only one. This is the surface the player
+                      // actually looks at during the reveal, and it was the one place `highlighted`
+                      // was never passed — so all four gold-border implementations were unreachable
+                      // and the sole visible mark was `winGlow`: a #FFD700 SHADOW on the wrapper.
+                      //
+                      // Border over glow, per Roye 2026-08-14:
+                      //   - it survives greyscale on TWO channels, luminance (L 0.410 won vs 0.526
+                      //     field vs 0.571 neutral) and width (2.5 / 2 / 1). A glow has only one.
+                      //   - iOS renders ONE shadow per view — documented at the top of Card.tsx,
+                      //     and the reason the ownership rim lives on an outer wrapper. A winner
+                      //     glow was a third shadow competing for that slot; a border takes none.
+                      //   - #FFD700 was a FOURTH gold. The settled map has exactly one: #c9a84c.
+                      // Dropping the glow also drops its `elevation: 8`, which was re-adding depth
+                      // the table surface already supplies.
+                      highlighted={isHighlighted}
                     />
                   </AnimatedRN.View>
                 );
@@ -1305,14 +1320,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#c9a84c',
   },
   // S114: winning card gold glow
-  winGlow: {
-    borderRadius: rs(4),
-    shadowColor: '#FFD700',
-    shadowOpacity: 0.9,
-    shadowRadius: rs(8),
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
+  // winGlow DELETED 2026-08-14 — it was the fifth "winner" implementation and the only one that
+  // rendered, in a fourth gold (#FFD700) and as a shadow rather than a border. Replaced by
+  // `highlighted` on the community CardComponent, which routes to the ONE settled mark.
+  // Deliberately removed rather than left unused: an orphaned style is how the other four
+  // implementations survived long enough to cost three sprints.
   // S114: "So close!" narrow loss
   soClose: {
     color: 'rgba(255,152,0,0.85)',
