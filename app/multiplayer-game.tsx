@@ -929,10 +929,43 @@ function MultiplayerGameScreenInner() {
   // double-invoke that updater, firing the ready broadcast twice / from a transient
   // state. That double-invoke is the autoSim fill-race + the MP soft-lock. A
   // readySentRef makes the send idempotent so it can't race handleReady either.
+  /**
+   * AG1-MP 2026-08-13 — ONE emitter for every placement path in this file.
+   *
+   * Before this, MP had four placement paths and exactly one emit (the tap path). The timeout
+   * fill, the per-board ⚡ and Auto-Place ALL were all silent — on the screen the tester round
+   * actually runs on. Solo was 4-of-4; MP was 1-of-4.
+   *
+   * Deliberately a single primitive rather than four call-site emits, for the reason the
+   * private-channel fix worked: routing that lives in one place cannot be forgotten by the
+   * fifth caller. This count has been wrong three times (two paths, then three, then four),
+   * so the shape that resists a fourth mistake is worth more than the shape that reads shorter.
+   *
+   * Fire-and-forget: `track` is non-blocking and every value is already computed, so nothing is
+   * added to the placement hot path.
+   *
+   * `alreadyPlaced` must be read BEFORE the state update that adds the cards, or placed_index
+   * double-counts.
+   */
+  const emitPlacements = useCallback((source: 'tap' | 'auto' | 'auto_all' | 'timeout', alreadyPlaced: number, count: number) => {
+    for (let k = 0; k < count; k++) {
+      track('card_placed', {
+        placed_index: alreadyPlaced + k + 1,
+        total_required: boardCount * CARDS_PER_BOARD,
+        board_count: boardCount,
+        player_count: playerCount,
+        ms_since_deal: mpDealtAtRef.current ? Date.now() - mpDealtAtRef.current : null,
+        source,
+        mode: 'multiplayer',
+      }, 'multiplayer-game');
+    }
+  }, [boardCount, playerCount]);
+
   const autoFillAndReady = useCallback(() => {
     if (readySentRef.current) return;
     readySentRef.current = true;
     const remaining = [...playerHandRef.current];
+    const beforeFill = boardsRef.current.reduce((n, b) => n + b.playerCards.length, 0);
     const updated = boardsRef.current.map((board) => {
       const needed = CARDS_PER_BOARD - board.playerCards.length;
       if (needed > 0) {
@@ -941,6 +974,17 @@ function MultiplayerGameScreenInner() {
       }
       return board;
     });
+
+    // AG1-MP 2026-08-13 — THE PATH THAT MATTERED MOST. This fills and readies when the
+    // arrangement clock expires (local timer :867, or the host deal-clock via
+    // autoFillReadyRef :897) and it emitted NOTHING. A player who timed out vanished from the
+    // placement data entirely — and timing out is the behaviour most likely to tell us whether
+    // twelve placements is too many.
+    //
+    // Emitted HERE, before setPhase('waiting') and before the ready broadcast below, because
+    // once the hand advances the counts we need are gone.
+    emitPlacements('timeout', beforeFill, playerHandRef.current.length - remaining.length);
+
     // pure state updates (no side effects / broadcasts inside an updater)
     setBoards(updated);
     boardsRef.current = updated;
@@ -1067,19 +1111,8 @@ function MultiplayerGameScreenInner() {
       return updated;
     });
     setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
-      // AG1 — per-tap telemetry, MP path. Mirrors solo (game.tsx). Fire-and-forget.
-      {
-        const alreadyPlaced = boards.reduce((n: number, b: any) => n + b.playerCards.length, 0);
-        track('card_placed', {
-          placed_index: alreadyPlaced + 1,
-          total_required: boardCount * CARDS_PER_BOARD,
-          board_count: boardCount,
-          player_count: playerCount,
-          ms_since_deal: mpDealtAtRef.current ? Date.now() - mpDealtAtRef.current : null,
-          source: 'tap',
-          mode: 'multiplayer',
-        }, 'multiplayer-game');
-      }
+      // AG1 — per-tap telemetry, MP path. Routed through emitPlacements like the other three.
+      emitPlacements('tap', boards.reduce((n: number, b: any) => n + b.playerCards.length, 0), 1);
     setSelectedCardIds([]);
   }, [isArranging, selectedCardIds]);
 
@@ -1122,6 +1155,7 @@ function MultiplayerGameScreenInner() {
       updated[boardIndex] = { ...prevBoard, playerCards: [...prevBoard.playerCards, ...cardsToPlace] };
       return updated;
     });
+    emitPlacements('auto', boardsRef.current.reduce((n, b) => n + b.playerCards.length, 0), cardsToPlace.length);
     setPlayerHand((hand) => hand.filter((c) => !placedIds.has(c.id)));
     setSelectedCardIds([]);
   }, [isArranging]);
@@ -1146,6 +1180,7 @@ function MultiplayerGameScreenInner() {
     if (placed.size === 0) return;
     haptic(Haptics?.ImpactFeedbackStyle?.Medium);
     playSound('cardPlace');
+    emitPlacements('auto_all', boardsRef.current.reduce((n, b) => n + b.playerCards.length, 0), placed.size);
     setBoards(updated);
     setPlayerHand((h) => h.filter((c) => !placed.has(c.id)));
     setSelectedCardIds([]);
