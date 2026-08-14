@@ -72,7 +72,25 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
   const TOP_BAR_H = A11Y_TOUCH_MIN + TOP_BAR_PAD_V;                 // 52, measured
   const BOT_STATUS_H = BOT_STATUS_ROW + CHROME_TO_BOARDS_GAP;       // 38, measured
   const TOP_CHROME_H = TOP_BAR_H + BOT_STATUS_H;                    // 90, measured
-  const FLOATING_ACTIONS_H = rs(56);                  // PRD.zone.actionBarH
+  // FLOATING-ACTIONS-H 2026-08-14 — was `rs(56)` = 56, and the reserved bottom chrome measures
+  // 101. This is the term that BINDS: it is consumed at :229 inside the fit-search that
+  // produces _MODE_BOARDS_CONTENT, which :327's Math.min then uses to set _boardsZoneH. The
+  // earlier correction to _handMarginB (:299) was the same premise applied at :317 — downstream
+  // of that clamp — which is why it was correct and moved nothing.
+  //
+  // MEASURED at 375 / 393 / 1706 / 1920, space below the hand:
+  //   below hand      118   119   129   128
+  //   gap (flex)       17    18    28    27
+  //   below - gap     101   101   101   101   <- flat at every width
+  // The gap is leftover space being ABSORBED, not reserved chrome; counting it would
+  // double-book the slack. Rule 20: 101 does not scale, so it must not sit behind rs().
+  //
+  // Parts, so the next reader can check them: the ⚡ Auto-Place ALL row (33 at all four widths)
+  // plus the Cancel/Confirm bar container (71), less the 3px by which they overlap.
+  const AUTO_PLACE_ROW_H = 33;   // measured 375/393/1706/1920 — identical
+  const ACTION_BAR_H = 71;       // Cancel/Confirm container incl. its bottom inset
+  const AUTO_BAR_OVERLAP = 3;    // the two touch; do not count it twice
+  const FLOATING_ACTIONS_H = AUTO_PLACE_ROW_H + ACTION_BAR_H - AUTO_BAR_OVERLAP;  // 101
 
   // FIT-ALL-BOARDS 2026-06-09 — Settings-controlled max board card height.
   // Persisted in AsyncStorage under 'max_board_card_h_dp'. Default rh(70) gives
@@ -293,11 +311,10 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
   // The two flat parts are flat for real reasons — the action bar and the Auto-Place row
   // measured identically at 393 and 1706 — so they are written as measured constants, while
   // the hand→Auto-Place gap does scale (18 at 393, 28 at 1706) and stays behind rs().
-  const ACTION_BAR_H = 71;      // Cancel/Confirm row, measured at 393 AND 1706
-  const AUTO_PLACE_ROW_H = 33;  // ⚡ Auto-Place ALL, measured at 393 AND 1706
-  const AUTO_BAR_OVERLAP = 3;   // the two touch by 3px; do not double-count it
-  const _handMarginB =
-    rs(18) + AUTO_PLACE_ROW_H + ACTION_BAR_H - AUTO_BAR_OVERLAP + insets.bottom;
+  // Same measured chrome as FLOATING_ACTIONS_H above, plus the flexible gap. NOTE: this term
+  // is INERT — :327's Math.min discards whatever :317 computes. Kept correct rather than
+  // deleted so it does not become a second wrong premise if the clamp ever stops binding.
+  const _handMarginB = rs(18) + FLOATING_ACTIONS_H + insets.bottom;
   const _chromeSafety = rs(28); // padding/borders/FadeIn wrapper overhead
   const _gridSidePad = _gridSidePadIfWide;
 
