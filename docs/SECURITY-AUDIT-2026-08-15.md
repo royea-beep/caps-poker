@@ -143,6 +143,104 @@ statement is that I do not know, not that there is none. **Edge Function `verify
 checked; MEMORY's "6 of 11 false" is unverified. **Branch run** to prove the five economic
 functions — not started.
 
+---
+
+# Part 3 — anon reachability (FB1/FB2, partial)
+
+Tested from a **real anon client over PostgREST** (Node `fetch`, the published anon key lifted
+live from the bundle), not from SQL — because the grant is what SQL shows and rows-returned is what
+SQL cannot.
+
+## PII tables from a real anon client — the finding DE-ESCALATES
+
+`SELECT * limit 1` on each of the twelve tables holding the flagged columns:
+
+| table | anon result | verdict |
+|---|---|---|
+| `push_tokens` | 200, **0 rows** | RLS blocks — token NOT exposed |
+| `bug_notifications` | 200, **0 rows** | RLS blocks — approval_token NOT exposed |
+| `account_deletion_requests` | 200, **0 rows** | RLS blocks — ip_address NOT exposed |
+| `bug_reports` | 200, **0 rows** | RLS blocks — tester_name NOT exposed |
+| `user_profiles` | 200, **0 rows** | RLS blocks |
+| `room_players` | 200, **0 rows** | RLS blocks |
+| `hand_history` | 200, **0 rows** | RLS blocks |
+| `leaderboard` | 200, **1 row** | player_name, device_id, chips, elo returned |
+| `clubs` | 200, **1 row** | club name, owner_device_id returned |
+| `club_members` | 200, **1 row** | display_name, device_id returned |
+| `game_rooms` | 200, **1 row** | host_name, game_config returned |
+| `sit_and_go_players` | 200, **1 row** | player_name, device_id returned |
+
+**The three highest-concern columns from Part 2 — `push_tokens.token`,
+`bug_notifications.approval_token`, `account_deletion_requests.ip_address` — return ZERO rows to a
+real stranger.** RLS holds where it matters. This is exactly the disclosure the grant could not
+confirm or deny, and it de-escalates the PII item from "14 columns exposed" (which would have been
+wrong) to "five public-facing tables leak `device_id` alongside display names."
+
+**What does leak, and is worth Roye deciding on:** every one of the five readable tables exposes
+`device_id` next to a display name. `device_id` is the impersonation key for the entire anon
+economy (Part 1). A stranger can page the leaderboard and harvest a `device_id`↔name map, and Part
+1's functions take `device_id` as the identity. The leak and the impersonation surface compound.
+
+## The five economic RPCs — reachable and anon-granted, exploit NOT proven this session
+
+The empty-body probe returned `404 PGRST202` for all five — but that is **PostgREST overload
+resolution** (it searched for a zero-argument version and found none), **not** an access block.
+Catalog-side, last sprint's `has_function_privilege('anon', …)` already confirmed all five carry
+the anon EXECUTE grant, and PostgREST exposes anon-granted functions by name. So the verdict is
+**reachable + granted**; a correctly-shaped call from a stranger's browser reaches the function
+body.
+
+**What remains unproven is that repeated calls stack** — the idempotency finding from Part 1. That
+proof requires a real write, which per Iron Rule #11 goes on the pre-authorised branch.
+
+**I did not run the branch this session, deliberately.** A branch run is create → migrate → register
+test device → call → observe → delete → confirm-deletion, and I am close enough to the context
+limit that stalling mid-sequence would leave a branch undeleted — production-adjacent infrastructure
+running and billing, the exact half-finished state the rules exist to prevent. Deferring it to a
+run where it is the first action with full context is the safer call. No cost incurred; the branch
+authorisation still stands.
+
+## Rate limiting — NOT PROBED
+
+Still not tested. I prioritised the reachability and disclosure questions, which size the rest.
+Unchanged from last sprint: I do not know, rather than "there is none." Supabase provides no
+per-RPC rate limiting by default; limiting is the caller's to add. That is a platform fact, not a
+probe result, and it is labelled as such.
+
+## Edge Functions `verify_jwt` — MEMORY confirmed exactly
+
+11 active functions. **6 have `verify_jwt: false`:**
+
+| function | verify_jwt | what it is / assessment |
+|---|---|---|
+| `telegram-bot-handler` | false | **deliberate** — a webhook; Telegram cannot send a JWT |
+| `legal` | false | **deliberate** — serves terms/privacy, must be public |
+| `log-error` | false | plausibly deliberate — clients log errors before auth; but it is an unauthenticated write endpoint, worth a rate check |
+| `analyze-bug-report` | false | **review** — if it does AI/DB work on call, it should not be open |
+| `flush-outbound` | false | **review** — sounds like an internal queue flush; open is wrong if so |
+| `retriage-pending` | false | **review** — sounds like an internal cron; open is wrong if so |
+| `sync-bugs-to-drive` · `whatsapp-bot-handler` · `crash-analyzer` · `auto-fix-crashes` · `anthropic-proxy` | true | gated; `anthropic-proxy` correctly so — it fronts a paid API key |
+
+Two clearly deliberate, one plausibly so, **three worth reviewing** (`analyze-bug-report`,
+`flush-outbound`, `retriage-pending`). Not fixed; their bodies not read this session.
+
+## Headers config Roye would need — stated, NOT applied
+
+The cheapest real fix on the whole audit: a `vercel.json` `headers` block, no code, no schema.
+It would add, for `/(.*)`:
+
+```
+Content-Security-Policy: frame-ancestors 'none'   (closes clickjacking outright)
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
+
+A full `script-src`/`connect-src` CSP is more work and risks breaking the app, so it needs its own
+pass; `frame-ancestors` + `X-Frame-Options` alone closes the framing/clickjacking finding and is
+safe to ship. **Not applied — this is the deliverable, not the fix.**
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
