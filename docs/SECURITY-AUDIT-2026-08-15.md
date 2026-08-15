@@ -395,6 +395,75 @@ The other half of the compound finding. It may be the cheaper side: dropping `de
 anon-readable leaderboard projection (a view or column-level revoke) removes the impersonation *key*
 without touching the economy functions at all. Not designed here — its own brief.
 
+---
+
+# Part 6 — close the key (FF1) + the leaderboard-write scare (FF2)
+
+## FF2 first — anon leaderboard writes: the grant is there, RLS blocks it, PROVEN on live
+
+`anon` and `authenticated` both hold `SELECT, INSERT, UPDATE, DELETE, TRUNCATE` on `leaderboard`.
+That is alarming until the policies and a live probe resolve it:
+
+- RLS is **enabled**. The write policies — `srv_leaderboard_update`, `srv_leaderboard_delete`,
+  `leaderboard_insert_service_only` — are all scoped to **`{service_role}`**. `leaderboard_select`
+  is `USING true` for all roles (anon reads, expected). So anon has **no applicable write policy**.
+- **Live probe from a real anon client, production:**
+  - `INSERT` → **401 / 42501** `new row violates row-level security policy`. Blocked.
+  - `UPDATE`/`DELETE` on a **nonexistent** row → 200 / `[]`. *Inconclusive* — 0 rows are eligible
+    either way, so this cannot distinguish (the same vacuous-truth trap as the earlier PostgREST
+    overload 404).
+  - **`UPDATE` on a REAL row** (a harmless same-value no-op, `return=representation`) → **200 with
+    empty `[]`.** The row was **excluded by RLS, not updated.** A successful write would have
+    returned the row.
+
+**Verdict: anon CANNOT update, delete or insert leaderboard rows.** The grant is present but RLS
+denies it — grant necessary, not sufficient, the same principle that de-escalated the PII columns.
+Not a finding. The nonexistent-row probe would have looked clean *and* proven nothing; the real-row
+representation test is what settles it.
+
+## FF1 — the leaked `device_id`, and the fix reuses code we already have
+
+**Anon projections exposing `device_id`:** `leaderboard`, `clubs`, `club_members`, `game_rooms`,
+`sit_and_go_players` (all `SELECT USING true`). The leaderboard is the harvestable one — a ranked,
+paged list of every player's `device_id` next to a name.
+
+**Does any client screen need it?** `app/leaderboard.tsx` uses `device_id` for exactly two things,
+both the self-marker pattern:
+- `item.device_id === myDeviceId` → the "this row is me" highlight (`:59`, `:63`)
+- `entry.device_id?.slice(-4)` → a last-4-char display fallback when there is no name (`:22`)
+
+No screen needs *other* players' `device_id`. And the server already computes the self-marker:
+`get_leaderboard(p_device_id, p_limit)` (exists, anon-granted) emits `'is_me', (device_id =
+p_device_id)` per row — **but it also still emits `'device_id', device_id`,** so routing through it
+today would not close the leak. One field is the whole gap.
+
+**Removal design (recommended): reuse + column-revoke, in three coupled parts.**
+1. **Server:** drop the `'device_id', device_id` field from `get_leaderboard`'s row objects (keep
+   `is_me`). One field removed from an existing function.
+2. **Client:** switch `leaderboard.tsx` from `.from('leaderboard').select()` to
+   `rpc('get_leaderboard', {p_device_id, p_limit})`; use `is_me` for the highlight; replace the
+   last-4 `device_id` suffix with a non-sensitive fallback (rank number, or "Player").
+3. **DB:** `REVOKE SELECT (device_id) FROM anon, authenticated` on `leaderboard` (column-level),
+   closing the direct-table path too. The SECURITY DEFINER RPC still reads `device_id` internally
+   for the comparison; it just never emits it.
+
+**Why column-revoke over a view:** a view without `device_id` cannot compute `is_me` for an anon
+caller (no server identity), so it would still need the device_id passed as a parameter — which is
+exactly what the RPC already does. The RPC is the view-with-a-parameter, already written.
+
+**Blast radius / what breaks if the client is not updated together:** the current client reads
+`device_id` directly for the highlight and the suffix. If the column is revoked before the client
+switches to the RPC, the direct `select` fails with a column-permission error → **the leaderboard
+does not load**, and both the self-highlight and the name fallback break. All three parts land in
+one release (the channel-work lesson).
+
+**The other four tables** (`clubs`, `club_members`, `game_rooms`, `sit_and_go_players`) leak
+`device_id` the same way but are not a ranked harvest list. Same pattern; lower priority; noted.
+
+**This closes the compound finding's key half without any binding or backfill** — and it defuses
+impersonation for all four economy functions at once, including `spend_chips`, which the interim
+economy plan could not close.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
