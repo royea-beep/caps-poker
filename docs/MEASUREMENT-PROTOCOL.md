@@ -582,6 +582,39 @@ collision" was scroll content being measured outside its own viewport.
 Overflow is still worth reporting — it means board content sits below the fold — but it is a
 scroll-affordance finding, not a collision, and it must not be filed as one.
 
+## Rule 23 — measure the box that occupies space, not the mark you can see; and "different layer" is not "intentional"
+
+Two ways to miss a collision that is plainly visible on screen. Both fired on the same defect.
+
+**23a — the glyph is not the control.** A `✕` drawn 13px wide inside a `<button>` with
+`minWidth/minHeight: 44` occupies **44px**. Anchor a probe on the character and the neighbouring
+element looks 18px clear; anchor it on the button and they overlap by 10. The accessibility target
+is real geometry and it is invisible in a screenshot, which is exactly why it must be measured
+rather than eyeballed.
+
+Symptom to watch for: a probe using `querySelectorAll(...).pop()` or text matching. Those select
+the innermost node — the `Text`, the glyph — while layout is done by an ancestor. **Select by role
+or testID, and print the box you matched** so the mismatch is visible in the output.
+
+**23b — Rule 19's layer test suppresses real chrome collisions.** Rule 19 buckets a pair as
+overlay-kind when the two elements have different nearest positioned ancestors. That is right for a
+tooltip, a dim layer or an attention arrow — transient things *painted over* content on purpose.
+It is wrong for two **permanent controls**: an absolutely-positioned status pill overlapping a
+button's touch target is in a different layer and is still a defect.
+
+**Cited case, 2026-08-15.** The practice pill sat 10px inside the `✕` button — 10×25.3 at 393,
+11×25.3 at 900 and 1100, at 3 boards and 4 boards alike. Width-independent, configuration-
+independent, present in every sprint of the layout arc. Every sweep reported the header clean:
+the targeted probes compared the glyph to the pill's inner `Text` (genuinely 18px apart), and the
+all-pairs sweep classified the real pair as overlay-kind and dropped it. The source comment that
+placed the pill recorded the same error in words — *"the ✕ (ends x 41)"* — 41 being the glyph and
+56 being the button.
+
+**Rule:** overlay-kind requires *different layer* **and** a transient/decorative role — a tooltip,
+dim layer, arrow, or modal. Two permanent controls in different layers are a normal-flow defect.
+When in doubt, report the pair rather than suppress it; Rule 19 exists to bucket findings, never to
+delete them.
+
 ## Rule 21 — a layout sweep must state its configuration, and one board count proves nothing about another
 
 CAPS renders a different screen per player count: **2P = 4 boards / 16 cards · 3P = 3 boards /
