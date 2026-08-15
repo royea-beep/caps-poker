@@ -1547,13 +1547,28 @@ const styles = StyleSheet.create({
     // header's "PLACE N CARDS" pill (freePlayLabel, :1434) is right-aligned and reaches back to
     // x 236 at 390px, while a centred practice pill spans x 132-258. Measured 22px of horizontal
     // overlap at EVERY board count (2P/3P/4P), with the teal pill drawn across "no chips".
-    // Anchored into the free band between the ✕ (ends x 41) and the PLACE pill (starts x 236)
-    // instead — 195px that nothing else occupies.
+    // Anchored into the free band between the ✕ and the PLACE pill (starts x 236) instead.
+    //
+    // BUILD-95E169F 2026-08-15 — that band was measured wrong, and this is the correction.
+    // "the ✕ (ends x 41)" is the GLYPH. The ✕ is a <button> with minWidth/minHeight 44 for the
+    // touch target, and its box is 44x44 spanning x 12-56. left: rs(46) therefore put this pill
+    // 10px INSIDE the button, at every width and every board count — measured 10x25.3 at 393,
+    // 11x25.3 at 900 and 1100, 3 boards and 4 boards alike. It has been there the whole time.
+    //
+    // Why no sweep caught it, twice over, and both are instrument defects now fixed:
+    //   1. The probes anchored on the visible glyph and the pill's inner Text, which really are
+    //      18px apart. The painted boxes -- button and pill container -- are not.
+    //   2. The pill is position:absolute and the button is not, so Rule 19's layer test scored
+    //      the pair "different layers = intentional overlay" and suppressed it. That test is
+    //      right for a tooltip over content and wrong for two permanent chrome controls.
+    // See MEASUREMENT-PROTOCOL Rule 23.
+    //
+    // Clearing the BUTTON, not the glyph: 56 + 8px of breathing room.
     // NOT fixed with zIndex: raising this above would just hide "PLACE N CARDS" instead, and
     // that string is the actual instruction during placement. That trades down, not up.
     // NOT stacked onto its own row: the gap between the header row (bottom y 39) and the bot
     // status row (top y 57) is 18px for a 16px pill. 1px of clearance is not a fix.
-    left: rs(46),
+    left: rs(64),
     backgroundColor: 'rgba(245,181,70,0.16)',
     borderWidth: 1,
     borderColor: 'rgba(245,181,70,0.5)',

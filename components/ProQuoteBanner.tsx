@@ -50,11 +50,29 @@ async function checkKillSwitch(): Promise<boolean> {
 // ── Active player instance (module-level — one clip at a time) ──────────
 let currentPlayer: any = null;
 
+// BUILD-95E169F 2026-08-15 — on web, play() and pause() return PROMISES. The try/catch below
+// only ever caught synchronous throws, so a rejection escaped as an UNHANDLED rejection and
+// surfaced in DevTools: "NotAllowedError: play() failed because the user didn't interact with
+// the document first" (x4, autoplay policy before any gesture) and "AbortError: The play()
+// request was interrupted by a call to pause()".
+//
+// Harmless in effect — the clip simply does not play — but it is noise on a screen every tester
+// opens, and noise is where real errors hide. `utils/sounds.ts:120` already had this guard; the
+// Pro Voice path never got it.
+function settle(r: any): void {
+  if (r && typeof r.catch === 'function') r.catch(() => {});
+}
+function safePause(p: any): void {
+  try { settle(p.pause()); } catch {}
+}
+
 async function playVoiceClip(audioFile: any): Promise<void> {
   if (!createAudioPlayer || !audioFile) return;
   try {
     if (currentPlayer) {
-      currentPlayer.pause();
+      // Pausing a player whose play() promise is still pending is what produces
+      // "AbortError: The play() request was interrupted by a call to pause()".
+      safePause(currentPlayer);
       currentPlayer.remove();
       currentPlayer = null;
     }
@@ -66,7 +84,7 @@ async function playVoiceClip(audioFile: any): Promise<void> {
         if (currentPlayer === player) currentPlayer = null;
       }
     });
-    player.play();
+    settle(player.play());
   } catch (e) {
     debugLog(`[ProQuoteBanner] Voice playback failed: ${e}`, 'warn');
   }
@@ -74,8 +92,9 @@ async function playVoiceClip(audioFile: any): Promise<void> {
 
 async function stopVoiceClip(): Promise<void> {
   if (currentPlayer) {
-    currentPlayer.pause();
-    currentPlayer.remove();
+    // Had no try/catch at all — this is where the AbortError came from on unmount.
+    safePause(currentPlayer);
+    try { currentPlayer.remove(); } catch {}
     currentPlayer = null;
   }
 }
