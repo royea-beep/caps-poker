@@ -241,6 +241,71 @@ A full `script-src`/`connect-src` CSP is more work and risks breaking the app, s
 pass; `frame-ancestors` + `X-Frame-Options` alone closes the framing/clickjacking finding and is
 safe to ship. **Not applied — this is the deliverable, not the fix.**
 
+---
+
+# Part 4 — branch-proof run (FC1)
+
+## The branch failed, and the test pivoted honestly
+
+Branch `sec-branchproof` (`lsvmztmptnlknjtyrdzw`) was created at the pre-authorised rate, but came
+up **`MIGRATIONS_FAILED`** — the database provisioned (`ACTIVE_HEALTHY`) but the migration chain
+errored before creating the five functions (`test_devices` and all five absent; `leaderboard`
+present, so it failed partway). The dynamic double-call test could not run on it.
+
+Per Iron Rule #4, I **deleted the branch immediately** and confirmed by listing (only `main`
+remains). Elapsed ~13 minutes, cost a few cents.
+
+**The double-call is not the only evidence available.** The accumulation question — is there
+idempotency — is a property of the function *body*, and the body is readable from production
+read-only via `pg_get_functiondef`. That is the **actual executed code**, not a signature guess
+(the distinction Iron Rule #14 draws), and I confirmed there are **no triggers** on `leaderboard`,
+`chip_transactions` or `user_missions` that could add a dedup the source does not show. This is one
+step short of a live double-call — it cannot catch a runtime surprise the code and schema don't
+contain — and it is labelled as code-read, not execution.
+
+## `econ_authz_probe` — detection, not prevention (new)
+
+Three of the five open with `PERFORM econ_authz_probe(fn, device_id)`. It is **not a guard**: it
+`INSERT`s one `analytics_events` row for the `no_session` and `uid_mismatch` cases and is wrapped
+in `EXCEPTION WHEN OTHERS THEN NULL` — *"instrumentation must NEVER break an economy call."* So
+every anonymous economy call **is logged** (device_id, function, `no_session`), and **none is
+blocked.** Abuse is observable after the fact, not silent — a real mitigating factor, and it is
+why the tripwire exists.
+
+## Per-function verdict, from the executed code
+
+| function | accumulates? | bound | note |
+|---|---|---|---|
+| `earn_chips` | **YES** | `+v_amt` per call, clamped to **≤1500**, event whitelisted | `UPDATE leaderboard SET total_chips = total_chips + v_amt` — no dedup. N calls = N×1500. |
+| `spend_chips` | **YES (griefing)** | down to the victim's balance | unconditional decrement; drains any device with a leaderboard row to 0 |
+| `update_leaderboard_elo` | **YES** | **+20 per call, unbounded** | client asserts `p_won`; also inflates `games_played`, `wins`, `win_rate`. No dedup. |
+| `update_mission_progress` | bounded | `LEAST(progress+amount, target)` | caps at the mission target, but forces `completed=true` without doing the mission |
+| `add_xp` (device) | **NO for pure-anon** | returns `{ok:false, no_user}` if the device has no linked account | delegates to the uuid variant only when a user_id exists; that body not read |
+
+**Absurd amount: NOT accepted.** `earn_chips` clamps `v_amt` to `GREATEST(-500, LEAST(1500, …))`.
+This corrects the Part 1 worry — "takes the amount as a parameter" is real but **bounded to 1500
+per call**, not unbounded. The unboundedness is in the *repetition*, not the per-call amount.
+
+**Asserted win: accepted.** `update_leaderboard_elo` takes `p_won boolean` and applies `+20` on
+`true` with no verification.
+
+**Foreign `device_id`: acted on — YES.** No ownership check, and the probe does not block, so a
+call operates on whatever `device_id` is passed, provided that device has a `leaderboard` row —
+which every player has and which the public leaderboard leaks.
+
+## Verdict
+
+**Accumulation proven (from code) for four of five: `earn_chips`, `spend_chips`,
+`update_leaderboard_elo` accumulate without bound across calls; `update_mission_progress`
+accumulates but is target-capped. `add_xp` is safe for a pure-anon device.** Not a live
+double-call — the branch prevented that — but read from the actual function bodies with the schema
+confirmed to hold no compensating trigger.
+
+**What an attacker can do, one sentence:** With any `device_id` harvested from the public
+leaderboard, an unauthenticated caller can credit that account up to 1500 chips per call and
+inflate its ELO by +20 per call with no cap on repetition, or drain any account to zero — every
+call logged by `econ_authz_probe` but none prevented.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
