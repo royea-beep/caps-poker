@@ -155,6 +155,26 @@ theme's accent.
 Routes with no gold at all: friends, cups, profile, achievements, shop, chip-store, missions,
 stats, hand-history, results, lobby, battle-pass, referral, coaching.
 
+## The 10px band — NINE fixes, not one, and that is the finding
+
+The gold sweep was worth doing because gold was **one settled map applied inconsistently**, so
+correcting it is one decision. I expected the small-text band to be the same shape. It is not.
+
+`fontSize: rf(10)` and `rf(9)` are declared **independently in at least fifteen files** — 30+
+separate declarations, each inside that screen's own local `StyleSheet`. There is no shared type
+token, no `caption`/`label`/`micro` scale, nothing to change in one place:
+
+`(tabs)/cups.tsx:71` · `(tabs)/profile.tsx:63` · `(tabs)/index.tsx:2283, 2376, 2393, 2435, 2478` ·
+`leaderboard.tsx:323, 338, 352` · `battle-pass.tsx:477, 522, 571, 649` · `coaching.tsx:60, 96,
+106, 112` · `hand-history.tsx:440, 499, 504` · `chip-store.tsx:375` · `club/[code].tsx:232, 243,
+260` · `game.tsx:1487, 1612` · `AvatarPicker.tsx:138` · `AchievementToast.tsx:78` ·
+`heatmap.tsx:409` (`rf(8)`)
+
+**So raising the floor is not a one-line change; it is a decision about whether this app should
+have a type scale at all.** Right now every screen re-declares its own sizes, which is why the
+band exists and why it will drift again after any one-off fix. That is the real item, and it is
+architectural rather than cosmetic. Recorded, not fixed, and explicitly not ordered.
+
 ## Screens CAPTURED and instrument-triaged, but NOT visually reviewed
 
 Flags below are from the probe, not from looking. **None of these is cleared.** `minFont` is the
@@ -194,6 +214,52 @@ achievements, lobby, theme-pick, missions). The 8px and 9px cases are below anyt
 at arm's length; the 10px band needs judgment, not arithmetic.
 
 ---
+
+## Summary — all 22 routes
+
+| screen | class | one line |
+|---|---|---|
+| home (onboarding) | **EMBARRASSING** | first-run carousel spends gold on a `Continue` button; heavy dim hides the screen behind |
+| game 393, 4 boards | COSMETIC | reads as one family now; tutorial tip covers Board 4 |
+| game 1706 | COSMETIC | same; tip covers Board 3, Board 4 below the fold (accepted) |
+| reveal | **CLEAN** | gold winner border against mint field, neutral hand — reads correctly |
+| replay (empty) | **EMBARRASSING** | black screen, no header, floating gold Back — reads as a crash page |
+| play | COSMETIC | strongest screen; five border colours with no system; bottom third empty |
+| stats (empty) | **CLEAN** | the reference empty state — icon, headline, explanation, skeletons, mint CTA |
+| rank | **EMBARRASSING** | "#738 of 754" to a player with 0 games, and the screen contradicts its own "no official rank yet" |
+| battle-pass | *not reviewed* | 9px text, 3 clipped elements |
+| leaderboard | *not reviewed* | 8 clipped elements |
+| achievements | *not reviewed* | 7 clipped elements |
+| lobby | *not reviewed* | 3 clipped |
+| settings | *not reviewed* | 2 clipped |
+| referral | *not reviewed* | 1 clipped |
+| friends · cups · profile | *not reviewed* | 10px band |
+| shop · chip-store · missions | *not reviewed* | — |
+| theme-pick | *not reviewed* | gold `SELECT` button |
+| hand-history (empty) | *not reviewed* | compare against `stats` |
+| coaching (empty) | *not reviewed* | compare against `stats` |
+| results (empty) | *not reviewed* | compare against `stats` |
+| gameover | *not reviewed* | gold `MAIN MENU` control |
+
+**BLOCKER: none found in the 8 reviewed.** Nothing yet gates the tester round on visual grounds.
+That is a statement about 8 screens, not 22.
+
+## Why this is going slowly, plainly
+
+The constraint is **working context per session, not effort**. Each screenshot costs a large,
+fixed share of the window to actually look at, so the honest rate is **2–4 screens per session**,
+and no amount of urgency changes it. The last three sprints did 4, 2 and 2 — that is the real
+throughput, and at it the remaining 14 need roughly four more sessions.
+
+Two ways to go faster, both trade-offs worth naming rather than absorbing silently:
+- **Crop before looking.** Most findings so far were in the top third or a single control. Capturing
+  and reviewing regions rather than full 393×852 pages would roughly double the rate at the cost
+  of missing whole-screen composition problems — which is where `play`'s empty bottom third and
+  home's heavy dim came from.
+- **Accept the audit spans sessions** and keep the not-cleared list honest, which is what it does
+  now.
+
+I am not choosing between these; it is Roye's call whether coverage or composition matters more.
 
 ## Where this stopped
 
