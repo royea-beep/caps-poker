@@ -464,6 +464,67 @@ one release (the channel-work lesson).
 impersonation for all four economy functions at once, including `spend_chips`, which the interim
 economy plan could not close.
 
+---
+
+# Part 7 — DROP-THE-KEY execution (parts 1+2 shipped; part 3 BLOCKED, honestly)
+
+## Shipped and verified
+
+- **Part 1** (`get_leaderboard_drop_device_id`, applied): the RPC no longer emits `device_id`;
+  `is_me` and a rank-based `display_name` replace its two client uses; bot filter moved server-side.
+  Verified live: payload has `is_me`, no `device_id`.
+- **Part 2** (`ce2643e`, web deployed & verified both engines): `getLeaderboard()` routes through the
+  RPC; `leaderboard.tsx` uses `is_me` and `display_name`. The screen renders "Player #N" fallbacks,
+  no blank names, zero page errors, self-highlight logic intact.
+
+**Order held:** client shipped and confirmed working before any revoke. Never revoke-first.
+
+## Part 3 — the REVOKE is BLOCKED, and watch-it-run is why I know
+
+I applied `REVOKE SELECT (device_id) … FROM anon, authenticated`. The migration **succeeded and did
+nothing** — a real anon client still reads `device_id` (`SELECT device_id → 200`, value returned).
+Cause: a **column-level REVOKE does not carve a column out of a table-level `SELECT` grant.** anon
+holds table-wide `SELECT`, so the column stays readable. The migration is a no-op; the DB is
+unchanged (nothing broken, nothing closed).
+
+The correct form is **`REVOKE SELECT ON leaderboard FROM anon, authenticated` then
+`GRANT SELECT (<every column except device_id>) …`**. That would work — **and it would break
+`app/rank.tsx`**, which reads `leaderboard` at three sites and **filters on `device_id`**:
+- `:64` `.eq('device_id', deviceId)` — my own row
+- `:73`, `:79` `.not('device_id', 'like', 'bot_%')` — counts
+
+Filtering on a column needs `SELECT` on it, so the column-grant that excludes `device_id` breaks all
+three — on **every** client, web and native, until `rank.tsx` is migrated to an RPC in the same
+release. That is the "do not break the game" line.
+
+## Honest status of the key
+
+**The app no longer transmits `device_id` through the leaderboard screen — but the raw column is
+still anon-readable directly over PostgREST.** So the harvest vector is **not closed at the DB
+layer.** Parts 1+2 are real (they remove the in-app UI path and are the prerequisite for the
+revoke), but the compound finding's key half is **not** closed until:
+1. `rank.tsx`'s three `device_id`-filtered leaderboard reads move to an RPC (e.g. `get_player_rank`
+   by device), and
+2. `REVOKE SELECT ON leaderboard FROM anon, authenticated; GRANT SELECT (<non-device_id cols>) …`.
+
+Both land in one release. I did not apply the breaking revoke, and the no-op one changed nothing.
+
+## What this closes and what it does not
+
+- **Closes:** the leaderboard *screen* as a device_id source; the client no longer needs or fetches
+  the key. Prerequisite done.
+- **Does NOT close:** direct PostgREST `SELECT device_id FROM leaderboard` (still 200), and the four
+  economy functions still accept any `device_id` obtained any way. This is one half of the compound
+  finding and it is not yet sealed at the DB.
+
+## The other four tables (FG3) — same shape, one existing RPC each where it matters
+
+`clubs`, `club_members`, `game_rooms`, `sit_and_go_players` expose `device_id` to anon. Consumers:
+`app/club/[code].tsx` and the lobby/table screens. None is a ranked harvest list. Same fix shape —
+route reads through an RPC that omits `device_id`, then table-revoke + column-grant — and each has
+the same `rank.tsx`-style trap: any client-side filter on `device_id` must move server-side first.
+**Not fixed this sprint;** one follow-up brief once the leaderboard+rank pattern is proven end to end.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
