@@ -58,33 +58,19 @@ export default function RankScreen() {
       const sb = getSupabase();
       if (!sb) { setLoading(false); return; }
 
-      const { data: row } = await sb
-        .from('leaderboard')
-        .select('elo, games_played, wins, total_chips')
-        .eq('device_id', deviceId)
-        .maybeSingle();
-
-      // VAMOS-CAPS-LEADERBOARD-HIDE-BOTS: exclude seed bot rows so rank position
-      // and total-player counts reflect real players only (bots are not opponents
-      // sourced from this table — see utils/gameLogic + BOT_NAMES constants).
-      const { count } = await sb
-        .from('leaderboard')
-        .select('*', { count: 'exact', head: true })
-        .not('device_id', 'like', 'bot_%')
-        .gte('elo', row?.elo ?? 1000);
-
-      const { count: total } = await sb
-        .from('leaderboard')
-        .select('*', { count: 'exact', head: true })
-        .not('device_id', 'like', 'bot_%');
-
-      if (row) {
+      // CLOSE-IT-PROPERLY 2026-08-15 — was three direct leaderboard reads that all filtered on
+      // device_id (.eq my row, .not bot_% for position and total). Filtering needs SELECT on the
+      // column, which blocked the device_id column-revoke. Moved server-side into
+      // get_player_rank_by_device, which returns the same five numbers and emits no device_id.
+      // Same non-bot filter and same `?? 1000` default; verified equal to the old query output.
+      const { data: r } = await sb.rpc('get_player_rank_by_device', { p_device_id: deviceId });
+      if (r && r.has_row) {
         setData({
-          elo: row.elo ?? 1000,
-          gamesPlayed: row.games_played ?? 0,
-          wins: row.wins ?? 0,
-          rankPosition: count ?? 1,
-          totalPlayers: total ?? 1,
+          elo: r.elo ?? 1000,
+          gamesPlayed: r.games_played ?? 0,
+          wins: r.wins ?? 0,
+          rankPosition: r.rank_position ?? 1,
+          totalPlayers: r.total_players ?? 1,
         });
       }
     } catch {
