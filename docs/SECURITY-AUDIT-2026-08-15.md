@@ -70,6 +70,79 @@ proof, and I am labelling them as such rather than asserting a working exploit.
 4. **`update_mission_progress`** — anon, arbitrary device, no dedup, time-gated only.
 5. **The other 64** of the 69 — enumerated and grouped, **not individually examined**.
 
+---
+
+# Part 2 — attack surface (FA1, partial)
+
+## Bundle secrets — CLEAN
+
+Live bundle `index-bdb96dec…js`, 3.83 MB. **No `service_role` key, no API secrets, no admin
+endpoints.** Two JWTs are present; both decode to the **same** token,
+`{"iss":"supabase","ref":"gxrpunvhjcrzqnitbqah","role":"anon"}` — the expected anon key, merely
+duplicated by the bundler. One Supabase origin, the project's own.
+
+`secret` ×7, `password` ×55, `Bearer ` ×9 appear as **substrings in library code and UI strings**
+(field labels, auth-flow text), not as literal credentials — verified by decoding every JWT-shaped
+match. **No source maps** (`sourceMappingURL` count 0), which also pre-answers part of EZ3.
+
+## Headers on `caps.ftable.co.il` — one of six present
+
+| header | status |
+|---|---|
+| `Strict-Transport-Security` | **present** — `max-age=63072000` |
+| `Content-Security-Policy` | **MISSING** |
+| `X-Frame-Options` | **MISSING** |
+| `X-Content-Type-Options` | **MISSING** |
+| `Referrer-Policy` | **MISSING** |
+| `Permissions-Policy` | **MISSING** |
+
+No CSP and no `X-Frame-Options` means the site can be framed — clickjacking is available against
+any in-app action, and there is no script-source restriction if any injection point exists.
+
+## Storage buckets — one is public
+
+| bucket | public |
+|---|---|
+| `screenshots` | **TRUE** |
+| `bug-recordings` | false |
+| `crash-recordings` | false |
+| `debug-screenshots` | false |
+| `signing-vault-backup` | false |
+
+`screenshots` being public means anything written there is world-readable by URL. Contents not
+enumerated. `signing-vault-backup` is correctly private, but a bucket by that name existing at all
+is worth Roye knowing about.
+
+## PII — where it is, and an important qualification
+
+Columns matching personal-data patterns, with the **table-level `anon` SELECT grant** and RLS
+state. Highest concern first:
+
+| column | RLS | anon SELECT grant |
+|---|---|---|
+| `push_tokens.token` | on | **granted** |
+| `bug_notifications.approval_token` | on | **granted** |
+| `account_deletion_requests.ip_address` | on | **granted** |
+| `account_deletion_requests.user_display_name` | on | **granted** |
+| `bug_reports.tester_name` | on | granted |
+| `user_profiles.display_name` · `leaderboard.player_name` · `room_players.display_name` · `club_members.display_name` · `clubs.name` · `game_rooms.host_name` · `hand_history.opponent_name` · `sit_and_go_players.player_name` | on | granted |
+
+**The qualification matters and I am not going to blur it:** `anon SELECT` here is the *table
+grant*. **RLS is ON for every one of these tables**, so whether any rows are actually returned
+depends on the row policies, which I did **not** enumerate. The grant is a necessary condition for
+exposure, not proof of it. `push_tokens.token`, `bug_notifications.approval_token` and
+`account_deletion_requests.ip_address` are the three worth proving or disproving first — a push
+token is a send-capability, an approval token is an authorisation, and an IP address is
+regulated personal data.
+
+## Not reached in FA1
+
+**Reachable-without-a-session enumeration** (which tables/RPCs actually return data to the anon
+key over PostgREST) — not run. **Rate limiting** — not probed; nothing proven, and the honest
+statement is that I do not know, not that there is none. **Edge Function `verify_jwt`** — not
+checked; MEMORY's "6 of 11 false" is unverified. **Branch run** to prove the five economic
+functions — not started.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
