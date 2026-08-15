@@ -176,8 +176,12 @@ export function BoardArrangement({
 
   // See the PARTIAL-PLACEMENT COLLISION note above. Declared here because `rs` is block-scoped to
   // this component and only exists from this line down.
-  const ACTION_BAR_CLEARANCE = Math.max(rs(56) + rs(4), 68);   // 60dp measured row + 8dp gap
-  const AUTO_BAR_H = 33;                                        // measured pill height, both widths
+  // ACTION_BAR_CLEARANCE and AUTO_BAR_H DELETED 2026-08-15 (BUILD-OPTION-A). Both described the
+  // absolute Auto-Place bar — its offset from the viewport bottom and its height — and both had
+  // zero consumers once that bar moved into the hand header. The 8dp bar gap they produced is
+  // unchanged for the Cancel/Confirm bar, which never read them. Removed rather than left
+  // unused: an unconsumed constant that still looks authoritative is how this file ended up
+  // with three copies of one wrong number.
 
   return (
     <>
@@ -385,14 +389,16 @@ export function BoardArrangement({
               // native. Cost: the boards region (flex:1) gives up ≤rs(24) on roomy
               // screens; on tight screens the hand flexShrinks instead — both keep the
               // last row clear.
-              // The rs(24) lift keeps the hand's last row clear of the Auto-Place bar. Now that the
-              // bar is floored at ACTION_BAR_CLEARANCE, the lift is floored to match — otherwise
-              // raising the bar would simply move the collision from the buttons up into the hand.
-              // Derived from the SAME constant as the bar, so the two cannot drift.
-              marginBottom: (!allBoardsFull && onAutoFillAll)
-                ? Math.max(rs(72) + insets.bottom + rs(8) + rs(24),
-                           insets.bottom + ACTION_BAR_CLEARANCE + AUTO_BAR_H + rs(4))
-                : (rs(72) + insets.bottom + rs(8)),
+              // BUILD-OPTION-A 2026-08-15 — the rs(24) lift and the ACTION_BAR_CLEARANCE +
+              // AUTO_BAR_H floor are RETIRED. Both existed for one reason: to hold the hand's
+              // last row clear of the absolute Auto-Place bar that floated below this panel.
+              // That bar is gone — the control is inside this panel's header now — so the
+              // compensation has nothing left to compensate for. Keeping it would reserve ~28dp
+              // of empty space under the hand forever, which is Rule 20's corollary: a constant
+              // that outlives the defect it was written for becomes the next wrong premise.
+              // The branch collapses to the plain bottom-chrome reservation, which is what the
+              // no-Auto-Place case already used.
+              marginBottom: rs(72) + insets.bottom + rs(8),
             },
           ]}
         >
@@ -410,6 +416,7 @@ export function BoardArrangement({
               handZoneH={handZoneH ?? HAND_ZONE_HEIGHT}
               maxCardH={maxHandCardH}
               universalCardW={universalCardW}
+              onAutoFillAll={!allBoardsFull && onAutoFillAll ? onAutoFillAll : undefined}
             />
           </ScrollView>
         </View>
@@ -475,22 +482,12 @@ export function BoardArrangement({
       {/* Auto-Place ALL — one-tap fill of every empty board. The per-board ⚡ chips on each
           Board header stay; this is an additive convenience. Sits in the winAllBanner slot
           (above the action bar), shown only while boards still have empty slots. */}
-      {isArranging && !allBoardsFull && onAutoFillAll && (
-        <View
-          style={[baStyles.autoAllBar, { bottom: insets.bottom + ACTION_BAR_CLEARANCE }]}
-          pointerEvents="box-none"
-        >
-          <Pressable
-            onPress={onAutoFillAll}
-            hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Auto-place all boards"
-            style={({ pressed }) => [baStyles.autoAllBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-          >
-            <Text style={baStyles.autoAllText}><Text style={baStyles.autoAllBolt}>⚡</Text> Auto-Place ALL</Text>
-          </Pressable>
-        </View>
-      )}
+      {/* autoAllBar DELETED 2026-08-15 (BUILD-OPTION-A). It was an absolute overlay pinned to
+          the viewport bottom, which left the pill floating alone in a bare band between two
+          navy panels — belonging to neither, and the thing Roye photographed three times. The
+          control now lives in the hand panel's own header row (PlayerHand), right-aligned,
+          mirroring the per-board `Auto-Place` chip. Deleted rather than hidden: an orphaned
+          overlay is how this file accumulated three copies of one wrong constant. */}
 
       {/* Floating action buttons */}
       {isArranging && (
@@ -730,33 +727,9 @@ const baStyles = StyleSheet.create({
   floatingBtnDisabled: {
     opacity: 0.4,
   },
-  autoAllBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 101,
-  },
-  autoAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(79,214,168,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.45)',
-    borderRadius: rsBase(20),
-    paddingVertical: rsBase(7),
-    paddingHorizontal: rsBase(16),
-  },
-  autoAllText: {
-    color: COLORS.mint,
-    fontSize: rfBase(13),
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  autoAllBolt: {
-    color: COLORS.mint,
-    fontSize: rfBase(13),
-  },
+  // autoAllBar / autoAllBtn / autoAllText / autoAllBolt DELETED 2026-08-15 (BUILD-OPTION-A).
+  // The chip now lives in PlayerHand's header row, styled to match the per-board control
+  // (radius 6, padding 1px 6px, font 11/800 mint) rather than the old radius-20 floating pill.
   undoBtnText: {
     // VAMOS-PLACEMENT-POLISH-2 FIX 2 — gold #F5C842 → mint
     color: COLORS.mint,

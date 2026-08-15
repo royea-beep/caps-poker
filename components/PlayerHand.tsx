@@ -27,6 +27,10 @@ interface PlayerHandProps {
    * coordinates on both platforms, so the number means the same thing everywhere.
    */
   onMeasureTop?: (y: number) => void;
+  /** BUILD-OPTION-A — when supplied, the hand header carries the "Auto-Place ALL" chip,
+   *  mirroring the per-board control. Optional so non-arranging mounts render the row
+   *  exactly as before. */
+  onAutoFillAll?: () => void;
   // FIT-ALL-BOARDS 2026-06-09 — actual rendered hand-zone height. When omitted,
   // falls back to PRD.zone.handMinH for backwards-compat. Game screen passes the
   // boards-first remainder so hand cards size to fit the real container.
@@ -89,7 +93,7 @@ function AnimatedCardSlot({
   );
 }
 
-export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH, universalCardW, onMeasureTop }: PlayerHandProps) {
+export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, handZoneH: handZoneHProp, maxCardH, universalCardW, onMeasureTop, onAutoFillAll }: PlayerHandProps) {
   const rootRef = React.useRef<View | null>(null);
   const lastTopRef = React.useRef<number | null>(null);
 
@@ -253,6 +257,35 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
         <View style={styles.countBadge}>
           <Text style={styles.countBadgeText}>{safeCards.length}</Text>
         </View>
+        {/* BUILD-OPTION-A 2026-08-15 — "Auto-Place ALL" moved here from the absolute
+            autoAllBar that floated in the bare band between this panel and the action bar.
+            The hand is the fourth panel on this screen and was the only one whose header
+            carried no action; a board header is label-left / chip-right, and this row is
+            the same shape (label + count badge). Measured free width to the right of the
+            badge is 259px at 393 and 186px at 320 — the chip is ~116px, so it fits at the
+            smallest supported width with room and costs ZERO vertical space, which matters
+            at 320 where the hand is 3 rows and the boards are already scroll-cut.
+            "ALL" is kept deliberately: it is the whole semantic difference from the four
+            per-board controls. Family resemblance comes from the chip styling. */}
+        {onAutoFillAll ? (
+          <>
+            <View style={styles.labelRowSpacer} />
+            <Pressable
+              onPress={onAutoFillAll}
+              accessibilityRole="button"
+              accessibilityLabel="Auto-place all boards"
+              // Matches the per-board control exactly (Board.tsx:717): an 18dp chip with
+              // 15dp hitSlop clears the 44pt target at 48. The chip is NOT grown to 44 —
+              // that is the pattern this project already defends on the board headers.
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              style={({ pressed }) => [styles.autoAllChip, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.autoAllChipText} allowFontScaling={false}>
+                <Text style={styles.autoAllChipBolt}>⚡</Text> Auto-Place ALL
+              </Text>
+            </Pressable>
+          </>
+        ) : null}
       </View>
       {safeCards.length > 0 ? (
         <View
@@ -349,8 +382,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: rs(12),
+    marginRight: rs(6),   // mirrors the per-board control's 6px right inset from its panel edge
     marginBottom: rs(3),
     gap: rs(6),
+  },
+  labelRowSpacer: { flex: 1 },
+  // Mirrors Board.tsx `autoBtn`: quiet mint chip, small radius, tight padding — the visual
+  // language of the four per-board controls, so the hand reads as a member of the same family.
+  autoAllChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: rs(18),
+    paddingVertical: rs(1),
+    paddingHorizontal: rs(6),
+    borderRadius: rv(6),
+    backgroundColor: 'rgba(79,214,168,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.35)',
+  },
+  autoAllChipText: {
+    color: COLORS.mint,
+    fontSize: rf(11),
+    fontWeight: '800',
+  },
+  autoAllChipBolt: {
+    color: COLORS.mint,
+    fontSize: rf(11),
   },
   label: {
     color: COLORS.neonBlue,
