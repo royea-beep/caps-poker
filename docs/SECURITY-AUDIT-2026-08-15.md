@@ -306,6 +306,95 @@ leaderboard, an unauthenticated caller can credit that account up to 1500 chips 
 inflate its ELO by +20 per call with no cap on repetition, or drain any account to zero — every
 call logged by `econ_authz_probe` but none prevented.
 
+---
+
+# Part 5 — economy fix design (FE1/FE2; FE3 deferred)
+
+## FE1 — the caller map (`add_xp` excluded, proven safe)
+
+| function | call site | trigger | award | session? |
+|---|---|---|---|---|
+| `earn_chips` | `app/shop.tsx:90` | shop rebuy / emergency chips | chips | yes (anon signed in) |
+| `earn_chips` | `app/results.tsx:1185` | share a hand — **documented LEGACY fallback** (`:1177`); `claim_share_reward` is the guarded path | share reward | yes |
+| `spend_chips` | `app/shop.tsx:139` | buying a shop item | −chips | yes |
+| `update_leaderboard_elo` | `app/results.tsx:557` | end of a **non-practice** hand (`:546` — practice is XP-only, never touches the leaderboard) | ±ELO, games, wins | yes |
+| `update_mission_progress` | `app/results.tsx:538-540` | end of a hand — `games_played +1`, `games_won +1`, `boards_won +N` (N = 1..4) | mission progress | yes |
+
+Note the per-hand `earn_chips('hand_won')` credit was already **removed** (ECON-SW-P1, `results.tsx:500`),
+so `earn_chips` today is only shop + the legacy share fallback.
+
+## FE1.2 — every legitimate caller HAS a session, but there is NO usable binding
+
+`signInAnonymously()` runs at `utils/auth.ts:43`, so every client carries a real `auth.uid()` — the
+cheapest fix (ownership via `auth.uid()`) looked available. **It is not.** Measured on production:
+
+| column | rows | that are a real `auth.users.id` |
+|---|---|---|
+| `leaderboard.user_id` | 764 | **0** |
+| `push_tokens.user_id` | 3 | **0** |
+| `chip_transactions.user_id` | 4890 | 274 (6%) |
+
+`auth.users` has 2,839 rows (2,837 anon, 2 linked), and the economy tables' `user_id` points at
+almost none of them. **The stored `user_id` is a client-generated / legacy id, not the Supabase auth
+identity.** So `WHERE device_id = p_device_id AND user_id = auth.uid()` would match **zero rows and
+break every legitimate call.** Ownership is not a small fix here — it requires **first building a
+`device_id → auth.uid()` binding** (populate going forward, backfill 764 devices), then checking it.
+
+## FE2 — design, per function, with real costs
+
+**`earn_chips` — repetition.** Recommend **idempotency by natural key**, not ownership. The two real
+awards already have guarded siblings: share → `claim_share_reward` (keyed on `p_share_id`, already
+idempotent), rescue → `claim_low_chip_rescue`. Route the legacy share fallback to the sibling and
+lock the `earn_chips` event whitelist to only genuinely self-limiting events (shop rebuy costs real
+balance, so it is self-capping). *Cost:* medium — client change at 2 sites + a dedup key. *Breaks if
+client not updated:* if a dedup-key param becomes required, old clients omit it → chips stop.
+
+**`spend_chips` — griefing (drain a victim).** Idempotency does not fit — spending legitimately
+repeats. **Ownership is the only real fix, and it needs the binding above.** *Interim:* this is pure
+griefing (attacker gains nothing, victim loses), lower priority than self-enrichment, and
+`econ_authz_probe` already logs it. *Cost:* high (binding infra). *Breaks if client not updated:* an
+ownership check breaks every legitimate spend until the client proves the owning session — which
+needs the binding first.
+
+**`update_leaderboard_elo` — asserted win + repetition.** Fires only for **non-practice (MP)** hands,
+where the room and reveal are server-mediated, so the result is knowable server-side. Recommend
+**server-derived from the room result, keyed per hand/room id** — closes both the asserted win and
+repetition. *Cheaper interim:* **idempotency per `hand_id`** — one ELO update per real hand; leaves
+the win asserted but bounds it to the legitimate hand count. *Cost:* high (server-derived) / medium
+(per-hand key). *Breaks if client not updated:* a required `hand_id` param → old clients stop
+updating ELO.
+
+**`update_mission_progress` — forces completion.** The exploit is a large `p_amount` (LEAST-capped at
+target → `completed=true`). Recommend **deriving the increment server-side from the recorded hand**,
+or clamping `p_amount` to the event's legitimate max. *Trap:* `boards_won` legitimately passes N=1..4
+(`results.tsx:540`), so a flat clamp to 1 would under-award — the clamp must respect the real per-event
+max. *Cost:* medium. *Breaks if client not updated:* a stricter server clamp under-awards the
+`boards_won` mission unless the client's semantics match.
+
+## Overarching recommendation
+
+The **complete** fix is the `device_id → auth.uid()` binding + ownership on all four — it is the only
+thing that closes `spend_chips` griefing and it simplifies the other three. If a faster tester-round
+mitigation is wanted first, ship **per-hand / per-share idempotency on `earn_chips` and
+`update_leaderboard_elo`** — that closes the two *self-enrichment* vectors (the ones where an attacker
+profits) and leaves only the griefing vector, which is logged. Both are real; the binding is the
+right end state.
+
+## FE3 — branch proof DEFERRED, with the reason
+
+296 migrations replay on every branch, and last run's branch came up `MIGRATIONS_FAILED`. Diagnosing
+*which* migration fails needs that branch's migration logs — which means creating a fresh branch as
+the **first** action of a run with a full context window, per the brief's own "branch first" rule. I
+am past that point in this window, and creating one now risks the stall-mid-run state I correctly
+avoided last time. The design above is the prerequisite for the branch test anyway — it defines what
+the positive and negative controls are. Deferred, not skipped; no cost incurred.
+
+## Leaderboard `device_id` exposure — noted, not designed (per FE4.3)
+
+The other half of the compound finding. It may be the cheaper side: dropping `device_id` from the
+anon-readable leaderboard projection (a view or column-level revoke) removes the impersonation *key*
+without touching the economy functions at all. Not designed here — its own brief.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
