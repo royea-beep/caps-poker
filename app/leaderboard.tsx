@@ -4,7 +4,7 @@ import { rf, rs, rv } from '../utils/responsive';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/gameConfig';
-import { getLeaderboard, getDeviceId, LeaderboardEntry, isLeaderboardAvailable } from '../utils/leaderboard';
+import { getLeaderboard, LeaderboardEntry, isLeaderboardAvailable } from '../utils/leaderboard';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 type SortMode = 'chips' | 'winRate';
@@ -17,12 +17,10 @@ function getMedal(pos: number): string {
 }
 
 function getDisplayName(entry: LeaderboardEntry): string {
-  const name = entry.player_name?.trim();
-  if (!name || name === 'Player' || /^Player[a-z0-9]{4}$/i.test(name)) {
-    const suffix = entry.device_id?.slice(-4).toUpperCase() ?? '????';
-    return `CAPS-${suffix}`;
-  }
-  return name;
+  // DROP-THE-KEY 2026-08-15 — the fallback used entry.device_id.slice(-4) ("CAPS-XXXX"), which
+  // leaked four chars of every player's device id. The server now resolves the fallback
+  // ("Player #<rank>") in get_leaderboard, so no device id ever reaches the client.
+  return entry.display_name?.trim() || entry.player_name?.trim() || 'Player';
 }
 
 export default function LeaderboardScreen() {
@@ -30,16 +28,13 @@ export default function LeaderboardScreen() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [myDeviceId, setMyDeviceId] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortMode>('chips');
 
   const fetchData = useCallback(async () => {
-    const [data, deviceId] = await Promise.all([
-      getLeaderboard(),
-      getDeviceId(),
-    ]);
+    // DROP-THE-KEY — getLeaderboard now returns per-row `is_me` from the server, so the client no
+    // longer fetches its own device id to compare. Identity never leaves the server.
+    const data = await getLeaderboard();
     setEntries(data);
-    setMyDeviceId(deviceId);
     setLoading(false);
     setRefreshing(false);
   }, []);
@@ -56,11 +51,11 @@ export default function LeaderboardScreen() {
     return b.total_chips - a.total_chips;
   });
 
-  const myIndex = sorted.findIndex(e => e.device_id === myDeviceId);
+  const myIndex = sorted.findIndex(e => e.is_me);
   const myInTopTen = myIndex >= 0 && myIndex < 10;
 
   const renderItem = ({ item, index }: { item: LeaderboardEntry; index: number }) => {
-    const isMe = item.device_id === myDeviceId;
+    const isMe = item.is_me;
     const pos = index + 1;
     const medal = getMedal(pos);
     const winRate = item.hands_played > 0
@@ -169,7 +164,7 @@ export default function LeaderboardScreen() {
       ) : (
         <FlatList
           data={sorted}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.rank)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.gold} />}

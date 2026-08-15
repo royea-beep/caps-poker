@@ -57,14 +57,19 @@ export async function getDefaultPlayerName(): Promise<string> {
 }
 
 export interface LeaderboardEntry {
-  id: string;
+  // DROP-THE-KEY 2026-08-15 — device_id removed. It was the anon impersonation key and it is no
+  // longer emitted by get_leaderboard, nor selectable by anon. The two things the client used it
+  // for are now server-supplied: `is_me` (the self-highlight) and `display_name` (the fallback for
+  // unnamed players, rank-based so it leaks no id).
+  rank: number;
   player_name: string;
-  device_id: string;
+  display_name: string;
+  is_me: boolean;
   total_chips: number;
   hands_played: number;
   hands_won: number;
   biggest_win: number;
-  updated_at: string;
+  rank_change: number;
 }
 
 /** Submit or update score on the leaderboard. Silent fail — never crashes the game. */
@@ -106,17 +111,13 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     const supabase = getSupabase();
     if (!supabase) return [];
 
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('*')
-      // VAMOS-CAPS-LEADERBOARD-HIDE-BOTS: exclude seed bot rows (device_id 'bot_%').
-      // In-game opponents come from local constants/gameLogic, never this table, so
-      // hiding these rows is display-only and does not affect gameplay.
-      .not('device_id', 'like', 'bot_%')
-      .order('total_chips', { ascending: false })
-      .limit(20);
-
-    if (error || !data) return [];
+    // DROP-THE-KEY 2026-08-15 — was `.from('leaderboard').select('*').not('device_id','like',...)`,
+    // which both SELECTED and FILTERED on device_id. Column-revoking device_id would break both.
+    // Routed through get_leaderboard(p_device_id) instead: the RPC does the bot exclusion and the
+    // self-marker server-side and never emits device_id. Same shape, minus the impersonation key.
+    const deviceId = await getDeviceId();
+    const { data, error } = await supabase.rpc('get_leaderboard', { p_device_id: deviceId, p_limit: 20 });
+    if (error || !Array.isArray(data)) return [];
     return data as LeaderboardEntry[];
   } catch {
     return [];
