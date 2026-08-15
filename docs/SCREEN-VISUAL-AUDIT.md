@@ -20,7 +20,7 @@ too small to read, cramped spacing, or content cut off (a clip is not an interse
 `lobby/private`), or the two in-game routes already reviewed this session (`game`,
 `multiplayer-game`).
 
-**I visually reviewed 4 screens. The other 18 are captured and instrument-triaged but NOT looked
+**I visually reviewed 6 screens. The other 16 are captured and instrument-triaged but NOT looked
 at.** That distinction is the whole point of this sprint and it is stated per row below rather
 than blurred. Marking a screen "clean" because a probe returned no flags would be the exact
 substitution this audit exists to stop.
@@ -66,6 +66,60 @@ borders. Reads correctly; nothing cramped, nothing cut.
 
 ---
 
+### Replay, no hand — **EMBARRASSING**
+
+A fully black screen with "Hand not found" in grey and a gold `← BACK` button floating in the
+middle. No header, no branding, no explanation of what happened or what to do next. It does not
+read as an empty state; it reads as a crash page. A tester who taps a stale replay link will
+screenshot this and ask whether the app broke. It is also the thinnest screen in the app — 21
+characters total.
+
+### Play — **COSMETIC**, plus one content bug worth checking
+
+Well composed and clearly the strongest screen reviewed so far: five mode cards, generous
+spacing, each with an icon and a one-line explanation. Two things.
+
+**Five cards, five different border colours** — gold, mint, blue, green, pink — assigned with no
+visible system. Immediately after a week spent establishing that gold means won, mint means the
+field and white means neutral, this screen uses colour decoratively. The gold border on "Single
+Player" is the same gold as the winner cue.
+
+**"Single Player · Practice vs bots · 3 boards"** hardcodes a board count. Board count is dynamic
+(2P = 4, 3P = 3, 4P = 2) and `CLAUDE.md` states the rule as "NEVER hardcode board counts". Worth
+confirming against `getBoardCount()` — if a player picks 2 players from here they get 4 boards,
+and the card said 3. Flagged, not verified in code, because this sprint fixes nothing.
+
+Also: roughly the bottom third of the screen is empty. Top-weighted rather than balanced.
+
+## Gold-as-chrome sweep — all 22 routes
+
+Swept for the settled gold (`#c9a84c` and its siblings `#FFD24A`, `#F5B546`, `#FFD700`) used as
+background, border or text. **The violations are controls and headlines; the legitimate uses are
+currency and brand.** This is one fix, not eighteen.
+
+**Gold used as chrome — the list:**
+
+| screen | element | role |
+|---|---|---|
+| home | `Continue` button, 307×46 | **solid gold background** on a navigation control |
+| home | carousel active dot, 22×8 | solid gold background |
+| home | onboarding card border, 353×249 | border |
+| home | avatar ring 64×64, `SIGN OUT` text | tint + border, text |
+| play | "Single Player" card border, 353×77 | **border on a control** |
+| theme-pick | `SELECT` button, 93×33 | **solid gold background** on a control |
+| gameover | `MAIN MENU`, 115×21 | **text on a control** |
+| replay | `← BACK`, 92×44 | **tint background + border on a control** |
+| rank | "🎯 Placement Games" heading | headline text |
+
+**Legitimate under the settled map, not to be changed:**
+currency — leaderboard's ten chip amounts, home's "💰 2,530 chips", gameover's balance (MEMORY
+records medals and currency as semantic gold); brand — the `CAPS POKER` wordmark on home and
+theme-pick; theme identity — the CLASSIC card on settings and theme-pick, where gold *is* that
+theme's accent.
+
+Routes with no gold at all: friends, cups, profile, achievements, shop, chip-store, missions,
+stats, hand-history, results, lobby, battle-pass, referral, coaching.
+
 ## Screens CAPTURED and instrument-triaged, but NOT visually reviewed
 
 Flags below are from the probe, not from looking. **None of these is cleared.** `minFont` is the
@@ -80,7 +134,7 @@ smallest rendered text on the screen; `clip` counts elements cut off by an ances
 | lobby | 10px | 3 | — | NOT REVIEWED |
 | settings | 10px | 2 | — | NOT REVIEWED |
 | referral | 12px | 1 | — | NOT REVIEWED |
-| play · friends · cups · profile | 10px | 0 | — | NOT REVIEWED |
+| friends · cups · profile | 10px | 0 | — | NOT REVIEWED |
 | shop · chip-store · missions | 11–12px | 0 | — | NOT REVIEWED |
 | theme-pick | 10px | 0 | — | NOT REVIEWED |
 | stats | 14px | 0 | empty state | NOT REVIEWED |
@@ -88,7 +142,7 @@ smallest rendered text on the screen; `clip` counts elements cut off by an ances
 | coaching | 14px | 0 | empty state | NOT REVIEWED |
 | gameover | 12px | 0 | — | NOT REVIEWED |
 | results (no hand) | 15px | 0 | empty state | NOT REVIEWED |
-| replay (no hand) | 13px | 0 | **renders 21 characters total** | NOT REVIEWED |
+| ~~replay~~ | — | — | — | **REVIEWED — see above, EMBARRASSING** |
 
 **Empty states that exist and render something sane by text:** `stats` ("No stats yet"),
 `hand-history` ("No hands"), `coaching` ("No coaching yet"), `results` ("This hand is no longer
@@ -108,7 +162,7 @@ at arm's length; the 10px band needs judgment, not arithmetic.
 
 ## Where this stopped
 
-After 4 screens reviewed by eye out of 22 captured. Everything above the divider is a finding I
+After 6 screens reviewed by eye out of 22 captured. Everything above the divider is a finding I
 saw; everything below it is a queue with triage flags attached, and it is explicitly not cleared.
 The next session should open the images in the order the flags suggest: rank, battle-pass,
 leaderboard, achievements, then the five empty states.
