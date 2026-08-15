@@ -20,7 +20,7 @@ too small to read, cramped spacing, or content cut off (a clip is not an interse
 `lobby/private`), or the two in-game routes already reviewed this session (`game`,
 `multiplayer-game`).
 
-**I visually reviewed 6 screens. The other 16 are captured and instrument-triaged but NOT looked
+**I visually reviewed 8 screens. The other 14 are captured and instrument-triaged but NOT looked
 at.** That distinction is the whole point of this sprint and it is stated per row below rather
 than blurred. Marking a screen "clean" because a probe returned no flags would be the exact
 substitution this audit exists to stop.
@@ -84,12 +84,47 @@ visible system. Immediately after a week spent establishing that gold means won,
 field and white means neutral, this screen uses colour decoratively. The gold border on "Single
 Player" is the same gold as the winner cue.
 
-**"Single Player · Practice vs bots · 3 boards"** hardcodes a board count. Board count is dynamic
-(2P = 4, 3P = 3, 4P = 2) and `CLAUDE.md` states the rule as "NEVER hardcode board counts". Worth
-confirming against `getBoardCount()` — if a player picks 2 players from here they get 4 boards,
-and the card said 3. Flagged, not verified in code, because this sprint fixes nothing.
+~~**"Single Player · Practice vs bots · 3 boards"** hardcodes a board count.~~ **WITHDRAWN
+2026-08-15 — I was wrong.** `app/(tabs)/play.tsx:52` reads
+`Practice vs bots · {getBoardCount(config.numberOfPlayers)} boards`. It is derived, exactly as
+the rule requires. It rendered "3 boards" because the persisted config was 3 players when I
+captured it. The flag came from reading a screenshot and inferring the code behind it, which is
+the same mistake in the opposite direction from the one this audit exists to correct — looking is
+how you find a defect, not how you confirm one. Checked in code, retracted.
+
+The gold on that card is real and separate: `borderColor: '#F5B546'` hardcoded at
+`app/(tabs)/play.tsx:48`.
 
 Also: roughly the bottom third of the screen is empty. Top-weighted rather than balanced.
+
+### Stats, empty — **CLEAN**, and it is the reference
+
+Header with `‹ Back` and title, a chart icon in a soft circle, "No stats yet", a plain
+explanation ("Play a few hands and your stats appear here"), two skeleton placeholder cards
+showing the shape of what will arrive, and a mint **Play Now** button. Designed, calm, and it
+tells a day-one player what to do next.
+
+**This is the finding, not the screen.** The pattern exists and is good. `replay` renders a black
+screen with no header, no icon, no guidance and a floating gold Back button. The gap between
+these two empty states in the same app is what a tester will notice, and it means fixing `replay`
+is a matter of applying an existing pattern rather than designing one.
+
+### Rank — **EMBARRASSING** (content, not layout)
+
+Structurally sound: tier medallion, ELO, progress bar to the next tier, a placement-games card,
+a 0/0/0% stat row, and a tier ladder. Two problems, both in what it *says*.
+
+**"Rank #738 of 754"** is shown to a player with zero games. Day one, the first number the app
+gives you about yourself is that you are 738th of 754. That is a discouraging first impression
+and it is on a screen a tester will open early.
+
+**The screen contradicts itself.** It says "Complete 10 more games to set your official rank!"
+and "0/10 games", while simultaneously asserting a rank (#738), a tier (Amateur) and a
+**CURRENT** badge on that tier. Either the rank is provisional or it is not; the screen claims
+both.
+
+Minor: `ELO: 1000` is gold — a stat, not a win (see the sweep). The tier ladder is cut at the
+bottom, but it scrolls, so that is the clip count behaving correctly.
 
 ## Gold-as-chrome sweep — all 22 routes
 
@@ -127,7 +162,7 @@ smallest rendered text on the screen; `clip` counts elements cut off by an ances
 
 | screen | minFont | clip | probe flags | status |
 |---|---|---|---|---|
-| rank | **9px** | 7 | — | NOT REVIEWED |
+| ~~rank~~ | — | — | — | **REVIEWED — EMBARRASSING** |
 | battle-pass | **9px** | 3 | — | NOT REVIEWED |
 | leaderboard | 10px | **8** | — | NOT REVIEWED |
 | achievements | 10px | **7** | — | NOT REVIEWED |
@@ -137,7 +172,7 @@ smallest rendered text on the screen; `clip` counts elements cut off by an ances
 | friends · cups · profile | 10px | 0 | — | NOT REVIEWED |
 | shop · chip-store · missions | 11–12px | 0 | — | NOT REVIEWED |
 | theme-pick | 10px | 0 | — | NOT REVIEWED |
-| stats | 14px | 0 | empty state | NOT REVIEWED |
+| ~~stats~~ | — | — | — | **REVIEWED — CLEAN, the reference empty state** |
 | hand-history | 12px | 0 | empty state | NOT REVIEWED |
 | coaching | 14px | 0 | empty state | NOT REVIEWED |
 | gameover | 12px | 0 | — | NOT REVIEWED |
@@ -162,7 +197,7 @@ at arm's length; the 10px band needs judgment, not arithmetic.
 
 ## Where this stopped
 
-After 6 screens reviewed by eye out of 22 captured. Everything above the divider is a finding I
+After 8 screens reviewed by eye out of 22 captured. Everything above the divider is a finding I
 saw; everything below it is a queue with triage flags attached, and it is explicitly not cleared.
 The next session should open the images in the order the flags suggest: rank, battle-pass,
 leaderboard, achievements, then the five empty states.
