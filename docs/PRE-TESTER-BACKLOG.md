@@ -93,6 +93,37 @@ reconciliation is supposed to do.
 
 - **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.** Measured 2026-08-14: live, cause misfiled (dead constants), fix is per-card variation keyed off card id — a design change, not a constant swap.
 
+#### Layout at 4 boards / 16 cards — measured 2026-08-14 (the configuration the arc never ran)
+
+Forced with `?practice=true&players=2`; every probe now prints its board count, because the whole
+arc had run at `players=3` without recording it. See protocol Rules 21 and 22.
+
+| config | boards | hand cards | rows | clipped cards BEFORE | AFTER | overlaps (clip-aware) |
+|---|---|---|---|---|---|---|
+| 2P | **4** | **16** | 2 | **8 cut 10–11px** | **0** | 0 |
+| 3P | 3 | 12 | 2 | 0 | 0 | 0 |
+| 4P | 2 | 8 | 2 | 0 | 0 | 0 |
+
+**Roye's three photographed defects:**
+1. **Hand row clipped — REPRODUCED and FIXED.** 8 of 16 cards cut 10–11px at 375, 393, both
+   engines. Cause: the hand-zone budget counted 18px of chrome against a real 29.7px. Fixed in
+   `useGameLayout` by correcting the premise, not by shrinking anything.
+2. **`Auto-Place ALL` over the action bar — NOT REPRODUCED on web.** Measured in the exact state
+   (12 of 16 placed, so Cancel/Confirm present *and* the pill still on screen) at 320×568,
+   375×667, 375×812, 393×852, 1706×960: clearance is **+15 to +17px** at every one, no
+   intersection. `BoardArrangement.tsx:134-143` documents this exact defect ("10px of overlap at
+   320 wide, 0px — touching — at 390") **and its fix** — `ACTION_BAR_CLEARANCE`. The measurement
+   says that fix is live. Most likely the screenshot predates it. Needs a native measurement or a
+   build number to settle; not changed on a guess.
+3. **`✕` over the `Practice · no chips` pill — NOT REPRODUCED on web.** Horizontal gap **+18 to
+   +21px** at every viewport including 320 wide. Same conclusion as (2).
+
+**Boards scroll by design and that is unchanged.** `board-3` is cut off at rest at every mobile
+width (67–83px) because the boards zone is a scroller — it was 55px before this fix and is larger
+now, since the hand correctly reclaimed ~12px. Reachable by scrolling. Flagged rather than
+buried: if Roye wants all four boards visible without scrolling, that is a card-size decision and
+a separate brief.
+
 #### Type legibility, measured 2026-08-14
 
 - **LEAD label (reveal equity row)** — was `rf(9)`, the smallest type on the reveal. Raised to

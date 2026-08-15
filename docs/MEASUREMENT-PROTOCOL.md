@@ -582,6 +582,41 @@ collision" was scroll content being measured outside its own viewport.
 Overflow is still worth reporting — it means board content sits below the fold — but it is a
 scroll-affordance finding, not a collision, and it must not be filed as one.
 
+## Rule 21 — a layout sweep must state its configuration, and one board count proves nothing about another
+
+CAPS renders a different screen per player count: **2P = 4 boards / 16 cards · 3P = 3 boards /
+12 cards · 4P = 2 boards / 8 cards**. Same viewport, different content. A sweep that does not name
+its configuration has not reported a result; it has reported a result *somewhere*.
+
+**Cited case, 2026-08-14.** The entire layout-collision arc — six sprints, three corrected
+constants, five viewports, two engines, a rebuilt overlap filter — ran at **3 boards / 12 cards**,
+because the probe URL said `players=3` and nobody wrote the configuration down. Roye plays
+2-player. He photographed a clipped hand row repeatedly while every sweep reported clean, and the
+arc was declared closed at zero on a screen he was not looking at.
+
+The defect was real and had been there the whole time: the hand-zone budget under-counted its own
+chrome by ~11px at every width. At 12 cards there was slack and it hid. At 16 there is none.
+
+**Rule:** every sweep states its configuration in the output, not just the URL. Run the
+configurations that exist, or name the ones you skipped. When a report says "zero", the next
+question is "at what board count" — and it should not have to be asked.
+
+## Rule 22 — clipped content is not an overlap, and a clip-aware sweep is blind to it
+
+Rule 19 says to intersect clipped rects, because scroll content reported as an overlap is a false
+positive. The corollary is a false *negative*: content cut off by an ancestor produces **no
+intersection at all**. The better the clip-aware filter, the more invisible this defect becomes.
+
+**Cited case, 2026-08-14.** At 4 boards / 393, eight of sixteen hand cards were cut off 10px at the
+bottom while the clip-aware pair-tested sweep returned **0 overlaps**. Both numbers were correct.
+They answer different questions.
+
+**Rule:** a layout sweep reports two independent lists — *overlaps* (pair-tested, clip-aware,
+overlay-kind separated) and *clipped content* (own rect vs clipped rect, per element, with the cut
+edge and amount). Never merge them, and never report one alone. Distinguish clipping by a
+**scrolling** ancestor — content is reachable, usually by design — from clipping by a **fixed-height**
+ancestor, which is a defect: the content cannot be reached at all.
+
 ## Rule 20 — a non-scaling quantity must not sit behind a scaling function
 
 If a value renders identically at 375, 393 and 1706, wrapping it in `rs()` / `rh()` does not
