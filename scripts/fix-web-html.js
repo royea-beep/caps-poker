@@ -96,7 +96,20 @@ fs.writeFileSync(htmlPath, html);
 console.log('✓ index.html patched (type="module", error handler, dvh viewport fix)');
 
 // 3. Write vercel.json for SPA routing
-const vercelJson = JSON.stringify({ rewrites: [{ source: "/privacy.html", destination: "/privacy.html" }, { source: "/(.*)", destination: "/index.html" }] });
+// SECURITY 2026-08-15 (FRAMING-HEADERS) — this is the vercel.json that ACTUALLY ships: the CI
+// deploy runs `vercel --prod` from dist/, so the root vercel.json is never read in prod. The
+// headers MUST live here or they do not deploy. Framing protection ONLY — frame-ancestors 'none'
+// is the sole CSP directive (no default-src/script-src), so it restricts embedding and nothing
+// else; Supabase/Realtime/fonts are untouched. A full CSP is a separate, verified pass.
+const vercelJson = JSON.stringify({
+  rewrites: [{ source: "/privacy.html", destination: "/privacy.html" }, { source: "/(.*)", destination: "/index.html" }],
+  headers: [{ source: "/(.*)", headers: [
+    { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }
+  ] }]
+});
 fs.writeFileSync(path.join(distDir, 'vercel.json'), vercelJson);
 console.log('✓ vercel.json written');
 
