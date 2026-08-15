@@ -525,6 +525,71 @@ route reads through an RPC that omits `device_id`, then table-revoke + column-gr
 the same `rank.tsx`-style trap: any client-side filter on `device_id` must move server-side first.
 **Not fixed this sprint;** one follow-up brief once the leaderboard+rank pattern is proven end to end.
 
+---
+
+# Part 8 — CLOSE-IT-PROPERLY: the key is closed at the DB (FH1 + FH2 shipped & verified)
+
+## FH1 — rank.tsx migrated off device_id
+
+The three filters, by **intent** (not shape): `:64 .eq(device_id, mine)` = my own row;
+`:73 .not(bot_%).gte(elo, mine)` = real players at/above my elo (my position); `:79 .not(bot_%)`
+= total real players. `get_player_rank` takes `user_id` and there is no device→uid binding, so it
+could not be reused. New RPC **`get_player_rank_by_device(p_device_id)`** (SECURITY DEFINER,
+anon-granted) returns those five numbers and **emits no device_id**. SQL-verified equal to the old
+output: top real player = rank #1 of 769; a no-row device = elo 1000, `has_row=false` (client skips
+`setData`, exactly as the old `if (row)` did). Shipped `5c83acc`; rank screen renders on both
+engines, 0 errors, "No rank yet" for a no-row device — the preserved behaviour.
+
+**After FH1, grep confirms zero client code does `.from('leaderboard')`.** Home and profile read the
+leaderboard only through SECURITY DEFINER RPCs, which run as the owner and bypass the anon column
+grant — so the revoke cannot touch them.
+
+## FH2 — the revoke that works
+
+Restore statement written first: `GRANT SELECT (device_id) ON public.leaderboard TO anon,
+authenticated;`. Applied:
+```sql
+REVOKE SELECT ON public.leaderboard FROM anon, authenticated;
+GRANT SELECT (id, player_name, total_chips, hands_played, hands_won, biggest_win, updated_at,
+              win_rate, games_played, wins, rank_change, elo, chips, user_id)
+  ON public.leaderboard TO anon, authenticated;
+```
+
+**On the wire, from a real anon client:**
+- `SELECT device_id` → **401 / 42501 permission denied**. Refused.
+- `SELECT *` → **401** — PostgREST expands `*` to all columns and errors on the ungranted one, so
+  it is *refused* rather than "returned without device_id". Safe, and no client does raw `*` (both
+  readers use RPCs). Any future `select('*')` on this table must name columns.
+- `SELECT player_name,total_chips` → 200. `get_leaderboard` → 200, no device_id, `is_me` present.
+- filter `device_id=not.like.bot_%` → **401** (filtering needs the column grant) — which is exactly
+  why rank.tsx had to move first.
+
+**All four leaderboard-reading screens, both engines, post-revoke:** `/leaderboard`, `/rank`, `/`,
+`/profile` — **0 page errors, no raw device_id visible anywhere.** Nothing broke; the restore
+statement was not needed.
+
+## What is now closed, and what is still open
+
+- **CLOSED:** the leaderboard `device_id` harvest — an anon stranger can no longer read it, over the
+  app or directly over PostgREST. The compound finding's **key half is sealed at the DB.**
+- **STILL OPEN:** the four economy functions still accept any `device_id` (a device id obtained some
+  other way still works), and the **other four tables** still expose `device_id`. The economy fix
+  needs the binding project (Part 5); the four tables are the follow-up below.
+
+## FG3 / FH3 — the other four tables (consumers + filter traps; NOT fixed)
+
+| table | anon-reachable consumer | filters on device_id? |
+|---|---|---|
+| `clubs` | `app/club/[code].tsx` (club header) | via `my_clubs` / `list_club_tables` RPCs — check |
+| `club_members` | `app/club/[code].tsx` (member league) | same RPCs |
+| `game_rooms` | lobby / `app/lobby/*` | likely direct — audit before revoke |
+| `sit_and_go_players` | SNG lobby / results | likely direct — audit before revoke |
+
+Same fix shape (route reads through an RPC that omits `device_id`, then table-revoke + column-grant)
+and the **same rank.tsx trap**: any client-side `device_id` filter must move server-side first, or
+the revoke 401s the screen. One follow-up brief, now that the leaderboard+rank pattern is proven
+end to end on the wire.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
