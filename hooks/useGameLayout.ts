@@ -181,8 +181,29 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
   // PlayerHand's inner ScrollView (V2) handles any genuinely-clipped row on
   // small screens so the bottom row is never lost.
   const _HAND_ROW_GAP_V = rs(2);  // was rs(4)
-  const _HAND_LABEL_H = rs(14);   // was rs(22)
-  const _HAND_CONTAINER_PADV = rs(2); // was rs(6)
+  // FOUR-BOARDS 2026-08-14 — the fourth wrong premise in this file, and the first one found by
+  // measuring a configuration nobody had measured. The whole layout arc ran at 3 boards / 12
+  // cards; Roye plays 2-player = 4 boards / 16 cards. At 12 cards this budget had slack and the
+  // error hid. At 16 it clips the bottom hand row.
+  //
+  // MEASURED on the live build, 4 boards, Chromium, at three widths — the hand zone's chrome
+  // around the card rows is IDENTICAL at every width:
+  //
+  //            375     393    1706
+  //   budget   125     132     143     <- what this file reserved
+  //   content  137.7   143.7   153.7   <- what the zone actually renders
+  //   deficit   12.7    11.7    10.7
+  //
+  //   label marginTop      4    4    4
+  //   label height        13   13   13
+  //   label -> rows gap    6    6    6
+  //   container padV     3.33 3.33 3.33  (x2)
+  //
+  // Nothing there scales, so per Rule 20 none of it may sit behind rs() — rs(14) + 2*rs(2) = 18
+  // against a real 29.7 was under-counting by ~11 at EVERY width. Written as its measured parts,
+  // rounded up so the budget can never again be the smaller number.
+  const _HAND_LABEL_BLOCK_H = 23;      // marginTop 4 + label 13 + gap to first row 6 (was rs(14))
+  const _HAND_CONTAINER_PADV = 3.5;    // measured 3.33, rounded UP (was rs(2) = 2)
   const _BOARD_CHROME_V = rs(18); // header strip + paddings + rowGap inside a cell (rs(20) was still 4pt over bc=3's edge; rs(18) lands bc=3 at 708 ≤ 710 → non-scroll)
   const _BOARD_INTER_GAP = rs(4);
   // VAMOS-LOBBY-MENU-CARDS-V1 2026-06-21 — lowered floor from rs(55) to rs(40)
@@ -213,7 +234,7 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
     ));
     const handRows = Math.max(1, Math.ceil(_handSize / perRow));
     const handZoneH = handRows * cardH + (handRows - 1) * _HAND_ROW_GAP_V
-      + _HAND_LABEL_H + 2 * _HAND_CONTAINER_PADV;
+      + _HAND_LABEL_BLOCK_H + 2 * _HAND_CONTAINER_PADV;
     const cellH = 2 * cardH + _BOARD_CHROME_V;
     const boardsContent = boardCount * cellH + (boardCount - 1) * _BOARD_INTER_GAP;
     return { cardH, perRow, handRows, handZoneH, cellH, boardsContent };
