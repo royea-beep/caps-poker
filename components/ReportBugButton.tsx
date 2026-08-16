@@ -19,6 +19,7 @@ import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { getSupabase } from '../utils/supabase';
 import { getBuildIdentity, getSessionId } from '../utils/analytics';
+import { getDeviceId } from '../utils/leaderboard';
 import { getBreadcrumbs } from '../utils/breadcrumbs';
 import { getConsoleLogs } from '../utils/logBuffer';
 import { useGameStore } from '../store/gameStore';
@@ -72,6 +73,12 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
       // ("N steps recovered from DB. Session: X") — not a native stack. The automatic path is
       // weak evidence by construction, so the manual report has to carry what it cannot.
       const buildId = getBuildIdentity();
+      // FLOOD 2026-08-16 — THE ONLY STABLE KEY A REPORT CAN CARRY.
+      // Before this, a report could not be tied to a device at all: device_id was present in
+      // 0 of 250 rows. session_id is not a substitute — BugReporter mints a FRESH one per
+      // report, so a session-keyed limit can never accumulate. This is the key the rate limit
+      // counts on, and it makes triage possible (which device filed this, what else did it file).
+      const deviceId = await getDeviceId();
       const { error } = await sb.from('bug_reports').insert({
         project: PROJECT,
         title: `[Tester] ${tester}: ${firstLine}`,
@@ -88,6 +95,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
         // Already captured by utils/logBuffer; last 20 lines only, to stay a payload not a dump.
         console_logs: getConsoleLogs().slice(-20),
         device_info: {
+          device_id: deviceId,
           platform: Platform.OS,
           osVersion: String(Platform.Version ?? ''),
           appVersion: APP_VERSION,

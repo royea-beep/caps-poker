@@ -29,7 +29,8 @@ import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils
 import { getSupabase } from '../utils/supabase';
 import { getConsoleLogs, getGameLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
-import { track } from '../utils/analytics';
+import { track, getSessionId } from '../utils/analytics';
+import { getDeviceId } from '../utils/leaderboard';
 import { readFileAsBytes } from '../utils/fileReader';
 import { playHaptic } from '../utils/haptics';
 import { withTimeout } from '../utils/withTimeout';
@@ -200,14 +201,18 @@ async function submitBugReport(opts: {
     description: opts.description || null,
     url: opts.screen,
     user_agent: `${Platform.OS} ${Platform.Version}`,
-    session_id: `caps-${Date.now().toString(36)}`,
+    // FLOOD 2026-08-16 — this minted a FRESH id per report, which is why all 242 session-bearing
+    // rows have 242 distinct sessions and no session ever shows a second report. It defeated both
+    // the session correlation this column exists for and any session-keyed limit. Real session
+    // first; the minted value stays only as a fallback when analytics has not started.
+    session_id: getSessionId() ?? `caps-${Date.now().toString(36)}`,
     status: 'open',
     report_type: 'video',
     has_video: opts.hasVideo,
     audio_url: opts.audioUrl,
     video_url: opts.videoUrl,
     screenshot_url: opts.screenshotUrl,
-    device_info: opts.deviceInfo,
+    device_info: { ...opts.deviceInfo, device_id: await getDeviceId() },
     console_logs: opts.consoleLogs,
     breadcrumbs: opts.breadcrumbs,
     metadata: {

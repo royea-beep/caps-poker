@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { debugLog } from '../components/DebugOverlay';
 import { getSupabase } from './supabase';
 import { readFileAsBytes } from './fileReader';
+import { getDeviceId } from './leaderboard';
 
 export interface CrashMeta {
   build: string;
@@ -52,8 +53,12 @@ export async function uploadCrashReport(
     }
 
     // Always insert crash log (even without video)
+    // FLOOD 2026-08-16 — this path carries NO session_id, so it was outside every limit, and it
+    // is the path that produced the historical 71-in-a-day peak. device_id brings it inside.
+    const deviceId = await getDeviceId();
     await supabase.from('bug_reports').insert({
       title: `[CRASH] ${meta.lastStep}`,
+      device_info: { device_id: deviceId, platform: Platform.OS, source: 'crash_auto' },
       description: `${meta.crashError ?? 'unknown'}\n\nLast 20 debug logs:\n${debugLogs.slice(-20).join('\n')}`,
       url: 'crashDetector/auto',
       report_type: 'text',
