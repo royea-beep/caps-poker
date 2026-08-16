@@ -133,7 +133,14 @@ export default function ChipStoreScreen() {
             <Pressable
               onPress={() => setFlashDismissed(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={({ pressed }) => pressed && { opacity: 0.6 }}
+              // VAMOS-14-SCREENS 2026-08-16 — the box measured 21x19. hitSlop 8 lifted the
+              // touchable area to 37x35, still under 44, and hitSlop does not enlarge the box a
+              // sweep can see. Sized the control itself instead so it passes on inspection and
+              // in the hand; hitSlop stays as extra margin on top.
+              style={({ pressed }) => [
+                { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+                pressed && { opacity: 0.6 },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Dismiss flash deal"
             >

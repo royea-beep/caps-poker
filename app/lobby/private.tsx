@@ -112,7 +112,15 @@ export default function PrivateLobby() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
+        {/* VAMOS-14-SCREENS 2026-08-16 — measured 60x21 at 390 and 49x17 at 320. hitSlop 10 made
+            the touchable area 41px tall, still under 44. Sized the control itself. */}
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={{ minHeight: 44, justifyContent: 'center' }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">PRIVATE TABLE</Text>
@@ -168,7 +176,10 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingTop: rv(8) },
   back: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '600', width: rs(60) },
   title: { color: '#4FD6A8', fontSize: rf(22), fontWeight: '900', letterSpacing: 2 },
-  sub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(11), textAlign: 'center', marginTop: rv(2), marginBottom: rv(16) },
+  // VAMOS-14-SCREENS 2026-08-16 — rf(11) clamps to [8.25, 13.75], so at 320 this rendered 9px,
+  // below the project's 10px floor. The second argument is that floor, the same fix already
+  // applied elsewhere in the codebase.
+  sub: { color: 'rgba(255,255,255,0.6)', fontSize: rf(11, 10), textAlign: 'center', marginTop: rv(2), marginBottom: rv(16) },
   block: { paddingHorizontal: rs(16), marginBottom: rv(22) },
   blockTitle: { color: '#fff', fontSize: rf(13), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', marginBottom: rv(8) },
   codeRow: { flexDirection: 'row', gap: rs(8) },
@@ -177,7 +188,7 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   codeBtnText: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(14) },
   createBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: 'rgba(79,214,168,0.4)', borderRadius: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(16), marginBottom: rv(8), backgroundColor: 'rgba(255,255,255,0.03)' },
   createTitle: { color: '#fff', fontSize: rf(15), fontWeight: '700' },
-  createSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(11), marginTop: rv(1) },
+  createSub: { color: 'rgba(255,255,255,0.5)', fontSize: rf(11, 10), marginTop: rv(1) },
   createGo: { color: '#4FD6A8', fontWeight: '800', fontSize: rf(14) },
   btnDisabled: { opacity: 0.5 },
   errorBanner: { marginHorizontal: rs(16), marginBottom: rv(8), paddingVertical: rv(8), paddingHorizontal: rs(12), backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.45)', borderRadius: rv(10) },
