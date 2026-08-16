@@ -990,7 +990,10 @@ export default function HomeScreen() {
     trackAction('play_pressed');
     track('play_button_tapped', { mode: 'practice', player_count: config.numberOfPlayers }, 'home');
     track('mode_start', { mode: 'practice', player_count: config.numberOfPlayers }, 'home');
-    track('game_started', { mode: 'practice', player_count: config.numberOfPlayers }, 'home');
+    // FUNNEL 2026-08-16 — game_started MOVED to game.tsx, where every route into a hand converges.
+    // Emitting it on this button counted taps that never reached a game and missed every other
+    // entry (onboarding, lobby, Play-again, multiplayer). play_button_tapped above still records
+    // the tap itself, which is what this line was really measuring.
     // Heatmap (D7)
     getDeviceId().then(id => trackEvent('home', 'play_button', id)).catch(() => {});
     // First-run beginner default (3P / guided) is applied ONCE on mount via the GUIDED_FORCED_KEY

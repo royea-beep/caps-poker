@@ -33,8 +33,8 @@ export default function PlayScreen() {
         return;
       }
     }
+    // FUNNEL 2026-08-16 — game_started MOVED to game.tsx, the point every route converges on.
     track('mode_start', { mode: 'single_player', player_count: config.numberOfPlayers }, 'play');
-    track('game_started', { player_count: config.numberOfPlayers }, 'play');
     router.push('/game' as any);
   }, [config, chips, router]);
 

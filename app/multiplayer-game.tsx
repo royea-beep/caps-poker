@@ -19,7 +19,7 @@ import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMu
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
-import { track } from '../utils/analytics';
+import { track, trackOnceThisSession } from '../utils/analytics';
 import { finishTable, touchRoomPlayer } from '../utils/lobbyApi';
 import { recordClubGame, ClubGameResult } from '../utils/clubApi';
 import { getDeviceId } from '../utils/leaderboard';
@@ -312,6 +312,11 @@ function MultiplayerGameScreenInner() {
 
   useEffect(() => {
     CapsHooks.gameStarted('online');
+    // FUNNEL 2026-08-16 — multiplayer never emitted game_started at all; it had only its own
+    // mp_game_started, which stopped appearing after 2026-07-12. Without this, an MP player could
+    // complete a hand with no start anywhere in the funnel. Session-guarded like the solo call.
+    trackOnceThisSession('game_started', { mode: 'multiplayer', isHost,
+      player_count: playerCount, board_count: boardCount }, 'multiplayer-game');
     // MP-PARITY-DEEP 2026-07-09 — SOLO starts/stops ambient bg audio per game.tsx's
     // mount effect; MP never did, making the table feel silent/dead by comparison.
     void startAmbient();
@@ -689,6 +694,11 @@ function MultiplayerGameScreenInner() {
     // behavior so we can flip off live if 2-player desync feels weird.
     if (isMpBoardRevealEnabled()) {
       setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
+      // FUNNEL 2026-08-16 — reveal_started, same as solo. Inside the isMpBoardRevealEnabled()
+      // branch, so flipping that kill switch correctly stops the event with the reveal.
+      track('reveal_started', { mode: 'multiplayer', role: isHost ? 'host' : 'guest',
+        player_count: playerCount, board_count: boardCount, reveal_speed: config.revealSpeed },
+        'multiplayer-game');
       setShowSafeReveal(true);
       return;
     }
@@ -818,6 +828,11 @@ function MultiplayerGameScreenInner() {
     // between host and guest is fine — both land on the (static) /results.
     if (isMpBoardRevealEnabled()) {
       setPendingRevealBoards(adaptRevealBoardsForReveal(revealBoards));
+      // FUNNEL 2026-08-16 — reveal_started, same as solo. Inside the isMpBoardRevealEnabled()
+      // branch, so flipping that kill switch correctly stops the event with the reveal.
+      track('reveal_started', { mode: 'multiplayer', role: isHost ? 'host' : 'guest',
+        player_count: playerCount, board_count: boardCount, reveal_speed: config.revealSpeed },
+        'multiplayer-game');
       setShowSafeReveal(true);
       return;
     }
@@ -984,6 +999,11 @@ function MultiplayerGameScreenInner() {
     // Emitted HERE, before setPhase('waiting') and before the ready broadcast below, because
     // once the hand advances the counts we need are gone.
     emitPlacements('timeout', beforeFill, playerHandRef.current.length - remaining.length);
+    // FUNNEL 2026-08-16 — the same gap solo had: this path readies the player when the clock
+    // expires, entirely bypassing handleReady, so cards_placed never fired for a timed-out player.
+    // readySentRef above already makes it once-per-hand.
+    track('cards_placed', { mode: 'multiplayer', isHost, numberOfPlayers: playerCount, boardCount,
+      source: 'timeout' }, 'multiplayer-game');
 
     // pure state updates (no side effects / broadcasts inside an updater)
     setBoards(updated);
@@ -1196,7 +1216,8 @@ function MultiplayerGameScreenInner() {
     // own handleReady/startCountdown, entirely separate from game.tsx's, and the event
     // was only ever wired into the solo/practice screen). Track it here too, guarded by
     // the same idempotent readySentRef so it fires exactly once per hand per player.
-    track('cards_placed', { mode: 'multiplayer', isHost, numberOfPlayers: playerCount, boardCount }, 'multiplayer-game');
+    track('cards_placed', { mode: 'multiplayer', isHost, numberOfPlayers: playerCount, boardCount,
+      source: 'ready' }, 'multiplayer-game');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
     timer.stop();
     setSelectedCardIds([]);

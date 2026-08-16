@@ -204,6 +204,26 @@ function commitFailureDrain(reported: Record<string, unknown>): void {
   try { AsyncStorage.setItem(FAILED_SENDS_KEY, '0').catch(() => {}); } catch { /* ignore */ }
 }
 
+// FUNNEL 2026-08-16 — fire an event at most ONCE per analytics session.
+//
+// The funnel inverted because `game_started` was emitted by the CALLERS (Home's Play button and
+// the Play tab) rather than at the point a game actually begins, so every other route into /game
+// — onboarding's guided hand, the lobby's instant tables, Play-again from /results, multiplayer —
+// produced a hand with no start. 267 devices reached hand_dealt; 32 emitted game_started.
+//
+// Moving it to the convergence point makes coverage complete, but /game re-mounts once per HAND,
+// so an unguarded call there would report a game per hand. Keyed on the session id: a device that
+// played is counted once, and a double-fire is impossible by construction. It UNDER-counts a
+// player who starts two separate games in one app session — chosen deliberately, because the
+// funnel is read per DEVICE and an under-count can never invert it.
+const _oncePerSession = new Map<string, string>();
+export function trackOnceThisSession(event: string, properties?: Record<string, unknown>, screen?: string): void {
+  const sid = cachedSessionId ?? 'no-session';
+  if (_oncePerSession.get(event) === sid) return;
+  _oncePerSession.set(event, sid);
+  track(event, properties, screen);
+}
+
 export function track(event: string, properties?: Record<string, unknown>, screen?: string): void {
   // Feed the shared breadcrumb trail (utils/breadcrumbs) that crash/bug reports
   // already attach — record even if the network call below later fails.

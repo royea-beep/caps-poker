@@ -31,7 +31,7 @@ import {
 } from '../utils/gameLogic';
 import { GamePhase, RevealBoardData } from '../types/gameTypes';
 import { playSound, startAmbient, stopAmbient } from '../utils/sounds';
-import { track } from '../utils/analytics';
+import { track, trackOnceThisSession } from '../utils/analytics';
 import { sortHand } from '../utils/sortHand';
 import { CapsHooks } from '../utils/learning';
 import { FriendsBg } from '../components/FriendsBg';
@@ -293,6 +293,8 @@ function GameScreenInner() {
   const playerReadyRef = useRef(false);
   // FIX 4: double-tap guard on deal button — prevents two handleReady calls before setState re-renders
   const isDealingRef = useRef(false);
+  // FUNNEL 2026-08-16 — one cards_placed per hand, whichever path confirms the placement.
+  const cardsPlacedTrackedRef = useRef(false);
   // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — fail-safe to release the isDealingRef
   // lock if a navigate silently fails to occur. Without this, a successful
   // handleReady that hits the `doNavigateRef.current(...)` happy path never
@@ -465,6 +467,14 @@ function GameScreenInner() {
         board_count: boardCount,
         cards_remaining: playerHandRef.current.length,
       }, 'game');
+      // FUNNEL 2026-08-16 — this branch completes the hand WITHOUT going through handleReady, so
+      // it never emitted cards_placed. A player who let the clock run out finished a hand with no
+      // placement step: 58 devices placed cards while 88 completed a hand, which cannot happen.
+      if (!cardsPlacedTrackedRef.current) {
+        cardsPlacedTrackedRef.current = true;
+        track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
+          source: 'timeout' }, 'game');
+      }
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
       const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, boardsRef.current);
 
@@ -578,12 +588,23 @@ function GameScreenInner() {
     playerReadyRef.current = false;
     isDealingRef.current = false;
     hasNavigatedRef.current = false;
+    cardsPlacedTrackedRef.current = false;
     CapsHooks.gameStarted('solo');
     dealtAtRef.current = Date.now();
     // AR2 — tag every deal with whether it came from the autoSim marathon path. Without this an
     // autoSim deal and a human deal were INDISTINGUISHABLE in every query, for six sprints.
     track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount,
       auto_sim: autoSim === 'true' }, 'game');
+    // FUNNEL 2026-08-16 — game_started belongs HERE, where every solo route converges, not on the
+    // buttons. It used to fire only from Home's Play and the Play tab, so onboarding's guided hand,
+    // the lobby's instant tables and Play-again from /results all dealt hands with no start: 267
+    // devices reached hand_dealt and 32 emitted game_started. Session-guarded, because this screen
+    // re-mounts once per HAND.
+    trackOnceThisSession('game_started', {
+      mode: isPractice ? 'practice' : 'solo',
+      player_count: numberOfPlayers,
+      board_count: boardCount,
+    }, 'game');
 
     // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
     const buyIn = getMatchCost(config.potPerBoard, boardCount);
@@ -779,6 +800,12 @@ function GameScreenInner() {
         boardHighlightIds: b.boardHighlightIds ?? [],
       }));
       setPendingRevealBoards(revealSummary);
+      // FUNNEL 2026-08-16 — the reveal is the longest phase of a hand and the one most likely to
+      // lose someone, and it was entirely unmeasured: reveal_started did not exist anywhere in the
+      // codebase. Emitted where the overlay actually opens, so the skip-reveal setting correctly
+      // produces no event.
+      track('reveal_started', { mode: isPractice ? 'practice' : 'solo', player_count: numberOfPlayers,
+        board_count: boardCount, reveal_speed: config.revealSpeed }, 'game');
       setShowSafeReveal(true);
       return; // navigation happens from onRevealDone
     }
@@ -1091,7 +1118,11 @@ function GameScreenInner() {
     // flipped never got counted, so cards_placed under-fired relative to hands
     // completed (11 vs 13, an impossible ratio). Track unconditionally, right where a
     // placement is confirmed — guaranteed once per hand via the guards above.
-    track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount }, 'game');
+    if (!cardsPlacedTrackedRef.current) {
+      cardsPlacedTrackedRef.current = true;
+      track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
+        source: 'ready' }, 'game');
+    }
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     debugLog('H3 hapticNotify');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
