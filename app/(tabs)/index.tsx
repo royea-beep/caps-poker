@@ -568,7 +568,11 @@ export default function HomeScreen() {
   const [myReferralCode, setMyReferralCode] = useState<string | null>(null);
 
   // Friend Activity Feed — recent Sit&Go sessions
-  type FeedItem = { player_id: string; winner_id: string | null; chips_won: number | null; ended_at: string };
+  // VAMOS-IDENTITY — was two direct reads of sit_and_go_players that pulled OTHER players'
+  // device_id as `winner_id`, only so the render could compare it to my own. The identity never
+  // reached the screen; only the boolean did. get_sng_activity_feed returns that boolean, which
+  // is what allows anon's SELECT on the table to be revoked.
+  type FeedItem = { won: boolean; chips_won: number | null; ended_at: string };
   const [activityFeed, setActivityFeed] = useState<FeedItem[]>([]);
 
   type CupItem = { id: string; name_he: string; tier: string; color: string; earned: boolean; progress: number };
@@ -578,34 +582,10 @@ export default function HomeScreen() {
     const sb = getSupabase();
     if (!sb) return;
     getDeviceId().then(async (deviceId) => {
-      // Derive feed from real schema (no phantom columns).
-      // 1) My participation rows on finished sessions (finish_position != null = SnG resolved).
-      const { data: myRows } = await sb
-        .from('sit_and_go_players')
-        .select('session_id, finish_position, chips, sit_and_go_sessions(started_at, prize_pool)')
-        .eq('device_id', deviceId)
-        .not('finish_position', 'is', null)
-        .order('joined_at', { ascending: false })
-        .limit(5);
-      if (!myRows?.length) { setActivityFeed([]); return; }
-      // 2) Resolve winner (finish_position=1) per session in one round-trip.
-      const sessionIds = myRows.map((r: any) => r.session_id);
-      const { data: winners } = await sb
-        .from('sit_and_go_players')
-        .select('session_id, device_id, chips')
-        .in('session_id', sessionIds)
-        .eq('finish_position', 1);
-      const wmap = new Map((winners ?? []).map((w: any) => [w.session_id, w]));
-      setActivityFeed(myRows.map((r: any) => {
-        const w = wmap.get(r.session_id) as { device_id: string; chips: number } | undefined;
-        const sess = r.sit_and_go_sessions;
-        return {
-          player_id: deviceId,
-          winner_id: w?.device_id ?? null,
-          chips_won: r.finish_position === 1 ? (w?.chips ?? sess?.prize_pool ?? null) : null,
-          ended_at: sess?.started_at ?? '',
-        };
-      }) as FeedItem[]);
+      // One SECURITY DEFINER call replaces the two table reads. It resolves the winner
+      // server-side and returns `won` as a boolean, so no device_id crosses the wire.
+      const { data } = await sb.rpc('get_sng_activity_feed', { p_device_id: deviceId, p_limit: 5 });
+      setActivityFeed(Array.isArray(data) ? (data as FeedItem[]) : []);
     }).catch(() => {});
   }, []);
 
@@ -1705,7 +1685,8 @@ export default function HomeScreen() {
               <Text style={styles.feedEmpty}>Play Sit and Go to see your history</Text>
             ) : (
               activityFeed.map((item, i) => {
-                const won = item.winner_id === item.player_id;
+                // The RPC decides this now; the client no longer sees either device_id.
+                const won = item.won;
                 return (
                   <View key={i} style={styles.feedItem}>
                     <Text style={styles.feedItemText} accessibilityLabel={won ? `You won Sit and Go — +${item.chips_won ?? 0} chips` : `Sit and Go — next time`}>
