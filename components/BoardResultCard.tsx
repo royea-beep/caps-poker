@@ -341,5 +341,11 @@ const styles = StyleSheet.create({
   comparisonWin: { color: COLORS.neonGreen },
   comparisonLose: { color: COLORS.neonRed },
   comparisonTie: { color: COLORS.textDim },
-  bestSelectedLabel: { fontSize: rf(10, 10), color: '#8B6914', fontWeight: '600', letterSpacing: 0.5 },
+  // VAMOS-CONTRAST 2026-08-16 — was #8B6914, measured 3.45:1 on its backdrop: below WCAG AA for
+  // body text. #e8c96a measures 10.86:1 and already carries field-level meaning here. Deliberately
+  // NOT #FFD700 — that now means "you won", and a caption must not shout in the winner colour.
+  // The other two #8B6914 sites are untouched: the chip-store badge is a BACKGROUND (different
+  // rule) and the player-count selector border is a non-text UI component at 3.89:1, which clears
+  // the 3:1 that applies to it.
+  bestSelectedLabel: { fontSize: rf(10, 10), color: '#e8c96a', fontWeight: '600', letterSpacing: 0.5 },
 });
