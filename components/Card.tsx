@@ -455,7 +455,12 @@ function CardComponent({
   const v2Border = highlighted
     ? { borderWidth: 3, borderColor: '#c9a84c' as const }                    // WON — gold
     : isCommunityCard
-    ? { borderWidth: 2, borderColor: OBSIDIAN.mint as const }                // the field — mint
+    // No `as const` here, unlike the two sibling branches. TS1355: a const assertion applies
+    // only to literals, and OBSIDIAN.mint is a property reference, not one. The assertion was
+    // copied from the neighbours when this map was written (694565f) and never compiled — it
+    // failed `tsc` from the day it landed. It is type-only and erased before emit, so removing
+    // it changes the colour, the width and the rendered pixel not at all.
+    ? { borderWidth: 2, borderColor: OBSIDIAN.mint }                         // the field — mint
     : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.22)' as const };         // neutral
 
   if (!card) {
