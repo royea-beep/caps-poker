@@ -919,11 +919,13 @@ export default function HomeScreen() {
         if (!sb) return;
         const { data: lb } = await sb.rpc('get_leaderboard', { p_device_id: deviceId });
         if (lb) {
-          const raw = Array.isArray(lb) ? lb : (lb.entries ?? []);
-          // VAMOS-CAPS-LEADERBOARD-HIDE-BOTS: drop seed bot rows so the home rank
-          // widget counts real players only. Recompute position from the filtered,
-          // chip-sorted order (the server rank includes bots until the DB cleanup runs).
-          const entries = raw.filter((e: any) => !String(e.device_id ?? '').startsWith('bot_'));
+          // VAMOS-ONE-RANK 2026-08-16 — the client-side bot filter here was REMOVED. It read
+          // `e.device_id`, which get_leaderboard stopped emitting on 2026-08-15, so every row
+          // passed `String(undefined ?? '').startsWith('bot_')` and it filtered nothing: a no-op
+          // that read as protection. Its comment claimed the server rank included bots "until the
+          // DB cleanup runs" — the cleanup has run (bot_% is 0 of 785), and both get_leaderboard
+          // overloads now exclude bots server-side, verified against a live bot row.
+          const entries = Array.isArray(lb) ? lb : (lb.entries ?? []);
           const myEntry = entries.find((e: any) => e.is_me || e.device_id === deviceId);
           if (myEntry) {
             const sorted = [...entries].sort((a: any, b: any) => (b.total_chips ?? 0) - (a.total_chips ?? 0));

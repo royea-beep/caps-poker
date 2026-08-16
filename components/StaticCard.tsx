@@ -57,7 +57,11 @@ function StaticCard({ card, cardWidth, cardHeight, highlighted, dimmed, isCommun
 
   const v2Shadow = width < 40 ? cardLiftShadowSmall : cardLiftShadow;
   const v2Border = highlighted
-    ? { borderWidth: 2.5, borderColor: '#c9a84c' as const }
+    // VAMOS-ONE-GOLD 2026-08-16 — the /results winner border, the second of the two mechanisms
+    // that mean "you won". Moved to #FFD700 with Card.tsx:456 so the cue is one metal on both
+    // surfaces. Width left at 2.5 — this is StaticCard, not the 3px game-screen border that
+    // 694565f pinned against Chromium's device-pixel rounding.
+    ? { borderWidth: 2.5, borderColor: '#FFD700' as const }
     : { borderWidth: 0 };
 
   return (

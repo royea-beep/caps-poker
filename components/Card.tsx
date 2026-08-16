@@ -453,7 +453,13 @@ function CardComponent({
   // No shadow here on purpose — the table surface supplies the depth now, and `highlightShadow`
   // (:460, iOS gold glow) stays dead for the same reason.
   const v2Border = highlighted
-    ? { borderWidth: 3, borderColor: '#c9a84c' as const }                    // WON — gold
+    // VAMOS-ONE-GOLD 2026-08-16 — was #c9a84c. Measured painted, that is rgb(201,168,76) at ~54%
+    // saturation with 7.68:1 contrast — good contrast, but on /results it renders directly beside
+    // "✅ YOU WIN" in #FFD700 at 100% saturation, and a half-saturated amber next to a pure gold
+    // reads as brass. Roye's call: the winner cue is the moment that matters most, so it takes the
+    // bright one. Hue only — the 3px width is untouched (694565f chose 3 because Chromium rounds
+    // border-width to whole device pixels and 2.5px collapsed into the 2px mint at DPR 3).
+    ? { borderWidth: 3, borderColor: '#FFD700' as const }                    // WON — gold
     : isCommunityCard
     // No `as const` here, unlike the two sibling branches. TS1355: a const assertion applies
     // only to literals, and OBSIDIAN.mint is a property reference, not one. The assertion was
