@@ -39,7 +39,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [name, setName] = useState(playerName || '');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error' | 'limited'>('idle');
 
   const reset = useCallback(() => {
     setDescription('');
@@ -107,7 +107,14 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           reportedAtLocal: new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jerusalem' }),
         },
       });
-      if (error) { setStatus('error'); return; }
+      // FLOOD 2026-08-16 — the rate limit refuses with a check_violation. Falling into the generic
+      // error would tell a tester to "check your connection", which is both wrong and unactionable:
+      // nothing is wrong with their connection and retrying immediately cannot work.
+      if (error) {
+        const limited = error.code === '23514' || (error.message ?? '').includes('bug_report_rate_limit');
+        setStatus(limited ? 'limited' : 'error');
+        return;
+      }
       setStatus('done');
     } catch {
       setStatus('error');
@@ -190,6 +197,11 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
                 {/* FAILURE MUST BE VISIBLE. A tester who believes a report was sent when it
                     was not is worse off than one with no button at all. */}
                 {status === 'error' && <Text style={styles.errorText}>Couldn't send — check your connection and try again.</Text>}
+                {status === 'limited' && (
+                  <Text style={styles.errorText} testID="report-bug-limited">
+                    Not sent — that's a lot of reports in a short time. Wait a few minutes and send this again.
+                  </Text>
+                )}
 
                 <View style={styles.actions}>
                   <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Cancel">
