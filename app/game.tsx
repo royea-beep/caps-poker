@@ -678,10 +678,21 @@ function GameScreenInner() {
         allBotHandNames: results.allBotResults[i]?.map((br) => br.name) || [],
         playerHighlightIds: result ? result.playerResult.playerCardsUsed.map((c) => c.id) : [],
         botHighlightIds: result ? result.botResult.playerCardsUsed.map((c) => c.id) : [],
-        boardHighlightIds: result ? [
-          ...result.playerResult.boardCardsUsed.map((c) => c.id),
-          ...result.botResult.boardCardsUsed.map((c) => c.id),
-        ] : [],
+        // VAMOS-OMAHA-HIGHLIGHT 2026-08-16 — was the UNION of the player's three board cards and
+        // the bot's three. Each side's selection is correct on its own (the evaluator enforces
+        // exactly 2-from-hand and 3-from-board over C(4,2)×C(5,3)=60 candidates), but the two
+        // sides rarely pick the same three, so the union rendered 4 or 5 marks on the one shared
+        // community row. Roye photographed 4 — a 4+2 display, which Omaha forbids.
+        //
+        // The community row is shared and can only carry one selection, so it carries the
+        // WINNER's: the reveal's whole message is "X beats Y", and the winning five is the hand
+        // being explained. The loser's own three are therefore not shown — a limitation of one
+        // shared row, not a rule violation. Ties fall back to the player's, which is deterministic
+        // and, on an equal-ranked tie, usually the same three cards anyway.
+        boardHighlightIds: result
+          ? (result.winner === 'bot' ? result.botResult : result.playerResult)
+              .boardCardsUsed.map((c) => c.id)
+          : [],
         // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — precomputed best-5 for both
         // sides so reveal/results can render rank-specific labels with no
         // re-evaluation. Captured here where evaluation already happened.
