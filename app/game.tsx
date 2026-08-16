@@ -593,18 +593,19 @@ function GameScreenInner() {
     dealtAtRef.current = Date.now();
     // AR2 — tag every deal with whether it came from the autoSim marathon path. Without this an
     // autoSim deal and a human deal were INDISTINGUISHABLE in every query, for six sprints.
-    track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount,
-      auto_sim: autoSim === 'true' }, 'game');
     // FUNNEL 2026-08-16 — game_started belongs HERE, where every solo route converges, not on the
     // buttons. It used to fire only from Home's Play and the Play tab, so onboarding's guided hand,
     // the lobby's instant tables and Play-again from /results all dealt hands with no start: 267
     // devices reached hand_dealt and 32 emitted game_started. Session-guarded, because this screen
-    // re-mounts once per HAND.
+    // re-mounts once per HAND. Emitted BEFORE hand_dealt so the intended order is unambiguous —
+    // arrival order in the table can still jitter, since track() is fire-and-forget.
     trackOnceThisSession('game_started', {
       mode: isPractice ? 'practice' : 'solo',
       player_count: numberOfPlayers,
       board_count: boardCount,
     }, 'game');
+    track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount,
+      auto_sim: autoSim === 'true' }, 'game');
 
     // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
     const buyIn = getMatchCost(config.potPerBoard, boardCount);
