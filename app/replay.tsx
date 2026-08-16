@@ -163,12 +163,31 @@ export default function ReplayScreen() {
   }
 
   if (!hand) {
+    // VAMOS-REPLAY — this is an EMPTY STATE, not a failure, but it read as one: two words and a
+    // back arrow on a blank screen looks exactly like a crash. The normal route in
+    // (hand-history.tsx:305) always supplies ?id=, so the only ways to land here are a cold URL
+    // with no id, or an id whose hand has aged out of local history — replay reads AsyncStorage
+    // via getHand, not the server. Say which of the two it is, and offer the place hands live.
+    const noId = !id;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Hand not found</Text>
-          <Pressable style={styles.backBtn} onPress={safeBack}>
-            <Text style={styles.backBtnText}>← BACK</Text>
+          <Text style={styles.errorText}>{noId ? 'No hand selected' : 'This hand is no longer saved'}</Text>
+          <Text style={styles.errorHint}>
+            {noId
+              ? 'Open a hand from your history to replay it card by card.'
+              : 'Replays are kept on this device, and older hands make way for newer ones.'}
+          </Text>
+          <Pressable
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go to hand history"
+            onPress={() => router.push('/hand-history' as any)}
+          >
+            <Text style={styles.backBtnText}>HAND HISTORY</Text>
+          </Pressable>
+          <Pressable style={styles.backBtnGhost} accessibilityRole="button" onPress={safeBack}>
+            <Text style={styles.backBtnGhostText}>← BACK</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -496,5 +515,26 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: '800',
     color: COLORS.gold,
+  },
+  // VAMOS-REPLAY — the explanation line under the heading, and a quieter secondary Back so the
+  // primary route (Hand History) is the obvious one. Same 44px target rule as backBtn.
+  errorHint: {
+    fontSize: rf(13, 11),
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: rf(13, 11) * 1.45,
+    paddingHorizontal: rs(32),
+    maxWidth: 340,
+  },
+  backBtnGhost: {
+    paddingHorizontal: rs(20),
+    paddingVertical: rs(10),
+    minHeight: rs(44),
+    justifyContent: 'center',
+  },
+  backBtnGhostText: {
+    fontSize: rf(13),
+    fontWeight: '700',
+    color: COLORS.textMuted,
   },
 });
