@@ -87,11 +87,28 @@ export default function ShopScreen() {
       await Purchases.purchasePackage(starterPack as any);
       // Award 5000 chips via earn_chips RPC (or locally as fallback)
       const deviceId = await getDeviceId();
-      const result = await callRPC<{ chips_earned: number; new_balance: number }>('earn_chips', {
+      // VAMOS-PURCHASE-TRUTH 2026-08-16 — was `result?.chips_earned ?? 5000`, which credited the
+      // LOCAL wallet by a hardcoded fallback whenever the server refused or returned nothing. The
+      // player saw +5,000 that the database never recorded, and it vanished on the next refresh —
+      // the worst shape for a payment path, because it looks like the purchase worked.
+      //
+      // For most of this feature's life the server refused every one of these calls:
+      // 'iap_starter_pack' was not in earn_chips' allow-list, so the fallback was the ONLY thing
+      // crediting anyone. The amount is now the server's to decide (app_config.starter_pack_chips)
+      // and this reads it back rather than guessing.
+      const result = await callRPC<{ ok?: boolean; chips_earned?: number; reason?: string }>('earn_chips', {
         p_device_id: deviceId,
         p_event_type: 'iap_starter_pack',
       });
-      const earned = result?.chips_earned ?? 5000;
+      const earned = result?.ok === true ? (result.chips_earned ?? 0) : 0;
+      if (earned <= 0) {
+        // The money already left RevenueCat, so do not imply the purchase failed — only that the
+        // chips have not arrived. Never move the wallet on an unconfirmed grant.
+        showToast(result?.reason === 'already_granted'
+          ? 'Starter Pack already claimed.'
+          : 'Purchase received — chips did not arrive. Contact support.');
+        return;
+      }
       addChips(earned);
       trackChipsSpent(0); // no chips spent — real money purchase
       showToast(`+${earned} 💰 Starter Pack!`);
