@@ -1,4 +1,8 @@
-import { Card, Rank, RANKS, SUITS } from '../constants/gameConfig';
+// Reads the four card primitives from the LEAF module, not from gameConfig. gameConfig's chain
+// reaches react-native (gameConfig -> theme -> paintThemes), which is fine in the app and fatal in
+// Deno — and server-side adjudication runs THIS evaluator rather than a second implementation.
+// Only this line moved; the body below is unchanged.
+import { Card, Rank, RANKS, SUITS } from '../constants/cards';
 
 const RANK_VALUES: Record<Rank, number> = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,

@@ -77,17 +77,11 @@ export const DEFAULT_CONFIG = {
 
 export type GameConfig = typeof DEFAULT_CONFIG;
 
-export const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const;
-export const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'] as const;
-
-export type Suit = (typeof SUITS)[number];
-export type Rank = (typeof RANKS)[number];
-
-export interface Card {
-  suit: Suit;
-  rank: Rank;
-  id: string;
-}
+// The four card primitives now live in the leaf ./cards, which imports NOTHING — see that file for
+// why. They are re-exported here unchanged so every existing consumer of gameConfig is untouched;
+// this is a move, not a redefinition, and there is still exactly one definition of each.
+export { SUITS, RANKS } from './cards';
+export type { Suit, Rank, Card } from './cards';
 
 /** @deprecated Default for 2 players only. Use getBoardCount(numberOfPlayers) for dynamic count. */
 export const NUM_BOARDS = 4;
