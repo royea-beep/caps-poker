@@ -473,7 +473,15 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // record_reward(each unlocked achievement) → submit_score(FINAL new_balance = stats + a
     // no-op echo of the true post-delta total). Fires exactly ONCE per hand (handNetPersistedRef
     // + the []-deps effect). Practice writes NOTHING.
-    if (!isPracticeGame && !handNetPersistedRef.current) {
+    // STAGE 2 — THE SERVER ADJUDICATES MULTIPLAYER, so the client must stop writing for it. If both
+    // wrote, every multiplayer hand would get TWO chip deltas and two hand_history rows: a
+    // double-write into the ledger this stage exists to make trustworthy.
+    //
+    // THE GATE IS `isMultiplayer`, NOT `isPractice`. Three kinds of hand reach this screen —
+    // practice, SOLO quick_poker, and multiplayer — and the server adjudicates only the last.
+    // Gating on practice would have silently stopped paying every solo real hand, which no server
+    // path covers. Practice was already excluded here and stays excluded.
+    if (!isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
       handNetPersistedRef.current = true;
       void (async () => {
         try {
@@ -584,13 +592,19 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // which meant every real hand was filed as practice and, because chips_delta derives
         // from that flag, could never report a chip movement. The gate was right; it just had
         // no way to know what kind of hand this was. Now it is told.
-        await sb.rpc('record_hand_result_d', {
-          p_device_id: deviceId,
-          p_won: revealData.netChips > 0,
-          p_boards_won: boardsWon,
-          p_boards_total: revealData.boards.length,
-          p_session_type: isPracticeGame ? 'practice' : 'quick_poker',
-        });
+        // STAGE 2 — multiplayer rows are written by the SERVER (resolve_hand), which is the only
+        // party that can write the row for a player who dropped. Two writers would mean two rows
+        // per player per hand. Solo and practice keep this client write; nothing on the server
+        // covers them.
+        if (!isMultiplayer) {
+          await sb.rpc('record_hand_result_d', {
+            p_device_id: deviceId,
+            p_won: revealData.netChips > 0,
+            p_boards_won: boardsWon,
+            p_boards_total: revealData.boards.length,
+            p_session_type: isPracticeGame ? 'practice' : 'quick_poker',
+          });
+        }
       } catch {}
     })();
 

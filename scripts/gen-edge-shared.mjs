@@ -36,6 +36,11 @@ const BANNER =
 /** name in _shared -> [source path, rewrite fn] */
 const FILES = {
   'cards.ts': ['constants/cards.ts', (s) => s],
+  // The chip arithmetic. IDENTITY TRANSFORM AND IT MUST STAY ONE: chipMath.ts is a leaf that
+  // imports nothing, so there is no specifier to rewrite. If this ever needs a rewrite, the leaf
+  // has stopped being a leaf and the extraction has quietly regressed — which would show up as a
+  // bundle failure in the Edge Function rather than anywhere in the app.
+  'chipMath.ts': ['utils/chipMath.ts', (s) => s],
   'handEvaluator.ts': [
     'utils/handEvaluator.ts',
     // TWO transformations, both to the import line and neither to the algorithm.
