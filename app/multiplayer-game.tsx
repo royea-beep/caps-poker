@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { isServerAdjudicationEnabled, submitOwnPlacements } from '../utils/serverAdjudication';
 import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -1025,6 +1026,26 @@ function MultiplayerGameScreenInner() {
     timer.stop();
     // broadcast exactly once, outside any updater
     const assignments = updated.map((b) => b.playerCards);
+    // STAGE 2 (flagged, default OFF) — each seat submits ITS OWN placements so the server judges
+    // the cards the player actually arranged. Fire-and-forget is fine while the flag is off; when
+    // it is on, a failure must be loud, so it is logged rather than swallowed. The host cannot
+    // submit for anyone else: `assignments` holds only this seat's cards and the RPC resolves the
+    // seat from the device id.
+    void (async () => {
+      try {
+        if (!(await isServerAdjudicationEnabled())) return;
+        const rc = storeRoomCode;
+        const hn = isHost ? mpServer?.getHandNo() : mpClient?.getHandNo();
+        const did = deviceIdRef.current ?? (await getDeviceId().catch(() => null));
+        if (!rc || typeof hn !== 'number' || hn <= 0 || !did) {
+          console.warn('[stage2] submit_placements skipped: missing room/hand/device', { rc, hn });
+          return;
+        }
+        await submitOwnPlacements(rc, hn, did, assignments);
+      } catch (e) {
+        console.warn('[stage2] submit_placements FAILED - the server would judge dealt order', e);
+      }
+    })();
     if (isHost && mpServer) {
       mpServer.setHostReady(assignments);
     } else if (!isHost && mpClient) {
@@ -1235,6 +1256,26 @@ function MultiplayerGameScreenInner() {
     setPhase('waiting');
 
     const assignments = boards.map((b) => b.playerCards);
+    // STAGE 2 (flagged, default OFF) — each seat submits ITS OWN placements so the server judges
+    // the cards the player actually arranged. Fire-and-forget is fine while the flag is off; when
+    // it is on, a failure must be loud, so it is logged rather than swallowed. The host cannot
+    // submit for anyone else: `assignments` holds only this seat's cards and the RPC resolves the
+    // seat from the device id.
+    void (async () => {
+      try {
+        if (!(await isServerAdjudicationEnabled())) return;
+        const rc = storeRoomCode;
+        const hn = isHost ? mpServer?.getHandNo() : mpClient?.getHandNo();
+        const did = deviceIdRef.current ?? (await getDeviceId().catch(() => null));
+        if (!rc || typeof hn !== 'number' || hn <= 0 || !did) {
+          console.warn('[stage2] submit_placements skipped: missing room/hand/device', { rc, hn });
+          return;
+        }
+        await submitOwnPlacements(rc, hn, did, assignments);
+      } catch (e) {
+        console.warn('[stage2] submit_placements FAILED - the server would judge dealt order', e);
+      }
+    })();
     if (isHost && mpServer) {
       mpServer.setHostReady(assignments);
     } else if (!isHost && mpClient) {

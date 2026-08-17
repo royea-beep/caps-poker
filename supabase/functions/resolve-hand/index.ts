@@ -129,6 +129,17 @@ Deno.serve(async (req) => {
         tiedPlayers: isTie ? tied : [],
         potWon: 0,
         handName: results[best].rank,
+        // RESPONSE FIELDS ONLY — these are already computed above; nothing new is evaluated. The
+        // reveal needs a rank name and score per seat per board (multiplayer-game.tsx:409-415
+        // reads br.playerResults[].name/.score), and without them the host would have to evaluate
+        // locally for display while taking winners from here — two evaluations of one hand, the
+        // duplication this whole route exists to remove.
+        playerResults: results.map((r, i) => ({
+          seat_index: seats[i].seat_index,
+          device_id: seats[i].device_id,
+          name: r.name,
+          score: r.score,
+        })),
       };
     });
 
@@ -179,7 +190,12 @@ Deno.serve(async (req) => {
         boards_won: boardResults.filter((b) => b.winnerIndex === i).length,
         auto_filled: autoFilled.includes(s.device_id),
       })),
-      boards: boardResults.map((b) => ({ board_index: b.boardIndex, winner_index: b.winnerIndex, tied: b.tiedPlayers })),
+      boards: boardResults.map((b) => ({
+        board_index: b.boardIndex,
+        winner_index: b.winnerIndex,
+        tied: b.tiedPlayers,
+        playerResults: b.playerResults,
+      })),
       complete_winner: deltas.completeWinner,
       complete_bonus: deltas.completeBonusAmount,
       bonus_percent: cfg.bonusPercent,

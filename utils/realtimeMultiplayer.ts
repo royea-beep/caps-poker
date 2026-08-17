@@ -731,6 +731,13 @@ export class RealtimeServer {
     }
   }
 
+  /** The hand number THIS SERVER dealt — identical to game_hands.hand_no, being the third
+   *  argument to dealHandFull() below. Read-only: submit_placements must name the hand the server
+   *  named, and a client-side guess would defeat the point of the server dealing at all. */
+  getHandNo(): number {
+    return this.handId;
+  }
+
   /** Collect all assignments, evaluate hands, return results */
   runRevealSequence(config: GameConfig): {
     boardResults: any[];
@@ -1039,6 +1046,14 @@ export class RealtimeClient {
   // --- Dedup tracking (CAPS 06 + 07) ---
   private lastProcessedHandId: number = -1;
   private lastCompletedHandId: number = -1;
+
+  /** The hand number the HOST announced in HAND_READY — the server's number, never invented here.
+   *  Returns -1 before the first HAND_READY, which callers must treat as "no hand yet". A guest
+   *  cannot arrange cards before HAND_READY (its cards come from onHandReady -> deal_hand), so by
+   *  the time Ready is pressable this is always the current hand. */
+  getHandNo(): number {
+    return this.lastProcessedHandId;
+  }
 
   // --- Host-alive monitoring (CAPS 10) ---
   private hostLostTimer: ReturnType<typeof setTimeout> | null = null;
