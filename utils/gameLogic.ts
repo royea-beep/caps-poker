@@ -1,4 +1,5 @@
 import { Card, NUM_BOARDS, CARDS_PER_BOARD, GameConfig, getBoardCount, getCompleteBonusPercent } from '../constants/gameConfig';
+import { calculateChipDeltasCore } from './chipMath';
 import { dealCards, DealResult, dealCardsMultiplayer, MultiDealResult } from './deck';
 import { evaluateOmahaHand, compareHands, HandResult } from './handEvaluator';
 import { Player, MultiBoardState } from '../types/gameTypes';
@@ -362,79 +363,27 @@ export function evaluateAllBoards(
   });
 }
 
+/**
+ * THE ARITHMETIC NOW LIVES IN `utils/chipMath.ts`, A LEAF THAT IMPORTS NOTHING, so the server can
+ * run the identical computation without dragging `deck.ts` — the client dealer — into an Edge
+ * Function. This wrapper is deliberately transparent: same name, same parameters, same return
+ * type, so every existing consumer is untouched.
+ *
+ * THE ONE THING IT ADDS is resolving the COMPLETE-bonus percentage HERE and passing it in. In the
+ * app that means the `app_config` map loaded by `_layout`, with the config constant as the
+ * fallback — exactly as before. A server caller resolves it from its own `app_config` read. The
+ * leaf can no longer silently fall back to a stale default, because it has no default to fall back
+ * to; see the header of `chipMath.ts` for the bug this closes.
+ */
 export function calculateChipDeltas(
   boardResults: MultiPlayerBoardResult[],
   playerCount: number,
   config: GameConfig
 ): MultiPlayerHandResult {
-  const potPerBoard = config.potPerBoard;
-  const totalBoardPot = potPerBoard * playerCount; // all players contribute
-  const chipDeltas = new Array(playerCount).fill(0);
-
-  // Each player pays potPerBoard per board
-  const boardCount = boardResults.length;
-  const totalPaid = potPerBoard * boardCount;
-  for (let p = 0; p < playerCount; p++) {
-    chipDeltas[p] -= totalPaid;
-  }
-
-  for (const result of boardResults) {
-    if (result.winnerIndex >= 0) {
-      // Single winner takes the whole pot
-      chipDeltas[result.winnerIndex] += totalBoardPot;
-      result.potWon = totalBoardPot;
-    } else {
-      // Tie — split pot among tied players, distribute rounding remainder
-      const tiedCount = result.tiedPlayers.length;
-      const share = Math.floor(totalBoardPot / tiedCount);
-      const tieRemainder = totalBoardPot - share * tiedCount;
-      for (let t = 0; t < tiedCount; t++) {
-        const extra = t < tieRemainder ? 1 : 0;
-        chipDeltas[result.tiedPlayers[t]] += share + extra;
-      }
-      result.potWon = share;
-    }
-  }
-
-  // Check COMPLETE: did any player win ALL boards?
-  let completeWinner: number | null = null;
-  for (let p = 0; p < playerCount; p++) {
-    if (boardResults.every((r) => r.winnerIndex === p)) {
-      completeWinner = p;
-      break;
-    }
-  }
-
-  // VAMOS-BUILD-506 2026-06-22 — COMPLETE bonus = % of the TOTAL POT (sum across ALL
-  // boards and ALL players), not one player's buy-in. Heads-up this is ~2x the old value
-  // (total pot = both players' buy-ins). The cost is distributed across the losers below
-  // (zero-sum), so the winner effectively takes the bonus "from the opponent(s)".
-  const totalPot = potPerBoard * boardCount * playerCount; // full pot: all boards × all players
-  let completeBonusAmount = 0;
-  if (completeWinner !== null) {
-    // VAMOS S-BATCH — bonus % scales with board count (app_config-driven; falls back
-    // to config.completeBonusPercent when no remote map is loaded).
-    completeBonusAmount = Math.floor((totalPot * getCompleteBonusPercent(boardCount, config.completeBonusPercent)) / 100);
-    chipDeltas[completeWinner] += completeBonusAmount;
-    // Distribute bonus cost to losers (zero-sum)
-    const losers = playerCount - 1;
-    const perLoserCost = Math.floor(completeBonusAmount / losers);
-    const remainder = completeBonusAmount - perLoserCost * losers;
-    for (let p = 0; p < playerCount; p++) {
-      if (p !== completeWinner) {
-        chipDeltas[p] -= perLoserCost;
-      }
-    }
-    // Assign any rounding remainder to the first loser
-    if (remainder > 0) {
-      for (let p = 0; p < playerCount; p++) {
-        if (p !== completeWinner) {
-          chipDeltas[p] -= remainder;
-          break;
-        }
-      }
-    }
-  }
-
-  return { boardResults, chipDeltas, completeWinner, completeBonusAmount };
+  return calculateChipDeltasCore(
+    boardResults,
+    playerCount,
+    config,
+    getCompleteBonusPercent(boardResults.length, config.completeBonusPercent)
+  );
 }
