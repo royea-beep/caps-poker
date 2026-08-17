@@ -27,6 +27,12 @@ const HOST_PRESENCE_POLL_MS = 300;
 const DELIVERY_RETRY_INTERVAL_MS = 2000;
 const DELIVERY_MAX_RETRIES = 5;
 const HOST_LOST_GRACE_MS = 10000; // 10s grace for real-world WiFi hiccups (was 5s)
+/**
+ * GRACE WINDOW 2026-08-17 — how long a dropped player has to come back before the hand resolves
+ * without them. Measured from PRESENCE LOSS, not from the start of the hand. On expiry their cards
+ * are auto-placed (never forfeited) exactly as before; only the timing changed.
+ */
+const DISCONNECT_GRACE_MS = 30000;
 export const WAITING_STATE_TIMEOUT_MS = 60000;
 
 interface PendingDelivery {
@@ -84,6 +90,8 @@ export interface ChatMsg {
 export interface RealtimeServerCallbacks {
   onPlayerJoined?: (player: RealtimeConnectedClient) => void;
   onPlayerLeft?: (playerId: string) => void;
+  /** GRACE WINDOW — same signal the guests get by broadcast, fired locally for the host. */
+  onPlayerAway?: (data: { playerId: string; name: string; away: boolean }) => void;
   onPlayerReady?: (playerId: string) => void;
   onAllPlayersReady?: () => void;
   onError?: (error: Error) => void;
@@ -152,6 +160,11 @@ export interface RealtimeClientCallbacks {
    * deal_hand for its OWN cards; nothing about anyone else's hand travels here.
    */
   onHandReady?: (data: HandReadyPayload) => void;
+  /**
+   * GRACE WINDOW — a seat went away or came back. Card-free; it exists so the remaining player is
+   * not staring at a frozen table for thirty unexplained seconds.
+   */
+  onPlayerAway?: (data: { playerId: string; name: string; away: boolean }) => void;
   onAllReady?: () => void;
   onBoardReveal?: (data: BoardRevealPayload) => void;
   onHandComplete?: (data: HandCompletePayload) => void;
@@ -186,6 +199,8 @@ export class RealtimeServer {
   private hostName: string = '';
   private presenceHandler: PresenceHandler | null = null;
   private started = false;
+  /** GRACE WINDOW — per-player timers armed on presence loss, cancelled on return. */
+  private graceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   // --- Game state (mirrors GameServer) ---
   private clients: Map<string, RealtimeConnectedClient> = new Map();
@@ -327,6 +342,16 @@ export class RealtimeServer {
           reconnectedIds.push(p.id);
           rtLog('SERVER', `Player reconnected: ${existing.name} (${p.id})`, { seat: existing.seat });
         }
+        // GRACE WINDOW — a return inside the window cancels it, and the rejoin path (STATE_SNAPSHOT
+        // + deal_hand) takes over from here. Cleared for the host too, harmlessly.
+        const grace = this.graceTimers.get(p.id);
+        if (grace) {
+          clearTimeout(grace);
+          this.graceTimers.delete(p.id);
+          this.broadcastToAll('PLAYER_AWAY', { playerId: p.id, name: existing.name, away: false });
+          this.callbacks.onPlayerAway?.({ playerId: p.id, name: existing.name, away: false });
+          rtLog('SERVER', `Grace window cancelled — ${existing.name} returned in time`);
+        }
       }
     }
 
@@ -338,17 +363,37 @@ export class RealtimeServer {
         rtLog('SERVER', `Player disconnected: ${client.name} (${id})`, { seat: client.seat });
         this.callbacks.onPlayerLeft?.(id);
 
-        // If game is active (handId > 0) and this guest wasn't ready yet,
-        // mark them ready so the hand doesn't hang waiting forever
-        if (this.handId > 0 && !client.isReady && !client.isHost) {
-          client.isReady = true;
-          rtLog('SERVER', `Auto-readied disconnected player ${client.name} to prevent game hang`);
-          guestDisconnectedDuringGame = true;
-        }
-
-        // Count them as having requested next hand if they hadn't
-        if (this.handId > 0 && !client.isHost) {
-          this.nextHandRequests.add(id);
+        // GRACE WINDOW 2026-08-17 — wait 30 seconds before resolving the hand without them.
+        //
+        // This used to auto-ready the moment presence dropped, so the hand resolved in about five
+        // seconds (measured: 5.2s between hand 1 and hand 2) and a returning player landed in the
+        // NEXT hand rather than the one they left. With the rejoin path now working, half a minute
+        // is enough for a locked phone or a dropped connection to come back and finish the hand
+        // they were in.
+        //
+        // WHAT HAPPENS ON EXPIRY IS UNCHANGED — the same auto-ready, the same nextHandRequests, the
+        // same checks. Only WHEN it fires moved. Auto-ready leaves boardAssignments null, which
+        // runRevealSequence auto-fills from the player's dealt hand: they are AUTO-PLACED, never
+        // forfeited, and can still win the hand on the cards they were given.
+        if (this.handId > 0 && !client.isHost && !this.graceTimers.has(id)) {
+          this.broadcastToAll('PLAYER_AWAY', { playerId: id, name: client.name, away: true });
+          this.callbacks.onPlayerAway?.({ playerId: id, name: client.name, away: true });
+          const timer = setTimeout(() => {
+            this.graceTimers.delete(id);
+            const c = this.clients.get(id);
+            if (!c || c.connected) return; // came back — nothing to do
+            let resolved = false;
+            if (!c.isReady) {
+              c.isReady = true;
+              rtLog('SERVER', `Grace expired — auto-readied ${c.name} (auto-place, not forfeit)`);
+              resolved = true;
+            }
+            this.nextHandRequests.add(id);
+            if (resolved) this.checkAllReady();
+            this.checkNextHandReady();
+          }, DISCONNECT_GRACE_MS);
+          this.graceTimers.set(id, timer);
+          rtLog('SERVER', `Grace window started for ${client.name}`, { ms: DISCONNECT_GRACE_MS });
         }
       }
     }
@@ -949,6 +994,10 @@ export class RealtimeServer {
 
   stop(): void {
     this.clearAllPendingDeliveries();
+    // GRACE WINDOW — the timers live on the host, so they die with it. See the handoff: if the HOST
+    // is the one that drops, nothing is left to fire them.
+    for (const t of this.graceTimers.values()) clearTimeout(t);
+    this.graceTimers.clear();
     // Per-player channels outlive nothing: a host restart must not leave subscriptions open,
     // or the next room reuses stale topics for players who are no longer seated.
     this.privateHub.teardown();
@@ -1228,6 +1277,11 @@ export class RealtimeClient {
         }
         rtLog('CLIENT', `CARDS_DEALT received`, { handId });
         this.callbacks.onCardsDealt?.(data as CardsDealtPayload);
+        break;
+      }
+      case 'PLAYER_AWAY': {
+        if (data?.playerId === this.playerId) break; // never announce yourself
+        this.callbacks.onPlayerAway?.(data);
         break;
       }
       case 'STATE_SNAPSHOT': {

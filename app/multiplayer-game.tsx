@@ -217,6 +217,8 @@ function MultiplayerGameScreenInner() {
   // isMpBoardRevealEnabled() is true (client default true, remotely overridable via
   // app_config `mp_board_reveal_enabled` — see constants/gameConfig.ts), both host and
   // guest play the same <BoardReveal> SOLO uses before /results.
+  /** GRACE WINDOW — name of a seat currently away, or null. Display only. */
+  const [awayPlayer, setAwayPlayer] = useState<string | null>(null);
   const [showSafeReveal, setShowSafeReveal] = useState(false);
   const [pendingRevealBoards, setPendingRevealBoards] = useState<Array<{
     winner: 'player' | 'bot' | 'tie';
@@ -309,6 +311,15 @@ function MultiplayerGameScreenInner() {
   const userIdRef = useRef<string | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dealClockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // GRACE WINDOW — whichever side is still here learns that the other went away, and that the hand
+  // is not stuck. Same signal both ways: broadcast to guests, fired locally on the host.
+  useEffect(() => {
+    const onAway = (d: { name: string; away: boolean }) =>
+      setAwayPlayer(d.away ? (d.name || 'Opponent') : null);
+    if (isHost && mpServer) mpServer.updateCallbacks({ onPlayerAway: onAway });
+    else if (!isHost && mpClient) mpClient.updateCallbacks({ onPlayerAway: onAway });
+  }, [isHost, mpServer, mpClient]);
 
   useEffect(() => {
     CapsHooks.gameStarted('online');
@@ -1362,8 +1373,16 @@ function MultiplayerGameScreenInner() {
               />
             </View>
           )}
-          {phase === 'waiting' && (
+          {phase === 'waiting' && !awayPlayer && (
             <Text style={styles.waitingHeaderText} accessibilityLiveRegion="polite">{t().waitingForOthers(otherPlayersN)}</Text>
+          )}
+          {/* GRACE WINDOW — thirty seconds of an unexplained frozen table is worse than five
+              seconds of a hand resolving. One line, in the slot that already exists, using the
+              style already there. No countdown: a ticking clock invites staring at it. */}
+          {awayPlayer && (
+            <Text style={styles.waitingHeaderText} accessibilityLiveRegion="polite">
+              {`${awayPlayer} disconnected — the hand continues shortly`}
+            </Text>
           )}
         </>
       }
