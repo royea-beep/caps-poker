@@ -38,6 +38,7 @@ import { track } from '../../utils/analytics';
 import { leaveTable, touchRoomPlayer } from '../../utils/lobbyApi';
 import { useWaitingSeatStore } from '../../stores/waitingSeatStore';
 import { getDeviceId } from '../../utils/leaderboard';
+import { dealHandSlice } from '../../utils/serverDeal';
 import { getSupabase } from '../../utils/supabase';
 import { rf, rs, rv } from '../../utils/responsive';
 
@@ -134,7 +135,7 @@ export default function TableRoomScreen() {
     let cancelled = false;
 
     // --- HOST: open the realtime room, auto-deal when presence fills ---
-    const dealAndGo = (server: RealtimeServer) => {
+    const dealAndGo = async (server: RealtimeServer) => {
       if (startedRef.current) return;
       // Belt-and-suspenders: the game screen needs mpServer in the store before we
       // navigate (start().then sets it earlier, but guarantee it here too).
@@ -157,7 +158,19 @@ export default function TableRoomScreen() {
       if (mountedRef.current) setStatus('starting');
       CapsHooks.multiplayerJoined(roomCode, 'realtime');
       track('mp_game_started', { player_count: maxPlayers, room_code: roomCode, role: 'host' }, 'table-room');
-      server.startGame(config);
+      // STAGE 1 — the server deals. startGame() now awaits deal_hand and THROWS on failure; there is
+      // no fallback to the local dealer, so a blip surfaces here instead of silently reopening the
+      // hole-card leak. This is the screen's existing error path, not a new one.
+      try {
+        await server.startGame(config);
+      } catch (e) {
+        startedRef.current = false;
+        if (mountedRef.current) {
+          setStatus('error');
+          setErrorMsg('Could not deal the hand. Check your connection and try again.');
+        }
+        return;
+      }
 
       const { boards, playerHands } = server.getDealtCards();
       launchedRef.current = true;
@@ -194,7 +207,7 @@ export default function TableRoomScreen() {
         if (p.length >= maxPlayers && !startedRef.current && !dealScheduledRef.current) {
           dealScheduledRef.current = true;
           setTimeout(() => {
-            if (!cancelled && mountedRef.current && !startedRef.current) dealAndGo(server);
+            if (!cancelled && mountedRef.current && !startedRef.current) void dealAndGo(server);
           }, 700);
         }
       });
@@ -243,6 +256,40 @@ export default function TableRoomScreen() {
 
       // Register callbacks BEFORE connect to eliminate the deal race (CAPS 08).
       client.updateCallbacks({
+        // STAGE 1 — the guest's start signal. HAND_READY carries NO cards; the guest fetches its own
+        // slice from deal_hand, so nothing about another seat's hand ever reaches this client and
+        // there is no private topic left to be denied. onCardsDealt below is kept for the moment
+        // (rejoin/snapshot paths still reference the shape) but the host no longer sends it.
+        onHandReady: (data) => {
+          void (async () => {
+            const dev = deviceIdRef.current ?? (await getDeviceId());
+            const mySeat = data.seats?.find((s) => s.id === dev);
+            try {
+              const slice = await dealHandSlice(roomCode, dev, data.handId);
+              launchedRef.current = true;
+              releaseSeat(); // S69 — game launched: the game screen owns the seat now
+              track('mp_game_started', { player_count: maxPlayers, room_code: roomCode, role: 'guest' }, 'table-room');
+              router.replace({
+                pathname: '/multiplayer-game',
+                params: {
+                  isHost: 'false',
+                  playerIndex: String(mySeat?.playerIndex ?? 1),
+                  playerCount: String(data.playerCount),
+                  yourCards: JSON.stringify(slice.your_cards),
+                  boards: JSON.stringify(data.boards),
+                },
+              });
+            } catch (e) {
+              // No fallback: a guest that cannot get its cards must SEE that, not sit forever on
+              // "waiting for the table to fill" — which is exactly the failure this stage exists
+              // to end.
+              if (mountedRef.current) {
+                setStatus('error');
+                setErrorMsg('Could not get your cards. Check your connection and try again.');
+              }
+            }
+          })();
+        },
         onCardsDealt: (data: any) => {
           launchedRef.current = true;
           releaseSeat(); // S69 — game launched: game screen owns the seat now

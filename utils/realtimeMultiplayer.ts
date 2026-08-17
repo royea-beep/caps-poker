@@ -10,11 +10,11 @@ import {
 } from '../constants/networkConfig';
 import { MultiBoardState } from '../types/gameTypes';
 import {
-  dealNewHand,
   assignCardsRandomly,
   evaluateAllBoards,
   calculateChipDeltas,
 } from './gameLogic';
+import { dealHandFull } from './serverDeal';
 
 type PresenceHandler = (players: { id: string; name: string }[]) => void;
 
@@ -135,8 +135,23 @@ export interface SpectatorSnapshot {
 // ---------------------------------------------------------------------------
 // Client callback interface — mirrors GameClientCallbacks
 // ---------------------------------------------------------------------------
+export interface HandReadyPayload {
+  handId: number;
+  playerCount: number;
+  boardCount: number;
+  cardsPerBoard: number;
+  timeLimit: number;
+  seats: { id: string; playerIndex: number; seat: number }[];
+  boards: { boardIndex: number; openCards: Card[]; closedCardCount: number }[];
+}
+
 export interface RealtimeClientCallbacks {
   onCardsDealt?: (data: CardsDealtPayload) => void;
+  /**
+   * STAGE 1 — the card-free start signal on the SHARED channel. The guest reacts by calling
+   * deal_hand for its OWN cards; nothing about anyone else's hand travels here.
+   */
+  onHandReady?: (data: HandReadyPayload) => void;
   onAllReady?: () => void;
   onBoardReveal?: (data: BoardRevealPayload) => void;
   onHandComplete?: (data: HandCompletePayload) => void;
@@ -540,13 +555,21 @@ export class RealtimeServer {
     }
   }
 
-  private startNewHand(config: GameConfig): void {
+  private async startNewHand(config: GameConfig): Promise<void> {
     for (const client of this.clients.values()) {
       client.isReady = false;
       client.boardAssignments = null;
     }
     this.nextHandRequests.clear();
-    this.startGame(config);
+    // A failed deal must NOT leave the table silently wedged mid-hand, and must not fall back to
+    // the local dealer either: surface it the same way a lost host is surfaced.
+    try {
+      await this.startGame(config);
+    } catch (e) {
+      rtLog('SERVER', `startNewHand: deal failed — ${String(e)}`);
+      this.callbacks.onError?.(e instanceof Error ? e : new Error(String(e)));
+      return;
+    }
     this.callbacks.onNewHandDealt?.();
   }
 
@@ -559,56 +582,78 @@ export class RealtimeServer {
     Object.assign(this.callbacks, partial);
   }
 
-  /** Deal cards and broadcast to all players */
-  startGame(config: GameConfig): void {
+  /**
+   * STAGE 1 — THE SERVER DEALS. Asks `deal_hand` instead of running the local dealer.
+   *
+   * THROWS on a failed deal. There is deliberately no fallback to dealNewHand(): a blip that
+   * silently restored client dealing would reopen the hole-card leak invisibly, and the caller
+   * (dealAndGo) already has an error path that tells the player the table could not open.
+   *
+   * NOTE: `dealNewHand` / `dealCardsMultiplayer` are NOT removed — practice still uses them, and
+   * they are the revert path for this stage.
+   */
+  async startGame(config: GameConfig): Promise<void> {
     this.gameConfig = config;
     this.handId++;
     this.gamePhase = 'arranging';
     this.clearAllPendingDeliveries();
 
     const playerCount = this.clients.size as 2 | 3 | 4;
-    const { boards, dealResult } = dealNewHand(playerCount, config);
-
-    this.boards = boards;
-    this.playerHands = dealResult.playerHands;
-
     const clientArray = Array.from(this.clients.values()).sort(
       (a, b) => a.seat - b.seat
     );
 
-    rtLog('SERVER', `Starting hand ${this.handId}`, { playerCount, boardCount: boards.length });
+    // p_full: the host still adjudicates this stage, and evaluateAllBoards needs every seat's
+    // cards plus the closed cards. Stage 2 deletes both this branch and client adjudication.
+    const deal = await dealHandFull(this.roomCode, this.hostId, this.handId);
 
-    // Send each player their own cards
-    for (let i = 0; i < clientArray.length; i++) {
-      const client = clientArray[i];
-      const payload: CardsDealtPayload = {
-        yourCards: dealResult.playerHands[i],
-        boards: boards.map((b, bi) => ({
-          boardIndex: bi,
-          openCards: b.openCards,
-          closedCardCount: b.closedCards.length,
-        })),
-        cardsPerBoard: CARDS_PER_BOARD,
-        timeLimit: config.arrangementTime,
-        playerCount,
-        boardCount: boards.length,
-        yourSeat: client.seat,
-      };
+    // The presence key IS the device id (start() sets hostId = getDeviceId()), so seats are matched
+    // by device rather than by array position — a positional map would silently mis-deal if the
+    // server's client order and room_players.seat_index ever disagreed.
+    const cardsFor = (deviceId: string): Card[] =>
+      deal.full.seats.find((s) => s.device_id === deviceId)?.cards ?? [];
 
-      if (client.isHost) {
-        // Host reads via getDealtCards(), not broadcast
-      } else {
-        // Include playerIndex + handId so guest knows their seat and can ACK
-        const fullPayload = { ...payload, playerIndex: i, handId: this.handId };
-        this.sendToPlayer(client.id, 'CARDS_DEALT', fullPayload);
-        rtLog('SERVER', `CARDS_DEALT sent to ${client.id}`, { handId: this.handId, seat: i });
-        this.trackDelivery('CARDS_DEALT', client.id, this.handId, fullPayload);
-      }
-    }
+    this.boards = deal.full.boards
+      .slice()
+      .sort((a, b) => a.board_index - b.board_index)
+      .map((b) => ({
+        openCards: b.open,
+        closedCards: b.closed,
+        playerCards: Array.from({ length: clientArray.length }, () => [] as Card[]),
+        revealed: false,
+      }));
+    this.playerHands = clientArray.map((c) => cardsFor(c.id));
+
+    rtLog('SERVER', `Starting hand ${this.handId} (server-dealt)`, {
+      playerCount, boardCount: this.boards.length, handNo: deal.hand_no,
+    });
+
+    // THE GUEST TRIGGER — card-free, on the SHARED channel.
+    //
+    // CARDS_DEALT is in PRIVATE_MESSAGE_TYPES and routes to caps-room-{CODE}-p-{device}, which is
+    // denied for a device-anonymous player. That constant is left exactly as it is; this message is
+    // simply not one of its types, so it travels the public room channel that demonstrably works
+    // (measured: the shared topic joins ok, the private one returns Unauthorized). It carries NO
+    // cards — each guest fetches its own from deal_hand.
+    //
+    // The per-player private topic now carries nothing. It is DEAD, and left in place.
+    this.broadcastToAll('HAND_READY', {
+      handId: this.handId,
+      playerCount,
+      boardCount: this.boards.length,
+      cardsPerBoard: CARDS_PER_BOARD,
+      timeLimit: config.arrangementTime,
+      seats: clientArray.map((c, i) => ({ id: c.id, playerIndex: i, seat: c.seat })),
+      boards: this.boards.map((b, bi) => ({
+        boardIndex: bi,
+        openCards: b.openCards,
+        closedCardCount: b.closedCards.length,
+      })),
+    });
 
     // Broadcast game start
     this.broadcastToAll('GAME_START', {
-      boardCount: boards.length,
+      boardCount: this.boards.length,
       playerCount,
     });
   }
@@ -1169,6 +1214,19 @@ export class RealtimeClient {
         }
         rtLog('CLIENT', `CARDS_DEALT received`, { handId });
         this.callbacks.onCardsDealt?.(data as CardsDealtPayload);
+        break;
+      }
+      case 'HAND_READY': {
+        // Card-free: it says a hand exists and which seat this client is. The cards come from
+        // deal_hand, which returns only this device's slice.
+        const hrHandId = data?.handId;
+        if (typeof hrHandId === 'number' && hrHandId <= this.lastProcessedHandId) {
+          rtLog('CLIENT', `Duplicate HAND_READY ignored`, { handId: hrHandId });
+          break;
+        }
+        if (typeof hrHandId === 'number') this.lastProcessedHandId = hrHandId;
+        rtLog('CLIENT', `HAND_READY received`, { handId: hrHandId });
+        this.callbacks.onHandReady?.(data as HandReadyPayload);
         break;
       }
       case 'ALL_READY':

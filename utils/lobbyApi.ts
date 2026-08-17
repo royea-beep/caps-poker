@@ -122,9 +122,20 @@ export async function createTable(playerCount: PlayerCount, hostId?: string | nu
   try {
     const sb = getSupabase();
     if (!sb) return null;
+    // CARRIED FIX — host_id was NULL on every room this path created. The caller passes
+    // `userIdRef.current`, which is filled by a FIRE-AND-FORGET getUser() (app/lobby/table.tsx),
+    // so a host who taps Create before that resolves seats itself with user_id NULL — and the same
+    // missing session is what leaves game_rooms.host_id NULL. joinTable already resolves an
+    // identity at its choke point (resolveJoinIdentity below); the CREATE path never got it.
+    // Bounded and non-blocking: if auth is slow or fails, we create with what we have rather than
+    // refusing to open a table.
+    let resolvedHost = hostId ?? null;
+    if (!resolvedHost) {
+      try { resolvedHost = (await ensureAnonymousAuth()) ?? null; } catch { /* create anyway */ }
+    }
     const { data, error } = await sb.rpc('create_table', {
       p_player_count: playerCount,
-      p_host_id: hostId ?? null,
+      p_host_id: resolvedHost,
       p_host_name: hostName ?? 'Player',
       p_device_id: deviceId ?? null,
     });
