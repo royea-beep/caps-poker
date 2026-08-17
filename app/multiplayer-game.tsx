@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { isServerAdjudicationEnabled, submitOwnPlacements } from '../utils/serverAdjudication';
+import { isServerAdjudicationEnabled, submitOwnPlacements, resolveHandOnServer, outcomeToRevealShape } from '../utils/serverAdjudication';
 import { View, Text, Pressable, StyleSheet, Alert, Platform, Animated as AnimatedRN, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -395,15 +395,17 @@ function MultiplayerGameScreenInner() {
     mpClient.updateCallbacks({ onChat: (msg: ChatMsg) => { if (mountedRef.current && msg.seat !== playerIndex) addChatMessage(msg, false); } });
   }, [isHost, mpClient, isInternetMP, addChatMessage, playerIndex]);
 
-  // --- Host: wire server callbacks on mount ---
-  useEffect(() => {
-    if (!isHost || !mpServer) return;
+  // --- Host: the reveal broadcast, extracted so BOTH sources of truth can feed it ---
+  // STEP 1 OF PIECE 4: pure extraction. The body below is IDENTICAL to what onAllPlayersReady ran
+  // inline; nothing about who decides has changed yet. Extracting first, and proving it compiles
+  // on its own, is deliberate — a previous attempt did the extraction and the branch in one move
+  // and failed tsc with four brace errors.
+  const runHostReveal = useCallback((server: { boardResults: any[]; handResult: any } | null) => {
+    if (!mpServer) return;
 
-    mpServer.updateCallbacks({
-      onAllPlayersReady: () => {
-        if (!mountedRef.current) return;
-
-        const { boardResults, handResult } = mpServer.runRevealSequence(config);
+    // STEP 2 OF PIECE 4. Handed a SERVER outcome, we use it verbatim and the host evaluates
+    // NOTHING. Handed null, the flag is off and this is the old path, unchanged.
+        const { boardResults, handResult } = server ?? mpServer.runRevealSequence(config);
         const serverBoards = mpServer.getBoards();
         const clientArray = mpServer.getClients().sort((a: any, b: any) => a.seat - b.seat);
 
@@ -463,9 +465,37 @@ function MultiplayerGameScreenInner() {
 
         // Build RevealData for host and navigate
         buildRevealDataAndNavigate(boardResults, handResult, serverBoards, clientArray);
+  }, [mpServer, config]);
+
+  // --- Host: wire server callbacks on mount ---
+  useEffect(() => {
+    if (!isHost || !mpServer) return;
+
+    mpServer.updateCallbacks({
+      onAllPlayersReady: () => {
+        if (!mountedRef.current) return;
+        void (async () => {
+          // FLAG OFF -> null -> runRevealSequence, byte-for-byte today. FLAG ON -> the server
+          // decides and the host broadcasts it verbatim. There is NO fallback from a failed
+          // resolve to local adjudication: falling back would silently restore client authority,
+          // the regression this stage exists to remove. A failure ends the hand loudly instead.
+          try {
+            if (!(await isServerAdjudicationEnabled())) {
+              if (mountedRef.current) runHostReveal(null);
+              return;
+            }
+            const rc = storeRoomCode;
+            const hn = mpServer.getHandNo();
+            if (!rc || hn <= 0) throw new Error(`resolve_hand: no room/hand (${rc}, ${hn})`);
+            const outcome = await resolveHandOnServer(rc, hn);
+            if (mountedRef.current) runHostReveal(outcomeToRevealShape(outcome));
+          } catch (e) {
+            console.error('[stage2] resolve_hand FAILED - hand not completed, no local fallback', e);
+          }
+        })();
       },
     });
-  }, [isHost, mpServer, config]);
+  }, [isHost, mpServer, config, runHostReveal, storeRoomCode]);
 
   // --- Guest: wire client callbacks on mount ---
   useEffect(() => {
@@ -1043,7 +1073,11 @@ function MultiplayerGameScreenInner() {
         }
         await submitOwnPlacements(rc, hn, did, assignments);
       } catch (e) {
-        console.warn('[stage2] submit_placements FAILED - the server would judge dealt order', e);
+        // FATAL WHEN THE FLAG IS ON. Swallowing this would let the server auto-fill in DEALT order
+        // while the reveal animates the player's ARRANGEMENT — paying for cards nobody saw. The
+        // hand stops instead. With the flag off we never reach here.
+        console.error('[stage2] submit_placements FAILED - aborting the hand', e);
+        setDisconnectBanner('Could not submit your cards - the hand cannot be scored.');
       }
     })();
     if (isHost && mpServer) {
@@ -1273,7 +1307,11 @@ function MultiplayerGameScreenInner() {
         }
         await submitOwnPlacements(rc, hn, did, assignments);
       } catch (e) {
-        console.warn('[stage2] submit_placements FAILED - the server would judge dealt order', e);
+        // FATAL WHEN THE FLAG IS ON. Swallowing this would let the server auto-fill in DEALT order
+        // while the reveal animates the player's ARRANGEMENT — paying for cards nobody saw. The
+        // hand stops instead. With the flag off we never reach here.
+        console.error('[stage2] submit_placements FAILED - aborting the hand', e);
+        setDisconnectBanner('Could not submit your cards - the hand cannot be scored.');
       }
     })();
     if (isHost && mpServer) {
