@@ -66,3 +66,7 @@ tests/wcag-report.json
 tests/animation-probe-result.json
 tests/landing-probe-result.json
 tests/confetti-probe-result.json
+
+# GENERATED, NEVER COMMITTED — scripts/gen-edge-shared.mjs rebuilds this from the app source of
+# record every deploy. A committed copy is the second source of truth arriving by the back door.
+supabase/functions/_shared/
