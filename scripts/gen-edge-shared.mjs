@@ -38,9 +38,23 @@ const FILES = {
   'cards.ts': ['constants/cards.ts', (s) => s],
   'handEvaluator.ts': [
     'utils/handEvaluator.ts',
-    // The ONLY transformation: give the relative import an extension Deno accepts. Nothing else
-    // about the file is touched — the algorithm is byte-identical to the source.
-    (s) => s.replace(/from '\.\.\/constants\/cards'/g, "from './cards.ts'"),
+    // TWO transformations, both to the import line and neither to the algorithm.
+    //
+    //  1. Give the relative import an extension Deno accepts.
+    //  2. SPLIT TYPES FROM VALUES. `Card` and `Rank` are types imported with a VALUE import, which
+    //     Metro elides using whole-program type information. A per-file transform has no such
+    //     information, so it emits real named imports for things that do not exist at runtime and
+    //     the module fails to INSTANTIATE — which in an Edge Function is a BOOT_ERROR: deploys
+    //     green, cannot start. Measured under Node before it could be measured in production:
+    //       SyntaxError: The requested module './cards.ts' does not provide an export named 'Card'
+    //
+    // This is the generator's job precisely because it is mechanical and about the seam, not the
+    // logic. The body below the import line is byte-identical to the source.
+    (s) =>
+      s.replace(
+        /import \{ Card, Rank, RANKS, SUITS \} from '\.\.\/constants\/cards';/,
+        "import { RANKS, SUITS } from './cards.ts';\nimport type { Card, Rank } from './cards.ts';"
+      ),
   ],
 };
 
