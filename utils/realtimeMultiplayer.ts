@@ -14,7 +14,7 @@ import {
   evaluateAllBoards,
   calculateChipDeltas,
 } from './gameLogic';
-import { dealHandFull } from './serverDeal';
+import { dealHandFull, dealHandSlice } from './serverDeal';
 
 type PresenceHandler = (players: { id: string; name: string }[]) => void;
 
@@ -782,10 +782,26 @@ export class RealtimeServer {
     const seatIndex = clientArray.findIndex((c) => c.id === playerId);
     if (seatIndex < 0) return;
 
-    const snapshot: GameStateSnapshot = {
+    // MID-GAME REJOIN 2026-08-17 — CARD-FREE, on the SHARED channel.
+    //
+    // This used to go through sendToPlayer('GAME_STATE_SNAPSHOT'), which is a PRIVATE_MESSAGE_TYPE
+    // and therefore rode caps-room-{CODE}-p-{device} — the topic a device-anonymous player is
+    // denied. That is why a friend whose phone locked could never get back into a hand they were
+    // already seated in. Stage 1 routed dealing around that denial; this routes rejoin around it
+    // the same way.
+    //
+    // ONLY `yourCards` was private in this payload. Everything else is either community state every
+    // seat already sees (openCards, closedCardCount, phase, handId, counts, the clock) or a
+    // non-secret scalar about one seat (playerIndex, alreadyReady). With the cards removed there is
+    // nothing left to protect, so it travels the public room channel — the same shape HAND_READY
+    // already proved. The rejoining client calls deal_hand for its own slice, and because that RPC
+    // is idempotent per (room, hand_no) it gets back the hand it was ORIGINALLY dealt, not a new one.
+    //
+    // sendToPlayer and PRIVATE_MESSAGE_TYPES are untouched — this path simply stops using them.
+    this.broadcastToAll('STATE_SNAPSHOT', {
+      forPlayerId: playerId,
       phase: this.gamePhase,
       handId: this.handId,
-      yourCards: this.playerHands[seatIndex] || [],
       boards: this.boards.map((b, bi) => ({
         boardIndex: bi,
         openCards: b.openCards,
@@ -797,9 +813,7 @@ export class RealtimeServer {
       timeLimit: this.gameConfig?.arrangementTime ?? 60,
       boardCount: this.boards.length,
       alreadyReady: client.isReady,
-    };
-
-    this.sendToPlayer(playerId, 'GAME_STATE_SNAPSHOT', snapshot);
+    });
     rtLog('SERVER', `GAME_STATE_SNAPSHOT sent to ${client.name}`, {
       phase: this.gamePhase,
       handId: this.handId,
@@ -1214,6 +1228,30 @@ export class RealtimeClient {
         }
         rtLog('CLIENT', `CARDS_DEALT received`, { handId });
         this.callbacks.onCardsDealt?.(data as CardsDealtPayload);
+        break;
+      }
+      case 'STATE_SNAPSHOT': {
+        // MID-GAME REJOIN — card-free and shared, so every client sees it; only the one it names
+        // acts on it. A client already inside /multiplayer-game is on a different screen with
+        // different callbacks and never reaches here, so there is no risk of it re-entering.
+        if (data?.forPlayerId !== this.playerId) break;
+        rtLog('CLIENT', `STATE_SNAPSHOT received`, { handId: data?.handId, phase: data?.phase });
+        void (async () => {
+          try {
+            // The cards come from the server, not from the wire — and idempotency per
+            // (room, hand_no) means these are the ORIGINAL cards, not a fresh deal.
+            const slice = await dealHandSlice(this.roomCode, this.playerId, data.handId);
+            this.callbacks.onGameStateSnapshot?.({
+              ...(data as Omit<GameStateSnapshot, 'yourCards'>),
+              yourCards: slice.your_cards,
+            } as GameStateSnapshot);
+          } catch (e) {
+            // No cards, no rejoin. Surfacing beats silently dropping someone back into a hand
+            // holding nothing.
+            rtLog('CLIENT', `STATE_SNAPSHOT: deal_hand failed — ${String(e)}`);
+            this.callbacks.onError?.(e instanceof Error ? e : new Error(String(e)));
+          }
+        })();
         break;
       }
       case 'HAND_READY': {
