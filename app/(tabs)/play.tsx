@@ -10,6 +10,14 @@ import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import { getMatchCost, canAffordMatch } from '../../utils/economy';
 import { track } from '../../utils/analytics';
 
+// WHAT THE SHARER IS ACTUALLY PAID. redeem_referral credits the referrer 300 via
+// record_reward('referral_joined'); the redeemer separately gets 100 ('referral_welcome').
+// This card said 100 — the redeemer's number — on the SHARER's screen. Neither is 500, which is
+// what app_config.referral_both_get_chips says and what /referral used to promise.
+// 2,647 codes have been minted and NOT ONE has ever been redeemed, so no player has yet been
+// paid either number; the copy is being made true before anyone is.
+const REFERRAL_SHARER_CHIPS = 300;
+
 /**
  * PLAY surface — VAMOS GAME-MODES-OVERHAUL + FRIENDS-CLUBS (TASK B).
  *
@@ -81,11 +89,11 @@ export default function PlayScreen() {
         </Pressable>
 
         {/* Invite friends (moved here from Friends) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={`${t().inviteFriends} · ${t().inviteFriendsSub(100)}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#f0abfc' }]} onPress={() => router.push('/referral' as any)}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={`${t().inviteFriends} · ${t().inviteFriendsSub(REFERRAL_SHARER_CHIPS)}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#f0abfc' }]} onPress={() => router.push('/referral' as any)}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎁</Text>
           <View style={styles.cardBody}>
             <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().inviteFriends}</Text>
-            <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().inviteFriendsSub(100).replace('💰 ', '')}>{t().inviteFriendsSub(100)}</Text>
+            <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().inviteFriendsSub(REFERRAL_SHARER_CHIPS).replace('💰 ', '')}>{t().inviteFriendsSub(REFERRAL_SHARER_CHIPS)}</Text>
           </View>
         </Pressable>
       </ScrollView>

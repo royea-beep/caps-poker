@@ -123,7 +123,10 @@ export default function ReferralScreen() {
   // Share via native share sheet (WhatsApp picks it up)
   const handleShare = useCallback(async () => {
     if (!myCode) return;
-    const message = `🃏 Come play CAPS with me!\nUse code ${myCode} to get a ${rewardPerReferral} 💰 bonus!\n${buildInviteUrl(myCode)}`;
+    // The RECIPIENT is the redeemer, who is paid 100 ('referral_welcome') — not rewardPerReferral.
+    // app_config.referral_both_get_chips says 500 and NOTHING pays 500: the sharer gets 300 from
+    // redeem_referral, the redeemer 100.
+    const message = `🃏 Come play CAPS with me!\nUse code ${myCode} to get a 100 💰 bonus!\n${buildInviteUrl(myCode)}`;
     try {
       await Share.share({ message });
     } catch {
@@ -190,7 +193,7 @@ export default function ReferralScreen() {
           <Text style={styles.heroEmoji}>🎁</Text>
           <Text style={styles.heroTitle}>Invite friends</Text>
           <Text style={styles.heroCopy}>
-            You both get {rewardPerReferral} 💰 when they join!
+            You get 300 💰, they get 100 💰 when they join!
           </Text>
         </View>
 
@@ -228,7 +231,7 @@ export default function ReferralScreen() {
         {/* Redeem section */}
         <View style={styles.redeemCard}>
           <Text style={styles.redeemTitle}>Got a friend's code?</Text>
-          <Text style={styles.redeemSub}>Enter it here and get {rewardPerReferral} 💰</Text>
+          <Text style={styles.redeemSub}>Enter it here and get 100 💰</Text>
           <View style={styles.redeemRow}>
             <TextInput
               style={styles.redeemInput}
@@ -265,7 +268,7 @@ export default function ReferralScreen() {
           {[
             { emoji: '1️⃣', text: 'Share your code with a friend' },
             { emoji: '2️⃣', text: 'Your friend downloads CAPS and enters the code' },
-            { emoji: '3️⃣', text: `You both get ${rewardPerReferral} 💰 instantly!` },
+            { emoji: '3️⃣', text: 'You get 300 💰, they get 100 💰 instantly!' },
           ].map((step, i) => (
             <View key={i} style={styles.howRow}>
               <Text style={styles.howEmoji}>{step.emoji}</Text>
