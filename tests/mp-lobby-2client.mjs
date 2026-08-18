@@ -29,8 +29,8 @@ async function gotoLobby(page, who) {
   await page.goto(BASE, { waitUntil: 'domcontentloaded' }).catch(() => {});
   await sleep(5000); // boot + anon auth
   // Then navigate to the lobby (SPA fallback serves it on a hard load too).
-  await page.goto(BASE + '/lobby', { waitUntil: 'domcontentloaded' }).catch(() => {});
-  await page.getByText(/LOBBY/).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  await page.goto(BASE + '/lobby/private', { waitUntil: 'domcontentloaded' }).catch(() => {});
+  await page.getByText(/Create a table to share/i).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   await sleep(1500);
   await shot(page, `${who}-1-lobby`);
 }
@@ -64,7 +64,7 @@ async function run() {
 
     // --- A creates a Heads-Up (2P) table ---
     log('A: create 2-player table');
-    await clickByLabel(A, /Create a 2-player table/i);
+    await clickByLabel(A, /Create a 2-player private table/i);
     await waitForText(A, /TABLE CODE/i, 15000);
     result.hostReachedRoom = true;
     await shot(A, 'A-2-tableroom');
