@@ -471,9 +471,18 @@ export function BoardArrangement({
           <Text style={baStyles.winAllHint}>
             {/* VAMOS S-BATCH — bonus part now matches the live math: % of the TOTAL pot,
                 scaled by board count (was hardcoded 0.5 of ONE player's buy-in). */}
+            {/* NET, NOT GROSS. The label is `WIN ALL → +${n} 🟡` (i18n.ts:396) — a leading + and a
+                coin, so it is a claim about what the player GAINS. The pot and the bonus were being
+                shown without subtracting the player's OWN ante, which they put in and therefore do
+                not gain. Measured against a live 4P sweep (room 2LYE): gross 200 + bonus 50 = 250
+                on screen while the server credited the sweeper +200 — the gap was exactly the
+                ante, 25 x 2 boards. Every other chip figure in the game (chips_delta, hand_net,
+                the /results summary) is net; this was the odd one out.
+                Shared by SOLO and MULTIPLAYER, so both paths are corrected here. */}
             {t().winAll(
               potPerBoard * boardCount * numberOfPlayers
               + Math.floor((potPerBoard * boardCount * numberOfPlayers * getCompleteBonusPercent(boardCount, 50)) / 100)
+              - potPerBoard * boardCount
             )}
           </Text>
         </View>
