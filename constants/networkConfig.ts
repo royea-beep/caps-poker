@@ -113,6 +113,10 @@ export interface HandCompletePayload {
   isComplete: boolean;
   completeWinnerIndex: number | null;
   completeBonusAmount: number;
+  /** The COMPLETE-bonus percentage THE SERVER used. Only the host receives the outcome object, so
+   *  without this a guest who sweeps sees the bonus named with no number while the host sees it
+   *  with one — two players looking at the same hand and reading different things. One integer. */
+  completeBonusPercent?: number;
 }
 
 export interface ErrorPayload {

@@ -24,6 +24,10 @@ interface CompleteOverlayProps {
   onDone: () => void;
   /** PRACTICE-CHIP-GATE-SWEEP — practice is XP-only; hides the "BONUS +N" pill, keeps the celebration. */
   isPractice?: boolean;
+  /** The COMPLETE-bonus percentage THE SERVER used. Absent -> the bonus is named without a number,
+   *  which is what this said before it was corrected: it asserted a hardcoded 50 while a 2-board
+   *  table pays 25. */
+  bonusPercent?: number;
 }
 
 const NUM_PARTICLES = 15;
@@ -36,7 +40,7 @@ const PARTICLE_COLORS = [
   '#FF9800',
 ];
 
-export default function CompleteOverlay({ winner, bonusAmount, duration, onDone, isPractice = false }: CompleteOverlayProps) {
+export default function CompleteOverlay({ winner, bonusAmount, duration, onDone, isPractice = false, bonusPercent }: CompleteOverlayProps) {
   // BB1 — same source clamp as BoardReveal/results/PlayerHand: the particle burst below spreads
   // across `screenW`, so on desktop it scattered across the whole browser window while the app
   // column is only WEB_MAX_WIDTH wide. Identity below 430 — phones are unaffected.
@@ -203,7 +207,11 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone,
               2-board table paid 25%% and this claimed 50 — measured on a real sweep. The bonus
               AMOUNT is shown elsewhere and was always correct; naming the bonus without a
               percentage cannot be wrong, whereas guessing one already was. */}
-          {winner === 'player' ? 'You won ALL boards! COMPLETE bonus 🏆' : 'Bot swept all boards!'}
+          {winner === 'player'
+            ? (typeof bonusPercent === 'number'
+                ? `You won ALL boards! +${bonusPercent}% bonus 🏆`
+                : 'You won ALL boards! COMPLETE bonus 🏆')
+            : 'Bot swept all boards!'}
         </Animated.Text>
 
         {/* Bonus row — PRACTICE-CHIP-GATE-SWEEP: hidden in practice (headline fix — this

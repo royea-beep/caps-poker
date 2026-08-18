@@ -937,6 +937,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         <CompleteOverlay
           winner="player"
           bonusAmount={completeBonusAmount}
+          bonusPercent={revealData.completeBonusPercent}
           duration={3}
           onDone={() => setCompleteOverlayDone(true)}
           isPractice={revealData.isPractice}

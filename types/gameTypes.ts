@@ -104,6 +104,10 @@ export interface RevealData {
   playerChipsWon: number;
   isComplete: boolean;
   completeBonusAmount: number;
+  /** The server's COMPLETE-bonus percentage, so /results can state the number that was actually
+   *  paid. ONE INTEGER — revealData was once 25KB and WebKit rejected it SILENTLY, killing
+   *  /results outright until it was compacted; nothing else rides along here. */
+  completeBonusPercent?: number;
   completeWinner: 'player' | 'bot' | null;
   boardRevealDuration: number;
   completeBonusDisplay: number;

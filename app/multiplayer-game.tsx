@@ -448,6 +448,7 @@ function MultiplayerGameScreenInner() {
           isComplete: handResult.completeWinner !== null,
           completeWinnerIndex: handResult.completeWinner,
           completeBonusAmount: handResult.completeBonusAmount,
+          completeBonusPercent: typeof handResult.bonusPercent === 'number' ? handResult.bonusPercent : undefined,
         };
         mpServer.sendHandComplete(handCompletePayload);
 
@@ -516,6 +517,8 @@ function MultiplayerGameScreenInner() {
       },
       onHandComplete: (result: HandCompletePayload) => {
         if (!mountedRef.current) return;
+        // The guest's only source for the server's bonus percentage — it never sees the outcome.
+        if (typeof result.completeBonusPercent === 'number') serverBonusPctRef.current = result.completeBonusPercent;
         // MP-STABILITY 2026-07-06 (Problem 1) — HAND_COMPLETE is reliably delivered (ACK+retry),
         // but it can race ahead of one or more of this hand's BOARD_REVEAL messages, which now
         // carry their own independent ACK+retry and may still be in flight. Give them a bounded
@@ -698,6 +701,7 @@ function MultiplayerGameScreenInner() {
       playerChipsWon: myDelta + config.potPerBoard * boardCount,
       isComplete: handResult.completeWinner !== null,
       completeBonusAmount: handResult.completeBonusAmount,
+      completeBonusPercent: typeof handResult.bonusPercent === 'number' ? handResult.bonusPercent : undefined,
       completeWinner: handResult.completeWinner !== null
         ? (handResult.completeWinner === myIdx ? 'player' : 'bot')
         : null,
@@ -826,6 +830,7 @@ function MultiplayerGameScreenInner() {
       playerChipsWon: myDelta + config.potPerBoard * boardCount,
       isComplete: result.isComplete,
       completeBonusAmount: result.completeBonusAmount,
+      completeBonusPercent: result.completeBonusPercent,
       completeWinner: result.isComplete
         ? (completeWinnerIsMe ? 'player' : 'bot')
         : null,
