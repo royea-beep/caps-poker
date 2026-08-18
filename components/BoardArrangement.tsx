@@ -8,7 +8,8 @@ import PlayerHand from './PlayerHand';
 import { useGameStore } from '../store/gameStore';
 import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
-import { Card, CARDS_PER_BOARD, COLORS, getCompleteBonusPercent } from '../constants/gameConfig';
+import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
+import { completeBonusPctFor } from '../utils/completeBonusPct';
 import { rf as rfBase, rs as rsBase, rb as rbBase, rv as rvBase } from '../utils/responsive';
 import { PRD } from '../utils/prdTokens';
 
@@ -481,7 +482,7 @@ export function BoardArrangement({
                 Shared by SOLO and MULTIPLAYER, so both paths are corrected here. */}
             {t().winAll(
               potPerBoard * boardCount * numberOfPlayers
-              + Math.floor((potPerBoard * boardCount * numberOfPlayers * getCompleteBonusPercent(boardCount, 50)) / 100)
+              + Math.floor((potPerBoard * boardCount * numberOfPlayers * completeBonusPctFor(boardCount)) / 100)
               - potPerBoard * boardCount
             )}
           </Text>
