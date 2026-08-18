@@ -85,11 +85,25 @@ try {
 
   // POLL urls — waitForFunction rejects when navigation destroys the context.
   const arrived = new Array(placers).fill(false);
+  // The COMPLETE banner renders DURING the reveal, on the game screen, and is gone by /results —
+  // so it has to be sampled while the reveal plays rather than read afterwards.
+  const banners = new Array(placers).fill(null);
   for (let t = 0; t < 70; t++) {
-    await sleep(3000);
-    for (let i = 0; i < placers; i++) if (!arrived[i] && (pages[i].url() || '').includes('results')) arrived[i] = true;
+    await sleep(1500);
+    for (let i = 0; i < placers; i++) {
+      if (!banners[i]) {
+        const hit = await pages[i].evaluate(() => {
+          const line = document.body.innerText.split(String.fromCharCode(10))
+            .find((L) => L.indexOf('You won ALL boards!') >= 0);
+          return line || null;
+        }).catch(() => null);
+        if (hit) { banners[i] = hit; console.log(`[np] *** BANNER ${String.fromCharCode(65 + i)}: ${hit}`); }
+      }
+      if (!arrived[i] && (pages[i].url() || '').includes('results')) arrived[i] = true;
+    }
     if (arrived.every(Boolean)) break;
   }
+  log('banners seen:', JSON.stringify(banners));
   log('reached /results:', arrived.map((v, i) => `${String.fromCharCode(65 + i)}=${v}`).join(' '));
   if (tDrop) log(`elapsed since drop: ${Math.round((Date.now() - tDrop) / 1000)}s`);
   for (let i = 0; i < placers; i++) {
