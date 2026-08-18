@@ -199,7 +199,11 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone,
 
         {/* Subtitle */}
         <Animated.Text style={[styles.subText, { opacity: subOpacity }]}>
-          {winner === 'player' ? 'You won ALL boards! +50% bonus 🏆' : 'Bot swept all boards!'}
+          {/* The percentage was HARDCODED at 50 while the live map is {"2":25,"3":50,"4":75}, so a
+              2-board table paid 25%% and this claimed 50 — measured on a real sweep. The bonus
+              AMOUNT is shown elsewhere and was always correct; naming the bonus without a
+              percentage cannot be wrong, whereas guessing one already was. */}
+          {winner === 'player' ? 'You won ALL boards! COMPLETE bonus 🏆' : 'Bot swept all boards!'}
         </Animated.Text>
 
         {/* Bonus row — PRACTICE-CHIP-GATE-SWEEP: hidden in practice (headline fix — this

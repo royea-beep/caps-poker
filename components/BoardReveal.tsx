@@ -95,9 +95,23 @@ interface Props {
   isFirstGame?: boolean;
   /** OTA-COSMETIC-FIXES — practice is XP-only, no chips actually move; hide the coin/± chip UI. */
   isPractice?: boolean;
+  /**
+   * The COMPLETE-bonus percentage THE SERVER ACTUALLY USED, when the caller knows it.
+   *
+   * This banner used to state a HARDCODED "+50% bonus". The live map is
+   * {"2":25,"3":50,"4":75}, so at a 2-board table the server pays 25% and the screen claimed 50 —
+   * measured on a real 4-player sweep: bonus_percent 25, complete_bonus 50 on a totalPot of 200,
+   * while the banner read "+50% bonus". The CHIP FIGURES were right; only this label lied, and a
+   * player told +50%% and paid 25%% will believe they were shortchanged.
+   *
+   * When this is not supplied we name the bonus WITHOUT a percentage rather than guess one. The
+   * amount is already itemised beside it, so nothing is lost — and an unstated number cannot be
+   * a wrong one.
+   */
+  completeBonusPercent?: number;
 }
 
-export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false, isPractice = false }: Props) {
+export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', isFirstGame = false, isPractice = false, completeBonusPercent }: Props) {
   // BB1 — the app renders inside WebContainer, hard-capped at WEB_MAX_WIDTH (430) on web.
   // useWindowDimensions() reports the RAW browser window, so on desktop every size derived from
   // it was computed for a column that does not exist: the `commOverlap` term below asks whether
@@ -1014,11 +1028,15 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                     style={styles.completeBannerSub}
                     accessibilityLabel={isPractice
                       ? `You won ALL boards! +${BATTLE_PASS_CONFIG.xpPerComplete} XP bonus`
-                      : 'You won ALL boards! +50% bonus'}
+                      : typeof completeBonusPercent === 'number'
+                        ? `You won ALL boards! +${completeBonusPercent}% bonus`
+                        : 'You won ALL boards! COMPLETE bonus'}
                   >
                     {isPractice
                       ? `You won ALL boards! +${BATTLE_PASS_CONFIG.xpPerComplete} XP bonus 🏆`
-                      : 'You won ALL boards! +50% bonus 🏆'}
+                      : typeof completeBonusPercent === 'number'
+                        ? `You won ALL boards! +${completeBonusPercent}% bonus 🏆`
+                        : 'You won ALL boards! COMPLETE bonus 🏆'}
                   </Text>
                 </View>
               )}
