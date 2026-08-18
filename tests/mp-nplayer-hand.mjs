@@ -70,6 +70,19 @@ try {
   const placers = DROP ? N - 1 : N;
   for (let i = 0; i < placers; i++) await placeAll(pages[i], String.fromCharCode(65 + i), boards);
 
+  // TASK 1 — the arrangement banner predicts the sweep value. It shows an AMOUNT (not a
+  // percentage), computed with getCompleteBonusPercent. At 4P/2 boards the pot is 25*2*4 = 200;
+  // with the app_config map loaded the bonus is 25% = 50 -> 250. On the flat-50 fallback it would
+  // be 100 -> 300. So the number itself distinguishes "map loaded" from "fallback".
+  for (let i = 0; i < placers; i++) {
+    const line = await pages[i].evaluate(() => {
+      const L = document.body.innerText.split(String.fromCharCode(10))
+        .find((x) => x.toLowerCase().indexOf('win all') >= 0 || x.toLowerCase().indexOf('sweep') >= 0);
+      return L || null;
+    }).catch(() => null);
+    if (line) console.log(`[np] *** ARRANGE-BANNER ${String.fromCharCode(65 + i)}: ${line}`);
+  }
+
   let tDrop = null;
   if (DROP) {
     log(`DROPPING ${String.fromCharCode(65 + N - 1)} (context closed) — grace 30s; connected becomes ${N - 1}`);

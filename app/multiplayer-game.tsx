@@ -1417,7 +1417,7 @@ function MultiplayerGameScreenInner() {
       boardError={null}
       boardCount={boardCount}
       numberOfPlayers={_safePlayers}
-      potPerBoard={config.potPerBoard * playerCount}
+      potPerBoard={config.potPerBoard}
       countdownActive={timer.isRunning}
       countdown={displayTimeLeft}
       timeBankUsed={timeBankUsed}
