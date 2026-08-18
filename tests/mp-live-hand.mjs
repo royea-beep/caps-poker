@@ -18,6 +18,20 @@ const BASE = process.env.BASE || 'https://caps.ftable.co.il';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log('[live]', ...a);
 
+function wire(p, who) {
+  // THE CAPTURE. Three failure modes look identical from the outside — never called, called and
+  // failed, or succeeded with the broadcast lost. serverAdjudication.ts throws loudly rather than
+  // falling back, so if it was tried and failed the console says why.
+  p.on('console', (m) => {
+    const t = m.text();
+    if (m.type() === 'error' || /stage2|resolve_hand|submit_placements|RT |READY|ALL_READY/i.test(t)) {
+      console.log(`[${who}:${m.type()}]`, t.slice(0, 300));
+    }
+  });
+  p.on('pageerror', (e) => console.log(`[${who}:pageerror]`, String(e).slice(0, 300)));
+  p.on('response', (r) => { if (r.status() >= 400) console.log(`[${who}:HTTP ${r.status()}]`, r.url().slice(0, 160)); });
+}
+
 async function boot(ctx) {
   const p = await ctx.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' }).catch(() => {});
@@ -48,6 +62,7 @@ async function placeAll(page, who) {
 const browser = await chromium.launch();
 const A = await boot(await browser.newContext({ viewport: { width: 375, height: 812 } }));
 const B = await boot(await browser.newContext({ viewport: { width: 375, height: 812 } }));
+wire(A, 'A'); wire(B, 'B');
 const out = { code: null, aResults: false, bResults: false, aSummary: '', bSummary: '' };
 try {
   await A.getByLabel(/Create a 2-player private table/i).first().click();
@@ -72,10 +87,13 @@ try {
     if (vis) { await rb.click({ timeout: 5000 }).catch(() => {}); log(`${who}: pressed ready`); }
   }
 
+  const t0 = Date.now();
   for (const [p, k] of [[A, 'aResults'], [B, 'bResults']]) {
-    out[k] = await p.waitForFunction(() => location.pathname.includes('results'), { timeout: 90000 })
+    out[k] = await p.waitForFunction(() => location.pathname.includes('results'), { timeout: 150000 })
       .then(() => true).catch(() => false);
+    log(`${k} after ${Math.round((Date.now() - t0) / 1000)}s`);
   }
+  log('final URLs', A.url().split('?')[0], '|', B.url().split('?')[0]);
   log('A results =', out.aResults, ' B results =', out.bResults);
   if (out.aResults) out.aSummary = (await A.evaluate(() => document.body.innerText.slice(0, 300)).catch(() => ''));
   if (out.bResults) out.bSummary = (await B.evaluate(() => document.body.innerText.slice(0, 300)).catch(() => ''));

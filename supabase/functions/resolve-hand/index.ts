@@ -53,7 +53,19 @@ async function loadConfig(boardCount: number): Promise<{ potPerBoard: number; bo
 interface Seat { device_id: string; seat_index: number; cards: Card[] }
 interface Board { board_index: number; open: Card[]; closed: Card[] }
 
+// CORS. This function was only ever called server-side until stage 2 wired the host, and a browser
+// preflight was therefore never exercised: the first live hand failed with "No
+// 'Access-Control-Allow-Origin' header is present". Transport only — nothing about adjudication,
+// the claim-release or idempotency changes here.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+
   // Set once the claim is taken, so a failure AFTER claiming can release it. Without this, a hand
   // that errors mid-write stays claimed forever and can never be resolved by anyone — measured,
   // not theorised: the first live call failed on a CHECK constraint and left exactly that state.
@@ -221,5 +233,5 @@ Deno.serve(async (req) => {
 });
 
 function json(b: unknown, status = 200): Response {
-  return new Response(JSON.stringify(b), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(b), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 }
