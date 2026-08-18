@@ -12,7 +12,7 @@
  *
  *   BASE=https://caps.ftable.co.il node tests/mp-live-hand.mjs
  */
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 
 const BASE = process.env.BASE || 'https://caps.ftable.co.il';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -59,7 +59,10 @@ async function placeAll(page, who) {
   return left;
 }
 
-const browser = await chromium.launch();
+// ENGINE=webkit runs the same hand on WebKit. It has twice exposed what Chromium forgave here
+// (the rowGap collapse, and a sessionStorage rejection that killed /results silently).
+const ENGINE = process.env.ENGINE === 'webkit' ? webkit : chromium;
+const browser = await ENGINE.launch();
 const A = await boot(await browser.newContext({ viewport: { width: 375, height: 812 } }));
 const B = await boot(await browser.newContext({ viewport: { width: 375, height: 812 } }));
 wire(A, 'A'); wire(B, 'B');
