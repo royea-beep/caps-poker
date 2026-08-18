@@ -48,9 +48,8 @@ export default function CupsScreen() {
                     way to learn how to open any of them. */}
                 {!cup.earned && !!cup.desc && (
                   <Text style={styles.cupReq}>
-                    {cup.desc}{typeof cup.req === 'number' && cup.req > 0
-                      ? ` · ${Math.floor((Math.min(100, cup.progress) / 100) * cup.req)}/${cup.req}`
-                      : ''}
+                    {cup.desc}
+                    {typeof cup.progress === 'number' ? ` · ${Math.min(100, cup.progress)}%` : ''}
                   </Text>
                 )}
                 {!cup.earned && (
