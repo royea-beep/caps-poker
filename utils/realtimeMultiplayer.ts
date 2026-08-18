@@ -589,6 +589,23 @@ export class RealtimeServer {
   }
 
   private checkNextHandReady(): void {
+    // A HAND THAT HAS NOT FINISHED CANNOT BE SUPERSEDED.
+    //
+    // The quorum below counts requests against CONNECTED clients, so a dropped opponent collapses
+    // it to a quorum of ONE — and the grace-expiry handler adds the DEPARTED player's own id to
+    // nextHandRequests (see the grace timer above). Together those dealt a fresh hand in the same
+    // tick that the current hand was being resolved: checkAllReady() schedules the resolve
+    // asynchronously, this ran immediately after and bumped handId, so the resolve then named the
+    // NEW hand. The player's real arrangement was discarded and dealt order judged instead —
+    // measured live: room HJQX held hand 1 (submitted, unresolved) and hand 2 (unsubmitted,
+    // resolved) 41 seconds apart.
+    //
+    // Gating on the phase fixes it at the level of the rule rather than the arithmetic: it holds
+    // however the quorum collapsed, and it keeps the departed player's request queued rather than
+    // discarded, so the table still moves on once the hand actually completes — which is what that
+    // request was for. No hand number is synthesised anywhere; the dealt hand still names itself.
+    if (this.gamePhase !== 'complete') return;
+
     const connected = Array.from(this.clients.values()).filter(
       (c) => c.connected
     );
