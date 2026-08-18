@@ -301,6 +301,11 @@ function MultiplayerGameScreenInner() {
 
   // Collected reveal data for guest
   const boardRevealsRef = useRef<Map<number, BoardRevealPayload>>(new Map());
+  // The COMPLETE-bonus percentage THE SERVER used, captured when the outcome arrives so the reveal
+  // banner can state it instead of the hardcoded "+50%" it used to assert. Null on the guest path,
+  // which never sees the outcome object — the banner then names the bonus without a number rather
+  // than guessing one.
+  const serverBonusPctRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
   // MP-LEAVE-RECOVERY — completedRef is set the moment a NORMAL completion begins
   // (host/guest reveal navigate, or reveal-modal done). The unmount handler uses it to
@@ -402,6 +407,9 @@ function MultiplayerGameScreenInner() {
   // and failed tsc with four brace errors.
   const runHostReveal = useCallback((server: { boardResults: any[]; handResult: any } | null) => {
     if (!mpServer) return;
+    if (typeof server?.handResult?.bonusPercent === 'number') {
+      serverBonusPctRef.current = server.handResult.bonusPercent;
+    }
 
     // STEP 2 OF PIECE 4. Handed a SERVER outcome, we use it verbatim and the host evaluates
     // NOTHING. Handed null, the flag is off and this is the old path, unchanged.
@@ -1431,7 +1439,7 @@ function MultiplayerGameScreenInner() {
           style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(201,168,76,0.18)', opacity: autoPlaceFlashAnim, zIndex: 99 }]}
         />
       }
-      reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed } : null}
+      reveal={showSafeReveal ? { boards: pendingRevealBoards, onDone: onRevealDone, revealSpeed: config.revealSpeed, completeBonusPercent: serverBonusPctRef.current ?? undefined } : null}
       topCenter={
         <>
           {isArranging && !timer.isRunning && (

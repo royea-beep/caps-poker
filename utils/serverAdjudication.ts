@@ -137,6 +137,11 @@ export function outcomeToRevealShape(outcome: ServerOutcome): { boardResults: an
       chipDeltas: outcome.seats.map((s) => s.chips_delta),
       completeWinner: outcome.complete_winner,
       completeBonusAmount: outcome.complete_bonus,
+      // ONE FIELD ADDED, nothing reshaped. The reveal banner used to assert a HARDCODED "+50%"
+      // while the live map is {"2":25,"3":50,"4":75} — at two boards the server pays 25% and the
+      // screen claimed 50. This carries the percentage THE SERVER ACTUALLY USED through to the
+      // banner so it displays that number rather than computing one of its own.
+      bonusPercent: outcome.bonus_percent,
     },
   };
 }

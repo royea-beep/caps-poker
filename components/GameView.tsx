@@ -59,6 +59,8 @@ export interface GameViewReveal {
   isFirstGame?: boolean;
   /** OTA-COSMETIC-FIXES — passed straight through to <BoardReveal/> to hide chip UI in practice. */
   isPractice?: boolean;
+  /** The COMPLETE-bonus percentage THE SERVER used, forwarded verbatim to <BoardReveal/>. */
+  completeBonusPercent?: number;
 }
 
 export interface GameViewProps {
@@ -297,6 +299,7 @@ export function GameView({
           revealSpeed={reveal.revealSpeed}
           isFirstGame={reveal.isFirstGame}
           isPractice={reveal.isPractice}
+          completeBonusPercent={reveal.completeBonusPercent}
         />
       )}
 
