@@ -43,6 +43,16 @@ export default function CupsScreen() {
                   {!cup.earned ? '🔒 ' : ''}{TIER_LABELS[cup.tier] || cup.name_he || cup.tier}
                 </Text>
                 <Text style={styles.cupTier}>{String(cup.tier ?? "").toUpperCase()}</Text>
+                {/* WHAT UNLOCKS IT. get_cup_collection has always returned `desc` ("Win 10 hands")
+                    and `req`; nothing rendered them, so the screen showed five locked rows and no
+                    way to learn how to open any of them. */}
+                {!cup.earned && !!cup.desc && (
+                  <Text style={styles.cupReq}>
+                    {cup.desc}{typeof cup.req === 'number' && cup.req > 0
+                      ? ` · ${Math.floor((Math.min(100, cup.progress) / 100) * cup.req)}/${cup.req}`
+                      : ''}
+                  </Text>
+                )}
                 {!cup.earned && (
                   <View style={styles.progressBar}>
                     <View style={[styles.progressFill, { width: `${Math.min(100, cup.progress)}%` as any, backgroundColor: cup.color }]} />
@@ -69,6 +79,7 @@ const styles = StyleSheet.create({
   cupInfo: { flex: 1 },
   cupName: { color: '#ffffff', fontSize: rf(15), fontWeight: '700' },
   cupTier: { color: 'rgba(255,255,255,0.75)', fontSize: rf(10), fontWeight: '600', letterSpacing: 1, marginTop: rs(2) },
+  cupReq: { color: 'rgba(255,255,255,0.85)', fontSize: rf(11), marginTop: rs(3) },
   progressBar: { height: rs(4), backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: rs(2), marginTop: rs(6), overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: rs(2) },
   earned: { fontSize: rf(20) },

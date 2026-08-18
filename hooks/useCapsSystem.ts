@@ -13,6 +13,12 @@ export interface CupItem {
   color: string;
   earned: boolean;
   progress: number;
+  /** The unlock condition, already sent by get_cup_collection and previously never rendered:
+   *  `desc` reads "Win 10 hands", `req` is the threshold. The Cups screen showed five locked rows
+   *  with no statement of what unlocks them — a locked door with no keyhole — while the server had
+   *  been supplying the answer all along. */
+  desc?: string;
+  req?: number;
 }
 
 export interface HomeScreenV2 {
