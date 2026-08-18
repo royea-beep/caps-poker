@@ -218,6 +218,17 @@ export default function ShopScreen() {
           contentContainerStyle={styles.itemList}
           showsVerticalScrollIndicator={false}
         >
+          {/* WHERE CHIPS COME FROM, when they cannot be bought. The IAP section below hides
+              ENTIRELY on web and whenever iap_enabled is false — header included, so there is no
+              empty frame — but that leaves a shop full of ways to SPEND chips and no statement of
+              how to get them. Every source named here is real and pays today: daily_reward,
+              daily_streak and the per-hand net all appear in chip_transactions. */}
+          {!(Platform.OS !== 'web' && isIapEnabled()) && (
+            <Text style={styles.earnHint} accessibilityRole="text">
+              Chips come from playing — daily rewards, streaks, and winning boards.
+            </Text>
+          )}
+
           {/* ─── IAP Section ─────────────────────────────────────── */}
           {/* VAMOS-HIDE-IAP-506 — hidden until remote iap_enabled flag is true (products not
               configured in App Store Connect / RevenueCat; Apple rejects non-functional IAP). */}
@@ -392,6 +403,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: '700',
   },
+  earnHint: { color: 'rgba(255,255,255,0.75)', fontSize: rf(12), textAlign: 'center', marginBottom: rs(10), paddingHorizontal: rs(12) },
   sectionTitle: {
     color: 'rgba(255,255,255,0.75)',
     fontSize: rf(12),

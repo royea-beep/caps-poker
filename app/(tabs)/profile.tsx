@@ -18,6 +18,12 @@ export default function ProfileScreen() {
 
   const winRate = handsPlayed > 0 ? Math.round((handsWon / handsPlayed) * 100) : 0;
 
+  // A MISSING STAT RENDERS AS A BLANK, NOT A ZERO. handsPlayed and currentWinStreak go straight
+  // into <Text>, so an undefined store value produced an empty card — a fresh profile showed a
+  // blank, a 0%, and another blank, which reads as broken rather than as "you have not played".
+  // winRate was already guarded (hence the 0% the survey saw); chips already used `?? 0`. These
+  // are the two that were not.
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -25,9 +31,9 @@ export default function ProfileScreen() {
         <Text style={styles.playerName}>{playerName}</Text>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${handsPlayed} hands`}><Text style={styles.statValue}>{handsPlayed}</Text><Text style={styles.statLabel}>HANDS</Text></View>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${winRate}% win rate`}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${currentWinStreak} streak`}><Text style={styles.statValue}>{currentWinStreak}</Text><Text style={styles.statLabel}>STREAK</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${handsPlayed ?? 0} hands`}><Text style={styles.statValue}>{handsPlayed ?? 0}</Text><Text style={styles.statLabel}>HANDS</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${winRate ?? 0}% win rate`}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${currentWinStreak ?? 0} streak`}><Text style={styles.statValue}>{currentWinStreak ?? 0}</Text><Text style={styles.statLabel}>STREAK</Text></View>
           <View style={styles.statCard} accessible={true} accessibilityLabel={`${(chips ?? 0).toLocaleString()} chips`}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel="CHIPS">CHIPS 💰</Text></View>
         </View>
 
