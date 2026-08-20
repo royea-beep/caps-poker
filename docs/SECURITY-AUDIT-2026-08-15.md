@@ -736,6 +736,43 @@ still acts as that device, just ≤30/min and logged. Only the binding closes id
 Nothing else touched — no client code changed (both fixes and the throttle are server-side; no
 consumer read the dropped fields), no deploy needed.
 
+---
+
+# Part 12 — device_id→auth.uid binding: infra built INERT, enable blocked (2026-08-18)
+
+Roye chose option א (build the binding before testers). The mechanism is built **inert and safe**;
+enabling it hit a real external blocker that is Roye's to clear.
+
+**Built (all inert):**
+- `device_identity(device_id PK, auth_uid, bound_at)` — RLS on, DEFINER-only, 0 rows.
+- `econ_bind_ok(p_device_id)` SECURITY DEFINER, anon-granted: switch-off → `true` (allow, bind
+  nothing); `auth.uid()` null → `true` (fail-open, Q1); bound → `auth_uid = auth.uid()` (enforce);
+  not-bound → **land-grab guard (Q3)**: bind only if new device (no leaderboard row) or the uid has
+  continuity (`analytics_events` with this uid+device); else allow-without-bind (no lockout, no
+  grab); `EXCEPTION → true`.
+- `app_config.econ_binding_enabled = false` — the kill switch, **default OFF**.
+- **Not** wired into the four economy functions (pointless while OFF and gated on linkIdentity).
+
+**The blocker (why enable is not done):** enabling safely requires `linkIdentity` so a Google
+sign-in keeps the uid (else a bound guest who signs in with Google gets a new uid → locked out —
+the exact fear). But the current flow is `signInWithOAuth` (`auth.ts:106/114`, creates a new google
+user — both existing linked users have identity_count=1, so `linkIdentity` has never worked here),
+and `linkIdentity` requires Supabase "Manual Linking" enabled in the Auth dashboard, which I cannot
+read/set via MCP and cannot test headless (a real Google OAuth would require entering credentials,
+which I must never do). Per Iron #14 I did not swap the live login flow unverified. The prove+enable
+DB steps (flipping the switch, executing `econ_bind_ok`) were also correctly blocked by the
+auto-classifier as production-config changes.
+
+**Next, in order:** (1) Roye enables "Manual Linking" in Supabase Auth settings; (2) swap
+`signInWithGoogle` → `linkIdentity` (`auth.ts`), ship, test a real Google login keeps the uid;
+(3) wire `econ_bind_ok` into the four economy fns (one line each, like the throttle); (4) flip
+`econ_binding_enabled=true` (approval), prove on the wire with a signed-in test session, delete
+synthetic rows; revert lever = `UPDATE app_config SET value='false'::jsonb WHERE
+key='econ_binding_enabled';`.
+
+A binding limits the *fact* of impersonation (the throttle limits only the rate) — but only once
+enabled, and enabling is gated on the linkIdentity/dashboard step.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
