@@ -773,6 +773,39 @@ key='econ_binding_enabled';`.
 A binding limits the *fact* of impersonation (the throttle limits only the rate) — but only once
 enabled, and enabling is gated on the linkIdentity/dashboard step.
 
+---
+
+# Part 13 — linkIdentity shipped; binding-wiring gated on Roye's Google test (2026-08-20)
+
+Manual Linking is enabled in the Auth dashboard (Roye confirmed), which unblocks the binding.
+
+**linkIdentity swap — shipped (`2d26b56`, Web Deploy green).** `utils/auth.ts` gains
+`startGoogleOAuth(client, options)` (same `{data,error}` shape; both web and native routed through
+it): anon session present → `linkIdentity({provider:'google'})` (uid **preserved**); already-linked
+/ manual-linking conflict → fall back to `signInWithOAuth` (won't break the 2 existing linked
+users); no anon session (brand-new user) → `signInWithOAuth`. `merge_guest_to_user` left as-is
+(harmless no-op; uid preserved makes it unnecessary).
+
+**The one unsimulatable step — Roye's Google login test (verbatim):** *"On caps.ftable.co.il, first
+play one practice hand so you have a chip balance/history. Then Sign in with Google. PASS = same
+account afterwards (same chips, hands, rank). FAIL = a fresh/empty account (new uid was created
+instead of linked) — do not enable the binding, tell the bot."* I cannot test a real Google OAuth
+headless and must never enter credentials.
+
+**Binding wiring — NOT done, gated on that test** (brief section 2: only after the login proves the
+uid is kept). `econ_binding_enabled` stays **FALSE**. On PASS: wire `econ_bind_ok` into the four fns
+(one line each, like the throttle), prove inert, then a separate approval flips the switch and
+proves on the wire.
+
+**Anon-user cost finding:** anonymous `auth.users` = **3,172** (the brief said 2,427 — it grew, and
+this session's Playwright runs are a known inflator: each fresh browser context calls
+`signInAnonymously`). Only **294 (~9%)** have any analytics activity under their uid; 91% are empty.
+`anon_with_leaderboard=0` is confounded (`leaderboard.user_id` ≠ auth.uid). No UA/webdriver column
+exists in the DB, so a precise automated count isn't available — the 9%-active proxy is the best
+signal. **MAU cost:** anon users count toward Supabase MAU; 3,172 is well within Free (50k)/Pro
+(100k), so no immediate cost — but with anonymous sign-in on and no captcha it's growable, and
+mostly noise. **Captcha not enabled** (its own brief). Worth watching.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
