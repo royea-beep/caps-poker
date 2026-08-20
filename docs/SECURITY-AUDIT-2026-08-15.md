@@ -1001,3 +1001,47 @@ This is roughly a third of one of the two questions Roye asked. Sizing it honest
 are each a session, and EZ1's remaining 64 functions are another.
 
 **Nothing was fixed. No revoke, no policy, no header. Read-only queries against production only.**
+
+---
+
+## Part 18 — Correction: the 30-second sign-in test criterion was not diagnostic (2026-08-21)
+
+**Status at time of writing:** Roye has not signed in yet. `google_identities`=2 (both pre-existing,
+0 in the last 12h), `permanent_users`=2, `bound_devices`=2, `identity_mismatch` in 24h = **0**.
+Baseline unchanged since Part 17: `e519-8702-3cc6` → `6db64e9f-…` 4,875 chips / 29 txns / 0
+identities / anonymous; `7159-1e31-d433` → `48c36af9-…` 2,530 chips / 3 txns / 0 identities /
+anonymous.
+
+**The defect (mine).** Part 17 told Roye: *PASS = 4,875 chips, FAIL = 2,530 chips.* Before he ran
+it I traced the read path:
+
+| what he would look at | where it comes from | keyed to |
+|---|---|---|
+| chip count in the header | `store/gameStore.ts:351` — `chips` is in `partialize`, persisted locally under `caps-poker-storage` | the device's local storage |
+| leaderboard / rank | `utils/leaderboard.ts:119` — `get_leaderboard({ p_device_id })` | `device_id` |
+| hand history | `hand_history.device_id` | `device_id` |
+
+**Nothing on that screen is keyed to `auth.uid`.** So in the exact failure we are testing for — the
+callback mints a *new* uid instead of linking — the chip count still reads 4,875. The eyeball test
+returns **PASS on a failed link**, and we would ship the MP prompt on top of broken binding. The
+criterion also fails the other way: 2,530 is a real device's real balance, so a correct PASS on
+`7159-1e31-d433` would read as "FAIL".
+
+**Corrected protocol.** Roye signs in and says "done" — no comparison, nothing to note. The verdict
+comes from the DB:
+
+- **PASS** — the new `auth.identities` row with `provider='google'` carries `user_id` =
+  `6db64e9f-…` (or `48c36af9-…`), i.e. the **same** uid; that user flips `is_anonymous=false`;
+  the `device_identity` row is unchanged; **zero** `identity_mismatch` for his device afterwards.
+- **FAIL** — the google row lands on a **new** uid. The device stays bound to the old uid, so his
+  next economy call returns `identity_mismatch`. Revert immediately.
+
+**Consolation that follows from the same finding:** because chips and history are device-keyed, a
+FAIL does **not** lose his chips. It breaks binding, not his account. The "do not play" caution in
+Part 17 was stronger than the evidence warrants — holding off merely keeps the observation window
+clean.
+
+**Unchanged:** the MP prompt is still **not built**, correctly gated on this verification.
+**Revert lever:** `UPDATE app_config SET value='false'::jsonb WHERE key='econ_binding_enabled';`
+
+*(handoff: `vamos_handoffs` id 75)*
