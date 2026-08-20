@@ -686,6 +686,56 @@ binding closes the identity hole.
 Only `get_sng_status` was changed (a read RPC; device_id dropped). No throttle applied; nothing on the
 economy path touched.
 
+---
+
+# Part 11 — two emitters + throttle shipped (2026-08-18)
+
+## get_play_of_the_day — FIXED
+
+Consumer: `app/(tabs)/index.tsx:844` → `setPotd(data)`. The `PotdData` type (`:614`) reads only
+`data.cards / pot_won / hand_name` (+ top-level `player`, `views`) — **never `device_id`.** Fix:
+`RETURN … 'data', (v_hand.data - 'device_id') …` — strips the one key, keeps everything rendered.
+Wire-verified: 200, no device_id, blob otherwise intact. No client change.
+
+## deal_hand — a host CAN read opponents' ids, but the field is functionally used
+
+**Yes:** a seated host calling `p_full=true` receives `'full' = v_deal`, whose `seats` carry every
+device_id, and `realtimeMultiplayer.ts:676` **reads** them (`s.device_id === deviceId`) to
+distribute/adjudicate cards in the **flag-off revert path**. Unlike the other two emitters, the
+field is *functionally consumed* — stripping it breaks host-side adjudication. It is host-only,
+own-room, flag-off-only, membership-gated — not a harvest. The right closure is the
+`device_id → auth.uid` binding (adjudicate by uid), **not** a field strip. Left standing; `p_full`
+is the flag's revert path and must not be deleted. Deferred to the binding project.
+
+## Throttle — built, shipped, proven
+
+**Infra:** `econ_rate_counters(device_id, bucket, window_start, count)` + `econ_rate_ok(p_device_id)`.
+Caps **30/device/min AND 120/device/hour**. **Fail-open** on any error / missing id / kill-switch-off.
+RLS on, no anon policy (DEFINER-only). Kill switch `app_config.econ_throttle_enabled` (default true).
+
+**Wired** into `earn_chips`, `spend_chips`, `update_leaderboard_elo`, `update_mission_progress` — one
+guard line each at the existing `econ_authz_probe` touchpoint, every other line verbatim, each
+returning its own refusal shape (`{ok:false, reason:'rate_limited'}` / `0` / void).
+
+**Controls, on the wire:**
+- POSITIVE — a fresh device, 11 calls (the observed peak): **all pass.**
+- NEGATIVE (`econ_rate_ok`): 40 calls, first false at **#31** (28–33: T,T,T,F,F,F).
+- NEGATIVE end-to-end (`earn_chips` amount=1 so the daily cap never trips first): 30 ok, first
+  **`rate_limited` at #31** (28–33: ok,ok,ok,rate_limited,rate_limited,rate_limited).
+- Smoke: the other three execute cleanly post-rewrite.
+
+**Revert path:** `UPDATE app_config SET value='false'::jsonb WHERE key='econ_throttle_enabled';` —
+instant, no redeploy; all four keep working (guard returns true when off).
+
+All synthetic test rows deleted; `econ_rate_counters` back to empty. Pre-existing `test-as1-guard`
+(2026-08-01) left untouched — not mine.
+
+**What a throttle does NOT buy:** the *rate* of impersonation, not the *fact*. A leaked device_id
+still acts as that device, just ≤30/min and logged. Only the binding closes identity.
+
+Nothing else touched — no client code changed (both fixes and the throttle are server-side; no
+consumer read the dropped fields), no deploy needed.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
