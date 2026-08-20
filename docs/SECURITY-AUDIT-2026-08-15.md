@@ -1133,3 +1133,59 @@ Instruction unchanged: a Google account **never used on CAPS** (not `royearguan@
 say "done". Prompt still not built.
 
 *(handoff: `vamos_handoffs` id 77)*
+
+---
+
+## Part 21 — The silent sign-in failure now speaks (2026-08-21)
+
+Roye still has not signed in. Baseline unchanged, `identity_mismatch` 24h = 0, binding not reverted,
+MP prompt still **not** built.
+
+**Built** — the open item from Part 20:
+
+- `utils/authCallbackError.ts` — reads `error` / `error_code` / `error_description` from **both**
+  the query string and the hash (Supabase uses either depending on flow) and maps them to wording.
+- `components/AuthErrorBanner.tsx` — mounted once in the root layout beside `WaitingSeatBanner`,
+  whose visual language it follows. `Alert.alert` is a no-op on web (project hard rule) and web is
+  exactly where this failure happens, so the message is **rendered**, not alerted. Dismissible,
+  48pt hit target.
+
+Wording is per case, because *"try again"* is useless advice for the conflict:
+
+| case | message |
+|---|---|
+| conflict | That Google account is already used by another CAPS profile. Sign in with a different account — your chips and history here are untouched. |
+| cancelled | Sign-in cancelled. Nothing changed — you are still playing as before. |
+| anything else | Google sign-in did not finish. Nothing changed — you are still playing as before. |
+
+**Two failed attempts before it worked, both caught by measuring rather than assuming.**
+
+1. Cleaning the URL during mount does **not** hold — expo-router re-syncs the initial URL afterwards
+   and puts the params straight back. Proven: the params were still in the address bar seconds
+   later, while the identical call made after the app had settled stuck.
+2. Gating the clean on `useRootNavigationState().key` was **still** too early — same result.
+
+Shipped answer: re-assert on a bounded schedule (0/250/500/1000/2000/3000 ms), stop as soon as it
+holds; the effect returns the canceller. No guessed settle point.
+
+**Verified live** on bundle `index-350fa154d93a5e9d7ee13302fafcf3a6.js`, **both engines** (WebKit +
+Chromium), 430×900:
+
+| case | result |
+|---|---|
+| conflict error (query string) | correct wording · URL cleaned |
+| `access_denied` in the **hash** | "Sign-in cancelled…" · URL cleaned — proves the hash branch works |
+| generic `server_error` | generic wording · URL cleaned |
+| clean load, no params | **nothing shown** — no false positive |
+
+Commits: `e5f9228` (banner) · `abe7558` (router-ready attempt) · `d19ce8a` (bounded re-assert).
+
+**On verification honesty:** full-project `tsc` crashed twice with this machine's known
+`0xC0000005`. The new files typecheck clean in isolation and CI's `tsc` gate passed — the deploy
+would not have shipped otherwise — but I am not claiming a clean local full typecheck.
+
+**Method note worth keeping:** watch deploys by **bundle content**, not by hash. A docs-only commit
+changed the hash, and my first verification ran against a bundle that did not contain the component
+at all.
+
+*(handoff: `vamos_handoffs` id 78)*
