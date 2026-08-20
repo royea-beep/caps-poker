@@ -846,6 +846,60 @@ throttle guard, rest verbatim, `reason='identity_mismatch'` / elo 0 / mission vo
 **Enable is a separate approval** with a wire proof (flip the flag; prove a bound device rejects a
 foreign uid and accepts its own with a signed-in session; revert = one `app_config` UPDATE).
 
+---
+
+# Part 15 — BINDING ENABLED and proven on the wire (2026-08-20)
+
+**Revert, printed before flipping (never needed):**
+`UPDATE app_config SET value='false'::jsonb WHERE key='econ_binding_enabled';`
+
+**Gap found and fixed before flipping.** `econ_authz_probe` logs only `no_session` and
+`uid_mismatch`, and `uid_mismatch` needs a `p_claimed_uid` that **none of the four functions pass**
+— so an `identity_mismatch` refusal would have been **completely unlogged** and a locked-out real
+player silent. Added an `analytics_events` insert in `econ_bind_ok`'s false branch (own
+`BEGIN/EXCEPTION`, can never break an economy call). Verified firing below.
+
+**Flipped at 2026-08-20 21:26:24.815+03.**
+
+**Four states, real clients with real sessions** (`signInAnonymously`; a raw anon-key fetch has
+`auth.uid()=NULL` and cannot test binding). Device `test-bind-mt1uvg3w`:
+
+| # | state | result |
+|---|---|---|
+| 1 | **POSITIVE CONTROL** — unbound + session A | `{"ok":true,"chips_earned":1}` **and bound** (row -> `5899e471…`) |
+| 2 | repeat, same session | `{"ok":true,"chips_earned":1}` — repeat play unaffected |
+| 3 | **foreign session B** on the bound device | `{"ok":false,"reason":"identity_mismatch"}` **and logged** (bound_uid vs caller_uid) |
+| 4 | no session (raw anon key) | `{"ok":true,"chips_earned":1}` — **fail-open as designed** |
+
+State 3 is the impersonation the whole project existed to close.
+
+**Real gameplay, both engines, binding ON:** practice 2P played through to `/results` —
+Chromium `reachedResults=true` (4 pageErrors = known audio autoplay), WebKit `true` (0 errors).
+**Honest scope:** practice is XP-only, so it calls `update_mission_progress` (one of the four,
+`results.tsx:546-548`) but **not** `earn_chips`/`update_leaderboard_elo` (practice-guarded at
+`:557`). So gameplay exercised one guarded function; `earn_chips` was proven on the wire instead.
+**Also observed:** the browser gameplay did **not** create a binding row — its call arrived with
+`auth.uid()` NULL (fire-and-forget auth) and took the fail-open branch. On web, binding binds
+opportunistically only when the session lands in time.
+
+**Watch:** 9m36s, **0 real `identity_mismatch`**, 0 real devices bound. **Qualifier:** real
+`chip_transactions` in that window = **0**, so "0 rejections" is a low-traffic sample, not proof
+under load. The stronger pre-flip evidence: zero real devices have *ever* called the four functions
+without a session (all 5 sessionless devices were `test-%`), and only 2 non-anonymous users exist.
+
+**Reverted: NO.** `device_identity` after cleanup: **0 rows**; all synthetic rows deleted.
+
+**Google entry point — reported, not restored (Roye's product call):** it would go in
+`app/settings.tsx` (the "settings-only flow" the removed code references) or a Profile row; cost is
+one button + handler calling the existing `loginWithGoogle()`. 2 non-anonymous users out of 3,176 is
+fully explained by there being no way in.
+
+**Residual, verbatim, for whoever re-enables Google:** *"The link path is proven in code
+(session-bound `linkIdentity`, uid preserved), but the live Google OAuth callback attaching the
+identity to the same uid has never been exercised. With binding ON, if that callback ever mints a
+new uid instead of linking, a bound player is locked out of their account. Verify one real Google
+login end-to-end before shipping a sign-in entry point."*
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
