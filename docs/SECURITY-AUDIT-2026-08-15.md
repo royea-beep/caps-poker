@@ -949,6 +949,41 @@ land-grab protection working on a real player.
 
 Nothing built, no cost incurred, no Auth setting changed, no prompt added to practice.
 
+---
+
+# Part 17 — sign-in was blocked by a live lockout trap (2026-08-21)
+
+**Correction to Part 16.** I reported Google sign-in as "unreachable — no entry point exists". That
+was **wrong**. `SideMenu` *has* a "Sign in" item wired to `loginWithGoogle`, and the menu opens from
+the top-bar avatar (`index.tsx:1323/1336`, `aria-label="Open menu"`). The item was simply never
+**rendered** for anonymous players.
+
+**Root cause + a live trap.** `SideMenu.tsx:179` gated the auth row on `{!user ? …}`, but
+`useAuthUser()` returns the **anonymous** Supabase user object, so `user` is truthy for every
+anonymous player. Verified live on a fresh browser before the fix: the menu rendered **"SIGN OUT"**
+and no "Sign in".
+
+1. The Sign-in entry was never shown to anyone anonymous — **3,176 of 3,185 users**. *That* is why
+   only 2 accounts exist, not "no entry point". It also blocked the Google-callback verification
+   outright: there was no button to press.
+2. **Worse, with binding enforcing:** an anonymous player who taps SIGN OUT loses the anon session,
+   gets a **new uid** next launch, while `device_id` stays bound to the **old** uid →
+   `identity_mismatch` → their economy calls fail **permanently**. Showing SIGN OUT to an anonymous
+   user was a lockout trap, and enabling binding turned it from cosmetic into destructive.
+
+**Fix (`6bc58fe`, Web Deploy success):** the condition only — `!user` → `(!user || user?.is_anonymous)`.
+**Verified live on both engines after deploy:** anonymous menu now shows **"🔵 SIGN IN"**, SIGN OUT
+gone; linked users still see their name + SIGN OUT.
+
+**Pre-login state recorded** for the callback verification: `e519-8702-3cc6` → bound uid
+`6db64e9f…`, 4,875 chips, 5 hands, 29 transactions, 3 hand_history, 0 identities (anonymous);
+`7159-1e31-d433` → bound uid `48c36af9…`, 2,530 chips, 3 transactions, 0 identities.
+
+**MP prompt: NOT built** — the brief gates it on the callback verification, which needs one real
+Google login. Design unchanged and ready.
+
+**Binding watch:** 0 real `identity_mismatch`, 2 real devices bound, not reverted.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
