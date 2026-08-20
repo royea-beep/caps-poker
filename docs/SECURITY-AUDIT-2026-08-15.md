@@ -590,6 +590,54 @@ and the **same rank.tsx trap**: any client-side `device_id` filter must move ser
 the revoke 401s the screen. One follow-up brief, now that the leaderboard+rank pattern is proven
 end to end on the wire.
 
+---
+
+# Part 9 — four-table wire-check + rate limiting (2026-08-18)
+
+## The four tables: direct access closed, but an RPC re-opens one
+
+Wire, real anon client, published key:
+
+| table | `SELECT device_id` | `SELECT *` |
+|---|---|---|
+| `club_members` | 401 permission denied | 401 |
+| `sit_and_go_players` | 401 permission denied | 401 |
+| `clubs` | 400 column does not exist | 401 |
+| `game_rooms` | 400 column does not exist | 401 |
+
+Direct table access for all four is refused — the grant is absent, and absence is sufficient. Two
+never had the column.
+
+**But the route the grant check cannot see is live.** `get_sng_status(p_session_id uuid)` is
+SECURITY DEFINER, anon-EXECUTE, and its players projection is
+`SELECT player_name, device_id, chips, is_eliminated, finish_position FROM sit_and_go_players`.
+**Proven on the wire:** called with a real session id, it returns **200 with `device_id` in the
+players array** (session `292d5afa…`, 6 players). Narrower than the leaderboard harvest — it needs a
+valid `session_id` and exposes only that one session's ≤6 players — but it is a real anon `device_id`
+leak, and `device_id` is the impersonation key for the four economy functions.
+
+**Four-table item: NOT closed.** The tables are locked; one anon RPC re-exposes one of them. **Not
+fixed this run** (stop-and-report per brief). Fix shape when briefed: drop `device_id` from the
+`get_sng_status` players projection (the client needs name/chips/is_eliminated/finish_position, not
+the id) — the same one-field removal as `get_leaderboard`. Sweep the other anon SNG/club read RPCs
+for the same projection first (`my_clubs`, `list_public_tables`, `list_open_tables`,
+`club_leaderboard`, `get_sng_activity_feed` all checked this run — none emit `device_id`).
+
+## Rate limiting: none observed, none by default
+
+Probe: `list_public_tables` (read-only, no writes, no accumulation). **400 sequential POSTs over
+30.6s = 13.1 req/s sustained, all 200 — no 429, no `Retry-After`, no `ratelimit-*` headers.** Behind
+Envoy (`x-envoy-*` present) but no per-RPC limit fired; the loop stopped at its own bound, not a
+limit. **Platform default at this tier:** the Supabase Data API has no per-RPC / per-user rate
+limiting by default — only coarse network-level gateway protection at far higher rates. Limiting is
+the app's to add.
+
+**What it means for the four economy functions:** with no throttle, unbounded repetition is unbounded
+*in practice*, not only in principle — `earn_chips` and the others can be called as fast as the
+network allows (13+/s from one key). `econ_authz_probe` logs it; nothing stops it.
+
+Nothing built, nothing applied — read-only wire probes and SQL reads only.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
