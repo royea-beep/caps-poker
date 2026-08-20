@@ -900,6 +900,55 @@ identity to the same uid has never been exercised. With binding ON, if that call
 new uid instead of linking, a bound player is locked out of their account. Verify one real Google
 login end-to-end before shipping a sign-in entry point."*
 
+---
+
+# Part 16 — MP sign-in gate: investigated + designed, nothing built (2026-08-20)
+
+Roye's ruling: sign-in returns **only at Multiplayer**; practice vs bots stays frictionless.
+
+**Phone auth does not exist — it is a purchase decision.** `auth.identities` by provider: **google
+only (n=2)**; `auth.users.phone` populated **0**; `phone_confirmed_at` **0**; and **no client code**
+(`signInWithOtp`/`verifyOtp`) anywhere. Supabase phone auth needs a paid third-party SMS provider
+(~$0.03–0.05/SMS to Israeli mobiles + number rental), every send *and retry* costs, and with
+anonymous sign-ups open and no captcha an unthrottled OTP endpoint is a toll-fraud risk.
+**Roye decided: Google only.**
+
+**MP entry points — gate these four:** `app/(tabs)/index.tsx:1490` (Home "Play Online"),
+`app/(tabs)/play.tsx:65` (Multiplayer Lobby), `app/(tabs)/play.tsx:74` (Quick Private Table),
+`app/invite/[code].tsx` (deep link). **Do NOT gate the returns** — `game.tsx:1209`,
+`lobby/table.tsx:88,95`, `multiplayer-game.tsx:547,587,641`, `results.tsx:799,831,1432` are all
+`router.replace('/lobby')` *after* a game; gating the route would re-prompt a player already in and,
+on decline, could trap them in a loop. The gate belongs at the **entry**, not the route.
+
+**MP works today for anonymous users — the gate is 100% new friction.** `join_requires_session=true`
+but `join_table` only checks `auth.uid() IS NOT NULL`, which an **anonymous** session satisfies.
+`join_identity` telemetry: **117 events — 114 by anonymous users, 0 by linked users**, 3 no-uid. So
+every MP join that has ever happened was anonymous; a hard gate would have blocked all 114.
+**Roye decided: soft prompt** — "Not now" still enters the lobby.
+
+**Design (next sprint):** reuse `components/LoginPromptModal.tsx` (already calls
+`loginWithGoogle()`). Copy: *"Play against real people — sign in to keep your chips, rank and history
+across devices."* Buttons: **Continue with Google · Not now**. Shows only for `isAnonymous`, at the
+four entries, once per session. **Must not appear** in practice, the tutorial, results, or any
+post-game return. **Chips/history are preserved** — `startGoogleOAuth` uses session-bound
+`linkIdentity`, upgrading the *same* user, so `auth.uid` is unchanged and chips, leaderboard,
+history and the `device_identity` binding all follow.
+
+**Google residual — sharper but now detectable.** With binding live, a callback that mints a new uid
+would leave the device bound to the old one → `identity_mismatch` → the player's economy actions
+fail. The logging added last sprint makes that immediate instead of silent. **Verify before any gate
+ships:** record the device's bound uid → Roye plays a hand and signs in once → confirm
+`auth.identities` gained a google row on the **same** uid, `device_identity.auth_uid` unchanged,
+chips intact, zero `identity_mismatch`. I cannot drive Google headless.
+
+**Binding watch — now real evidence.** 2h12m since the flip: **0 real `identity_mismatch`, not
+reverted**, and unlike the 9-minute sample there was real traffic — **7 real chip transactions and 2
+real devices bound**, including `e519-8702-3cc6` (29 transactions, history to 2026-06-25). That
+device has a leaderboard row, so it bound only because the **continuity guard** matched its uid —
+land-grab protection working on a real player.
+
+Nothing built, no cost incurred, no Auth setting changed, no prompt added to practice.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
