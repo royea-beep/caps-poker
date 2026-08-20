@@ -176,7 +176,17 @@ export default function SideMenu({
           <View style={styles.divider} />
 
           {/* Auth */}
-          {!user ? (
+          {/* MP-PROMPT 2026-08-20 — was `!user`, which is FALSE for every anonymous player because
+              useAuthUser() returns the anonymous Supabase user object. Consequences, both live:
+                1. The "Sign in" item was never shown to anyone anonymous (3,176 of 3,185 users),
+                   which is the real reason only 2 accounts exist — not "no entry point".
+                2. Anonymous players were shown SIGN OUT instead. With the device->auth.uid binding
+                   now ENFORCING, signing out mints a NEW uid on next launch while the device stays
+                   bound to the old one -> econ_bind_ok returns identity_mismatch -> that player's
+                   economy calls fail permanently. Showing SIGN OUT to an anonymous user was a
+                   lockout trap.
+              An anonymous user is "not signed in" for UI purposes, so treat it as such. */}
+          {(!user || user?.is_anonymous) ? (
             <MenuItem
               icon="🔵"
               label={t().signIn}
