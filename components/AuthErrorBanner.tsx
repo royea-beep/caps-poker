@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { readAuthCallbackError, type AuthCallbackError } from '../utils/authCallbackError';
+import { useRootNavigationState } from 'expo-router';
+import { readAuthCallbackError, clearAuthCallbackParams, type AuthCallbackError } from '../utils/authCallbackError';
 import { rf, rs, rv } from '../utils/responsive';
 
 /**
@@ -17,9 +18,17 @@ import { rf, rs, rv } from '../utils/responsive';
 export default function AuthErrorBanner() {
   const [err, setErr] = useState<AuthCallbackError | null>(null);
   const insets = useSafeAreaInsets();
+  const navState = useRootNavigationState();
 
-  // Read once on mount: readAuthCallbackError() also clears the params from the URL.
+  // Read once on mount, before anything can rewrite the URL.
   useEffect(() => { setErr(readAuthCallbackError()); }, []);
+
+  // Strip the params only once the router has settled. Cleaning them during mount does not
+  // hold: expo-router's initial URL sync runs afterwards and puts them straight back.
+  useEffect(() => {
+    if (!navState?.key) return;
+    clearAuthCallbackParams();
+  }, [navState?.key]);
 
   const dismiss = useCallback(() => setErr(null), []);
 

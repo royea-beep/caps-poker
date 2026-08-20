@@ -42,14 +42,30 @@ export function readAuthCallbackError(): AuthCallbackError | null {
 
     const description = query.get('error_description') || hash.get('error_description') || '';
 
-    // Clean the URL so a refresh does not resurrect the banner, and so the error text
-    // is not left sitting in the address bar.
-    if (typeof window.history?.replaceState === 'function') {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-
     return { code, message: humanise(code, description) };
   } catch {
     return null; // A malformed callback URL must never break boot.
+  }
+}
+
+/**
+ * Strips the error params from the address bar.
+ *
+ * Deliberately NOT done inside readAuthCallbackError: a replaceState issued during mount is
+ * undone again by expo-router's own initial URL sync, which runs afterwards — measured live,
+ * the params were still there a second later, while the same call made after the router had
+ * settled stuck. So the caller runs this once the router reports ready, rather than guessing
+ * a delay. Idempotent: safe to call when there is nothing to strip.
+ */
+export function clearAuthCallbackParams(): void {
+  if (Platform.OS !== 'web') return;
+  if (typeof window === 'undefined' || !window.location) return;
+  if (!window.location.search && !window.location.hash) return;
+  try {
+    if (typeof window.history?.replaceState === 'function') {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  } catch {
+    // Address-bar tidiness is never worth breaking the app for.
   }
 }
