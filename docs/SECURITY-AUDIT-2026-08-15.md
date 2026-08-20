@@ -638,6 +638,54 @@ network allows (13+/s from one key). `econ_authz_probe` logs it; nothing stops i
 
 Nothing built, nothing applied — read-only wire probes and SQL reads only.
 
+---
+
+# Part 10 — SNG leak closed + throttle designed (2026-08-18)
+
+## get_sng_status leak — CLOSED, and the full emitter sweep
+
+**Consumers: zero.** No client code calls `get_sng_status` (the only SNG client call is
+`get_sng_activity_feed`, index.tsx:587, which emits no device_id and was untouched). So the field
+dropped with no ordering risk and no screen to break. Recreated `get_sng_status`; players projection
+is now `player_name, chips, is_eliminated, finish_position` — **device_id removed. Wire-verified**
+(same real 6-player session): 200, no `device_id`.
+
+**Full anon-DEFINER `device_id`-emitter sweep — the full set, not the likely set:**
+
+| function | verdict |
+|---|---|
+| `get_sng_status` | **LEAK** — emitted every player's device_id to any caller with a session id. **FIXED.** |
+| `deal_hand` | **NARROW emitter** — other seats' device_ids **only** in the `p_full AND v_is_host` branch (host, own room, the flag-off revert path). Membership-gated, not a harvest. Not fixed — touching it risks the MP revert; own brief. |
+| `get_play_of_the_day` | **NARROW emitter** — returns the featured shared-hand's `data` blob wholesale, which carries the sharer's device_id (one/day, anon). Not fixed — needs a consumer check on `data`; own brief. |
+| `join_table`, `submit_placements`, `on_app_open` (both), `get_cup_collection_by_user`, `record_club_game`, `get_leaderboard` | **clean** — device_id only in WHERE / INSERT / storage-key / boolean, never in output |
+
+The grant audit cannot see any of these — an RPC is the one path that bypasses it. That is the rule
+beside "a grant is necessary but not sufficient": **its absence is not sufficient either, if a
+DEFINER function reads on the caller's behalf.**
+
+## Throttle — designed, NOT applied
+
+**Where:** a shared guard `econ_rate_ok(p_device_id)` called at the top of all four economy functions,
+backed by a small `econ_rate_counters(device_id, window_start, count)` table. One source of truth, four
+one-line call sites. Beats per-function counters (four copies to drift) and a gateway/Edge proxy
+(Supabase has no per-RPC limiter; a proxy is a rework and moves the trust boundary).
+
+**Legitimate rate, from `chip_transactions` (5,433 rows):** peak **11/device/min**, 21/hour; p99
+4/min, 7/hour; avg 1.61/active min. The attack ran at **780/min (13 req/s) — 70× the peak.** Proposed
+cap **30/device/min AND 120/device/hour** — ~3× peak legitimate (costs real players nothing), throttles
+the attack 26× (`earn_chips` 1500/call × 30 = 45k/min vs 1.17M/min).
+
+**Fail-open:** if the counter read/write errors, the award proceeds. A throttle is a rate-limiter, not
+an auth gate; blocking paying players during a DB hiccup is worse than the logged, bounded,
+leaderboard-recoverable abuse it prevents. Fail-open does not widen the identity hole.
+
+**What a throttle does NOT buy:** it limits the **rate** of impersonation, not the **fact**. A leaked
+device_id still acts as that device, just slower and more visibly. Only the `device_id → auth.uid`
+binding closes the identity hole.
+
+Only `get_sng_status` was changed (a read RPC; device_id dropped). No throttle applied; nothing on the
+economy path touched.
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
