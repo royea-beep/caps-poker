@@ -1085,3 +1085,51 @@ finding, not a binding failure.
 Unchanged: prompt not built; baseline unchanged; `identity_mismatch` 24h = 0; binding not reverted.
 
 *(handoff: `vamos_handoffs` id 76)*
+
+---
+
+## Part 20 — Web Google sign-in could not complete at all; fixed. Plus a retraction. (2026-08-21)
+
+Still not signed in. Baseline unchanged, `identity_mismatch` 24h = 0, binding not reverted.
+
+**The defect.** `utils/supabase.ts` carried `detectSessionInUrl: false` for **every** platform,
+added in the original anonymous-auth commit `732a4b3` (2026-04-23) and never revisited. On web that
+flag is the only mechanism that turns an OAuth callback into a session — the one explicit callback
+handler, `app/_layout.tsx:555`, opens with `if (Platform.OS === 'web') return;`. So on web the user
+went to Google, came back, and **nothing consumed the callback**: still anonymous, no error, no
+message.
+
+**Corroboration from the data:** both `google` identities in the DB were created *before* that
+commit (2026-03-18, 2026-03-30). **Zero since** — across ~4 months and 3,185 users. This, not the
+SideMenu bug alone, is why there are only two accounts.
+
+**Fixed and deployed.** `detectSessionInUrl: Platform.OS === 'web'` — commit `0479451`, live bundle
+`index-40a02df19629cad7fcdf25367943f02d.js`. Native stays `false`; it exchanges the code itself from
+the deep link. `tsc` clean (one pre-existing, unrelated Deno error in `supabase/functions`).
+
+### Retraction — my own commit message overclaims
+
+`0479451` says *"Proven on the wire: loading the live site with `?code=` present fired 19 Supabase
+calls and ZERO /auth/v1/token."* **That probe was invalid.** The live bundle sets
+`flowType:"implicit"`, so the callback arrives as a URL **hash** (`#access_token=…`), never as
+`?code=`, and the implicit flow never calls `/auth/v1/token` at all. I measured an endpoint that
+would be silent either way. A follow-up hash probe with a fabricated token was also inconclusive —
+the server rejects the fake before anything observable changes.
+
+**So the wire probes prove nothing and I am not citing them.** What stands is the config flag and
+its documented meaning, the web-excluded handler, the git history, and the identity-creation dates.
+That chain is strong, but it is code-and-data evidence, **not** a wire demonstration. The only real
+proof is a genuine Google round-trip — which is exactly the test Roye is about to run.
+
+**What it means for the test:** it could not have succeeded before this fix, on any account. Had he
+run it an hour ago he would have come back still anonymous, and the fourth wrong conclusion in a row
+would have been *"binding is broken — revert it."*
+
+**Still open, not fixed by this:** the callback **error** path has no UI anywhere — nothing in the
+app reads `error` / `error_description` from the URL. The returning-user conflict of Part 19 will
+therefore still fail silently. That needs a visible message before the MP prompt reaches testers.
+
+Instruction unchanged: a Google account **never used on CAPS** (not `royearguan@gmail.com`), then
+say "done". Prompt still not built.
+
+*(handoff: `vamos_handoffs` id 77)*
