@@ -806,6 +806,46 @@ signal. **MAU cost:** anon users count toward Supabase MAU; 3,172 is well within
 (100k), so no immediate cost — but with anonymous sign-in on and no captcha it's growable, and
 mostly noise. **Captcha not enabled** (its own brief). Worth watching.
 
+---
+
+# Part 14 — binding proven without Google, and wired inert (2026-08-20)
+
+Both automatable proofs pass (no Google, no credentials):
+
+**Part 1 — the client chooses `linkIdentity`, not a new user.** The code (`auth.ts` `startGoogleOAuth`)
+reads `getSession → is_anonymous → linkIdentity`, else `signInWithOAuth`. Endpoints differ (node,
+real anon session): `signInWithOAuth` → `/auth/v1/authorize` (generic, separate user);
+`linkIdentity` → a **session-bound** Google URL (`accounts.google.com/o/oauth2/v2/auth?…&state=<session>`),
+which only resolves because the anon session exists. **No-session fallback:** `linkIdentity` with no
+session → `ERROR "missing sub claim"`; `signInWithOAuth` with no session → OK `/authorize`. So the
+guard (link only when an anon session is present, else plain OAuth) is correct and can't throw.
+
+**Part 2 — uid preserved on anon→permanent.** An anon user has **0 identities** (0→1 on linking).
+`updateUser({email})` (the same "modify current user" machinery as `linkIdentity`) → **uid identical
+before/after**; `is_anonymous` flips only after email confirmation. Converting operates on the same
+user and never mints a new uid. Both synthetic test users deleted.
+
+**Residual (honest size):** the live Google OAuth callback attaching the identity to the same uid
+can't be driven headless (Google + credentials). But it's Supabase platform behavior identical for
+every provider, and the part *we* control (choose linkIdentity + session-bound + uid-preserving
+machinery) is proven. **Small — a platform formality, not a code risk.** One real Google login would
+close it but is no longer needed to de-risk our code.
+
+**Finding — Google login is UNREACHABLE in the live UI.** The home nudge and the results
+`LoginPromptModal` were both removed (VAMOS-UNIFY-FINAL), and there is **no** Google button in
+settings despite the "settings-only flow" comment. So no player can currently sign in with Google.
+The linkIdentity fix is correct but sits on a dead path: (a) the uid-change lockout scenario is
+currently moot (nobody can link), making the binding *safer* to enable; (b) "keep your account with
+Google" is unavailable — re-adding a sign-in entry is its own brief.
+
+**Wired (inert).** `econ_bind_ok` added to all four economy fns (one guard line each after the
+throttle guard, rest verbatim, `reason='identity_mismatch'` / elo 0 / mission void).
+`econ_binding_enabled` stays **FALSE**. Inert proven on the wire: `earn_chips` (flag off) →
+`{ok:true, chips_earned:1}`, no `identity_mismatch`. Test rows cleaned; `device_identity` back to 0.
+
+**Enable is a separate approval** with a wire proof (flip the flag; prove a bound device rejects a
+foreign uid and accepts its own with a signed-in session; revert = one `app_config` UPDATE).
+
 ## Scope actually reached
 
 **EZ1: partial.** 169 enumerated and classified; the 69-function impersonation set identified; the
