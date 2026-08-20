@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Hardcoded fallback — safe to embed (anon key is public, RLS enforces security)
@@ -31,7 +32,15 @@ export function getSupabase(): SupabaseClient | null {
         storage: AsyncStorage,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
+        // WEB MUST BE TRUE. Google returns to https://caps.ftable.co.il/?code=... and supabase-js
+        // is the ONLY thing that exchanges that code on web: the deep-link handler in
+        // app/_layout.tsx bails out with `if (Platform.OS === 'web') return`. With this false
+        // (as it was from the original anon-auth commit 732a4b3, 2026-04-23) the callback was
+        // silently dropped — proven on the wire: loading the live site with ?code= present fired
+        // 19 Supabase calls and ZERO /auth/v1/token. Web Google sign-in never completed, which is
+        // why the only two google identities in the DB both predate that commit.
+        // Native stays false — it exchanges the code itself from the deep link.
+        detectSessionInUrl: Platform.OS === 'web',
       },
     });
   }
