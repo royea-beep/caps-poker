@@ -1045,3 +1045,43 @@ clean.
 **Revert lever:** `UPDATE app_config SET value='false'::jsonb WHERE key='econ_binding_enabled';`
 
 *(handoff: `vamos_handoffs` id 75)*
+
+---
+
+## Part 19 — Pre-flight #2: which Google account he picks decides the result (2026-08-21)
+
+Still not signed in; both `google` identities in the DB are old (2026-03-18, 2026-03-30).
+
+**Roye already has a Google user in this project.** `d0cc66b9-e71d-4e5c-8e19-100c3f2b2cdb` /
+`royearguan@gmail.com` — `is_anonymous=false`, last sign-in 2026-06-17, **274** `chip_transactions`
+under `user_id`, bound to **no** device. (One other pre-existing google user, not his, likewise
+unbound.) His playing device `e519-8702-3cc6` is bound to a **different** uid,
+`6db64e9f-5e52-409d-afa1-bda38431e7ab`.
+
+**Why that breaks the test.** `linkIdentity` attaches a provider identity to the *current anonymous
+user*. If that Google account is already attached to another Supabase user, the server refuses —
+it is a conflict, not a link. Two observables, both useless to us:
+
+- **(a)** he returns still anonymous with an error in the callback URL. Most likely on web:
+  `linkIdentity` redirects to Google *before* any conflict is known, so the client-side fallback at
+  `utils/auth.ts:117` cannot fire. **Inferred, not measured** — I cannot drive Google headless.
+- **(b)** he ends up signed in as `d0cc66b9` — a **different** uid from the one his device is bound
+  to → `econ_bind_ok` returns `identity_mismatch` → we read FAIL and revert binding that is fine.
+
+Either way the run would not have measured uid preservation, and (b) would trigger a revert of a
+healthy system.
+
+**Instruction change, one line:** sign in with a Google account that has **never been used on
+CAPS** — explicitly **not** `royearguan@gmail.com`.
+
+**The conflict is not exotic — it is the returning-user path, and it is untested.** Once a player
+links Google on device A, then reinstalls or opens device B, that device gets a fresh anonymous uid
+while the Google account is already attached to the user from device A. Every such sign-in hits
+this same conflict. Today that is 2 people; after the MP prompt ships it is everyone with a second
+device. It should be tested deliberately **after** the clean test passes — using
+`royearguan@gmail.com` *precisely because* it is already attached — and whatever it does is its own
+finding, not a binding failure.
+
+Unchanged: prompt not built; baseline unchanged; `identity_mismatch` 24h = 0; binding not reverted.
+
+*(handoff: `vamos_handoffs` id 76)*
