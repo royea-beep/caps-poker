@@ -4,7 +4,7 @@ import { getSupabase } from './supabase';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
+import type { User, AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabase-js';
 import { getDeviceId } from './leaderboard';
 
 export type AuthState = {
@@ -94,6 +94,37 @@ export async function logout(): Promise<void> {
 
 WebBrowser.maybeCompleteAuthSession();
 
+/**
+ * LINK-IDENTITY 2026-08-20 — start the Google OAuth flow, LINKING it to the current anonymous
+ * session so the uid is PRESERVED (the device→auth.uid binding depends on this — a new uid on
+ * sign-in would lock a bound guest out of their account). Falls back to a plain sign-in when:
+ *   - there is no anonymous session to link to (a brand-new user landing straight at Google —
+ *     nothing to preserve, so a fresh user is correct), or
+ *   - the identity is already linked / manual-linking conflicts (must not throw or break them).
+ * Returns the same `{ data, error }` shape as signInWithOAuth, so both call sites are unchanged
+ * below.
+ */
+async function startGoogleOAuth(
+  client: SupabaseClient,
+  options: { redirectTo: string; skipBrowserRedirect?: boolean },
+): Promise<{ data: { url?: string } | null; error: Error | null }> {
+  try {
+    const { data: { session } } = await client.auth.getSession();
+    if (session?.user?.is_anonymous) {
+      const res = await client.auth.linkIdentity({ provider: 'google', options });
+      const err = res.error as Error | null;
+      // Already linked / manual-linking conflict → fall back to a normal sign-in rather than throw.
+      if (err && /already|identity|link|exists|manual/i.test(err.message)) {
+        return await client.auth.signInWithOAuth({ provider: 'google', options }) as any;
+      }
+      return { data: (res.data as any) ?? null, error: err };
+    }
+  } catch {
+    // getSession / linkIdentity unavailable → fall through to a plain sign-in.
+  }
+  return await client.auth.signInWithOAuth({ provider: 'google', options }) as any;
+}
+
 export async function signInWithGoogle(): Promise<{ error: Error | null }> {
   const client = getSupabase();
   if (!client) return { error: new Error('Supabase not configured') };
@@ -103,18 +134,12 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
     : Linking.createURL('auth/callback');
 
   if (Platform.OS === 'web') {
-    const { error } = await client.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: redirectUrl },
-    });
+    const { error } = await startGoogleOAuth(client, { redirectTo: redirectUrl });
     return { error: error as Error | null };
   }
 
   // Native: open browser with skipBrowserRedirect so we can capture the result
-  const { data, error } = await client.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
-  });
+  const { data, error } = await startGoogleOAuth(client, { redirectTo: redirectUrl, skipBrowserRedirect: true });
 
   if (data?.url) {
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
