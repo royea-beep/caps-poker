@@ -49,23 +49,37 @@ export function readAuthCallbackError(): AuthCallbackError | null {
 }
 
 /**
- * Strips the error params from the address bar.
+ * Strips the error params from the address bar, and keeps them stripped.
  *
- * Deliberately NOT done inside readAuthCallbackError: a replaceState issued during mount is
- * undone again by expo-router's own initial URL sync, which runs afterwards — measured live,
- * the params were still there a second later, while the same call made after the router had
- * settled stuck. So the caller runs this once the router reports ready, rather than guessing
- * a delay. Idempotent: safe to call when there is nothing to strip.
+ * A single replaceState does not survive: expo-router re-syncs the initial URL after mount
+ * and puts the params straight back. Measured live — a clear issued at mount was gone again
+ * a second later, while the same call made once the app had settled stuck. Gating on
+ * useRootNavigationState().key was still too early.
+ *
+ * So instead of guessing when the re-sync happens, this re-asserts on a short bounded
+ * schedule and stops as soon as the clean holds. Returns a cancel function for unmount.
+ * Idempotent, and gives up quietly — a tidy address bar is never worth breaking boot for.
  */
-export function clearAuthCallbackParams(): void {
-  if (Platform.OS !== 'web') return;
-  if (typeof window === 'undefined' || !window.location) return;
-  if (!window.location.search && !window.location.hash) return;
-  try {
-    if (typeof window.history?.replaceState === 'function') {
+const RECHECK_MS = [0, 250, 500, 1000, 2000, 3000];
+
+export function clearAuthCallbackParams(): () => void {
+  if (Platform.OS !== 'web') return () => {};
+  if (typeof window === 'undefined' || !window.location) return () => {};
+
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const attempt = () => {
+    try {
+      if (!window.location.search && !window.location.hash) return true;
+      if (typeof window.history?.replaceState !== 'function') return true;
       window.history.replaceState({}, '', window.location.pathname);
+      return false;
+    } catch {
+      return true;
     }
-  } catch {
-    // Address-bar tidiness is never worth breaking the app for.
+  };
+
+  for (const ms of RECHECK_MS) {
+    timers.push(setTimeout(() => { attempt(); }, ms));
   }
+  return () => { for (const t of timers) clearTimeout(t); };
 }

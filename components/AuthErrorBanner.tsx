@@ -23,11 +23,11 @@ export default function AuthErrorBanner() {
   // Read once on mount, before anything can rewrite the URL.
   useEffect(() => { setErr(readAuthCallbackError()); }, []);
 
-  // Strip the params only once the router has settled. Cleaning them during mount does not
-  // hold: expo-router's initial URL sync runs afterwards and puts them straight back.
+  // Strip the params once the router exists, and keep re-asserting briefly: expo-router's
+  // initial URL sync runs afterwards and puts them back, so one clear is not enough.
   useEffect(() => {
     if (!navState?.key) return;
-    clearAuthCallbackParams();
+    return clearAuthCallbackParams();
   }, [navState?.key]);
 
   const dismiss = useCallback(() => setErr(null), []);
