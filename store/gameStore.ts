@@ -3,6 +3,7 @@ import { debugLog } from '../components/DebugOverlay';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
+import { mergeGameStorePersisted } from './configMerge';
 import { ConnectedPlayerInfo, GameSession, RevealData, RevealBoardCalcCapture } from '../types/gameTypes';
 import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
 import { CardBackId, DEFAULT_CARD_BACK } from '../constants/cardBacks';
@@ -360,6 +361,12 @@ export const useGameStore = create<GameStore>()(
       // in the exported migrateGameStorePersisted() (below) so it can be unit-tested directly.
       version: 1,
       migrate: migrateGameStorePersisted,
+      // CONFIG COMPLETENESS: zustand's default merge is SHALLOW, so a partially-written `config`
+      // REPLACES the initial one and rehydrates with keys missing — every arithmetic read of a
+      // missing key is then NaN. NOT done in `migrate` above: that only runs on a version change,
+      // while this must run on EVERY rehydration. Logic lives in the dependency-free
+      // mergeGameStorePersisted() so it can be unit-tested without loading the native store.
+      merge: (persisted, current) => mergeGameStorePersisted(persisted, current, DEFAULT_CONFIG),
       partialize: (state) => ({ chips: state.chips, cardBack: state.cardBack, emotePack: state.emotePack, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, skipBoardReveal: state.skipBoardReveal, colorblindMode: state.colorblindMode, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
     }
   )
