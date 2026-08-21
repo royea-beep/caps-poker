@@ -372,8 +372,14 @@ export default function AchievementsScreen() {
           return;
         }
         const { data: { user } } = await sb.auth.getUser();
-        const { data, error } = user
-          ? await sb.rpc('get_achievements_list', { p_user_id: user.id })
+        // WIRE-ACHIEVEMENTS 2026-08-21 — this used to branch on `user` being truthy. CAPS signs
+        // players in ANONYMOUSLY, so `user` is truthy for almost everybody, and the user-scoped
+        // RPC matched achievements.user_id — which is NULL on every anonymous unlock. The screen
+        // read 0/36 while the row existed. Identity in CAPS is the DEVICE; an anonymous auth user
+        // is incidental, so only a REAL account may take the user-scoped branch.
+        const hasAccount = !!user && user.is_anonymous === false;
+        const { data, error } = hasAccount
+          ? await sb.rpc('get_achievements_list', { p_user_id: user!.id })
           : await sb.rpc('get_achievements_list_d', { p_device_id: deviceId });
         if (cancelled) return;
         if (!error && Array.isArray(data)) {
