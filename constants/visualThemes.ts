@@ -45,7 +45,7 @@ export interface ThemeTokens {
   boardNeonGreen: string;
   boardNeonRed: string;
   boardMintHairline: string;
-  boardMintGhost: string;
+  boardSlotFillSelected: string;
   boardSlotFill: string;
   boardSlotDash: string;
   boardSlotDashActive: string;
@@ -135,7 +135,7 @@ export const VISUAL_THEMES: Record<VisualTheme, ThemeTokens> = {
     boardNeonGreen: streetStencilPaint.colors.neonGreen,
     boardNeonRed: streetStencilPaint.colors.neonRed,
     boardMintHairline: streetStencilPaint.obsidian.mintHairline, // rgba(248,240,80,0.45)
-    boardMintGhost: streetStencilPaint.obsidian.mintGhost,       // rgba(248,240,80,0.10)
+    boardSlotFillSelected: streetStencilPaint.obsidian.mintGhost,       // rgba(248,240,80,0.10)
     boardSlotFill: streetStencilPaint.obsidian.slotFill,             // rgba(248,240,80,0.06)
     boardSlotDash: streetStencilPaint.obsidian.slotDash,             // rgba(248,240,80,0.45)
     boardSlotDashActive: streetStencilPaint.obsidian.slotDashActive, // #F8F050

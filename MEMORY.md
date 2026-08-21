@@ -1236,6 +1236,17 @@ PENDING: BoardReveal in MP (flag mpBoardReveal=false, dormant — code wired but
 - Rule 12 (2026-06-28): ~15 qa_* migrations in history are throwaway test sims (see docs/MIGRATION_HYGIENE.md) — don't let them replay on a branch.
 - Rule 13 (2026-07-02): Stale docs are hazards — MEMORY.md's dated sections are the only trusted state. Verify any claim older than the newest dated section before acting on it.
 - Rule 14 (2026-07-02): A code comment is a claim, not evidence — verify against the actual implementation (the "idempotent — safe every open" comment shipped the earn_chips leak).
+- Rule 15 (2026-08-20): **Reanimated — the seven crash-fix iron rules.** From the s3 Crash Fixes
+  session, recorded in `docs/2026-03-24_0632_CAPS_caps-audit.jsx:53` and restated here because
+  that is a generated audit artifact nobody greps: **zero Reanimated in results · no
+  `withRepeat(-1)` · max 5 shared values · `cancelAnimation` cleanup · no ConfettiCannon · no
+  `entering=` props · cancel before navigate.** Added after commit `86b4b881` cited "MEMORY's
+  Reanimated limit of 5 per screen" when MEMORY.md contained no mention of shared values at all —
+  a reader who greps here and finds nothing concludes the limit was invented. It was not.
+  🔴 **`components/Board.tsx` currently sits at 5 of 5** (`Board` itself; `EmptySlotAnimated` has 1
+  and `FloatingChips` 2). It has ZERO headroom — see the header comment in that file for what to
+  do instead of adding a sixth. Guarded by the shared-value count in
+  `constants/__tests__/paintThemes.fidelity.test.ts`.
 
 ## TODO
 - **Web audio NotAllowedError catch:** wrap web `playSound`/`startAmbient` in a NotAllowedError catch — browser autoplay policy logs 4 console exceptions when audio starts without a user gesture (e.g. after refresh). Benign/cosmetic; next batch.

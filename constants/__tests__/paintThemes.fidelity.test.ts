@@ -350,10 +350,14 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     boardNeonRed: '#c0392b',
     // from OBSIDIAN (constants/obsidianTheme.ts)
     boardMintHairline: 'rgba(79,214,168,0.45)',
-    boardMintGhost: 'rgba(79,214,168,0.10)',
-    boardSlotFill: 'rgba(79,214,168,0.03)',
-    boardSlotDash: 'rgba(79,214,168,0.30)',
-    boardSlotDashActive: '#4FD6A8',
+    // CC/D3 (90d8f36, 2026-08-07) — the empty slot went mint -> white: "the empty slot was
+    // olive mud - it is now chrome, and it stays legible". That commit changed Board.tsx and
+    // paintThemes.ts but NOT this file, which is why these four pins were red for 13 days.
+    // Pins follow the ship; do not revert them to mint.
+    boardSlotFillSelected: 'rgba(255,255,255,0.10)',
+    boardSlotFill: 'rgba(255,255,255,0.045)',
+    boardSlotDash: 'rgba(255,255,255,0.30)',
+    boardSlotDashActive: 'rgba(255,255,255,0.72)',
     boardCardInk: '#1B1B24',
     boardAutoBg: 'rgba(79,214,168,0.10)',
     boardAutoBorder: 'rgba(79,214,168,0.35)',
@@ -418,7 +422,7 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     boardNeonGreen: '#2ecc71',                   // generic green — readability, deliberately unthemed
     boardNeonRed: '#c0392b',                     // generic red — ditto
     boardMintHairline: 'rgba(248,240,80,0.45)',
-    boardMintGhost: 'rgba(248,240,80,0.10)',
+    boardSlotFillSelected: 'rgba(248,240,80,0.10)',
     boardSlotFill: 'rgba(248,240,80,0.06)',      // FILL11 — alpha RAISED from 0.03 (see paintThemes)
     boardSlotDash: 'rgba(248,240,80,0.45)',      // FILL11 — alpha RAISED from 0.30
     boardSlotDashActive: '#F8F050',              // FILL11
@@ -495,8 +499,17 @@ describe('S76-BOARD-ROUTING — Board.tsx consumes the pinned keys, safely', () 
     expect(reads.length).toBeGreaterThan(0);
   });
 
-  it('Board.tsx still has exactly 7 shared values — NOT 8 (geometry frozen)', () => {
-    expect(rawSrc.match(/useSharedValue\(/g) ?? []).toHaveLength(7);
+  // Counts DECLARATIONS, not the bare string. The previous match counted every occurrence of
+  // `useSharedValue(` including prose: 56b3446b added two COMMENT lines mentioning
+  // `useSharedValue(0.6)` and the guard jumped 7 -> 9 without a single new shared value. It then
+  // read 10 while the real count was 8, so the number it reported was never the number it froze.
+  //
+  // Re-frozen at 8, not restored to 7. The one real addition is `landT` (86b4b881, 2026-08-08),
+  // a single board-owned millisecond clock from which twelve cards derive their landing progress
+  // inside the worklet. Reverting it would trade 1 shared value for 12.
+  it('Board.tsx has exactly 8 shared-value DECLARATIONS (geometry frozen)', () => {
+    const decls = rawSrc.match(/^\s*(?:const|let)\s+\w+\s*=\s*useSharedValue\(/gm) ?? [];
+    expect(decls).toHaveLength(8);
   });
 
   // THE TRAPS. Board must never read the same-named legacy keys: theme.textSecondary is

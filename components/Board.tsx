@@ -1,4 +1,20 @@
 // v-red-boards
+//
+// 🔴 REANIMATED SHARED VALUES: THIS FILE IS AT THE CEILING. `Board` holds 5, and the documented
+// maximum is 5 per screen — one of the seven Reanimated iron rules from the March Hermes
+// crash-fix session (MEMORY.md Rule 15; original source
+// docs/2026-03-24_0632_CAPS_caps-audit.jsx:53). The next `useSharedValue` added to `Board`
+// breaks that rule on the exact surface the rule was written for.
+//
+// IF YOU NEED ANOTHER ANIMATED PROPERTY, DERIVE IT FROM `landT` INSIDE THE WORKLET — that is
+// what `landT` exists for. It is a board-owned millisecond clock from which twelve cards each
+// compute their own landing progress by index (86b4b881); twelve card-owned values would have
+// breached this ceiling on their own. The same trick generalises: one clock, many derived
+// values, zero additional shared values.
+//
+// The count is enforced by the shared-value guard in
+// constants/__tests__/paintThemes.fidelity.test.ts, which counts DECLARATIONS, not the bare
+// string — mentioning `useSharedValue(` in a comment (as these lines do) does not inflate it.
 import React, { useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
@@ -202,7 +218,7 @@ function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, sl
           nothing; it now says "this slot can take the card in your hand", which changes as
           the player picks up and puts down. The resting outline still says "a card belongs
           here" on its own. */}
-      <Animated.View style={[styles.emptySlot, { borderColor: theme.boardSlotDash, backgroundColor: theme.boardSlotFill }, { width: slotWidth, height: slotHeight }, hasSelection && styles.dropTarget, hasSelection && { borderColor: theme.boardSlotDashActive, backgroundColor: theme.boardMintGhost }, animStyle]}>
+      <Animated.View style={[styles.emptySlot, { borderColor: theme.boardSlotDash, backgroundColor: theme.boardSlotFill }, { width: slotWidth, height: slotHeight }, hasSelection && styles.dropTarget, hasSelection && { borderColor: theme.boardSlotDashActive, backgroundColor: theme.boardSlotFillSelected }, animStyle]}>
         {false && <Text style={styles.plusText}>tap</Text>}
       </Animated.View>
     </Pressable>

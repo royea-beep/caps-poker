@@ -124,7 +124,7 @@ export interface VisualPaint {
   boardNeonRed: string;
   // from OBSIDIAN (constants/obsidianTheme.ts)
   boardMintHairline: string;
-  boardMintGhost: string;
+  boardSlotFillSelected: string;
   boardSlotFill: string;
   boardSlotDash: string;
   boardSlotDashActive: string;
@@ -525,7 +525,7 @@ export const currentPaint = {
       // one colour mean both "a card that exists" and "a space where none does", which is the
       // gold collision from C4 wearing different clothes. Second, an empty slot is the ABSENCE
       // of content; chrome is exactly what it is.
-      boardMintGhost: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
+      boardSlotFillSelected: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
       boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
       boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
       boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
@@ -589,7 +589,7 @@ export const currentPaint = {
       // one colour mean both "a card that exists" and "a space where none does", which is the
       // gold collision from C4 wearing different clothes. Second, an empty slot is the ABSENCE
       // of content; chrome is exactly what it is.
-      boardMintGhost: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
+      boardSlotFillSelected: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
       boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
       boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
       boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
