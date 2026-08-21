@@ -1370,7 +1370,7 @@ function GameScreenInner() {
       header={
         <View style={styles.botStatusRow}>
           <Text style={styles.botEmoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🤖</Text>
-          <Text style={styles.botNameLabel} accessibilityLanguage="he">
+          <Text style={styles.botNameLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
             {numberOfBots === 1 ? `${t().botSingular} 1` : t().botPlural(readyBotCount, numberOfBots)}
           </Text>
           <View style={[styles.botStatusPill, allBotsReady ? styles.botReadyPill : styles.botThinkingPill]}>

@@ -180,10 +180,10 @@ function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () 
   return (
     <AnimatedRN.View style={[nudgeStyles.banner, { transform: [{ translateY }] }]}>
       <View style={nudgeStyles.content}>
-        <Text style={nudgeStyles.title} accessibilityLanguage="he" accessibilityLabel={isHE ? 'התחבר כדי לשמור את הנתונים' : 'Sign in to save your stats'}>
+        <Text style={nudgeStyles.title} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={isHE ? 'התחבר כדי לשמור את הנתונים' : 'Sign in to save your stats'}>
           {isHE ? '🔒 התחבר כדי לשמור את הנתונים' : '🔒 Sign in to save your stats'}
         </Text>
-        <Text style={nudgeStyles.sub} accessibilityLanguage="he">
+        <Text style={nudgeStyles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
           {isHE
             ? 'הניצחונות, הבנקרול וההיסטוריה ישמרו בין מכשירים.'
             : 'Your wins, bankroll & history will be saved across devices.'}
@@ -195,7 +195,7 @@ function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () 
             accessibilityLabel={isHE ? 'כניסה עם Google' : 'Sign in with Google'}
             style={nudgeStyles.signInBtn}
           >
-            <Text style={nudgeStyles.signInBtnText} accessibilityLanguage="he">
+            <Text style={nudgeStyles.signInBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
               {isHE ? '🔵 כניסה עם Google' : '🔵 Sign in with Google'}
             </Text>
           </Pressable>
@@ -206,7 +206,7 @@ function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () 
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={nudgeStyles.laterBtn}
           >
-            <Text style={nudgeStyles.laterBtnText} accessibilityLanguage="he">{isHE ? 'אחר כך' : 'Later'}</Text>
+            <Text style={nudgeStyles.laterBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{isHE ? 'אחר כך' : 'Later'}</Text>
           </Pressable>
         </View>
       </View>
@@ -291,7 +291,7 @@ function WelcomeToast({ name }: { name: string }) {
       pointerEvents="none"
       accessibilityLiveRegion="polite"
     >
-      <Text style={toastStyles.text} accessibilityLanguage="he">
+      <Text style={toastStyles.text} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
         {isHE ? `ברוך הבא, ${name}! הנתונים שלך נשמרים.` : `Welcome, ${name}! Your data is now saved.`}
       </Text>
     </AnimatedRN.View>
@@ -359,14 +359,14 @@ function DailyRewardModal({
       />
       <AnimatedRN.View style={[dailyRewardModalStyles.card, { transform: [{ scale }] }]}>
         <Text style={dailyRewardModalStyles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🎁</Text>
-        <Text style={dailyRewardModalStyles.title} accessibilityLanguage="he">
+        <Text style={dailyRewardModalStyles.title} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
           {isHE ? 'פרס יומי!' : 'Daily Reward!'}
         </Text>
         <Text style={dailyRewardModalStyles.chips}>
           {`+${(reward ?? 0).toLocaleString()} chips`}
         </Text>
         {streak > 1 && (
-          <Text style={dailyRewardModalStyles.streak} accessibilityLanguage="he" accessibilityLabel={isHE ? `${streak} ימים ברצף` : `${streak}-day streak!`}>
+          <Text style={dailyRewardModalStyles.streak} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={isHE ? `${streak} ימים ברצף` : `${streak}-day streak!`}>
             {isHE ? `🔥 ${streak} ימים ברצף` : `🔥 ${streak}-day streak!`}
           </Text>
         )}
@@ -376,7 +376,7 @@ function DailyRewardModal({
           accessibilityRole="button"
           accessibilityLabel={isHE ? 'קחו את הפרס' : 'Claim Reward'}
         >
-          <Text style={dailyRewardModalStyles.claimBtnText} accessibilityLanguage="he">
+          <Text style={dailyRewardModalStyles.claimBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
             {isHE ? '✅ קחו את הפרס' : '✅ Claim Reward'}
           </Text>
         </Pressable>
@@ -387,7 +387,7 @@ function DailyRewardModal({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={dailyRewardModalStyles.laterBtn}
         >
-          <Text style={dailyRewardModalStyles.laterText} accessibilityLanguage="he">
+          <Text style={dailyRewardModalStyles.laterText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
             {isHE ? 'אחר כך' : 'Later'}
           </Text>
         </Pressable>
