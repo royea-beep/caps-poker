@@ -53,28 +53,20 @@ interface Mission {
   is_complete: boolean;
 }
 
-// VAMOS-HEBREW-SWEEP-FULL 2026-06-19 — server `get_daily_missions_d` RPC returns
-// Hebrew title/description for legacy reasons. Override client-side by mission
-// id so the rendered text is English even while the server data stays as-is.
-// Keys match the mission ids in stores/battlePassStore.ts DAILY_MISSION_POOL +
-// WEEKLY_MISSION_POOL.
-const MISSION_EN: Record<string, { title: string; description: string }> = {
-  play_3:           { title: 'Play 3 games',        description: 'Play 3 games today' },
-  win_5_boards:     { title: 'Win 5 boards',        description: 'Win 5 boards today' },
-  win_flush:        { title: 'Win with a Flush',    description: 'Win a board with a Flush hand' },
-  play_online:     { title: 'Play an online game',  description: 'Play one online (multiplayer) game' },
-  win_hard:         { title: 'Beat Hard bot',       description: 'Beat a bot on Hard difficulty' },
-  complete_boards:  { title: 'Win all boards',      description: 'Win every board in a single game' },
-  play_5:           { title: 'Play 5 games',        description: 'Play 5 games today' },
-  win_3_row:        { title: 'Win 3 in a row',      description: 'Win 3 games consecutively' },
-  win_15:           { title: 'Win 15 games',        description: 'Win 15 games this week' },
-  play_25:          { title: 'Play 25 games',       description: 'Play 25 games this week' },
-};
-
-function localizeMission(m: Mission): Mission {
-  const override = MISSION_EN[m.id];
-  return override ? { ...m, title: override.title, description: override.description } : m;
-}
+// ACHIEVEMENT-LANGUAGE 2026-08-21 — the client-side MISSION_EN override that used to live here
+// has been REMOVED, and the Hebrew is now fixed at the source instead.
+//
+// The 2026-06-19 sweep worked around a server bug by rewriting the strings the server sent. The
+// bug was COALESCE(dm.title_he, dm.title) — Hebrew first, English only as a fallback that was
+// never reached. That is now COALESCE(dm.title, dm.title_he) in get_daily_missions_d, so the RPC
+// returns English on its own.
+//
+// The map was not merely redundant, it was WRONG. Measured against daily_missions: 8 of its 10
+// keys (win_5_boards, win_flush, play_online, win_hard, complete_boards, win_3_row, win_15,
+// play_25) do not exist in that table at all — they are battlePassStore pool ids, a different
+// namespace. The 2 that did match, play_3 and play_5, were overridden from the server's
+// "Play 3 Hands" to "Play 3 games" — CAPS has no "games", it has hands and boards, so the
+// override contradicted the game's own vocabulary on the only rows it actually touched.
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -247,7 +239,7 @@ export default function MissionsScreen() {
 
       const { data, error } = await sb.rpc('get_daily_missions_d', { p_device_id: userId });
       if (!error && Array.isArray(data)) {
-        setMissions((data as Mission[]).map(localizeMission));
+        setMissions(data as Mission[]);
       }
     } catch {
       // silently fail — empty state shown

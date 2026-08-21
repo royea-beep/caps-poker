@@ -39,7 +39,11 @@ export default function CupsScreen() {
                 <Text style={{ fontSize: rf(26), opacity: cup.earned ? 1 : 0.3 }} accessibilityLabel="Trophy">🏆</Text>
               </View>
               <View style={styles.cupInfo}>
-                <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]} accessibilityLanguage="he">
+                {/* ACHIEVEMENT-LANGUAGE 2026-08-21 — accessibilityLanguage="he" removed. The text here is
+                    TIER_LABELS (English) falling back to cups.name_he, and that column literally holds
+                    English ("Bronze Cup"), so the tag made a screen reader announce English in a
+                    Hebrew voice. The app is English-only: getLanguage() is hardcoded 'en'. */}
+                <Text style={[styles.cupName, !cup.earned && { color: 'rgba(255,255,255,0.75)' }]}>
                   {!cup.earned ? '🔒 ' : ''}{TIER_LABELS[cup.tier] || cup.name_he || cup.tier}
                 </Text>
                 <Text style={styles.cupTier}>{String(cup.tier ?? "").toUpperCase()}</Text>
