@@ -16,6 +16,7 @@ import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { fetchPokerShop } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
+import { getSupabase } from '../utils/supabase';
 
 export default function GameOverScreen() {
   const router = useRouter();
@@ -65,16 +66,35 @@ export default function GameOverScreen() {
       //   2. The designed rescue is claim_emergency_chips: 200 chips, once per day, capped and
       //      written to chip_transactions. This path handed out 2,000, unledgered and unlimited.
       //
-      // The server is the authority, so ask it rather than guess. We do NOT call
-      // claim_emergency_chips here: it takes a uuid leaderboard id, and the majority of CAPS
-      // players are device-anonymous with auth.uid() NULL, so the device->uuid mapping has to
-      // be settled before that RPC can be wired in honestly. Adopting the real balance is
-      // strictly better than fabricating one, and it is the whole of the data-integrity bug.
+      // The server is the authority, so ask it rather than guess.
+      //
+      // INTEGRITY-GAP 2026-08-21 — the rescue is finally wired. The note that used to sit here
+      // said claim_emergency_chips could not be called because it takes a uuid leaderboard id
+      // while CAPS players are device-anonymous. That was true and it left 21 real devices at
+      // exactly zero with no route back: one emergency row existed in the whole ledger, from
+      // April. There is now a device-keyed overload, guarded by bind + throttle and carrying the
+      // SAME 200/day cap and the same zero-balance precondition — access, not generosity.
+      //
+      // Order matters: adopt the real balance FIRST, and only ask for the rescue if the server
+      // says the player is actually broke. The RPC refuses anyone holding chips anyway, so this
+      // is belt and braces, but it keeps the common path to a single read.
       void (async () => {
         try {
           const deviceId = await getDeviceId();
           const shop = await fetchPokerShop(deviceId);
-          if (shop && typeof shop.balance === 'number') setChips(shop.balance);
+          let balance = shop && typeof shop.balance === 'number' ? shop.balance : null;
+
+          if (balance === 0) {
+            const client = getSupabase();
+            if (client) {
+              const { data } = await client.rpc('claim_emergency_chips', { p_device_id: deviceId });
+              // Refusals ('already_claimed_today', 'still_have_chips') are normal, not errors:
+              // the player simply stays where they are and the daily faucet is their way back.
+              if (data?.ok && typeof data.new_balance === 'number') balance = data.new_balance;
+            }
+          }
+
+          if (balance !== null) setChips(balance);
         } catch {
           /* offline — fall through on the balance we already hold; nothing is invented */
         } finally {
