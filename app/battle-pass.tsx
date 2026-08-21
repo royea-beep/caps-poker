@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,6 +25,24 @@ import TierRewardCard from '../components/TierRewardCard';
 import { rf, rs, rv } from '../utils/responsive';
 import { BackControl } from '../components/BackControl';
 
+/**
+ * Alert.alert is a NO-OP ON WEB (this project's hard rule), which is why ten tier buttons were
+ * reported inert when they were only mute. These two are the same one-line shape already applied to
+ * Reset and to the delete-failure message — one implementation, used by every branch on this screen.
+ */
+function say(title: string, body: string) {
+  if (Platform.OS === 'web') window.alert(`${title} — ${body}`);
+  else Alert.alert(title, body);
+}
+function ask(title: string, body: string, confirmText: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') { if (window.confirm(`${title} — ${body}`)) onConfirm(); return; }
+  Alert.alert(title, body, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: confirmText, onPress: onConfirm },
+  ]);
+}
+
+
 // ── Palette ──────────────────────────────────────────────────────────────────
 const BG = '#0d0700';
 const SURFACE = '#1a0e06';
@@ -38,13 +57,15 @@ const PREMIUM_BG = 'rgba(201,106,26,0.08)';
 // ── Tier circle component ─────────────────────────────────────────────────────
 interface TierCircleProps {
   tierNum: number;
+  /** Which of the two tracks this circle belongs to — without it both rows announce a bare number. */
+  trackLabel?: string;
   isCompleted: boolean;
   isCurrent: boolean;
   isLocked: boolean;
   onPress: () => void;
 }
 
-function TierCircle({ tierNum, isCompleted, isCurrent, isLocked, onPress }: TierCircleProps) {
+function TierCircle({ tierNum, isCompleted, isCurrent, isLocked, onPress, trackLabel }: TierCircleProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -80,7 +101,19 @@ function TierCircle({ tierNum, isCompleted, isCurrent, isLocked, onPress }: Tier
     : styles.circleTextLocked;
 
   return (
-    <Pressable onPress={onPress} hitSlop={4}>
+    // HALF-BUILT-SCREENS 2026-08-21 — the free and premium tracks each render a circle per tier, so
+    // with no label the screen announced "1 1 2 2 3 3 4 4 5 5": ten controls, five names, twice each.
+    // The state was on screen in colour only, which is also the one channel greyscale removes.
+    <Pressable
+      onPress={onPress}
+      hitSlop={4}
+      accessibilityRole="button"
+      accessibilityLabel={[
+        trackLabel ? `${trackLabel} tier ${tierNum}` : `Tier ${tierNum}`,
+        isCompleted ? 'claimed' : isCurrent ? 'current' : isLocked ? 'locked' : 'available',
+      ].join(', ')}
+      accessibilityState={{ disabled: false, selected: !!isCurrent }}
+    >
       <Animated.View
         style={[
           styles.circle,
@@ -193,55 +226,42 @@ export default function BattlePassScreen() {
       ? claimedPremiumTiers.includes(tierNum)
       : claimedFreeTiers.includes(tierNum);
 
+    // HALF-BUILT-SCREENS 2026-08-21 — every branch below went through Alert.alert, a no-op on web.
+    // That is why ten tier buttons were reported as inert: they were not inert, they were MUTE.
+    // Third instance of this bug in three sprints (Reset, the delete-failure message, now here), so
+    // it uses the same one-line shape rather than a fourth invention.
     if (!isUnlocked) {
-      Alert.alert(`Tier ${tierNum}`, `Reach tier ${tierNum} to unlock: ${label}`);
+      say(`Tier ${tierNum}`, `Reach tier ${tierNum} to unlock: ${label}`);
       return;
     }
 
     if (isClaimed) {
-      Alert.alert(`Tier ${tierNum}`, `Already claimed: ${label}`);
+      say(`Tier ${tierNum}`, `Already claimed: ${label}`);
       return;
     }
 
     if (isPremiumTrack && !isPremium) {
-      Alert.alert('Premium Required', 'Unlock Premium to claim this reward.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Unlock Premium', onPress: handleUnlockPremium },
-      ]);
+      ask('Premium Required', 'Unlock Premium to claim this reward.', 'Unlock Premium', handleUnlockPremium);
       return;
     }
 
-    Alert.alert(
+    ask(
       isPremiumTrack ? `Premium — Tier ${tierNum}` : `Tier ${tierNum}`,
       label,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Claim',
-          onPress: () => {
-            const ok = isPremiumTrack
-              ? claimPremiumReward(tierNum)
-              : claimFreeReward(tierNum);
-            if (!ok) {
-              Alert.alert('Oops', 'Could not claim reward.');
-            }
-          },
-        },
-      ],
+      'Claim',
+      () => {
+        const ok = isPremiumTrack ? claimPremiumReward(tierNum) : claimFreeReward(tierNum);
+        if (!ok) say('Oops', 'Could not claim reward.');
+      },
     );
   }
 
   function handleUnlockPremium() {
-    Alert.alert(
+    ask(
       'Unlock Premium',
       `Spend ${BATTLE_PASS_CONFIG.premiumChipCost.toLocaleString()} chips to unlock the Premium track?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unlock',
-          onPress: () => upgradeToPremium(),
-        },
-      ],
+      'Unlock',
+      () => upgradeToPremium(),
     );
   }
 
@@ -332,6 +352,7 @@ export default function BattlePassScreen() {
                     isCompleted={freeCompleted}
                     isCurrent={freeCurrent}
                     isLocked={freeLocked}
+                    trackLabel="Free"
                     onPress={() => handleTierPress(tier, false)}
                   />
                   {/* PREMIUM track circle */}
@@ -340,6 +361,7 @@ export default function BattlePassScreen() {
                     isCompleted={premCompleted}
                     isCurrent={premCurrent}
                     isLocked={premLocked}
+                    trackLabel="Premium"
                     onPress={() => handleTierPress(tier, true)}
                   />
                 </View>

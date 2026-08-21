@@ -211,6 +211,8 @@ export default function ReferralScreen() {
             style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}
             onPress={handleShare}
             disabled={!myCode}
+            accessibilityRole="button"
+            accessibilityLabel="Share your referral code to WhatsApp"
           >
             <Text style={styles.shareBtnText}>Share to WhatsApp 💬</Text>
           </Pressable>
@@ -243,6 +245,10 @@ export default function ReferralScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
               editable={!submitting}
+              // HALF-BUILT-SCREENS 2026-08-21 — this input had NO accessible name; the control
+              // enumerator read it as a literal empty label "". Text inputs get their name from an
+              // explicit label or nothing at all, and there is no visible <label> in RN.
+              accessibilityLabel="Friend's referral code, 6 characters"
               textAlign={Platform.OS === 'ios' ? 'right' : undefined}
             />
             <Pressable
@@ -253,6 +259,9 @@ export default function ReferralScreen() {
               ]}
               onPress={handleRedeem}
               disabled={submitting || redeemInput.length !== 6}
+              accessibilityRole="button"
+              accessibilityLabel="Redeem referral code"
+              accessibilityState={{ disabled: submitting || redeemInput.length !== 6, busy: submitting }}
             >
               {submitting
                 ? <ActivityIndicator color="#fff" size="small" />

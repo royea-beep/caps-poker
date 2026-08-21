@@ -90,6 +90,9 @@ function CategoryTabs({
           <Pressable
             key={cat.key}
             onPress={() => onSelect(cat.key)}
+            accessibilityRole="tab"
+            accessibilityLabel={`Filter achievements by ${cat.label}`}
+            accessibilityState={{ selected: isActive }}
             style={({ pressed }) => [
               styles.tab,
               isActive && styles.tabActive,
@@ -120,9 +123,22 @@ function BadgeCell({
   const hasProgress = item.progress !== undefined && item.target !== undefined && item.target > 0 && !item.is_earned;
   const progressPct = hasProgress ? Math.min(1, (item.progress ?? 0) / (item.target ?? 1)) : 0;
 
+  // HALF-BUILT-SCREENS 2026-08-21 — this tile had no role and no label, so its accessible name fell
+  // back to the concatenated text content: an emoji and a padlock. Every locked tile announced
+  // itself as "🃏🔒", and a player could not tell what they were working toward. Everything needed
+  // is already on `item`; nothing new is fetched.
+  const a11yLabel = [
+    item.name,
+    item.is_earned ? 'unlocked' : 'locked',
+    hasProgress ? `${item.progress} of ${item.target}` : null,
+  ].filter(Boolean).join(', ');
+
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      accessibilityState={{ disabled: false, selected: item.is_earned }}
       style={({ pressed }) => [
         styles.badge,
         {

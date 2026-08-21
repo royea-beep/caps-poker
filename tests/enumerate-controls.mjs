@@ -19,7 +19,7 @@ const VW = Number(process.env.VIEWPORT || 430);
 const MAX = Number(process.env.MAX || 60);
 
 const LIST = `(() => {
-  const sel = 'button,[role="button"],[role="switch"],[role="radio"],[role="checkbox"],input,[tabindex="0"]';
+  const sel = 'button,[role="button"],[role="switch"],[role="radio"],[role="checkbox"],[role="tab"],[role="link"],[role="menuitem"],[role="combobox"],a,input,textarea,select,[tabindex="0"]';
   const out = [];
   for (const el of document.querySelectorAll(sel)) {
     const r = el.getBoundingClientRect();
@@ -68,7 +68,7 @@ for (let i = 0; i < n; i++) {
   await load();
   const before = await page.evaluate(SNAP);
   const label = controls[i].label;
-  await page.evaluate(`(()=>{const sel='button,[role="button"],[role="switch"],[role="radio"],[role="checkbox"],input,[tabindex="0"]';
+  await page.evaluate(`(()=>{const sel='button,[role="button"],[role="switch"],[role="radio"],[role="checkbox"],[role="tab"],[role="link"],[role="menuitem"],[role="combobox"],a,input,textarea,select,[tabindex="0"]';
     const want=${JSON.stringify(controls[i].label)};
     const els=[...document.querySelectorAll(sel)].filter(e=>{const r=e.getBoundingClientRect();
       if(r.width<4||r.height<4) return false; let n=e,h=false;
