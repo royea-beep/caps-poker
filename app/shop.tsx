@@ -172,7 +172,9 @@ export default function ShopScreen() {
             balance: newBalance,
             items: prev.items.map((i) => ({
               ...i,
-              owned: i.event_type === item.event_type ? true : i.owned,
+              // Only a PERMANENT item becomes owned. rebuy_500 and the buy-ins are consumables:
+              // marking those owned would let a player rebuy exactly once, ever.
+              owned: i.event_type === item.event_type && result.permanent ? true : i.owned,
               can_afford: newBalance >= i.cost,
             })),
           };

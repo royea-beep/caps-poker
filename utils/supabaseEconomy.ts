@@ -295,6 +295,8 @@ export interface PurchaseResult {
   price?: number;
   new_balance?: number;
   already_owned?: boolean;
+  /** false for consumables (chip top-ups, buy-ins) — they stay buyable and grant no entitlement. */
+  permanent?: boolean;
   required?: number;
 }
 
@@ -319,6 +321,7 @@ export async function purchaseItem(deviceId: string, eventType: string): Promise
     price: raw.price,
     new_balance: raw.new_balance,
     already_owned: raw.already_owned === true,
+    permanent: raw.permanent === true,
     required: raw.required,
   };
 }
