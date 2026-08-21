@@ -8,7 +8,6 @@ import { rf, rs, rv, rb } from '../utils/responsive';
 import { t } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
-import { PRO_QUOTES_ENABLED_KEY, PRO_VOICES_ENABLED_KEY } from '../components/ProQuoteBanner';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
 // Lazy haptics — web-safe
@@ -848,70 +847,6 @@ const vtStyles = StyleSheet.create({
   },
 });
 
-function ProQuotesToggle() {
-  const [enabled, setEnabled] = useState(true);
-  const [voicesEnabled, setVoicesEnabled] = useState(true);
-
-  useEffect(() => {
-    AsyncStorage.getItem(PRO_QUOTES_ENABLED_KEY).then(val => {
-      setEnabled(val !== 'false');
-    }).catch(() => {});
-    AsyncStorage.getItem(PRO_VOICES_ENABLED_KEY).then(val => {
-      setVoicesEnabled(val !== 'false');
-    }).catch(() => {});
-  }, []);
-
-  const toggleQuotes = () => {
-    const next = !enabled;
-    setEnabled(next);
-    AsyncStorage.setItem(PRO_QUOTES_ENABLED_KEY, next ? 'true' : 'false').catch(() => {});
-    // If quotes OFF → voices also OFF
-    if (!next) {
-      setVoicesEnabled(false);
-      AsyncStorage.setItem(PRO_VOICES_ENABLED_KEY, 'false').catch(() => {});
-    }
-  };
-
-  const toggleVoices = () => {
-    if (!enabled) return; // Can't enable voices without quotes
-    const next = !voicesEnabled;
-    setVoicesEnabled(next);
-    AsyncStorage.setItem(PRO_VOICES_ENABLED_KEY, next ? 'true' : 'false').catch(() => {});
-  };
-
-  return (
-    <>
-      <View style={styles.row}>
-        <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>
-            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎭 </Text>
-            {t().proQuotes}
-          </Text>
-          <Text style={styles.rowHint}>Show fictional poker pro reactions</Text>
-        </View>
-        <Pressable onPress={toggleQuotes} style={[styles.toggleBtn, enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro quotes" accessibilityState={{ checked: enabled }} aria-checked={enabled}>
-          <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>{enabled ? 'ON' : 'OFF'}</Text>
-        </Pressable>
-      </View>
-      <View style={[styles.row, !enabled && { opacity: 0.4 }]}>
-        <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>
-            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔊 </Text>
-            {t().proVoice}
-          </Text>
-          <Text style={styles.rowHint}>Play AI voice clips with quotes</Text>
-          <Text style={[styles.rowHint, { color: 'rgba(255,255,255,0.7)', fontSize: rf(9) }]}>
-            <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚠️ </Text>
-            Not real player voices
-          </Text>
-        </View>
-        <Pressable onPress={toggleVoices} style={[styles.toggleBtn, voicesEnabled && enabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Pro voices" accessibilityState={{ checked: voicesEnabled && enabled, disabled: !enabled }} aria-checked={voicesEnabled && enabled} aria-disabled={!enabled}>
-          <Text style={[styles.toggleText, voicesEnabled && enabled && styles.toggleTextActive]}>{voicesEnabled && enabled ? 'ON' : 'OFF'}</Text>
-        </Pressable>
-      </View>
-    </>
-  );
-}
 
 // C2: Reset All Progress dialog
 function ResetProgressButton() {
@@ -1035,7 +970,7 @@ export default function SettingsScreen() {
   };
   const [debugEnabled, setDebugEnabled] = useState(false);
   // A3's showQuotes state REMOVED 2026-08-11 with the duplicate Pro Quotes row that was its
-  // only consumer. The polarity fix it records still stands — ProQuotesToggle (:773) reads
+  // only consumer. The polarity fix it records still stands — ProQuotesToggle (archived 2026-08-21) read
   // ON = you get the thing — it is just owned by one control now instead of two.
   const isBeta = Constants.expoConfig?.extra?.isBeta === true;
   // B-8 — the DEVELOPER section (Debug Overlay, Max board card, Reset to Defaults) rendered
@@ -1064,8 +999,8 @@ export default function SettingsScreen() {
       setDebugEnabled(v === 'true');
     }).catch(() => {});
     // A3 RESIDUAL hydration REMOVED 2026-08-11 along with the duplicate Pro Quotes row it fed.
-    // Its only consumer was that row; ProQuotesToggle (:773) does its own read via the exported
-    // PRO_QUOTES_ENABLED_KEY. Leaving a write-only state behind is the same dead-key shape this
+    // Its only consumer was that row; ProQuotesToggle (archived 2026-08-21) did its own read via
+    // the key it exported. Leaving a write-only state behind is the same dead-key shape this
     // very comment block was written to fix.
     // B-8 — fails closed: only an explicit 'true' unlocks; a rejected read leaves it hidden.
     AsyncStorage.getItem('caps_dev_unlocked').then(v => setDevUnlocked(v === 'true')).catch(() => {});
@@ -1146,7 +1081,6 @@ export default function SettingsScreen() {
         <View style={{ marginBottom: 12 }}>
           <ReportBugButton variant="row" />
         </View>
-        <ProQuotesToggle />
         {/* DEDUPE-QA: a single replay for the one onboarding (InteractiveTutorial). The old
             "show tutorial" (static Tutorial) + "How to Play (Onboarding)" (OnboardingOverlay)
             buttons were removed along with those flows. */}
@@ -1304,9 +1238,8 @@ export default function SettingsScreen() {
                 DANGER ZONE below (multiRemove of a specific key list) is the single
                 reset control. */}
             {/* DUPLICATE "Pro Quotes" REMOVED 2026-08-11. This was the SAME setting as the
-                ProQuotesToggle in TOOLS (:773, rendered :1074), not a second control — both
-                write `caps_show_pro_quotes`, which is exactly what PRO_QUOTES_ENABLED_KEY
-                (ProQuoteBanner.tsx:18) resolves to and what ProQuoteBanner.tsx:106 reads.
+                ProQuotesToggle in TOOLS (archived 2026-08-21), not a second control — both
+                wrote `caps_show_pro_quotes`. Both are gone with the archived layer.
                 Established by grepping the KEY, not by assuming from the matching label.
                 Worse than merely redundant: each row held its OWN local state (`enabled` here
                 vs `showQuotes` there), so toggling one left the other displaying the opposite

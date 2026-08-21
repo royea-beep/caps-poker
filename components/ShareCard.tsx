@@ -7,7 +7,6 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import CardComponent from './Card';
 import { Card } from '../constants/gameConfig';
 import { RevealBoardData } from '../types/gameTypes';
-import { getRandomQuote } from '../constants/proQuotes';
 
 const CARD_W = 52;
 const CARD_H = 73;
@@ -26,7 +25,6 @@ interface SingleBoardShareCardProps {
 }
 
 export function SingleBoardShareCard({ board, boardIndex, potAmount, isPractice = false }: SingleBoardShareCardProps) {
-  const quote = getRandomQuote('summary');
   const communityCards = [...(board.openCards ?? []), ...(board.closedCards ?? [])];
   const botCards = (board.allBotCards ?? [])[0] ?? board.allBotCards?.[0] ?? [];
   const chipResult = board.winner === 'player'
@@ -83,10 +81,6 @@ export function SingleBoardShareCard({ board, boardIndex, potAmount, isPractice 
       </View>
       <View style={styles.doubleDivider} />
 
-      {/* Pro quote */}
-      <Text style={styles.quoteLabel}>🤖 AI Pro Quote:</Text>
-      <Text style={styles.quoteText}>"{quote?.quote ?? ''}"</Text>
-      <Text style={styles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
       {/* Watermark */}
       <Text style={styles.watermark}>caps.ftable.co.il</Text>
@@ -111,7 +105,6 @@ export function FullGameShareCard({
   potPerBoard,
   numberOfPlayers,
 }: FullGameShareCardProps) {
-  const quote = getRandomQuote(isComplete ? 'complete' : 'summary');
   const boardsWon = boards.filter((b) => b.winner === 'player').length;
   const potTotal = potPerBoard * numberOfPlayers;
 
@@ -159,9 +152,6 @@ export function FullGameShareCard({
       )}
       <View style={styles.doubleDivider} />
 
-      {/* Pro quote */}
-      <Text style={styles.quoteText}>"{quote?.quote ?? ''}"</Text>
-      <Text style={styles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
       {/* Watermark */}
       <Text style={styles.watermark}>caps.ftable.co.il</Text>
@@ -352,7 +342,6 @@ export function StoryShareCard({
   numberOfPlayers = 2,
   isPractice = false,
 }: StoryShareCardProps) {
-  const quote = getRandomQuote(isComplete ? 'complete' : 'summary');
   const isSingleBoard = !!board;
 
   if (isSingleBoard && board) {
@@ -406,8 +395,6 @@ export function StoryShareCard({
           <Text style={storyStyles.completeLabel}>{isPractice ? '🏆 COMPLETE!' : `🏆 COMPLETE! +50% BONUS (+${completeBonusAmount})`}</Text>
         )}
 
-        <Text style={storyStyles.quoteText}>"{quote?.quote ?? ''}"</Text>
-        <Text style={storyStyles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
         <View style={storyStyles.ctaPill}>
           <Text style={storyStyles.ctaText}>Play CAPS Poker</Text>
@@ -453,8 +440,6 @@ export function StoryShareCard({
       </Text>
       <View style={storyStyles.doubleDivider} />
 
-      <Text style={storyStyles.quoteText}>"{quote?.quote ?? ''}"</Text>
-      <Text style={storyStyles.quoteAuthor}>— {quote?.player ?? ''}</Text>
 
       <View style={storyStyles.ctaPill}>
         <Text style={storyStyles.ctaText}>Play CAPS Poker</Text>

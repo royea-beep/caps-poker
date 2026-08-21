@@ -6,7 +6,6 @@ import Board from './Board';
 import BoardSurface from './BoardSurface';
 import PlayerHand from './PlayerHand';
 import { useGameStore } from '../store/gameStore';
-import ProQuoteBanner from './ProQuoteBanner';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
 import { completeBonusPctFor } from '../utils/completeBonusPct';
@@ -442,10 +441,6 @@ export function BoardArrangement({
         </View>
       )}
 
-      {/* Pro quote tip during arrangement — shown after 3 games */}
-      {isArranging && !boardError && selectedCardIds.length === 0 && gamesPlayed >= 3 && (
-        <ProQuoteBanner context="tutorial" />
-      )}
 
       {/* Time bank button — visible when countdown < 20s and not yet used */}
       {isArranging && countdownActive && countdown < 20 && !timeBankUsed && (

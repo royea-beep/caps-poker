@@ -4,7 +4,6 @@ import { debugLog } from './DebugOverlay';
 import { COLORS } from '../constants/gameConfig';
 import { playSound } from '../utils/sounds';
 import { playHaptic } from '../utils/haptics';
-import ProQuoteBanner from './ProQuoteBanner';
 import { rv, rf, rs } from '../utils/responsive';
 import { shouldShowCompleteBonus } from './completeOverlayGate';
 import { WEB_MAX_WIDTH } from './WebContainer';
@@ -225,12 +224,6 @@ export default function CompleteOverlay({ winner, bonusAmount, duration, onDone,
           </Animated.View>
         )}
 
-        {/* Pro quote */}
-        {winner === 'player' && (
-          <Animated.View style={[{ marginTop: rs(16), width: '100%' }, { opacity: bonusOpacity }]}>
-            <ProQuoteBanner context="complete" />
-          </Animated.View>
-        )}
       </View>
     </View>
   );

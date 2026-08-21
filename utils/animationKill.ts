@@ -32,9 +32,8 @@
  * that produced the original crash. These stay KILLED on native until a device says
  * otherwise. Do not "simplify" the Platform check away.
  *
- * STILL OFF EVERYWHERE: `KILL_ProQuoteBanner`. It is the only `withRepeat(..., -1, true)` left
- * in the app and therefore the only site matching the documented cause. It goes last, and only
- * on native evidence.
+ * The last `withRepeat(..., -1, true)` in the app lived in ProQuoteBanner, which was archived
+ * 2026-08-21 with the attributed-quote layer. No infinite repeat remains.
  */
 
 /**
@@ -68,11 +67,6 @@ export const KILL_game = KILL_FINITE_ON_THIS_PLATFORM;
 /** Board — empty-slot pulse, board-`active` pulse, `isWinner` pulse. All withRepeat(200). */
 export const KILL_Board = KILL_FINITE_ON_THIS_PLATFORM;
 
-/**
- * ProQuoteBanner — speaker pulse while a quote plays. `withRepeat(..., -1, true)`.
- * THE ONLY INFINITE REPEAT LEFT. Stays true on every platform. See the header.
- */
-export const KILL_ProQuoteBanner = true;
 
 // PR-C 2026-05-24: b153 visual restore. `false` = NOT killed.
 // All driving animations are FINITE (withRepeat(N)), never -1.
