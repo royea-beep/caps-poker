@@ -31,7 +31,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import CardComponent from '../components/Card';
 import { CARD_BACK_LIST, DEFAULT_CARD_BACK, isCardBackUnlocked, CardBackId } from '../constants/cardBacks';
+import { EMOTE_PACK_LIST, DEFAULT_EMOTE_PACK, EmotePackId } from '../constants/emotePacks';
 import { fetchPokerShop } from '../utils/supabaseEconomy';
+import { useOwnedSkus, isUnlocked } from '../utils/ownedItems';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
 // BATCH-B: cardThemes / homeThemes-picker / friendsBgs imports removed — the four pickers were
@@ -682,10 +684,23 @@ function VisualThemePicker() {
   const setVisualTheme = useGameStore((s) => s.setVisualTheme);
   const current = visualTheme ?? 'classic';
 
-  const options: { id: VisualTheme; label: string; tag: string; bg: string; accent: string }[] = [
-    { id: 'classic', label: 'CLASSIC', tag: 'Timeless', bg: '#1a0800', accent: '#c9a84c' },
-    { id: 'fiveo',   label: 'FIVE-O',  tag: 'Arcade',   bg: '#5c0000', accent: '#FFD700' },
+  // THREE-FAMILIES — `streetStencil` has existed in constants/visualThemes.ts since S76 with every
+  // token resolved, and was unreachable only because this list hardcoded two entries. The existing
+  // buy_table_theme row unlocks it. CLASSIC and FIVE-O keep their exact entries and stay free.
+  const { skus, ready } = useOwnedSkus();
+  const ALL_THEMES: { id: VisualTheme; label: string; tag: string; bg: string; accent: string; sku: string | null }[] = [
+    { id: 'classic', label: 'CLASSIC', tag: 'Timeless', bg: '#1a0800', accent: '#c9a84c', sku: null },
+    { id: 'fiveo',   label: 'FIVE-O',  tag: 'Arcade',   bg: '#5c0000', accent: '#FFD700', sku: null },
+    { id: 'streetStencil', label: 'STREET', tag: 'Concrete', bg: '#2b2b30', accent: '#F2C230', sku: 'buy_table_theme' },
   ];
+  const options = ALL_THEMES.filter((o) => isUnlocked(o.sku, skus));
+
+  // A selection must never outlive its entitlement.
+  useEffect(() => {
+    if (!ready) return;
+    const chosen = ALL_THEMES.find((o) => o.id === current);
+    if (chosen && !isUnlocked(chosen.sku, skus)) setVisualTheme('classic');
+  }, [ready, skus, current, setVisualTheme]);
 
   return (
     <View style={vtStyles.container}>
@@ -699,6 +714,7 @@ function VisualThemePicker() {
             key={opt.id}
             style={[vtStyles.tile, current === opt.id && { borderColor: opt.accent, borderWidth: 2 }]}
             onPress={() => { hapticLight(); setVisualTheme(opt.id); }}
+            testID={`visual-theme-${opt.id}`}
             accessibilityRole="radio"
             accessibilityLabel={`Visual style ${opt.label}`}
             accessibilityState={{ checked: current === opt.id }} aria-checked={current === opt.id}
@@ -784,6 +800,58 @@ function CardBackPicker() {
             <Text style={[vtStyles.tileLabel, current === opt.id && { color: opt.glyph }]}>{opt.label}</Text>
             <Text style={vtStyles.tileTag}>{opt.sku === null ? 'Default' : 'Owned'}</Text>
             {current === opt.id && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[vtStyles.check, { color: opt.glyph }]}>✓</Text>}
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+
+/**
+ * THREE-FAMILIES — the emote-pack picker. Same tile row as VISUAL STYLE and CARD BACK, same styles,
+ * same two guards: hidden until a second pack is owned, and a selection that is no longer owned
+ * falls back. It lives here rather than on the MP chat strip so owning a pack is never a one-way
+ * door — the free six are always one tap away.
+ */
+function EmotePackPicker() {
+  const emotePack = useGameStore((s) => s.emotePack);
+  const setEmotePack = useGameStore((s) => s.setEmotePack);
+  const { skus, ready } = useOwnedSkus();
+  const current = emotePack ?? DEFAULT_EMOTE_PACK;
+  const unlocked = EMOTE_PACK_LIST.filter((p) => isUnlocked(p.sku, skus));
+
+  useEffect(() => {
+    if (!ready) return;
+    const chosen = EMOTE_PACK_LIST.find((p) => p.id === current);
+    if (chosen && !isUnlocked(chosen.sku, skus)) setEmotePack(DEFAULT_EMOTE_PACK);
+  }, [ready, skus, current, setEmotePack]);
+
+  if (unlocked.length < 2) return null;
+
+  return (
+    <View style={vtStyles.container}>
+      <Text style={vtStyles.sectionLabel} accessibilityRole="header">
+        <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">😄 </Text>
+        EMOTE PACK
+      </Text>
+      <View style={vtStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Emote pack">
+        {unlocked.map((opt) => (
+          <Pressable
+            key={opt.id}
+            style={[vtStyles.tile, current === opt.id && { borderColor: COLORS.gold ?? '#c9a84c', borderWidth: 2 }]}
+            onPress={() => { hapticLight(); setEmotePack(opt.id as EmotePackId); }}
+            accessibilityRole="radio"
+            accessibilityLabel={`Emote pack ${opt.label}`}
+            accessibilityState={{ checked: current === opt.id }} aria-checked={current === opt.id}
+            testID={`emote-pack-${opt.id}`}
+          >
+            <View style={[vtStyles.preview, { backgroundColor: '#1a1a1e', borderColor: 'rgba(255,255,255,0.18)' }]}>
+              <Text style={vtStyles.previewSymbol}>{opt.emotes[0]}</Text>
+            </View>
+            <Text style={[vtStyles.tileLabel, current === opt.id && { color: COLORS.gold ?? '#c9a84c' }]}>{opt.label}</Text>
+            <Text style={vtStyles.tileTag}>{opt.emotes.slice(0, 3).join(' ')}</Text>
+            {current === opt.id && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[vtStyles.check, { color: COLORS.gold ?? '#c9a84c' }]}>✓</Text>}
           </Pressable>
         ))}
       </View>
@@ -1102,6 +1170,7 @@ export default function SettingsScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <VisualThemePicker />
         <CardBackPicker />
+        <EmotePackPicker />
         {/* VAMOS-POLISH 2026-06-17 — ORIENTATION section removed. The app is
             portrait-only (Iron Rule #2); the prior section offered Portrait /
             Widescreen which violated the rule. */}

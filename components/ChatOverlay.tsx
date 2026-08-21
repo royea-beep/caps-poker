@@ -22,6 +22,8 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants/gameConfig';
 import { rs, rf, rv } from '../utils/responsive';
+import { EMOTE_PACKS, getEmotePack } from '../constants/emotePacks';
+import { useGameStore } from '../store/gameStore';
 
 export interface ChatMessage {
   id: string;
@@ -33,7 +35,9 @@ export interface ChatMessage {
 
 export type SendKind = 'emote' | 'chat';
 
-export const EMOTES = ['😂', '💀', '🔥', '👏', '😤', '🤝'];
+// THREE-FAMILIES — the six live in constants/emotePacks.ts now; CLASSIC there is this exact array.
+// Kept exported so nothing that imported EMOTES breaks.
+export const EMOTES = EMOTE_PACKS.classic.emotes;
 const AUTO_DISMISS_MS = 4000;
 
 interface BarProps {
@@ -47,6 +51,10 @@ export default function ChatBar({ myName, onSend }: BarProps) {
   const [showInput, setShowInput] = useState(false);
 
   const handleEmote = useCallback((emote: string) => { onSend(emote, 'emote'); }, [onSend]);
+  // Which six show is the player's own pack. The COUNT never changes — the strip's space-between
+  // row is sized for exactly six plus the chat toggle (Issue D).
+  const emotePack = useGameStore((st: any) => st.emotePack);
+  const emotes = getEmotePack(emotePack).emotes;
 
   const handleSend = useCallback(() => {
     const trimmed = inputText.trim();
@@ -80,7 +88,7 @@ export default function ChatBar({ myName, onSend }: BarProps) {
       )}
 
       <View style={styles.emoteBar}>
-        {EMOTES.map((emote) => (
+        {emotes.map((emote: string) => (
           <Pressable key={emote} style={styles.emoteBtn} onPress={() => handleEmote(emote)} accessibilityRole="button" accessibilityLabel={`Send ${emote} emote`}>
             <Text style={styles.emoteText}>{emote}</Text>
           </Pressable>

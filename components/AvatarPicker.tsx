@@ -2,7 +2,7 @@
  * AvatarPicker — modal for choosing an emoji avatar + display name.
  * ZERO Reanimated — iron rule.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
-import { AVATAR_OPTIONS } from '../utils/playerProfile';
+import { avatarOptionsFor, AVATAR_OPTIONS, AVATAR_PREMIUM_SKU } from '../utils/playerProfile';
+import { useOwnedSkus } from '../utils/ownedItems';
 
 interface Props {
   visible: boolean;
@@ -27,6 +28,16 @@ interface Props {
 export default function AvatarPicker({ visible, currentAvatar, currentName, onSave, onClose }: Props) {
   const [selectedAvatar, setSelectedAvatar] = useState(currentAvatar);
   const [nameText, setNameText] = useState(currentName);
+  // THREE-FAMILIES — the grid grows when buy_avatar is owned; it is never smaller than today's.
+  const { skus, ready } = useOwnedSkus();
+  const options = avatarOptionsFor(skus);
+
+  // A selection must not outlive its entitlement. Only act once ownership has actually loaded —
+  // resetting on a set that simply has not arrived would clear an avatar the player does own.
+  useEffect(() => {
+    if (!ready) return;
+    if (!options.includes(selectedAvatar) && AVATAR_OPTIONS.length > 0) setSelectedAvatar(AVATAR_OPTIONS[0]);
+  }, [ready, options, selectedAvatar]);
 
   const handleSave = () => {
     onSave(selectedAvatar, nameText.trim().slice(0, 20) || currentName);
@@ -50,11 +61,15 @@ export default function AvatarPicker({ visible, currentAvatar, currentName, onSa
           {/* Avatar grid */}
           <Text style={styles.sectionLabel}>CHOOSE AVATAR</Text>
           <View style={styles.grid}>
-            {AVATAR_OPTIONS.map((emoji) => (
+            {options.map((emoji) => (
               <Pressable
                 key={emoji}
                 style={[styles.avatarBtn, selectedAvatar === emoji && styles.avatarBtnSelected]}
                 onPress={() => setSelectedAvatar(emoji)}
+                testID={`avatar-${emoji}`}
+                accessibilityRole="radio"
+                accessibilityLabel={`Avatar ${emoji}`}
+                accessibilityState={{ checked: selectedAvatar === emoji }}
               >
                 <Text style={styles.avatarEmoji}>{emoji}</Text>
               </Pressable>
