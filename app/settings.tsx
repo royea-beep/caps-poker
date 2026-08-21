@@ -324,22 +324,10 @@ function SoundToggle() {
             {soundEnabled ? 'ON' : 'OFF'}
           </Text>
         </Pressable>
-        {soundEnabled && (
-          <View style={{ flexDirection: 'row', gap: rs(2), marginLeft: rs(6), flexShrink: 1, minWidth: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {Array.from({ length: STEPS }).map((_, i) => (
-              <Pressable
-                key={i}
-                onPress={() => updateConfig({ soundVolume: (i + 1) / STEPS })}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel={`Volume ${(i + 1) * 10} percent`}
-              >
-                <View style={[styles.volSegment, i < filled && styles.volSegmentFilled]} />
-              </Pressable>
-            ))}
-            <Text style={styles.volPct}>{Math.round(soundVolume * 100)}%</Text>
-          </View>
-        )}
+        {/* SETTINGS-STRIP 2026-08-21 — the ten volume segments are GONE. Ten controls for one
+            continuous value, and the on/off switch beside them already carries the decision a
+            player actually has. config.soundVolume keeps its stored value; nothing is orphaned,
+            there is simply no longer a ten-tap way to nudge it. */}
       </View>
     </View>
   );
@@ -920,32 +908,41 @@ const vtStyles = StyleSheet.create({
 function ResetProgressButton() {
   const resetConfig = useGameStore((s) => s.resetConfig);
 
+  // SETTINGS-STRIP 2026-08-21 — this was Alert.alert ONLY, with no web branch, and Alert.alert is a
+  // no-op on web (this project's own hard rule). So on the web build the button did nothing at all:
+  // no dialog, no error, no state change. handleDeleteAccount beside it already had the right shape
+  // — Platform.OS === 'web' ? window.confirm(...) : Alert.alert(...) — so this MATCHES that rather
+  // than inventing a second confirm mechanism for the same job. Copy is unchanged: it already names
+  // exactly what is lost, which is what makes it a confirmation and not just "are you sure?".
+  const CONFIRM_TITLE = 'Reset All Progress';
+  const CONFIRM_BODY = 'This will delete all chips, level, history and streak. Are you sure?';
+
+  const doReset = async () => {
+    // Clear all known async storage keys
+    const keys = [
+      'caps-poker-storage',
+      'colorblind_mode',
+      'caps_ambient_enabled',
+      'debug_overlay_enabled',
+      'last_daily_reward_claim',
+      'caps_hand_history',
+    ];
+    await AsyncStorage.multiRemove(keys).catch(() => {});
+    resetConfig();
+    const done = 'All progress has been cleared. Restart the app to apply fully.';
+    if (Platform.OS === 'web') window.alert(done);
+    else Alert.alert('Progress Reset', done);
+  };
+
   const handleReset = () => {
-    Alert.alert(
-      'Reset All Progress',
-      'This will delete all chips, level, history and streak. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            // Clear all known async storage keys
-            const keys = [
-              'caps-poker-storage',
-              'colorblind_mode',
-              'caps_ambient_enabled',
-              'debug_overlay_enabled',
-              'last_daily_reward_claim',
-              'caps_hand_history',
-            ];
-            await AsyncStorage.multiRemove(keys).catch(() => {});
-            resetConfig();
-            Alert.alert('Progress Reset', 'All progress has been cleared. Restart the app to apply fully.');
-          },
-        },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (window.confirm(CONFIRM_TITLE + ' — ' + CONFIRM_BODY)) void doReset();
+      return;
+    }
+    Alert.alert(CONFIRM_TITLE, CONFIRM_BODY, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: () => { void doReset(); } },
+    ]);
   };
 
   return (
@@ -1123,16 +1120,22 @@ export default function SettingsScreen() {
             random placement only (Iron Rule #5); the Easy/Medium/Hard selector
             was dead UI. The botDifficulty config field stays in the store for
             analytics/telemetry compatibility but is no longer user-facing. */}
-        <RevealSpeedSelector />
         <SkipRevealToggle />
-        <SettingRow label="Starting Chips" configKey="startingChips" min={1} />
-        <SettingRow label="Pot Per Board" configKey="potPerBoard" suffix={`× ${boardCount} boards = ${buyIn}`} min={1} />
-        <SettingRow label="Complete Bonus %" configKey="completeBonusPercent" suffix="% of buy-in" min={0} max={100} />
+        {/* SETTINGS-STRIP 2026-08-21 — Roye: "leave only what a player would find essential and
+            sensible". REMOVED here:
+              RevealSpeedSelector — three options for a duration nobody can evaluate before sitting
+                through it. Now the shipped default (see the store migration).
+              Starting Chips — a row LABEL rendered as a button; tapping it did nothing.
+              Pot Per Board / Complete Bonus % — economy internals that edit the LOCAL SOLO config
+                only. The multiplayer stake comes from the server (app_config.pot_per_board), so a
+                player reading this as "my stake" was reading a number that does not apply. */}
 
         <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="Cards">🃏 CARDS</Text>
         <FourColorSuitsToggle />
         <ColorblindToggle />
-        <HandSortToggle />
+        {/* HandSortToggle REMOVED — its label said "pairs" while the stored value was "user"; the
+            option was not even nameable. Defaulted, see the migration. Suits + colourblind stay:
+            those are accessibility, not taste. */}
 
         {/* VAMOS UX-BATCH-2 (Item 1) — TIMING + BOT raw tuning knobs moved into the
             collapsed ADVANCED section at the bottom. Iron Rule 3 stays satisfied:
@@ -1195,7 +1198,12 @@ export default function SettingsScreen() {
           </>
         )}
 
-        <AdvancedSection />
+        {/* AdvancedSection REMOVED — six raw-tuning rows (Arrangement Time, Board Reveal Duration,
+            Card Flip Speed, Complete Bonus Display, Bot Speed Min/Max) behind a plain collapsible,
+            NOT the 7-tap developer gate. Its own copy read "Raw gameplay tuning — the defaults are
+            right for normal play", which is the argument for removing it. Two of these edited the
+            same values as the reveal-speed row, so keeping them would have moved that row out of
+            sight rather than removed it. */}
 
         {/* B-8 — everything from here to the Reset to Defaults button is developer tooling and
             was rendering for every player. Wrapped in `devUnlocked &&` so the nodes are NOT

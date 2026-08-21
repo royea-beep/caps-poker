@@ -15,6 +15,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, RefreshControl, Alert, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { safeBack } from '../../components/BackControl';
 import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
 import { getBoardCount } from '../../constants/gameConfig';
@@ -246,7 +247,11 @@ export default function PublicLobby() {
             this small unnoticed. Real height now; hitSlop kept for native. This sits alone at
             the left of the header row, so growing it compresses no neighbour. */}
         <Pressable
-          onPress={() => router.back()}
+          // SETTINGS-STRIP 2026-08-21 — was a bare router.back(). ScreenHeader carries a DEAD-END FIX from
+          // 2026-08-13 for exactly this: a cold load (deep link, refresh, shared URL) leaves the history
+          // stack empty and router.back() silently does nothing. 17 screens are guarded; this one and
+          // lobby/private were the two that kept their own header and missed it.
+          onPress={safeBack}
           hitSlop={10}
           style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}
           accessibilityRole="button"

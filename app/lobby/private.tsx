@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, TextInput, Alert, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { safeBack } from '../../components/BackControl';
 import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
 import { rf as rfBase, rs as rsBase, rv as rvBase } from '../../utils/responsive';
@@ -115,7 +116,11 @@ export default function PrivateLobby() {
         {/* VAMOS-14-SCREENS 2026-08-16 — measured 60x21 at 390 and 49x17 at 320. hitSlop 10 made
             the touchable area 41px tall, still under 44. Sized the control itself. */}
         <Pressable
-          onPress={() => router.back()}
+          // SETTINGS-STRIP 2026-08-21 — was a bare router.back(). ScreenHeader carries a DEAD-END FIX from
+          // 2026-08-13 for exactly this: a cold load (deep link, refresh, shared URL) leaves the history
+          // stack empty and router.back() silently does nothing. 17 screens are guarded; this one and
+          // lobby/private were the two that kept their own header and missed it.
+          onPress={safeBack}
           hitSlop={10}
           style={{ minHeight: 44, justifyContent: 'center' }}
           accessibilityRole="button"

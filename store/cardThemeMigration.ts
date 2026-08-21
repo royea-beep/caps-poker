@@ -10,9 +10,43 @@
  * opt-out) is left untouched. Spread preserves EVERY other persisted field (chips, streaks,
  * achievements); guarded against null so it can never throw and drop a rehydrate.
  */
+/**
+ * SETTINGS-STRIP (version 1 -> 2), 2026-08-21.
+ *
+ * Removing a control must not strand the value it wrote. Three settings lost their UI:
+ *   revealSpeed      (Reveal Speed row)   · config
+ *   boardRevealDuration / turnRevealDelay (ADVANCED steppers, same two values) · config
+ *   handSortMethod   (Card Sort row)      · top level
+ * A player who had chosen "cinematic" or "pairs" would otherwise keep it forever with no way back.
+ * Normalise those keys to the shipped defaults so everyone lands on the same, chosen-by-us value.
+ *
+ * DEFAULTS ARE IMPORTED, NEVER RETYPED HERE (Iron Rule #3) — if gameConfig changes, this follows.
+ * Anything else in `config` is preserved: only the four orphaned keys are touched.
+ */
+import { DEFAULT_CONFIG } from '../constants/gameConfig';
+
+const ORPHANED_CONFIG_KEYS = ['revealSpeed', 'boardRevealDuration', 'turnRevealDelay'] as const;
+
 export function migrateGameStorePersisted(persisted: any, _fromVersion?: number): any {
-  if (persisted && persisted.cardTheme === 'v1') {
-    return { ...persisted, cardTheme: 'v3' };
+  if (!persisted) return persisted;
+  let next = persisted;
+
+  if (next.cardTheme === 'v1') next = { ...next, cardTheme: 'v3' };
+
+  // handSortMethod: the row is gone, so re-pin it to the default.
+  if (next.handSortMethod !== undefined && next.handSortMethod !== 'caps') {
+    next = { ...next, handSortMethod: 'caps' };
   }
-  return persisted;
+
+  // The three config keys whose controls were removed.
+  if (next.config && typeof next.config === 'object') {
+    const patch: Record<string, unknown> = {};
+    for (const k of ORPHANED_CONFIG_KEYS) {
+      const shipped = (DEFAULT_CONFIG as Record<string, unknown>)[k];
+      if (shipped !== undefined && next.config[k] !== shipped) patch[k] = shipped;
+    }
+    if (Object.keys(patch).length) next = { ...next, config: { ...next.config, ...patch } };
+  }
+
+  return next;
 }

@@ -359,7 +359,9 @@ export const useGameStore = create<GameStore>()(
       // CARD-FACE MERGE (v3.2 ship): store was previously unversioned (version 0). Bump to 1 so the
       // one-time migrate runs on existing devices to move the flipped card-face default. Logic lives
       // in the exported migrateGameStorePersisted() (below) so it can be unit-tested directly.
-      version: 1,
+      // SETTINGS-STRIP: bumped 1 -> 2 so the orphaned-value normalisation actually runs on
+      // devices that already persisted a reveal-speed or card-sort choice.
+      version: 2,
       migrate: migrateGameStorePersisted,
       // CONFIG COMPLETENESS: zustand's default merge is SHALLOW, so a partially-written `config`
       // REPLACES the initial one and rehydrates with keys missing — every arithmetic read of a
