@@ -152,6 +152,34 @@ jobs:
             echo "note: fixture symbol fully stripped from bundle." >> $GITHUB_STEP_SUMMARY
           fi
 
+      # ATTRIBUTED-QUOTE GUARD (added 2026-08-21 with the archive of constants/proQuotes.ts).
+      # Two layers once shipped invented words attributed to real, named people — 102 strings across
+      # 37 of them, ten backed by ElevenLabs voice clones of that person. They were removed from
+      # source, but source removal does not clear a build: the names lived on in dist/ and were
+      # served from caps.ftable.co.il until it was rebuilt. This gate fails the DEPLOY, not just the
+      # test run, so they cannot come back silently.
+      #
+      # Full names only. Bare surnames false-positive hard in minified JS — "Chan" matches "change",
+      # "Chen" matches "kitchen". That mistake cost a verification cycle; do not "simplify" this list.
+      - name: Guard — no fabricated attributions in the bundle
+        run: |
+          set -euo pipefail
+          NAMES='Negreanu|Hellmuth|Phil Ivey|Doyle Brunson|Stu Ungar|Vanessa Selbst|Erik Seidel|Justin Bonomo|Bryn Kenney|Imsirovic|Kornuth|Mizrachi|Galfond|Tom Dwan|Patrik Antonius|Sklansky|Dan Harrington|Greenstein|Ciaffone|Jared Tendler|Amarillo Slim|Chip Reese|Johnny Moss|Johnny Chan|Mike Caro|Mason Malmuth|Bill Chen|Gus Hansen|Chris Ferguson|Paul Newman|Yardley|Brian Townsend'
+          hits=$(grep -rIE "$NAMES" dist | head -20 || true)
+          voices=$(find dist -path '*pro-voices*' | head -20 || true)
+          if [ -n "$hits" ] || [ -n "$voices" ]; then
+            echo "::error::Fabricated attributions found in the build — refusing to deploy."
+            [ -n "$hits" ]   && { echo "name matches:";   echo "$hits";   }
+            [ -n "$voices" ] && { echo "voice assets:";   echo "$voices"; }
+            {
+              echo "### Attributed-quote guard: FAILED"
+              echo "The build contains strings attributed to real named people, or voice-clone assets."
+              echo "See the archive README for what these were and why they must not ship."
+            } >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "attributed-quote guard: clean (0 names, 0 voice assets)" >> $GITHUB_STEP_SUMMARY
+
       - name: Patch index.html + write vercel.json
         run: node scripts/fix-web-html.js
 
