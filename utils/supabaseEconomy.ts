@@ -245,6 +245,8 @@ export async function fetchCardDisplayConfig(): Promise<CardDisplayConfig> {
 
 export interface ShopItem {
   event_type: string;
+  /** SHOP-OWNERSHIP: server-computed from `purchases`. Absent on older server builds. */
+  owned?: boolean;
   cost: number;
   description: string;
   description_he: string;
@@ -286,6 +288,41 @@ export interface SpendResult {
  * A matching server-side fix (returns success+new_balance, looks up cost, checks
  * balance) is the LIVE remediation — see VAMOS report — and is owner-applied.
  */
+export interface PurchaseResult {
+  ok: boolean;
+  reason?: string;
+  item_id?: string;
+  price?: number;
+  new_balance?: number;
+  already_owned?: boolean;
+  required?: number;
+}
+
+/**
+ * SHOP-OWNERSHIP — buy a cosmetic and actually receive it.
+ *
+ * Deliberately takes NO amount. spend_chips accepts an optional p_amount that overrides the
+ * catalogue price, and this screen used to pass the client's own item.cost: a 500-chip table theme
+ * was bought for 1 chip on the wire, and (being the old path) granted nothing either. purchase_item
+ * reads the price from chip_config itself, so underpaying is impossible from here.
+ *
+ * The debit and the entitlement are one transaction server-side — a failed grant rolls the chips
+ * back rather than leaving a player who paid and owns nothing.
+ */
+export async function purchaseItem(deviceId: string, eventType: string): Promise<PurchaseResult | null> {
+  const raw = await callRPC<any>('purchase_item', { p_device_id: deviceId, p_item_type: eventType });
+  if (!raw) return null;
+  return {
+    ok: raw.ok === true,
+    reason: raw.reason,
+    item_id: raw.item_id,
+    price: raw.price,
+    new_balance: raw.new_balance,
+    already_owned: raw.already_owned === true,
+    required: raw.required,
+  };
+}
+
 export async function spendChips(
   deviceId: string,
   eventType: string,

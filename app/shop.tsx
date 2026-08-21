@@ -22,7 +22,7 @@ import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
-import { fetchPokerShop, spendChips, ShopItem, ShopData, callRPC } from '../utils/supabaseEconomy';
+import { fetchPokerShop, purchaseItem, spendChips, ShopItem, ShopData, callRPC } from '../utils/supabaseEconomy';
 import { isIapEnabled } from '../utils/iapEnabled';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabase } from '../utils/supabase';
@@ -153,25 +153,32 @@ export default function ShopScreen() {
       // VAMOS-CAPS-QA-ECONOMY-GATED: pass the real cost (the server otherwise
       // charges a flat 50) and tolerate a missing new_balance (the live RPC does
       // not return one) by deriving it from the known shop balance minus the spend.
-      const result = await spendChips(deviceId, item.event_type, item.cost);
-      if (result?.success) {
-        // Update local chip balance
-        addChips(-result.chips_spent);
-        trackChipsSpent(result.chips_spent);
-        // Update shop balance + re-evaluate can_afford
+      // SHOP-OWNERSHIP: purchase_item, not spendChips. It reads the price from the catalogue
+      // itself, so the client no longer sends one — the old call passed item.cost and a modified
+      // client could buy a 500-chip theme for 1. It also grants the entitlement in the same
+      // transaction as the debit, which is the whole point: buying used to take the chips and
+      // give nothing back.
+      const result = await purchaseItem(deviceId, item.event_type);
+      if (result?.ok) {
+        const spent = result.already_owned ? 0 : (result.price ?? item.cost);
+        if (spent > 0) {
+          addChips(-spent);
+          trackChipsSpent(spent);
+        }
         setShopData((prev) => {
           if (!prev) return prev;
-          const newBalance = result.new_balance ?? Math.max(0, prev.balance - result.chips_spent);
+          const newBalance = result.new_balance ?? Math.max(0, prev.balance - spent);
           return {
             balance: newBalance,
             items: prev.items.map((i) => ({
               ...i,
+              owned: i.event_type === item.event_type ? true : i.owned,
               can_afford: newBalance >= i.cost,
             })),
           };
         });
-        track('purchase', { item: item.event_type, cost: result.chips_spent }, 'shop');
-        showToast(`-${result.chips_spent} 🎰`);
+        track('purchase', { item: item.event_type, cost: spent }, 'shop');
+        showToast(result.already_owned ? t().shopOwned : `-${spent} 🎰`);
       }
       // Insufficient balance handled inside callRPC (Alert shown there)
     } catch {
@@ -313,21 +320,23 @@ export default function ShopScreen() {
               <Pressable
                 style={[
                   styles.buyBtn,
-                  !item.can_afford && styles.buyBtnDisabled,
+                  (item.owned || !item.can_afford) && styles.buyBtnDisabled,
                   buying === item.event_type && styles.buyBtnLoading,
                 ]}
-                disabled={!item.can_afford || buying !== null}
+                disabled={item.owned || !item.can_afford || buying !== null}
                 onPress={() => handleBuy(item)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel={`Buy ${item.description} for ${(item.cost ?? 0).toLocaleString()} chips`}
-                accessibilityState={{ disabled: !item.can_afford || buying !== null, busy: buying === item.event_type }}
+                accessibilityLabel={item.owned
+                  ? `${item.description}, already owned`
+                  : `Buy ${item.description} for ${(item.cost ?? 0).toLocaleString()} chips`}
+                accessibilityState={{ disabled: item.owned || !item.can_afford || buying !== null, busy: buying === item.event_type }}
               >
                 {buying === item.event_type ? (
                   <ActivityIndicator color="#000" size="small" />
                 ) : (
-                  <Text style={[styles.buyBtnText, !item.can_afford && styles.buyBtnTextDisabled]} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
-                    {item.can_afford ? t().shopBuy : t().shopCantAfford}
+                  <Text style={[styles.buyBtnText, (item.owned || !item.can_afford) && styles.buyBtnTextDisabled]} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
+                    {item.owned ? t().shopOwned : item.can_afford ? t().shopBuy : t().shopCantAfford}
                   </Text>
                 )}
               </Pressable>

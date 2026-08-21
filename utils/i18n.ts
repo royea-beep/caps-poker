@@ -239,6 +239,7 @@ interface Translations {
   playChooseMode: string;
   shopBuy: string;
   shopCantAfford: string;
+  shopOwned: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -379,6 +380,7 @@ const he: Translations = {
   playChooseMode: 'בחר מצב משחק',
   shopBuy: 'קנה',
   shopCantAfford: 'אין מספיק צ׳יפים',
+  shopOwned: 'ברשותך',
 };
 
 // ---------------------------------------------------------------------------
@@ -525,6 +527,7 @@ const en: Translations = {
   playChooseMode: 'Choose your game mode',
   shopBuy: 'Buy',
   shopCantAfford: "Can't afford",
+  shopOwned: 'Owned',
 };
 
 const translations: Record<Language, Translations> = { he, en };
