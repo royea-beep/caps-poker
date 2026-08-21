@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG, GameConfig, Card } from '../constants/gameConfig';
 import { ConnectedPlayerInfo, GameSession, RevealData, RevealBoardCalcCapture } from '../types/gameTypes';
 import { CardThemeId, DEFAULT_CARD_THEME } from '../constants/cardThemes';
+import { CardBackId, DEFAULT_CARD_BACK } from '../constants/cardBacks';
 import { HomeThemeId, DEFAULT_HOME_THEME, ButtonStyle } from '../constants/homeThemes';
 import { FriendsBgId } from '../constants/friendsBgs';
 import { CardDisplayConfig } from '../utils/supabaseEconomy';
@@ -33,6 +34,8 @@ interface GameStore {
   // + persistence STAY. Do NOT delete as "unused": simulate.tsx reads it, and the card-face batch
   // depends on this mechanism being intact.
   cardTheme: CardThemeId;
+  /** SECOND-CARD-BACK — the face-DOWN skin. cardTheme is the face; these are different things. */
+  cardBack: CardBackId;
   homeTheme: HomeThemeId;
   buttonStyle: ButtonStyle;
   friendsBg: FriendsBgId;
@@ -94,6 +97,7 @@ interface GameStore {
   setPlayerAvatar: (avatar: string) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
   setCardTheme: (theme: CardThemeId) => void;
+  setCardBack: (back: CardBackId) => void;
   setHomeTheme: (theme: HomeThemeId) => void;
   setButtonStyle: (style: ButtonStyle) => void;
   setFriendsBg: (bg: FriendsBgId) => void;
@@ -155,6 +159,7 @@ export const useGameStore = create<GameStore>()(
       playerAvatar: '👤',
       notificationsEnabled: true,
       cardTheme: DEFAULT_CARD_THEME,
+      cardBack: DEFAULT_CARD_BACK,
       homeTheme: DEFAULT_HOME_THEME,
       buttonStyle: 'solid' as ButtonStyle,
       friendsBg: 'none' as FriendsBgId,
@@ -219,6 +224,7 @@ export const useGameStore = create<GameStore>()(
       setPlayerAvatar: (avatar: string) => set({ playerAvatar: avatar }),
       setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
       setCardTheme: (theme: CardThemeId) => set({ cardTheme: theme }),
+      setCardBack: (back: CardBackId) => set({ cardBack: back }),
       setHomeTheme: (theme: HomeThemeId) => set({ homeTheme: theme }),
       setButtonStyle: (style: ButtonStyle) => set({ buttonStyle: style }),
       setFriendsBg: (bg: FriendsBgId) => set({ friendsBg: bg }),
@@ -348,7 +354,7 @@ export const useGameStore = create<GameStore>()(
       // in the exported migrateGameStorePersisted() (below) so it can be unit-tested directly.
       version: 1,
       migrate: migrateGameStorePersisted,
-      partialize: (state) => ({ chips: state.chips, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, skipBoardReveal: state.skipBoardReveal, colorblindMode: state.colorblindMode, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
+      partialize: (state) => ({ chips: state.chips, cardBack: state.cardBack, config: state.config, handsPlayed: state.handsPlayed, bestChips: state.bestChips, handsWon: state.handsWon, biggestWin: state.biggestWin, playerName: state.playerName, playerAvatar: state.playerAvatar, notificationsEnabled: state.notificationsEnabled, cardTheme: state.cardTheme, homeTheme: state.homeTheme, buttonStyle: state.buttonStyle, friendsBg: state.friendsBg, fourColorSuits: state.fourColorSuits, skipBoardReveal: state.skipBoardReveal, colorblindMode: state.colorblindMode, handSortMethod: state.handSortMethod, orientation: state.orientation, visualTheme: state.visualTheme, lastDailyRewardClaim: state.lastDailyRewardClaim, dailyRewardStreak: state.dailyRewardStreak, lastFreeRefill: state.lastFreeRefill, totalChipsEarned: state.totalChipsEarned, totalChipsSpent: state.totalChipsSpent, unlockedAchievements: state.unlockedAchievements, currentWinStreak: state.currentWinStreak, bestWinStreak: state.bestWinStreak }),
     }
   )
 );

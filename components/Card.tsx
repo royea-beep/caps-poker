@@ -5,6 +5,7 @@ import { PRD } from '../utils/prdTokens';
 import { useGameStore } from '../store/gameStore';
 import { Card as CardType } from '../constants/gameConfig';
 import { OBSIDIAN, OBSIDIAN_GEOM, cardLiftShadow, cardLiftShadowSmall, cardBackShadow } from '../constants/obsidianTheme';
+import { getCardBack } from '../constants/cardBacks';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Card Display Bible (V2+ — rewritten 2026-07-23, CARD-FACE batch). The old S81 version was STALE:
@@ -98,11 +99,10 @@ const CARD_BACK_BORDER = '#C5A028';
 // placeholder, and the elevation change in obsidianTheme drops it beneath the face for the same
 // reason. Neutral white-alpha is also pure VALUE, so it survives full desaturation, where two
 // hues at similar luminance would not.
-const CARD_BACK_C_BG = '#18181c';                     // charcoal — unchanged
-const CARD_BACK_C_GOLD = 'rgba(255,255,255,0.45)';    // the "C" + edge ring — was #c9a84c
-const CARD_BACK_C_RING = 'rgba(255,255,255,0.16)';    // inner circle — was low-alpha gold
-const CARD_BACK_C_EDGE = 'rgba(255,255,255,0.18)';    // inset edge ring — was gold 0.5
-const CARD_BACK_C_GLOW = 'rgba(255,255,255,0.22)';    // soft glow on the C — was gold 0.55
+// SECOND-CARD-BACK: these five values now live in constants/cardBacks.ts as the CLASSIC palette,
+// byte-identical, still free for everyone. The back is resolved per player from `cardBack`, exactly
+// the way the FACE is already resolved from `cardTheme` above. The reasoning above still governs
+// every entry in that table: a variant may differ in luminance and pattern, never in hue.
 // FONT RULING A: Bangers is NOT bundled (0 font files, expo-font never imported).
 // Ship on the platform's heaviest system face now; when the font-infra batch bundles
 // Bangers, this ONE constant becomes 'Bangers' and the C upgrades with a one-line swap.
@@ -218,6 +218,8 @@ function CardComponent({
   // (default 'v3', plus 'v2') = upgraded. Existing 'v1' devices are migrated to 'v3' by the store.
   const cardTheme = useGameStore((s) => s.cardTheme);
   const isUpgraded = cardTheme !== 'v1';
+  // SECOND-CARD-BACK — the face-DOWN skin, independent of the face theme.
+  const cardBack = useGameStore((s) => s.cardBack);
   // v3.2 — ownership RIM gated by owner + ZONE, never by width. Width is the same number for hand
   // and board cards (see the measured width map above), so it cannot express "these are in my hand".
   // Board-PLACED cards are player-owned but already committed, so they carry no rim.
@@ -316,14 +318,18 @@ function CardComponent({
     const cSize = Math.max(12, Math.floor(anchor * 0.5));
     const ringD = Math.max(18, Math.floor(anchor * 0.72));
     const ringBorder = Math.max(2, Math.round(anchor * 0.05));
+    // The palette is the player's own and is applied to EVERY face-down card identically — it is
+    // never derived from `card`, which is what makes a purchased back incapable of leaking
+    // anything about the hand to an opponent.
+    const back = getCardBack(cardBack);
     const cardStyle: any[] = [
       {
         width,
         height,
-        backgroundColor: CARD_BACK_C_BG,
+        backgroundColor: back.bg,
         borderRadius: OBSIDIAN_GEOM.cardBackRadius,
         borderWidth: 2,
-        borderColor: CARD_BACK_C_EDGE,
+        borderColor: back.edge,
         overflow: 'hidden' as const,
         justifyContent: 'center' as const,
         alignItems: 'center' as const,
@@ -333,29 +339,36 @@ function CardComponent({
 
     return (
       <View style={cardStyle}>
-        {/* Inner low-alpha gold ring, centered */}
-        <View
-          style={{
-            position: 'absolute',
-            width: ringD,
-            height: ringD,
-            borderRadius: ringD / 2,
-            borderWidth: ringBorder,
-            borderColor: CARD_BACK_C_RING,
-          }}
-          pointerEvents="none"
-        />
+        {/* Concentric neutral ring(s). The COUNT is the hue-independent channel: two backs that
+            differ only in luminance are weak in greyscale, and greyscale is the floor we measure. */}
+        {Array.from({ length: back.rings }).map((_, i) => {
+          const d = ringD - i * ringBorder * 3;
+          return (
+            <View
+              key={i}
+              style={{
+                position: 'absolute',
+                width: d,
+                height: d,
+                borderRadius: d / 2,
+                borderWidth: ringBorder,
+                borderColor: back.ring,
+              }}
+              pointerEvents="none"
+            />
+          );
+        })}
         {/* The bold gold "C" — heavy system weight now; CARD_BACK_FONT becomes
             'Bangers' in a one-line swap once the font-infra batch bundles it. */}
         <Text
           allowFontScaling={false}
           style={{
-            color: CARD_BACK_C_GOLD,
+            color: back.glyph,
             fontSize: cSize,
             fontWeight: '900',
             fontFamily: CARD_BACK_FONT,
             lineHeight: Math.round(cSize * 1.02),
-            textShadowColor: CARD_BACK_C_GLOW,
+            textShadowColor: back.glow,
             textShadowOffset: { width: 0, height: 0 },
             textShadowRadius: 8,
           }}

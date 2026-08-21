@@ -30,6 +30,8 @@ import * as Updates from 'expo-updates';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import CardComponent from '../components/Card';
+import { CARD_BACK_LIST, DEFAULT_CARD_BACK, isCardBackUnlocked, CardBackId } from '../constants/cardBacks';
+import { fetchPokerShop } from '../utils/supabaseEconomy';
 import { useGameStore } from '../store/gameStore';
 import { DEFAULT_CONFIG, COLORS, GameConfig, getBoardCount } from '../constants/gameConfig';
 // BATCH-B: cardThemes / homeThemes-picker / friendsBgs imports removed — the four pickers were
@@ -714,6 +716,81 @@ function VisualThemePicker() {
   );
 }
 
+
+/**
+ * SECOND-CARD-BACK — the card-back picker.
+ *
+ * Deliberately NOT a new settings toggle: it is the same tile row as VISUAL STYLE directly above,
+ * on the surface where cosmetics are already chosen, and it reuses that component's styles rather
+ * than inventing any.
+ *
+ * IT READS OWNERSHIP, NOT A STATIC LIST. The owned set comes from get_poker_shop — the same call
+ * the shop already makes — so a back with a `sku` only appears once it has actually been bought.
+ * A player who owns nothing sees exactly one tile, which is what they see today.
+ */
+function CardBackPicker() {
+  const cardBack = useGameStore((s) => s.cardBack);
+  const setCardBack = useGameStore((s) => s.setCardBack);
+  const [ownedSkus, setOwnedSkus] = useState<string[]>([]);
+  const current = cardBack ?? DEFAULT_CARD_BACK;
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const shop = await fetchPokerShop(await getDeviceId());
+        if (!alive || !shop?.items) return;
+        setOwnedSkus(shop.items.filter((i) => i.owned).map((i) => i.event_type));
+      } catch {
+        /* offline — the free back is always available, so the picker still works */
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const unlocked = CARD_BACK_LIST.filter((b) => isCardBackUnlocked(b, ownedSkus));
+
+  // A selection must never outlive its entitlement: if the persisted choice is not owned (refund,
+  // a different device, a hand-edited store), fall back rather than render a back they do not own.
+  useEffect(() => {
+    if (ownedSkus.length === 0) return;
+    const chosen = CARD_BACK_LIST.find((b) => b.id === current);
+    if (chosen && !isCardBackUnlocked(chosen, ownedSkus)) setCardBack(DEFAULT_CARD_BACK);
+  }, [ownedSkus, current, setCardBack]);
+
+  // One tile is not a choice — hide the row entirely until a second back is owned.
+  if (unlocked.length < 2) return null;
+
+  return (
+    <View style={vtStyles.container}>
+      <Text style={vtStyles.sectionLabel} accessibilityRole="header">
+        <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🂠 </Text>
+        CARD BACK
+      </Text>
+      <View style={vtStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Card back">
+        {unlocked.map((opt) => (
+          <Pressable
+            key={opt.id}
+            style={[vtStyles.tile, current === opt.id && { borderColor: opt.glyph, borderWidth: 2 }]}
+            onPress={() => { hapticLight(); setCardBack(opt.id as CardBackId); }}
+            accessibilityRole="radio"
+            accessibilityLabel={`Card back ${opt.label}`}
+            accessibilityState={{ checked: current === opt.id }} aria-checked={current === opt.id}
+            testID={`card-back-${opt.id}`}
+          >
+            <View style={[vtStyles.preview, { backgroundColor: opt.bg, borderColor: opt.edge }]}>
+              <Text style={[vtStyles.previewSymbol, { color: opt.glyph }]}>C</Text>
+            </View>
+            <Text style={[vtStyles.tileLabel, current === opt.id && { color: opt.glyph }]}>{opt.label}</Text>
+            <Text style={vtStyles.tileTag}>{opt.sku === null ? 'Default' : 'Owned'}</Text>
+            {current === opt.id && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[vtStyles.check, { color: opt.glyph }]}>✓</Text>}
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const vtStyles = StyleSheet.create({
   container: {
     marginBottom: rs(24),
@@ -1024,6 +1101,7 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <VisualThemePicker />
+        <CardBackPicker />
         {/* VAMOS-POLISH 2026-06-17 — ORIENTATION section removed. The app is
             portrait-only (Iron Rule #2); the prior section offered Portrait /
             Widescreen which violated the rule. */}
