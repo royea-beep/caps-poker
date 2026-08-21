@@ -1189,3 +1189,92 @@ changed the hash, and my first verification ran against a bundle that did not co
 at all.
 
 *(handoff: `vamos_handoffs` id 78)*
+
+---
+
+## Part 22 — BLANK-AFTER-ERROR: not reproduced in 9 configurations; race removed (2026-08-21)
+
+### What his run proved
+
+`auth_logs`, from his IP `37.142.153.36` (mine is `5.29.23.95`):
+
+```
+03:54:57Z  GET /user/identities/authorize  provider=google  "Redirecting to external provider"  200
+03:55:37Z  GET /callback                   "422: Identity is already linked to another user"    302
+```
+
+`/user/identities/authorize` **is the link endpoint**. So `startGoogleOAuth` correctly chose
+`linkIdentity` over `signInWithOAuth` on a live anonymous session — **proven on the wire**, not
+inferred. The conflict predicted in Part 19 fired exactly as predicted.
+
+### The blank — not reproduced
+
+Nine configurations, both engines, **zero page errors in every one**: fresh device (WebKit +
+Chromium), returning-player device, session removed, session corrupted (the `bad_jwt` 403s show up
+in `auth_logs`, so the instrument worked), iPhone 13, Pixel 5, **his exact 2560×1440 viewport**, the
+real hash form with numeric `error_code=422`, and a reload after dismissing. Console carried only
+the known benign warnings (expo-notifications on web, expo-file-system on web, `useNativeDriver`).
+
+**Hypothesis tested and disproven:** a router desync into an unmatched route. There is no
+`+not-found` route, so blank was the expectation — but expo-router ships a default *"Unmatched
+Route / Page could not be found / Go back / Sitemap"* screen. Not blank. Worth noting separately:
+that dev-looking screen is what a user sees on any bad link.
+
+**His device, from analytics:** `45bf-df1f-d8d8`, Windows Chrome, screen 2560×1440 — a **desktop**,
+not a phone. `home_screen_loaded` fired at 06:55:38 +03, one second *after* the callback: the app
+booted and Home mounted, so the content is what was empty. The device has a leaderboard row (8,780
+chips, 2 games, elo 1040) and is **not** in `device_identity`, so he is in no mismatch state and his
+economy is healthy.
+
+### What changed, and why it is not called a fix (`9a41734`)
+
+Removed the timed `replaceState` re-assert shipped in `d19ce8a`. It put **three** independent
+writers on `window.history` on the one path that produced a blocker — supabase-js's
+`detectSessionInUrl` cleanup, expo-router's URL sync, and ours — and it is the only novel mechanism
+that ran there. A stale query string is cosmetic; a blank app is not.
+
+*Accepted consequence:* the error params now stay in the address bar until the next navigation, and
+a manual reload re-shows the banner once.
+
+*Also fixed, a separate real bug found while measuring:* the banner read the URL only on mount, so a
+hash-only change never triggered it — and Supabase returns implicit-flow failures in the **hash**.
+It now also reads on `hashchange`.
+
+**Verified** post-deploy on `index-c2080e964ced9c3bb365afc38b694f0c.js`, both engines × {430×900,
+2560×1440}: clean load → no banner; conflict → banner shown; after dismiss → home renders with
+chips; no page errors. **This is a non-regression check, not proof the blank is fixed** — all four
+combinations also passed *before* the change.
+
+### Which account he used: unknown, and not recoverable
+
+`auth.audit_log_entries` is empty (0 rows). `auth_logs` record the 422 but not the email. Neither
+identity's `updated_at` moved, so the server refused before touching either row. What is certain: a
+422 can only be raised by an account already attached, and only two exist — so it was
+`royearguan@gmail.com` or `aviavitan2211@gmail.com`. Which one is not determinable, and I am not
+guessing.
+
+### The conflict path — options and costs (for Roye; nothing decided, no merge built)
+
+| option | what it gives | what it costs |
+|---|---|---|
+| **A** sign in as the existing user on 422 | the returning player gets their old account — the thing they actually want | `auth.uid` changes while `device_identity` still points at the anonymous uid → `identity_mismatch` → economy breaks. Needs a deliberate rebind, which is a policy call (whose chips win?) and an abuse surface |
+| **B** keep refusing (today) | honest, safe, nothing breaks | a returning player can **never** reach their old account from a new device |
+| **C** merge | the only option satisfying both "my old history" and "what I just played" | hardest; out of scope by instruction, not built, `merge_guest_to_user` untouched |
+| **D** detect the conflict before redirecting | user never leaves the app for a doomed round trip | cheap UX win, orthogonal — does not answer the underlying question |
+
+### Still unproven: a successful link
+
+No successful Google link has ever happened on this build — the conflict fired before the link could
+be attempted. **What would prove it:** one sign-in with a Google account that appears nowhere in
+`auth.identities`. **Worth asking?** Yes, and it is 20 seconds. It is *not* made moot by the conflict
+work: options A–D all assume the success path works, and we have never seen it — if that path is
+broken too, it changes which option is even viable.
+
+MP prompt still **not** built. Binding **not** reverted (the DB behaved perfectly).
+
+**Test data cleaned:** the nine repro runs created 7 anonymous devices; deleted 7 leaderboard rows,
+69 `analytics_events`, 14 `chip_transactions`. His device untouched. The anonymous `auth.users` those
+page loads created were left alone — deleting auth users is riskier than the tidiness is worth, so
+this is flagged rather than acted on.
+
+*(handoff: `vamos_handoffs` id 79)*
