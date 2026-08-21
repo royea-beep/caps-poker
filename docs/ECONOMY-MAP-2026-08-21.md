@@ -148,3 +148,80 @@ production, settled by the server, zero-sum, with a rake.** It is not a thing to
 | Sink balance — design, not code. At 0.6% drain the currency is already near-meaningless | — |
 
 *(handoff: `vamos_handoffs` id 80)*
+
+---
+
+# Addendum — INTEGRITY-GAP, same day
+
+Three functions guarded, the zero-chip rescue shipped, and one finding that changes the premise.
+
+## Identities, determined before wiring
+
+- **resolve-hand EF**: `SUPABASE_SERVICE_ROLE_KEY` ([index.ts:26](supabase/functions/resolve-hand/index.ts:26)) → `auth.uid()` is NULL inside the function. `econ_bind_ok`'s second line is `IF … v_uid IS NULL THEN RETURN true;` — the MP settlement path passes **by construction**, for every seat. Read from the body, then proven on the wire.
+- **Solo**: [results.tsx:484](app/results.tsx:484), the player's own client and own session. Normal guarded case.
+
+## `p_hand_id` uniqueness: enforced
+
+`uq_hand_net_ref` — `UNIQUE (device_id, reference_id) WHERE event_type='hand_net' AND reference_id IS NOT NULL`. **Replay was already impossible**; only the amount was forgeable, bounded by the 20,000/device/day cap. Smaller than it looked.
+
+## Wired
+
+`record_hand_net`, `claim_daily_streak`, `claim_daily_reward` — two guard lines each, everything else verbatim (migration `econ_guard_hand_net_and_daily_faucets`). Both guards honour the existing kill switches, so the change reverts by flipping a flag. No client change needed: refusals reuse each function's existing response shape.
+
+**Proof** — QA copy first (Iron Rule 11), then the live function; QA copy dropped:
+
+| case | result |
+|---|---|
+| first call, real session A | ok, net 60, rake 3 |
+| **forged, foreign session B, 9999** | **`identity_mismatch` — refused** |
+| loss from legit session | ok, net −30 — losses still accepted |
+| MP-shaped, no session | ok — **MP unaffected** |
+
+Faucets: legit → 500 / 30; foreign → `identity_mismatch` on both. **Live positive control:** real device `1333-78ac-5b6a` claimed `daily_streak` 500 and `daily_reward` 30 at 07:55, *after* the guards went live.
+
+## ⚠️ The finding that changes the premise
+
+The first QA run showed the forgery **succeeding**. Not a wiring mistake — it is `econ_bind_ok`'s coverage:
+
+```
+IF (NOT v_is_existing) OR v_has_continuity THEN <bind>; RETURN true; END IF;
+RETURN true;   -- existing device, no continuity: ALLOWED, and never bound
+```
+
+A device with a leaderboard row but no analytics row matching the caller's uid is let through **and never bound**, so it stays permanently unbindable and any session can write for it.
+
+**Measured: 2 of 1,038 devices are bound.** Only 27.38% of `analytics_events` carry a `user_id` (6,740 of 24,613, 300 distinct devices), and an anonymous uid changes whenever the persisted session is lost — so the continuity test rarely matches.
+
+Wiring the guard is correct, free and strictly better, but **it does not close the forgery hole today**. For 99.8% of devices the real ceiling is still the daily cap and the unique index. The guard was verified to *exist*; it was never measured for *coverage*. Closing it means loosening the continuity rule so devices bind on first sight — which is the land-grab risk that branch was written to avoid. **Roye's call, not mine.**
+
+## Zero-chip trap: fixed
+
+`claim_emergency_chips(p_device_id text)` — migration `claim_emergency_chips_device_overload`.
+Guarded, **same** 200/day, same once-per-day rule, same zero-balance precondition. Refuses on missing
+config rather than inventing an amount. Client wired at [gameover.tsx](app/gameover.tsx) (`00f1448`).
+
+**21 of 21** at-zero devices can now claim (on their next game-over tap). The **5** devices holding
+1–49 chips remain stuck — below the cheapest match (50) but not at zero, so the unchanged
+precondition refuses them. Not loosened; flagged as Roye's call.
+
+## Sink problem — report only
+
+Credited **1,121,093** · debited 10,642 · **true destruction 7,104 ever (0.63%)** · float
+**2,457,144** across 1,036 devices · rake has burned **154 chips** in its lifetime. **Faucet:drain ≈ 158:1.**
+
+**Inert sinks:** `quick_poker_buyin` dead since 2026-06-24 (was the largest at 5,900) · `daily_login`
+died 2026-07-02 (still the #2 faucet ever at +110,850) · rake alive but 5% of 36 rows ·
+emotes/avatar/rebuy, 10 rows ever. There is effectively no working sink.
+
+| option | cost |
+|---|---|
+| **A** raise the rake | one config value, already live — but at this volume it is arithmetic on nothing, and it taxes the engaged players |
+| **B** real cosmetic sinks | shop, ledger and `spend_chips` exist; the catalogue does not. 2–3 days. Burns chips where the float actually sits |
+| **C** tournament buy-ins | a sink only if prizes < entries. 1 week+, and a wagering tier Roye has not ordered |
+| **D** expiry / decay | fastest burn, but punishes returning players — the exact cohort the sign-in work is trying to recover. Not recommended |
+
+**Recommendation: B, paired with trimming the daily faucets rather than adding any tax.** The daily
+streak alone is **86%** of everything ever created (+953,900 of 1,121,093); no sink can outrun that
+while it stands. Decision is Roye's.
+
+*(handoff: `vamos_handoffs` id 81)*
