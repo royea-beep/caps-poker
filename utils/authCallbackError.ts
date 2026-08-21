@@ -49,37 +49,16 @@ export function readAuthCallbackError(): AuthCallbackError | null {
 }
 
 /**
- * Strips the error params from the address bar, and keeps them stripped.
+ * NOT EXPORTED ANY MORE — the URL is deliberately left alone.
  *
- * A single replaceState does not survive: expo-router re-syncs the initial URL after mount
- * and puts the params straight back. Measured live — a clear issued at mount was gone again
- * a second later, while the same call made once the app had settled stuck. Gating on
- * useRootNavigationState().key was still too early.
+ * The previous version re-asserted history.replaceState on a timed schedule to beat
+ * expo-router's initial URL sync. That put THREE independent writers on window.history for
+ * the one path that had just produced a blocker (supabase-js's own detectSessionInUrl
+ * cleanup, expo-router's sync, and this). The blank screen Roye hit after dismissing the
+ * banner could not be reproduced in nine configurations, so this is not a proven cause —
+ * but it is the only novel mechanism that ran on that path, and a stale query string in the
+ * address bar is cosmetic while a blank app is a blocker. Cosmetics lose.
  *
- * So instead of guessing when the re-sync happens, this re-asserts on a short bounded
- * schedule and stops as soon as the clean holds. Returns a cancel function for unmount.
- * Idempotent, and gives up quietly — a tidy address bar is never worth breaking boot for.
+ * Consequence, accepted: after a failed sign-in the error params stay in the address bar
+ * until the next navigation, and a manual reload shows the banner once more.
  */
-const RECHECK_MS = [0, 250, 500, 1000, 2000, 3000];
-
-export function clearAuthCallbackParams(): () => void {
-  if (Platform.OS !== 'web') return () => {};
-  if (typeof window === 'undefined' || !window.location) return () => {};
-
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  const attempt = () => {
-    try {
-      if (!window.location.search && !window.location.hash) return true;
-      if (typeof window.history?.replaceState !== 'function') return true;
-      window.history.replaceState({}, '', window.location.pathname);
-      return false;
-    } catch {
-      return true;
-    }
-  };
-
-  for (const ms of RECHECK_MS) {
-    timers.push(setTimeout(() => { attempt(); }, ms));
-  }
-  return () => { for (const t of timers) clearTimeout(t); };
-}

@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRootNavigationState } from 'expo-router';
-import { readAuthCallbackError, clearAuthCallbackParams, type AuthCallbackError } from '../utils/authCallbackError';
+import { readAuthCallbackError, type AuthCallbackError } from '../utils/authCallbackError';
 import { rf, rs, rv } from '../utils/responsive';
 
 /**
@@ -18,17 +17,16 @@ import { rf, rs, rv } from '../utils/responsive';
 export default function AuthErrorBanner() {
   const [err, setErr] = useState<AuthCallbackError | null>(null);
   const insets = useSafeAreaInsets();
-  const navState = useRootNavigationState();
 
-  // Read once on mount, before anything can rewrite the URL.
-  useEffect(() => { setErr(readAuthCallbackError()); }, []);
-
-  // Strip the params once the router exists, and keep re-asserting briefly: expo-router's
-  // initial URL sync runs afterwards and puts them back, so one clear is not enough.
+  // Read on mount, and again on hashchange: Supabase returns implicit-flow failures in the
+  // hash, and a hash-only change does not remount, so a mount-only read misses it (measured).
   useEffect(() => {
-    if (!navState?.key) return;
-    return clearAuthCallbackParams();
-  }, [navState?.key]);
+    const read = () => setErr(readAuthCallbackError());
+    read();
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
 
   const dismiss = useCallback(() => setErr(null), []);
 
