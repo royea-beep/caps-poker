@@ -27,7 +27,15 @@ export default function ThemePickScreen() {
 
       <View style={styles.cardsRow}>
         {/* CLASSIC */}
-        <Pressable style={styles.card} onPress={() => pick('classic')}>
+        {/* THE-ONE-DAY 2026-08-22 — both tiles WORK (tapping FIVE-O persists visualTheme
+            classic -> fiveo, measured) but were div, AT:N — no role, no name, so this whole screen
+            exposed zero buttons. */}
+        <Pressable
+          style={styles.card}
+          onPress={() => pick('classic')}
+          accessibilityRole="button"
+          accessibilityLabel="Choose Classic style, timeless dark gold, elegant look"
+        >
           <View style={styles.classicPreview}>
             <Text style={styles.classicPreviewText}>♠</Text>
             <View style={styles.classicPreviewBar} />
@@ -41,7 +49,12 @@ export default function ThemePickScreen() {
         </Pressable>
 
         {/* FIVE-O */}
-        <Pressable style={[styles.card, styles.fiveoCard]} onPress={() => pick('fiveo')}>
+        <Pressable
+          style={[styles.card, styles.fiveoCard]}
+          onPress={() => pick('fiveo')}
+          accessibilityRole="button"
+          accessibilityLabel="Choose Five-O style, arcade red felt, bold action"
+        >
           <View style={styles.fiveoPreview}>
             <Text style={styles.fiveoPreviewText}>♠</Text>
             <View style={styles.fiveoPreviewBar} />

@@ -234,6 +234,53 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const rtl = isRTL();
   const tx = t();
   const isHE = getLanguage() === 'he';
+  const overlayRef = useRef<any>(null);
+
+  /**
+   * THE-ONE-DAY 2026-08-22 — WEB FOCUS TRAP.
+   *
+   * accessibilityViewIsModal hides the background from a screen reader, but on web it does NOT
+   * stop the Tab key: every home control stayed reachable behind the overlay, which is how our
+   * own automation activated "Play" through it. This keeps Tab inside the overlay while it is up
+   * and restores focus to whatever was focused before, so the tutorial cannot be tabbed past.
+   *
+   * Native is unaffected — accessibilityViewIsModal already does the right thing there, and this
+   * whole effect is a no-op without a document.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const node: HTMLElement | null = overlayRef.current as any;
+    if (!node || typeof node.querySelectorAll !== 'function') return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const FOCUSABLE = 'button,[role="button"],a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
+    const inOverlay = () =>
+      Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+
+    inOverlay()[0]?.focus?.();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = inOverlay();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      // Focus escaped the overlay entirely (or is on <body>) — pull it back in.
+      if (!active || !node.contains(active)) { e.preventDefault(); first.focus(); return; }
+      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      previouslyFocused?.focus?.();
+    };
+  }, []);
 
   // VAMOS HOME-ONBOARDING 2026-07-04 — cut to sharp. ONE punchy line per step, no forced
   // tap gate, prominent Skip. Core message across the 3 steps a new player actually needs
@@ -287,11 +334,25 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
   const Visual = current.Visual;
 
   return (
-    <View style={styles.overlay}>
+    <View
+      style={styles.overlay}
+      ref={overlayRef}
+      /* THE-ONE-DAY 2026-08-22 — this overlay is the FIRST thing a new player meets and none of
+         its controls were exposed: SKIP and Continue were bare Pressables, so RN-web emitted
+         div[tabindex=0] with no role and no name. Measured live: they were not among the elements
+         the page exposed as buttons, our own automation tabbed straight past Continue and
+         activated "Play" THROUGH the overlay. Same idiom as the daily-reward modal
+         (app/(tabs)/index.tsx:351). */
+      accessibilityViewIsModal={true}
+      accessibilityRole="alert"
+      accessibilityLabel={isHE ? 'מדריך פתיחה' : 'Getting started tutorial'}
+    >
       <Pressable
         style={[styles.skipBtn, rtl ? styles.skipBtnLeft : styles.skipBtnRight]}
         onPress={handleSkip}
         hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={isHE ? 'דלג על המדריך' : 'Skip the tutorial'}
       >
         <Text style={styles.skipText}>{(tx.onboarding?.skip ?? (isHE ? 'דלג' : 'Skip'))} ✕</Text>
       </Pressable>
@@ -306,14 +367,30 @@ function InteractiveTutorialImpl({ onDone }: InteractiveTutorialProps) {
         {/* Progress dots */}
         <View style={styles.dots}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <Pressable key={i} onPress={() => goToStep(i)} hitSlop={8}>
+            <Pressable
+              key={i}
+              onPress={() => goToStep(i)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityState={{ selected: i === step }}
+              accessibilityLabel={isHE
+                ? `שלב ${i + 1} מתוך ${TOTAL_STEPS}`
+                : `Step ${i + 1} of ${TOTAL_STEPS}`}
+            >
               <View style={[styles.dot, i === step && styles.dotActive]} />
             </Pressable>
           ))}
         </View>
 
         {/* Normal Continue button — never gated (VAMOS HOME-ONBOARDING) */}
-        <Pressable style={[styles.btn, isLast && styles.btnLast]} onPress={handleNext}>
+        <Pressable
+          style={[styles.btn, isLast && styles.btnLast]}
+          onPress={handleNext}
+          accessibilityRole="button"
+          accessibilityLabel={isLast
+            ? (isHE ? 'בואו נשחק' : "Let's play")
+            : (isHE ? `המשך, שלב ${step + 1} מתוך ${TOTAL_STEPS}` : `Continue, step ${step + 1} of ${TOTAL_STEPS}`)}
+        >
           <Text style={styles.btnText}>
             {isLast
               ? (tx.onboarding?.letsPlay ?? (isHE ? 'בואו נשחק!' : "Let's play!"))

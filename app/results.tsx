@@ -38,6 +38,7 @@ import { playHaptic } from '../utils/haptics';
 import AchievementToast from '../components/AchievementToast';
 import { clearGameActive } from '../utils/dirtyShutdown';
 import { getSupabase } from '../utils/supabase';
+import { queueHandResult } from '../utils/handOutbox';
 import { shouldPromptLogin } from '../utils/auth';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
@@ -596,13 +597,18 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // party that can write the row for a player who dropped. Two writers would mean two rows
         // per player per hand. Solo and practice keep this client write; nothing on the server
         // covers them.
+        // THE-ONE-DAY 2026-08-22 — this call is no longer made directly. It was fire-and-forget,
+        // and a player who left /results before it settled lost the hand outright (measured: 1 of
+        // 2 hands lost). queueHandResult persists the hand to storage BEFORE touching the network
+        // and retries on the next app start, and record_hand_result_d is now idempotent on
+        // (device_id, client_hand_id) so a retry cannot double-count. See utils/handOutbox.ts.
         if (!isMultiplayer) {
-          await sb.rpc('record_hand_result_d', {
-            p_device_id: deviceId,
-            p_won: revealData.netChips > 0,
-            p_boards_won: boardsWon,
-            p_boards_total: revealData.boards.length,
-            p_session_type: isPracticeGame ? 'practice' : 'quick_poker',
+          await queueHandResult({
+            deviceId,
+            won: revealData.netChips > 0,
+            boardsWon,
+            boardsTotal: revealData.boards.length,
+            sessionType: isPracticeGame ? 'practice' : 'quick_poker',
           });
         }
       } catch {}

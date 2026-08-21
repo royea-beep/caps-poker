@@ -147,7 +147,11 @@ export default function SideMenu({
           <MenuItem icon="📊" label={t().stats} onPress={() => navigate('/stats')} />
           <MenuItem icon="📜" label={t().handHistory} onPress={() => navigate('/hand-history')} />
           <MenuItem icon="🎓" label={t().coaching} onPress={() => navigate('/coaching')} />
-          <MenuItem icon="👁" label={t().spectator} onPress={() => navigate('/spectate')} />
+          {/* THE-ONE-DAY 2026-08-22 — SPECTATOR removed from the menu. /spectate was reachable in
+              ONE tap and is a dead end: four lines, "⚠️ No room code provided", zero working
+              controls and no way back (scope panel, handoff 87). The route stays on disk — it is
+              reachable with a real room code — but it must not be offered as a destination.
+              Nothing depends on this entry; the remaining items are unchanged. */}
           {/* Dedupe: leaderboard canonical in Friends tab — removed here + from Profile. */}
 
           <View style={styles.divider} />
@@ -227,11 +231,23 @@ function MenuItem({
   onPress: () => void;
 }) {
   return (
+    /* THE-ONE-DAY 2026-08-22 — every MenuItem was a bare Pressable, so RN-web emitted
+       div[tabindex=0] with no role and no accessible name. Measured live: the whole side menu —
+       ten entries — was invisible to assistive tech while being perfectly usable by sight. The
+       icon is decorative and is hidden so the name is the label, not "🎮 Play online". */
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
-      <Text style={styles.menuItemIcon}>{icon}</Text>
+      <Text
+        style={styles.menuItemIcon}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {icon}
+      </Text>
       <Text style={styles.menuItemLabel}>{label}</Text>
     </Pressable>
   );

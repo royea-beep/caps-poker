@@ -209,6 +209,16 @@ export default function RootLayout() {
     try { return useGameStore.persist.hasHydrated(); } catch { return true; }
   });
 
+  // THE-ONE-DAY 2026-08-22 — re-send any hand that never reached the server. results.tsx persists
+  // each completed solo/practice hand to an outbox BEFORE calling the RPC, so a hand whose request
+  // was cancelled by a fast navigate is still on disk. This is the retry that turns "lost" into
+  // "delayed". Idempotent server-side on (device_id, client_hand_id); safe to run every launch.
+  useEffect(() => {
+    void import('../utils/handOutbox')
+      .then(({ flushHandOutbox }) => flushHandOutbox())
+      .catch(() => {});
+  }, []);
+
   // FIX 1: absolute failsafe — if SplashOverlay onDone never fires (Reanimated thread dies
   // or iOS kills setTimeout under memory pressure), force splashDone=true after 5s.
   // Root cause of 15x dirty-shutdown at Splash: app frozen waiting for splash to dismiss.

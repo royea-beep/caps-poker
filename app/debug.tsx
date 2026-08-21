@@ -2,7 +2,8 @@
  * Auto-Debug Screen — runs numbered logic steps, shows results, sends WhatsApp alert on failure.
  * Accessible from Settings (dev builds only).
  */
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { useRouter } from 'expo-router'
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Platform, Clipboard,
@@ -98,7 +99,17 @@ function getBuildInfo() {
 type RunStatus = 'idle' | 'running' | 'done'
 type QAStatus = 'idle' | 'running' | 'done'
 
-export default function DebugScreen() {
+/**
+ * THE-ONE-DAY 2026-08-22 — /debug must not answer on a public build.
+ *
+ * The route is not linked from anywhere (scope panel, handoff 87), but it IS reachable by typing
+ * the URL, and what it renders is 35 lines of AUTO-DEBUG output with no back button — a page that
+ * reads as a crash to anyone who lands on it. In a production bundle it now redirects home instead
+ * of rendering; in a dev build it is unchanged, because it is a genuinely useful screen there.
+ *
+ * DEVELOPER and the 7-tap gate are NOT involved and NOT touched — this is a build-time check only.
+ */
+function DebugScreenImpl() {
   const [status, setStatus] = useState<RunStatus>('idle')
   const [stepResults, setStepResults] = useState<StepResult[]>([])
   const [report, setReport] = useState<DebugReport | null>(null)
@@ -680,3 +691,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 })
+
+export default function DebugScreen() {
+  const router = useRouter();
+  const allowed = typeof __DEV__ !== 'undefined' && __DEV__;
+  useEffect(() => {
+    if (!allowed) router.replace('/' as any);
+  }, [allowed, router]);
+  if (!allowed) return null;
+  return <DebugScreenImpl />;
+}
