@@ -91,7 +91,8 @@ reconciliation is supposed to do.
 
 ## THE FOUR PREVIOUSLY-UNRECOVERED ITEMS — verbatim, with true status
 
-- **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **OPEN.** Measured 2026-08-14: live, cause misfiled (dead constants), fix is per-card variation keyed off card id — a design change, not a constant swap.
+- **C5** — *"מונוטוניות 5 גבים זהים ברצף."* → **STILL OPEN.** Measured 2026-08-14: live, cause misfiled (dead constants), fix is per-card variation keyed off card id — a design change, not a constant swap.
+  **Update 2026-08-21 — read this before assuming C5 is done.** A SECOND card back shipped today (`constants/cardBacks.ts`, SLATE, unlocked by the existing `buy_card_back` row). That is a *player-level* choice: which back **you** use. C5 is about *card-level* monotony — five identical backs side by side **within one hand** — and every back in a hand is still byte-identical to its neighbours. The sprint brief described the new back as closing C5; it does not, and marking it closed would have buried a live item. What did change is the cost: the back is now a resolved palette rather than five hardcoded constants, so options A–D below apply inside `renderBack()` over `back.*` and are cheaper than when they were priced.
 
 #### Layout at 4 boards / 16 cards — measured 2026-08-14 (the configuration the arc never ran)
 

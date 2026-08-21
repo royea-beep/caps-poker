@@ -105,3 +105,103 @@ rows**; 0 test devices and 0 QA functions remain.
 tiers, stakes UI or tournaments · MP prompt untouched · visual audit not resumed · no keys.
 
 *(handoff: `vamos_handoffs` id 83)*
+
+---
+
+# Addendum — the second card back (same day)
+
+The fifth criterion is now **met**, and the shop's loop is complete for one family.
+
+## SLATE
+
+`constants/cardBacks.ts`. The five constants hardcoded in `Card.tsx` became the **CLASSIC** entry,
+byte-identical and still free — nobody lost the back they had. SLATE is unlocked by the **existing**
+`buy_card_back` row: no catalogue item added, no price changed.
+
+`bg #4A5058` · glyph `rgba(255,255,255,0.66)` · ring `rgba(255,255,255,0.24)` · edge
+`rgba(255,255,255,0.30)` · glow `rgba(255,255,255,0.26)` · **two** concentric rings.
+**Neutral/charcoal confirmed:** every value is a grey or a white alpha. No gold, no mint, anywhere.
+
+**Information leak — ruled out by construction:** `renderBack()` never receives the card. It takes
+width, height and the resolved palette, nothing else, so a back cannot correlate with rank, suit or
+value.
+
+## Winner cue — re-measured, and one part honestly not
+
+| pair (greyscale, hue removed) | ratio |
+|---|---:|
+| SLATE vs CLASSIC back | 2.175 : 1 |
+| winner **GOLD vs SLATE** back | **3.562 : 1** |
+| winner GOLD vs CLASSIC back | 7.746 : 1 |
+| field MINT vs SLATE back | 4.465 : 1 |
+| SLATE back vs card **FACE** | 8.057 : 1 |
+| SLATE back vs felt | 1.924 : 1 |
+| **CLASSIC back vs felt — the shipped baseline** | **1.130 : 1** |
+
+The new back is ~1.7× **more** legible against the felt than the one shipping today. The ring
+**count** adds a hue-free second channel on top of luminance.
+
+**Diff scope** (`git diff 74e7a97..c405c66 -- components/Card.tsx`): every changed line sits inside
+the card-back block. **Zero winner-cue lines touched** — no `v2Border`, no highlight, no gold
+constant. **Live:** 4 gold-bordered elements render alongside 27 slate backs in a real hand.
+
+**Not achieved, stated plainly:** the 3px WON border was **not** captured live during a reveal —
+auto-sim runs past it to `/results`, and 40 dense samples across a hand never landed on it. The cue
+is verified by diff scope + colour separation + gold-still-renders, **not** by a live measurement of
+the 3px border. That one is still owed.
+
+## Mechanism
+
+[Card.tsx:222](components/Card.tsx:222) reads `cardBack`; [:324](components/Card.tsx:324) resolves
+the palette — the same pattern the face already uses at [:219](components/Card.tsx:219). No prop
+threading. [settings.tsx:732](app/settings.tsx:732) `CardBackPicker` is the same tile row as VISUAL
+STYLE above it, reusing its styles — **no new setting, no new control**.
+
+**Reads ownership, not a static list:** the owned set comes from `get_poker_shop`. The row **hides
+entirely** until a second back is owned, and a persisted selection that is no longer owned falls
+back to the default — a selection must never outlive its entitlement.
+
+## The fifth criterion — all five
+
+**webkit/430, chromium/393, webkit/375 — identical:**
+
+| step | result |
+|---|---|
+| unowned settings | 0 tiles, no heading — cannot select what you don't own |
+| before buy, in a hand | 27 classic, 0 slate |
+| purchase | 2,530 → 2,230 = **exactly 300**, Buy 7→6, Owned 1 |
+| owned settings | 2 tiles |
+| select SLATE | persisted `cardBack: 'slate'` |
+| **in a real hand** | **0 classic, 27 SLATE — it visibly renders** |
+| **after a full reload** | **0 classic, 27 SLATE — the selection is durable** |
+
+Console clean on webkit/430; the other runs logged one benign pre-existing message each (a Chromium
+audio-autoplay block, a WebKit AbortError from a cancelled fetch on navigation) — reported rather
+than glossed as "no errors".
+
+## ⚠️ C5 is **not** closed
+
+C5 is *"מונוטוניות 5 גבים זהים ברצף"* — **five identical backs in a row**, i.e. **card-level**
+monotony within one hand. What shipped is a **player-level** choice: which back *you* use. Every back
+in a hand is still byte-identical to its neighbours — the 27 above are 27 identical slates.
+
+The brief described this as closing C5. It does not, and marking it closed would have buried a live
+item behind a sprint that looked like it addressed it. The backlog now says so explicitly. What did
+change is the **cost**: the back is a resolved palette instead of five constants, so the filed
+options A–D apply inside `renderBack()` over `back.*` and are cheaper than when priced.
+
+## Shop end to end: **yes, with one qualifier**
+
+For the **card back** the loop is complete and proven: catalogue → guarded atomic purchase → durable
+entitlement → owned state → a picker that reads ownership → visibly renders → survives a reload.
+
+**The other three families are not there.** Table theme, avatar and emotes still have no purchasable
+variant, so buying them writes an entitlement nothing reads. They are no longer *broken* — the chips
+aren't taken for nothing, the row is written, the shop shows Owned — but nothing changes on screen.
+One variant each is the honest remaining work.
+
+**Cleanup:** 4 purchases, 12 chip_transactions, 4 leaderboard rows, 1 binding, 104 analytics events,
+13 counters, 2 hand_history rows across 4 browser test devices. `purchases` back to **zero**; 0 test
+devices, 0 QA functions.
+
+*(handoff: `vamos_handoffs` id 84)*
