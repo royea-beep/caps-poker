@@ -1013,10 +1013,14 @@ export default function SettingsScreen() {
         // deletion path for apps that support account creation, so removing the button trades a
         // broken control for a review rejection. What changes is the copy — "try again later"
         // promised it would start working, which is the one thing we know is false.
-        Alert.alert(
-          'Account deletion unavailable',
-          'Account deletion is temporarily disabled while we finish a security fix. Nothing has been deleted. Email royearguan@gmail.com and we will remove your account manually.'
-        );
+        // SETTINGS-STRIP 2026-08-21 — this honest message was itself invisible on web: Alert.alert
+        // is a no-op there, so a web player confirmed TWICE and then got SILENCE. Measured on the
+        // live site: both confirms fire, account_deletion_failed is tracked, and the user is told
+        // nothing. The failure is deliberate and documented above; being unable to SAY so was not.
+        const unavailable = 'Account deletion is temporarily disabled while we finish a security fix. '
+          + 'Nothing has been deleted. Email royearguan@gmail.com and we will remove your account manually.';
+        if (Platform.OS === 'web') window.alert('Account deletion unavailable — ' + unavailable);
+        else Alert.alert('Account deletion unavailable', unavailable);
         track('account_deletion_failed', { error: error.message }, 'settings');
         return;
       }
@@ -1029,7 +1033,9 @@ export default function SettingsScreen() {
         router.replace('/');
       }
     } catch (e: any) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      // Same reason as above: an error the player never sees is an error we never hear about.
+      if (Platform.OS === 'web') window.alert('Something went wrong. Please try again.');
+      else Alert.alert('Error', 'Something went wrong. Please try again.');
       track('account_deletion_error', { error: e?.message }, 'settings');
     }
   };

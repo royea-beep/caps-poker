@@ -8,7 +8,7 @@
  *
  *   SCREEN=/settings node tests/enumerate-controls.mjs
  */
-import { webkit } from 'playwright';
+import { webkit, chromium } from 'playwright';
 import { installFire } from './harness/play.mjs';
 
 const SITE = process.env.CAPS_URL || 'https://caps.ftable.co.il';
@@ -42,12 +42,20 @@ const SNAP = `(() => {
   return { path: location.pathname, text: document.body.innerText.replace(/\s+/g,' ').slice(0, 4000), store };
 })()`;
 
-const browser = await webkit.launch({ headless: false });
+const ENGINE = process.env.ENGINE || 'webkit';
+const browser = await (ENGINE === 'chromium' ? chromium : webkit).launch({ headless: false });
 const ctx = await browser.newContext({ viewport: { width: VW, height: 900 } });
 await ctx.addInitScript(() => { try { localStorage.setItem('has_seen_interactive_tutorial','true');
   localStorage.setItem('caps_onboarding_done','true'); localStorage.setItem('caps_tutorial_seen','true'); } catch {} });
 const page = await ctx.newPage();
+// Playwright AUTO-DISMISSES native dialogs when nothing is listening, which is exactly why
+// "Delete account" was reported dead: window.confirm returned false and the flow cancelled.
+const dialogs = [];
+page.on('dialog', async (d) => { dialogs.push(`${d.type()}: ${d.message().slice(0, 90)}`); await d.dismiss(); });
 
+// Reset the persisted state before EVERY control. Without this, one control's side effect hides
+// later ones — the sound toggle hid the ten volume segments and produced ten false "dead" verdicts.
+const RESET_STATE = () => { try { localStorage.removeItem('caps-poker-storage'); } catch {} };
 const load = async () => { await page.goto(SITE + SCREEN, { waitUntil: 'domcontentloaded' }); await page.waitForTimeout(9000); await installFire(page); };
 await load();
 const controls = await page.evaluate(LIST);
@@ -81,7 +89,8 @@ for (let i = 0; i < n; i++) {
       delta = keys.map(k => `${k}:${JSON.stringify(b[k])}->${JSON.stringify(a[k])}`).join(' ').slice(0, 110);
     } catch {}
   }
-  const verdict = moved ? `NAV -> ${after.path}` : storeChanged ? `STORE ${delta}` : textChanged ? 'text changed' : 'NO VISIBLE EFFECT';
+  const dlg = dialogs.splice(0).join(' | ');
+  const verdict = dlg ? `DIALOG ${dlg}` : moved ? `NAV -> ${after.path}` : storeChanged ? `STORE ${delta}` : textChanged ? 'text changed' : 'NO VISIBLE EFFECT';
   console.log(`${String(i).padStart(2)} | ${JSON.stringify(label).padEnd(42)} | ${verdict}`);
 }
 await browser.close();
