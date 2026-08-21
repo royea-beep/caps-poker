@@ -377,7 +377,22 @@ export default function AchievementsScreen() {
           : await sb.rpc('get_achievements_list_d', { p_device_id: deviceId });
         if (cancelled) return;
         if (!error && Array.isArray(data)) {
-          setAchievements(data as AchievementItem[]);
+          // HALF-BUILT-SCREENS 2026-08-21 — the RPC and this interface never agreed. Measured on
+          // the live function: get_achievements_list_d returns title / earned / chips / xp, while
+          // AchievementItem declares name / is_earned / chips_reward / xp_reward. So `is_earned`
+          // was ALWAYS undefined: every tile rendered locked even when earned, and the header
+          // counter — earnedCount filters on is_earned — could only ever say "0/36 unlocked".
+          // Normalised HERE, at the one boundary, so all 13 read sites keep working unchanged.
+          // Both key spellings are accepted: the user-scoped variant is not re-verified here and
+          // this must not break if it already returns the declared shape.
+          const rows = (data as any[]).map((r) => ({
+            ...r,
+            name: r.name ?? r.title ?? '',
+            is_earned: r.is_earned ?? r.earned ?? false,
+            chips_reward: r.chips_reward ?? r.chips ?? 0,
+            xp_reward: r.xp_reward ?? r.xp ?? 0,
+          }));
+          setAchievements(rows as AchievementItem[]);
         }
       } catch {
         // silent fail -- empty state shown
