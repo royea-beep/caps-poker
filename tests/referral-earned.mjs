@@ -27,7 +27,10 @@ await A.goto(SITE + '/referral', { waitUntil: 'domcontentloaded' });
 await A.waitForTimeout(11000);
 const aBefore = await read(A);
 const devA = await A.evaluate(`localStorage.getItem('caps-device-id')`);
-const code = (aBefore.lines.find((l) => /^[A-Z0-9]{6}$/.test(l)) || '').trim();
+// The code is whatever the DB issues -- 8 chars today. Do NOT re-derive the format here;
+// assuming 6 is the exact bug this test exists to catch.
+const iCode = aBefore.lines.indexOf('Your code');
+const code = (iCode >= 0 ? (aBefore.lines[iCode + 1] || '') : '').trim();
 console.log(`   A device=${devA}  code=${code}`);
 console.log(`   A before: ${JSON.stringify(aBefore.lines)}`);
 
