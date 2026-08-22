@@ -16,6 +16,7 @@ import { getSupabase } from '../../utils/supabase';
 import { getDeviceId } from '../../utils/leaderboard';
 import { recordReward } from '../../utils/supabaseEconomy';
 import { useGameStore } from '../../store/gameStore';
+import { isPlausibleReferralCode, normaliseReferralCode } from '../../constants/appLinks';
 
 type RedeemState =
   | { phase: 'loading' }
@@ -28,14 +29,14 @@ export default function InviteRedeemScreen() {
   const params = useLocalSearchParams<{ code?: string | string[] }>();
   const router = useRouter();
   const rawCode = Array.isArray(params.code) ? params.code[0] : params.code;
-  const code = (rawCode || '').trim().toUpperCase();
+  const code = normaliseReferralCode(rawCode || '');
   const [state, setState] = useState<RedeemState>({ phase: 'loading' });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!code || code.length !== 6) {
-        if (!cancelled) setState({ phase: 'error', message: 'This invite link is missing a valid 6-character code.' });
+      if (!code || !isPlausibleReferralCode(code)) {
+        if (!cancelled) setState({ phase: 'error', message: 'This invite link does not contain a valid code.' });
         return;
       }
       try {

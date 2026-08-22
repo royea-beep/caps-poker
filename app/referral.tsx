@@ -26,7 +26,7 @@ import { getSupabase } from '../utils/supabase';
 import { getDeviceId } from '../utils/leaderboard';
 import { recordReward } from '../utils/supabaseEconomy';
 import { useGameStore } from '../store/gameStore';
-import { buildInviteUrl } from '../constants/appLinks';
+import { buildInviteUrl, isPlausibleReferralCode, normaliseReferralCode, REFERRAL_CODE_MAX } from '../constants/appLinks';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 // Suppress unused-import lint warning — COLORS used by pattern convention
@@ -144,9 +144,9 @@ export default function ReferralScreen() {
 
   // Redeem a friend's code
   const handleRedeem = useCallback(async () => {
-    const code = redeemInput.trim().toUpperCase();
-    if (code.length !== 6) {
-      showToast('Enter a 6-character code.');
+    const code = normaliseReferralCode(redeemInput);
+    if (!isPlausibleReferralCode(code)) {
+      showToast('That code does not look right. Check it and try again.');
       return;
     }
     Keyboard.dismiss();
@@ -249,7 +249,7 @@ export default function ReferralScreen() {
               onChangeText={v => setRedeemInput(v.toUpperCase().slice(0, 6))}
               placeholder="XXXXXX"
               placeholderTextColor="#666"
-              maxLength={6}
+              maxLength={REFERRAL_CODE_MAX}
               autoCapitalize="characters"
               autoCorrect={false}
               editable={!submitting}
@@ -262,14 +262,14 @@ export default function ReferralScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.redeemBtn,
-                (submitting || redeemInput.length !== 6) && styles.redeemBtnDisabled,
+                (submitting || !isPlausibleReferralCode(redeemInput)) && styles.redeemBtnDisabled,
                 pressed && { opacity: 0.8 },
               ]}
               onPress={handleRedeem}
-              disabled={submitting || redeemInput.length !== 6}
+              disabled={submitting || !isPlausibleReferralCode(redeemInput)}
               accessibilityRole="button"
               accessibilityLabel="Redeem referral code"
-              accessibilityState={{ disabled: submitting || redeemInput.length !== 6, busy: submitting }}
+              accessibilityState={{ disabled: submitting || !isPlausibleReferralCode(redeemInput), busy: submitting }}
             >
               {submitting
                 ? <ActivityIndicator color="#fff" size="small" />

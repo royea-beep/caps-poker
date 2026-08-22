@@ -42,7 +42,7 @@ import CardComponent from '../../components/Card';
 import ChipsDisplay from '../../components/ChipsDisplay';
 import SideMenu from '../../components/SideMenu';
 import { useGameStore } from '../../store/gameStore';
-import { buildInviteUrl } from '../../constants/appLinks';
+import { buildInviteUrl, isPlausibleReferralCode, normaliseReferralCode, REFERRAL_CODE_MAX } from '../../constants/appLinks';
 import { COLORS, getBoardCount, Card } from '../../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../../constants/economyConfig';
 import {
@@ -1115,9 +1115,9 @@ export default function HomeScreen() {
 
   // Referral: redeem code (D6)
   const handleRedeemCode = useCallback(async () => {
-    const code = referralCodeInput.trim().toUpperCase();
-    if (code.length !== 6) {
-      showReferralToast('Enter a 6-character code.');
+    const code = normaliseReferralCode(referralCodeInput);
+    if (!isPlausibleReferralCode(code)) {
+      showReferralToast('That code does not look right. Check it and try again.');
       return;
     }
     setReferralSubmitting(true);
@@ -1839,7 +1839,7 @@ export default function HomeScreen() {
             accessibilityLabel="Invite code dialog"
           >
             <Text style={styles.modalTitle} accessibilityRole="header" accessibilityLabel="Enter Invite Code">🎁 Enter Invite Code</Text>
-            <Text style={styles.modalSub}>6-character code from a friend</Text>
+            <Text style={styles.modalSub}>Enter the code your friend shared</Text>
             <TextInput
               style={styles.codeInput}
               value={referralCodeInput}
@@ -1847,7 +1847,7 @@ export default function HomeScreen() {
               placeholder="A3F2B1"
               placeholderTextColor="rgba(255,255,255,0.25)"
               autoCapitalize="characters"
-              maxLength={6}
+              maxLength={REFERRAL_CODE_MAX}
               returnKeyType="done"
               onSubmitEditing={handleRedeemCode}
             />
