@@ -10,6 +10,7 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore } from '../store/gameStore';
@@ -17,6 +18,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSupabase } from '../utils/supabase';
 import { safeBack } from '../components/BackControl';
+import { isWebPaymentsEnabled, startCheckout } from '../utils/webPayments';
 
 // --- Types -------------------------------------------------------------------
 
@@ -64,11 +66,22 @@ export default function ChipStoreScreen() {
 
   const [packages,       setPackages]       = useState<ChipPackage[]>(DEFAULT_PACKAGES);
   const [flashDismissed, setFlashDismissed] = useState(false);
+  // PAYMENT-VERIFICATION 2026-08-22 — both rails are remote flags and BOTH ARE OFF. Fetched here
+  // rather than at app start because this is the only screen that reads them, and re-rendered on
+  // resolve so the gate below reflects the fetched value rather than the false default forever.
+  const [, setFlagsResolved] = useState(false);
 
   // Stable social-proof numbers - seeded once on mount, never re-randomised
   const socialProof = useRef<number[]>(
     DEFAULT_PACKAGES.map(() => Math.floor(Math.random() * 151) + 50),
   );
+
+  useEffect(() => {
+    void import('../utils/webPayments')
+      .then(({ loadWebPaymentsEnabled }) => loadWebPaymentsEnabled())
+      .then(() => setFlagsResolved(true))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchChipStorePackages().then((pkgs) => {
@@ -79,12 +92,32 @@ export default function ChipStoreScreen() {
     });
   }, []);
 
-  const handleBuy = (pkg: ChipPackage) => {
-    Alert.alert(
-      'Coming Soon',
-      `In-app purchase will be available in a future update.\n\n${pkg.label}: ${(pkg.chips ?? 0).toLocaleString()} chips for ${pkg.price}`,
-      [{ text: 'OK' }],
-    );
+  /**
+   * PAYMENT-VERIFICATION 2026-08-22 — the five chip packages are now WIRED, behind a flag that is
+   * OFF. Before this they were a "Coming Soon" Alert, which is also a no-op on web.
+   *
+   * The client sends a PACKAGE ID and never a price or a chip amount: chips come from app_config
+   * inside credit_purchase, and the credit only ever happens from a verified provider webhook
+   * (supabase/functions/verify-purchase). The browser cannot assert a payment — credit_purchase is
+   * revoked from anon and authenticated, proven by a direct call returning
+   * "permission denied for function credit_purchase".
+   */
+  const handleBuy = async (pkg: ChipPackage) => {
+    const say = (title: string, msg: string) => {
+      if (Platform.OS === 'web') { try { window.alert(title + '\n\n' + msg); } catch {} }
+      else Alert.alert(title, msg, [{ text: 'OK' }]);
+    };
+    const res = await startCheckout(pkg.id);
+    if (res.ok) { openCheckout(res.redirectUrl); return; }
+    // Honest copy per reason. "no_provider" is a pending approval, not a broken button.
+    say('Coming Soon', res.reason === 'no_provider'
+      ? 'Card payment is not switched on yet.'
+      : 'Purchases are not available yet.');
+  };
+
+  /** Provider redirect. Separate so the flow above stays provider-agnostic. */
+  const openCheckout = (url: string) => {
+    if (Platform.OS === 'web') { try { window.location.assign(url); } catch {} }
   };
 
   const handleRestorePurchases = () => {
@@ -152,7 +185,7 @@ export default function ChipStoreScreen() {
         {/* VAMOS-HIDE-IAP-506 — no price-bearing purchase buttons while IAP is disabled
             (products not configured in App Store Connect; Apple rejects non-functional IAP).
             Same iap_enabled source of truth; reversible by flipping the flag. */}
-        {require('../utils/iapEnabled').isIapEnabled() ? (
+        {(require('../utils/iapEnabled').isIapEnabled() || isWebPaymentsEnabled()) ? (
           <>
             {/* Package cards */}
             {packages.map((pkg, idx) => (
