@@ -128,6 +128,42 @@ const stop = async (label, { quiet = false } = {}) => {
 
 console.log(`\n══════════ ${TAG} ══════════`);
 
+// -- INSTRUMENT SELF-TEST ----------------------------------------------------
+// Cycle 1 filed six findings that were all measurement error, so cycle 2's classifier is
+// LOOSER than cycle 1's. A looser instrument that reports zero is indistinguishable from a
+// blind one -- unless it is shown to still catch a defect. So before measuring anything, plant
+// one real overflow and one real clip on the page and require the probe to report BOTH.
+// If it does not, the run aborts rather than reporting a green that means nothing.
+{
+  await page.goto(SITE + '/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(2500);
+  await page.evaluate((vw) => {
+    const wide = document.createElement('div');
+    wide.id = '__selftest_wide';
+    wide.textContent = 'selftest overflow';
+    wide.style.cssText = `position:static;width:${vw + 400}px;height:40px;background:#f00`;
+    const clip = document.createElement('span');
+    clip.id = '__selftest_clip';
+    clip.textContent = 'selftest clipped text that is far too long for its box';
+    clip.style.cssText = 'display:block;width:20px;height:20px;overflow:hidden;white-space:nowrap';
+    document.body.append(wide, clip);
+  }, VW);
+  const t = await page.evaluate(PROBE);
+  const caughtPast = t.past.some((x) => /selftest overflow/.test(x.n));
+  const caughtClip = t.clipped.some((x) => /selftest clipped/.test(x.n));
+  console.log(`  SELF-TEST  planted overflow caught=${caughtPast}  planted clip caught=${caughtClip}`);
+  if (!caughtPast || !caughtClip) {
+    console.log('  x INSTRUMENT IS BLIND - aborting. A green run from this probe would be meaningless.');
+    await browser.close();
+    process.exit(2);
+  }
+  await page.evaluate(() => {
+    document.getElementById('__selftest_wide')?.remove();
+    document.getElementById('__selftest_clip')?.remove();
+  });
+}
+
+
 // ── FIRST SESSION ────────────────────────────────────────────────────────────
 await page.goto(SITE + '/', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(11000);

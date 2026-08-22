@@ -50,6 +50,44 @@ interface ChipPackage {
 
 // --- Supabase fetch (non-blocking; mirrors fetchCardDisplayConfig pattern) ---
 
+/**
+ * Normalise ONE config row into what this screen renders.
+ *
+ * FINAL-QA 2026-08-22 — the store rendered every pack as "Buy 2,000 chips for undefined".
+ * app_config stores `price_usd` as a NUMBER (0.99); this screen read `pkg.price` as a string,
+ * and those two names have never agreed. Nobody saw it because the whole section is gated behind
+ * (iap_enabled || web_payments_enabled) and both are false — so the defect was invisible until
+ * the moment payments were switched on, which is the worst possible time to find it.
+ *
+ * That is the THIRD screen in three sprints where the server's field names and the component's
+ * disagreed (achievements, missions, this). So this converts explicitly and VALIDATES: a row
+ * without an id, a positive chip count and a usable price is DROPPED rather than rendered with a
+ * hole in it. The screen would rather show four packs, or the honest error, than a price that
+ * reads "undefined".
+ *
+ * The price here is DISPLAY ONLY. checkout still sends nothing but the package id — chips and
+ * the charged amount come from app_config server-side, inside credit_purchase.
+ */
+function normalisePackage(raw: unknown): ChipPackage | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const id = typeof r.id === 'string' ? r.id : null;
+  const chips = typeof r.chips === 'number' ? r.chips : Number(r.chips);
+  // Accept either spelling, so a future config edit either way still renders.
+  const usd = typeof r.price_usd === 'number' ? r.price_usd : Number(r.price_usd);
+  const priceText = Number.isFinite(usd) ? `$${usd.toFixed(2)}`
+    : typeof r.price === 'string' && r.price ? r.price : null;
+  if (!id || !Number.isFinite(chips) || chips <= 0 || !priceText) return null;
+  const badge = r.badge === 'POPULAR' || r.badge === 'BEST VALUE' || r.badge === 'VIP' ? r.badge : null;
+  return {
+    id,
+    chips,
+    price: priceText,
+    label: typeof r.label === 'string' && r.label ? r.label : id,
+    badge,
+  };
+}
+
 /** Returns null when the ladder cannot be read. Null means "say so", never "invent one". */
 async function fetchChipStorePackages(): Promise<ChipPackage[] | null> {
   try {
@@ -61,8 +99,10 @@ async function fetchChipStorePackages(): Promise<ChipPackage[] | null> {
       .eq('key', 'chip_store_packages')
       .single();
     if (error || !data?.value) return null;
-    const remote = data.value as ChipPackage[];
-    return Array.isArray(remote) && remote.length > 0 ? remote : null;
+    const remote = data.value;
+    if (!Array.isArray(remote)) return null;
+    const packages = remote.map(normalisePackage).filter((x): x is ChipPackage => x !== null);
+    return packages.length > 0 ? packages : null;
   } catch {
     return null;
   }
