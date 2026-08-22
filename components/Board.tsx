@@ -727,6 +727,13 @@ export default function Board({
             <Pressable
               style={[styles.autoBtn, { backgroundColor: theme.boardAutoBg, borderColor: theme.boardAutoBorder }]}
               onPress={onAutoFill}
+              // FOUR-GAME-SCREENS 2026-08-22 — the per-board chip had no role and no name, so
+              // 2-4 of them were exposed as nothing while only "Auto-place all boards" was
+              // reachable. The name MUST carry the board number: without it these are
+              // indistinguishable from each other and from the ALL control, which is the exact
+              // confusion that cost three sprints in the harness. Role + name only.
+              accessibilityRole="button"
+              accessibilityLabel={`${t().autoPlace.replace(/^\s*⚡\s*/, '')} — ${t().boardLabel(index + 1)}`}
               // NATIVE-LAYOUT-FIX 2026-07-08 — widened from {10,10} so the tap target
               // clears 44pt even at autoBtn's minWidth:20 floor (20+15+15=50), without
               // growing the chip's own measured height/width (see autoBtn style comment).

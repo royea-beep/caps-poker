@@ -501,17 +501,27 @@ export function BoardArrangement({
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
             onPress={onUndo}
             disabled={boards.every((b) => b.playerCards.length === 0)}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: boards.every((b) => b.playerCards.length === 0) }}
+            accessibilityLabel={t().cancel}
           >
             <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
           </Pressable>
           {/* BW1 — THE ACTUAL ACTION BUTTON. Four elements render the text "✓ READY"; the other
               three are status. Mistaking the header chip for this button produced the "primary
               action is 10px" finding. Anchor here, never match on the text. */}
+          {/* FOUR-GAME-SCREENS 2026-08-22 — this had a testID but NO role and NO name, so the one
+              control that advances the hand was exposed to assistive tech as nothing at all.
+              Measured across every phase of a live hand: at "ready armed" the only exposed
+              controls were "Leave game" and "Dismiss tip". Role + name only; no layout change. */}
           <Pressable
             testID="ready-button"
             style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={onReady}
             disabled={!allBoardsFull}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !allBoardsFull }}
+            accessibilityLabel={allBoardsFull ? t().readyCheck : t().confirm}
           >
             <Text style={[baStyles.floatingBtnText, baStyles.placeBtnText]}>
               {allBoardsFull ? t().readyCheck : t().confirm}
