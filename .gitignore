@@ -70,3 +70,6 @@ tests/confetti-probe-result.json
 # GENERATED, NEVER COMMITTED — scripts/gen-edge-shared.mjs rebuilds this from the app source of
 # record every deploy. A committed copy is the second source of truth arriving by the back door.
 supabase/functions/_shared/
+
+# Playwright QA artifacts - large binaries, regenerated per run
+tests/screenshots/
