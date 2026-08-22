@@ -24,8 +24,6 @@ import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
 import { fetchPokerShop, purchaseItem, spendChips, ShopItem, ShopData, callRPC } from '../utils/supabaseEconomy';
 import { isIapEnabled } from '../utils/iapEnabled';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSupabase } from '../utils/supabase';
 import { ScreenHeader } from '../components/ScreenHeader';
 
 // Lazy-load RevenueCat (native only)
@@ -47,11 +45,6 @@ export default function ShopScreen() {
   const [toast, setToast] = useState<string | null>(null);
   // IAP packages from RevenueCat
   const [starterPack, setStarterPack] = useState<RCPackage | null>(null);
-  const [monthlyPack, setMonthlyPack] = useState<RCPackage | null>(null);
-  // PRICE-LADDER 2026-08-22 — the daily figure was HARDCODED as "1,000 chips/day" in two places
-  // while app_config.subscription_daily_chips said something else. A number that lives in config
-  // and is also typed into the UI will drift, and here it already had. Read it.
-  const [subDaily, setSubDaily] = useState<number | null>(null);
   const [iapLoading, setIapLoading] = useState(false);
 
   const showToast = (msg: string) => {
@@ -74,25 +67,11 @@ export default function ShopScreen() {
 
   useEffect(() => {
     void loadShop();
-    // The daily-chips figure is app_config's to state, not this file's. Falls back to showing no
-    // number rather than a stale one — an unproven promise is worse than a missing detail on a
-    // card that cannot be bought yet anyway.
-    void (async () => {
-      try {
-        const sb = getSupabase();
-        if (!sb) return;
-        const { data } = await sb.from('app_config').select('value')
-          .eq('key', 'subscription_daily_chips').maybeSingle();
-        const n = Number(data?.value);
-        if (Number.isFinite(n) && n > 0) setSubDaily(n);
-      } catch { /* leave it unstated */ }
-    })();
     // Load RevenueCat offerings
     if (Purchases && Platform.OS !== 'web') {
       Purchases.getOfferings().then((offerings) => {
         const pkgs = (offerings.current?.availablePackages ?? []) as RCPackage[];
         setStarterPack(pkgs.find(p => p.identifier === 'starter_pack') ?? null);
-        setMonthlyPack(pkgs.find(p => p.identifier === 'monthly_sub') ?? null);
       }).catch(() => {});
     }
   }, [loadShop]);
@@ -129,28 +108,6 @@ export default function ShopScreen() {
       addChips(earned);
       trackChipsSpent(0); // no chips spent — real money purchase
       showToast(`+${earned} 💰 Starter Pack!`);
-    } catch (e: any) {
-      if (!e.userCancelled) showToast('Purchase failed. Try again.');
-    } finally {
-      setIapLoading(false);
-    }
-  };
-
-  const handleBuySubscription = async () => {
-    if (!monthlyPack || iapLoading || !Purchases) return;
-    setIapLoading(true);
-    try {
-      await Purchases.purchasePackage(monthlyPack as any);
-      await AsyncStorage.setItem('caps_is_subscriber', 'true');
-      // Update DB if authenticated
-      const sb = getSupabase();
-      if (sb) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session?.user?.id) {
-          await sb.from('profiles').update({ is_subscriber: true }).eq('id', session.user.id);
-        }
-      }
-      showToast(subDaily !== null ? `🏆 VIP Activated! ${subDaily.toLocaleString()} chips/day unlocked.` : '🏆 VIP Activated!');
     } catch (e: any) {
       if (!e.userCancelled) showToast('Purchase failed. Try again.');
     } finally {
@@ -258,6 +215,21 @@ export default function ShopScreen() {
           {/* ─── IAP Section ─────────────────────────────────────── */}
           {/* VAMOS-HIDE-IAP-506 — hidden until remote iap_enabled flag is true (products not
               configured in App Store Connect / RevenueCat; Apple rejects non-functional IAP). */}
+          {/* SUBSCRIPTION REMOVED 2026-08-22 — Roye's ruling. A "VIP Monthly" card used to sit
+              below the Starter Pack. Do not re-add it without building the mechanism first.
+              What it actually did when bought:
+                · money left through RevenueCat
+                · `caps_is_subscriber` was written to DEVICE-LOCAL AsyncStorage — gone on reinstall
+                · the server write targeted `profiles`, A TABLE THAT DOES NOT EXIST (only
+                  `user_profiles` exists, and it has no is_subscriber column). supabase-js returns
+                  the error rather than throwing and the result was discarded, so it failed
+                  SILENTLY, every time
+                · a toast promised "VIP Activated! N chips/day unlocked"
+                · and NOTHING paid those chips — no job, RPC or trigger reads any subscriber flag
+              So it was not merely undelivered, it was UNRECORDED: a player who paid, reinstalled
+              and contacted support left no trace that they ever paid. That is a refund problem.
+              app_config still holds subscription_price_usd / subscription_daily_chips /
+              subscription_perks — accurate if this is ever built, orphaned until then. */}
           {Platform.OS !== 'web' && isIapEnabled() && (
             <View style={styles.iapSection}>
               <Text style={styles.sectionTitle} accessibilityRole="header">Premium</Text>
@@ -284,33 +256,6 @@ export default function ShopScreen() {
                   ) : (
                     <Text style={styles.iapBtnText}>
                       {starterPack ? 'Buy' : 'Soon'}
-                    </Text>
-                  )}
-                </Pressable>
-              </View>
-              {/* Monthly Subscription */}
-              <View style={styles.iapCard}>
-                <View style={styles.iapInfo}>
-                  <Text style={styles.iapTitle} accessibilityLabel="VIP Monthly">👑 VIP Monthly</Text>
-                  <Text style={styles.iapDesc}>{subDaily !== null ? `${subDaily.toLocaleString()} chips/day · Auto-renews` : 'Auto-renews'}</Text>
-                  {monthlyPack && (
-                    <Text style={styles.iapPrice}>{monthlyPack.product.priceString}/mo</Text>
-                  )}
-                </View>
-                <Pressable
-                  style={[styles.iapBtn, (iapLoading || !monthlyPack) && styles.iapBtnDisabled]}
-                  onPress={handleBuySubscription}
-                  disabled={iapLoading || !monthlyPack}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={monthlyPack ? `Subscribe to VIP Monthly for ${monthlyPack.product.priceString} per month` : 'VIP Monthly coming soon'}
-                  accessibilityState={{ disabled: iapLoading || !monthlyPack, busy: iapLoading }}
-                >
-                  {iapLoading ? (
-                    <ActivityIndicator color="#000" size="small" />
-                  ) : (
-                    <Text style={styles.iapBtnText}>
-                      {monthlyPack ? 'Subscribe' : 'Soon'}
                     </Text>
                   )}
                 </Pressable>
