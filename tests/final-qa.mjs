@@ -59,12 +59,28 @@ const PROBE = () => {
     const r = e.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) continue;
     if (r.right > vwNow + 1 || r.left < -1) {
-      const cs = getComputedStyle(e);
-      // An overlay deliberately positioned off-screen is not a defect; classify, do not suppress.
-      const deliberate = cs.position === 'fixed' || cs.position === 'absolute';
+      // CLASSIFY, DO NOT SUPPRESS — and classify by walking ANCESTORS, not the element itself.
+      // Cycle 1 filed six "elements past the viewport" findings that were all instrument error:
+      // the closed side-menu drawer (parked off-screen by a transform on a PARENT) and the
+      // battle-pass / achievements rails (legitimately wider than the screen inside their own
+      // horizontal scroller). Reading only the element's own computed position misses both,
+      // because the items inside are position:static.
+      let deliberate = false;
+      for (let a = e; a && a !== document.body; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.position === 'fixed' || cs.position === 'absolute') { deliberate = true; break; }
+        if (cs.transform && cs.transform !== 'none') { deliberate = true; break; }
+        if (/(auto|scroll)/.test(cs.overflowX)) { deliberate = true; break; }
+        if (cs.overflowX === 'hidden' && a.getBoundingClientRect().right <= vwNow + 1) {
+          deliberate = true; break;   // clipped by an ancestor that is itself on-screen
+        }
+      }
       past.push({ n: name(e).slice(0, 30), right: Math.round(r.right), deliberate });
     }
-    if (e.children.length === 0 && e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0) {
+    // Emoji glyphs routinely measure 1-3px wider than their box; that is font metrics, not a clip.
+    // Require a real overflow AND more than a single glyph before calling it clipped.
+    const txt = (e.textContent || '').trim();
+    if (e.children.length === 0 && e.scrollWidth > e.clientWidth + 4 && e.clientWidth > 0 && txt.length > 2) {
       clipped.push({ n: name(e).slice(0, 30), sw: e.scrollWidth, cw: e.clientWidth });
     }
   }

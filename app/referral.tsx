@@ -39,6 +39,14 @@ const BORDER = '#3d2a1a';
 const TEXT   = '#f5e6d3';
 const GREEN  = '#27ae60';
 
+// The two payouts, in ONE place, so the promise and the arithmetic cannot drift apart again.
+// Both are DB ground truth, read from production rather than assumed:
+//   redeem_referral  -> record_reward(referrer, 300, 'referral_joined')
+//   the redeemer's welcome bonus is granted client-side below via record_reward(..., 100, once)
+// If either payout changes in the database, change it HERE -- these render the copy as well.
+const REFERRER_REWARD_CHIPS = 300;
+const REDEEMER_WELCOME_CHIPS = 100;
+
 // ─── Toast helper ────────────────────────────────────────────
 function Toast({ message, visible }: { message: string; visible: boolean }) {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -69,7 +77,7 @@ export default function ReferralScreen() {
   const [chipsEarned, setChipsEarned]   = useState(0);
   const [toastMsg, setToastMsg]         = useState('');
   const [toastVis, setToastVis]         = useState(false);
-  const [rewardPerReferral, setRewardPerReferral] = useState(500);
+  const rewardPerReferral = REFERRER_REWARD_CHIPS;
 
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -91,14 +99,14 @@ export default function ReferralScreen() {
         const { data: codeData } = await sb.rpc('create_referral_link', { p_device_id: deviceId });
         if (codeData?.code) setMyCode(codeData.code as string);
 
-        // Reward amount from app_config (fetched first so we can derive chips earned).
-        const { data: cfg } = await sb
-          .from('app_config')
-          .select('value')
-          .eq('key', 'referral_both_get_chips')
-          .single();
-        const reward = cfg?.value ? (Number(cfg.value) || 500) : 500;
-        setRewardPerReferral(reward);
+        // FINAL-QA 2026-08-22 — this used to read app_config.referral_both_get_chips and fall back
+        // to 500. That key DOES NOT EXIST in production, so the fetch 406'd on every visit (the
+        // only console error in the whole QA sweep) and the fallback 500 was always what won.
+        // Nothing has ever paid 500: redeem_referral pays the referrer REFERRER_REWARD_CHIPS, and
+        // the screen's own copy says 300. So "Chips earned" read joined x 500 while the player was
+        // actually paid joined x 300 -- a player with two referrals was shown 1,000 for 600.
+        // The figure now comes from the same constant the copy uses.
+        const reward = REFERRER_REWARD_CHIPS;
 
         // Referral stats from referral_links (real schema: per-link `conversions` count).
         // Was selecting non-existent chips_awarded/is_redeemed -> HTTP 400 (FIX-REFERRAL-PLAYOFDAY).
@@ -160,13 +168,13 @@ export default function ReferralScreen() {
         // the redeemer's bonus is client-side via record_reward(once=true → server dedupes
         // per device forever, so it can never double-grant, incl. vs the Home redeem path).
         try {
-          const res = await recordReward(deviceId, 100, 'referral_welcome', true);
+          const res = await recordReward(deviceId, REDEEMER_WELCOME_CHIPS, 'referral_welcome', true);
           if (res && res.granted > 0 && typeof res.new_balance === 'number') {
             useGameStore.getState().setChips(res.new_balance);
             useGameStore.getState().trackChipsEarned(res.granted);
           }
         } catch { /* economy RPC never crashes the UI */ }
-        showToast('+100 💰 Welcome bonus!');
+        showToast(`+${REDEEMER_WELCOME_CHIPS} 💰 Welcome bonus!`);
         setRedeemInput('');
       }
     } catch {
@@ -193,7 +201,7 @@ export default function ReferralScreen() {
           <Text style={styles.heroEmoji}>🎁</Text>
           <Text style={styles.heroTitle}>Invite friends</Text>
           <Text style={styles.heroCopy}>
-            You get 300 💰, they get 100 💰 when they join!
+            You get {REFERRER_REWARD_CHIPS} 💰, they get {REDEEMER_WELCOME_CHIPS} 💰 when they join!
           </Text>
         </View>
 
@@ -277,7 +285,7 @@ export default function ReferralScreen() {
           {[
             { emoji: '1️⃣', text: 'Share your code with a friend' },
             { emoji: '2️⃣', text: 'Your friend downloads CAPS and enters the code' },
-            { emoji: '3️⃣', text: 'You get 300 💰, they get 100 💰 instantly!' },
+            { emoji: '3️⃣', text: `You get ${REFERRER_REWARD_CHIPS} 💰, they get ${REDEEMER_WELCOME_CHIPS} 💰 instantly!` },
           ].map((step, i) => (
             <View key={i} style={styles.howRow}>
               <Text style={styles.howEmoji}>{step.emoji}</Text>
