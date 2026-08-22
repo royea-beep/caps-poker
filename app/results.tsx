@@ -604,6 +604,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // (device_id, client_hand_id) so a retry cannot double-count. See utils/handOutbox.ts.
         if (!isMultiplayer) {
           await queueHandResult({
+            // REVEAL-SAVE 2026-08-22 — the SAME id game.tsx queued with at the reveal. Both paths
+            // now carry one client_hand_id, so uq_hand_history_client_ref collapses them to a
+            // single row: whichever lands first wins, the other returns {duplicate:true}. This
+            // call is kept as a safety net rather than removed, because "the reveal block always
+            // runs" is a claim, and keying it identically makes the belt-and-braces free.
+            id: revealData.handId,
             deviceId,
             won: revealData.netChips > 0,
             boardsWon,

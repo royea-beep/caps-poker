@@ -737,6 +737,9 @@ function GameScreenInner() {
     debugLog('9 addChips done');
 
     debugLog('10 setRevealData START');
+    // Hoisted so the reveal-time outbox queue below writes the SAME client_hand_id that
+    // results.tsx will use. One key, one row.
+    const revealHandId = `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     setRevealData({
       boards: revealBoards,
       isPractice,
@@ -754,9 +757,46 @@ function GameScreenInner() {
       // ECON-SW P1.1 (S62) — stable per-hand id for record_hand_net server-side dedup.
       // doNavigate is guarded (hasNavigatedRef) so this runs once per hand → stable across
       // any results re-mount that reads this same revealData.
-      handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      handId: revealHandId,
     });
     debugLog('11 setRevealData DONE');
+
+    // REVEAL-SAVE 2026-08-22 — Roye's ruling: a player who leaves mid-reveal KEEPS the hand,
+    // because they played it. The hand used to be queued from /results, so leaving during the
+    // reveal recorded nothing at all: measured, devices that left had ZERO hand_history rows
+    // while those that reached /results had exactly one. Achievements count hand_history rows,
+    // so an abandoned reveal silently cost progression too.
+    //
+    // Queued HERE instead, at the moment the outcome is known — every field below is already
+    // decided, and this block runs once per hand behind the same hasNavigatedRef guard that
+    // makes handId stable.
+    //
+    // WHY THIS CANNOT DOUBLE-COUNT. It reuses `handId`, the stable per-hand id that already
+    // existed for record_hand_net's server-side dedup, as the client_hand_id. results.tsx passes
+    // the SAME id, so both writes carry one key and uq_hand_history_client_ref collapses them to
+    // a single row — whichever arrives first wins and the other is a no-op returning
+    // {duplicate:true}. The danger here is queueing twice, not queueing late, so the two paths
+    // are deliberately keyed identically rather than one of them being removed on the assumption
+    // that this block always runs.
+    //
+    // Multiplayer is untouched: MP rows are written by the server (resolve_hand), and this file
+    // is the solo/practice screen.
+    void (async () => {
+      try {
+        const { queueHandResult } = await import('../utils/handOutbox');
+        const { getDeviceId } = await import('../utils/leaderboard');
+        await queueHandResult({
+          id: revealHandId,
+          deviceId: await getDeviceId(),
+          won: results.playerChipsWon - config.potPerBoard * boardCount > 0,
+          boardsWon: revealBoards.filter((b) => b.winner === 'player').length,
+          boardsTotal: revealBoards.length,
+          sessionType: isPractice ? 'practice' : 'quick_poker',
+        });
+      } catch {
+        /* the outbox already persisted before the network call; app start re-sends */
+      }
+    })();
 
     // A3: track last COMPLETE for home screen share banner
     if (results.isComplete) {
