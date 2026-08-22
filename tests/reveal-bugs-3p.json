@@ -1,0 +1,11 @@
+{
+ "url": "https://caps.ftable.co.il",
+ "players": "3",
+ "ts": "2026-08-09T09:31:17.096Z",
+ "net404": [],
+ "pageErrors": [
+  "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+  "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+  "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+ ]
+}

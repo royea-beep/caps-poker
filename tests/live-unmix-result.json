@@ -1,0 +1,76 @@
+{
+ "url": "https://caps.ftable.co.il",
+ "ts": "2026-08-09T09:15:01.756Z",
+ "steps": {
+  "mounted": true,
+  "homeHebrew": [],
+  "sideMenuWidths": [
+   {
+    "t": "PLAY ONLINE",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "BATTLE PASS",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "STATS",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "HAND HISTORY",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "COACHING",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "SPECTATOR",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "SETTINGS",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "TUTORIAL",
+    "w": 188,
+    "sw": 188,
+    "clipped": false
+   },
+   {
+    "t": "SIGN OUT",
+    "w": 59,
+    "sw": 59,
+    "clipped": false
+   }
+  ],
+  "/playHebrew": [],
+  "/profileHebrew": [],
+  "lobby": {
+   "rootKids": 1,
+   "headerNodes": [
+    "‹ Back",
+    "LOBBY"
+   ],
+   "sample": "‹ Back LOBBY Public tables · auto-start when full 1 player online now 🤖 PLAY A BOT — INSTANT practice · XP only · no chips 🤖 BOT Practice vs Bots 2P · 4 boards · instant Play now 🤖 BOT Practice vs "
+  },
+  "lobbyHebrew": []
+ },
+ "pageErrors": []
+}

@@ -141,15 +141,24 @@ export default function ChipStoreScreen() {
    * revoked from anon and authenticated, proven by a direct call returning
    * "permission denied for function credit_purchase".
    */
+  /**
+   * Alert.alert IS A NO-OP ON WEB. This branch is not a style preference -- it is the reason
+   * a message reaches the player at all, and it has caused three separate dead controls in
+   * this codebase. Hoisted out of handleBuy in FINAL-QA so Restore Purchases can use it too:
+   * Restore called Alert.alert directly, and therefore did NOTHING on web.
+   */
+  const say = (title: string, msg: string) => {
+    if (Platform.OS === 'web') { try { window.alert(title + '\n\n' + msg); } catch {} }
+    else Alert.alert(title, msg, [{ text: 'OK' }]);
+  };
+
   const handleBuy = async (pkg: ChipPackage) => {
-    const say = (title: string, msg: string) => {
-      if (Platform.OS === 'web') { try { window.alert(title + '\n\n' + msg); } catch {} }
-      else Alert.alert(title, msg, [{ text: 'OK' }]);
-    };
     const res = await startCheckout(pkg.id);
     if (res.ok) { openCheckout(res.redirectUrl); return; }
     // Honest copy per reason. "no_provider" is a pending approval, not a broken button.
-    say('Coming Soon', res.reason === 'no_provider'
+    // The title used to read "Coming Soon" -- a promise about TIMING that nobody can keep:
+    // the card rail waits on an acquirer approving this domain, and that has no date.
+    say('Payment unavailable', res.reason === 'no_provider'
       ? 'Card payment is not switched on yet.'
       : 'Purchases are not available yet.');
   };
@@ -160,7 +169,10 @@ export default function ChipStoreScreen() {
   };
 
   const handleRestorePurchases = () => {
-    Alert.alert('Restore Purchases', 'In-app purchases are coming soon.', [{ text: 'OK' }]);
+    // Was Alert.alert -- silent on web, so this button did nothing at all there. It sits
+    // inside the payment gate, so no player has reached it yet: it would have gone live
+    // already dead, exactly like the undefined price.
+    say('Restore Purchases', 'Card payment is not switched on yet, so there is nothing to restore.');
   };
 
   return (
