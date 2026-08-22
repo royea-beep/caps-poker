@@ -951,6 +951,12 @@ function MultiplayerGameScreenInner() {
     playerHighlightIds: b.playerHighlightIds,
     botHighlightIds: b.botHighlightIds,
     boardHighlightIds: b.boardHighlightIds,
+    // This adapter rebuilds an EXPLICIT literal, so any field not named here is silently dropped
+    // on the way into <BoardReveal>. That is what kept the reveal on bare category names
+    // ("Two Pair") after the best-five data was added -- the reveal renders the same
+    // getComparisonText() the results screen does, and was being handed undefined.
+    playerBestCards: b.playerBestCards,
+    botBestCards: b.botBestCards,
   })), []);
 
   const onRevealDone = useCallback(() => {

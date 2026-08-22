@@ -1,0 +1,288 @@
+{
+ "url": "https://caps.ftable.co.il",
+ "ts": "2026-08-09T08:38:14.266Z",
+ "runs": [
+  {
+   "locale": "he-IL",
+   "navigatorLanguage": "he-IL",
+   "mounted": true,
+   "home": {
+    "שחק אונליין": {
+     "found": false
+    },
+    "יציאה": {
+     "found": false
+    },
+    "היסטוריית ידיים": {
+     "found": false
+    },
+    "שחקן יחיד": {
+     "found": false
+    },
+    "פרופיל": {
+     "found": false
+    },
+    "אחוז ניצחון": {
+     "found": false
+    }
+   },
+   "homeEn": {
+    "Play Online": {
+     "found": false
+    },
+    "Sign Out": {
+     "found": false
+    },
+    "Hand History": {
+     "found": false
+    },
+    "Single Player": {
+     "found": false
+    },
+    "Profile": {
+     "found": false
+    },
+    "Win Rate": {
+     "found": false
+    }
+   },
+   "play": {
+    "שחק אונליין": {
+     "found": false
+    },
+    "יציאה": {
+     "found": false
+    },
+    "היסטוריית ידיים": {
+     "found": false
+    },
+    "שחקן יחיד": {
+     "found": true,
+     "text": "שחקן יחיד",
+     "clientW": 246,
+     "scrollW": 246,
+     "clipped": false
+    },
+    "פרופיל": {
+     "found": false
+    },
+    "אחוז ניצחון": {
+     "found": false
+    }
+   },
+   "playEn": {
+    "Play Online": {
+     "found": false
+    },
+    "Sign Out": {
+     "found": false
+    },
+    "Hand History": {
+     "found": false
+    },
+    "Single Player": {
+     "found": false
+    },
+    "Profile": {
+     "found": false
+    },
+    "Win Rate": {
+     "found": false
+    }
+   },
+   "profile": {
+    "שחק אונליין": {
+     "found": false
+    },
+    "יציאה": {
+     "found": false
+    },
+    "היסטוריית ידיים": {
+     "found": false
+    },
+    "שחקן יחיד": {
+     "found": false
+    },
+    "פרופיל": {
+     "found": true,
+     "text": "פרופיל",
+     "clientW": 375,
+     "scrollW": 375,
+     "clipped": false
+    },
+    "אחוז ניצחון": {
+     "found": true,
+     "text": "אחוז ניצחון",
+     "clientW": 61,
+     "scrollW": 61,
+     "clipped": false
+    }
+   },
+   "profileEn": {
+    "Play Online": {
+     "found": false
+    },
+    "Sign Out": {
+     "found": false
+    },
+    "Hand History": {
+     "found": true,
+     "text": "Hand History",
+     "clientW": 288,
+     "scrollW": 288,
+     "clipped": false
+    },
+    "Single Player": {
+     "found": false
+    },
+    "Profile": {
+     "found": false
+    },
+    "Win Rate": {
+     "found": false
+    }
+   }
+  },
+  {
+   "locale": "en-US",
+   "navigatorLanguage": "en-US",
+   "mounted": true,
+   "home": {
+    "שחק אונליין": {
+     "found": false
+    },
+    "יציאה": {
+     "found": false
+    },
+    "היסטוריית ידיים": {
+     "found": false
+    },
+    "שחקן יחיד": {
+     "found": false
+    },
+    "פרופיל": {
+     "found": false
+    },
+    "אחוז ניצחון": {
+     "found": false
+    }
+   },
+   "homeEn": {
+    "Play Online": {
+     "found": false
+    },
+    "Sign Out": {
+     "found": false
+    },
+    "Hand History": {
+     "found": false
+    },
+    "Single Player": {
+     "found": false
+    },
+    "Profile": {
+     "found": false
+    },
+    "Win Rate": {
+     "found": false
+    }
+   },
+   "play": {
+    "שחק אונליין": {
+     "found": false
+    },
+    "יציאה": {
+     "found": false
+    },
+    "היסטוריית ידיים": {
+     "found": false
+    },
+    "שחקן יחיד": {
+     "found": true,
+     "text": "שחקן יחיד",
+     "clientW": 246,
+     "scrollW": 246,
+     "clipped": false
+    },
+    "פרופיל": {
+     "found": false
+    },
+    "אחוז ניצחון": {
+     "found": false
+    }
+   },
+   "playEn": {
+    "Play Online": {
+     "found": false
+    },
+    "Sign Out": {
+     "found": false
+    },
+    "Hand History": {
+     "found": false
+    },
+    "Single Player": {
+     "found": false
+    },
+    "Profile": {
+     "found": false
+    },
+    "Win Rate": {
+     "found": false
+    }
+   },
+   "profile": {
+    "שחק אונליין": {
+     "found": false
+    },
+    "יציאה": {
+     "found": false
+    },
+    "היסטוריית ידיים": {
+     "found": false
+    },
+    "שחקן יחיד": {
+     "found": false
+    },
+    "פרופיל": {
+     "found": true,
+     "text": "פרופיל",
+     "clientW": 375,
+     "scrollW": 375,
+     "clipped": false
+    },
+    "אחוז ניצחון": {
+     "found": true,
+     "text": "אחוז ניצחון",
+     "clientW": 61,
+     "scrollW": 61,
+     "clipped": false
+    }
+   },
+   "profileEn": {
+    "Play Online": {
+     "found": false
+    },
+    "Sign Out": {
+     "found": false
+    },
+    "Hand History": {
+     "found": true,
+     "text": "Hand History",
+     "clientW": 288,
+     "scrollW": 288,
+     "clipped": false
+    },
+    "Single Player": {
+     "found": false
+    },
+    "Profile": {
+     "found": false
+    },
+    "Win Rate": {
+     "found": false
+    }
+   }
+  }
+ ]
+}
