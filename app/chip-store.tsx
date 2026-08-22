@@ -32,30 +32,39 @@ interface ChipPackage {
 
 // --- Defaults ----------------------------------------------------------------
 
-const DEFAULT_PACKAGES: ChipPackage[] = [
-  { id: 'chips_99',   chips: 500,   price: '$0.99',  label: 'Starter Pack', badge: null         },
-  { id: 'chips_299',  chips: 1500,  price: '$2.99',  label: 'Player Pack',  badge: 'POPULAR'    },
-  { id: 'chips_499',  chips: 3000,  price: '$4.99',  label: 'Pro Pack',     badge: 'BEST VALUE' },
-  { id: 'chips_999',  chips: 7500,  price: '$9.99',  label: 'High Roller',  badge: null         },
-  { id: 'chips_1999', chips: 20000, price: '$19.99', label: 'VIP Bundle',   badge: 'VIP'        },
-];
+/**
+ * FINAL-QA 2026-08-22 — THE HARDCODED FALLBACK LADDER WAS DELETED. Do not reintroduce one.
+ *
+ * It listed chips_99 … chips_1999 at 500–20,000 chips, and it was dangerous in three ways:
+ *   1. Its ids DO NOT EXIST in app_config.chip_store_packages, so credit_purchase returns
+ *      `unknown_package` for every one of them. A player served the fallback could be shown a
+ *      price, taken through checkout, and then not be creditable — a GUARANTEED failure with
+ *      their money already gone.
+ *   2. It was roughly a quarter of the live ladder's value.
+ *   3. It reproduced the inverted-value bug we fixed on the live ladder the same day: its
+ *      "POPULAR" tier gave 502 chips/$ against the tier below it at 505.
+ *
+ * A fallback that cannot be honoured is worse than no fallback. On failure the screen now says so
+ * and offers no way to pay. Prices and chips have exactly one source: app_config.
+ */
 
 // --- Supabase fetch (non-blocking; mirrors fetchCardDisplayConfig pattern) ---
 
-async function fetchChipStorePackages(): Promise<ChipPackage[]> {
+/** Returns null when the ladder cannot be read. Null means "say so", never "invent one". */
+async function fetchChipStorePackages(): Promise<ChipPackage[] | null> {
   try {
     const sb = getSupabase();
-    if (!sb) return DEFAULT_PACKAGES;
+    if (!sb) return null;
     const { data, error } = await sb
       .from('app_config')
       .select('value')
       .eq('key', 'chip_store_packages')
       .single();
-    if (error || !data?.value) return DEFAULT_PACKAGES;
+    if (error || !data?.value) return null;
     const remote = data.value as ChipPackage[];
-    return Array.isArray(remote) && remote.length > 0 ? remote : DEFAULT_PACKAGES;
+    return Array.isArray(remote) && remote.length > 0 ? remote : null;
   } catch {
-    return DEFAULT_PACKAGES;
+    return null;
   }
 }
 
@@ -64,17 +73,12 @@ async function fetchChipStorePackages(): Promise<ChipPackage[]> {
 export default function ChipStoreScreen() {
   const chips  = useGameStore((s) => s.chips);
 
-  const [packages,       setPackages]       = useState<ChipPackage[]>(DEFAULT_PACKAGES);
+  const [packages,       setPackages]       = useState<ChipPackage[] | null>(null);
   const [flashDismissed, setFlashDismissed] = useState(false);
   // PAYMENT-VERIFICATION 2026-08-22 — both rails are remote flags and BOTH ARE OFF. Fetched here
   // rather than at app start because this is the only screen that reads them, and re-rendered on
   // resolve so the gate below reflects the fetched value rather than the false default forever.
   const [, setFlagsResolved] = useState(false);
-
-  // Stable social-proof numbers - seeded once on mount, never re-randomised
-  const socialProof = useRef<number[]>(
-    DEFAULT_PACKAGES.map(() => Math.floor(Math.random() * 151) + 50),
-  );
 
   useEffect(() => {
     void import('../utils/webPayments')
@@ -84,12 +88,7 @@ export default function ChipStoreScreen() {
   }, []);
 
   useEffect(() => {
-    fetchChipStorePackages().then((pkgs) => {
-      setPackages(pkgs);
-      if (pkgs.length !== socialProof.current.length) {
-        socialProof.current = pkgs.map(() => Math.floor(Math.random() * 151) + 50);
-      }
-    });
+    fetchChipStorePackages().then(setPackages);
   }, []);
 
   /**
@@ -187,14 +186,15 @@ export default function ChipStoreScreen() {
             Same iap_enabled source of truth; reversible by flipping the flag. */}
         {(require('../utils/iapEnabled').isIapEnabled() || isWebPaymentsEnabled()) ? (
           <>
-            {/* Package cards */}
-            {packages.map((pkg, idx) => (
-              <PackageCard
-                key={pkg.id}
-                pkg={pkg}
-                buyersToday={socialProof.current[idx] ?? 75}
-                onBuy={handleBuy}
-              />
+            {/* FINAL-QA 2026-08-22 — null means the ladder could not be read. Say so and offer no
+                way to pay, rather than serving invented packages that credit_purchase would
+                refuse. Prices and chips have one source: app_config. */}
+            {packages === null ? (
+              <Text style={[styles.restoreText, { textAlign: 'center', marginTop: 24 }]}>
+                Chip packs are unavailable right now. Please try again later.
+              </Text>
+            ) : packages.map((pkg) => (
+              <PackageCard key={pkg.id} pkg={pkg} onBuy={handleBuy} />
             ))}
 
             {/* Restore purchases */}
@@ -223,11 +223,10 @@ export default function ChipStoreScreen() {
 
 interface PackageCardProps {
   pkg:         ChipPackage;
-  buyersToday: number;
   onBuy:       (pkg: ChipPackage) => void;
 }
 
-function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
+function PackageCard({ pkg, onBuy }: PackageCardProps) {
   const badgeBg =
     pkg.badge === 'POPULAR'    ? '#c96a1a' :
     pkg.badge === 'BEST VALUE' ? '#8b6914' :
@@ -250,8 +249,10 @@ function PackageCard({ pkg, buyersToday, onBuy }: PackageCardProps) {
       {/* Chip amount */}
       <Text style={styles.cardChips} accessibilityLabel={`${(pkg.chips ?? 0).toLocaleString()} chips`}>💰 {(pkg.chips ?? 0).toLocaleString()} chips</Text>
 
-      {/* Social proof */}
-      <Text style={styles.socialProof}>{buyersToday} players bought today</Text>
+      {/* FINAL-QA 2026-08-22 — REMOVED: "{n} players bought today", where n was
+          Math.random()*151+50. There have been ZERO purchases, ever. It was a fabricated social
+          claim shown to players, and inventing a number is not a placeholder, it is a false
+          statement about other people. Nothing replaces it: we have no purchase data to show. */}
 
       {/* Price + CTA */}
       <View style={styles.ctaRow}>
