@@ -84,11 +84,18 @@ for (let i = 0; i < 16; i++) {
   // Semantic escape test. DOM-containment heuristics kept misreporting this (a "div containing
   // SKIP" can be the app root), so escape is judged by WHAT focus landed on: any of these is a
   // control behind the tutorial, and reaching it means Tab left the overlay.
-  if (/PLAY ONLINE|BATTLE PASS|STATS|HAND HISTORY|COACHING|SETTINGS|TUTORIAL|SIGN IN|LANGUAGE|Open menu|Open chip shop|Report a bug|referral|^Play$|^Home$|^Friends$|^Cups$|^Profile$/i.test(at.name)) {
-    escaped = true;
-  }
+  // Match the behind-the-overlay controls EXACTLY. An earlier substring regex included
+  // /TUTORIAL/i, which the overlay's own new label "Skip the tutorial" satisfies — the probe
+  // reported an escape that the 16-step walk plainly disproved. Anchor, do not substring.
+  const BEHIND = [
+    '🎮PLAY ONLINE', '⚔️BATTLE PASS', '📊STATS', '📜HAND HISTORY', '🎓COACHING',
+    '⚙️SETTINGS', '📖TUTORIAL', '🔵SIGN IN', '👁SPECTATOR',
+    'Open menu', 'Open chip shop', 'Report a bug', 'Copy referral code', 'Share referral code',
+    'Play', 'Home', 'Friends', 'Cups', 'Profile',
+  ];
+  if (BEHIND.some((b) => at.name === b || at.name.startsWith(b))) escaped = true;
 }
-const trap = { seen: walk.slice(0, 8), escaped, overlayFound: overlayBox };
+const trap = { seen: walk, escaped, overlayFound: overlayBox };
 console.log(`   REAL TAB WALK   : overlayFound=${trap.overlayFound} escapedOverlay=${trap.escaped}`);
 console.log(`   focus landed on : ${JSON.stringify(trap.seen)}`);
 
