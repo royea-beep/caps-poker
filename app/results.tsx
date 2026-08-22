@@ -872,6 +872,27 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const botWins = boards.filter((b) => b.winner === 'bot').length;
   const isPerfectGame = playerWins === boards.length && boards.length > 0;
 
+  /**
+   * A TIE IS ITS OWN OUTCOME — and this must agree with the headline, because it did not.
+   *
+   * The multiplayer sub-header used to be a TWO-branch ternary on `netChips > 0`, so a tie
+   * (netChips === 0) fell through to the LOSS branch. Both clients in a 2-2 hand read
+   * "TIE GAME | 2 - 2" in mint, and directly underneath it "Defeated by <name>" in red. Both
+   * players were told they lost the same tied game, in the first multiplayer hand they play.
+   *
+   * The root cause is not the missing branch, it is the SECOND SOURCE OF TRUTH: the headline
+   * (:1073) decides from boards won, the sub-header decided from chips. Those disagree whenever
+   * boards tie but the pots do not -- which the screen already knows about, because it renders a
+   * "Tie bonus: +N chips" line for exactly that case. So the outcome is derived ONCE here, from
+   * the headline's own source, and both read it. They can no longer contradict each other.
+   *
+   * Colour: mint, which is what the headline directly above already paints TIE GAME. Deliberately
+   * NOT the win gold (#c9a84c) and not the loss red (#ef5350) -- a tie borrows neither treatment.
+   * There is no motion on this header to make say "tie"; it is a static Text.
+   */
+  const mpOutcome: 'win' | 'loss' | 'tie' =
+    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+
   // CN-CAPTURE 2026-08-08 — READ the equity/outs the reveal captured, and publish what we got
   // for the probe. No UI this sprint: this proves reachability only. Coverage is PARTIAL by
   // design — `equity`/`outs` are undefined for any board the reveal never reached (skip-reveal
@@ -1323,8 +1344,17 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           {/* S118: Multiplayer result header */}
           {isMultiplayer && storeOpponentName ? (
-            <Text style={[styles.mpResultHeader, { color: netChips > 0 ? '#c9a84c' : '#ef5350' }]} accessibilityLabel={netChips > 0 ? `You beat ${storeOpponentName}!` : `Defeated by ${storeOpponentName}`}>
-              {netChips > 0 ? `🏆 You beat ${storeOpponentName}!` : `Defeated by ${storeOpponentName}`}
+            <Text
+              style={[styles.mpResultHeader, { color: mpOutcome === 'win' ? '#c9a84c' : mpOutcome === 'loss' ? '#ef5350' : COLORS.mint }]}
+              accessibilityLabel={
+                mpOutcome === 'win' ? `You beat ${storeOpponentName}!`
+                : mpOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
+                : `Tied with ${storeOpponentName}`
+              }
+            >
+              {mpOutcome === 'win' ? `🏆 You beat ${storeOpponentName}!`
+                : mpOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
+                : `🤝 Tied with ${storeOpponentName}`}
             </Text>
           ) : null}
 

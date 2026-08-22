@@ -540,8 +540,8 @@ export default function HomeScreen() {
   const [streakData, setStreakData] = useState<{ current_streak: number; reward: number; next_reward: number; milestones?: unknown } | null>(null);
   const pendingStreakRef = useRef(false);
 
-  // Home data cards — missions + leaderboard
-  const [missionData, setMissionData] = useState<{ title: string; progress: number; total: number; reward: number } | null>(null);
+  // Home data cards — leaderboard
+  // missionData state removed 2026-08-22 with the Daily Missions feature.
   const [leaderboardData, setLeaderboardData] = useState<{ rank: number; total: number } | null>(null);
   const [recentHands, setRecentHands] = useState<HandRecord[]>([]);
   const [totalHandCount, setTotalHandCount] = useState(0);
@@ -898,20 +898,11 @@ export default function HomeScreen() {
       } catch {}
     })();
 
-    // Home data cards — missions + leaderboard
-    void (async () => {
-      try {
-        const deviceId = await getDeviceId();
-        const sb = getSupabase();
-        if (!sb) return;
-        try { await sb.rpc('assign_daily_missions', { p_device_id: deviceId }); } catch {}
-        const { data: missions } = await sb.rpc('get_daily_missions', { p_device_id: deviceId });
-        if (Array.isArray(missions) && missions.length > 0) {
-          const m = missions[0] as any;
-          setMissionData({ title: m.title ?? m.name ?? 'Mission', progress: m.progress ?? 0, total: m.target ?? m.required ?? 1, reward: m.reward_chips ?? m.reward ?? 0 });
-        }
-      } catch {}
-    })();
+    // MISSIONS RETIRED 2026-08-22 — the assign_daily_missions + get_daily_missions pair that used
+    // to run here on every Home load is gone with the feature. All 20 definitions are deactivated
+    // in app_config's stead (daily_missions.is_active = false), so both calls would now return an
+    // empty list on every open: two RPCs per Home load to render a dash. See app/missions.tsx for
+    // why the feature was retired.
     void (async () => {
       try {
         const deviceId = await getDeviceId();
@@ -1676,8 +1667,11 @@ export default function HomeScreen() {
               style={homeDataCardStyles.card}
             >
               <Text style={homeDataCardStyles.label}>Competition</Text>
-              <Text style={homeDataCardStyles.value}>{missionData ? `${missionData.progress}/${missionData.total}` : '—'}</Text>
-              <Text style={homeDataCardStyles.sub}>Missions · {leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank} Rank` : 'Play to be ranked'}</Text>
+              {/* Was `missionData.progress/total` over a "Missions ·" sub-label. Missions are
+                  retired, so the value showed a permanent dash under the name of a feature that no
+                  longer exists. The card has always opened the leaderboard; it now says so. */}
+              <Text style={homeDataCardStyles.value}>{leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank}` : '—'}</Text>
+              <Text style={homeDataCardStyles.sub}>{leaderboardData && leaderboardData.rank > 0 ? 'Leaderboard rank' : 'Play to be ranked'}</Text>
             </Pressable>
           </View>
         )}

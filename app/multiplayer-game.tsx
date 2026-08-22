@@ -426,6 +426,9 @@ function MultiplayerGameScreenInner() {
             cards: serverBoards[b].playerCards[pi] || [],
             handRank: pr.name,
             score: pr.score,
+            // The evaluated best five, exactly as solo precomputes it (game.tsx:721). Showdown
+            // only -- see the note on BoardRevealPayload. Not hole cards.
+            bestCards: [...(pr.playerCardsUsed ?? []), ...(pr.boardCardsUsed ?? [])],
           }));
           mpServer.sendBoardReveal(
             b,
@@ -672,6 +675,25 @@ function MultiplayerGameScreenInner() {
         br.winnerIndex === myIdx ? 'player' :
         br.winnerIndex === -1 ? 'tie' : 'bot';
 
+      /**
+       * THE OPPONENT THE COMPARISON LINE IS ABOUT — and why this used to be blank.
+       *
+       * `botHandName` was assigned ONLY when the winner was someone else. On every board the
+       * player WON it was '', so /results printed "Straight beats " with nothing after it, while
+       * boards they LOST read correctly. Asymmetric, and visible in the first MP hand.
+       *
+       * It was never a transmission problem: every player's evaluated result is already here in
+       * br.playerResults. The comparison slot simply has to be the BEST OPPOSING hand, whoever
+       * won -- picked by score so it is still correct at 3 and 4 players, not just heads-up.
+       */
+      let bestOpp: any = null;
+      for (let p = 0; p < br.playerResults.length; p++) {
+        if (p === myIdx) continue;
+        const r = br.playerResults[p];
+        if (r && (bestOpp === null || r.score > bestOpp.score)) bestOpp = r;
+      }
+      const best5 = (r: any) => (r ? [...(r.playerCardsUsed ?? []), ...(r.boardCardsUsed ?? [])] : undefined);
+
       return {
         openCards: board.openCards,
         closedCards: board.closedCards,
@@ -679,12 +701,15 @@ function MultiplayerGameScreenInner() {
         allBotCards: otherCards,
         winner,
         playerHandName: myResult?.name || '',
-        botHandName: br.winnerIndex >= 0 && br.winnerIndex !== myIdx
-          ? br.playerResults[br.winnerIndex]?.name || '' : '',
+        botHandName: bestOpp?.name || '',
         allBotHandNames: otherHandNames,
         playerHighlightIds: [],
         botHighlightIds: [],
         boardHighlightIds: [],
+        // Precomputed best-5 for both sides, so MP prints the same rank-specific labels solo does
+        // ("Two Pair, Jacks and Twos beats Pair of Twos") rather than the bare category.
+        playerBestCards: best5(myResult),
+        botBestCards: best5(bestOpp),
         potAmount: config.potPerBoard * clientArray.length,
       };
     });
@@ -799,6 +824,15 @@ function MultiplayerGameScreenInner() {
         reveal.winnerIndex === playerIndex ? 'player' :
         reveal.winnerIndex === -1 ? 'tie' : 'bot';
 
+      // Same defect, same fix as the host path above: the comparison slot is the BEST OPPOSING
+      // hand whoever won, chosen by score so it holds at 3 and 4 players.
+      let bestOppHand: any = null;
+      for (let p = 0; p < reveal.playerHands.length; p++) {
+        if (p === playerIndex) continue;
+        const h = reveal.playerHands[p];
+        if (h && (bestOppHand === null || h.score > bestOppHand.score)) bestOppHand = h;
+      }
+
       return {
         openCards: board.openCards,
         closedCards: reveal.closedCards,
@@ -806,12 +840,15 @@ function MultiplayerGameScreenInner() {
         allBotCards: otherCards,
         winner,
         playerHandName: myHand?.handRank || '',
-        botHandName: reveal.winnerIndex >= 0 && reveal.winnerIndex !== playerIndex
-          ? reveal.playerHands[reveal.winnerIndex]?.handRank || '' : '',
+        botHandName: bestOppHand?.handRank || '',
         allBotHandNames: otherHandNames,
         playerHighlightIds: [],
         botHighlightIds: [],
         boardHighlightIds: [],
+        // Undefined on an older guest bundle that predates `bestCards`; getSpecificHandName then
+        // falls back to the bare category, which is what MP showed before this sprint.
+        playerBestCards: myHand?.bestCards,
+        botBestCards: bestOppHand?.bestCards,
         potAmount: config.potPerBoard * playerCount,
       };
     });

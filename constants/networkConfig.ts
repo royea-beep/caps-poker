@@ -97,6 +97,20 @@ export interface BoardRevealPayload {
     cards: Card[];
     handRank: string;
     score: number;
+    /**
+     * PRE-TESTER-CLOSE 2026-08-22 — the EVALUATED BEST FIVE (2 from hand + 3 from board), which
+     * is what solo already precomputes so /results and the reveal can print rank-specific labels
+     * ("Two Pair, Jacks and Twos") instead of the bare category ("Two Pair").
+     *
+     * DELIBERATELY the evaluated hand and NOT extra hole cards. This payload already carries
+     * `cards` because it is only ever sent AT SHOWDOWN, where every hand is public; nothing here
+     * is new information, it is the same hand already on the wire, pre-selected. No private-phase
+     * channel is touched.
+     *
+     * Optional so a guest running an older cached bundle simply falls back to the bare category
+     * rather than breaking.
+     */
+    bestCards?: Card[];
   }[];
   winnerIndex: number;
   winnerName: string;
