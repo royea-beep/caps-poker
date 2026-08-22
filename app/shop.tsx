@@ -48,6 +48,10 @@ export default function ShopScreen() {
   // IAP packages from RevenueCat
   const [starterPack, setStarterPack] = useState<RCPackage | null>(null);
   const [monthlyPack, setMonthlyPack] = useState<RCPackage | null>(null);
+  // PRICE-LADDER 2026-08-22 — the daily figure was HARDCODED as "1,000 chips/day" in two places
+  // while app_config.subscription_daily_chips said something else. A number that lives in config
+  // and is also typed into the UI will drift, and here it already had. Read it.
+  const [subDaily, setSubDaily] = useState<number | null>(null);
   const [iapLoading, setIapLoading] = useState(false);
 
   const showToast = (msg: string) => {
@@ -70,6 +74,19 @@ export default function ShopScreen() {
 
   useEffect(() => {
     void loadShop();
+    // The daily-chips figure is app_config's to state, not this file's. Falls back to showing no
+    // number rather than a stale one — an unproven promise is worse than a missing detail on a
+    // card that cannot be bought yet anyway.
+    void (async () => {
+      try {
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data } = await sb.from('app_config').select('value')
+          .eq('key', 'subscription_daily_chips').maybeSingle();
+        const n = Number(data?.value);
+        if (Number.isFinite(n) && n > 0) setSubDaily(n);
+      } catch { /* leave it unstated */ }
+    })();
     // Load RevenueCat offerings
     if (Purchases && Platform.OS !== 'web') {
       Purchases.getOfferings().then((offerings) => {
@@ -133,7 +150,7 @@ export default function ShopScreen() {
           await sb.from('profiles').update({ is_subscriber: true }).eq('id', session.user.id);
         }
       }
-      showToast('🏆 VIP Activated! 1000 chips/day unlocked.');
+      showToast(subDaily !== null ? `🏆 VIP Activated! ${subDaily.toLocaleString()} chips/day unlocked.` : '🏆 VIP Activated!');
     } catch (e: any) {
       if (!e.userCancelled) showToast('Purchase failed. Try again.');
     } finally {
@@ -275,7 +292,7 @@ export default function ShopScreen() {
               <View style={styles.iapCard}>
                 <View style={styles.iapInfo}>
                   <Text style={styles.iapTitle} accessibilityLabel="VIP Monthly">👑 VIP Monthly</Text>
-                  <Text style={styles.iapDesc}>1,000 chips/day · Auto-renews</Text>
+                  <Text style={styles.iapDesc}>{subDaily !== null ? `${subDaily.toLocaleString()} chips/day · Auto-renews` : 'Auto-renews'}</Text>
                   {monthlyPack && (
                     <Text style={styles.iapPrice}>{monthlyPack.product.priceString}/mo</Text>
                   )}
