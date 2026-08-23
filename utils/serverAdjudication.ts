@@ -87,6 +87,12 @@ export interface ServerPlayerResult {
   device_id: string;
   name: string;
   score: number;
+  /**
+   * The evaluated best five (2 from hand + 3 from board), sent by resolve-hand so the reveal and
+   * /results can print rank-specific labels — "Two Pair, Jacks and Sixes" rather than "Two Pair".
+   * Optional because a guest on a cached bundle may receive an outcome from before it was added.
+   */
+  bestCards?: { suit: string; rank: string; id: string }[];
 }
 
 export interface ServerOutcome {
@@ -125,7 +131,12 @@ export async function resolveHandOnServer(roomCode: string, handNo: number): Pro
 export function outcomeToRevealShape(outcome: ServerOutcome): { boardResults: any[]; handResult: any } {
   const boardResults = outcome.boards.map((b) => ({
     boardIndex: b.board_index,
-    playerResults: b.playerResults.map((pr) => ({ name: pr.name, score: pr.score })),
+    // LABELS 2026-08-23 — THE SECOND LITERAL IN THE SAME CHAIN. This rebuilt each result as
+    // ({ name, score }) and dropped everything else, so even once resolve-hand started
+    // sending the evaluated five it never reached the render and MP kept printing the bare
+    // category. Two explicit literals in series, one server-side and one here: class D twice
+    // over, which is why walking the chain link by link kept coming back clean.
+    playerResults: b.playerResults.map((pr) => ({ name: pr.name, score: pr.score, bestCards: pr.bestCards })),
     winnerIndex: b.winner_index,
     tiedPlayers: b.tied,
     potWon: 0,
