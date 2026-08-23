@@ -33,27 +33,57 @@ const fire = `(el) => { for (const t of ['pointerdown','mousedown','pointerup','
 
 const browser = await engine.launch({ headless: false });
 const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, ignoreHTTPSErrors: true });
-const page = await ctx.newPage();
-page.on('dialog', async (d) => { await d.dismiss(); });
+// The ?players= param is honoured ONLY in practice (game.tsx:122). A REAL hand takes its seat
+// count from the persisted preference, so the seat count is seeded here instead. The first run of
+// this harness asked for four players, got four BOARDS - which is two players - and would have
+// "proved" the alignment on the wrong table size entirely.
+await ctx.addInitScript((n) => {
+  try {
+    const k = 'caps-poker-storage';
+    const cur = JSON.parse(localStorage.getItem(k) || '{}');
+    // numberOfPlayers lives under state.CONFIG, and only `config` is in the store's partialize.
+    // Setting state.numberOfPlayers directly - the obvious guess - persists nothing at all.
+    cur.state = { ...(cur.state || {}), config: { ...((cur.state || {}).config || {}), numberOfPlayers: n } };
+    cur.version = cur.version ?? 0;
+    localStorage.setItem(k, JSON.stringify(cur));
+  } catch {}
+}, Number(PLAYERS));
+let page = await ctx.newPage();
 
 // Read the analytics payload off the wire. The event fires on UNMOUNT, so it is captured when we
 // navigate away, not while /results is open.
 let lastAnalytics = null;
-page.on('request', (req) => {
+function attachListeners(p) {
+  p.on('dialog', async (d) => { await d.dismiss(); });
+  p.on('request', (req) => {
   if (!/rpc\/track_event/.test(req.url())) return;
   try {
     const body = JSON.parse(req.postData() || '{}');
-    if (body.p_event === 'result_viewed_duration' || body.event === 'result_viewed_duration') {
-      const props = body.p_properties || body.properties || {};
-      lastAnalytics = props.result ?? '(no result field)';
-    }
-  } catch {}
-});
+      // track_event sends p_data, NOT p_properties. Reading the wrong key returned null on every
+      // hand of the first run and would have read as "the event stopped firing".
+      const props = body.p_data || body.p_properties || body.properties || {};
+      if (Object.prototype.hasOwnProperty.call(props, 'result')) {
+        lastAnalytics = `${body.p_event || body.event || '?'}=${props.result}`;
+      }
+    } catch {}
+  });
+}
+attachListeners(page);
 
 const rows = [];
 
 for (let hand = 0; hand < HANDS; hand++) {
-  await page.goto(`${SITE}/game?players=${PLAYERS}&fresh=${hand === 0 ? 1 : 0}`, { waitUntil: 'load', timeout: 120000 });
+  try {
+    await page.goto(`${SITE}/game?fresh=${hand === 0 ? 1 : 0}`, { waitUntil: 'load', timeout: 120000 });
+  } catch (e) {
+    // A long run crashes the tab eventually. Losing the run at hand 2 of 12 is an instrument
+    // failure, not a result, so the page is rebuilt and the hand retried once.
+    console.log(`hand ${hand}: page died (${String(e).slice(0, 60)}) - rebuilding`);
+    try { await page.close(); } catch {}
+    page = await ctx.newPage();
+    attachListeners(page);
+    await page.goto(`${SITE}/game?fresh=0`, { waitUntil: 'load', timeout: 120000 });
+  }
   await page.waitForTimeout(7000);
   await page.evaluate(`window.__f=${fire}`);
 
@@ -137,9 +167,9 @@ console.log('\nCONSISTENCY CHECK');
 const bad = [];
 for (const k of ['win', 'loss', 'tie']) {
   for (const r of byOutcome[k]) {
-    if (k === 'win' && (!r.overlay || !r.xpWinBonus || r.analytics !== 'win')) bad.push(`win hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
-    if (k === 'tie' && (r.overlay || r.xpWinBonus || r.analytics !== 'tie')) bad.push(`TIE hand still celebrating: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
-    if (k === 'loss' && (r.overlay || r.xpWinBonus || r.analytics !== 'lose')) bad.push(`loss hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
+    if (k === 'win' && (!r.overlay || !r.xpWinBonus || !String(r.analytics||'').endsWith('=win'))) bad.push(`win hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
+    if (k === 'tie' && (r.overlay || r.xpWinBonus || !String(r.analytics||'').endsWith('=tie'))) bad.push(`TIE hand still celebrating: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
+    if (k === 'loss' && (r.overlay || r.xpWinBonus || !String(r.analytics||'').endsWith('=lose'))) bad.push(`loss hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
   }
 }
 console.log(bad.length ? bad.map((b) => '   FAIL ' + b).join('\n') : '   all sampled hands agree across headline / overlay / XP / analytics');

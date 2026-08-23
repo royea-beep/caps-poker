@@ -693,16 +693,29 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
     // Analytics — hand completed
     const bWonCount = revealData.boards.filter((b) => b.winner === 'player').length;
+    // THE TWO FUNNEL EVENTS. These were already boards-derived, but they carried a SECOND COPY of
+    // the rule rather than reading the one derivation, and that copy was wrong in two ways:
+    //
+    //   - `bWonCount > boards.length - bWonCount` is a two-branch boolean over a THREE-way
+    //     outcome, so every tie was logged as `won: false` - indistinguishable from a loss in the
+    //     funnel these events exist to feed.
+    //   - subtracting from the total treats a board that ITSELF tied as the opponent's, so a hand
+    //     with tied boards could be misreported even when it was not a tie.
+    //
+    // `won` KEEPS ITS NAME AND ITS TYPE so every row already recorded stays comparable, and
+    // `outcome` is added alongside it as the honest three-state value.
     track('hand_completed', {
       boards_won: bWonCount,
       boards_total: revealData.boards.length,
       efficiency_pct: Math.round(bWonCount / revealData.boards.length * 100),
-      won: bWonCount > revealData.boards.length - bWonCount,
+      won: handOutcome === 'win',
+      outcome: handOutcome,
     }, 'results');
     track('game_ended', {
       boards_won: bWonCount,
       boards_total: revealData.boards.length,
-      won: bWonCount > revealData.boards.length - bWonCount,
+      won: handOutcome === 'win',
+      outcome: handOutcome,
       net_chips: revealData.netChips,
     }, 'results');
 

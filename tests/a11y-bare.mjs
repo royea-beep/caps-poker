@@ -3,7 +3,7 @@
 import { webkit } from 'playwright';
 const b = await webkit.launch({ headless: false });
 const p = await (await b.newContext({ viewport: { width: 393, height: 852 }, ignoreHTTPSErrors: true })).newPage();
-for (const route of ['/', '/missions']) {
+for (const route of ['/hand-history', '/battle-pass']) {
   await p.goto('https://caps.ftable.co.il' + route, { waitUntil: 'load', timeout: 120000 });
   await p.waitForTimeout(9000);
   const r = await p.evaluate(() => Array.from(document.querySelectorAll('[tabindex="0"]'))
