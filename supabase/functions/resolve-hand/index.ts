@@ -151,6 +151,22 @@ Deno.serve(async (req) => {
           device_id: seats[i].device_id,
           name: r.name,
           score: r.score,
+          // LABELS 2026-08-23 — THIS LINE IS THE FIX, and its absence cost three sprints.
+          //
+          // This literal carried four fields and dropped the evaluator's card arrays, so every
+          // multiplayer hand reached BoardResultCard with playerBestCards = [] and printed the
+          // bare category ("Two Pair") where solo prints "Two Pair, Jacks and Sixes". Two sprints
+          // walked the CLIENT payload chain and found nothing wrong there, because nothing IS
+          // wrong there: the client was faithfully forwarding an empty array it had been handed.
+          //
+          // Found by reading the React fiber on the node that actually rendered the text and
+          // diffing the props against solo: same component, same 16 keys, playerBestCards length
+          // 5 in solo and 0 in MP. An EMPTY ARRAY, not a missing field — which is why five
+          // link-checks looking for a missing field kept coming back clean.
+          //
+          // `bestCards` is already computed by evaluateOmahaHand (2 from hand + 3 from board). It
+          // is showdown data, public by then, and it is the SAME five cards the reveal is drawing.
+          bestCards: r.bestCards,
         })),
       };
     });

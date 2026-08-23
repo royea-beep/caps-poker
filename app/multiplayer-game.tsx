@@ -428,7 +428,11 @@ function MultiplayerGameScreenInner() {
             score: pr.score,
             // The evaluated best five, exactly as solo precomputes it (game.tsx:721). Showdown
             // only -- see the note on BoardRevealPayload. Not hole cards.
-            bestCards: [...(pr.playerCardsUsed ?? []), ...(pr.boardCardsUsed ?? [])],
+            // Prefer what the SERVER evaluated. Multiplayer is server-adjudicated, so
+            // playerCardsUsed / boardCardsUsed are not in the response at all -- the concatenation
+            // below produced [] on every hand. Kept as a fallback for any locally-evaluated path.
+            bestCards: pr.bestCards?.length ? pr.bestCards
+              : [...(pr.playerCardsUsed ?? []), ...(pr.boardCardsUsed ?? [])],
           }));
           mpServer.sendBoardReveal(
             b,
@@ -692,7 +696,11 @@ function MultiplayerGameScreenInner() {
         const r = br.playerResults[p];
         if (r && (bestOpp === null || r.score > bestOpp.score)) bestOpp = r;
       }
-      const best5 = (r: any) => (r ? [...(r.playerCardsUsed ?? []), ...(r.boardCardsUsed ?? [])] : undefined);
+      // Same correction as the sender above: in a server-adjudicated hand the result carries
+      // `bestCards` and NOT the two component arrays, so concatenating them yielded [] every time.
+      const best5 = (r: any) => (!r ? undefined
+        : r.bestCards?.length ? r.bestCards
+        : [...(r.playerCardsUsed ?? []), ...(r.boardCardsUsed ?? [])]);
 
       return {
         openCards: board.openCards,
