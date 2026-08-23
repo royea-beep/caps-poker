@@ -34,15 +34,38 @@ const KEY = 'caps_hand_outbox';
 /** A queue this long means the device has been offline for a long time; oldest are dropped first. */
 const MAX_PENDING = 50;
 
+/**
+ * ONE-WIN-COUNTER 2026-08-23 — a hand has THREE outcomes, not two.
+ *
+ * This was `won: boolean`, so every tie was queued as a loss and stored as one. The outcome is
+ * now carried end to end: 'tie' becomes p_won NULL, which record_hand_result_d stores as 'tied'
+ * and the leaderboard trigger counts as neither a win nor a loss.
+ */
+export type HandOutcome = 'win' | 'loss' | 'tie';
+
 export type PendingHand = {
   id: string;
   deviceId: string;
-  won: boolean;
+  outcome: HandOutcome;
   boardsWon: number;
   boardsTotal: number;
   sessionType: string;
   queuedAt: number;
 };
+
+/** What the server said, when the first send got through. */
+export type QueueResult = { sent: boolean; eloDelta: number | null };
+
+/**
+ * An entry queued by an OLDER build carries `won: boolean` and no `outcome`. It is still sitting
+ * in this device's storage and must not be dropped or mis-sent, so it is migrated on read.
+ * A legacy tie is indistinguishable from a legacy loss — that information was never stored — so
+ * it stays a loss rather than being guessed at.
+ */
+function migrate(h: any): PendingHand {
+  if (h && typeof h.outcome === 'string') return h as PendingHand;
+  return { ...h, outcome: h?.won ? 'win' : 'loss' } as PendingHand;
+}
 
 /** Stable per-hand id. Not security-sensitive — it only has to be unique per device. */
 function newHandId(): string {
@@ -55,7 +78,7 @@ async function read(): Promise<PendingHand[]> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(migrate) : [];
   } catch {
     return [];
   }
@@ -70,23 +93,33 @@ async function write(list: PendingHand[]): Promise<void> {
   }
 }
 
-/** Send one entry. Returns true only when the server confirms it (including an idempotent repeat). */
-async function send(h: PendingHand): Promise<boolean> {
+/**
+ * Send one entry. Returns the server's reply when it confirms (including an idempotent repeat),
+ * or null when it did not get through.
+ *
+ * THIS IS NOW THE ONLY CALL THAT RECORDS A HAND. It used to be one of two: this wrote the row and
+ * a separate update_leaderboard_elo moved the counters, and because they were separate network
+ * calls one could land without the other. The counters are now written by an AFTER INSERT trigger
+ * on hand_history, inside this call's transaction, so a retry cannot double them and a failure
+ * cannot skip them. `elo_delta` comes back from the same reply.
+ */
+async function send(h: PendingHand): Promise<any | null> {
   const sb = getSupabase();
-  if (!sb) return false;
+  if (!sb) return null;
   try {
     const { data, error } = await sb.rpc('record_hand_result_d', {
       p_device_id: h.deviceId,
-      p_won: h.won,
+      // NULL means TIE. Not `h.outcome === 'win'`, which would send a tie as false = a loss.
+      p_won: h.outcome === 'tie' ? null : h.outcome === 'win',
       p_boards_won: h.boardsWon,
       p_boards_total: h.boardsTotal,
       p_session_type: h.sessionType,
       p_client_hand_id: h.id,
     });
-    if (error) return false;
-    return !!(data as any)?.ok;
+    if (error) return null;
+    return (data as any)?.ok ? data : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -101,11 +134,17 @@ async function remove(id: string): Promise<void> {
  */
 export async function queueHandResult(
   entry: Omit<PendingHand, 'id' | 'queuedAt'> & { id?: string },
-): Promise<void> {
+): Promise<QueueResult> {
   const hand: PendingHand = { ...entry, id: entry.id ?? newHandId(), queuedAt: Date.now() };
   const list = await read();
   await write([...list, hand]);          // survives a navigate from this line onward
-  if (await send(hand)) await remove(hand.id);
+  const data = await send(hand);
+  if (!data) return { sent: false, eloDelta: null };
+  await remove(hand.id);
+  // null rather than 0 when the server did not report one: 0 is a REAL delta (it is what a tie
+  // applies), so it must not double as "unknown".
+  const d = (data as any)?.elo_delta;
+  return { sent: true, eloDelta: typeof d === 'number' ? d : null };
 }
 
 /**
@@ -117,7 +156,7 @@ export async function flushHandOutbox(): Promise<number> {
   if (!list.length) return 0;
   let sent = 0;
   for (const h of list) {
-    if (await send(h)) { await remove(h.id); sent++; }
+    if (await send(h) !== null) { await remove(h.id); sent++; }
   }
   return sent;
 }

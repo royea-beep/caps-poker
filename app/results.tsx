@@ -574,27 +574,17 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       } catch {} // Silent — never crash the game
     })();
 
-    // Update ELO in leaderboard table.
-    // PRACTICE = XP-only, zero chips → it must NOT touch the leaderboard. update_leaderboard_elo
-    // is the path that writes leaderboard.games_played (strategist-confirmed), so a practice
-    // hand was bumping games_played (and ELO) even though nothing real happened — a tester who
-    // only practices would climb the game count. Guard it out for practice.
-    void (async () => {
-      try {
-        if (isPracticeGame) return; // practice never touches ELO / leaderboard.games_played
-        const deviceId = await getDeviceId();
-        const sb = getSupabase();
-        if (!sb) return;
-        // CLASS A, ranking rail. This was `netChips > 0`, so a tie arrived as false and was
-        // scored as a LOSS: both players dropped 10 ELO on the screen that says "Tied with".
-        // NULL means TIE in update_leaderboard_elo -- no elo movement, no win credited, but
-        // games_played still increments because a game was played. It returns 0 for a tie, and
-        // the badge below renders only when eloChange !== 0, so a tie shows no chip at all.
-        const p_won = handOutcome === 'tie' ? null : handOutcome === 'win';
-        const res = await sb.rpc('update_leaderboard_elo', { p_device_id: deviceId, p_won });
-        if (res.data) setEloChange(res.data as number);
-      } catch {}
-    })();
+    // ONE-WIN-COUNTER 2026-08-23 — the update_leaderboard_elo effect that stood here is DELETED.
+    //
+    // It was the SECOND writer: it moved leaderboard.elo / games_played / wins while
+    // record_hand_result_d separately wrote the hand row. Two network calls for one fact, so one
+    // could land without the other — measured drift before the fix: the two counters disagreed on
+    // 19 of 100 devices, 22 wins against 39.
+    //
+    // The counters are now an AFTER INSERT projection of hand_history (trg_hand_history_leaderboard),
+    // so the queueHandResult call below records the hand AND moves them in ONE transaction, and
+    // returns the delta the ELO badge needs. The practice exclusion moved with them, into the
+    // trigger, where it is enforced for every writer rather than only for this one.
 
     // Record hand result for adaptive bot difficulty
     void (async () => {
@@ -630,8 +620,20 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // 2 hands lost). queueHandResult persists the hand to storage BEFORE touching the network
         // and retries on the next app start, and record_hand_result_d is now idempotent on
         // (device_id, client_hand_id) so a retry cannot double-count. See utils/handOutbox.ts.
-        if (!isMultiplayer) {
-          await queueHandResult({
+        // ONE-WIN-COUNTER 2026-08-23 — the `if (!isMultiplayer)` guard is REMOVED.
+        //
+        // The comment above says multiplayer rows are written by the server (resolve_hand).
+        // THERE IS NO resolve_hand -- verified against pg_proc, it does not exist. So multiplayer
+        // hands have never produced a hand_history row at all: they were invisible in
+        // /hand-history, and they only counted on the ladder because the old second writer moved
+        // the counters directly. With the counters now derived from hand_history, an unrecorded
+        // MP hand would simply stop counting, so recording it is required, not optional.
+        //
+        // Each client writes only its OWN row, for its own device, keyed by its own
+        // client_hand_id -- one row per player per hand, which is what the two-writer worry in
+        // the comment above was actually about.
+        {
+          const q = await queueHandResult({
             // REVEAL-SAVE 2026-08-22 — the SAME id game.tsx queued with at the reveal. Both paths
             // now carry one client_hand_id, so uq_hand_history_client_ref collapses them to a
             // single row: whichever lands first wins, the other returns {duplicate:true}. This
@@ -639,11 +641,16 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             // runs" is a claim, and keying it identically makes the belt-and-braces free.
             id: revealData.handId,
             deviceId,
-            won: revealData.netChips > 0,
+            // The one outcome this screen derives, not a third `netChips > 0`.
+            outcome: handOutcome,
             boardsWon,
             boardsTotal: revealData.boards.length,
             sessionType: isPracticeGame ? 'practice' : 'quick_poker',
           });
+          // The ELO badge now comes from the SAME reply that recorded the hand. null means the
+          // send did not get through (offline): the outbox will retry and the counters will move
+          // then, but there is no delta to show now, so no badge is drawn rather than a wrong one.
+          if (!isPracticeGame && q.eloDelta !== null) setEloChange(q.eloDelta);
         }
       } catch {}
     })();

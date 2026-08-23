@@ -788,7 +788,14 @@ function GameScreenInner() {
         await queueHandResult({
           id: revealHandId,
           deviceId: await getDeviceId(),
-          won: results.playerChipsWon - config.potPerBoard * boardCount > 0,
+          // ONE-WIN-COUNTER 2026-08-23 — was `playerChipsWon - cost > 0`, a CHIPS test with two
+          // branches, so a tie queued as a loss. Decided from BOARDS, the same source /results
+          // uses, so the queued outcome and the screen can never disagree.
+          outcome: (() => {
+            const pw = revealBoards.filter((b) => b.winner === 'player').length;
+            const bw = revealBoards.filter((b) => b.winner === 'bot').length;
+            return pw > bw ? 'win' as const : pw < bw ? 'loss' as const : 'tie' as const;
+          })(),
           boardsWon: revealBoards.filter((b) => b.winner === 'player').length,
           boardsTotal: revealBoards.length,
           sessionType: isPractice ? 'practice' : 'quick_poker',
