@@ -620,19 +620,26 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // 2 hands lost). queueHandResult persists the hand to storage BEFORE touching the network
         // and retries on the next app start, and record_hand_result_d is now idempotent on
         // (device_id, client_hand_id) so a retry cannot double-count. See utils/handOutbox.ts.
-        // ONE-WIN-COUNTER 2026-08-23 — the `if (!isMultiplayer)` guard is REMOVED.
+        // MP-COUNTS-NOTHING 2026-08-23 — THE GUARD IS RESTORED, and the reasoning that removed it
+        // was mine and was WRONG.
         //
-        // The comment above says multiplayer rows are written by the server (resolve_hand).
-        // THERE IS NO resolve_hand -- verified against pg_proc, it does not exist. So multiplayer
-        // hands have never produced a hand_history row at all: they were invisible in
-        // /hand-history, and they only counted on the ladder because the old second writer moved
-        // the counters directly. With the counters now derived from hand_history, an unrecorded
-        // MP hand would simply stop counting, so recording it is required, not optional.
+        // Last sprint I searched pg_proc for a DATABASE function named `resolve_hand`, found none,
+        // and concluded multiplayer rows were never written. The real writer is an EDGE FUNCTION
+        // named `resolve-hand` (a hyphen, not an underscore) -- it is deployed, active, and it
+        // POSTs one hand_history row PER SEAT before calling record_hand_net for each. Checking one
+        // namespace and reporting the absence as universal is the error; the row was always there.
         //
-        // Each client writes only its OWN row, for its own device, keyed by its own
-        // client_hand_id -- one row per player per hand, which is what the two-writer worry in
-        // the comment above was actually about.
-        {
+        // Removing this guard therefore did not start recording MP hands, it started recording
+        // them TWICE. Measured on a live two-client hand: two hand_history rows per player, and
+        // because the leaderboard counters are now an AFTER INSERT projection, ONE hand gave each
+        // player games_played 2 -- the winner wins 2 and elo +40, the loser elo -20.
+        //
+        // The server row is the better one: it carries the real chips_delta from the shared
+        // arithmetic, it covers a seat that DROPPED (nobody is left client-side to write that one),
+        // and it is idempotent per (room, hand_no) via the resolved_at claim. The client row
+        // carries chips_delta NULL and cannot represent an absent player. So multiplayer records
+        // server-side and this screen stays out of it, exactly as the original comment said.
+        if (!isMultiplayer) {
           const q = await queueHandResult({
             // REVEAL-SAVE 2026-08-22 — the SAME id game.tsx queued with at the reveal. Both paths
             // now carry one client_hand_id, so uq_hand_history_client_ref collapses them to a
