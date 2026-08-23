@@ -61,9 +61,14 @@ function attachListeners(p) {
     const body = JSON.parse(req.postData() || '{}');
       // track_event sends p_data, NOT p_properties. Reading the wrong key returned null on every
       // hand of the first run and would have read as "the event stopped firing".
-      const props = body.p_data || body.p_properties || body.properties || {};
-      if (Object.prototype.hasOwnProperty.call(props, 'result')) {
-        lastAnalytics = `${body.p_event || body.event || '?'}=${props.result}`;
+      const props = body.p_data || {};
+      // KEY ON game_ended, NOT result_viewed_duration. The latter is emitted from a useEffect
+      // CLEANUP, and a full-page navigation tears down the JS context without running React
+      // cleanups - so on web it never fires at all, and reading it returned null on every hand of
+      // every run. That null then printed as FAIL against passing hands: a harness reporting a
+      // defect that was its own. game_ended fires while /results is still open.
+      if ((body.p_event || body.event) === 'game_ended') {
+        lastAnalytics = props.outcome ?? '(no outcome field)';
       }
     } catch {}
   });
@@ -84,6 +89,7 @@ for (let hand = 0; hand < HANDS; hand++) {
     attachListeners(page);
     await page.goto(`${SITE}/game?fresh=0`, { waitUntil: 'load', timeout: 120000 });
   }
+  lastAnalytics = null;   // reset per hand; game_ended fires during the hand, not on unmount
   await page.waitForTimeout(7000);
   await page.evaluate(`window.__f=${fire}`);
 
@@ -132,8 +138,6 @@ for (let hand = 0; hand < HANDS; hand++) {
     };
   })()`);
 
-  // Unmount /results so the analytics event fires, then read what went over the wire.
-  lastAnalytics = null;
   await page.goto(`${SITE}/`, { waitUntil: 'load', timeout: 120000 });
   await page.waitForTimeout(3500);
 
@@ -167,9 +171,9 @@ console.log('\nCONSISTENCY CHECK');
 const bad = [];
 for (const k of ['win', 'loss', 'tie']) {
   for (const r of byOutcome[k]) {
-    if (k === 'win' && (!r.overlay || !r.xpWinBonus || !String(r.analytics||'').endsWith('=win'))) bad.push(`win hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
-    if (k === 'tie' && (r.overlay || r.xpWinBonus || !String(r.analytics||'').endsWith('=tie'))) bad.push(`TIE hand still celebrating: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
-    if (k === 'loss' && (r.overlay || r.xpWinBonus || !String(r.analytics||'').endsWith('=lose'))) bad.push(`loss hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
+    if (k === 'win' && (!r.overlay || !r.xpWinBonus || r.analytics !== 'win')) bad.push(`win hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
+    if (k === 'tie' && (r.overlay || r.xpWinBonus || r.analytics !== 'tie')) bad.push(`TIE hand still celebrating: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
+    if (k === 'loss' && (r.overlay || r.xpWinBonus || r.analytics !== 'loss')) bad.push(`loss hand disagrees: overlay=${r.overlay} xpWin=${r.xpWinBonus} analytics=${r.analytics}`);
   }
 }
 console.log(bad.length ? bad.map((b) => '   FAIL ' + b).join('\n') : '   all sampled hands agree across headline / overlay / XP / analytics');
