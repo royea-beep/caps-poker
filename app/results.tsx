@@ -15,6 +15,7 @@ import { FriendsBg } from '../components/FriendsBg';
 import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
+import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
 import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
 import { applyDevRevealFixture, publishProbeSnapshot } from '../utils/devRevealFixture';
 import { getSpecificHandName } from '../utils/handNames';
@@ -135,8 +136,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
    */
   const playerWins = revealData.boards.filter((b) => b.winner === 'player').length;
   const botWins = revealData.boards.filter((b) => b.winner === 'bot').length;
-  const handOutcome: 'win' | 'loss' | 'tie' =
-    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+  // ALIGN-THE-CELEBRATION 2026-08-23 - ONE DERIVATION, and it now lives in utils/handOutcome.ts
+  // so the local achievement check reads the SAME function rather than a second copy of the rule.
+  // Every reader below asks this variable. Nothing on this screen decides the outcome for itself.
+  const handOutcome: HandOutcome = deriveHandOutcome(revealData.boards);
   const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
   const { width: rawW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -322,9 +325,15 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     if (!revealData) return;
     incrementHandsPlayed();
     updateBestChips();
+    // READER 1 - the local hands-won counter and the celebration sounds. Both used to hang off
+    // `netChips > 0`, so a hand the record called a tie was counted as a win locally and given the
+    // winning fanfare. updateBiggestWin stays on chips DELIBERATELY: "biggest win" is a statement
+    // about money, and a board win that nets zero must not be recorded as a bigger one.
     if (revealData.netChips > 0) {
-      incrementHandsWon();
       updateBiggestWin(revealData.netChips);
+    }
+    if (handOutcome === 'win') {
+      incrementHandsWon();
       // CELEBRATION AUDIO, TIERED BY HOW MUCH WAS WON (was: one flat 'chipsWin' for every win).
       //
       // Ratio, not raw board count. The board count is DYNAMIC — 2P=4, 3P=3, 4P=2 — so "3 of 3"
@@ -346,9 +355,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       if (!(totalBoardsHere > 0 && boardsWonHere === totalBoardsHere)) {
         setTimeout(() => { playHaptic('medium'); }, 500);
       }
-    } else if (revealData.netChips < 0) {
+    } else if (handOutcome === 'loss') {
       setTimeout(() => { void playSound('lose'); }, 500);
     }
+    // A TIE PLAYS NOTHING - it neither celebrates nor mourns. Previously a tie with a positive net
+    // got the winning fanfare and a tie with a negative net got the losing one, purely on chips.
     // Complete sound — VAMOS-COMPLETE-ON-LOSS 2026-06-21: only when the LOCAL player
     // swept every board (isComplete is true for EITHER player's sweep). Previously the
     // celebratory 'complete' sound + bonus hook fired even when the opponent swept (a loss).
@@ -540,7 +551,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // Battle Pass XP + mission tracking
     try {
       const boardsWonByPlayer = revealData.boards.filter((b) => b.winner === 'player').length;
-      const isWinner = revealData.netChips > 0;
+      // READERS 2 and 3 - win XP and the games_won mission tick, both from the one derivation.
+      const isWinner = handOutcome === 'win';
       // VAMOS-COMPLETE-ON-LOSS 2026-06-21 — complete XP/mission credit only when the
       // LOCAL player swept every board. revealData.isComplete is true for EITHER
       // player's sweep, which previously awarded the player complete-XP for LOSING.
@@ -565,7 +577,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         const sb = getSupabase();
         if (!sb) return;
         const boardsWon = revealData.boards.filter((b) => b.winner === 'player').length;
-        const isWin = revealData.netChips > 0;
+        // READER 4 - the server-side mission tick. Missions are inactive, but it decided a win
+        // from chips like the rest and would have disagreed the moment they were switched on.
+        const isWin = handOutcome === 'win';
         await Promise.all([
           sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_played', p_amount: 1 }),
           ...(isWin ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_won', p_amount: 1 })] : []),
@@ -729,7 +743,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       const bWon = revealData.boards.filter((b) => b.winner === 'player').length;
       track('result_viewed_duration', {
         seconds: duration,
-        result: revealData.netChips > 0 ? 'win' : 'lose',
+        // READER 5 - ANALYTICS. This logged a tie as a win, which quietly corrupts the funnel the
+        // tester round will be read with. It now carries three values. 'lose' KEEPS ITS EXISTING
+        // SPELLING so the event stays continuous with every row already recorded; only 'tie' is new.
+        result: handOutcome === 'win' ? 'win' : handOutcome === 'loss' ? 'lose' : 'tie',
         boards_won: bWon,
         is_complete: revealData.isComplete,
       }, 'results');
@@ -750,10 +767,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   // exact false claim that sweep removed. So the copy is now practice-aware below.
   useEffect(() => {
     if (!revealData) return;
-    const wonHand = revealData.isPractice
-      ? revealData.boards.filter((b) => b.winner === 'player').length >
-        revealData.boards.filter((b) => b.winner === 'bot').length
-      : revealData.netChips > 0;
+    // READER 6 - THE WIN OVERLAY. Practice already asked the boards; a real hand asked the chips.
+    // Both now ask the same question, which is the whole point of the ruling. A TIE DOES NOT FIRE
+    // IT: the headline says TIE GAME, the tie-bonus line still reports any chips, and the screen
+    // stays quiet rather than celebrating or mourning.
+    const wonHand = handOutcome === 'win';
     if (!wonHand) return;
     // Delay slightly so the results screen fade-in finishes first
     const showTimer = setTimeout(() => {
@@ -964,8 +982,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   boards.forEach((b, i) => { const r = HAND_ORDER.indexOf(b.playerHandName); if (r >= 0 && r < bestRank) { bestRank = r; bestName = b.playerHandName; bestBoard = i + 1; } });
 
   // S115: session stats
-  const sessionWins = sessionHistory.filter((h) => h.netChips > 0).length;
-  const sessionLosses = sessionHistory.filter((h) => h.netChips < 0).length;
+  // READER 8 — the session W-L tally, found while auditing the survivors. HandRecord carries the
+  // boards, so this asks the same question as everything else instead of counting positive nets.
+  // A tied hand is now in NEITHER column, where before it landed in whichever the chips implied.
+  const sessionWins = sessionHistory.filter((h) => deriveHandOutcome(h.boards) === 'win').length;
+  const sessionLosses = sessionHistory.filter((h) => deriveHandOutcome(h.boards) === 'loss').length;
   const sessionChips = sessionHistory.reduce((sum, h) => sum + h.netChips, 0);
 
   // Chip x-positions (left %) for shower
@@ -1068,7 +1089,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           Real-chip hands are UNCHANGED: `netChips > 0` still gates them and is doing real work
           there (it also excludes a net-zero hand, which a board count would not). */}
-      {showWinOverlay && revealData && (revealData.isPractice ? playerWins > botWins : revealData.netChips > 0) && (
+      {showWinOverlay && revealData && handOutcome === 'win' && (
         <Animated.View
           pointerEvents="none"
           accessibilityLiveRegion="assertive"
@@ -1098,10 +1119,19 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           ))}
           <Text
             style={styles.winOverlayText}
-            accessibilityLabel={revealData.isPractice ? 'Hand won!' : `You won ${revealData.netChips} chips!`}
+            accessibilityLabel={
+              revealData.isPractice ? 'Hand won!'
+                : revealData.netChips > 0 ? `You won ${revealData.netChips} chips!`
+                : 'You won the hand!'
+            }
           >
-            {/* Practice is XP-only — never quote a chip figure here. See the effect above. */}
-            {revealData.isPractice ? 'Hand won! 🎉' : `You won ${revealData.netChips} chips! 🎉`}
+            {/* Practice is XP-only — never quote a chip figure here. See the effect above.
+                AND, now that BOARDS open this overlay rather than chips, a board win can arrive
+                with a net of zero or less. Quoting it would print "You won 0 chips!" over a win.
+                A chip figure appears only when there is actually a positive one to state. */}
+            {revealData.isPractice ? 'Hand won! 🎉'
+              : revealData.netChips > 0 ? `You won ${revealData.netChips} chips! 🎉`
+              : 'You won the hand! 🎉'}
           </Text>
         </Animated.View>
       )}
@@ -1174,7 +1204,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               bpXpNeeded = prog.xpNeeded;
             } catch {}
             const boardsWonForBanner = boards.filter((b) => b.winner === 'player').length;
-            const isWinnerForBanner = netChips > 0;
+            // Must agree with the XP actually awarded above, which is now boards-derived.
+            const isWinnerForBanner = handOutcome === 'win';
             return (
               <View style={styles.xpBanner}>
                 <Text style={styles.xpBannerTitle} accessibilityLabel={`+${xpGained} XP`}>⭐ +{xpGained} XP</Text>

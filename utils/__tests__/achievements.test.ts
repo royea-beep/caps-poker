@@ -22,6 +22,24 @@ function makeReveal(overrides: Partial<RevealData> = {}): RevealData {
   };
 }
 
+/**
+ * ALIGN-THE-CELEBRATION 2026-08-23 — a win is BOARDS, so the fixtures have to say so.
+ *
+ * The default makeReveal() boards are one player win and one bot win, which is a TIE. Two tests
+ * below expressed "a win" as `netChips: 100` on top of that fixture, and they passed only because
+ * the achievement check used to read chips. They were asserting the defect.
+ */
+function boardsFor(outcome: 'win' | 'loss' | 'tie') {
+  const board = (winner: 'player' | 'bot') => ({
+    winner, playerHandName: 'One Pair', botHandName: 'High Card',
+    openCards: [], closedCards: [], playerCards: [], allBotCards: [], allBotHandNames: [],
+    playerHighlightIds: [], botHighlightIds: [], boardHighlightIds: [], potAmount: 100,
+  });
+  return outcome === 'win' ? [board('player'), board('player')]
+    : outcome === 'loss' ? [board('bot'), board('bot')]
+    : [board('player'), board('bot')];
+}
+
 function makeCtx(overrides: Partial<AchievementCheckContext> = {}): AchievementCheckContext {
   return {
     revealData: makeReveal(),
@@ -109,7 +127,7 @@ describe('checkAchievements', () => {
   });
 
   it('unlocks hard_mode_win when beating hard bot', () => {
-    const result = checkAchievements(makeCtx({ config: { botDifficulty: 'hard' } as any, revealData: makeReveal({ netChips: 100 }) }));
+    const result = checkAchievements(makeCtx({ config: { botDifficulty: 'hard' } as any, revealData: makeReveal({ boards: boardsFor('win') as any, netChips: 100 }) }));
     expect(result).toContain('hard_mode_win');
   });
 
@@ -143,8 +161,37 @@ describe('checkAchievements', () => {
   });
 
   it('unlocks online_win for multiplayer win', () => {
-    const result = checkAchievements(makeCtx({ isMultiplayer: true, revealData: makeReveal({ netChips: 200 }) }));
+    const result = checkAchievements(makeCtx({ isMultiplayer: true, revealData: makeReveal({ boards: boardsFor('win') as any, netChips: 200 }) }));
     expect(result).toContain('online_win');
+  });
+
+  // THE DEFECT THIS SPRINT CLOSED, asserted so it cannot come back. The shape is the one measured
+  // on real production rows: the boards tie, and the chips are still positive. Under the old rule
+  // both of these unlocked a WIN achievement on a hand the record and the ladder called a tie.
+  it('does NOT unlock hard_mode_win on a board TIE, even with positive chips', () => {
+    const result = checkAchievements(makeCtx({
+      config: { botDifficulty: 'hard' } as any,
+      revealData: makeReveal({ boards: boardsFor('tie') as any, netChips: 50 }),
+    }));
+    expect(result).not.toContain('hard_mode_win');
+  });
+
+  it('does NOT unlock online_win on a board TIE, even with positive chips', () => {
+    const result = checkAchievements(makeCtx({
+      isMultiplayer: true,
+      revealData: makeReveal({ boards: boardsFor('tie') as any, netChips: 50 }),
+    }));
+    expect(result).not.toContain('online_win');
+  });
+
+  // And the converse: a board win with a non-positive net is still a win. Not observed in
+  // production, but the rule has to be the rule in both directions.
+  it('DOES unlock hard_mode_win on a board win whose net is zero', () => {
+    const result = checkAchievements(makeCtx({
+      config: { botDifficulty: 'hard' } as any,
+      revealData: makeReveal({ boards: boardsFor('win') as any, netChips: 0 }),
+    }));
+    expect(result).toContain('hard_mode_win');
   });
 
   it('unlocks underdog when 1 of 3+ boards won', () => {

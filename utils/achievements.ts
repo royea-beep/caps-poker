@@ -4,6 +4,7 @@
  * Call checkAchievements() in results.tsx after every hand.
  */
 
+import { deriveHandOutcome } from './handOutcome';
 import { RevealData } from '../types/gameTypes';
 import { GameConfig } from '../constants/gameConfig';
 import { isLocalComplete } from './resultsGating';
@@ -59,7 +60,9 @@ export function checkAchievements(ctx: AchievementCheckContext): string[] {
     }
 
     const boardsWon = revealData.boards.filter((b) => b.winner === 'player').length;
-    const isWin = revealData.netChips > 0;
+    // READER 7 - the local achievement check. Reads the SAME function the results screen does,
+    // so hard_mode_win and online_win can no longer unlock on a hand the record calls a tie.
+    const isWin = deriveHandOutcome(revealData.boards) === 'win';
     const difficulty = (config as any).botDifficulty ?? 'easy';
 
     check('first_win',       handsWon >= 1);
