@@ -112,6 +112,24 @@ const PROBE = () => {
 
 const browser = await engine.launch({ headless: false });
 const ctx = await browser.newContext({ viewport: { width: VW, height: VW >= 1000 ? 800 : 900 } });
+
+// A GATED SCREEN IS AN UNMEASURED SCREEN — now standard, not a one-off.
+//
+// /shop and /chip-store hide their ENTIRE paid half behind iap_enabled and web_payments_enabled,
+// both false in production. Every pass this loop has ever recorded on those two routes was a pass
+// on a screen with the purchase surface removed. This overrides the CONFIG RESPONSE in the browser
+// so the paid surface renders and can be checked like anything else.
+//
+// THE FLAGS THEMSELVES ARE NEVER TOUCHED. Nothing is enabled for any real user, no purchase is
+// attempted, and the override lives and dies with this browser context. Overriding the response
+// rather than flipping the flag is the rule: flipping it would make a production change to measure
+// a screen.
+await ctx.route(/\/rest\/v1\/app_config.*/, async (route) => {
+  if (/key=eq\.(iap_enabled|web_payments_enabled)/.test(route.request().url())) {
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ value: true }) });
+  }
+  return route.continue();
+});
 const page = await ctx.newPage();
 const consoleErrs = [];
 const pageErrs = [];
