@@ -217,3 +217,38 @@ edited** · `Card.tsx` untouched · missions still inactive · the client's `upd
 **not** re-added · **no DB function, trigger or constraint changed this sprint** · nothing backfilled.
 
 **Edge Function:** `resolve-hand` **v10 → v11** — one field added to the response literal.
+
+---
+
+## ADDENDUM — the angle I had missed: a gated screen is an unmeasured screen
+
+`/shop` and `/chip-store` hide their **entire paid half** behind `iap_enabled` and
+`web_payments_enabled`, both false in production. So every loop that has ever "passed" those two
+routes passed on a screen with the purchase surface removed. The brief named payment verification
+and the price ladder as surfaces to run the angles across, and this is the angle that applies to
+them — I had not run it.
+
+Measured by overriding the `app_config` **response** in the browser only
+(`tests/gated-payment-surfaces.mjs`). The flags were never touched, nothing was enabled for any real
+user, and no purchase was attempted.
+
+**Result — both engines × 375 and 393: 0 findings.**
+
+- prices render; no `undefined` / `NaN` / `null` leak — **this exact screen shipped that defect once**
+- every buy control carries a role **and** a real label: *"Buy 13,000 chips for $4.99"*
+- **0** focusable-with-no-role controls — the class fixed this sprint does not recur here
+- no horizontal overflow at either width
+
+**The value ladder is strictly increasing**, measured rather than asserted:
+
+| price | chips | chips per dollar |
+|---|---:|---:|
+| $0.99 | 2,000 | 2,020 |
+| $2.99 | 7,000 | 2,341 |
+| $4.99 | 13,000 | 2,605 |
+| $9.99 | 30,000 | 3,003 |
+| $19.99 | 70,000 | 3,502 |
+
+The inversion fixed in the price-ladder sprint has stayed fixed. **The paid surface is sound the day
+the flag is flipped — and that is the first time it has been looked at with the gate open.**
+
