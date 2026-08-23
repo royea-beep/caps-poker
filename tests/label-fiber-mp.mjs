@@ -110,6 +110,11 @@ for (let i = 0; i < 90; i++) {
 await A.waitForTimeout(7000);
 console.log('\n══ MP /results (client A)');
 console.log(JSON.stringify(await A.evaluate(PROBE), null, 2));
+// BOTH SEATS. The host builds its RevealData from the Edge Function response; the GUEST builds
+// its own from the BOARD_REVEAL broadcast — a different literal on a different path. Reading
+// only the host would have proven the fix for half the players.
+console.log('== MP /results (client B - GUEST)');
+console.log(JSON.stringify(await B.evaluate(PROBE), null, 2));
 console.log(`   A device: ${await A.evaluate(`localStorage.getItem('caps-device-id')`)}`);
 console.log(`   B device: ${await B.evaluate(`localStorage.getItem('caps-device-id')`)}`);
 console.log(`   room: ${roomCode}`);

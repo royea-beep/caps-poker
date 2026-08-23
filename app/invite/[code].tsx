@@ -64,7 +64,14 @@ export default function InviteRedeemScreen() {
             useGameStore.getState().trackChipsEarned(res.granted);
           }
         } catch { /* economy RPC never crashes the UI */ }
-        if (!cancelled) setState({ phase: 'success', earned: earned || WELCOME_BONUS });
+        // REPORT WHAT WAS ACTUALLY GRANTED. This used to be `earned || WELCOME_BONUS`, which
+        // fell back to the full figure whenever the grant returned 0 — and 0 is a REAL outcome:
+        // record_reward is once-per-device, so a player who follows a SECOND friend's link
+        // redeems successfully (a new referrer/redeemer pair) but receives nothing. The screen
+        // then stated '+100 added to your balance' over an unchanged balance. Measured against
+        // production: record_reward returns {granted: 0, already_granted: true} on the repeat.
+        // A claim about someone's money has to match what moved.
+        if (!cancelled) setState({ phase: 'success', earned });
       } catch {
         if (!cancelled) setState({ phase: 'error', message: 'Something went wrong. Please try again.' });
       }
@@ -89,7 +96,11 @@ export default function InviteRedeemScreen() {
         {state.phase === 'success' && (
           <>
             <Text style={styles.title}>You're in! 🎉</Text>
-            <Text style={styles.msg}>+{state.earned} 💰 welcome bonus added to your balance.</Text>
+            <Text style={styles.msg}>
+              {state.earned > 0
+                ? `+${state.earned} 💰 welcome bonus added to your balance.`
+                : 'Your invite is registered — your friend gets their reward. The welcome bonus was already claimed on this device.'}
+            </Text>
             <Pressable style={styles.cta} onPress={goHome} accessibilityRole="button" accessibilityLabel="Start playing CAPS">
               <Text style={styles.ctaText}>Start playing</Text>
             </Pressable>
