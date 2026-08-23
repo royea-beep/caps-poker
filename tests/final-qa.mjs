@@ -48,8 +48,17 @@ const PROBE = () => {
   const name = (e) => (e.getAttribute('aria-label') || e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 44);
   const exposed = [...document.querySelectorAll('button,[role="button"],[role="tab"],[role="switch"],[role="link"],a[href]')]
     .filter(vis).map(name);
-  const bare = [...document.querySelectorAll('[tabindex="0"]')].filter(vis)
-    .filter((e) => !e.getAttribute('role') && e.tagName !== 'BUTTON' && e.tagName !== 'A').map(name);
+  // Focusable, but declaring nothing about what it is. Two very different things land here, and
+  // the difference decides whether it is a defect:
+  //   - an EMPTY one is react-native-web giving a ScrollView tabindex=0 so a keyboard can scroll
+  //     it. Legitimate, and it appears on nearly every screen (home's is 393x788).
+  //   - a NAMED one is a Pressable that never got accessibilityRole. It reads as plain text to a
+  //     screen reader with no indication it acts. That is the defect.
+  // Only the named ones are asserted on below; the empty ones stay counted for visibility.
+  const bareAll = [...document.querySelectorAll('[tabindex="0"]')].filter(vis)
+    .filter((e) => !e.getAttribute('role') && e.tagName !== 'BUTTON' && e.tagName !== 'A');
+  const bare = bareAll.map(name);
+  const bareNamed = bareAll.map(name).filter((t) => t && t.length > 0);
 
   // LAYOUT — clip-aware. Plain containers included, not just controls.
   const vwNow = window.innerWidth;
@@ -91,6 +100,7 @@ const PROBE = () => {
     head: body.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 4),
     exposedN: exposed.length, exposed,
     bareN: bare.length, bare: bare.slice(0, 6),
+    bareNamed,
     overflowX: document.documentElement.scrollWidth > vwNow + 1,
     scrollW: document.documentElement.scrollWidth,
     past: past.filter((x) => !x.deliberate).slice(0, 5),
@@ -226,6 +236,10 @@ for (const r of ROUTES) {
   await page.waitForTimeout(6500);
   const s = await stop(`route ${r}`);
   if (s.exposedN === 0) add(`route ${r}`, 'A11Y', 'zero exposed controls — no way forward or back');
+  // NOW ASSERTED. This count was printed on every run since the harness was written and never
+  // checked, which is how three filter tabs and a chip-spending unlock button stayed roleless.
+  // A number nobody asserts on is decoration.
+  if (s.bareNamed?.length) add(`route ${r}`, 'A11Y', `focusable with no role: ${s.bareNamed.join(' | ')}`);
 }
 
 // ── STATE: zero chips, cold deep-link, returning ─────────────────────────────

@@ -335,6 +335,13 @@ export default function HandHistoryScreen() {
             key={f}
             onPress={() => setFilter(f)}
             style={[styles.filterTab, filter === f && styles.filterTabActive]}
+            // These three rendered as tabindex=0 divs with NO role: focusable by keyboard and
+            // announced by a screen reader as plain text, with nothing to say they filter anything
+            // or which one is currently applied. The loop had been PRINTING them as unexposed on
+            // every run and never asserting on it, so the signal was there and unread.
+            accessibilityRole="tab"
+            accessibilityState={{ selected: filter === f }}
+            accessibilityLabel={f === 'all' ? 'Show all hands' : f === 'wins' ? 'Show only wins' : 'Show only losses'}
           >
             <Text style={[styles.filterTabText, filter === f && styles.filterTabTextActive]}>
               {f === 'all' ? t().historyAll(history.length) : f === 'wins' ? t().historyWins(wins.length) : t().historyLosses(losses.length)}

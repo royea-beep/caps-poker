@@ -372,7 +372,14 @@ export default function BattlePassScreen() {
 
         {/* ── Premium CTA ────────────────────────────────────── */}
         {!isPremium && (
-          <Pressable style={styles.premiumBtn} onPress={handleUnlockPremium}>
+          <Pressable
+            style={styles.premiumBtn}
+            onPress={handleUnlockPremium}
+            // Same gap, on a control that SPENDS CHIPS. It rendered focusable with no role,
+            // so a screen reader gave no indication the premium unlock was actionable.
+            accessibilityRole="button"
+            accessibilityLabel={`Unlock premium battle pass for ${BATTLE_PASS_CONFIG.premiumChipCost.toLocaleString()} chips`}
+          >
             <Text style={styles.premiumBtnText}>
               ⭐ UNLOCK PREMIUM — {BATTLE_PASS_CONFIG.premiumChipCost.toLocaleString()} chips
             </Text>
