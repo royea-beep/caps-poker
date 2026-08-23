@@ -671,3 +671,58 @@ see which part is an accessibility floor and must not be trimmed. If they differ
 Corollary: when a consumer patches around a source constant — `BoardArrangement.tsx:354`,
 *"PRD.zone.actionBarH=rs(56) under-counted the …"* — that is a report that the source is wrong.
 Fix the source; a local patch leaves every other consumer still reading the bad number.
+
+---
+
+## 7. A branch of this project does not reproduce this project
+
+**Iron Rule 11 says QA on a branch, never production. On CAPS that rule cannot be honoured as
+written**, and pretending otherwise produces a proof of nothing.
+
+**Measured 2026-08-23.** A fresh Supabase branch of `caps-poker` came up with **5 tables** —
+`app_config`, `deploy_tracker`, `leaderboard`, `user_profiles`, `whatsapp_sessions` — against
+production's **56**, and its `leaderboard` was an **older shape** (`hands_played` / `hands_won` /
+`biggest_win` where production has `elo` / `games_played` / `wins` / `win_rate`).
+
+**Cause:** `create_branch` replays the *tracked migration history*. CAPS' schema was largely built
+outside it, so a branch reproduces only the fraction that was recorded. (Production data never
+carries over either — that part is by design and is not the problem.)
+
+**What to do instead.** Still create the branch, but budget for building a **minimal replica by
+hand** of only the tables the change touches:
+
+- real column types, the **real CHECK constraints**, the **real partial unique indexes** — the
+  idempotency guarantee usually lives in an index, and a replica without it proves the opposite of
+  what you think
+- stub the guard functions (`econ_authz_probe`, `econ_rate_ok`, `econ_bind_ok`) to their pass
+  behaviour so the function signature under test is identical
+- **say in the report that the replica was built**, rather than writing "proven on a branch" and
+  letting the reader assume it mirrored production
+
+**Which future work this affects:** anything touching a table the tracked migrations do not create
+— `hand_history`, `chip_transactions`, `game_rooms`, `room_players`, `achievements`,
+`referral_links`, `user_missions`, and most of the other 51. In practice: every economy change,
+every hand-recording change, every multiplayer change. Only `app_config` and `leaderboard` work
+on a bare branch, and `leaderboard` only after adding the columns.
+
+Cost was **$0.01344/hour**; delete the branch when done and confirm by listing.
+
+---
+
+## 8. Absence in one namespace is not absence
+
+**Cited case, 2026-08-23 — and it caused a live regression, not just a wrong report.**
+
+The claim was *"`resolve_hand` does not exist"*, from a `pg_proc` search that genuinely returned
+nothing. The real object is an **Edge Function named `resolve-hand`** — a hyphen, not an underscore,
+and a different namespace entirely. It is deployed, active, and writes one `hand_history` row per
+seat.
+
+Acting on the absence removed a guard that existed precisely because the server writes those rows,
+which turned one multiplayer hand into **two** recorded hands per player: `games_played 2`, the
+winner `wins 2` and `elo +40`, the loser `elo −20`.
+
+**Test:** before reporting that something does not exist, enumerate **every** place it could live —
+`pg_proc`, Edge Functions, triggers, views, cron, the client — and say **which** you checked. A
+name that differs by a hyphen, a suffix (`_d`), or a namespace is the normal case in this codebase,
+not the exception.
