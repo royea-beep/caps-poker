@@ -96,6 +96,12 @@ export default function TierRewardCard({
           style={styles.claimBtn}
           onPress={handleClaim}
           android_ripple={{ color: 'rgba(201,106,26,0.3)' }}
+          // Found by the assertion added in this same sprint, and NOT by the direct sweep that
+          // preceded it: CLAIM only renders once a tier is claimable, so a device that has never
+          // played a hand never draws it. A one-shot dump of a fresh session cannot see a control
+          // that state has to earn.
+          accessibilityRole="button"
+          accessibilityLabel={`Claim tier ${tier} reward`}
         >
           <Text style={styles.claimBtnText}>CLAIM</Text>
         </Pressable>
