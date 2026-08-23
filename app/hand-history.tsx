@@ -107,7 +107,21 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
   const shareRef = useRef<any>(null);
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
-  const isWin = hand.netChips >= 0;
+  /**
+   * CLASS A + CLASS B, both in one line. This was `hand.netChips >= 0`, so a TIE (net 0) rendered
+   * with the WIN border and a green "+0". Worse, the two lines directly above already compute the
+   * authoritative answer from the boards and it was being thrown away -- the same shape as the
+   * blank opponent hand.
+   *
+   * And the two ends disagreed: the client showed a net-zero hand as a WIN while the same hand was
+   * written to hand_history as result='lost'. Measured in production: 127 of 243 rows are net-zero,
+   * and of the 22 genuinely board-tied hands, 15 are stored 'lost' and 5 'won' -- the same outcome
+   * recorded both ways. Storing a third value needs a CHECK-constraint change and a decision about
+   * those rows, so it is reported; the DISPLAY is corrected here, from the boards, which are right.
+   */
+  const outcome: 'win' | 'loss' | 'tie' =
+    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+  const isWin = outcome === 'win';
   const bestHand = getBestHandName(hand);
   const isBigHand = BIG_HANDS.includes(bestHand);
 
@@ -123,7 +137,7 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
   return (
     <View>
       <TouchableOpacity
-        style={[styles.handCard, isWin ? styles.handCardWin : styles.handCardLose]}
+        style={[styles.handCard, outcome === 'win' ? styles.handCardWin : outcome === 'loss' ? styles.handCardLose : styles.handCardTie]}
         onPress={() => setExpanded(!expanded)}
         activeOpacity={0.7}
       >
@@ -143,8 +157,8 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
             ) : null}
           </View>
           <View style={styles.handRight}>
-            <Text style={[styles.netChips, { color: isWin ? COLORS.neonGreen : COLORS.neonRed }]}>
-              {isWin ? '+' : ''}{hand.netChips}🪙
+            <Text style={[styles.netChips, { color: outcome === 'win' ? COLORS.neonGreen : outcome === 'loss' ? COLORS.neonRed : COLORS.textDim }]}>
+              {hand.netChips > 0 ? '+' : ''}{hand.netChips === 0 ? '±0' : hand.netChips}🪙
             </Text>
             {hand.isComplete && hand.completeBonusAmount > 0 && (
               <Text style={styles.bonusTag}>+{hand.completeBonusAmount} bonus</Text>
@@ -275,8 +289,13 @@ export default function HandHistoryScreen() {
     });
   }, []);
 
-  const wins = history.filter(h => h.netChips >= 0);
-  const losses = history.filter(h => h.netChips < 0);
+  // Counted from BOARDS, like the cards above. `netChips >= 0` counted every tie as a win, and
+  // net-zero is over half of all recorded hands. A tie is in neither tab, so All is deliberately
+  // NOT Wins + Losses -- that is the honest arithmetic, not a rounding error.
+  const boardsWonOf = (h: HandRecord) => h.boards.filter((b) => b.winner === 'player').length;
+  const boardsLostOf = (h: HandRecord) => h.boards.filter((b) => b.winner === 'bot').length;
+  const wins = history.filter(h => boardsWonOf(h) > boardsLostOf(h));
+  const losses = history.filter(h => boardsWonOf(h) < boardsLostOf(h));
   const filtered = filter === 'all' ? history : filter === 'wins' ? wins : losses;
 
   // Group by date
@@ -345,7 +364,7 @@ export default function HandHistoryScreen() {
         ) : (
           <>
             {Object.entries(grouped).map(([date, hands]) => {
-              const dayWins = hands.filter(h => h.netChips >= 0).length;
+              const dayWins = hands.filter(h => boardsWonOf(h) > boardsLostOf(h)).length;
               const dayChips = hands.reduce((s, h) => s + h.netChips, 0);
               return (
                 <View key={date}>
@@ -452,6 +471,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.boardBorder,
   },
+  // Neutral border for a tie -- neither the win treatment nor the loss treatment.
+  handCardTie: { borderLeftColor: COLORS.textDim },
   handCardWin: {
     borderLeftWidth: 3,
     borderLeftColor: COLORS.neonGreen,

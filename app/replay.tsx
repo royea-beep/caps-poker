@@ -99,7 +99,11 @@ function BoardView({ board, boardNumber, totalBoards }: { board: HandBoardRecord
 }
 
 function SummaryView({ hand, onCoach }: { hand: HandRecord; onCoach: () => void }) {
-  const isWin = hand.netChips >= 0;
+  // Same class-A line as hand-history: `netChips >= 0` painted a TIE green with a "+".
+  const rpPlayerWins = hand.boards.filter((b) => b.winner === 'player').length;
+  const rpBotWins = hand.boards.filter((b) => b.winner === 'bot').length;
+  const outcome: 'win' | 'loss' | 'tie' =
+    rpPlayerWins > rpBotWins ? 'win' : rpPlayerWins < rpBotWins ? 'loss' : 'tie';
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
 
@@ -113,8 +117,8 @@ function SummaryView({ hand, onCoach }: { hand: HandRecord; onCoach: () => void 
         <Text style={[styles.scoreBig, { color: COLORS.neonRed }]}>{botWins}</Text>
       </View>
 
-      <Text style={[styles.netChips, { color: isWin ? COLORS.neonGreen : COLORS.neonRed }]}>
-        {isWin ? '+' : ''}{hand.netChips} chips
+      <Text style={[styles.netChips, { color: outcome === 'win' ? COLORS.neonGreen : outcome === 'loss' ? COLORS.neonRed : COLORS.textDim }]}>
+        {hand.netChips > 0 ? '+' : ''}{hand.netChips === 0 ? '±0' : hand.netChips} chips
       </Text>
 
       {hand.isComplete && hand.completeBonusAmount > 0 && (

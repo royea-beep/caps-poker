@@ -151,13 +151,49 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 
 type FilterPeriod = 'today' | 'week' | 'all';
 
+/**
+ * CLASS C — the FIFTH screen where the RPC's field names and this component's disagreed.
+ *
+ * get_player_stats returns, verified by calling it against a real device:
+ *   rank, found, win_rate, hands_won, percentile, biggest_win, player_name, total_chips,
+ *   hands_played, total_players
+ *
+ * This interface asked for `wins`, `roi`, `vpip` and `best_hand`. Not one of those four is
+ * emitted. The screen rendered "undefinedW", "NaN%" and "+undefined" — with ZERO console errors,
+ * which is what makes this class invisible.
+ *
+ * The QA loop could not have caught it: /stats renders this block only when the device HAS
+ * stats, and every harness device is brand new, so the loop always measured the empty state.
+ * That is exactly why this sprint enumerated the RPCs rather than the screens.
+ *
+ * ROI and VPIP are not a rename — the server has never computed either. A card with nothing
+ * behind it is a promise, so the ROI card is removed rather than left rendering NaN.
+ */
 interface DbStats {
   hands_played: number;
-  wins: number;
+  hands_won: number;
   win_rate: number;
-  roi: number;
-  vpip: number;
-  best_hand: number;
+  biggest_win: number;
+}
+
+/** Normalise at the FETCH BOUNDARY, accepting both spellings, so a future rename cannot re-break it. */
+function normaliseDbStats(raw: unknown): DbStats | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  if (r.found === false) return null;
+  const num = (...keys: string[]): number => {
+    for (const k of keys) {
+      const v = Number(r[k]);
+      if (Number.isFinite(v)) return v;
+    }
+    return 0;
+  };
+  return {
+    hands_played: num('hands_played'),
+    hands_won: num('hands_won', 'wins'),
+    win_rate: num('win_rate'),
+    biggest_win: num('biggest_win', 'best_hand'),
+  };
 }
 
 export default function StatsScreen() {
@@ -191,7 +227,7 @@ export default function StatsScreen() {
       const sb = getSupabase();
       if (!sb) return;
       const { data } = await sb.rpc('get_player_stats', { p_device_id: deviceId });
-      if (data) setDbStats(data as DbStats);
+      setDbStats(normaliseDbStats(data));
     }).catch(() => {});
   }, []);
 
@@ -337,20 +373,19 @@ export default function StatsScreen() {
                 <StatCard
                   label="HANDS (DB)"
                   value={String(dbStats.hands_played)}
-                  sub={`${dbStats.wins}W`}
+                  sub={`${dbStats.hands_won}W`}
                 />
                 <StatCard
                   label="WIN %"
                   value={`${Math.round(dbStats.win_rate)}%`}
                   sub={dbStats.win_rate >= 50 ? '🔥' : '❄️'}
                 />
-                <StatCard
-                  label="ROI"
-                  value={`${dbStats.roi >= 0 ? '+' : ''}${Math.round(dbStats.roi)}%`}
-                />
+                {/* The ROI card was removed: get_player_stats has never returned an roi field, so
+                    it rendered "NaN%". Nothing server-side computes ROI, and inventing one here
+                    would be a second source of truth for a number the server is supposed to own. */}
                 <StatCard
                   label="BEST POT"
-                  value={`+${dbStats.best_hand}`}
+                  value={`+${dbStats.biggest_win}`}
                 />
               </View>
             </View>

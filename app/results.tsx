@@ -119,6 +119,24 @@ export default function ResultsScreen() {
 
 function ResultsContent({ revealData }: { revealData: RevealData }) {
   const router = useRouter();
+
+  /**
+   * WHO WON — DECIDED ONCE, HERE, AND NOWHERE ELSE ON THIS SCREEN.
+   *
+   * Hoisted to the top of the component in HUNT-THE-CLASSES because the effects below need it
+   * and they run before the old derivation site (:870). Putting a second `netChips > 0` in an
+   * effect is exactly the class-B mistake that caused the original tie defect, so there is one
+   * derivation and every consumer reads it: the headline, the multiplayer sub-header, and the
+   * ELO write.
+   *
+   * BOARDS WON, not chips. Those two disagree whenever the boards tie but the pots do not --
+   * a case this screen already knows about, because it renders a "Tie bonus: +N chips" line for
+   * exactly it.
+   */
+  const playerWins = revealData.boards.filter((b) => b.winner === 'player').length;
+  const botWins = revealData.boards.filter((b) => b.winner === 'bot').length;
+  const handOutcome: 'win' | 'loss' | 'tie' =
+    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
   const { autoSim, autoSimCount, currentSimHand } = useLocalSearchParams<{ autoSim?: string; autoSimCount?: string; currentSimHand?: string }>();
   const { width: rawW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -442,9 +460,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
     // Achievement checks — run after stats are incremented
     const gs = useGameStore.getState();
-    const newWin = revealData.netChips > 0;
+    // CLASS A. This was `netChips > 0` with an else-reset, so a TIE BROKE THE WIN STREAK exactly
+    // as a loss does. A tie is not a loss: it neither extends the streak nor ends it. Reads the
+    // one outcome derived at the top of this component rather than deciding again.
     if (!isPracticeGame) {
-      if (newWin) gs.incrementWinStreak(); else gs.resetWinStreak();
+      if (handOutcome === 'win') gs.incrementWinStreak();
+      else if (handOutcome === 'loss') gs.resetWinStreak();
     }
 
     const newlyUnlocked = isPracticeGame ? [] : checkAchievements({
@@ -452,7 +473,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       config,
       handsPlayed: gs.handsPlayed,
       handsWon: gs.handsWon,
-      currentWinStreak: newWin ? gs.currentWinStreak : 0,
+      // Was `newWin ? streak : 0`, which zeroed the streak on a TIE for the achievement check
+      // even though the streak itself is no longer reset by one. Only a loss zeroes it.
+      currentWinStreak: handOutcome === 'loss' ? 0 : gs.currentWinStreak,
       isMultiplayer,
       alreadyUnlocked: gs.unlockedAchievements,
     });
@@ -562,8 +585,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
-        const won = revealData.netChips > 0;
-        const res = await sb.rpc('update_leaderboard_elo', { p_device_id: deviceId, p_won: won });
+        // CLASS A, ranking rail. This was `netChips > 0`, so a tie arrived as false and was
+        // scored as a LOSS: both players dropped 10 ELO on the screen that says "Tied with".
+        // NULL means TIE in update_leaderboard_elo -- no elo movement, no win credited, but
+        // games_played still increments because a game was played. It returns 0 for a tie, and
+        // the badge below renders only when eloChange !== 0, so a tie shows no chip at all.
+        const p_won = handOutcome === 'tie' ? null : handOutcome === 'win';
+        const res = await sb.rpc('update_leaderboard_elo', { p_device_id: deviceId, p_won });
         if (res.data) setEloChange(res.data as number);
       } catch {}
     })();
@@ -868,30 +896,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   }, [revealData, autoShareUrl]);
 
   const { boards, netChips, isComplete, completeBonusAmount, numberOfPlayers, boardCount } = revealData;
-  const playerWins = boards.filter((b) => b.winner === 'player').length;
-  const botWins = boards.filter((b) => b.winner === 'bot').length;
+  // playerWins / botWins / handOutcome are derived ONCE at the top of this component -- see the
+  // note there. They were recomputed here as well until HUNT-THE-CLASSES; two places computing
+  // the same fact is the class that caused the tie defect in the first place.
   const isPerfectGame = playerWins === boards.length && boards.length > 0;
 
-  /**
-   * A TIE IS ITS OWN OUTCOME — and this must agree with the headline, because it did not.
-   *
-   * The multiplayer sub-header used to be a TWO-branch ternary on `netChips > 0`, so a tie
-   * (netChips === 0) fell through to the LOSS branch. Both clients in a 2-2 hand read
-   * "TIE GAME | 2 - 2" in mint, and directly underneath it "Defeated by <name>" in red. Both
-   * players were told they lost the same tied game, in the first multiplayer hand they play.
-   *
-   * The root cause is not the missing branch, it is the SECOND SOURCE OF TRUTH: the headline
-   * (:1073) decides from boards won, the sub-header decided from chips. Those disagree whenever
-   * boards tie but the pots do not -- which the screen already knows about, because it renders a
-   * "Tie bonus: +N chips" line for exactly that case. So the outcome is derived ONCE here, from
-   * the headline's own source, and both read it. They can no longer contradict each other.
-   *
-   * Colour: mint, which is what the headline directly above already paints TIE GAME. Deliberately
-   * NOT the win gold (#c9a84c) and not the loss red (#ef5350) -- a tie borrows neither treatment.
-   * There is no motion on this header to make say "tie"; it is a static Text.
-   */
-  const mpOutcome: 'win' | 'loss' | 'tie' =
-    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+
 
   // CN-CAPTURE 2026-08-08 — READ the equity/outs the reveal captured, and publish what we got
   // for the probe. No UI this sprint: this proves reachability only. Coverage is PARTIAL by
@@ -1092,8 +1102,8 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           {/* Title + score */}
           <View style={styles.titleSection}>
-            <Text testID="result-headline" accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : playerWins > botWins ? gameColors.win : playerWins < botWins ? gameColors.lose : COLORS.mint }]}>
-              {isPerfectGame ? 'PERFECT!' : playerWins > botWins ? 'YOU WIN' : playerWins < botWins ? 'YOU LOSE' : 'TIE GAME'}
+            <Text testID="result-headline" accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : handOutcome === 'win' ? gameColors.win : handOutcome === 'loss' ? gameColors.lose : COLORS.mint }]}>
+              {isPerfectGame ? 'PERFECT!' : handOutcome === 'win' ? 'YOU WIN' : handOutcome === 'loss' ? 'YOU LOSE' : 'TIE GAME'}
             </Text>
             {revealData.isPractice && (
               <View style={{ backgroundColor: 'rgba(245,181,70,0.14)', borderWidth: 1, borderColor: 'rgba(245,181,70,0.5)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14, marginTop: 6, alignSelf: 'center' }} accessibilityRole="text" testID="practice-banner">
@@ -1345,15 +1355,15 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* S118: Multiplayer result header */}
           {isMultiplayer && storeOpponentName ? (
             <Text
-              style={[styles.mpResultHeader, { color: mpOutcome === 'win' ? '#c9a84c' : mpOutcome === 'loss' ? '#ef5350' : COLORS.mint }]}
+              style={[styles.mpResultHeader, { color: handOutcome === 'win' ? '#c9a84c' : handOutcome === 'loss' ? '#ef5350' : COLORS.mint }]}
               accessibilityLabel={
-                mpOutcome === 'win' ? `You beat ${storeOpponentName}!`
-                : mpOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
+                handOutcome === 'win' ? `You beat ${storeOpponentName}!`
+                : handOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
                 : `Tied with ${storeOpponentName}`
               }
             >
-              {mpOutcome === 'win' ? `🏆 You beat ${storeOpponentName}!`
-                : mpOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
+              {handOutcome === 'win' ? `🏆 You beat ${storeOpponentName}!`
+                : handOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
                 : `🤝 Tied with ${storeOpponentName}`}
             </Text>
           ) : null}
