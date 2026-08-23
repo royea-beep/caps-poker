@@ -158,23 +158,51 @@ Deno.serve(async (req) => {
     const cfg = await loadConfig(boardCount);
     const deltas = calculateChipDeltasCore(boardResults, seats.length, { potPerBoard: cfg.potPerBoard }, cfg.bonusPercent);
 
+    // MP-RECORDING 2026-08-23 — BOARDS DECIDE THE WIN, IN MULTIPLAYER AS IN SOLO.
+    //
+    // `result` used to be `chipDeltas[i] > 0 ? 'won' : 'lost'`, which made two problems. It was a
+    // two-branch boolean over a three-way outcome, so a break-even hand filed as a LOSS. And it
+    // decided from CHIPS while solo decides from BOARDS WON — two definitions of winning in one
+    // game, which is the split that produced the tie defect. There is now one definition.
+    //
+    // THE RULE, at any seat count:
+    //   A seat's boards-won is the number of boards it won OUTRIGHT (a board that itself tied
+    //   awards nobody). Let `max` be the highest boards-won across the seats. If exactly ONE seat
+    //   holds `max`, that seat is 'won' and every other seat is 'lost'. If TWO OR MORE share
+    //   `max`, each of those is 'tied' and every other seat is 'lost'.
+    //
+    // So a four-player 2/1/1/0 split has ONE winner and THREE losers — it is not a tie. A 2/2/0/0
+    // split is two ties and two losses. All-boards-tied makes every seat 'tied'. At two players
+    // this reduces exactly to solo's `playerWins > botWins ? win : < ? loss : tie`.
+    //
+    // CHIPS ARE UNAFFECTED. record_hand_net still settles from chipDeltas, zero-sum with the rake.
+    // This changes what the hand RECORD says, not who gets paid — and the two can legitimately
+    // disagree: a seat can take the most boards and still be net-negative once the COMPLETE bonus
+    // and pot splits are applied, so `result: 'won'` alongside a negative `chips_delta` is
+    // POSSIBLE AND CORRECT. Nothing reads the pair as a consistency check.
+    const boardsWonBySeat = seats.map((_, i) => boardResults.filter((b) => b.winnerIndex === i).length);
+    const maxBoardsWon = Math.max(...boardsWonBySeat);
+    const leaderCount = boardsWonBySeat.filter((n) => n === maxBoardsWon).length;
+
     // Write one hand_history row PER SEAT — including any seat that dropped. chips_delta is the
     // REAL NET from the shared arithmetic, not a display approximation.
     const rows = seats.map((s, i) => ({
       device_id: s.device_id,
       hand_number: handNo,
       chips_delta: deltas.chipDeltas[i],
-      boards_won: boardResults.filter((b) => b.winnerIndex === i).length,
+      boards_won: boardsWonBySeat[i],
       boards_total: boardCount,
       player_count: seats.length,
-      // hand_history_session_type_check allows sng/quick_poker/practice/custom only. Multiplayer
-      // hands were already filed as 'quick_poker' by the client, so the server keeps that label and
-      // the history stays continuous across the handover.
-      session_type: 'quick_poker',
-      // hand_history_result_check allows only won/lost/folded/timeout — there is no 'tie'. This
-      // mirrors the client's existing `p_won: netChips > 0`, so a break-even hand files as 'lost'
-      // exactly as it always has. chips_delta carries the truth; `result` is the coarse label.
-      result: deltas.chipDeltas[i] > 0 ? 'won' : 'lost',
+      // Multiplayer is now IDENTIFIABLE. It used to file as 'quick_poker', indistinguishable from
+      // solo, so nothing could answer "how many multiplayer hands were played" — the question that
+      // started this line of work. The session_type CHECK gained 'multiplayer' in the same deploy,
+      // and check_achievements was widened so MP wins keep crediting qp_win_1 / qp_win_10 exactly
+      // as they did while they were mislabelled.
+      session_type: 'multiplayer',
+      // 'tied' has existed in hand_history_result_check since 2026-08-23. The comment that used to
+      // sit here said there was no tie value; it was stale, and a stale comment is what credited a
+      // non-existent function in the first place.
+      result: boardsWonBySeat[i] < maxBoardsWon ? 'lost' : leaderCount > 1 ? 'tied' : 'won',
     }));
     await rest('hand_history', { method: 'POST', body: JSON.stringify(rows) });
 
