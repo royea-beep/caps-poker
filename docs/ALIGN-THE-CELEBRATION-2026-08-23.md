@@ -149,3 +149,27 @@ win as boards, and the tie-with-positive-chips case is asserted in **both** dire
 unlock, and a board win with a zero net must.
 
 **2,642 passed, 0 failed.**
+
+---
+
+## Final confirming run — and an unplanned control
+
+Six real four-player hands, chromium, with the analytics read off the wire from `game_ended`:
+
+| hand | boards | net | headline | overlay | win XP | analytics |
+|---|---|---:|---|---|---|---|
+| 0 | **1/2** | **+50** | **YOU WIN** | yes | yes | `win` |
+| 1 | **1/2** | **+50** | **TIE GAME** | **no** | **no** | **`tie`** |
+| 2 | 0/2 | −50 | YOU LOSE | no | no | `loss` |
+| 3 | **1/2** | **+50** | **TIE GAME** | **no** | **no** | **`tie`** |
+| 4 | 1/2 | +100 | YOU WIN | yes | yes | `win` |
+| 5 | 0/2 | −50 | YOU LOSE | no | no | `loss` |
+
+`all sampled hands agree across headline / overlay / XP / analytics`
+
+**Hands 0, 1 and 3 are the argument for the whole sprint.** All three show `boards 1/2` and `net
++50` — identical on both counters — yet 0 is a **win** and 1 and 3 are **ties**. The difference is
+that hand 0's other board *itself tied* and awarded nobody, so one board outright beat zero; in 1
+and 3 a bot took it. **Chips cannot tell those three hands apart. Boards can.** Under the old rule
+all three fired the win overlay and credited win XP; now each is celebrated as what it was.
+
