@@ -726,3 +726,30 @@ winner `wins 2` and `elo +40`, the loser `elo −20`.
 `pg_proc`, Edge Functions, triggers, views, cron, the client — and say **which** you checked. A
 name that differs by a hyphen, a suffix (`_d`), or a namespace is the normal case in this codebase,
 not the exception.
+
+---
+
+## 9. A value can be PRESENT and EMPTY
+
+**Cited case, 2026-08-23 — it cost three sprints.**
+
+Multiplayer printed the bare hand category ("Two Pair") where solo printed the rank-specific label
+("Two Pair, Jacks and Sixes"). Two sprints walked the payload chain link by link looking for a
+**missing field**, and each one came back clean — correctly. The field was never missing. It was
+present, correctly spelled, correctly typed, and held **`[]`**.
+
+`playerBestCards` had length **5** in solo and length **0** in multiplayer, on the same component
+with the same sixteen props. A key-existence check, a spelling check and a type check all pass on an
+empty array.
+
+**Test:** when a check for a missing field comes back clean and the defect is still there, check the
+**value**, not the shape. Read what the component was actually handed — for React, the
+`__reactFiber$…` key on the rendering DOM node exposes `memoizedProps` in production — and compare
+the working case against the broken one at the *same* point. Lengths and contents, not just keys.
+
+**Corollary, from the same case:** the cause was **two** explicit literals in series, one on the
+server and one on the client, each dropping the same field. Fixing either alone changes nothing
+observable, and inspecting either alone shows a function that looks reasonable. When a payload
+crosses a process boundary, **every** rebuild of it is a suspect — not just the last one before the
+render.
+
