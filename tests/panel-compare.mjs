@@ -54,6 +54,12 @@ const OUT = path.resolve(process.env.OUT_DIR || 'panel-compare', LABEL);
 const PORT = Number(process.env.PORT || 8801);
 const SEED = Number(process.env.SEED || 20260827);
 const CARD_BACK = process.env.CARD_BACK || 'classic';
+// SETTLE TIME. 4500ms is enough on Chromium. WebKit needed longer for the deal animation to
+// finish filling the hand tray — the 393/2P arrangement capture caught it with 2 of 16 cards
+// dealt, which showed up as a card-face share of 6.67% against Chromium's 14.37% while every
+// other cell agreed within 0.7pp. The board panels were fully painted either way, so the panel
+// measurement was never affected, but a half-dealt capture is not something to leave in place.
+const SETTLE = Number(process.env.CAPS_SETTLE || 4500);
 fs.mkdirSync(OUT, { recursive: true });
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
@@ -124,7 +130,7 @@ for (const W of [393, 320]) {
     page.on('pageerror', (e) => errs.push(String(e).slice(0, 140)));
     await page.goto(`http://localhost:${PORT}/game?practice=true&players=${players}&fresh=1`,
       { waitUntil: 'load', timeout: 120000 });
-    await page.waitForTimeout(4500);
+    await page.waitForTimeout(SETTLE);
 
     // Rule 14a — prove the page is painting before believing a single pixel read off it.
     const painted = await page.evaluate(async () => {
