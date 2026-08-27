@@ -765,7 +765,21 @@ export const FELT_GRADIENT: Record<'classic' | 'fiveo' | 'streetStencil', readon
   // dark and tasteful but actually reads as green felt through the 0.55 panels. The "buried under
   // rgb(10,10,10)" the panel saw was navigator/WebContainer chrome BEHIND the felt (contentStyle
   // #0a0a0a + WebContainer #050f0a gutter), not a layer over it — the felt was simply too dark.
-  classic:       ['#10281A', '#0E2418'], // top rgb(16,40,26) -> bottom rgb(14,36,24), visible green felt
+  // SHIP-THE-GREEN 2026-08-27. Roye picked a green felt off a side-by-side panel. The surface
+  // already existed and was already green — it was simply too dark to read as one (measured on
+  // the live /game capture: the lifted table top came out rgb(21,51,41)). So this raises the
+  // green rather than inventing a layer.
+  //
+  // THE VALUES ARE TOKENS FOR THE TOKEN, NOT FOR THE SCREEN. BoardSurface lifts the base
+  // toward white (0.10 top / 0.055 bottom at full intensity) so the table top catches more
+  // light than the room, so what SHIPS is the lifted result: top rgb(26,70,44), which is the
+  // lightness Roye chose. Writing his rgb(21,71,52) here would have rendered lighter again.
+  //
+  // HUE IS DELIBERATE AND IS NOT HIS LITERAL VALUE. The winner cue's mint is #4FD6A8 at hue
+  // 159.6. This felt renders at 144.5 — 15 degrees away, exactly where today's felt already
+  // sits. His nominal rgb(21,71,52) is hue 157.2, i.e. 2.4 degrees from mint, which would put
+  // the FIELD MARKER on its own background. Same lightness, hue held where it was.
+  classic:       ['#003115', '#062E18'], // -> lifted top rgb(26,70,44) / bottom rgb(20,57,37)
   fiveo:         ['#28101A', '#0C070A'], // dark maroon felt (harmonises with fiveo's #5A1520 lean) — UNTOUCHED
   streetStencil: ['#4E4E54', '#42424A'], // dormant — concrete-grey, matches its existing bg/feltLight
 };

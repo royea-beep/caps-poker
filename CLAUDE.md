@@ -30,7 +30,12 @@
 - Version: 2.7.0 | Build: B458 (building)
 - Tests: 2,474/2,474
 - 56 tables, 127 RPCs, 16 Edge Functions
-- Visual: maroon felt #5C1818, warm cards #FFFEF8, red/black suits
+- Visual: green felt — `FELT_GRADIENT.classic` `['#003115','#062E18']`, which BoardSurface
+  lifts to rgb(26,70,44) for the table top. Card face **#FCFAF3**, red/black suits.
+  (Was "maroon felt #5C1818, warm cards #FFFEF8" — wrong on BOTH halves. That line was
+  ADDED in 3ed2b8a on 2026-08-22, the same commit that introduced the paint-theme system
+  and set cardFace to #FCFAF3 — so it described the app it was replacing and was false the
+  day it was written. The app has never rendered #FFFEF8 since.)
 - 5 tabs: בית/שחק/חברים/כוסות/פרופיל
 - UI language: English (hand labels English-only since 2026-06-17; caps_language pref currently not applied)
 - Auth: Anonymous + Google login prompt after game 3-5

@@ -45,7 +45,17 @@ const T = {
   textMuted: '#9aa19b',
 };
 
-const FELTS = [
+/**
+ * The surfaces under comparison. CAPS_FELTS overrides them as `id:name:#hex` triples separated
+ * by `|`, so a follow-up question — "does this green separate the mint cue better than that
+ * one?" — is a different invocation rather than a different file. Defaults are the original three.
+ */
+const parseFelts = (spec) => spec.split('|').map((chunk) => {
+  const [id, name, felt] = chunk.split(':');
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(felt.slice(i, i + 2), 16));
+  return { id, name, felt, rgb: `rgb(${r},${g},${b})` };
+});
+const FELTS = process.env.CAPS_FELTS ? parseFelts(process.env.CAPS_FELTS) : [
   { id: 'A', name: 'Deep green',    felt: '#154734', rgb: 'rgb(21,71,52)' },
   { id: 'B', name: 'Deep burgundy', felt: '#4A1A22', rgb: 'rgb(74,26,34)' },
   { id: 'C', name: 'Near-black, defined', felt: '#1C1C22', rgb: 'rgb(28,28,34)' },

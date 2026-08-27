@@ -95,6 +95,22 @@ export function BoardSurface({ children, visualTheme, screenW, railColor, intens
   // room around it, so this is the physically honest direction as well as the legible one. The
   // lift is small and derived from the theme's own felt, so no second palette is introduced and
   // every theme stays internally consistent.
+  // SHIP-THE-GREEN 2026-08-27 — THE LIFT WAS RAISED TO 0.22 AND PUT BACK. The value step is
+  // genuinely too small: measured on a real export of /game, the felt reads 1.00:1 against the
+  // page ground just outside the rail. The cause is structural — the SCREEN ROOT paints the same
+  // FELT_GRADIENT, so raising the token raises room and table together, and the lift is the only
+  // knob that moves one without the other.
+  //
+  // SO IT WAS TRIED, AND MEASURED, AND IT DID NOT WORK. Locating the felt by DIFFING two real
+  // renders (the changed pixels ARE the felt, which avoids guessing at coordinates), 0.10 -> 0.22
+  // moved it from rgb(16,22,22) to rgb(19,26,26) — about 4/255 — and the edge from 1.00 to 1.03.
+  // The analytic prediction was rgb(56,94,72); what ships is nothing like it, because the felt is
+  // almost never bare: translucent board panels (#1C1F268C, ~55%) plus their shadows and this
+  // surface's own inner shadow sit over it. Paying card 10.28 -> 7.02 of contrast headroom for
+  // ~1% of edge is a bad trade, so the original values stand.
+  //
+  // THE EDGE IS NOT A COLOUR PROBLEM. Until the panels over the felt change, no felt value makes
+  // the table read as a table. That is a design call, not a token swap.
   const felt: readonly [string, string] = muted
     ? [lift(base[0], 0.055), lift(base[1], 0.03)]
     : [lift(base[0], 0.10), lift(base[1], 0.055)];

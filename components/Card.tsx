@@ -480,7 +480,13 @@ function CardComponent({
     // failed `tsc` from the day it landed. It is type-only and erased before emit, so removing
     // it changes the colour, the width and the rendered pixel not at all.
     ? { borderWidth: 2, borderColor: OBSIDIAN.mint }                         // the field — mint
-    : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.22)' as const };         // neutral
+    // NEUTRAL — the third state of the winner cue. Was rgba(0,0,0,0.22), which composites over
+    // the card face #FCFAF3 to rgb(197,195,190): 1.69:1 AGAINST THE CARD IT IS DRAWN ON, i.e.
+    // not legible, on every felt including the one shipping before this change. 0.45 gives
+    // rgb(139,138,134) and 3.31:1 — clear with margin rather than sitting on the 3.00 line,
+    // which 0.42 would have. Still black, still 1px, so the WIDTH channel (3 gold / 2 mint /
+    // 1 neutral) is untouched and the cue stays a width in greyscale.
+    : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.45)' as const };         // neutral
 
   if (!card) {
     return (
