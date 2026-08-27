@@ -25,6 +25,20 @@ const INTERACTIVE_TUTORIAL_KEY = 'has_seen_interactive_tutorial';
  *  A baseline must show the app, not its first run. */
 const GAMES_PLAYED_KEY = 'caps_games_played';
 
+/** app/(tabs)/index.tsx's GUIDED_FORCED_KEY, and the reason seeding the counter alone did not
+ *  work. game.tsx computes `guided = played === 0 || guidedVal === 'true'` — so this flag WINS
+ *  over any games-played value.
+ *
+ *  It gets in by an unhappy accident: `tests/bootstrap-storage-state.js` visits the live site as a
+ *  BRAND-NEW visitor to capture an "onboarded" state, and home's first-run effect writes
+ *  guidedModeForced='true' while it is there. The bootstrap then saves that flag into
+ *  caps-onboarded.json, and this hook faithfully replays it into every scenario — so the state
+ *  that exists to represent a settled player was carrying a first-run flag the whole time.
+ *
+ *  DELETED rather than set to 'false': game.tsx tests `=== 'true'`, but the key's absence is what
+ *  an onboarded user actually has, and game.tsx itself removes it once consumed. */
+const GUIDED_FORCED_KEY = 'guidedModeForced';
+
 module.exports = async (page, _scenario, _viewport, _isReference, _browserContext) => {
   let entries = {};
   try {
@@ -45,6 +59,8 @@ module.exports = async (page, _scenario, _viewport, _isReference, _browserContex
   // THE FIRST-HAND COACHING TIPS — the /game equivalent, and a separate key. See the constant
   // above: seeding the tutorial key alone left /game photographing a toast over a dimmed screen.
   entries[GAMES_PLAYED_KEY] = '25';
+  // And drop the first-run flag the bootstrap picked up, which overrides the counter above.
+  delete entries[GUIDED_FORCED_KEY];
 
   await page.evaluateOnNewDocument((kv) => {
     try {
