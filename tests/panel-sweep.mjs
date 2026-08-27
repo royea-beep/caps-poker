@@ -18,10 +18,21 @@
  *
  *   node tests/panel-sweep.mjs
  */
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+
+// SHIP-V1 2026-08-27 — SECOND ENGINE. Handoffs 108-113 all said WebKit was unavailable because
+// "its download host closes the connection". That was WRONG: the download always succeeded and it
+// was the host DEPENDENCY check that failed. `npx playwright install-deps webkit` fixes it and
+// WebKit 26.4 launches. CAPS_ENGINE=webkit selects it; Chromium stays the default so every earlier
+// number remains comparable. executablePath is Chromium-specific, so it is only passed to Chromium.
+const ENGINE = process.env.CAPS_ENGINE === 'webkit' ? webkit : chromium;
+const LAUNCH = process.env.CAPS_ENGINE === 'webkit'
+  ? { headless: true }
+  : { headless: true, ...(process.env.CAPS_BROWSER_PATH ? { executablePath: process.env.CAPS_BROWSER_PATH } : {}) };
+
 
 const VARIANTS = (process.env.VARIANTS || 'P0,P0S,V1,V2,V3').split(',');
 const MIN_FRAC = 0.35;
@@ -109,15 +120,12 @@ const seedState = (() => {
   return JSON.stringify(st);
 })();
 
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.CAPS_BROWSER_PATH ? { executablePath: process.env.CAPS_BROWSER_PATH } : {}),
-});
+const browser = await ENGINE.launch(LAUNCH);
 
 const all = {};
 let port = PORT0;
 for (const v of VARIANTS) {
-  const server = await serve(path.resolve(`web-${v.toLowerCase()}-dist`), ++port);
+  const server = await serve(path.resolve(process.env[`DIST_${v}`] || `web-${v.toLowerCase()}-dist`), ++port);
   all[v] = {};
   for (const W of [393, 320]) {
     for (const players of [2, 3, 4]) {

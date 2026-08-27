@@ -32,10 +32,21 @@
  *
  *   DIST=web-p0-dist LABEL=P0 node tests/panel-compare.mjs
  */
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+
+// SHIP-V1 2026-08-27 — SECOND ENGINE. Handoffs 108-113 all said WebKit was unavailable because
+// "its download host closes the connection". That was WRONG: the download always succeeded and it
+// was the host DEPENDENCY check that failed. `npx playwright install-deps webkit` fixes it and
+// WebKit 26.4 launches. CAPS_ENGINE=webkit selects it; Chromium stays the default so every earlier
+// number remains comparable. executablePath is Chromium-specific, so it is only passed to Chromium.
+const ENGINE = process.env.CAPS_ENGINE === 'webkit' ? webkit : chromium;
+const LAUNCH = process.env.CAPS_ENGINE === 'webkit'
+  ? { headless: true }
+  : { headless: true, ...(process.env.CAPS_BROWSER_PATH ? { executablePath: process.env.CAPS_BROWSER_PATH } : {}) };
+
 
 const DIR = path.resolve(process.env.DIST || 'web-p0-dist');
 const LABEL = process.env.LABEL || 'P0';
@@ -82,10 +93,7 @@ const seedState = (() => {
   return JSON.stringify(st);
 })();
 
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.CAPS_BROWSER_PATH ? { executablePath: process.env.CAPS_BROWSER_PATH } : {}),
-});
+const browser = await ENGINE.launch(LAUNCH);
 
 const results = [];
 for (const W of [393, 320]) {
