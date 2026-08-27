@@ -1,0 +1,181 @@
+{
+  "_README": [
+    "TEN VIDEOS. Five gameplay, five development. English, global — Roye's ruling.",
+    "",
+    "NO STORE DATE ANYWHERE. Every call to action is 'play now in your browser', because a",
+    "'coming soon' that sits for two months reads as a stalled project. Grep this file for",
+    "'App Store', 'Google Play', 'coming soon' or 'soon' and you should find nothing.",
+    "",
+    "THE DEV FOOTAGE IS THE CURRENT BUILD, NOT THE BUG. Every one of these bugs is fixed, so",
+    "none of them can be filmed. The captions tell what went wrong over footage of the app as it",
+    "is today. That is stated here so nobody later mistakes the B-roll for a reproduction — and",
+    "no caption claims to be showing the defect.",
+    "",
+    "EVERY STORY IS TRUE AND IS IN vamos_handoffs. They are not dramatised: the numbers (four",
+    "months, 3140 codes, 8 vs 6, 0/36) are the numbers from the reports.",
+    "",
+    "Timings are seconds. cut.mjs REFUSES a spec whose first cue starts after 0.5s or whose",
+    "duration exceeds 60s, so the research's two hard rules cannot be forgotten here."
+  ],
+  "videos": [
+    {
+      "id": "play-autoplace",
+      "kind": "gameplay",
+      "source": "autoplace",
+      "start": 0.5,
+      "duration": 9.0,
+      "payoff": "Sixteen cards land across four boards in a single tap.",
+      "caption": "Four boards. Sixteen cards. One tap. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 2.6, "text": "16 cards.\nOne tap." },
+        { "t": 3.0, "d": 3.0, "text": "Every board filled\nat once" },
+        { "t": 6.0, "d": 3.0, "text": "Play free\nin your browser" }
+      ]
+    },
+    {
+      "id": "play-reveal",
+      "kind": "gameplay",
+      "source": "reveal",
+      "start": 3.0,
+      "duration": 17.0,
+      "payoff": "Four boards resolve one after another — four results from one hand.",
+      "caption": "One hand. Four boards. Four separate results. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 2.8, "text": "One hand.\nFour boards." },
+        { "t": 3.2, "d": 3.2, "text": "Each one resolves\nseparately" },
+        { "t": 7.0, "d": 3.4, "text": "Win some.\nLose some." },
+        { "t": 11.0, "d": 3.2, "text": "That is the whole\ngame" },
+        { "t": 14.0, "d": 3.0, "text": "Play free\nin your browser" }
+      ]
+    },
+    {
+      "id": "play-win",
+      "kind": "gameplay",
+      "source": "win",
+      "start": 5.0,
+      "duration": 17.0,
+      "payoff": "All four boards taken — the app's top celebration tier.",
+      "caption": "Taking one board is fine. Taking all four is the whole point. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 2.8, "text": "Take one board?\nFine." },
+        { "t": 3.2, "d": 3.2, "text": "Take all four?" },
+        { "t": 7.0, "d": 4.0, "text": "Gold border =\nthe cards that won" },
+        { "t": 11.5, "d": 3.2, "text": "Four for four" },
+        { "t": 14.0, "d": 3.0, "text": "Play free\nin your browser" }
+      ]
+    },
+    {
+      "id": "play-tie",
+      "kind": "gameplay",
+      "source": "tie",
+      "start": 5.0,
+      "duration": 17.0,
+      "payoff": "Two boards each — a tie, shown as a tie.",
+      "caption": "Two boards each. Nobody wins. That is a real result, not an error. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 2.8, "text": "Two boards each." },
+        { "t": 3.2, "d": 3.4, "text": "Nobody wins" },
+        { "t": 7.2, "d": 3.8, "text": "A tie is a result,\nnot a bug" },
+        { "t": 11.4, "d": 3.4, "text": "It took us a while\nto agree" },
+        { "t": 14.0, "d": 3.0, "text": "Play free\nin your browser" }
+      ]
+    },
+    {
+      "id": "play-felt",
+      "kind": "gameplay",
+      "source": "felt",
+      "start": 0.0,
+      "duration": 9.0,
+      "payoff": "The playing surface, four days old, measured rather than eyeballed.",
+      "caption": "We measured this green instead of arguing about it. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 2.8, "text": "This green is\nfour days old" },
+        { "t": 3.2, "d": 3.4, "text": "We measured it\ninstead of arguing" },
+        { "t": 6.0, "d": 3.0, "text": "Play free\nin your browser" }
+      ]
+    },
+
+    {
+      "id": "dev-signin",
+      "kind": "development",
+      "source": "win",
+      "start": 0.0,
+      "duration": 20.0,
+      "payoff": "The sign-in button was invisible for four months because an anonymous player IS a user.",
+      "caption": "The sign-in button was hidden for four months. The check was 'is there a user'. Anonymous players are users. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 3.0, "text": "Our sign-in button\nwas invisible" },
+        { "t": 3.4, "d": 2.6, "text": "For four months" },
+        { "t": 6.4, "d": 3.6, "text": "The code asked:\n\"is there a user?\"" },
+        { "t": 10.4, "d": 4.0, "text": "An anonymous player\nIS a user" },
+        { "t": 14.8, "d": 2.6, "text": "So it always\nsaid yes" },
+        { "t": 17.8, "d": 2.1, "text": "Fixed." }
+      ]
+    },
+    {
+      "id": "dev-invite",
+      "kind": "development",
+      "source": "tie",
+      "start": 0.0,
+      "duration": 20.0,
+      "payoff": "3,140 invite codes existed and not one could be redeemed — 8 characters issued, 6 accepted.",
+      "caption": "We issued 3,140 invite codes. Zero of them worked. The database made 8 characters. Every screen accepted 6. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 3.2, "text": "We issued 3,140\ninvite codes" },
+        { "t": 3.6, "d": 2.8, "text": "None of them\nworked" },
+        { "t": 6.8, "d": 3.6, "text": "The database made\n8 characters" },
+        { "t": 10.8, "d": 3.6, "text": "Every screen\naccepted 6" },
+        { "t": 14.8, "d": 3.0, "text": "3,140 codes.\nZero redeemable." },
+        { "t": 18.2, "d": 1.7, "text": "Fixed." }
+      ]
+    },
+    {
+      "id": "dev-achievements",
+      "kind": "development",
+      "source": "reveal",
+      "start": 0.0,
+      "duration": 18.0,
+      "payoff": "The achievements screen could only ever say 0/36 — server and client never agreed on a field name.",
+      "caption": "Our achievements screen could only ever say 0 of 36. The server and the app never agreed what to call the field. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 3.2, "text": "Our achievements\nscreen said 0/36" },
+        { "t": 3.6, "d": 2.8, "text": "To everyone" },
+        { "t": 6.8, "d": 3.4, "text": "Always" },
+        { "t": 10.6, "d": 3.6, "text": "Server and app\nnever agreed" },
+        { "t": 14.6, "d": 3.2, "text": "on one\nfield name" }
+      ]
+    },
+    {
+      "id": "dev-wcag",
+      "kind": "development",
+      "source": "win",
+      "start": 4.0,
+      "duration": 18.0,
+      "payoff": "The contrast test was measuring a screen dimmed to 60% — for weeks.",
+      "caption": "Our accessibility test measures colour contrast. It was running on a screen dimmed to 60% the whole time. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 3.4, "text": "We have a test that\nmeasures contrast" },
+        { "t": 3.8, "d": 3.4, "text": "It was running on\na dimmed screen" },
+        { "t": 7.6, "d": 3.4, "text": "A tutorial overlay\nfaded everything" },
+        { "t": 11.4, "d": 3.6, "text": "The contrast test.\nOn a faded screen." },
+        { "t": 14.6, "d": 3.4, "text": "Nobody noticed\nfor weeks" }
+      ]
+    },
+    {
+      "id": "dev-tie",
+      "kind": "development",
+      "source": "tie",
+      "start": 4.0,
+      "duration": 18.0,
+      "payoff": "A tie told BOTH players they had lost, because the code only knew win and not-win.",
+      "caption": "When a hand tied, we told both players they lost. The code knew 'win' and 'not win'. A tie is neither. Play free in your browser.",
+      "cues": [
+        { "t": 0.0, "d": 3.2, "text": "When a hand tied" },
+        { "t": 3.6, "d": 3.4, "text": "we told BOTH players\nthey lost" },
+        { "t": 7.4, "d": 3.6, "text": "The code knew win\nand not-win" },
+        { "t": 11.4, "d": 3.4, "text": "A tie is neither" },
+        { "t": 14.4, "d": 3.6, "text": "Now it is its own\nresult" }
+      ]
+    }
+  ]
+}
