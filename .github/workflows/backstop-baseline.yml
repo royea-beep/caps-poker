@@ -13,6 +13,14 @@ name: Backstop Baseline (Linux)
 
 on:
   workflow_dispatch:
+    inputs:
+      filter:
+        description: >-
+          Scenario label to recapture, e.g. `home`. Leave empty to recapture ALL of them.
+          Regenerating every baseline at once forces a reviewer to re-approve screens that did not
+          change, so a targeted recapture is the normal case and the full sweep is the exception.
+        required: false
+        default: ''
 
 jobs:
   rebaseline:
@@ -45,7 +53,15 @@ jobs:
       - name: Capture BackstopJS reference bitmaps
         env:
           CAPS_URL: 'https://caps.ftable.co.il'
-        run: npx backstop reference
+          FILTER: ${{ inputs.filter }}
+        run: |
+          if [ -n "$FILTER" ]; then
+            echo "Recapturing only: $FILTER"
+            npx backstop reference --filter="$FILTER"
+          else
+            echo "Recapturing ALL scenarios"
+            npx backstop reference
+          fi
 
       - name: Open PR with refreshed baselines
         uses: peter-evans/create-pull-request@v6
