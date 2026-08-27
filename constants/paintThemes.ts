@@ -527,8 +527,27 @@ export const currentPaint = {
       // of content; chrome is exactly what it is.
       boardSlotFillSelected: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
       boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
-      boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
-      boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
+      // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75. THE TOKEN IS NOT THE PIXEL HERE, and the gap is
+      // not antialiasing. EmptySlotAnimated renders the WHOLE slot at opacity 0.6 - a
+      // useSharedValue(0.6) initial belonging to a pulse that never runs, because KILL_Board is a
+      // hardcoded true from the unfinished 2026-03 crash bisect. So the border composites over
+      // the 0.045 fill (-> 0.3315) and is then MULTIPLIED BY 0.6, landing at an effective 0.199.
+      // Predicted rgb(70,96,83); measured off the render rgb(68,95,82). That is 1.73:1 against
+      // the fill it encloses and 1.82:1 against the panel outside it - not the 2.59 previously
+      // reported, which was an analytic composite against one neighbour and overstated the real
+      // contrast by about 40%.
+      // 0.75 measures 3.70 vs fill and 3.87 vs panel on the real render. Swept, not solved on
+      // paper: width and border-style do not move the ratio at all (they change how many pixels
+      // the line covers, not their colour), so alpha was the only lever.
+      // ⚠️ THIS VALUE IS CALIBRATED AGAINST THE 0.6 MULTIPLIER. If KILL_Board is ever flipped,
+      // the pulse runs 0.72<->1.0 and this outline paints far brighter than intended, and pulses.
+      // Fix the dead pulse and this comes back down - see the handoff.
+      boardSlotDash: 'rgba(255,255,255,0.75)',     // resting outline
+      // Raised with the resting outline above, and ONLY to keep the order intact: at resting 0.75
+      // a 0.72 "active" would have been DIMMER than the resting state it is supposed to escalate
+      // from. Active is also solid and 1.5px against resting's dashed 1px, so the step does not
+      // rest on alpha alone.
+      boardSlotDashActive: 'rgba(255,255,255,0.95)', // the invitation, when a card is in hand
       boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
       boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
@@ -602,8 +621,27 @@ export const currentPaint = {
       // of content; chrome is exactly what it is.
       boardSlotFillSelected: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
       boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
-      boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
-      boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
+      // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75. THE TOKEN IS NOT THE PIXEL HERE, and the gap is
+      // not antialiasing. EmptySlotAnimated renders the WHOLE slot at opacity 0.6 - a
+      // useSharedValue(0.6) initial belonging to a pulse that never runs, because KILL_Board is a
+      // hardcoded true from the unfinished 2026-03 crash bisect. So the border composites over
+      // the 0.045 fill (-> 0.3315) and is then MULTIPLIED BY 0.6, landing at an effective 0.199.
+      // Predicted rgb(70,96,83); measured off the render rgb(68,95,82). That is 1.73:1 against
+      // the fill it encloses and 1.82:1 against the panel outside it - not the 2.59 previously
+      // reported, which was an analytic composite against one neighbour and overstated the real
+      // contrast by about 40%.
+      // 0.75 measures 3.70 vs fill and 3.87 vs panel on the real render. Swept, not solved on
+      // paper: width and border-style do not move the ratio at all (they change how many pixels
+      // the line covers, not their colour), so alpha was the only lever.
+      // ⚠️ THIS VALUE IS CALIBRATED AGAINST THE 0.6 MULTIPLIER. If KILL_Board is ever flipped,
+      // the pulse runs 0.72<->1.0 and this outline paints far brighter than intended, and pulses.
+      // Fix the dead pulse and this comes back down - see the handoff.
+      boardSlotDash: 'rgba(255,255,255,0.75)',     // resting outline
+      // Raised with the resting outline above, and ONLY to keep the order intact: at resting 0.75
+      // a 0.72 "active" would have been DIMMER than the resting state it is supposed to escalate
+      // from. Active is also solid and 1.5px against resting's dashed 1px, so the step does not
+      // rest on alpha alone.
+      boardSlotDashActive: 'rgba(255,255,255,0.95)', // the invitation, when a card is in hand
       boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
       boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder

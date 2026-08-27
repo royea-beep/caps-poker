@@ -47,7 +47,11 @@ const T = {
   backClassic: '#18181c', // cardBacks.ts CLASSIC.bg — THE DEFAULT
   backSlate: '#4A5058',   // cardBacks.ts SLATE.bg — purchasable
   resultsSurface: '#161922', // paintThemes:217 — what the gold cue actually sits on
-  slotDash: 0.30,         // paintThemes boardSlotDash, white
+  // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75. NOTE the analytic row below is an UPPER BOUND and not
+  // what a player sees: EmptySlotAnimated renders the whole slot at opacity 0.6 (a dead pulse's
+  // initial), so the painted line is ~0.6x this composite. tests/slot-probe.mjs reads the real
+  // pixel and its two real neighbours; that is the number to quote.
+  slotDash: 0.75,         // paintThemes boardSlotDash, white
   neutralAlpha: 0.45,     // Card.tsx:483, black, over the CARD FACE
 };
 

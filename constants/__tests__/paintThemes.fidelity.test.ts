@@ -356,8 +356,14 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     // Pins follow the ship; do not revert them to mint.
     boardSlotFillSelected: 'rgba(255,255,255,0.10)',
     boardSlotFill: 'rgba(255,255,255,0.045)',
-    boardSlotDash: 'rgba(255,255,255,0.30)',
-    boardSlotDashActive: 'rgba(255,255,255,0.72)',
+    // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75 and 0.72 -> 0.95, by design. The slot renders at
+    // opacity 0.6 (a dead pulse's initial value, KILL_Board being hardcoded true), so 0.30
+    // composited to an effective 0.199 and PAINTED 1.73:1 against the fill it encloses - not the
+    // 2.59 previously reported analytically. 0.75 paints 3.70 vs fill / 3.87 vs panel. Active
+    // rose with it purely to keep active brighter than resting. These pins exist so the
+    // compensation cannot be "tidied" back down without someone reading why it is there.
+    boardSlotDash: 'rgba(255,255,255,0.75)',
+    boardSlotDashActive: 'rgba(255,255,255,0.95)',
     boardCardInk: '#1B1B24',
     boardAutoBg: 'rgba(79,214,168,0.10)',
     boardAutoBorder: 'rgba(79,214,168,0.35)',
