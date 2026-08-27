@@ -535,11 +535,22 @@ export const currentPaint = {
       boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
       boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
 
-      // ── PANEL-FELT batch: board panel -> ~0.55 alpha (0x8C) so the root felt reads through
-      //    the play area. fallback -> transparent so native's fallback+gradient stack does NOT
-      //    double the opacity (the gradient is the sole 0.55 paint on both native and web). ──
-      boardPanelTop: '#1C1F268C',                  // OBSIDIAN.bgTop @ ~0.55
-      boardPanelBottom: '#1012188C',               // OBSIDIAN.bgBottom @ ~0.55
+      // ── SHIP-V1 2026-08-27: 0x8C (~0.55) -> 0x40 (~0.25). THIS IS A LEGIBILITY FIX, not a look
+      //    change. At 0x8C the panel rendered rgb(23,33,33) and the DEFAULT card back (cardBacks
+      //    CLASSIC #18181c) sits on it at 1.08:1 — SIX steps of grey out of 255. Face-down cards
+      //    were all but invisible on the surface they rest on, on the back every player has. 0x40
+      //    renders rgb(23,51,37) and takes that to 1.30:1, while the PURCHASED slate back stays
+      //    ahead at 1.68:1 — the two options measured below it (0x00 and a lighter tint) flattened
+      //    slate's advantage to 1.03x and then inverted it to 0.61x, i.e. the free back beating the
+      //    one people pay for.
+      //    CARD FACE 15.76 -> 13.09, still well clear of the 10.28 floor. Chosen over full
+      //    transparency because each board stays its own recessed region: in a game whose whole
+      //    idea is four separate boards, melting them into one surface works against the product.
+      //    THE ALPHA HERE IS NOW THE ALPHA THAT RENDERS. It was not before — Board.tsx painted this
+      //    gradient a second time on web, so 0.55 composited to 0.80. That duplicate is gone.
+      //    fallback stays transparent so native's fallback+gradient stack does not double it. ──
+      boardPanelTop: '#1C1F2640',                  // OBSIDIAN.bgTop @ ~0.25
+      boardPanelBottom: '#10121840',               // OBSIDIAN.bgBottom @ ~0.25
       boardPanelFallback: 'rgba(22,25,34,0)',      // was #161922 — alpha 0 (transparent) so alpha isn't doubled on native; kept as an rgba() colour, not 'transparent', for the colour-invariant guard
       boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
       boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
@@ -603,9 +614,11 @@ export const currentPaint = {
       //    panel reads OBSIDIAN.* (theme-independent — fiveo has never had its own
       //    panel colour) and the other three are raw literals. Both themes render
       //    these exact pixels today, so pinning them equal is a proof, not a choice.
-      // PANEL-FELT batch: fiveo panel matches classic — ~0.55 alpha + transparent fallback.
-      boardPanelTop: '#1C1F268C',                  // OBSIDIAN.bgTop @ ~0.55
-      boardPanelBottom: '#1012188C',               // OBSIDIAN.bgBottom @ ~0.55
+      // SHIP-V1 2026-08-27: fiveo tracks classic, as it always has — the panel reads OBSIDIAN.*
+      // and fiveo has never had its own panel colour, so pinning them equal stays a proof rather
+      // than a choice. ~0.25 alpha + transparent fallback. Reasoning in the classic block above.
+      boardPanelTop: '#1C1F2640',                  // OBSIDIAN.bgTop @ ~0.25
+      boardPanelBottom: '#10121840',               // OBSIDIAN.bgBottom @ ~0.25
       boardPanelFallback: 'rgba(22,25,34,0)',      // was #161922 — alpha 0 (transparent) so alpha isn't doubled on native; kept as an rgba() colour, not 'transparent', for the colour-invariant guard
       boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
       boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"

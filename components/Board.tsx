@@ -656,8 +656,19 @@ export default function Board({
         // boardAccent: per-board IDENTITY (PRD.board.accent), not a theme colour.
         { backgroundColor: theme.boardPanelFallback, borderColor: boardAccent },
         boardIdentityGlow(boardAccent),
+        // SHIP-V1 2026-08-27 — THE `background` LINE IS GONE, AND ONLY IT. It painted the panel
+        // gradient a SECOND time on web, on top of the absolute-fill <LinearGradient> below, at a
+        // different angle (CSS 165deg vs the child's 131.6deg as the browser resolves its
+        // start/end). Both carried the token's ~0.55 alpha, so web composited to
+        // 1-(1-0.55)^2 = 0.80 while native — which has no CSS layer at all — painted the single
+        // 0.55 the token asks for. Measured off the live DOM, not inferred: the container and its
+        // first child both reported a background-image, and the rendered panel moved
+        // rgb(23,33,33) -> rgb(23,41,35) when this line was removed with nothing else changed.
+        // The child is the layer that stays because it is the one native already uses, so
+        // deleting this one makes web MATCH native rather than inventing a third behaviour.
+        // boxShadow is kept exactly as it was: it is web's stand-in for the native elevation and
+        // has nothing to do with the panel fill.
         Platform.OS === 'web' && {
-          background: `linear-gradient(165deg, ${theme.boardPanelTop} 0%, ${theme.boardPanelBottom} 100%)`,
           boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
         } as any,
         // S76-BOARD-ROUTING — colour-only overrides. shadowColor is guarded to iOS to
