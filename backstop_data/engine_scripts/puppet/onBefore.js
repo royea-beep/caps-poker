@@ -15,6 +15,16 @@ const STATE_PATH = path.join(__dirname, '..', '..', '..', 'tests', 'caps-onboard
  *  runs in plain Node under BackstopJS and cannot import from the TSX module. */
 const INTERACTIVE_TUTORIAL_KEY = 'has_seen_interactive_tutorial';
 
+/** app/game.tsx's first-hand coaching tips (its GAMES_PLAYED_KEY). A SECOND overlay, gated on a
+ *  DIFFERENT key from the tutorial above — seeding only that one is not enough, which is exactly
+ *  how this was missed. The tips render a toast AND dim the whole screen: in the 2026-08-27
+ *  recapture the /game reference came back with "These are your cards. Place 4 on each board."
+ *  frozen in and every colour behind a ~0.61 veil — the card face photographed rgb(156,155,150)
+ *  where the token is #FCFAF3. That baseline would have made a dimmed, coached screen the
+ *  definition of a correct game board, the same way the home baseline once froze in a modal.
+ *  A baseline must show the app, not its first run. */
+const GAMES_PLAYED_KEY = 'caps_games_played';
+
 module.exports = async (page, _scenario, _viewport, _isReference, _browserContext) => {
   let entries = {};
   try {
@@ -32,6 +42,9 @@ module.exports = async (page, _scenario, _viewport, _isReference, _browserContex
   // home baseline is a photograph of an overlay rather than of the screen. A baseline must show the
   // app, not its first-run state, so the key is seeded here alongside the rest.
   entries[INTERACTIVE_TUTORIAL_KEY] = 'true';
+  // THE FIRST-HAND COACHING TIPS — the /game equivalent, and a separate key. See the constant
+  // above: seeding the tutorial key alone left /game photographing a toast over a dimmed screen.
+  entries[GAMES_PLAYED_KEY] = '25';
 
   await page.evaluateOnNewDocument((kv) => {
     try {
