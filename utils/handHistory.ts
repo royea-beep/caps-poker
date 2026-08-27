@@ -10,6 +10,10 @@ export interface HandPlayerRecord {
 export interface HandBoardRecord {
   boardIndex: number;
   winner: 'player' | 'bot' | 'tie';
+  /** Seat that won this board outright, local player = 0, -1 = board tied. See RevealBoardData.
+   *  OPTIONAL AND ABSENT ON EVERY RECORD WRITTEN BEFORE THIS FIELD EXISTED — deriveHandOutcome
+   *  falls back to the collapsed count for those rather than treating a missing seat as 0. */
+  winnerSeat?: number;
   playerHandName: string;
   botHandName: string;
   playerCards: { rank: string; suit: string }[];

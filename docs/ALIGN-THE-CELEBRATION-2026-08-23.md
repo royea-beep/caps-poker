@@ -22,8 +22,27 @@ That is now closed.
 ## One derivation, eight readers
 
 `utils/handOutcome.ts` → `deriveHandOutcome(boards): 'win' | 'loss' | 'tie'`. Boards won **outright**
-decide it; a board that itself tied awards nobody. At two players this is solo's original rule
-unchanged; at three and four it matches `resolve-hand`'s server rule exactly.
+decide it; a board that itself tied awards nobody.
+
+> **CORRECTION (2026-08-27) — this section previously claimed "at three and four it matches
+> `resolve-hand`'s server rule exactly". THAT CLAIM WAS FALSE, and nothing tested it.**
+>
+> The derivation compared my boards against the opponents' **combined** total, because
+> `RevealBoardData.winner` collapses every opponent into the single token `'bot'`. The server
+> compares against the **highest single seat**. Enumerating every reachable distribution at every
+> table size found they disagree on exactly one shape — **three players, three boards, one board
+> each**: the server records `'tied'` for all three seats, the client returned `'loss'` to every
+> one of them. Two players (4 boards) and four players (2 boards) agreed on all 81 and all 25
+> distributions, which is why the four-player production case this sprint was built on was right.
+>
+> So the sprint closed the chips-vs-boards split and left a **boards-vs-boards** one: a sixth
+> definition of winning, in the one derivation itself. It is now fixed. Boards carry
+> `winnerSeat` (local player `0`, each opponent a distinct index, `-1` = board tied) through all
+> four producers — solo, the MP host path, the MP guest path, and the session hand record — and
+> the rule compares against the best single opponent, which is the server's rule. The parity
+> claim is no longer a sentence: `handOutcome.test.ts` transcribes the server rule from
+> `resolve-hand/index.ts` and asserts agreement across **every** distribution at 2, 3 and 4
+> players. Reverting the seat rule fails exactly the 3-player cells and no others.
 
 | # | reader | was | now |
 |---|---|---|---|
@@ -173,3 +192,93 @@ that hand 0's other board *itself tied* and awarded nobody, so one board outrigh
 and 3 a bot took it. **Chips cannot tell those three hands apart. Boards can.** Under the old rule
 all three fired the win overlay and credited win XP; now each is celebrated as what it was.
 
+---
+
+## FOLLOW-UP (2026-08-27) — the sixth definition of winning was inside the one derivation
+
+The ruling was "one definition of winning, everywhere". This sprint removed the chips-derived one
+and left a **boards-derived one that was not the server's**. Recorded here because the failure mode
+is the same one the sprint was called to fix, one level down.
+
+### How it was found
+
+Not by walking the chain. By refusing the sentence. The section above claimed the derivation
+"matches `resolve-hand`'s server rule exactly" at three and four players — a claim, not evidence
+(Iron Rule 14). Both rules were transcribed from source and run against **every reachable
+distribution** at every table size:
+
+| table | boards | distributions | disagreements |
+|---|---|---|---|
+| 2 players | 4 | 81 | **0** |
+| 3 players | 3 | 64 | **6** — all one shape |
+| 4 players | 2 | 25 | **0** |
+
+The single disagreeing shape is **three seats, one board each**:
+
+| | boards_won | rule | result |
+|---|---|---|---|
+| `resolve-hand` | 1-1-1 | three seats share the max → each `'tied'` | **TIE** |
+| `deriveHandOutcome` (was) | mine 1 vs *combined* 2 | `mine < theirs` | **LOSS** |
+
+`RevealBoardData.winner` is `'player' | 'bot' | 'tie'`, so **every opponent collapses into one
+token**. Counting it yields the opponents' *combined* total; the server compares against the
+*highest single* seat. Identical at two seats, identical at four (two boards cannot make a
+three-way split), different at three. The four-player production case the sprint was built on sits
+in a column where the two rules agree, which is why it never surfaced.
+
+### Reachability — measured, not argued
+
+`hand_history` holds **42 non-practice rows at 3 players / 3 boards**, 15 of them at
+`boards_won = 1`. **Not one row at three players has ever been recorded `'tied'`**, against 13 ties
+in 24 rows at two players. The 3-player distributions cannot be reconstructed from history:
+`boards_data` is **NULL** on those rows — present and empty, Rule 9 — so the shape is proved
+deterministically instead, not asserted from the ladder.
+
+**This was not only the celebration.** In solo the client is the recorder: `queueHandResult` sends
+this same outcome, and `record_hand_result_d` maps `p_won IS NULL → 'tied'`. So a solo 3-player
+1-1-1 hand was **written to `hand_history` as `'lost'`** and moved the ladder as a loss, while the
+identical shape in multiplayer was written `'tied'` by `resolve-hand`. Same boards, two records.
+
+### The fix
+
+Boards now carry `winnerSeat` — `0` = the local player, each opponent a **distinct** index, `-1` =
+the board itself tied — through **all four producers**: solo (`utils/gameLogic.ts`), the MP **host**
+path and the MP **guest** path (`app/multiplayer-game.tsx`, separate builders — fixing one aligns
+half the table), and the session hand record (`utils/handHistory.ts`). `deriveHandOutcome` compares
+against the best **single** opponent, which is `resolve-hand`'s rule. The signature still takes
+boards and nothing else, so the "it never sees chips" property test stands.
+
+Records written before the field existed have no seat; those fall back to the collapsed count
+rather than reading a missing seat as `0`.
+
+### Proof
+
+`handOutcome.test.ts` transcribes the server rule from `resolve-hand/index.ts` and asserts
+agreement across **every** distribution at 2, 3 and 4 players. **Reverting the seat rule fails
+exactly the two 3-player assertions and nothing else** — the blast radius, demonstrated rather
+than described.
+
+In a browser, on a production export containing the fix (`tests/parity-3p-probe.mjs`, the fixture
+mechanism from `celebration-gate-probe.mjs`), read off the rendered headline and the overlay's own
+nodes — **7/7 at 393, 320 and 430 px, 0 page errors**:
+
+| # | shape | headline | overlay dots | |
+|---|---|---|---|---|
+| 1 | **3P one board each** | **TIE GAME** | **0** | **was YOU LOSE** |
+| 2 | 3P, one opponent takes two | YOU LOSE | 0 | unchanged |
+| 3 | 3P, player takes two | YOU WIN | 20 | unchanged |
+| 4 | 3P, every board tied | TIE GAME | 0 | unchanged |
+| 5 | CONTROL 2P clean win | YOU WIN | 20 | unchanged |
+| 6 | CONTROL 2P clean loss | YOU LOSE | 0 | unchanged |
+| 7 | CONTROL 4P, the sprint's own case | TIE GAME | 0 | unchanged |
+
+Exactly one row moves. The tie neither celebrates nor mourns: headline TIE GAME, overlay absent.
+
+### One instrument failure, named
+
+The probe read `null` from every row off a page that was painting at 74 rAF/s. The bundle contains
+`import.meta` (a redux-devtools guard) and the export produced in this container emits
+`<script defer>` — a **parse** error, so React never mounted. `caps.ftable.co.il` serves the same
+bundle as `<script type="module">`; the probe's static server now normalises the tag to match the
+deployed one. Checked against the live `index.html`, not assumed. Had the Rule 14a paint preamble
+not been there, seven `null` headlines would have read as seven passing absences.

@@ -402,6 +402,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
       boardIndex: i,
       winner: b.winner,
+      winnerSeat: b.winnerSeat,
       playerHandName: b.playerHandName,
       botHandName: b.botHandName,
       playerCards: b.playerCards.map((c) => ({ rank: c.rank, suit: c.suit })),

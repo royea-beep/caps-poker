@@ -695,6 +695,10 @@ function GameScreenInner() {
         playerCards: board.playerCards,
         allBotCards: board.allBotCards,
         winner: result ? result.winner : ('tie' as const),
+        // Carried through so /results derives the outcome with the server's seat-by-seat rule.
+        // A board the reveal never resolved has no winner at all, which is -1 (awards nobody) —
+        // the same thing the 'tie' token above says, not a silent credit to seat 0.
+        winnerSeat: result ? result.winnerSeat : -1,
         playerHandName: result?.playerResult.name || '',
         botHandName: result?.botResult.name || '',
         allBotHandNames: results.allBotResults[i]?.map((br) => br.name) || [],

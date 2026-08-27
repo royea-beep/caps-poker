@@ -6,6 +6,10 @@ node_modules/
 # Expo
 .expo/
 dist/
+# Probe bundle built by tests/celebration-gate-probe.mjs and tests/parity-3p-probe.mjs
+# (EXPO_PUBLIC_CAPS_FIXTURE=1 export). A build artifact — never committed.
+web-fixture-dist/
+test-results/
 web-build/
 expo-env.d.ts
 

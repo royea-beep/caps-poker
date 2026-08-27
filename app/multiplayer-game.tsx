@@ -679,6 +679,16 @@ function MultiplayerGameScreenInner() {
         br.winnerIndex === myIdx ? 'player' :
         br.winnerIndex === -1 ? 'tie' : 'bot';
 
+      // THE SEAT, NOT JUST THE SIDE. `winner` above folds all three opponents into 'bot', so a
+      // 1-1-1 split and a 1-2-0 split look identical to anything counting it — and the server
+      // calls the first a TIE and the second a LOSS. Rotated so the local player is 0 and every
+      // opponent keeps a DISTINCT index (seats below mine shift up by one, seats above keep
+      // theirs), which is a bijection and therefore preserves each opponent's own count.
+      const winnerSeat =
+        br.winnerIndex === -1 ? -1 :
+        br.winnerIndex === myIdx ? 0 :
+        br.winnerIndex < myIdx ? br.winnerIndex + 1 : br.winnerIndex;
+
       /**
        * THE OPPONENT THE COMPARISON LINE IS ABOUT — and why this used to be blank.
        *
@@ -708,6 +718,7 @@ function MultiplayerGameScreenInner() {
         playerCards: board.playerCards[myIdx] || [],
         allBotCards: otherCards,
         winner,
+        winnerSeat,
         playerHandName: myResult?.name || '',
         botHandName: bestOpp?.name || '',
         allBotHandNames: otherHandNames,
@@ -832,6 +843,13 @@ function MultiplayerGameScreenInner() {
         reveal.winnerIndex === playerIndex ? 'player' :
         reveal.winnerIndex === -1 ? 'tie' : 'bot';
 
+      // Same rotation as the host path. The guest builds its OWN reveal from the broadcast, so
+      // fixing only the host would have aligned the celebration for one seat at the table.
+      const winnerSeat =
+        reveal.winnerIndex === -1 ? -1 :
+        reveal.winnerIndex === playerIndex ? 0 :
+        reveal.winnerIndex < playerIndex ? reveal.winnerIndex + 1 : reveal.winnerIndex;
+
       // Same defect, same fix as the host path above: the comparison slot is the BEST OPPOSING
       // hand whoever won, chosen by score so it holds at 3 and 4 players.
       let bestOppHand: any = null;
@@ -847,6 +865,7 @@ function MultiplayerGameScreenInner() {
         playerCards: myHand?.cards || board.playerCards,
         allBotCards: otherCards,
         winner,
+        winnerSeat,
         playerHandName: myHand?.handRank || '',
         botHandName: bestOppHand?.handRank || '',
         allBotHandNames: otherHandNames,

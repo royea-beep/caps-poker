@@ -101,6 +101,10 @@ export interface BoardResult {
   playerResult: HandResult;
   botResult: HandResult;
   winner: 'player' | 'bot' | 'tie';
+  /** Seat that won this board outright — local player 0, opponents 1..N-1, -1 = board tied.
+   *  Heads-up it carries no information the token does not; it matters from three seats up,
+   *  where 'bot' stops identifying WHICH opponent won. See utils/handOutcome.ts. */
+  winnerSeat?: number;
 }
 
 export function evaluateBoard(board: BoardState): BoardResult | null {
@@ -116,7 +120,8 @@ export function evaluateBoard(board: BoardState): BoardResult | null {
   else if (comparison < 0) winner = 'bot';
   else winner = 'tie';
 
-  return { playerResult, botResult, winner };
+  // Heads-up: exactly two seats, so the seat follows from the token.
+  return { playerResult, botResult, winner, winnerSeat: winner === 'player' ? 0 : winner === 'bot' ? 1 : -1 };
 }
 
 export function calculateHandResults(
@@ -234,6 +239,10 @@ export function calculateHandResultsMulti(
     playerResult: r.playerResults[0],
     botResult: r.playerResults[1] || r.playerResults[0],
     winner: (r.winnerIndex === 0 ? 'player' : r.winnerIndex === -1 ? 'tie' : 'bot') as 'player' | 'bot' | 'tie',
+    // Seat 0 IS the local player in solo (playerResults[0]), so the evaluator's index needs no
+    // rotation here. Carried alongside the collapsed token so the outcome rule can tell two
+    // opponents apart; the token itself is unchanged and every existing reader is untouched.
+    winnerSeat: r.winnerIndex,
   }));
 
   const allBotResults = mpBoardResults.map((r) => r.playerResults.slice(1));
