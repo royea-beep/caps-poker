@@ -5,6 +5,7 @@
 import { Platform } from 'react-native';
 import { RevealBoardData, RevealData } from '../types/gameTypes';
 import { getSupabase, isSupabaseConfigured } from './supabase';
+import { deriveHandOutcome } from './handOutcome';
 import { debugLog } from '../components/DebugOverlay';
 
 // Lazy-load native-only modules to avoid web crashes
@@ -95,7 +96,12 @@ export async function saveHandForWebReplay(data: ShareData): Promise<{ url: stri
 // OTA-CHIP-UI-PARITY 2026-07-09 — isPractice suppresses the "Net: ±N chips" line, same
 // predicate/rationale as the share-card images (practice never moves real chips).
 export function generateShareText(data: ShareData, replayUrl?: string | null, isPractice = false): string {
-  const emoji = data.isComplete ? '🏆' : data.netChips > 0 ? '✅' : '❌';
+  // The shared card announced a win from CHIPS, so a hand the record calls a tie went out to
+  // other people as ✅ and a board win that netted zero went out as ❌. It asks the boards now,
+  // and a tie gets its OWN mark rather than being shared as a loss. This text leaves the app,
+  // which makes it the one reader whose disagreement other people could see.
+  const outcome = deriveHandOutcome(data.boards);
+  const emoji = data.isComplete ? '🏆' : outcome === 'win' ? '✅' : outcome === 'loss' ? '❌' : '🤝';
   const completeLine = data.isComplete ? '\n🏆 COMPLETE! Swept all boards!' : '';
   const urlLine = replayUrl ? `\nReplay: ${replayUrl}` : '';
   const netLine = isPractice ? '' : `\nNet: ${data.netChips >= 0 ? '+' : ''}${data.netChips} chips`;
