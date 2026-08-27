@@ -92,7 +92,18 @@ jobs:
           fi
           git checkout -B "$BRANCH"
           git commit -m "chore(qa): refresh BackstopJS baselines (Linux capture)"
-          git push --force-with-lease origin "$BRANCH"
+          # FETCH THE BRANCH BEFORE FORCING. actions/checkout fetches only the triggering ref, so
+          # the runner has no remote-tracking ref for $BRANCH — and --force-with-lease with nothing
+          # to compare against is REJECTED as "stale info" rather than silently forcing. That is
+          # the lease doing its job: it refuses when it cannot tell what it would overwrite. This
+          # branch is regenerated output and always safe to replace, but it is replaced knowingly:
+          # fetch first, then the lease has a real value to check.
+          if git fetch origin "$BRANCH" 2>/dev/null; then
+            LEASE="--force-with-lease=refs/heads/$BRANCH:$(git rev-parse FETCH_HEAD)"
+          else
+            LEASE=""   # branch does not exist remotely yet — an ordinary first push
+          fi
+          git push $LEASE origin "HEAD:refs/heads/$BRANCH"
           echo "::notice::Baselines pushed to $BRANCH — open a PR from it and review the bitmaps before merging."
           echo "Baselines pushed to $BRANCH" >> "$GITHUB_STEP_SUMMARY"
           echo "Open a PR from that branch and LOOK at the bitmaps before merging." >> "$GITHUB_STEP_SUMMARY"
