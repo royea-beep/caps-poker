@@ -110,8 +110,18 @@ const PROBE = () => {
   };
 };
 
-const browser = await engine.launch({ headless: false });
-const ctx = await browser.newContext({ viewport: { width: VW, height: VW >= 1000 ? 800 : 900 } });
+// CAPS_BROWSER_PATH — the container running this loop may ship a Playwright browser build whose
+// version does not match the one this project pins, in which case the binary is named explicitly
+// rather than downloaded. Unset everywhere else, so the normal path is untouched. headless stays
+// FALSE as designed; run under xvfb-run where there is no display.
+// CAPS_PROXY — where egress is via an inspecting proxy, the browser must be told about it
+// explicitly (curl reads the env, Chromium does not) and must accept that proxy's CA. Both are
+// gated on the variable, so an ordinary run is byte-for-byte the run this harness always did.
+const browser = await engine.launch({ headless: false,
+  ...(process.env.CAPS_BROWSER_PATH ? { executablePath: process.env.CAPS_BROWSER_PATH } : {}),
+  ...(process.env.CAPS_PROXY ? { proxy: { server: process.env.CAPS_PROXY } } : {}) });
+const ctx = await browser.newContext({ viewport: { width: VW, height: VW >= 1000 ? 800 : 900 },
+  ...(process.env.CAPS_PROXY ? { ignoreHTTPSErrors: true } : {}) });
 
 // A GATED SCREEN IS AN UNMEASURED SCREEN — now standard, not a one-off.
 //

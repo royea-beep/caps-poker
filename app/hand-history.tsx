@@ -329,7 +329,14 @@ export default function HandHistoryScreen() {
       <ScreenHeader title="HAND HISTORY" />
 
       {/* Filter tabs */}
-      <View style={styles.filterRow}>
+      {/* THE TABLIST THAT WAS MISSING. The three children below were given accessibilityRole="tab"
+          to fix them being focusable-but-undeclared — correct as far as it went, but `tab` is one
+          of the roles axe checks a PARENT for, and this View declared nothing. Result:
+          aria-required-parent, impact CRITICAL, which is the single critical that has been failing
+          the post-deploy WCAG gate and therefore SKIPPING BackstopJS entirely on every deploy since
+          2026-08-23. Identical structure to app/leaderboard.tsx:151, which the same audit measures
+          at crit=0 — so this is the shape already proven against this instrument, not a guess. */}
+      <View style={styles.filterRow} accessibilityRole="tablist" accessibilityLabel="Filter hands">
         {(['all', 'wins', 'losses'] as FilterMode[]).map(f => (
           <TouchableOpacity
             key={f}
