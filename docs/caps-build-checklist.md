@@ -1,6 +1,6 @@
 ---
 name: caps-build-checklist
-description: Use whenever a new CAPS Poker build (b<N>) lands on TestFlight and the user wants verification, or whenever Claude is about to mark a build status=live in build_history. Activates on phrases like "b372 הגיע", "b373 לבדיקה", "build is live", "אישרת את ה-build". Provides the full QA checklist that should run on every build before it's considered stable.
+description: Use whenever a new CAPS Poker build (b<N>) lands on TestFlight and the user wants verification, or whenever Claude is about to declare a build live. (It must NOT write build_history to do that — see "After running checklist".) Activates on phrases like "b372 הגיע", "b373 לבדיקה", "build is live", "אישרת את ה-build". Provides the full QA checklist that should run on every build before it's considered stable.
 ---
 
 # CAPS Poker — Per-Build QA Checklist
@@ -12,7 +12,7 @@ Every build needs the same baseline checks. Without a fixed list, regressions sl
 ## When to invoke this skill
 
 - Roye says "b<N> הגיע" or "b<N> לבדיקה" or sends new screenshots
-- Claude is about to UPDATE `build_history SET status='live'`
+- Claude is about to declare a build live — read `get_live_build()`; do NOT UPDATE `build_history`
 - After major architectural changes (layout pivot, settings reorg)
 
 ## Pre-check: which screens did Roye actually capture?
@@ -46,7 +46,7 @@ not against memory of the b372 app.
 | Board count | **DYNAMIC**: 2 players = 4 boards, 3 = 3, 4 = 2. Four cards per board per player, 5 community per board, one 52-card deck, max 4 players. Never hardcode. |
 | Practice mode | **XP-ONLY. No chips move.** COMPLETE pays **200 XP** (`BATTLE_PASS_CONFIG.xpPerComplete`), NOT chips. **Any chip or "+50% bonus" figure shown in practice is a bug.** |
 | Build number | Settings reads the **native** build (`Application.nativeBuildVersion`). `app.json` `extra.buildNumber` is deliberately left stale — **never use it as a source of truth.** |
-| `build_history` | **DEAD.** Last write 2026-05-08; row `451` stuck `in_progress` for three months. Do NOT gate anything on it and do NOT write to it. |
+| `build_history` | **HISTORICAL ONLY.** Last write 2026-05-08; builds 452-508 absent; row `451` stuck `in_progress`. Do NOT gate anything on it and **do NOT write to it** — the "After running checklist" section below used to tell you to, which is exactly how a dead table kept looking alive. **For the live build call `get_live_build()`**, which derives it from what devices report. If you must read `build_history` at all, read it **by `started_at`, never by `build_number`**: the testflight and production profiles ran independent number series, so `max(build_number)` and `max(started_at)` are different rows. |
 | Palette | The "dark maroon" values in section H are **STALE**. Live theming is per-theme felt (classic green `#10281A`→`#0E2418`, fiveo maroon) resolved through `constants/paintThemes.ts`. Judge contrast and legibility, not a specific hex. |
 
 **Marking convention below:** `[CODE]` = verifiable by reading code or querying the DB, no device
@@ -239,17 +239,35 @@ If ANY of these appear, do NOT mark live:
 
 ## After running checklist
 
-Update `build_history`:
+**DO NOT UPDATE `build_history`.** This section used to hand you an `UPDATE build_history SET
+status = 'live'` — while the reference table 190 lines above already declared the same table dead.
+That contradiction is not hypothetical: on 2026-08-28 a session read the table in good faith and
+reported build **471** as live while Roye's phone ran **508**, and the 21:00 digest had been
+repeating 471 for **123 consecutive nights**.
+
+The table is historical. Writing to it now would restore the exact illusion that caused the
+incident — a hand-maintained row that looks authoritative and silently ages out.
+
+**The live build is not something you record. It is something you observe:**
 
 ```sql
-UPDATE build_history
-SET status = 'live',
-    deployed_at = NOW(),
-    completed_at = <CI completion time>,
-    notes = notes || ' [<timestamp> IL] Checklist passed: A,B,C,D,E,F,G,H all green.
-                       Unverified: <list>. Soft issues: <list>.'
-WHERE id = <id>;
+SELECT get_live_build();
+-- {"build_number": 508, "version": "2.7.0", "devices": 81, "stale": false,
+--  "source": "device telemetry (analytics_events.native_build)"}
 ```
+
+It reads `Application.nativeBuildVersion` as reported by installed binaries, so it cannot go stale
+the way a hand-fed table did, and when it has nothing to go on it returns `build_number: null` with
+a note instead of a confident wrong number. Every build reader delegates to it:
+`get_current_build`, `get_build_changelog`, `run_daily_digest`, `get_daily_digest`,
+`get_live_dashboard`, `get_caps_launch_dashboard`, `auto_dismiss_stale_crashes`.
+
+`app_config.current_build` (465) and `app_config.next_build_number` (466) are **dead keys** for the
+same reason. No reader uses them. Do not "fix" them by typing 508 in — that is how they got wrong.
+
+If a build record with changelog and commits is wanted again, it must be **written by CI**, not by
+a person: one step in `ios-testflight.yml` calling `register_build()`. A record only a human
+maintains is a record that stops.
 
 Update `session_handoffs`:
 
