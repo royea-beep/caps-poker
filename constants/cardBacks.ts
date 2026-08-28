@@ -19,7 +19,7 @@
  * suit or value — renderBack() never receives the card at all.
  */
 
-export type CardBackId = 'classic' | 'slate';
+export type CardBackId = 'classic' | 'slate' | 'graphite';
 
 export interface CardBackPalette {
   id: CardBackId;
@@ -41,7 +41,7 @@ export interface CardBackPalette {
    * differ only in luminance are weak in greyscale, and greyscale is the accessibility floor this
    * project measures against.
    */
-  rings: 1 | 2;
+  rings: 1 | 2 | 3;
 }
 
 /**
@@ -79,15 +79,46 @@ const SLATE: CardBackPalette = {
   rings: 2,
 };
 
+/**
+ * GRAPHITE — the second purchasable back (SHIP-509), unlocked by `buy_card_back_graphite`.
+ *
+ * IT OBEYS THE SAME THREE RULES AS SLATE, AND THEY ARE THE REASON IT LOOKS LIKE THIS:
+ *
+ *  1. NO HUE. Every channel is a neutral grey. Gold means WON and mint means the field; a back
+ *     that borrowed either would put one mark on two opposite states, which is exactly the
+ *     collision the original gold back was removed for. The winner cue keeps gold to itself.
+ *  2. NO INFORMATION LEAK, BY CONSTRUCTION. renderBack() is never passed the card, so nothing
+ *     here can vary by rank or suit. A back is chosen by its OWNER and drawn identically on every
+ *     one of their face-down cards.
+ *  3. NOT MISTAKEABLE FOR A FACE. Faces are warm near-white (#FCFAF3); #2E3238 sits far below
+ *     that, so face-up and face-down never read alike at a glance.
+ *
+ * It separates from BOTH shipped backs on TWO channels, not one — luminance (#18181c < #2E3238 <
+ * #4A5058) and ring count (1 / 3 / 2). Luminance alone is weak in greyscale, and greyscale is the
+ * accessibility floor this project measures against.
+ */
+const GRAPHITE: CardBackPalette = {
+  id: 'graphite',
+  label: 'GRAPHITE',
+  sku: 'buy_card_back_graphite',
+  bg: '#2E3238',
+  glyph: 'rgba(255,255,255,0.56)',
+  ring: 'rgba(255,255,255,0.20)',
+  edge: 'rgba(255,255,255,0.24)',
+  glow: 'rgba(255,255,255,0.24)',
+  rings: 3,
+};
+
 export const CARD_BACKS: Record<CardBackId, CardBackPalette> = {
   classic: CLASSIC,
   slate: SLATE,
+  graphite: GRAPHITE,
 };
 
 export const DEFAULT_CARD_BACK: CardBackId = 'classic';
 
 /** Every back in picker order — free first. */
-export const CARD_BACK_LIST: CardBackPalette[] = [CLASSIC, SLATE];
+export const CARD_BACK_LIST: CardBackPalette[] = [CLASSIC, SLATE, GRAPHITE];
 
 /**
  * Resolve a palette, falling back to the default for an unknown id. Card.tsx renders on every

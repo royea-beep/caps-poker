@@ -12,7 +12,7 @@
  * always go back — a purchase must never cost you something you had.
  */
 
-export type EmotePackId = 'classic' | 'wild';
+export type EmotePackId = 'classic' | 'wild' | 'deadpan';
 
 export interface EmotePack {
   id: EmotePackId;
@@ -42,9 +42,26 @@ const WILD: EmotePack = {
   emotes: ['🤯', '🫠', '🚀', '🧊', '🤝', '🐐'],
 };
 
-export const EMOTE_PACKS: Record<EmotePackId, EmotePack> = { classic: CLASSIC, wild: WILD };
+/**
+ * DEADPAN — the second purchasable pack (SHIP-509), unlocked by `buy_emotes_deadpan`.
+ *
+ * SIX AGAIN, and covering the SAME six conversational slots as CLASSIC and WILD in the same order
+ * (amused, beaten, hot streak, applause, annoyed, good game). That is not a style decision: the
+ * count is a layout constraint, and holding the slots constant is what makes switching packs cost
+ * you nothing. A pack that dropped "good game" would take a gesture away from whoever bought it.
+ *
+ * The register is dry rather than loud, which is the only thing that differs between the three.
+ */
+const DEADPAN: EmotePack = {
+  id: 'deadpan',
+  label: 'DEADPAN',
+  sku: 'buy_emotes_deadpan',
+  emotes: ['🙃', '😐', '📈', '🫡', '🥱', '🤷'],
+};
+
+export const EMOTE_PACKS: Record<EmotePackId, EmotePack> = { classic: CLASSIC, wild: WILD, deadpan: DEADPAN };
 export const DEFAULT_EMOTE_PACK: EmotePackId = 'classic';
-export const EMOTE_PACK_LIST: EmotePack[] = [CLASSIC, WILD];
+export const EMOTE_PACK_LIST: EmotePack[] = [CLASSIC, WILD, DEADPAN];
 
 /** Resolve a pack, falling back to the default for an unknown or stale persisted id. */
 export function getEmotePack(id: EmotePackId | null | undefined): EmotePack {
