@@ -24,7 +24,6 @@ import { WEB_MAX_WIDTH } from '../../components/WebContainer';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ReportBugButton from '../../components/ReportBugButton';
 import { KILL_HeroGlow } from '../../utils/animationKill';
 import HomeCupRings from '../../components/HomeCupRings';
 import Animated, {
@@ -88,6 +87,7 @@ import { StreakPopup } from '../../components/StreakPopup';
 import { getHandHistory, HandRecord } from '../../utils/handHistory';
 import { ACHIEVEMENTS } from '../../utils/achievements';
 import { track } from '../../utils/analytics';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -142,6 +142,39 @@ function HeroCardFan() {
           }}
         >
           <CardComponent card={card} cardWidth={38} cardHeight={53} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * THE TABLE, NOT A FAN OF CARDS — concept C3, which the panel called the best single upgrade.
+ *
+ * A card fan says "poker". It does not say THIS poker. The one thing CAPS does that other poker
+ * does not is run several boards at once, and that is a picture, not a sentence — so the hero is
+ * the felt with the boards on it.
+ *
+ * IRON RULE #3 — THE BOARD COUNT IS NOT DRAWN AS A CONSTANT. It comes from getBoardCount(), the
+ * same function the game uses, so the art shows the seat count the player will actually get
+ * (2P=4, 3P=3, 4P=2). Drawing four boards here would have been the same false claim the tagline
+ * list already had to retract on 2026-08-11.
+ *
+ * DECORATION ONLY: one accessibilityRole="image" with a label, nothing focusable inside it, so it
+ * adds ZERO controls to the screen. That was the condition on including it.
+ */
+function HeroTable({ boards }: { boards: number }) {
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={`A CAPS table: ${boards} boards, each dealt five community cards`}
+      style={styles.heroTable}
+    >
+      {Array.from({ length: boards }).map((_, b) => (
+        <View key={b} style={styles.heroBoard}>
+          {Array.from({ length: 5 }).map((__, c) => (
+            <View key={c} style={styles.heroPip} />
+          ))}
         </View>
       ))}
     </View>
@@ -1373,13 +1406,27 @@ export default function HomeScreen() {
             CAPS
           </Text>
           <Text style={styles.titlePoker}>POKER</Text>
-          <HeroCardFan />
+          <HeroTable boards={getBoardCount(config.numberOfPlayers)} />
+          {/*
+            C6's SENTENCE — a stranger must learn what this game IS from the home screen, and the
+            rotating taglines never told them. Nine of the ten were mood, not instruction.
+
+            ⚠️ C6's CONCEPT WORDING SAID "Four boards run at once" AND THAT IS FALSE. The board
+            count is DYNAMIC (2P=4, 3P=3, 4P=2), and this codebase already retracted exactly that
+            claim once — see the FACTUAL FIX note on TAGLINES, 2026-08-11, which removed
+            "Four cards. Four boards. One winner." for the same reason. Every clause below is true
+            at EVERY seat count: four cards per board per player always holds, all boards do run
+            together, and the hand goes to whoever takes the most.
+          */}
           <Animated.Text
-            style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
+            /* NOT theme.subtitleColor — that measured 3.70:1 at 11px against a 4.5 bar, and it
+               was fine while this line was a rotating mood tagline nobody needed to read. It is
+               now the sentence that TEACHES THE GAME, so it is the last text that may be dim.
+               #cfd8d2 on #0a0a0a measures well past the bar at this size. */
+            style={[styles.titleSub, { color: '#cfd8d2' }, taglineAnimStyle]}
+            numberOfLines={3}
           >
-            {tagline}
+            Four cards on every board. Every board plays at once. Win the most boards, win the hand.
           </Animated.Text>
         </View>
         {/* HOME-DECLUTTER 2026-07-05 — removed the daily-quote block + divider, and the
@@ -1397,84 +1444,20 @@ export default function HomeScreen() {
             lobby destroys trust in every number in the app. Restore a REAL presence count
             when there's actual concurrency (do not surface a live "2 online" — reads dead). */}
 
-        {/* PLAY button — always green, center stage. PR-C glow halo behind it. */}
-        <View style={styles.playSection}>
-          <View style={{ position: 'relative', alignSelf: 'center' }}>
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.playGlowHalo,
-                { width: playBtnWidth + rs(28) },
-                playGlowStyle,
-              ]}
-            />
-            <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
-              <Pressable
-                onPress={handleNewHand}
-                onPressIn={() =>
-                  AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
-                }
-                onPressOut={() =>
-                  AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
-                }
-                style={[styles.playBtn, { width: playBtnWidth }]}
-                accessibilityRole="button"
-                accessibilityLabel="Play"
-              >
-                <View style={styles.playBtnHighlight} pointerEvents="none" />
-                {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
-                    button is a solo game vs bots, so name it honestly. */}
-                {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
-                    LAYOUT width to the Pressable's content box (minus padding). Without it,
-                    the Pressable's default alignItems:'center' lets the Text intrinsic-size
-                    to its own natural (unconstrained) width, so adjustsFontSizeToFit had no
-                    real box to shrink into and the label truncated on narrow real devices
-                    instead of shrinking. */}
-                <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>🤖 Practice vs Bots</Text>
-              </Pressable>
-            </AnimatedRN.View>
-          </View>
+        {/* ── C5's LIVE PLAYER COUNT IS DELIBERATELY ABSENT ──────────────────────────────────
+            The panel wanted it and Roye approved it ONLY once the number is real. It is not.
+            Measured 2026-08-28: 0 distinct devices in the last hour, 31 in 24h. A live count
+            would read "0 players online" on the front door right now.
+            This app has already made this mistake once and written it down: HOME-DECLUTTER
+            2026-07-05 removed a hardcoded "32 players online" as "fake and deceptive ... '32
+            online' -> empty lobby destroys trust in every number in the app", and its own note
+            says do not surface a real-but-tiny count either, because it reads dead.
+            SO: no count, and no liveness implied in the subtitle. Add it when concurrency is
+            real, not when the query is easy. */}
 
-          {/* Board config hint — English only (S112) */}
-          <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
-            {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
-            {config.potPerBoard > 0 ? ` · ${config.potPerBoard <= 25 ? 'Low' : config.potPerBoard <= 100 ? 'Mid' : 'High'} Blinds · ${config.potPerBoard}/board` : ' · Free'}
-          </Text>
-        </View>
-
-        {/* S74 — player selector lives BELOW Play now: a small centered "change players"
-            affordance, never a gate. Play always works with the remembered/default players
-            (3P on first run), so a first-time user starts a game in ONE tap without touching it. */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), marginTop: rs(10) }}>
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rf(11, 10), fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>Players</Text>
-          <View style={{ flexDirection: 'row', gap: rs(6) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
-            {([2, 3, 4] as const).map(n => (
-              <Pressable
-                key={n}
-                onPress={() => updateConfig({ numberOfPlayers: n })}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: config.numberOfPlayers === n }}
-                aria-checked={config.numberOfPlayers === n}
-                accessibilityLabel={`${n} players`}
-                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
-                style={{
-                  paddingHorizontal: rs(12), paddingVertical: rs(6),
-                  borderRadius: rv(16),
-                  backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
-                  borderWidth: 1,
-                  borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.15)',
-                }}
-              >
-                <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: rf(12, 11), fontWeight: '700' }}>
-                  {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* HOME-MP-LINK — prominent multiplayer entry (owner asked twice). The lobby was
-            only reachable via the bottom tab; make MP discoverable from the first screen. */}
+        {/* C2 — PLAY ONLINE, FIRST AND FILLED. The product is multiplayer; the biggest and
+            highest thing on the front door is now the thing we want pressed. Practice follows
+            it as the fallback. */}
         <AnimatedRN.View style={{ transform: [{ scale: playOnlineScale }] }}>
           <Pressable
             style={styles.playOnlineBtn}
@@ -1491,14 +1474,71 @@ export default function HomeScreen() {
             {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
                 English inside a Hebrew app, on the highest-traffic route to multiplayer.
                 The emoji stays as decoration; the TEXT is what names the destination. */}
-            <Text style={styles.playOnlineEmoji}>🎮</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.playOnlineTitle}>Play Online</Text>
-              <Text style={styles.playOnlineSub}>Multiplayer lobby · real players &amp; instant bot tables</Text>
+            <Text style={styles.playOnlineEmoji} allowFontScaling={false}>🎮</Text>
+            {/* LABEL_COLUMN, not `flex: 1` — a zero-basis text column between two fixed glyphs is the
+                one arrangement Yoga and CSS lay out differently, and it is why TestFlight showed
+                a gamepad and a chevron with nothing between them. See the constant.
+
+                allowFontScaling={false} on the two glyphs for the same reason: iOS Dynamic Type
+                scales them (web ignores it), and they are decoration whose only job is to stay
+                small enough that the words keep their room. */}
+            <View style={LABEL_COLUMN}>
+              <Text style={styles.playOnlineTitle} numberOfLines={1}>Play Online</Text>
+              {/* Shortened: the old string ellipsised at 320pt ("...instant bot …"), losing the word that
+                  said what the tables were. It also carries NO liveness claim — see the live-count
+                  note below; a subtitle is not the place to imply a busy room either. */}
+              <Text style={styles.playOnlineSub} numberOfLines={2}>Real players · instant bot tables</Text>
             </View>
-            <Text style={styles.playOnlineGo}>›</Text>
+            <Text style={styles.playOnlineGo} allowFontScaling={false}>›</Text>
           </Pressable>
         </AnimatedRN.View>
+
+        {/* C2 — PRACTICE, SECOND. It kept its position through the first pass of this change
+            and that made the restyle cosmetic: the eye lands on whatever is highest, so a
+            demoted button above the hero is still the first thing read. Order IS the hierarchy. */}
+        <View style={styles.playSection}>
+          <View style={{ position: 'relative', alignSelf: 'center' }}>
+{/* C2 — the green glow halo went with the primary. A secondary button does not glow. */}
+            <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
+              <Pressable
+                onPress={handleNewHand}
+                onPressIn={() =>
+                  AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
+                }
+                onPressOut={() =>
+                  AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
+                }
+                style={[styles.playBtn, { width: playBtnWidth }]}
+                accessibilityRole="button"
+                accessibilityLabel="Practice against bots"
+              >
+                {/* playBtnHighlight removed with the fill — a gloss overlay on a transparent
+                    button just paints a lighter grey slab over the top half of it. */}
+                {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
+                    button is a solo game vs bots, so name it honestly. */}
+                {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
+                    LAYOUT width to the Pressable's content box (minus padding). Without it,
+                    the Pressable's default alignItems:'center' lets the Text intrinsic-size
+                    to its own natural (unconstrained) width, so adjustsFontSizeToFit had no
+                    real box to shrink into and the label truncated on narrow real devices
+                    instead of shrinking. */}
+                <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>Practice vs bots</Text>
+              </Pressable>
+            </AnimatedRN.View>
+          </View>
+
+          {/* C2 — THE CONFIG LINE IS GONE. "3 boards · 3 players · Low Blinds · 25/board" measured
+              3.70:1 (needs 4.5) and it configured before it explained: a stranger's first screen
+              should not open with stakes jargon. The board count it carried is now SHOWN by the
+              hero table above, drawn from the same getBoardCount(). */}
+        </View>
+
+        {/* C2 — THE 2P/3P/4P SELECTOR IS GONE FROM HOME.
+            It was three controls at 41x28, 54x28 and 41x28 — all three under the 44pt minimum —
+            and it put a SETTING on the front door. Nothing is lost: the stored player count still
+            drives Practice (S74's one-tap property is intact, 3P on first run), and the per-seat
+            choice already exists where the tables are listed, as bot-table-2/3/4 in the lobby.
+            This REMOVES a selector; it does not add one. */}
 
         {/* HOME-DECLUTTER — "Welcome to CAPS Poker! Tap Play to start" card removed:
             redundant now that onboarding + the clear Play button + Play Online CTA exist. */}
@@ -1760,14 +1800,11 @@ export default function HomeScreen() {
               </View>
             </View>
           ) : (
-            <Pressable
-              onPress={handleInviteFriends}
-              accessibilityRole="button"
-              accessibilityLabel="Invite friends"
-              style={styles.inviteBtn}
-            >
-              <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
-            </Pressable>
+            /* C2 — INVITE MOVED OFF THE FRONT DOOR. Referral is a returning-player action and
+               it already has a whole screen (/referral, via the Play tab), which the comment
+               below already said was the full home for it. The streak/code block above is
+               untouched for players who already have a code. */
+            null
           )}
           {/* HOME-DECLUTTER — "Got an invite code?" removed so Home has ONE invite affordance
               ("Invite Friends 🎁"). Full invite + redeem lives on /referral (Play tab). */}
@@ -1781,9 +1818,11 @@ export default function HomeScreen() {
             colliding at others, including after two different offset strategies). Rendering
             it as normal content instead makes overlap structurally impossible — no absolute
             positioning, no magic number to keep re-tuning. */}
-        <View style={{ marginTop: rs(4), width: '100%' }}>
-          <ReportBugButton variant="row" />
-        </View>
+        {/* C2 — THE BUG-REPORT ROW IS GONE FROM HOME. A large card asking a stranger to report a
+            defect, in their first three seconds, on the front door. THE PATH IS NOT REMOVED: it
+            is still a row in Settings (app/settings.tsx:1160) and the global <BugReporter> gesture
+            wrapper in app/_layout.tsx is untouched, so nothing about reporting a bug gets harder
+            for the person who actually has one. */}
 
         {/* RESPONSIVE-FIX 2026-07-06 — fontSize/margins were hardcoded (fixed px regardless
             of screen width), an Iron Rule violation. This 62-char string wraps to 2 lines on
@@ -2110,11 +2149,16 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   titleSub: {
-    fontSize: rf(11),
-    fontWeight: '400',
-    letterSpacing: 1.5,
-    marginTop: rs(6),
-    textTransform: 'uppercase',
+    // Was 11px / letterSpacing 1.5 / UPPERCASE — fine for a five-word mood tagline, fatal for a
+    // sentence: the caps and the tracking made it so wide that numberOfLines={2} cut it at
+    // "PLAYS AT ONCE...." and dropped the clause stating how you WIN. Every metric still read
+    // zero, because a truncated string has perfectly good contrast.
+    fontSize: rf(13),
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    lineHeight: rf(19),
+    marginTop: rs(8),
+    paddingHorizontal: rs(18),
     textAlign: 'center',
   },
   titleDivider: {
@@ -2147,9 +2191,16 @@ const styles = StyleSheet.create({
       android: { elevation: 0 },
     }),
   },
+  // ── C2: PRACTICE IS THE FALLBACK, NOT THE HERO ──────────────────────────────────────────
+  // Was a filled #22C55E slab — the largest and loudest thing on the screen, for the mode that
+  // is not the product, and its white label measured 2.28:1 against a 3:1 bar. Now an OUTLINED
+  // secondary: mint text on the page background, which is a contrast pair that passes rather
+  // than one that needed the white to be shouted.
   playBtn: {
-    minHeight: rv(72),
-    backgroundColor: '#22C55E',
+    minHeight: 56,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#4FD6A8',
     borderRadius: rv(16),
     alignItems: 'center',
     justifyContent: 'center',
@@ -2159,11 +2210,6 @@ const styles = StyleSheet.create({
     // rs(20) + the wider 0.82 ratio above give the label real breathing room.
     paddingHorizontal: rs(20),
     overflow: 'hidden',
-    ...Platform.select({
-      web: { boxShadow: '0 8px 32px rgba(34,197,94,0.4), 0 2px 8px rgba(0,0,0,0.3)' } as any,
-      ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 20 },
-      android: { elevation: 12 },
-    }),
   },
   playBtnHighlight: {
     position: 'absolute',
@@ -2174,7 +2220,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: rv(16),
   },
   playBtnText: {
-    color: '#ffffff',
+    // mint, not white: the button is no longer filled, so white would sit on the page
+    // background at 1.9:1. #4FD6A8 on #0a0a0a measures well past the bar.
+    color: '#4FD6A8',
     // RESPONSIVE-FIX 2026-07-06 — was rf(22) (default floor ~17, i.e. it could barely
     // shrink at narrow widths). Explicit min:13 lets it shrink further on tiny screens;
     // the wider button + smaller padding above mean it rarely needs to go that low.
@@ -2193,23 +2241,44 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   // HOME-MP-LINK — mint accent so it reads as a distinct primary path next to the green Play
+  // ── C3's HERO TABLE (decoration; zero controls) ──────────────────────────────────────────
+  // The felt values are the SHIPPING ones from paintThemes `classic` and BoardSurface's lift.
+  // The felt is settled and is not being re-litigated here — this reuses it, it does not change it.
+  heroTable: {
+    width: '64%', alignSelf: 'center', marginTop: rs(10), marginBottom: rs(6),
+    backgroundColor: '#04351A', borderRadius: rv(14), borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.45)', paddingVertical: rs(9), paddingHorizontal: rs(9), gap: rs(6),
+  },
+  heroBoard: {
+    backgroundColor: 'rgb(26,70,44)', borderRadius: rv(8), borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)', paddingVertical: rs(5),
+    flexDirection: 'row', justifyContent: 'center', gap: rs(5),
+  },
+  heroPip: { width: rs(15), height: rs(21), borderRadius: rv(3), backgroundColor: '#FCFAF3' },
+
+  // ── C2: PLAY ONLINE IS THE HERO ─────────────────────────────────────────────────────────
+  // A FILLED mint button, not an outlined card. The biggest promise on the screen must be the
+  // thing we want pressed, and until now that was the mode that is NOT the product.
+  // Filled also fixes the contrast: dark ink on mint measures far above the 3:1 large-text bar,
+  // where the old white-on-green practice button measured 2.28:1.
   playOnlineBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: rs(12),
     marginHorizontal: rs(16),
-    marginTop: rs(10),
-    paddingVertical: rs(13),
+    marginTop: rs(12),
+    paddingVertical: rs(16),
     paddingHorizontal: rs(16),
-    borderRadius: rv(14),
-    borderWidth: 1.5,
-    borderColor: '#4FD6A8',
-    backgroundColor: 'rgba(79,214,168,0.12)',
+    minHeight: 64,
+    borderRadius: rv(16),
+    backgroundColor: '#4FD6A8',
   },
   playOnlineEmoji: { fontSize: rf(24) },
-  playOnlineTitle: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '900', letterSpacing: 0.5 },
-  playOnlineSub: { color: 'rgba(255,255,255,0.7)', fontSize: rf(11), marginTop: rs(1) },
-  playOnlineGo: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900' },
+  playOnlineTitle: { color: '#08130F', fontSize: rf(19), fontWeight: '900', letterSpacing: 0.5 },
+  // #0A1A14 on mint = well past 4.5:1. The old 'rgba(255,255,255,0.7)' sub-line was 3.7:1 dim
+  // grey on near-black; as dark ink on the filled button it is no longer a borderline case.
+  playOnlineSub: { color: '#0A1A14', fontSize: rf(12), fontWeight: '700', marginTop: rs(1) },
+  playOnlineGo: { color: '#08130F', fontSize: rf(24), fontWeight: '900' },
   stakesLabel: {
     fontSize: rf(11),
     fontWeight: '500',
@@ -2227,6 +2296,11 @@ const styles = StyleSheet.create({
     borderRadius: rv(24),
     paddingVertical: rs(10),
     paddingHorizontal: rs(22),
+    // minHeight 44 + centring: it rendered 39pt tall, five short of the WCAG 2.5.5 / Apple HIG
+    // minimum. A LITERAL 44, deliberately NOT rs(44) — the floor is an absolute point value and
+    // scaling it down on a narrow screen is precisely the failure it exists to prevent.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   dailyPillText: {
     color: '#e8c96a',

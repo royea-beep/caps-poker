@@ -16,6 +16,7 @@ import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
 import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
+import { tallyBoards, tallyLine, tallySpoken } from '../utils/boardTally';
 import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
 import { applyDevRevealFixture, publishProbeSnapshot } from '../utils/devRevealFixture';
 import { getSpecificHandName } from '../utils/handNames';
@@ -136,6 +137,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
    */
   const playerWins = revealData.boards.filter((b) => b.winner === 'player').length;
   const botWins = revealData.boards.filter((b) => b.winner === 'bot').length;
+  // EVERY BOARD ACCOUNTED FOR. playerWins and botWins are both outright-winner counts, so a TIED
+  // board is in neither and the scoreboard rendered "3 — 0" for a four-board hand. Three plus zero
+  // is three. The tally derives the tied count as the REMAINDER, so the three numbers cannot fail
+  // to sum to the board count. See utils/boardTally.ts.
+  const tally = tallyBoards(revealData.boards);
   // ALIGN-THE-CELEBRATION 2026-08-23 - ONE DERIVATION, and it now lives in utils/handOutcome.ts
   // so the local achievement check reads the SAME function rather than a second copy of the rule.
   // Every reader below asks this variable. Nothing on this screen decides the outcome for itself.
@@ -517,6 +523,31 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // practice, SOLO quick_poker, and multiplayer — and the server adjudicates only the last.
     // Gating on practice would have silently stopped paying every solo real hand, which no server
     // path covers. Practice was already excluded here and stays excluded.
+    // PLAY-NOT-PRESENCE — PRACTICE NOW REACHES THE SAME WRITER, WITH NET 0.
+    //
+    // Under 1% of every chip ever minted came from playing; the rest was paid for opening the
+    // app. Moving the faucet to play would have starved the one group that plays most and earns
+    // least — someone learning the game — because practice writes nothing here.
+    //
+    // So practice calls record_hand_net with net 0: the HAND stays chip-neutral exactly as
+    // before (no buy-in, no winnings, XP only — Roye's rule is unchanged), and the only chips
+    // that move are the play grant, which the server pays at play_grant_practice_pct of the real
+    // rate. Real play therefore stays strictly the better deal and the grant cannot become a
+    // reason to avoid opponents.
+    //
+    // It goes through record_hand_net rather than beside it because a second chip writer is the
+    // bug this project has already fixed twice. Same guards, same daily cap, same per-hand
+    // idempotency — the practice hand is just a hand whose net happens to be zero.
+    if (isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
+      handNetPersistedRef.current = true;
+      void (async () => {
+        try {
+          const deviceId = await getDeviceId();
+          await recordHandNet(deviceId, 0, revealData.handId, true);
+        } catch (_) { /* a missed practice grant must never block the results screen */ }
+      })();
+    }
+
     if (!isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
       handNetPersistedRef.current = true;
       void (async () => {
@@ -1172,11 +1203,22 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 </Text>
               </View>
             )}
-            <Text testID="score-numerals" style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
+            <Text testID="score-numerals" accessibilityLabel={tallySpoken(tally)} style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
               <Text style={{ color: gameColors.win }}>{playerWins}</Text>
               <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
               <Text style={{ color: gameColors.lose }}>{botWins}</Text>
             </Text>
+            {/* Only when a two-number score would be incomplete. A hand with no tied board is
+                unchanged, so this costs a returning player nothing. */}
+            {tally.hasTie && (
+              <Text testID="board-tally" style={styles.boardTally} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+                <Text style={{ color: gameColors.win }}>{tally.won} WON</Text>
+                <Text style={styles.boardTallyDot}> · </Text>
+                <Text style={styles.boardTallyTied}>{tally.tied} TIED</Text>
+                <Text style={styles.boardTallyDot}> · </Text>
+                <Text style={{ color: gameColors.lose }}>{tally.lost} LOST</Text>
+              </Text>
+            )}
             {playerWins === botWins && netChips > 0 && !revealData.isPractice && (
               <Text style={styles.tieBonusText}>
                 {`Tie bonus: +${netChips} chips`}
@@ -1324,7 +1366,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
           {/* Stats row */}
           <View style={styles.statsRow}>
-            <Text style={styles.statItem}>Boards: {playerWins}/{boards.length}</Text>
+            <Text style={styles.statItem}>Boards: {playerWins}/{boards.length}{tally.hasTie ? ` (${tally.tied} tied)` : ''}</Text>
             <Text style={styles.statSep}>|</Text>
             <Text style={[styles.statItem, { color: revealData.isPractice ? '#F5B546' : netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
               {revealData.isPractice ? 'Net: XP only' : `Net: ${netChips >= 0 ? '+' : ''}${netChips}`}
@@ -1579,6 +1621,11 @@ const styles = StyleSheet.create({
   scoreDisplay: { fontSize: rf(42), fontWeight: '900' },
   scoreSep: { color: COLORS.textDim, fontSize: rf(32), fontWeight: '300' },
   tieBonusText: { color: COLORS.mint, fontSize: rf(13), fontWeight: '600', opacity: 0.75, marginTop: rs(2) },
+  // letterSpacing rather than a bigger size: this line must read as a caption to the numerals
+  // above it, not compete with them.
+  boardTally: { fontSize: rf(13), fontWeight: '800', letterSpacing: 0.6, marginTop: rs(3), textAlign: 'center' },
+  boardTallyTied: { color: COLORS.textDim },
+  boardTallyDot: { color: COLORS.textDim, fontWeight: '400' },
   netSection: { width: '100%' },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: rs(4) },
   netLabel: { color: COLORS.textMuted, fontSize: rf(16), fontWeight: '600' },

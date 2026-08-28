@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import CardComponent from './Card';
 import { Card } from '../constants/gameConfig';
 import { RevealBoardData } from '../types/gameTypes';
+import { tallyBoards } from '../utils/boardTally';
 
 const CARD_W = 52;
 const CARD_H = 73;
@@ -105,7 +106,10 @@ export function FullGameShareCard({
   potPerBoard,
   numberOfPlayers,
 }: FullGameShareCardProps) {
-  const boardsWon = boards.filter((b) => b.winner === 'player').length;
+  // "3/4 boards won" was never WRONG the way "3 — 0" was — but it still leaves the reader to
+  // wonder whether the 4th was lost or tied, and this image is the one that gets shared.
+  const tally = tallyBoards(boards);
+  const boardsWon = tally.won;
   const potTotal = potPerBoard * numberOfPlayers;
 
   return (
@@ -141,7 +145,7 @@ export function FullGameShareCard({
         <Text style={[styles.resultLabel, { color: netChips >= 0 ? '#FFD700' : '#ff4444' }]}>
           NET: {netChips >= 0 ? '+' : ''}{netChips}
         </Text>
-        <Text style={styles.chipResult}>{boardsWon}/{boards.length} boards won</Text>
+        <Text style={styles.chipResult}>{boardsWon}/{boards.length} boards won{tally.hasTie ? ` · ${tally.tied} tied` : ''}</Text>
       </View>
 
       {/* Complete bonus */}

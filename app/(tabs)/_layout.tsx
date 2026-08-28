@@ -14,7 +14,14 @@ const SCREEN_W = Dimensions.get('window').width;
 // Border-top hairline also retoned to mint @15%. Cascades to all 5 tabs.
 const TAB_BG = '#0D0D0D';
 const ACTIVE = '#4FD6A8';
-const INACTIVE = 'rgba(255,255,255,0.35)';
+// 0.52, was 0.35. THIS IS AN APP-WIDE FIX, NOT A HOME-SCREEN ONE — the tab bar renders on every
+// tab, so the inactive labels failed on every screen in the app.
+//   0.35 over TAB_BG #0D0D0D composites to rgb(98,98,98) = 3.17:1, against a 4.5:1 bar for the
+//   9-10px label. Measured, not estimated.
+//   0.52 composites to rgb(139,139,139) = 5.7:1, with margin so a future TAB_BG nudge does not
+//   silently drop it back under.
+// The ACTIVE mint is untouched, so the active/inactive distinction still reads.
+const INACTIVE = 'rgba(255,255,255,0.52)';
 const TAB_BORDER = 'rgba(79,214,168,0.20)';
 
 function TabIcon({ label, emoji, focused }: { label: string; emoji: string; focused: boolean }) {

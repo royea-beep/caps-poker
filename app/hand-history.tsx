@@ -16,6 +16,7 @@ import { HandBadge } from '../components/HandBadge';
 import { EmptyState } from '../components/EmptyState';
 import { HandHistoryPreview } from '../components/EmptyStatePreviews';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { tallyBoards } from '../utils/boardTally';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -107,6 +108,9 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
   const shareRef = useRef<any>(null);
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
+  // Same binary-count-over-a-three-way-outcome as the results scoreboard: a tied board was in
+  // neither number, so a 4-board hand with one tie listed as "3 - 0". utils/boardTally.ts.
+  const tally = tallyBoards(hand.boards);
   /**
    * CLASS A + CLASS B, both in one line. This was `hand.netChips >= 0`, so a TIE (net 0) rendered
    * with the WIN border and a green "+0". Worse, the two lines directly above already compute the
@@ -149,6 +153,10 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
               <Text style={[styles.scoreText, { color: COLORS.neonGreen }]}>{playerWins}</Text>
               <Text style={styles.scoreDash}> - </Text>
               <Text style={[styles.scoreText, { color: COLORS.neonRed }]}>{botWins}</Text>
+              {/* A row this dense cannot carry the full "3 WON · 1 TIED · 0 LOST" line, so the
+                  missing board is named with the same '=' token the board rows below already use
+                  for a tie. The expanded card spells it out in full. */}
+              {tally.hasTie && <Text style={styles.scoreTied}> ={tally.tied}</Text>}
             </View>
             {bestHand ? (
               isBigHand
@@ -512,6 +520,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  scoreTied: { color: COLORS.textDim, fontSize: 13, fontWeight: '800' },
   scoreText: {
     fontSize: rf(18),
     fontWeight: '900',

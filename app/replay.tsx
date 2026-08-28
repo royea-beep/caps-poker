@@ -17,6 +17,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getHand, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { safeBack } from '../components/BackControl';
+import { tallyBoards, tallyLine, tallySpoken } from '../utils/boardTally';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -100,22 +101,25 @@ function BoardView({ board, boardNumber, totalBoards }: { board: HandBoardRecord
 
 function SummaryView({ hand, onCoach }: { hand: HandRecord; onCoach: () => void }) {
   // Same class-A line as hand-history: `netChips >= 0` painted a TIE green with a "+".
-  const rpPlayerWins = hand.boards.filter((b) => b.winner === 'player').length;
-  const rpBotWins = hand.boards.filter((b) => b.winner === 'bot').length;
+  // Was four filters over the same array producing two identical pairs — rpPlayerWins/rpBotWins
+  // for the outcome and playerWins/botWins for the display. One tally now, and it carries the
+  // TIED count the two-number score dropped.
+  const tally = tallyBoards(hand.boards);
+  const playerWins = tally.won;
+  const botWins = tally.lost;
   const outcome: 'win' | 'loss' | 'tie' =
-    rpPlayerWins > rpBotWins ? 'win' : rpPlayerWins < rpBotWins ? 'loss' : 'tie';
-  const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
-  const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
+    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
 
   return (
     <View style={styles.summaryContainer}>
       <Text style={styles.summaryTitle}>HAND COMPLETE</Text>
 
-      <View style={styles.scoreRow}>
+      <View style={styles.scoreRow} accessibilityLabel={tallySpoken(tally)}>
         <Text style={[styles.scoreBig, { color: COLORS.neonGreen }]}>{playerWins}</Text>
         <Text style={styles.scoreDash}> — </Text>
         <Text style={[styles.scoreBig, { color: COLORS.neonRed }]}>{botWins}</Text>
       </View>
+      {tally.hasTie && <Text style={styles.scoreTally}>{tallyLine(tally)}</Text>}
 
       <Text style={[styles.netChips, { color: outcome === 'win' ? COLORS.neonGreen : outcome === 'loss' ? COLORS.neonRed : COLORS.textDim }]}>
         {hand.netChips > 0 ? '+' : ''}{hand.netChips === 0 ? '±0' : hand.netChips} chips
@@ -422,6 +426,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  scoreTally: { color: COLORS.textDim, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, marginTop: 2, textAlign: 'center' },
   scoreBig: {
     fontSize: rf(48),
     fontWeight: '900',
