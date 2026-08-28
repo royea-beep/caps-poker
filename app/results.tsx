@@ -523,6 +523,31 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // practice, SOLO quick_poker, and multiplayer — and the server adjudicates only the last.
     // Gating on practice would have silently stopped paying every solo real hand, which no server
     // path covers. Practice was already excluded here and stays excluded.
+    // PLAY-NOT-PRESENCE — PRACTICE NOW REACHES THE SAME WRITER, WITH NET 0.
+    //
+    // Under 1% of every chip ever minted came from playing; the rest was paid for opening the
+    // app. Moving the faucet to play would have starved the one group that plays most and earns
+    // least — someone learning the game — because practice writes nothing here.
+    //
+    // So practice calls record_hand_net with net 0: the HAND stays chip-neutral exactly as
+    // before (no buy-in, no winnings, XP only — Roye's rule is unchanged), and the only chips
+    // that move are the play grant, which the server pays at play_grant_practice_pct of the real
+    // rate. Real play therefore stays strictly the better deal and the grant cannot become a
+    // reason to avoid opponents.
+    //
+    // It goes through record_hand_net rather than beside it because a second chip writer is the
+    // bug this project has already fixed twice. Same guards, same daily cap, same per-hand
+    // idempotency — the practice hand is just a hand whose net happens to be zero.
+    if (isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
+      handNetPersistedRef.current = true;
+      void (async () => {
+        try {
+          const deviceId = await getDeviceId();
+          await recordHandNet(deviceId, 0, revealData.handId, true);
+        } catch (_) { /* a missed practice grant must never block the results screen */ }
+      })();
+    }
+
     if (!isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
       handNetPersistedRef.current = true;
       void (async () => {

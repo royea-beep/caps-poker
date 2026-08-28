@@ -125,6 +125,8 @@ export interface HandNetResult {
   clamped?: boolean;
   /** ECON-SW P1.1 (S62) — true when the server deduped this (device_id, hand_id) → no balance change. */
   duplicate?: boolean;
+  /** PLAY-NOT-PRESENCE — chips granted for FINISHING the hand. 0 once the daily cap is reached. */
+  play_grant?: number;
 }
 
 /**
@@ -136,13 +138,21 @@ export interface HandNetResult {
  * for practice hands. Contract (server clamps net to ±10000):
  *   record_hand_net(p_device_id, p_net) -> { ok, new_balance, net, clamped }
  */
-export async function recordHandNet(deviceId: string, net: number, handId?: string): Promise<HandNetResult | null> {
+export async function recordHandNet(
+  deviceId: string, net: number, handId?: string, isPractice?: boolean,
+): Promise<HandNetResult | null> {
   // ECON-SW P1.1 (S62) — pass a STABLE per-hand id as p_hand_id when available; the server
   // dedups on (device_id, hand_id) via a partial unique index, so a results re-mount for the
   // same hand returns { duplicate:true, net:0 } instead of double-counting. Omitting it (2-arg
   // call) keeps the old no-dedup behavior.
   const params: Record<string, unknown> = { p_device_id: deviceId, p_net: net };
   if (handId) params.p_hand_id = handId;
+  // PLAY-NOT-PRESENCE — p_is_practice is passed ONLY when true, and deliberately so. The RPC has
+  // two overloads: the 3-arg one (which delegates with practice=false) and a 4-arg one with NO
+  // default. Sending the key only for practice means every existing caller — including
+  // resolve-hand, which settles multiplayer server-side — keeps resolving to the 3-arg form and
+  // picks up the play grant with no change at all.
+  if (isPractice) params.p_is_practice = true;
   const raw = await callRPC<any>('record_hand_net', params);
   if (!raw) return null;
   return {
@@ -151,6 +161,7 @@ export async function recordHandNet(deviceId: string, net: number, handId?: stri
     new_balance: raw.new_balance,
     clamped: raw.clamped,
     duplicate: raw.duplicate,
+    play_grant: raw.play_grant ?? 0,
   };
 }
 
