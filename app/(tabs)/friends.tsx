@@ -17,6 +17,7 @@ import { getSupabase } from '../../utils/supabase';
 import { getDeviceId } from '../../utils/leaderboard';
 import { track } from '../../utils/analytics';
 import { myClubs, createClub, joinClub, Club } from '../../utils/clubApi';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
 export default function FriendsScreen() {
   const router = useRouter();
@@ -131,7 +132,7 @@ export default function FriendsScreen() {
           clubs.map((c) => (
             <Pressable key={c.id} style={styles.clubCard} onPress={() => openClub(c)} accessibilityRole="button" accessibilityLabel={`Open club ${c.name}, ${c.member_count} members`}>
               <Text style={styles.clubEmoji}>{c.is_owner ? '👑' : '🛡️'}</Text>
-              <View style={{ flex: 1 }}>
+              <View style={LABEL_COLUMN}>
                 <Text style={styles.clubName} numberOfLines={1}>{c.name}</Text>
                 <Text style={styles.clubMeta}>#{c.club_code} · {c.member_count} member{c.member_count === 1 ? '' : 's'}{c.is_owner ? ' · owner' : ''}</Text>
               </View>

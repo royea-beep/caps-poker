@@ -20,6 +20,7 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getDeviceId } from '../utils/leaderboard';
 import { getSupabase } from '../utils/supabase';
+import { LABEL_COLUMN } from '../constants/labelColumn';
 
 // ─── Tiers ────────────────────────────────────────────────────────────────────
 
@@ -207,7 +208,7 @@ export default function RankScreen() {
                     style={[styles.tierRow, isCurrentTier && { backgroundColor: t.color + '18', borderColor: t.color }]}
                   >
                     <Text style={styles.tierRowIcon}>{t.icon}</Text>
-                    <View style={{ flex: 1 }}>
+                    <View style={LABEL_COLUMN}>
                       <Text style={[styles.tierRowName, isCurrentTier && { color: t.color }]}>{t.name}</Text>
                       <Text style={styles.tierRowRange}>{t.min}–{t.max === 9999 ? '∞' : t.max} ELO</Text>
                     </View>

@@ -30,6 +30,7 @@ import { beginPracticeLive, getPracticeLiveState, isPracticeLiveActive, endPract
 import { PRACTICE_LIVE_ENABLED } from '../../constants/featureFlags';
 import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 import { t } from '../../utils/i18n';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -312,7 +313,7 @@ export default function PublicLobby() {
             testID={`bot-table-${n}`}
           >
             <View style={styles.botBadge}><Text style={styles.botBadgeText}>🤖 BOT</Text></View>
-            <View style={{ flex: 1 }}>
+            <View style={LABEL_COLUMN}>
               <Text style={styles.botRowTitle}>Practice vs Bots</Text>
               <Text style={styles.botRowSub}>{t().botRowSub(n, getBoardCount(n))}</Text>
             </View>

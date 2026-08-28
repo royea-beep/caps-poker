@@ -88,6 +88,7 @@ import { StreakPopup } from '../../components/StreakPopup';
 import { getHandHistory, HandRecord } from '../../utils/handHistory';
 import { ACHIEVEMENTS } from '../../utils/achievements';
 import { track } from '../../utils/analytics';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -1491,12 +1492,19 @@ export default function HomeScreen() {
             {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
                 English inside a Hebrew app, on the highest-traffic route to multiplayer.
                 The emoji stays as decoration; the TEXT is what names the destination. */}
-            <Text style={styles.playOnlineEmoji}>🎮</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.playOnlineTitle}>Play Online</Text>
-              <Text style={styles.playOnlineSub}>Multiplayer lobby · real players &amp; instant bot tables</Text>
+            <Text style={styles.playOnlineEmoji} allowFontScaling={false}>🎮</Text>
+            {/* LABEL_COLUMN, not `flex: 1` — a zero-basis text column between two fixed glyphs is the
+                one arrangement Yoga and CSS lay out differently, and it is why TestFlight showed
+                a gamepad and a chevron with nothing between them. See the constant.
+
+                allowFontScaling={false} on the two glyphs for the same reason: iOS Dynamic Type
+                scales them (web ignores it), and they are decoration whose only job is to stay
+                small enough that the words keep their room. */}
+            <View style={LABEL_COLUMN}>
+              <Text style={styles.playOnlineTitle} numberOfLines={1}>Play Online</Text>
+              <Text style={styles.playOnlineSub} numberOfLines={2}>Multiplayer lobby · real players &amp; instant bot tables</Text>
             </View>
-            <Text style={styles.playOnlineGo}>›</Text>
+            <Text style={styles.playOnlineGo} allowFontScaling={false}>›</Text>
           </Pressable>
         </AnimatedRN.View>
 
