@@ -145,11 +145,22 @@ for (const spec of specs) {
     `${String(kb).padStart(5)}KB  ${(audio ? 'YES' : 'none').padEnd(5)}  ${dims}  "${report.at(-1).hook.slice(0, 34)}"`);
 }
 
+/**
+ * MERGE, NEVER REPLACE. With ONLY= set this used to write a queue.json containing just the one
+ * re-cut video and silently drop the other nine — the same shape of bug that wiped raw/manifest.json
+ * when a single scene was re-captured. A partial run must not be able to delete finished work.
+ */
+const prevQueue = fs.existsSync(path.join(OUT, 'queue.json'))
+  ? JSON.parse(fs.readFileSync(path.join(OUT, 'queue.json'), 'utf8')).videos ?? [] : [];
+const merged = specs.map((s) => report.find((r) => r.id === s.id) ?? prevQueue.find((r) => r.id === s.id))
+  .filter(Boolean);
+if (!only && merged.length !== specs.length) throw new Error('a full cut did not produce every video');
+
 fs.writeFileSync(path.join(OUT, 'queue.json'), JSON.stringify({
   generated: 'tools/cut.mjs',
   note: 'A QUEUE, NOT A SCHEDULE. Nothing here is published, and nothing in this repo can publish it.',
   constraints: { maxSeconds: MAX_SECONDS, hookDeadlineSeconds: HOOK_DEADLINE, audioStreams: 0,
                  resolution: `${TARGET.width}x${TARGET.height}`, fps: FPS, capture: `${VIEWPORT.width}x${VIEWPORT.height}` },
-  videos: report,
+  videos: merged,
 }, null, 2));
-console.log(`\n  wrote ${path.join(OUT, 'queue.json')}  (${report.length} videos)\n`);
+console.log(`\n  wrote ${path.join(OUT, 'queue.json')}  (${merged.length} videos, ${report.length} re-cut)\n`);
