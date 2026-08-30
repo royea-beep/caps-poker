@@ -148,38 +148,6 @@ function HeroCardFan() {
   );
 }
 
-/**
- * THE TABLE, NOT A FAN OF CARDS — concept C3, which the panel called the best single upgrade.
- *
- * A card fan says "poker". It does not say THIS poker. The one thing CAPS does that other poker
- * does not is run several boards at once, and that is a picture, not a sentence — so the hero is
- * the felt with the boards on it.
- *
- * IRON RULE #3 — THE BOARD COUNT IS NOT DRAWN AS A CONSTANT. It comes from getBoardCount(), the
- * same function the game uses, so the art shows the seat count the player will actually get
- * (2P=4, 3P=3, 4P=2). Drawing four boards here would have been the same false claim the tagline
- * list already had to retract on 2026-08-11.
- *
- * DECORATION ONLY: one accessibilityRole="image" with a label, nothing focusable inside it, so it
- * adds ZERO controls to the screen. That was the condition on including it.
- */
-function HeroTable({ boards }: { boards: number }) {
-  return (
-    <View
-      accessibilityRole="image"
-      accessibilityLabel={`A CAPS table: ${boards} boards, each dealt five community cards`}
-      style={styles.heroTable}
-    >
-      {Array.from({ length: boards }).map((_, b) => (
-        <View key={b} style={styles.heroBoard}>
-          {Array.from({ length: 5 }).map((__, c) => (
-            <View key={c} style={styles.heroPip} />
-          ))}
-        </View>
-      ))}
-    </View>
-  );
-}
 
 const TAGLINES = [
   "Place your cards. Own every board.",
@@ -198,7 +166,29 @@ const TAGLINES = [
   "The poker game that never sleeps.",
   "Where every board is a battle.",
 ];
-const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
+/**
+ * D1's FACE. The wordmark is now the hero, so the face it renders in matters far more than it did
+ * when this was a 41px title.
+ *
+ * ⚠️ PLAYFAIR DISPLAY IS NOT AVAILABLE ON NATIVE AND WAS NEVER GOING TO BE. There are ZERO font
+ * files in `assets/` and `expo-font` is never imported — the same fact `CARD_BACK_FONT` in
+ * Card.tsx already records as FONT RULING A. The concept render Roye approved was set in Playfair,
+ * and on a phone it cannot be, because the font is not in the binary.
+ *
+ * `default: undefined` used to mean the system SANS face, which for a masthead is the wrong shape
+ * entirely. So the fallbacks now name real serifs that ARE present:
+ *   ios      Georgia — bundled with iOS, a genuine high-contrast serif, the closest shipped thing
+ *   android  'serif' — resolves to Noto Serif
+ *   web      Playfair Display, as before
+ * That is an ASSET-FREE improvement, and it follows the precedent rather than inventing one:
+ * when a font-infra batch bundles Playfair, this one constant changes and every platform matches.
+ */
+const DISPLAY_FONT = Platform.select({
+  web: 'Playfair Display, Georgia, serif',
+  ios: 'Georgia',
+  android: 'serif',
+  default: undefined,
+});
 
 // ─── Sign-in nudge banner — slide-up, non-blocking ─────────────────────────────
 function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () => void }) {
@@ -1220,7 +1210,19 @@ export default function HomeScreen() {
     return () => anim.stop();
   }, [canClaim]);
 
-  const titleFontSize = Math.min(42, Math.floor(screenW * 0.105));
+  /**
+   * D1 — THE WORDMARK IS THE HERO NOW. Was `min(42, screenW * 0.105)`, i.e. 41pt at 393: a title
+   * sitting above the art. D1 makes it the art, so it triples.
+   *
+   * IRON RULE #3 — every value derives from the live width; nothing here is a device literal.
+   * The 126 ceiling stops a 430pt phone from rendering a wordmark larger than the design was ever
+   * measured at, and 0.30 was chosen so the widest plausible face still fits the narrowest screen:
+   * four capitals at ~0.72em advance is ~2.9em, and 0.30 x 320 x 2.9 = 278pt inside a 320pt frame.
+   * That is tight, which is why it is MEASURED at 320/375/393/430 on both engines rather than
+   * trusted — `adjustsFontSizeToFit` rescues native but is a NO-OP ON WEB, a fact this project
+   * learned from the REMATCH regression.
+   */
+  const titleFontSize = Math.min(126, Math.round(screenW * 0.30));
 
   // Web title gradient for dark_gold theme
   const webTitleGradient = isWeb && homeThemeId === 'dark_gold'
@@ -1406,7 +1408,6 @@ export default function HomeScreen() {
             CAPS
           </Text>
           <Text style={styles.titlePoker}>POKER</Text>
-          <HeroTable boards={getBoardCount(config.numberOfPlayers)} />
           {/*
             C6's SENTENCE — a stranger must learn what this game IS from the home screen, and the
             rotating taglines never told them. Nine of the ten were mood, not instruction.
@@ -1529,8 +1530,10 @@ export default function HomeScreen() {
 
           {/* C2 — THE CONFIG LINE IS GONE. "3 boards · 3 players · Low Blinds · 25/board" measured
               3.70:1 (needs 4.5) and it configured before it explained: a stranger's first screen
-              should not open with stakes jargon. The board count it carried is now SHOWN by the
-              hero table above, drawn from the same getBoardCount(). */}
+              should not open with stakes jargon. The board count it carried was then shown by the
+              hero table; that art was replaced by D1 on 2026-08-30, so the count now lives ONLY in
+              the teaching sentence below — which is the right medium for it, per handoffs 125/127:
+              a rules fact is READ, not seen. */}
         </View>
 
         {/* C2 — THE 2P/3P/4P SELECTOR IS GONE FROM HOME.
@@ -2133,20 +2136,30 @@ const styles = StyleSheet.create({
   },
   titleCaps: {
     fontWeight: '900',
-    letterSpacing: 8,
+    // D1 — was a fixed `letterSpacing: 8`. At 41pt that opened a small title out; at 118pt it
+    // pushes the word past the frame and reads as a spaced-out label rather than a masthead.
+    // Display type tightens as it grows, so this goes NEGATIVE and scales with the width.
+    letterSpacing: rs(-3),
     textShadowColor: 'rgba(0,0,0,0.85)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 24,
   },
   titlePoker: {
-    fontSize: rf(18),
+    // D1 — the subtitle is now the counterweight to a 118pt word, so it goes smaller and much
+    // wider-tracked. Same relationship the concept render had between the two lines.
+    fontSize: rf(13),
     fontWeight: '600',
-    letterSpacing: 3,
+    letterSpacing: rs(10),
     textTransform: 'uppercase',
     color: '#c9a84c',
     opacity: 1.0,
-    marginTop: -2,
-    marginBottom: 2,
+    // The negative pull existed to close a gap under a small title; a big one already sits close.
+    marginTop: rs(2),
+    marginBottom: rs(2),
+    // NOTE: tracking leaves a trailing space after the last letter, so a centred word sits about
+    // half a space left of true centre — 5pt at 393. `textIndent` would correct it and is WEB-ONLY
+    // CSS; smuggling it into a StyleSheet behind `as any` to buy 5pt is a worse trade than the 5pt.
+    // Left alone deliberately.
   },
   titleSub: {
     // Was 11px / letterSpacing 1.5 / UPPERCASE — fine for a five-word mood tagline, fatal for a
@@ -2241,20 +2254,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   // HOME-MP-LINK — mint accent so it reads as a distinct primary path next to the green Play
-  // ── C3's HERO TABLE (decoration; zero controls) ──────────────────────────────────────────
-  // The felt values are the SHIPPING ones from paintThemes `classic` and BoardSurface's lift.
-  // The felt is settled and is not being re-litigated here — this reuses it, it does not change it.
-  heroTable: {
-    width: '64%', alignSelf: 'center', marginTop: rs(10), marginBottom: rs(6),
-    backgroundColor: '#04351A', borderRadius: rv(14), borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.45)', paddingVertical: rs(9), paddingHorizontal: rs(9), gap: rs(6),
-  },
-  heroBoard: {
-    backgroundColor: 'rgb(26,70,44)', borderRadius: rv(8), borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)', paddingVertical: rs(5),
-    flexDirection: 'row', justifyContent: 'center', gap: rs(5),
-  },
-  heroPip: { width: rs(15), height: rs(21), borderRadius: rv(3), backgroundColor: '#FCFAF3' },
+  // C3's HERO TABLE — the fifteen blank rectangles — was REMOVED for D1 on 2026-08-30. Handoff
+  // 124 measured it as the reason the home screen did not land: "the hero is fifteen blank white
+  // rounded rectangles". The felt tokens it borrowed are untouched and still live in paintThemes.
 
   // ── C2: PLAY ONLINE IS THE HERO ─────────────────────────────────────────────────────────
   // A FILLED mint button, not an outlined card. The biggest promise on the screen must be the
