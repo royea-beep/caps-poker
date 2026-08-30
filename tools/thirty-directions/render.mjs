@@ -22,9 +22,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { page } from './lib.mjs';
 import { DIRECTIONS } from './directions.mjs';
+import { CUP_DIRECTIONS } from './cups.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')));
 const ONLY = args.only ? new Set(args.only.split(',')) : null;
+/**
+ * `--set=cups` renders the cup family instead of the thirty, and `--audit=<name>` sends the
+ * report to its own file. ONE audit implementation serves both — a second renderer would be a
+ * second instrument, with its own bugs, and this one has already been wrong three times.
+ */
+const SET = args.set === 'cups' ? CUP_DIRECTIONS : DIRECTIONS;
+const AUDIT_FILE = args.audit || 'floor-audit.json';
 /** The home screen's own default is 3 players. Board count is DYNAMIC — never a literal 4. */
 const PLAYERS = Number(args.players || 3);
 const BOARDS = PLAYERS === 2 ? 4 : PLAYERS === 3 ? 3 : 2;
@@ -97,7 +105,7 @@ const AUDIT = () => {
 const browser = await chromium.launch({ headless: false, executablePath: process.env.CAPS_BROWSER_PATH });
 const report = { ts: new Date().toISOString(), players: PLAYERS, boards: BOARDS, widths: WIDTHS, directions: [] };
 
-for (const d of DIRECTIONS) {
+for (const d of SET) {
   if (ONLY && !ONLY.has(d.id)) continue;
   const entry = { id: d.id, family: d.family, name: d.name, needs: d.needs, note: d.note || null, widths: {} };
 
@@ -210,5 +218,5 @@ for (const d of DIRECTIONS) {
 }
 
 await browser.close();
-fs.writeFileSync(path.join(OUT, 'floor-audit.json'), JSON.stringify(report, null, 2));
+fs.writeFileSync(path.join(OUT, AUDIT_FILE), JSON.stringify(report, null, 2));
 console.log(`\n${report.directions.length} directions x ${WIDTHS.length} widths -> ${OUT}`);

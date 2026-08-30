@@ -20,6 +20,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fontFaces, P } from './lib.mjs';
 import { DIRECTIONS } from './directions.mjs';
+import { CUP_DIRECTIONS } from './cups.mjs';
+const ALL = [...DIRECTIONS, ...CUP_DIRECTIONS];
 
 const IDS = (process.argv[2] || 'A2,I2,J2,I1,H2,F1,C1').split(',');
 const OUT = path.resolve(process.argv[1], '../../../docs/thirty-directions');
@@ -30,7 +32,7 @@ const browser = await chromium.launch({ headless: false, executablePath: process
 const tiles = [];
 
 for (const id of IDS) {
-  const d = DIRECTIONS.find((x) => x.id === id);
+  const d = ALL.find((x) => x.id === id);
   if (!d) { console.log(`skip ${id} — no such direction`); continue; }
   const row = { id, name: d.name, shots: {} };
 
