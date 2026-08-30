@@ -30,7 +30,21 @@ const PLAYERS = Number(args.players || 3);
 const BOARDS = PLAYERS === 2 ? 4 : PLAYERS === 3 ? 3 : 2;
 const WIDTHS = [393, 320];
 const OUT = path.resolve(process.argv[1], '../../../docs/thirty-directions');
+/**
+ * `--shots=<dir>` sends the screenshots somewhere else while the audit still lands in OUT.
+ *
+ * WHY IT EXISTS. `--only=J2` rewrites `floor-audit.json` with a ONE-DIRECTION report, because the
+ * report is assembled from whatever this run touched. That is what happened after J2's red spade
+ * was fixed: the audit was truncated to a single entry, `sheet.mjs` was then rebuilt from it, and
+ * twenty-nine of thirty tiles lost their floor verdict to a `?`. The pictures were fine and the
+ * labels were quietly wrong — and the report claimed the sheets carried the verdicts.
+ *
+ * So an audit-repair pass can now regenerate the full measurement WITHOUT rewriting a single
+ * committed render: the art stays exactly as it was published, only the JSON is refreshed.
+ */
+const SHOTS = args.shots ? path.resolve(args.shots) : OUT;
 fs.mkdirSync(OUT, { recursive: true });
+fs.mkdirSync(SHOTS, { recursive: true });
 
 const lum = (r, g, b) => {
   const f = (v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
@@ -101,7 +115,7 @@ for (const d of DIRECTIONS) {
     await p.evaluate(() => document.fonts.ready);   // THE PRECONDITION
     await p.waitForTimeout(350);                     // let feTurbulence rasterise
 
-    const shotPath = path.join(OUT, `${d.id}-${W}.png`);
+    const shotPath = path.join(SHOTS, `${d.id}-${W}.png`);
     await p.screenshot({ path: shotPath });
     const raw = await p.evaluate(AUDIT);
 
@@ -119,7 +133,7 @@ for (const d of DIRECTIONS) {
      * RESIDUAL LIMIT, stated: colour-emoji fonts ignore `color`, so an emoji still paints in the
      * ground shot. It only pollutes its own box, and emoji are excluded from scoring anyway.
      */
-    const groundPath = path.join(OUT, `.ground-${d.id}-${W}.png`);
+    const groundPath = path.join(SHOTS, `.ground-${d.id}-${W}.png`);
     await p.addStyleTag({ content: `*{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}` });
     await p.screenshot({ path: groundPath });
     const { PNG } = await import('pngjs');

@@ -241,7 +241,7 @@ opposite of that in half a second.
 
 | file | what it is |
 |---|---|
-| `docs/thirty-directions/_contact-sheet-393.png` · `-320.png` | all thirty, both widths, labelled with ID and floor verdict |
+| `docs/thirty-directions/_contact-sheet-393.png` · `-320.png` | all thirty, both widths, each tile labelled with its ID and floor verdict (verified: 30/30 carry a verdict at both widths) |
 | `docs/thirty-directions/_icon-test.png` | seven candidates at 1024 / 240 / 120 / 60 |
 | `docs/thirty-directions/<ID>-393.png` · `-320.png` | sixty full renders |
 | `docs/thirty-directions/floor-audit.json` | every text node, every control, both widths |
