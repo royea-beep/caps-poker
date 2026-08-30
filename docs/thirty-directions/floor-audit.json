@@ -1,0 +1,1673 @@
+{
+  "ts": "2026-08-30T07:31:29.009Z",
+  "players": 3,
+  "boards": 3,
+  "widths": [
+    393,
+    320
+  ],
+  "directions": [
+    {
+      "id": "A1",
+      "family": "Table from above",
+      "name": "Overhead, cards mid-deal",
+      "needs": "asset",
+      "note": "CSS gets the layout and the light; real depth of field and card-in-flight blur want a rendered still.",
+      "widths": {
+        "320": {
+          "shot": "A1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "A1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "family": "Table from above",
+      "name": "Dealer’s arc, cropped hard",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "A2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "A",
+                "worst": 2.1,
+                "median": 2.2,
+                "need": 3,
+                "size": 29
+              },
+              {
+                "text": "K",
+                "worst": 2.83,
+                "median": 2.89,
+                "need": 3,
+                "size": 29
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "A2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "A",
+                "worst": 2.1,
+                "median": 2.16,
+                "need": 3,
+                "size": 36
+              }
+            ],
+            "contrastEdges": [
+              {
+                "text": "K",
+                "worst": 2.95,
+                "median": 3.01,
+                "need": 3
+              }
+            ],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "family": "Table from above",
+      "name": "Still table, one card lifted",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "A3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "A3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "B1",
+      "family": "The format as the image",
+      "name": "Boards as lit bars",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "B1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "B1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "B2",
+      "family": "The format as the image",
+      "name": "Hand splitting into boards",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "B2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "B2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "B3",
+      "family": "The format as the image",
+      "name": "Card grid, edge to edge",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "B3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "K",
+                "worst": 1.41,
+                "median": 1.62,
+                "need": 3,
+                "size": 23
+              },
+              {
+                "text": "J",
+                "worst": 1.41,
+                "median": 1.62,
+                "need": 3,
+                "size": 23
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "B3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "K",
+                "worst": 1.64,
+                "median": 1.86,
+                "need": 3,
+                "size": 28
+              },
+              {
+                "text": "J",
+                "worst": 1.64,
+                "median": 1.86,
+                "need": 3,
+                "size": 28
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    },
+    {
+      "id": "C1",
+      "family": "One oversized card",
+      "name": "Ace of spades, centred",
+      "needs": "designer",
+      "note": "The pip layout and the face art are a real card design, not a centred glyph.",
+      "widths": {
+        "320": {
+          "shot": "C1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "C1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "family": "One oversized card",
+      "name": "Card bleeding off frame + wordmark",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "C2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "C2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "C3",
+      "family": "One oversized card",
+      "name": "The card back as hero",
+      "needs": "designer",
+      "note": "The shop already sells card backs; this wants the real back art, not three circles.",
+      "widths": {
+        "320": {
+          "shot": "C3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "C3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "D1",
+      "family": "Typography alone",
+      "name": "CAPS, gold, enormous",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "D1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "D1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "family": "Typography alone",
+      "name": "Editorial masthead",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "D2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "D2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "D3",
+      "family": "Typography alone",
+      "name": "The sentence is the art",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "D3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "D3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "E1",
+      "family": "Light and shadow on felt",
+      "name": "Raking light, long shadow",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "E1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "E1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "E2",
+      "family": "Light and shadow on felt",
+      "name": "Chiaroscuro pool",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "E2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "A",
+                "worst": 3.49,
+                "median": 4.2,
+                "need": 4.5,
+                "size": 12
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "E2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "A",
+                "worst": 2.93,
+                "median": 3.75,
+                "need": 4.5,
+                "size": 15
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    },
+    {
+      "id": "E3",
+      "family": "Light and shadow on felt",
+      "name": "Cards barely emerging",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "E3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "E3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "F1",
+      "family": "Wordmark as the screen",
+      "name": "Letters cropped by the frame",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "F1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "F1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "F2",
+      "family": "Wordmark as the screen",
+      "name": "Gold foil emboss",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "F2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "F2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "F3",
+      "family": "Wordmark as the screen",
+      "name": "Cinema title card",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "F3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "F3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "G1",
+      "family": "Frozen at reveal",
+      "name": "One card mid-flip",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "G1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "G1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "G2",
+      "family": "Frozen at reveal",
+      "name": "The winning hand lit",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "G2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "3",
+                "worst": 2.67,
+                "median": 2.71,
+                "need": 4.5,
+                "size": 11
+              },
+              {
+                "text": "8",
+                "worst": 2.67,
+                "median": 2.75,
+                "need": 4.5,
+                "size": 11
+              },
+              {
+                "text": "5",
+                "worst": 1.12,
+                "median": 1.14,
+                "need": 4.5,
+                "size": 11
+              },
+              {
+                "text": "2",
+                "worst": 2.67,
+                "median": 2.75,
+                "need": 4.5,
+                "size": 11
+              },
+              {
+                "text": "9",
+                "worst": 2.67,
+                "median": 2.71,
+                "need": 4.5,
+                "size": 11
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "G2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "3",
+                "worst": 2.71,
+                "median": 2.71,
+                "need": 4.5,
+                "size": 14
+              },
+              {
+                "text": "8",
+                "worst": 2.67,
+                "median": 2.75,
+                "need": 4.5,
+                "size": 14
+              },
+              {
+                "text": "5",
+                "worst": 1.14,
+                "median": 1.14,
+                "need": 4.5,
+                "size": 14
+              },
+              {
+                "text": "2",
+                "worst": 2.67,
+                "median": 2.71,
+                "need": 4.5,
+                "size": 14
+              },
+              {
+                "text": "9",
+                "worst": 2.71,
+                "median": 2.75,
+                "need": 4.5,
+                "size": 14
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    },
+    {
+      "id": "G3",
+      "family": "Frozen at reveal",
+      "name": "All boards resolving at once",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "G3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "K",
+                "worst": 1.75,
+                "median": 1.77,
+                "need": 4.5,
+                "size": 8
+              },
+              {
+                "text": "9",
+                "worst": 1.75,
+                "median": 1.77,
+                "need": 4.5,
+                "size": 8
+              },
+              {
+                "text": "LOST",
+                "worst": 3.42,
+                "median": 3.45,
+                "need": 4.5,
+                "size": 11
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "G3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "K",
+                "worst": 1.75,
+                "median": 1.77,
+                "need": 4.5,
+                "size": 10
+              },
+              {
+                "text": "9",
+                "worst": 1.72,
+                "median": 1.75,
+                "need": 4.5,
+                "size": 10
+              },
+              {
+                "text": "LOST",
+                "worst": 3.43,
+                "median": 3.45,
+                "need": 4.5,
+                "size": 14
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    },
+    {
+      "id": "H1",
+      "family": "Chips",
+      "name": "Stacks in depth of field",
+      "needs": "asset",
+      "note": "CSS blur is not depth of field and a conic gradient is not a moulded clay chip.",
+      "widths": {
+        "320": {
+          "shot": "H1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "H1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "H2",
+      "family": "Chips",
+      "name": "One enormous chip",
+      "needs": "asset",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "H2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "H2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "H3",
+      "family": "Chips",
+      "name": "Chips mid-fall",
+      "needs": "asset",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "H3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "H3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "I1",
+      "family": "Stark and minimal",
+      "name": "One spade, screen height",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "I1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "I1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "I2",
+      "family": "Stark and minimal",
+      "name": "The card as negative space",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "I2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "I2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "I3",
+      "family": "Stark and minimal",
+      "name": "Boards reduced to marks",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "I3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "I3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "J1",
+      "family": "Texture and material",
+      "name": "Felt weave, card edge entering",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "J1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "J1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "J2",
+      "family": "Texture and material",
+      "name": "Card stock, extreme close",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "J2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "J2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "J3",
+      "family": "Texture and material",
+      "name": "Felt, foil and stock meeting",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "J3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "J3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    }
+  ]
+}

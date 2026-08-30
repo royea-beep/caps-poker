@@ -1,0 +1,134 @@
+{
+  "ts": "2026-08-29T23:38:15.899Z",
+  "scanned": {
+    "files": 95,
+    "dirs": [
+      "app",
+      "components"
+    ]
+  },
+  "method": "JSX call sites only. Zero findings is not proof of absence — see the header.",
+  "unscannable": [
+    {
+      "component": "components/GameView.tsx · <GameView>",
+      "reason": "a call site uses spread props"
+    },
+    {
+      "component": "components/LevelUpModal.tsx · <LevelUpModal>",
+      "reason": "no JSX call site found — rendered indirectly, or not rendered at all"
+    },
+    {
+      "component": "components/LoginPromptModal.tsx · <LoginPromptModal>",
+      "reason": "no JSX call site found — rendered indirectly, or not rendered at all"
+    },
+    {
+      "component": "components/WeeklyRecapModal.tsx · <WeeklyRecapModalImpl>",
+      "reason": "a call site uses spread props"
+    },
+    {
+      "component": "components/WeeklyRecapModal.tsx · <WeeklyRecapModalCISkip>",
+      "reason": "a call site uses spread props"
+    }
+  ],
+  "findingCount": 14,
+  "findings": [
+    {
+      "verdict": "ALWAYS_true",
+      "component": "components/Badge.tsx · <Badge>",
+      "prop": "small",
+      "sites": 3,
+      "detail": "every call site passes true (components/Board.tsx:714, components/BoardResultCard.tsx:149, components/BoardResultCard.tsx:152)"
+    },
+    {
+      "verdict": "ALWAYS_false",
+      "component": "components/Board.tsx · <Board>",
+      "prop": "revealed",
+      "sites": 1,
+      "detail": "every call site passes false (components/BoardArrangement.tsx:299)"
+    },
+    {
+      "verdict": "ALWAYS_false",
+      "component": "components/Board.tsx · <Board>",
+      "prop": "active",
+      "sites": 1,
+      "detail": "every call site passes false (components/BoardArrangement.tsx:299)"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/Board.tsx · <Board>",
+      "prop": "isWinner",
+      "sites": 1,
+      "detail": "declared, and none of its 1 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "ALWAYS_false",
+      "component": "components/Board.tsx · <Board>",
+      "prop": "contentSafetyPad",
+      "sites": 1,
+      "detail": "every call site passes false (components/BoardArrangement.tsx:299)"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/BugReporter.tsx · <BugReporter>",
+      "prop": "overlayActive",
+      "sites": 1,
+      "detail": "declared, and none of its 1 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/Card.tsx · <CardComponent>",
+      "prop": "small",
+      "sites": 27,
+      "detail": "declared, and none of its 27 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/Card.tsx · <CardComponent>",
+      "prop": "suitsOnly",
+      "sites": 27,
+      "detail": "declared, and none of its 27 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/ConnectionStatus.tsx · <ConnectionStatus>",
+      "prop": "connecting",
+      "sites": 1,
+      "detail": "declared, and none of its 1 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/OutsRow.tsx · <OutsRow>",
+      "prop": "pending",
+      "sites": 1,
+      "detail": "declared, and none of its 1 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/ScreenHeader.tsx · <ScreenHeader>",
+      "prop": "showBackLabel",
+      "sites": 14,
+      "detail": "declared, and none of its 14 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "NEVER_PASSED",
+      "component": "components/StaticCard.tsx · <StaticCard>",
+      "prop": "isCommunityCard",
+      "sites": 4,
+      "detail": "declared, and none of its 4 call site(s) pass it — the truthy branch is unreachable"
+    },
+    {
+      "verdict": "ALWAYS_true",
+      "component": "components/TimerController.tsx · <TimerController>",
+      "prop": "isActive",
+      "sites": 2,
+      "detail": "every call site passes true (app/game.tsx:1394, app/multiplayer-game.tsx:1527)"
+    },
+    {
+      "verdict": "ALWAYS_false",
+      "component": "components/XPBar.tsx · <XPBar>",
+      "prop": "compact",
+      "sites": 2,
+      "detail": "every call site passes false (app/battle-pass.tsx:309, app/results.tsx:1274)"
+    }
+  ]
+}

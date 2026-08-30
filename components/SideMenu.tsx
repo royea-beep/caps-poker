@@ -105,7 +105,26 @@ export default function SideMenu({
         style={[StyleSheet.absoluteFillObject, styles.overlay, { opacity: overlayOpacity }]}
         pointerEvents={visible ? 'auto' : 'none'}
       >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        {/*
+          PRE-EXISTING, FOUND WHILE VERIFYING D1'S FLOOR — not a D1 change.
+          This backdrop was the ONE unnamed control on the home screen, at every width, on the
+          shipped build as well as the new one. Two faults, one line each:
+            1. NO NAME. A full-screen button that announced nothing.
+            2. STILL FOCUSABLE WHEN CLOSED. SideMenu stays MOUNTED with `pointerEvents: 'none'`,
+               which stops touch but does NOT remove an element from the tab order or the
+               accessibility tree on web — so a keyboard or screen-reader user landed on an
+               invisible 393x788 target on every screen that renders this menu.
+          `focusable={visible}` is the part that matters: pointerEvents was never going to do it.
+        */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={onClose}
+          focusable={visible}
+          accessibilityElementsHidden={!visible}
+          importantForAccessibility={visible ? 'yes' : 'no-hide-descendants'}
+          accessibilityRole="button"
+          accessibilityLabel="Close menu"
+        />
       </Animated.View>
 
       {/* Menu panel */}

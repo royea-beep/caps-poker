@@ -1,0 +1,305 @@
+{
+  "dist": "dist-live",
+  "players": 2,
+  "boards": 4,
+  "viewport": {
+    "w": 393,
+    "h": 852
+  },
+  "engine": "chromium",
+  "seconds": 470,
+  "ts": "2026-08-29T23:59:09.695Z",
+  "precondition": {
+    "hidden": false,
+    "rafCount": 121,
+    "ok": true
+  },
+  "sample": {
+    "slotCount": 16,
+    "samples": 7768,
+    "canaryDistinct": 16,
+    "slotInlineOpacity": [
+      "0.72",
+      "0.72",
+      "0.72",
+      "0.72"
+    ],
+    "frames": {
+      "median": 16.6,
+      "p95": 17.5,
+      "max": 170.7,
+      "over32ms": 14,
+      "count": 28163
+    },
+    "tail30s": {
+      "windowSeconds": 30,
+      "fromApproxSecond": 436,
+      "slotsStillMoving": 0,
+      "of": 16
+    },
+    "perSlot": [
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 60,
+        "first8": [
+          0.81,
+          0.782,
+          0.765,
+          0.746,
+          0.736,
+          0.726,
+          0.721,
+          0.72
+        ]
+      }
+    ],
+    "otherMotion": 40
+  },
+  "alive": true,
+  "pageErrors": [
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_FAILED",
+    "TypeError: Failed to fetch\n    at http://localhost:4301/_expo/static/js/web/index-6697cc580ae6f2c3cc71dd67d4b3f743.js:861:5619\n    at _handleRequest (http://localhost:4301/_expo/static/js/web/index-66",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_CONNECTION_RESET",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "consoleErrorCount": 10,
+  "verdict": "PULSING — 16/16 slots changed opacity (range 0.72..1)"
+}
