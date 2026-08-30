@@ -1,0 +1,60 @@
+{
+  "ts": "2026-08-30T06:10:02.633Z",
+  "players": 3,
+  "boards": 3,
+  "widths": [
+    393,
+    320
+  ],
+  "directions": [
+    {
+      "id": "J2",
+      "family": "Texture and material",
+      "name": "Card stock, extreme close",
+      "needs": "none",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "J2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "J2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    }
+  ]
+}
