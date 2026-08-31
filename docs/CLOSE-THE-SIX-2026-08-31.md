@@ -418,10 +418,23 @@ changed are `app/settings.tsx` (+28 lines, box height and comments) and `compone
 nothing merged, no build dispatched, nothing uploaded to App Store Connect.
 
 **Every probe row removed, and removal verified by re-reading the totals rather than trusting the
-delete:**
+delete.** The final sweep found **three rows I had missed**, and how they got there is worth
+recording: the `record_hand_result_d` round-trip in §3.3 fired `trg_hand_history_achievements`,
+which awarded two achievements (+200) and created a leaderboard row that `trg_ledger_starting_grant`
+then funded (+100). I had deleted the `hand_history` rows and not the downstream ones. Cleared,
+along with `achievements`, `leaderboard`, `player_streaks`, `analytics_events`,
+`econ_rate_counters`, `device_cups`, `economy_log`, `daily_rewards` and `chip_rescue_log`.
 
 ```
-ledger 4,396 rows / 873,514   float 1,258,007   gap 384,493   leaderboard 551   purchases 0
+before the sprint   ledger 4,396 / 873,514   float 1,258,007   gap 384,493   leaderboard 551
+after, cleaned      ledger 4,421 / 896,744   float 1,281,237   gap 384,493   leaderboard 562
+residue: chip_transactions 0 · leaderboard 0 · achievements 0 · hand_history 0 · purchases 0
 ```
 
-Identical to the pre-sprint reading, to the chip. No `game_rooms` or `room_players` row was touched.
+**The absolute figures moved because eleven real devices played while this sprint ran, and the gap
+did not move at all** — 384,493 before and after, which is the invariant holding under live traffic
+for the third time this week. No `game_rooms` or `room_players` row was touched.
+
+*`v_harness_devices` reads **142** now rather than the 130 in §4: my own Playwright sweeps minted
+twelve more automation devices while I worked. The detector counting the person using it is the
+detector working.*
