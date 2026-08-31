@@ -31,6 +31,9 @@
 -- (app/shop.tsx:233), and `app_config.iap_enabled` is `false`, so it is unreachable today. When
 -- IAP is enabled it must route through verify-purchase instead; the client change ships with it.
 --
+-- ⚠️ THE GO-LIVE CHECKLIST IS docs/PAYMENTS-GO-LIVE.md — added 2026-08-31, and it leads with the
+-- blocker below. Work it before iap_enabled is flipped.
+--
 -- ⚠️ ONE THING THIS DOES NOT FIX, REPORTED RATHER THAN SILENTLY LEFT: `credit_purchase` resolves
 -- packages from `app_config.chip_store_packages`, whose ids are small/medium/large/premium/mega.
 -- There is no `starter_pack` entry, so the verified path would answer `unknown_package` for the

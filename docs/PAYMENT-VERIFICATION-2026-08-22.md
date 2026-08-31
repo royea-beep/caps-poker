@@ -4,6 +4,12 @@ Handoff 97 found the hole: after a purchase resolves *on the device*, the **clie
 `earn_chips`, with no proof a payment happened. This builds the server side of a real payment flow.
 **Nothing is enabled, no provider is integrated, and no real money moved.**
 
+> ⚠️ **BEFORE `iap_enabled` IS EVER FLIPPED, WORK [`docs/PAYMENTS-GO-LIVE.md`](PAYMENTS-GO-LIVE.md).**
+> Added 2026-08-31. The blocker it leads with is that `credit_purchase` has no package for either
+> starter pack, so the verified path answers `unknown_package` — after the money has already left
+> the provider. That failure only appears at the moment payments are switched on, which is the
+> worst moment to find it.
+
 ---
 
 ## 1. The webhook
