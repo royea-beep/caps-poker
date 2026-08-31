@@ -1,0 +1,13 @@
+const URL='https://gxrpunvhjcrzqnitbqah.supabase.co';
+const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cnB1bnZoamNyenFuaXRicWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTc5OTksImV4cCI6MjA4ODkzMzk5OX0.MLHYIbU4saCHq0eQbwUzyfAl_q9TLgepKf8iNDDav-Q';
+const rpc=async(n,a)=>{const r=await fetch(`${URL}/rest/v1/rpc/${n}`,{method:'POST',headers:{apikey:ANON,Authorization:`Bearer ${ANON}`,'Content-Type':'application/json'},body:JSON.stringify(a||{})});return (await r.text());};
+console.log('== get_elo_leaderboard (does user_id = an auth uuid, and is it a real player?) ==');
+console.log((await rpc('get_elo_leaderboard',{p_limit:5})).slice(0,600));
+console.log('\n== get_caps_dashboard ==');
+console.log((await rpc('get_caps_dashboard',{})).slice(0,500));
+console.log('\n== get_play_of_the_day (does it embed device/user ids or private hands?) ==');
+console.log((await rpc('get_play_of_the_day',{})).slice(0,600));
+console.log('\n== get_home_screen_v3 with a device id I do NOT own (does it return that account?) ==');
+console.log((await rpc('get_home_screen_v3',{p_device_id:'e519-8702-3cc6'})).slice(0,300));
+console.log('\n== get_player_stats for a device id I do not own ==');
+console.log((await rpc('get_player_stats',{p_device_id:'e519-8702-3cc6'})).slice(0,300));
