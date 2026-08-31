@@ -49,6 +49,11 @@ export default function ProfileScreen() {
         <Pressable style={styles.menuRow} onPress={() => router.push('/stats' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuDetailedStats} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuDetailedStats}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
         </Pressable>
+        {/* VAMOS-NAV-3TABS 2026-08-31 — Cups moved off the bottom bar into Profile (its new canonical
+            home). Same /cups route the tab used; the Cups screen is unchanged. */}
+        <Pressable style={styles.menuRow} onPress={() => router.push('/cups' as any)} accessibilityRole="button" accessibilityLabel={t().tabCups} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().tabCups}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>
+        </Pressable>
         {/* Dedupe: leaderboard lives canonically in the Friends tab (removed from Profile + Side Menu). */}
         <Pressable style={styles.menuRow} onPress={() => router.push('/settings' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuSettings} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.menuEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚙️</Text><Text style={styles.menuLabel} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileMenuSettings}</Text><Text style={styles.menuArrow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{isRTL() ? '‹' : '›'}</Text>

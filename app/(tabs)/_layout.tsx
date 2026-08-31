@@ -87,24 +87,13 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabPlay} emoji="♠️" focused={focused} />,
         }}
       />
-      <Tabs.Screen
-        name="friends"
-        options={{
-          title: t().tabFriends,
-          // PR-J: explicit a11y label = localized word only
-          tabBarAccessibilityLabel: t().tabFriends,
-          tabBarIcon: ({ focused }) => <TabIcon label={t().tabFriends} emoji="👥" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="cups"
-        options={{
-          title: t().tabCups,
-          // PR-J: explicit a11y label = localized word only
-          tabBarAccessibilityLabel: t().tabCups,
-          tabBarIcon: ({ focused }) => <TabIcon label={t().tabCups} emoji="🏆" focused={focused} />,
-        }}
-      />
+      {/* VAMOS-NAV-3TABS 2026-08-31 — five tabs → three. Friends/Clubs (1 club, 2 members) and Cups
+          (5 cup-earners ever) did not warrant a bottom-tab slot; the benchmark's highest-clarity cut.
+          href:null REMOVES each from the tab bar but KEEPS the route: Friends is reached from the
+          side menu, Cups from the Profile screen. Nothing that links to /friends or /cups breaks —
+          the paths are unchanged (the files stay in (tabs)/). Bottom bar is now Home / Play / Profile. */}
+      <Tabs.Screen name="friends" options={{ href: null }} />
+      <Tabs.Screen name="cups" options={{ href: null }} />
       <Tabs.Screen
         name="profile"
         options={{

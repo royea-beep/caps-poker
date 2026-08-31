@@ -17,8 +17,11 @@ export const ECONOMY_FLAGS = {
   adRewardEnabled: false,
   /** Sit & Go mode — not yet available */
   sit_n_go_enabled: true,
-  /** Battle Pass mode — not yet available */
-  battle_pass_enabled: false,
+  // VAMOS-NAV-DEAD-CODE 2026-08-31 — `battle_pass_enabled` removed: it was defined here but read by
+  // NO client code (repo-wide grep = 0), so the flag read as a control while controlling nothing —
+  // the Battle Pass screen renders regardless. The screen stays (Roye's ruling); only the dead flag
+  // goes. (The equally-unread app_config.battle_pass_enabled DB row is left for a future DB sprint;
+  // this sprint does not touch the database.)
 } as const;
 
 export const ECONOMY_VALUES = {

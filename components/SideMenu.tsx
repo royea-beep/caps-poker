@@ -156,27 +156,24 @@ export default function SideMenu({
 
           <View style={styles.divider} />
 
-          {/* Online / Multiplayer — single entry: the Multiplayer Lobby (/lobby). */}
-          <MenuItem icon="🎮" label={t().playOnline} onPress={() => navigate('/lobby')} />
+          {/* VAMOS-NAV-3TABS 2026-08-31 — Friends/Clubs moved off the bottom bar to here (1 club,
+              2 members ever). /friends route is unchanged; the tab was dropped with href:null. */}
+          <MenuItem icon="👥" label={t().tabFriends} onPress={() => navigate('/friends')} />
 
           <View style={styles.divider} />
 
-          {/* Progress & History */}
+          {/* Secondary / rare features only. VAMOS-NAV-DEDUPE 2026-08-31 — REMOVED four duplicate
+              entries so each destination has one obvious route:
+                · Play Online  → canonical: the Play tab's Multiplayer Lobby + the big PLAY ONLINE
+                  CTA on the home screen (this very drawer opens from that same screen).
+                · Stats, Hand History, Settings → canonical: the Profile tab's menu rows.
+              The drawer now holds only what has no other home: Battle Pass, Coaching, Tutorial,
+              Language, and auth. (Leaderboard was already deduped to the Play tab.) */}
           <MenuItem icon="⚔️" label={t().battlePass} onPress={() => navigate('/battle-pass')} />
-          <MenuItem icon="📊" label={t().stats} onPress={() => navigate('/stats')} />
-          <MenuItem icon="📜" label={t().handHistory} onPress={() => navigate('/hand-history')} />
           <MenuItem icon="🎓" label={t().coaching} onPress={() => navigate('/coaching')} />
-          {/* THE-ONE-DAY 2026-08-22 — SPECTATOR removed from the menu. /spectate was reachable in
-              ONE tap and is a dead end: four lines, "⚠️ No room code provided", zero working
-              controls and no way back (scope panel, handoff 87). The route stays on disk — it is
-              reachable with a real room code — but it must not be offered as a destination.
-              Nothing depends on this entry; the remaining items are unchanged. */}
-          {/* Dedupe: leaderboard canonical in Friends tab — removed here + from Profile. */}
 
           <View style={styles.divider} />
 
-          {/* Settings */}
-          <MenuItem icon="⚙️" label={t().settings} onPress={() => navigate('/settings')} />
           <MenuItem
             icon="📖"
             label={t().tutorial}
