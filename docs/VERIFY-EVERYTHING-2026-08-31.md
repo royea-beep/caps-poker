@@ -173,6 +173,11 @@ the float grew by exactly 29,900 and the ledger grew by exactly 29,900. The gap 
 test, and it passes. `trg_ledger_starting_grant` is live; 13 `starting_grant` rows totalling 26,000
 chips, first 2026‑08‑28 12:46:50, last 2026‑08‑30 23:20:01.
 
+**Re-checked an hour later, and this is the stronger version of the result.** Four more real
+players had appeared (547 → 551 rows). Float rose to 1,258,007 and the ledger to 873,514 — both by
+exactly 8,890 — and **the gap was still exactly 384,493.** The invariant held across live traffic
+I had nothing to do with, which is better evidence than the single reading above.
+
 *The 384,493 itself is historic and unexplained by this audit* — it is the balance that existed
 before the ledger started recording. Nothing here reduces it; the point is that it is no longer
 growing.
