@@ -1376,10 +1376,34 @@ export default function SettingsScreen() {
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', lineHeight: 18 }}>
             {"CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 18+."}
           </Text>
-          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')} style={{ marginTop: 8 }} accessibilityRole="link" accessibilityLabel="Privacy policy">
+          {/* CLOSE-THE-SIX 2026-08-31 — these two measured 68x12 and 65x12 in a real render, at
+              every width, on both engines. Twelve points tall, for the two links App Store review
+              opens by hand.
+
+              FIXED WITH REAL BOX HEIGHT, NOT hitSlop, AND THAT DISTINCTION IS THE WHOLE POINT.
+              react-native-web implements hitSlop only in the legacy `Touchable` export — grep its
+              dist: the string does not appear in Pressable at all. So `hitSlop` on a Pressable is
+              a no-op on web and works on iOS, which is exactly how the app came to have a 12pt
+              target that looked fixed. `minHeight` + `justifyContent` grows the box itself, so the
+              44pt floor is real on BOTH platforms and is visible to a measuring harness rather
+              than only to a native gesture responder.
+
+              44 is the literal HIG/WCAG floor and is deliberately NOT run through rs(): a
+              responsive scale would put it under 44 on a 320pt screen, which is the one size that
+              needs it most. `rb()` exists for exactly this and floors at 44 — used here via a
+              plain constant because these are inline styles, not a StyleSheet entry. */}
+          <Pressable
+            onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')}
+            style={{ marginTop: 4, minHeight: 44, paddingHorizontal: rs(12), justifyContent: 'center', alignItems: 'center' }}
+            hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
+            accessibilityRole="link" accessibilityLabel="Privacy policy">
             <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Privacy Policy</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')} style={{ marginTop: 4 }} accessibilityRole="link" accessibilityLabel="Terms of use">
+          <Pressable
+            onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')}
+            style={{ minHeight: 44, paddingHorizontal: rs(12), justifyContent: 'center', alignItems: 'center' }}
+            hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
+            accessibilityRole="link" accessibilityLabel="Terms of use">
             <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Terms of Use</Text>
           </Pressable>
         </View>
