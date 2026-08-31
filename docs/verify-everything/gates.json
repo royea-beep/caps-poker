@@ -1,0 +1,41 @@
+{
+  "ts": "2026-08-31T07:54:22.398Z",
+  "rows": [
+    {
+      "route": "/chip-store",
+      "why": "iap_enabled=false AND web_payments_enabled=false",
+      "verdict": "CLOSED — and it says so",
+      "url": "/chip-store",
+      "chars": 108,
+      "text": "← | Back | 💰 Chip Store | YOUR BALANCE | 💰 2,000 | ⚡ Flash Deal — 2× chips for 24h! | ✕ | 💎 Chip packs are coming soon!",
+      "errs": []
+    },
+    {
+      "route": "/simulate",
+      "why": "__DEV__ guard — production build",
+      "verdict": "CLOSED — redirected to home",
+      "url": "/",
+      "chars": 490,
+      "text": "👤 | Player | 💰 2,000 chips | 🎮 | PLAY ONLINE | ⚔️ | BATTLE PASS | 📊 | STATS | 📜 | HAND HISTORY | 🎓 | COACHING | ⚙️ | SETTINGS | 📖 | TUTORIAL | 🌐 | 🌐 LANGUAGE: English | 🔵 | SIGN IN | 🪙 2,000 | 👤 | ♠ ♥ ♦ ♣ | CAPS | POKE",
+      "errs": []
+    },
+    {
+      "route": "/debug",
+      "why": "__DEV__ guard — production build",
+      "verdict": "CLOSED — redirected to home",
+      "url": "/",
+      "chars": 490,
+      "text": "👤 | Player | 💰 2,000 chips | 🎮 | PLAY ONLINE | ⚔️ | BATTLE PASS | 📊 | STATS | 📜 | HAND HISTORY | 🎓 | COACHING | ⚙️ | SETTINGS | 📖 | TUTORIAL | 🌐 | 🌐 LANGUAGE: English | 🔵 | SIGN IN | 🪙 2,000 | 👤 | ♠ ♥ ♦ ♣ | CAPS | POKE",
+      "errs": []
+    },
+    {
+      "route": "/spectate",
+      "why": "replaces to / when there is nothing to spectate",
+      "verdict": "OPEN — the screen rendered",
+      "url": "/spectate",
+      "chars": 40,
+      "text": "← BACK | SPECTATE | ⚠️ | No room code provided",
+      "errs": []
+    }
+  ]
+}
