@@ -86,6 +86,9 @@ Profile header (avatar/name/chips) · **Play Online** 🎮→/lobby · **Battle 
    Home for the play CTA). Cost: **low**, pure removal — the leanest win and the most on-thesis.
 4. **Remove the Battle Pass drawer entry OR honor its flag** — it's `false` in config but the screen
    renders anyway (Report 2). Either wire the flag or drop the entry; cost: **low**.
+5. **Retire or link the two orphaned routes** `/heatmap` and `/chip-store` — no nav reaches either;
+   `/chip-store` duplicates `/shop`. Retire like `/missions`, or (post-payments) fold `/chip-store`
+   into `/shop`. Cost: **low**.
 
 ## ADD list (each must clear a higher bar than every cut — and most don't)
 1. **One dominant "PLAY NOW" primary CTA on Home** — the only add I'd argue *clears* the bar, because
@@ -113,32 +116,46 @@ Profile header (avatar/name/chips) · **Play Online** 🎮→/lobby · **Battle 
 _(Screen-walk findings below; verified items first, subagent-corroborated items merged in.)_
 
 ## Naming inconsistencies (verified from source)
-1. **"Streak" names two different concepts.** `daily_streak` (`utils/economy.ts:46-82`) is a genuine
-   *consecutive-day login* streak (increments if claimed yesterday, resets on a gap; day 1–6 escalate,
-   day 7 = 500, day 30 = 2000). **Correction to the channel:** it is *not* "really a one-time grant" —
-   the code is a real multi-day streak. The actual collision is that `streak_3`/`streak_7` in
-   `utils/achievements.ts:22-23` ("Hot Streak" / "On Fire") are *win-run* streaks — **the same word
-   for two mechanics** (days-logged-in vs games-won-in-a-row). That is the mislabel to fix.
+1. **"Streak" names THREE different meters** (the strongest naming finding):
+   (a) daily-login streak — `StreakPopup` "DAY n STREAK", server `player_streaks`
+   (`components/StreakPopup.tsx:85`); (b) win streak — the Profile stat literally labeled "STREAK"
+   is `currentWinStreak` (`app/(tabs)/profile.tsx:36`); (c) an achievement category "streak"
+   (`app/achievements.tsx:46,68`). Same word, three unrelated meters.
+   **Correction to the channel:** `daily_streak` is *not* "really a one-time grant" — `economy.ts:46-82`
+   and migration `20260828140000_play_not_presence.sql:220-247` show a genuine consecutive-day streak
+   (increments only when days_since_login=1, resets otherwise, with a streak-shield). That prior claim
+   was measurement error or since-fixed.
 2. **Three overlapping "daily" grants.** `daily_streak` (active, 83% of all chips minted),
    `daily_reward` (active, config `daily_reward_chips=150`, 1.7%), and `daily_login` (**dead since
    2026-07-02**, but 13.4% of all historical chips and `daily_login_chips=0` in config). Three names,
-   one player-facing idea ("your daily chips"). Confusing in the ledger and likely in the UI copy.
-3. **`hand_won` vs `hand_net`.** Gameplay rewards were written as `hand_won` (dead since 2026-07-09),
-   now as `hand_net` (active). Two event types for "you won chips this hand"; the old one lingers.
+   one player-facing idea ("your daily chips").
+3. **"Cups" vs "Trophy" for the same item.** The screen title/tab is "CUPS" but every row's
+   accessibility label and icon call it a "Trophy" (`app/(tabs)/cups.tsx:37,39`). Pick one word.
+4. **"Achievements" has two sources of truth.** Home's "My Progress" card counts a **local** list
+   (`unlockedAchievements.length / ACHIEVEMENTS.length`, `index.tsx:88,584,1700`) while `/achievements`
+   counts a **server** list (`get_achievements_list`). They can disagree; magnitude **unconfirmed**.
+   *(Not a clash, do not re-file: `hand_net` [per-hand chip delta] vs `hands_won` [win count] are
+   distinct and consistent; cups vs achievements are genuinely different features; missions/challenge
+   have no live collision.)*
 
 ## Gated / flag states (verified)
-4. **`battle_pass_enabled=false` is a dead flag.** The Battle Pass screen (`app/battle-pass.tsx`)
+5. **`battle_pass_enabled=false` is a dead flag.** The Battle Pass screen (`app/battle-pass.tsx`)
    renders a full season UI, and **no client code reads `battle_pass_enabled`** (grep across
    app/components/utils/hooks = 0 hits). So a config flag that says "off" does nothing, and the
    drawer still routes to a live-looking Battle Pass. Either honor the flag or remove it — a genuine
    say-one-thing/do-another.
 
 ## Contradictions / dead ends (verified)
-5. **`/spectate` dead end is FIXED — none remaining there.** The prior "4 lines, 'No room code
-   provided', no way back" state is gone: `app/spectate.tsx` (now 544 lines) sets the error
-   (`:88`) but renders a working back control (`safeBack`, `:156/:174`) on every state including
-   the no-code error. It's off the SideMenu, reachable only with a real room code — correct.
-6. **Battle Pass is the one live say-one-thing/do-another** (finding 4 above): drawer routes to a
+6. **`/spectate` dead end is FIXED — none remaining there.** `app/spectate.tsx` (now 544 lines) sets
+   the error (`:88`) but renders a working back control (`safeBack`, `:156/:174`) on every state.
+   Prior `/battle-pass`, `/coaching`, `/replay` missing-back/missing-param dead ends are also FIXED
+   (BackControl / distinct empty states with exits). `/missions` is retired to a `<Redirect href="/">`.
+7. **STILL PRESENT — two orphaned URL-only routes.** `/heatmap` and `/chip-store` have **zero
+   navigation entry points** anywhere (grep = 0 in app/components/hooks/store). Reachable only by typed
+   URL. Not hard dead-ends (both have a back control and a sensible state), but they are unreachable
+   screens — and **`/chip-store` duplicates the IAP purpose of the reachable `/shop`**. Decide: link
+   them, or retire like `/missions`. (Cut candidate for Report 1 / dead surface for Report 3.)
+8. **Battle Pass is the one live say-one-thing/do-another** (finding 5 above): the drawer routes to a
    full season UI while `battle_pass_enabled=false` is ignored by the client.
 
 ## Empty / error / first-run states (verified — in good shape)
@@ -148,7 +165,11 @@ _(Screen-walk findings below; verified items first, subagent-corroborated items 
    (`:1148-1154`). No broken empty state found — a "confirm none remain" pass, not a defect list.
 
 ## Confusing-but-correct (verified)
-8. **Tutorial re-show is FIXED.** `index.tsx:872-876` gates the single onboarding on
+9. **STILL PRESENT (minor copy): Cups rows label the tier twice.** `cups.tsx:47` renders the name as
+   `TIER_LABELS[cup.tier]` ("Bronze") and `:49` the subtitle as `tier.toUpperCase()` ("BRONZE") — the
+   same word stacked, and because `TIER_LABELS` always resolves the real `name_he` cup names never
+   show. Correct data, redundant presentation. One-line copy consideration.
+10. **Tutorial re-show is FIXED.** `index.tsx:872-876` gates the single onboarding on
    `INTERACTIVE_TUTORIAL_KEY` in AsyncStorage (`if (!val) show`) with a CI bypass — it no longer
    re-shows to returning players. The duplicate OnboardingOverlay/WebLandingHero were also removed
    (`:895`, `:1246`). Confirm-clear, not a defect.
@@ -160,10 +181,16 @@ _(Screen-walk findings below; verified items first, subagent-corroborated items 
 
 ## Verdict for Report 2
 The logic is in **much better shape than the channel's framing suggests** — the historically-cited
-defects (tutorial re-show, /spectate dead end, 34-line results) are **fixed or handled**. The two
-*live* issues are naming (**"streak" = two mechanics**, three overlapping "daily" grants, `hand_won`
-vs `hand_net`) and the **dead `battle_pass_enabled` flag**. Both are report-only; the naming ones are
-not one-line copy fixes (they touch event types/ledger), so nothing was changed.
+defects (tutorial re-show, /spectate dead end, 34-line results, missing back controls, /missions) are
+all **fixed or handled**, and empty/first-run/gated states behave. The remaining *live* items, all
+report-only:
+- **Naming:** "streak" = three meters; three overlapping "daily" grants; "cups" vs "trophy";
+  "achievements" counted local-on-home vs server-on-`/achievements` (divergence unconfirmed).
+- **Orphaned routes:** `/heatmap`, `/chip-store` (latter duplicates `/shop`).
+- **Dead flag:** `battle_pass_enabled` ignored by the client.
+- **Minor copy:** Cups double-labels the tier.
+The naming items are **not** one-line copy fixes (they touch event types / ledger / two data sources),
+so nothing was changed.
 
 ---
 
@@ -185,6 +212,10 @@ players who've played a hand. The structural headline is size, not any one dead 
   run, but a lot of scheduled machinery for the live scale — worth a prune pass (report, not now).
 - Left-open writers from the prior sprint remain (`deploy_log` anon POST via `scripts/deploy-ota.sh`;
   `prompt_execution_log` SECURITY INVOKER granted to anon) — already documented in PURGE-AND-CLOSE.
+- **Orphaned screens** `app/heatmap.tsx` and `app/chip-store.tsx` — no navigation reaches them
+  (grep = 0); `/chip-store` duplicates `/shop`. Dead UI surface; retire or link (also in Reports 1 & 2).
+- **`hand_won` is a retired event type**, superseded by `hand_net` for gameplay credits (last
+  `hand_won` 2026-07-09). Not a naming clash in code — a dead ledger event type that lingers.
 
 ## Bundle + performance (MEASURED — real numbers)
 - **Web bundle: one ~3.8 MB monolith** — `dist/_expo/static/js/web/index-*.js` = **3,815,043 bytes raw
