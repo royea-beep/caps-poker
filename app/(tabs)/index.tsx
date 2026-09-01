@@ -89,6 +89,8 @@ import { ACHIEVEMENTS } from '../../utils/achievements';
 import { track } from '../../utils/analytics';
 import { LABEL_COLUMN } from '../../constants/labelColumn';
 import { ChipButton } from '../../components/ChipButton';
+import { LuxuryBackdrop } from '../../components/LuxuryBackdrop';
+import { RoyalFlushFan } from '../../components/RoyalFlushFan';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -1237,9 +1239,17 @@ export default function HomeScreen() {
   // fear of clipping "Practice vs bots" is covered by the chip's own padding + the label's
   // adjustsFontSizeToFit(min 0.6) backstop; measured to hold at 320 and 393 (EN).
   const practiceChipWidth = Math.round(_effectiveW * 0.64);
+  // LUXURY-HOME — the royal-flush fan card width, proportional to the screen (rv-style, no literal).
+  // Small: five fanned cards must sit under the wordmark without crowding it or the CTAs. Clamped so
+  // it neither vanishes at 320 nor bloats at 430.
+  const fanCardW = Math.max(rv(38), Math.min(rv(52), Math.round(_effectiveW * 0.12)));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* LUXURY-HOME 2026-09-01 — the deep radial-green felt vignette + diagonal beam + faint weave,
+          the base of the Luxury Dark home. First child so nothing renders between it and the frame;
+          it lifts the gilded wordmark rather than fighting it (green glow under the ~30% band). */}
+      <LuxuryBackdrop />
       {/* WebLandingHero removed (DEDUPE-QA) — web users land straight in the app + the one onboarding. */}
       <FriendsBg />
 
@@ -1388,7 +1398,9 @@ export default function HomeScreen() {
 
         {/* Title section */}
         <View style={styles.titleSection}>
-          <Text style={[styles.suitSymbols, { color: theme.accent }]} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+          {/* LUXURY-HOME \u2014 the four suits in gilded gold #c9a84c (the wordmark gold, NOT the winner
+              cue #FFD700), the crown above the CAPS wordmark. */}
+          <Text style={[styles.suitSymbols, { color: '#c9a84c' }]} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
             {'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}
           </Text>
           <Text
@@ -1405,28 +1417,15 @@ export default function HomeScreen() {
             CAPS
           </Text>
           <Text style={styles.titlePoker}>POKER</Text>
-          {/*
-            C6's SENTENCE — a stranger must learn what this game IS from the home screen, and the
-            rotating taglines never told them. Nine of the ten were mood, not instruction.
-
-            ⚠️ C6's CONCEPT WORDING SAID "Four boards run at once" AND THAT IS FALSE. The board
-            count is DYNAMIC (2P=4, 3P=3, 4P=2), and this codebase already retracted exactly that
-            claim once — see the FACTUAL FIX note on TAGLINES, 2026-08-11, which removed
-            "Four cards. Four boards. One winner." for the same reason. Every clause below is true
-            at EVERY seat count: four cards per board per player always holds, all boards do run
-            together, and the hand goes to whoever takes the most.
-          */}
-          <Animated.Text
-            /* NOT theme.subtitleColor — that measured 3.70:1 at 11px against a 4.5 bar, and it
-               was fine while this line was a rotating mood tagline nobody needed to read. It is
-               now the sentence that TEACHES THE GAME, so it is the last text that may be dim.
-               #cfd8d2 on #0a0a0a measures well past the bar at this size. */
-            style={[styles.titleSub, { color: '#cfd8d2' }, taglineAnimStyle]}
-            numberOfLines={3}
-          >
-            Four cards on every board. Every board plays at once. Win the most boards, win the hand.
-          </Animated.Text>
+          {/* LUXURY-HOME — the teaching sentence MOVED below the chips (it is "the tagline" in the
+              approved order: wordmark → fan → chips → tagline). See its new home after the CTAs. */}
         </View>
+
+        {/* LUXURY-HOME 2026-09-01 — the royal-flush hero fan (10 J Q K A of spades), built from the
+            REAL components/Card.tsx (not a redrawn SVG), sits BELOW the wordmark with a gilded
+            "ROYAL FLUSH" caption. It must never overlap POKER — proven at every width in the
+            harness; the content-container gap + the fan's own headroom keep it clear. */}
+        <RoyalFlushFan cardW={fanCardW} />
         {/* HOME-DECLUTTER 2026-07-05 — removed the daily-quote block + divider, and the
             redundant/false secondary "CAPS · FOUR CARDS. FOUR BOARDS. ONE WINNER." wordmark
             (duplicated the title AND was wrong: only 2P has 4 boards; 3P=3, 4P=2). Kept:
@@ -1520,6 +1519,26 @@ export default function HomeScreen() {
               the teaching sentence below — which is the right medium for it, per handoffs 125/127:
               a rules fact is READ, not seen. */}
         </View>
+
+        {/*
+          C6's SENTENCE — a stranger must learn what this game IS from the home screen, and the
+          rotating taglines never told them. Nine of the ten were mood, not instruction.
+          LUXURY-HOME 2026-09-01 — MOVED here (below the CTAs) as "the tagline" in the approved
+          Luxury order. Same text, same style; only its position changed.
+
+          ⚠️ C6's CONCEPT WORDING SAID "Four boards run at once" AND THAT IS FALSE. The board
+          count is DYNAMIC (2P=4, 3P=3, 4P=2). Every clause below is true at EVERY seat count:
+          four cards per board per player always holds, all boards run together, and the hand
+          goes to whoever takes the most.
+        */}
+        <Animated.Text
+          /* #cfd8d2 on the deep-green felt measures well past the 4.5 bar (the felt under this line
+             is darker than the old #0a0a0a, so the margin only grew — re-measured in the harness). */
+          style={[styles.titleSub, { color: '#cfd8d2' }, taglineAnimStyle]}
+          numberOfLines={3}
+        >
+          Four cards on every board. Every board plays at once. Win the most boards, win the hand.
+        </Animated.Text>
 
         {/* C2 — THE 2P/3P/4P SELECTOR IS GONE FROM HOME.
             It was three controls at 41x28, 54x28 and 41x28 — all three under the 44pt minimum —

@@ -14,8 +14,11 @@ import { rs, rv } from '../utils/responsive';
  *
  * COLOURS — the app's own, restated as literals (index.tsx already hardcodes '#4FD6A8'):
  *   MINT  #4FD6A8 — the action / the primary fill.
- *   BRASS #C9A84C — the chip EDGE only (the dashed rim). A different colour from the winner cue.
+ *   BRASS #C9A84C — the chip EDGE only (a smooth solid rim line). A different colour from the cue.
  *   winner gold #FFD700 (the WON cue, Card.tsx, 3px) appears NOWHERE on this button.
+ *
+ * EDGE — smooth, not dashed. Roye reviewed the dashed rim in the Luxury-Home design and removed
+ * the dash: the edge is now a clean solid brass line (LUXURY-HOME 2026-09-01).
  *
  * DIMENSIONS — every one via rf/rs/rv (Iron Rule #3). No pixel literals: the corner radius,
  * padding, gap, the dashed edge width and its inset, the bevel heights and the drop shadow all
@@ -82,7 +85,7 @@ export function ChipButton({
   const padH = isPrimary ? rs(24) : rs(20);
   const gap = isPrimary ? rs(12) : rs(8);
   const edgeInset = rs(6); // the dashed rim sits this far in from the fill edge
-  const edgeWidth = rv(3); // the dashed rim stroke
+  const edgeWidth = rv(2); // the smooth solid rim line
   const bevelTop = rs(3); // inner top highlight — the chip catches light
   const bevelBottom = rs(8); // inner bottom shadow — the chip has depth
   const sinkTo = rs(4);
@@ -147,10 +150,9 @@ export function ChipButton({
             },
           ]}
         />
-        {/* THE CHIP EDGE — the dashed rim (brass on primary, mint on secondary).
-            NOTE (device fidelity): borderStyle:'dashed' + borderRadius renders the dashes cleanly
-            on react-native-web; on iOS a dashed rounded border can render solid or with uneven
-            dashes — a device-only tap, like the Georgia masthead. */}
+        {/* THE CHIP EDGE — a smooth SOLID rim line (brass on primary, mint on secondary). Roye
+            removed the dash in the Luxury-Home review; a solid rounded border renders identically
+            on web and iOS, so this is no longer a device-fidelity unknown. */}
         <View
           pointerEvents="none"
           style={{
@@ -162,8 +164,8 @@ export function ChipButton({
             borderRadius: radius,
             borderWidth: edgeWidth,
             borderColor: edgeColor,
-            borderStyle: 'dashed',
-            opacity: 0.85,
+            borderStyle: 'solid',
+            opacity: 0.9,
           }}
         />
         {children}
