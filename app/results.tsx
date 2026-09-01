@@ -12,6 +12,7 @@ import { ShareSection } from '../components/ShareSection';
 import { EfficiencyCard } from '../components/EfficiencyCard';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { FriendsBg } from '../components/FriendsBg';
+import { LuxuryBackdrop } from '../components/LuxuryBackdrop';
 import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
@@ -1039,6 +1040,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* EVERY-SCREEN luxury pass (2026-09-01) — the app-wide LuxuryBackdrop (deep radial-green
+          vignette + beam + felt) behind everything, one visual language across home/game/results.
+          pointerEvents:none, zero layout impact. NOTE: this is the SAFE visual pass only — results'
+          information architecture (the "34 competing lines") is a separate rethink, proposed in
+          docs/screen-audit, NOT redesigned under cover of a paint pass. */}
+      <LuxuryBackdrop />
       <FriendsBg />
 
       {/* PRACTICE-TO-LIVE — between hands: if a real opponent triggers the countdown, jump
