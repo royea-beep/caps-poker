@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { FriendsBg } from './FriendsBg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { LuxuryBackdrop } from './LuxuryBackdrop';
 import { FELT_GRADIENT } from '../constants/paintThemes';
 import { BoardArrangement } from './BoardArrangement';
 import BoardReveal from './BoardReveal';
@@ -206,6 +207,12 @@ export function GameView({
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
+      {/* GAME-UPGRADES step 3 (2026-09-01) — a MUTED LuxuryBackdrop over the theme felt: the same
+          radial vignette + faint beam as the home, dimmed (glow 0.22 vs 0.55, beam halved) so the
+          play surface reads as a table without competing with the reveal spotlight or the winner
+          cue. overlayOnly keeps the theme's own FELT_GRADIENT above; pointerEvents none = zero
+          layout impact (the 83px arc is untouched). Reveal re-measured: cue/field/greyscale hold. */}
+      <LuxuryBackdrop muted overlayOnly />
       <FriendsBg />
       {preChrome}
       <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>

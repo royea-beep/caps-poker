@@ -25,41 +25,45 @@ const FELT_TOP = '#0C2C1D';
 const FELT_MID = '#071C12';
 const FELT_BOTTOM = '#03110B';
 
-export function LuxuryBackdrop() {
+/**
+ * GAME-UPGRADES step 3 — `muted` dims the vignette + beam so the reveal spotlight and the winner
+ * cue still dominate the play surface; `overlayOnly` skips the felt base so a caller that already
+ * paints its own theme felt (the game root) gets ONLY the vignette + beam + weave layered on top.
+ * Both are pointerEvents:none absolute fills — zero layout impact (the 83px arc is untouched).
+ */
+export function LuxuryBackdrop({ muted = false, overlayOnly = false }: { muted?: boolean; overlayOnly?: boolean } = {}) {
+  // Muted center-glow is much dimmer (0.22 vs 0.55) and the beam is halved, so a bright surface
+  // never puts attention back on the non-winning cards the reveal deliberately dims.
+  const vignette = muted
+    ? 'radial-gradient(120% 82% at 50% 34%, rgba(26,70,44,0.22) 0%, rgba(7,28,18,0.0) 50%, rgba(0,0,0,0.42) 100%)'
+    : 'radial-gradient(120% 78% at 50% 30%, rgba(26,70,44,0.55) 0%, rgba(7,28,18,0.0) 46%, rgba(0,0,0,0.55) 100%)';
+  const beam = muted
+    ? 'linear-gradient(118deg, rgba(255,240,205,0.05) 0%, rgba(255,240,205,0.018) 12%, rgba(255,240,205,0) 27%)'
+    : 'linear-gradient(118deg, rgba(255,240,205,0.10) 0%, rgba(255,240,205,0.035) 12%, rgba(255,240,205,0) 27%)';
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {/* 1 — FELT base (native + web) */}
-      <LinearGradient
-        colors={[FELT_TOP, FELT_MID, FELT_BOTTOM]}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* 1b — radial vignette: green glow under the wordmark, dark at the rim (web) */}
+      {/* 1 — FELT base (native + web) — skipped when overlayOnly (the game root paints its own felt) */}
+      {!overlayOnly && (
+        <LinearGradient
+          colors={[FELT_TOP, FELT_MID, FELT_BOTTOM]}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
+      {/* 1b — radial vignette: green glow toward the centre, dark at the rim (web) */}
       <View
         style={[
           StyleSheet.absoluteFill,
-          Platform.select({
-            web: {
-              backgroundImage:
-                'radial-gradient(120% 78% at 50% 30%, rgba(26,70,44,0.55) 0%, rgba(7,28,18,0.0) 46%, rgba(0,0,0,0.55) 100%)',
-            } as any,
-            default: {},
-          }),
+          Platform.select({ web: { backgroundImage: vignette } as any, default: {} }),
         ]}
       />
       {/* 2 — diagonal light BEAM from the top corner (web-rich; device-tap) */}
       <View
         style={[
           StyleSheet.absoluteFill,
-          Platform.select({
-            web: {
-              backgroundImage:
-                'linear-gradient(118deg, rgba(255,240,205,0.10) 0%, rgba(255,240,205,0.035) 12%, rgba(255,240,205,0) 27%)',
-            } as any,
-            default: {},
-          }),
+          Platform.select({ web: { backgroundImage: beam } as any, default: {} }),
         ]}
       />
       {/* 3 — faint felt WEAVE (web SVG data-URI, same idiom as grainOverlay; device-tap) */}
