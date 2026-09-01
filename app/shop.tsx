@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LuxuryBackdrop } from '../components/LuxuryBackdrop';
+import { ChipButton } from '../components/ChipButton';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
@@ -286,29 +287,29 @@ export default function ShopScreen() {
                   <Text style={styles.itemCost} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">💰 {(item.cost ?? 0).toLocaleString()}</Text>
                 </View>
               </View>
-              <Pressable
-                style={[
-                  styles.buyBtn,
-                  (item.owned || !item.can_afford) && styles.buyBtnDisabled,
-                  buying === item.event_type && styles.buyBtnLoading,
-                ]}
-                disabled={item.owned || !item.can_afford || buying !== null}
+              {/* EVERY-SCREEN luxury pass — the buy control is the app's ChipButton (mint chip,
+                  brass edge), the same action identity as the home + results primary CTA. Owned /
+                  can't-afford dim via the chip's disabled state; the label still names which. */}
+              <ChipButton
+                variant="primary"
+                compact
                 onPress={() => handleBuy(item)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
+                disabled={item.owned || !item.can_afford || buying !== null}
                 accessibilityLabel={item.owned
                   ? `${item.description}, already owned`
                   : `Buy ${item.description} for ${(item.cost ?? 0).toLocaleString()} chips`}
                 accessibilityState={{ disabled: item.owned || !item.can_afford || buying !== null, busy: buying === item.event_type }}
+                testID={`buy-${item.event_type}`}
+                style={{ minWidth: rs(96) }}
               >
                 {buying === item.event_type ? (
-                  <ActivityIndicator color="#000" size="small" />
+                  <ActivityIndicator color="#08130F" size="small" />
                 ) : (
-                  <Text style={[styles.buyBtnText, (item.owned || !item.can_afford) && styles.buyBtnTextDisabled]} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
+                  <Text style={styles.buyChipText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
                     {item.owned ? t().shopOwned : item.can_afford ? t().shopBuy : t().shopCantAfford}
                   </Text>
                 )}
-              </Pressable>
+              </ChipButton>
             </View>
           ))}
         </ScrollView>
@@ -445,15 +446,22 @@ const styles = StyleSheet.create({
     padding: rs(16),
     gap: rs(12),
   },
+  // EVERY-SCREEN luxury pass — gilded product cards, the same identity as the profile stat
+  // cards and the game header pills: a brass hairline + a soft lift over the felt. Was flat
+  // rgba(255,255,255,0.04) on a bare border — a card that read cheap in a shop that sells nothing.
   itemCard: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(0,0,0,0.28)',
     borderRadius: rv(14),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(201,168,76,0.45)',
     padding: rs(14),
     flexDirection: 'row',
     alignItems: 'center',
     gap: rs(12),
+    ...Platform.select({
+      web: { boxShadow: '0 3px 10px rgba(0,0,0,0.4)' } as any,
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6 },
+    }),
   },
   itemInfo: {
     flex: 1,
@@ -501,6 +509,14 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: rf(13),
     fontWeight: '800',
+  },
+  // The buy ChipButton's label — dark on the mint fill (same contrast choice as the home +
+  // results primary CTA).
+  buyChipText: {
+    color: '#08130F',
+    fontSize: rf(13),
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   buyBtnTextDisabled: {
     color: 'rgba(255,255,255,0.7)',

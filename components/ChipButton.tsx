@@ -72,7 +72,7 @@ interface ChipButtonProps {
   /** Footer height instead of the tall home height — keeps the fixed action bar its current size. */
   compact?: boolean;
   testID?: string;
-  accessibilityState?: { disabled?: boolean };
+  accessibilityState?: { disabled?: boolean; busy?: boolean };
 }
 
 export function ChipButton({
