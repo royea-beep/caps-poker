@@ -1602,18 +1602,26 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 )}
                 <View style={styles.rematchRow}>
                   {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { handleRematch(); }} style={{ flex: 1 }} />}
+                  {/* SHIP-513 — MP has NO sticky DEAL ME IN (that is !isMultiplayer), so ⚡ REMATCH
+                      IS the MP primary restart. It was the one plain Button left in this screen
+                      family; it is now the app's ChipButton, matching the solo sticky primary
+                      (mint chip, dark label, brass edge). HOME stays the quiet secondary. */}
                   {isMultiplayer && isMpHost && (
-                    <Button
-                      title="⚡ REMATCH"
-                      variant="secondary"
+                    <ChipButton
+                      variant="primary"
+                      compact
+                      flex
                       onPress={() => {
                         // Unified: rematch returns to the Multiplayer Lobby to start a fresh table.
                         useGameStore.getState().resetMultiplayer();
                         clearRevealData();
                         router.replace('/lobby' as any);
                       }}
-                      style={{ flex: 1 }}
-                    />
+                      accessibilityLabel="Rematch"
+                      testID="mp-rematch"
+                    >
+                      <Text style={styles.playAgainChipText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>⚡ REMATCH</Text>
+                    </ChipButton>
                   )}
                   <Button title="HOME" variant="secondary" onPress={() => { handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
                 </View>

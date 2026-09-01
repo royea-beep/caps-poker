@@ -1,0 +1,35 @@
+{
+ "ts": "2026-09-01T17:33:03.467Z",
+ "views": [
+  {
+   "W": 320,
+   "headline": "YOU WIN",
+   "boardTally": "2 WON · 1 TIED · 1 LOST",
+   "mpRematchPresent": true,
+   "mpRematchBg": "rgb(79, 214, 168)",
+   "mpRematchLabel": "⚡ REMATCH",
+   "mpResultHeaderPresent": true,
+   "homePresent": true,
+   "goldButtonHits": 0,
+   "mounted": true,
+   "errs": [
+    "PAGEERROR: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ]
+  },
+  {
+   "W": 393,
+   "headline": "YOU WIN",
+   "boardTally": "2 WON · 1 TIED · 1 LOST",
+   "mpRematchPresent": true,
+   "mpRematchBg": "rgb(79, 214, 168)",
+   "mpRematchLabel": "⚡ REMATCH",
+   "mpResultHeaderPresent": true,
+   "homePresent": true,
+   "goldButtonHits": 0,
+   "mounted": true,
+   "errs": [
+    "PAGEERROR: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ]
+  }
+ ]
+}
