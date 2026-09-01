@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated'; // needed for boardShakeStyles (
 import Board from './Board';
 import BoardSurface from './BoardSurface';
 import PlayerHand from './PlayerHand';
+import { ChipButton } from './ChipButton';
 import { useGameStore } from '../store/gameStore';
 import { BoardState } from '../utils/gameLogic';
 import { Card, CARDS_PER_BOARD, COLORS } from '../constants/gameConfig';
@@ -497,36 +498,44 @@ export function BoardArrangement({
       {/* Floating action buttons */}
       {isArranging && (
         <View style={[baStyles.floatingActions, { bottom: insets.bottom, paddingBottom: insets.bottom > 0 ? 0 : rs(8) }]}>
-          <Pressable
-            style={({ pressed }) => [baStyles.floatingBtn, baStyles.undoBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] }]}
-            onPress={onUndo}
+          {/* GAME-UPGRADES step 1 (2026-09-01) — Chrome → chips. Cancel + Confirm/READY are now the
+              home's ChipButton (reused, not forked; smooth brass/mint edge + bevel + sink). SAFE for
+              the 83px arc: floatingActions is an absolute bottom overlay, NOT part of the flex column
+              that feeds board height (unlike the per-board Auto-Place chip, whose measured height IS
+              the arc — see Board.tsx autoBtn; that one is left untouched, reported not done). compact
+              keeps the bar its current rv(52) height. */}
+          <ChipButton
+            variant="secondary"
+            flex
+            compact
             disabled={boards.every((b) => b.playerCards.length === 0)}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: boards.every((b) => b.playerCards.length === 0) }}
+            onPress={onUndo}
             accessibilityLabel={t().cancel}
           >
-            <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText, boards.every((b) => b.playerCards.length === 0) && baStyles.floatingBtnDisabled]}>{t().cancel}</Text>
-          </Pressable>
+            <Text style={[baStyles.floatingBtnText, baStyles.undoBtnText]}>{t().cancel}</Text>
+          </ChipButton>
           {/* BW1 — THE ACTUAL ACTION BUTTON. Four elements render the text "✓ READY"; the other
               three are status. Mistaking the header chip for this button produced the "primary
-              action is 10px" finding. Anchor here, never match on the text. */}
-          {/* FOUR-GAME-SCREENS 2026-08-22 — this had a testID but NO role and NO name, so the one
-              control that advances the hand was exposed to assistive tech as nothing at all.
-              Measured across every phase of a live hand: at "ready armed" the only exposed
-              controls were "Leave game" and "Dismiss tip". Role + name only; no layout change. */}
-          <Pressable
+              action is 10px" finding. Anchor here (testID="ready-button"), never match on the text.
+              FOUR-GAME-SCREENS 2026-08-22 — role + name are load-bearing for a11y; ChipButton
+              carries accessibilityRole="button" + the label + accessibilityState, and the testID is
+              forwarded, so the one control that advances the hand stays exposed. The green "ready
+              armed" state comes through fillOverride/edgeOverride — NOT the winner gold #FFD700. */}
+          <ChipButton
+            variant="primary"
+            flex
+            compact
             testID="ready-button"
-            style={({ pressed }) => [baStyles.floatingBtn, baStyles.placeBtn, !allBoardsFull && baStyles.placeBtnDisabled, allBoardsFull && baStyles.placeBtnReady, pressed && allBoardsFull && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-            onPress={onReady}
             disabled={!allBoardsFull}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !allBoardsFull }}
+            fillOverride={allBoardsFull ? '#28A745' : undefined}
+            edgeOverride={allBoardsFull ? '#1E7E34' : undefined}
+            onPress={onReady}
             accessibilityLabel={allBoardsFull ? t().readyCheck : t().confirm}
           >
             <Text style={[baStyles.floatingBtnText, baStyles.placeBtnText]}>
               {allBoardsFull ? t().readyCheck : t().confirm}
             </Text>
-          </Pressable>
+          </ChipButton>
         </View>
       )}
     </>

@@ -60,6 +60,19 @@ interface ChipButtonProps {
   children: React.ReactNode;
   /** Applied to the outer (sinking) wrapper — use for margins / width, not for the chip skin. */
   style?: ViewStyle;
+  // ── GAME-UPGRADES step 1 — optional, backward-compatible. The home never passes these. ──
+  /** Override the mint/dark fill (e.g. the game's green "✓ READY" state). */
+  fillOverride?: string;
+  /** Override the brass/mint edge line to match a fill override. */
+  edgeOverride?: string;
+  /** Dim + block the press (disabled CTA). */
+  disabled?: boolean;
+  /** Stretch to fill a flex row (the game's two-up Cancel/Confirm footer). */
+  flex?: boolean;
+  /** Footer height instead of the tall home height — keeps the fixed action bar its current size. */
+  compact?: boolean;
+  testID?: string;
+  accessibilityState?: { disabled?: boolean };
 }
 
 export function ChipButton({
@@ -68,6 +81,13 @@ export function ChipButton({
   accessibilityLabel,
   children,
   style,
+  fillOverride,
+  edgeOverride,
+  disabled = false,
+  flex = false,
+  compact = false,
+  testID,
+  accessibilityState,
 }: ChipButtonProps) {
   // Pressed state — the chip SINKS (translateY), the poker-chip "press". POLISH-1 (2): the
   // onPressIn/onPressOut pair is also what keeps Play Online's very first tap from being dropped
@@ -75,13 +95,15 @@ export function ChipButton({
   const sink = useRef(new Animated.Value(0)).current;
   const isPrimary = variant === 'primary';
 
-  const fill = isPrimary ? MINT : CHIP_DARK;
-  const edgeColor = isPrimary ? BRASS : MINT;
+  const fill = fillOverride ?? (isPrimary ? MINT : CHIP_DARK);
+  const edgeColor = edgeOverride ?? (isPrimary ? BRASS : MINT);
 
   // ── Every dimension responsive — no pixel literals ─────────────────────────
   const radius = rv(60); // clamps to a stadium (half-height) at these button heights
-  const minHeight = isPrimary ? rv(72) : rv(52); // primary dominant, secondary quiet — NOT equal
-  const padV = isPrimary ? rs(14) : rs(10);
+  // compact = the fixed action-bar height (rv(52)), so chipifying the footer does not change its
+  // size; otherwise the home hierarchy (primary rv(72) dominant, secondary rv(52) quiet).
+  const minHeight = compact ? rv(52) : isPrimary ? rv(72) : rv(52);
+  const padV = compact ? rs(12) : isPrimary ? rs(14) : rs(10);
   const padH = isPrimary ? rs(24) : rs(20);
   const gap = isPrimary ? rs(12) : rs(8);
   const edgeInset = rs(6); // the dashed rim sits this far in from the fill edge
@@ -100,15 +122,20 @@ export function ChipButton({
       style={[
         { transform: [{ translateY: sink }], backgroundColor: fill, borderRadius: radius },
         dropShadow(rs(10), rs(22), 0.5, isPrimary ? 10 : 6),
+        flex ? { flex: 1 } : null,
+        disabled ? { opacity: 0.5 } : null,
         style,
       ]}
     >
       <Pressable
-        onPress={onPress}
-        onPressIn={onIn}
-        onPressOut={onOut}
+        onPress={disabled ? undefined : onPress}
+        onPressIn={disabled ? undefined : onIn}
+        onPressOut={disabled ? undefined : onOut}
+        disabled={disabled}
+        testID={testID}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
+        accessibilityState={accessibilityState ?? (disabled ? { disabled: true } : undefined)}
         style={[
           styles.chip,
           {
