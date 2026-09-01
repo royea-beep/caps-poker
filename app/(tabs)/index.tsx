@@ -88,6 +88,7 @@ import { getHandHistory, HandRecord } from '../../utils/handHistory';
 import { ACHIEVEMENTS } from '../../utils/achievements';
 import { track } from '../../utils/analytics';
 import { LABEL_COLUMN } from '../../constants/labelColumn';
+import { ChipButton } from '../../components/ChipButton';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -685,13 +686,10 @@ export default function HomeScreen() {
     }).catch(() => {});
   }, []);
 
-  // PLAY button scale — RN Animated (not Reanimated)
-  const playScale = useRef(new AnimatedRN.Value(1)).current;
-  // POLISH-1 (2) — Play Online lost its FIRST tap: with only onPress, react-native-web's press
-  // recognizer dropped the very first pointer press after load (the green Play button survives
-  // because its onPressIn grabs the responder on pointer-down). Give Play Online the same
-  // onPressIn/onPressOut so the first tap navigates.
-  const playOnlineScale = useRef(new AnimatedRN.Value(1)).current;
+  // BUILD-ELONGATED-CHIP 2026-09-01 — playScale / playOnlineScale removed: ChipButton owns its
+  // own press animation (a translateY "sink"), and its onPressIn/onPressOut preserve the POLISH-1
+  // (2) first-tap fix — react-native-web dropped Play Online's very first pointer press when it had
+  // only onPress, so grabbing the responder on pointer-down is still required and still present.
 
   // A2: Daily Reward pulse animation
   const dailyPulseAnim = useRef(new AnimatedRN.Value(1)).current;
@@ -1234,12 +1232,11 @@ export default function HomeScreen() {
   // that silently drifts from the constant is exactly how this class of bug comes back. Now
   // imported, so changing WEB_MAX_WIDTH moves this with it.
   const _effectiveW = (Platform.OS === 'web' && screenW > WEB_MAX_WIDTH) ? WEB_MAX_WIDTH : screenW;
-  // RESPONSIVE-FIX 2026-07-06 — was 0.75. At narrow widths (320-375pt), 0.75 combined
-  // with the old fixed rs(32) horizontal padding left too little room for "Practice vs
-  // Bots" and it truncated on a real tester device. 0.82 gives ~9% more width at every
-  // size (paired with reduced padding + a lower font floor below) so the label has
-  // real margin to fit without relying solely on adjustsFontSizeToFit.
-  const playBtnWidth = Math.round(_effectiveW * 0.82);
+  // BUILD-ELONGATED-CHIP 2026-09-01 — Practice is the QUIET chip: 0.64 of the width so it reads
+  // clearly subordinate to the full-width primary (refinement 1 — do not equalise). The old 0.82
+  // fear of clipping "Practice vs bots" is covered by the chip's own padding + the label's
+  // adjustsFontSizeToFit(min 0.6) backstop; measured to hold at 320 and 393 (EN).
+  const practiceChipWidth = Math.round(_effectiveW * 0.64);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -1459,74 +1456,62 @@ export default function HomeScreen() {
         {/* C2 — PLAY ONLINE, FIRST AND FILLED. The product is multiplayer; the biggest and
             highest thing on the front door is now the thing we want pressed. Practice follows
             it as the fallback. */}
-        <AnimatedRN.View style={{ transform: [{ scale: playOnlineScale }] }}>
-          <Pressable
-            style={styles.playOnlineBtn}
-            onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
-            onPressIn={() =>
-              AnimatedRN.timing(playOnlineScale, { toValue: 0.97, duration: 80, useNativeDriver: true }).start()
-            }
-            onPressOut={() =>
-              AnimatedRN.timing(playOnlineScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Play online, open the multiplayer lobby"
-          >
-            {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
-                English inside a Hebrew app, on the highest-traffic route to multiplayer.
-                The emoji stays as decoration; the TEXT is what names the destination. */}
-            <Text style={styles.playOnlineEmoji} allowFontScaling={false}>🎮</Text>
-            {/* LABEL_COLUMN, not `flex: 1` — a zero-basis text column between two fixed glyphs is the
-                one arrangement Yoga and CSS lay out differently, and it is why TestFlight showed
-                a gamepad and a chevron with nothing between them. See the constant.
+        {/* BUILD-ELONGATED-CHIP 2026-09-01 — the E identity, built for real. Roye ranked the
+            beveled poker-chip #1, then chose the ELONGATED stadium over the true circle because the
+            circle clips "Play Online" (HE overflows +17px at 320 AND 393; the stadium holds the
+            full label EN+HE at both). ChipButton carries the mint fill, the brass DASHED rim, the
+            bevel and the pressed sink; its onPressIn/onPressOut also preserve the POLISH-1 first-tap
+            fix. Dominant primary — Practice below stays the quiet secondary. */}
+        <ChipButton
+          variant="primary"
+          onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
+          accessibilityLabel="Play online, open the multiplayer lobby"
+          style={{ marginHorizontal: rs(16), marginTop: rs(12) }}
+        >
+          {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
+              English inside a Hebrew app, on the highest-traffic route to multiplayer.
+              The emoji stays as decoration; the TEXT is what names the destination. */}
+          <Text style={styles.playOnlineEmoji} allowFontScaling={false}>🎮</Text>
+          {/* LABEL_COLUMN, not `flex: 1` — a zero-basis text column between two fixed glyphs is the
+              one arrangement Yoga and CSS lay out differently, and it is why TestFlight showed
+              a gamepad and a chevron with nothing between them. See the constant.
 
-                allowFontScaling={false} on the two glyphs for the same reason: iOS Dynamic Type
-                scales them (web ignores it), and they are decoration whose only job is to stay
-                small enough that the words keep their room. */}
-            <View style={LABEL_COLUMN}>
-              <Text style={styles.playOnlineTitle} numberOfLines={1}>Play Online</Text>
-              {/* Shortened: the old string ellipsised at 320pt ("...instant bot …"), losing the word that
-                  said what the tables were. It also carries NO liveness claim — see the live-count
-                  note below; a subtitle is not the place to imply a busy room either. */}
-              <Text style={styles.playOnlineSub} numberOfLines={2}>Real players · instant bot tables</Text>
-            </View>
-            <Text style={styles.playOnlineGo} allowFontScaling={false}>›</Text>
-          </Pressable>
-        </AnimatedRN.View>
+              allowFontScaling={false} on the two glyphs for the same reason: iOS Dynamic Type
+              scales them (web ignores it), and they are decoration whose only job is to stay
+              small enough that the words keep their room. */}
+          <View style={LABEL_COLUMN}>
+            <Text style={styles.playOnlineTitle} numberOfLines={1}>Play Online</Text>
+            {/* Shortened: the old string ellipsised at 320pt ("...instant bot …"), losing the word that
+                said what the tables were. It also carries NO liveness claim — see the live-count
+                note below; a subtitle is not the place to imply a busy room either. */}
+            <Text style={styles.playOnlineSub} numberOfLines={2}>Real players · instant bot tables</Text>
+          </View>
+          <Text style={styles.playOnlineGo} allowFontScaling={false}>›</Text>
+        </ChipButton>
 
         {/* C2 — PRACTICE, SECOND. It kept its position through the first pass of this change
             and that made the restyle cosmetic: the eye lands on whatever is highest, so a
             demoted button above the hero is still the first thing read. Order IS the hierarchy. */}
         <View style={styles.playSection}>
-          <View style={{ position: 'relative', alignSelf: 'center' }}>
-{/* C2 — the green glow halo went with the primary. A secondary button does not glow. */}
-            <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
-              <Pressable
-                onPress={handleNewHand}
-                onPressIn={() =>
-                  AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
-                }
-                onPressOut={() =>
-                  AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
-                }
-                style={[styles.playBtn, { width: playBtnWidth }]}
-                accessibilityRole="button"
-                accessibilityLabel="Practice against bots"
-              >
-                {/* playBtnHighlight removed with the fill — a gloss overlay on a transparent
-                    button just paints a lighter grey slab over the top half of it. */}
-                {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
-                    button is a solo game vs bots, so name it honestly. */}
-                {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
-                    LAYOUT width to the Pressable's content box (minus padding). Without it,
-                    the Pressable's default alignItems:'center' lets the Text intrinsic-size
-                    to its own natural (unconstrained) width, so adjustsFontSizeToFit had no
-                    real box to shrink into and the label truncated on narrow real devices
-                    instead of shrinking. */}
-                <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>Practice vs bots</Text>
-              </Pressable>
-            </AnimatedRN.View>
-          </View>
+          {/* C2 — the green glow halo went with the primary. A secondary button does not glow.
+              BUILD-ELONGATED-CHIP — Practice is the SAME chip, quieter: dark felt fill, MINT
+              dashed rim, smaller (rv(52) vs the primary's rv(72)) and narrower (0.64 vs full
+              width). Refinement 1 held — Play Online dominates, this does not equalise it. */}
+          <ChipButton
+            variant="secondary"
+            onPress={handleNewHand}
+            accessibilityLabel="Practice against bots"
+            style={{ alignSelf: 'center', width: practiceChipWidth }}
+          >
+            {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
+                button is a solo game vs bots, so name it honestly. */}
+            {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
+                LAYOUT width to the chip's content box (minus padding). Without it,
+                the chip's alignItems:'center' lets the Text intrinsic-size to its own
+                natural (unconstrained) width, so adjustsFontSizeToFit had no real box to
+                shrink into and the label truncated on narrow real devices instead of shrinking. */}
+            <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>Practice vs bots</Text>
+          </ChipButton>
 
           {/* C2 — THE CONFIG LINE IS GONE. "3 boards · 3 players · Low Blinds · 25/board" measured
               3.70:1 (needs 4.5) and it configured before it explained: a stranger's first screen
@@ -2209,40 +2194,15 @@ const styles = StyleSheet.create({
   // is not the product, and its white label measured 2.28:1 against a 3:1 bar. Now an OUTLINED
   // secondary: mint text on the page background, which is a contrast pair that passes rather
   // than one that needed the white to be shouted.
-  playBtn: {
-    minHeight: 56,
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#4FD6A8',
-    borderRadius: rv(16),
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: rs(18),
-    // RESPONSIVE-FIX 2026-07-06 — was rs(32). Combined with the old 0.75 width ratio
-    // this left too little room for "Practice vs Bots" on narrow devices (320-375pt);
-    // rs(20) + the wider 0.82 ratio above give the label real breathing room.
-    paddingHorizontal: rs(20),
-    overflow: 'hidden',
-  },
-  playBtnHighlight: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    height: '50%' as any,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderTopLeftRadius: rv(16),
-    borderTopRightRadius: rv(16),
-  },
+  // BUILD-ELONGATED-CHIP — the label on the QUIET secondary chip (dark #12211B fill, mint rim).
   playBtnText: {
-    // mint, not white: the button is no longer filled, so white would sit on the page
-    // background at 1.9:1. #4FD6A8 on #0a0a0a measures well past the bar.
+    // mint on the dark chip fill = high contrast (well past 4.5:1).
     color: '#4FD6A8',
-    // RESPONSIVE-FIX 2026-07-06 — was rf(22) (default floor ~17, i.e. it could barely
-    // shrink at narrow widths). Explicit min:13 lets it shrink further on tiny screens;
-    // the wider button + smaller padding above mean it rarely needs to go that low.
-    fontSize: rf(20, 13, 25),
-    fontWeight: '900',
-    // was a fixed 1.5 (didn't scale down on narrow screens, eating into the same
-    // tight space that caused the truncation).
+    // Smaller than the primary title (rf(19)) so the hierarchy reads by SIZE too, not only by
+    // fill — refinement 1, do not equalise. Floor 12 keeps "Practice vs bots" legible on tiny
+    // screens; adjustsFontSizeToFit(min 0.6) is the backstop.
+    fontSize: rf(15, 12, 18),
+    fontWeight: '800',
     letterSpacing: rs(0.8),
     textAlign: 'center',
   },
@@ -2258,23 +2218,10 @@ const styles = StyleSheet.create({
   // 124 measured it as the reason the home screen did not land: "the hero is fifteen blank white
   // rounded rectangles". The felt tokens it borrowed are untouched and still live in paintThemes.
 
-  // ── C2: PLAY ONLINE IS THE HERO ─────────────────────────────────────────────────────────
-  // A FILLED mint button, not an outlined card. The biggest promise on the screen must be the
-  // thing we want pressed, and until now that was the mode that is NOT the product.
-  // Filled also fixes the contrast: dark ink on mint measures far above the 3:1 large-text bar,
-  // where the old white-on-green practice button measured 2.28:1.
-  playOnlineBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(12),
-    marginHorizontal: rs(16),
-    marginTop: rs(12),
-    paddingVertical: rs(16),
-    paddingHorizontal: rs(16),
-    minHeight: 64,
-    borderRadius: rv(16),
-    backgroundColor: '#4FD6A8',
-  },
+  // ── C2: PLAY ONLINE IS THE HERO — now the elongated chip (components/ChipButton.tsx) ────────
+  // The mint fill + brass dashed rim + bevel + pressed sink live in ChipButton; the row content
+  // (emoji · label column · chevron) and its text styles stay here. Dark ink on mint measures far
+  // above the bar, where the old white-on-green practice button measured 2.28:1.
   playOnlineEmoji: { fontSize: rf(24) },
   playOnlineTitle: { color: '#08130F', fontSize: rf(19), fontWeight: '900', letterSpacing: 0.5 },
   // #0A1A14 on mint = well past 4.5:1. The old 'rgba(255,255,255,0.7)' sub-line was 3.7:1 dim
