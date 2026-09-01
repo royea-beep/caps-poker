@@ -34,11 +34,14 @@ const FELT_BOTTOM = '#03110B';
 export function LuxuryBackdrop({ muted = false, overlayOnly = false }: { muted?: boolean; overlayOnly?: boolean } = {}) {
   // Muted center-glow is much dimmer (0.22 vs 0.55) and the beam is halved, so a bright surface
   // never puts attention back on the non-winning cards the reveal deliberately dims.
+  // SHIP-5 amplitude push (2026-09-01): the muted felt was timid. Richness comes mostly from a
+  // DARKER RIM (a real vignette frame) with a modest centre glow — the rim darkening does not touch
+  // card-vs-ground (cards never sit at the extreme edge), while a heavy centre glow would. Measured.
   const vignette = muted
-    ? 'radial-gradient(120% 82% at 50% 34%, rgba(26,70,44,0.22) 0%, rgba(7,28,18,0.0) 50%, rgba(0,0,0,0.42) 100%)'
+    ? 'radial-gradient(120% 84% at 50% 33%, rgba(30,80,50,0.34) 0%, rgba(7,28,18,0.0) 48%, rgba(0,0,0,0.66) 100%)'
     : 'radial-gradient(120% 78% at 50% 30%, rgba(26,70,44,0.55) 0%, rgba(7,28,18,0.0) 46%, rgba(0,0,0,0.55) 100%)';
   const beam = muted
-    ? 'linear-gradient(118deg, rgba(255,240,205,0.05) 0%, rgba(255,240,205,0.018) 12%, rgba(255,240,205,0) 27%)'
+    ? 'linear-gradient(118deg, rgba(255,240,205,0.09) 0%, rgba(255,240,205,0.03) 13%, rgba(255,240,205,0) 28%)'
     : 'linear-gradient(118deg, rgba(255,240,205,0.10) 0%, rgba(255,240,205,0.035) 12%, rgba(255,240,205,0) 27%)';
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">

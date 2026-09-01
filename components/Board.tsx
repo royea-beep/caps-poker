@@ -693,7 +693,11 @@ export default function Board({
         // boxShadow is kept exactly as it was: it is web's stand-in for the native elevation and
         // has nothing to do with the panel fill.
         Platform.OS === 'web' && {
-          boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
+          // GAME-UPGRADES step 5 (SHIP-5 amplitude) — recessed well + top-bevel light via appended
+          // INSET shadows. PAINT ONLY (geometry byte-identical). The panel FILL alpha is a documented
+          // card/back legibility calibration (0.55 → face-down 1.08:1), so depth comes from SHADOW,
+          // never fill. Pushed deeper than the timid preview.
+          boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62), inset 0 5px 14px rgba(0,0,0,0.60), inset 0 1px 0 rgba(255,255,255,0.07)`,
         } as any,
         // S76-BOARD-ROUTING — colour-only overrides. shadowColor is guarded to iOS to
         // mirror the StyleSheet's Platform.select exactly: Android uses `elevation` and
@@ -1247,6 +1251,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: OBSIDIAN.slotFill,
+    // GAME-UPGRADES step 4 (SHIP-5 amplitude) — mint INNER GLOW so the empty slot reads as a target.
+    // GLOW ONLY: the 3:1 dashed OUTLINE and the resting FILL are BOTH untouched (the outline contrast
+    // is calibrated against the fill). Pushed stronger than the preview, measured against the 3:1 floor.
+    ...Platform.select({ web: { boxShadow: 'inset 0 0 13px rgba(79,214,168,0.44)' } as any, default: {} }),
   },
   dropTarget: {
     // VAMOS-VISUAL-C — when a hand card is selected, slot brightens to solid mint

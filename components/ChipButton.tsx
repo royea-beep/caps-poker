@@ -108,8 +108,8 @@ export function ChipButton({
   const gap = isPrimary ? rs(12) : rs(8);
   const edgeInset = rs(6); // the dashed rim sits this far in from the fill edge
   const edgeWidth = rv(2); // the smooth solid rim line
-  const bevelTop = rs(3); // inner top highlight — the chip catches light
-  const bevelBottom = rs(8); // inner bottom shadow — the chip has depth
+  const bevelTop = rs(4); // inner top highlight — the chip catches light (SHIP-5: raised for depth)
+  const bevelBottom = rs(11); // inner bottom shadow — the chip has depth (SHIP-5: raised)
   const sinkTo = rs(4);
 
   const onIn = () =>
@@ -159,7 +159,7 @@ export function ChipButton({
               height: bevelTop,
               borderTopLeftRadius: radius,
               borderTopRightRadius: radius,
-              backgroundColor: 'rgba(255,255,255,0.45)',
+              backgroundColor: 'rgba(255,255,255,0.55)',
             },
           ]}
         />
@@ -173,7 +173,7 @@ export function ChipButton({
               height: bevelBottom,
               borderBottomLeftRadius: radius,
               borderBottomRightRadius: radius,
-              backgroundColor: 'rgba(0,0,0,0.20)',
+              backgroundColor: 'rgba(0,0,0,0.28)',
             },
           ]}
         />
