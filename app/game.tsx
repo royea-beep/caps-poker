@@ -1444,8 +1444,12 @@ function GameScreenInner() {
       }
       chrome={
         <>
-          {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips) */}
-          {isPractice && (
+          {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips).
+              GAME-UPGRADES step 2 (2026-09-01) — HIDDEN at ≤340pt (the 320 crowd the audit found:
+              this absolute pill crossed the "PLACE N CARDS" instruction). Per this pill's own history
+              note, the PLACE string is the actual instruction during placement, so it wins the narrow
+              band; the "no chips" reassurance drops on tiny screens only. Unchanged ≥375. */}
+          {isPractice && screenW > 340 && (
             <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? 'Practice, no chips at stake' : `Practice, this session ${practiceSessionNet > 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)} chips`}>
               {/* "Session +0" is dev jargon — until the player has actually won/lost, just say
                   what matters (no real chips). Show the running tally only once it's non-zero. */}
@@ -1595,9 +1599,12 @@ const styles = StyleSheet.create({
     borderRadius: rv(12),
     backgroundColor: 'rgba(79,214,168,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.30)',
+    // GAME-UPGRADES step 2 — luxury pill: mint fill + BRASS gilded hairline (the home's chip
+    // identity), with a soft lift so it reads as raised, not a flat translucent slab.
+    borderColor: 'rgba(201,168,76,0.55)',
     overflow: 'hidden',
     textTransform: 'uppercase' as any,
+    ...Platform.select({ web: { boxShadow: '0 2px 6px rgba(0,0,0,0.35)' } as any, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.35, shadowRadius: 4 } }),
   },
   headerChips: {
     // VAMOS-PLACEMENT-POLISH-2 FIX 3 — money/balance pill: gold rgba bg/border → mint
@@ -1609,7 +1616,10 @@ const styles = StyleSheet.create({
     paddingVertical: rs(4),
     paddingHorizontal: rs(10),
     borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.25)',
+    // GAME-UPGRADES step 2 — luxury pill: brass gilded hairline + soft lift (matches the PLACE pill
+    // and the home's mint-fill/brass-edge chip identity).
+    borderColor: 'rgba(201,168,76,0.55)',
+    ...Platform.select({ web: { boxShadow: '0 2px 6px rgba(0,0,0,0.35)' } as any, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.35, shadowRadius: 4 } }),
   },
   headerChipsEmoji: {
     fontSize: rf(14),
