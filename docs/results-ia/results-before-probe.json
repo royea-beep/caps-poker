@@ -1,0 +1,56 @@
+{
+ "label": "before",
+ "ts": "2026-09-01T16:33:36.679Z",
+ "views": [
+  {
+   "W": 320,
+   "H": 720,
+   "collapsed": {
+    "headline": "YOU WIN",
+    "scoreNumerals": "2 — 1",
+    "boardTally": "2 WON · 1 TIED · 1 LOST",
+    "practiceBanner": false,
+    "playAgainPresent": false,
+    "playAgainBg": null,
+    "coachingPresent": true,
+    "coachingBg": "rgba(255, 215, 0, 0.08)",
+    "toggleLabel": null,
+    "xpBanner": true,
+    "breakdownHand": true,
+    "boardByBoard": true,
+    "historyLink": true,
+    "shopCta": true,
+    "goldButtonHits": 6
+   },
+   "expanded": null,
+   "errs": [
+    "PAGEERROR: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ]
+  },
+  {
+   "W": 393,
+   "H": 852,
+   "collapsed": {
+    "headline": "YOU WIN",
+    "scoreNumerals": "2 — 1",
+    "boardTally": "2 WON · 1 TIED · 1 LOST",
+    "practiceBanner": false,
+    "playAgainPresent": false,
+    "playAgainBg": null,
+    "coachingPresent": true,
+    "coachingBg": "rgba(255, 215, 0, 0.08)",
+    "toggleLabel": null,
+    "xpBanner": true,
+    "breakdownHand": true,
+    "boardByBoard": true,
+    "historyLink": true,
+    "shopCta": true,
+    "goldButtonHits": 1
+   },
+   "expanded": null,
+   "errs": [
+    "PAGEERROR: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ]
+  }
+ ]
+}
