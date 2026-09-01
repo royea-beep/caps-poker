@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rf, rs, rv } from '../../utils/responsive';
 import { useGameStore } from '../../store/gameStore';
 import { t, getLanguage, isRTL } from '../../utils/i18n';
+import { LuxuryBackdrop } from '../../components/LuxuryBackdrop';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -26,6 +27,9 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* EVERY-SCREEN luxury pass — the app-wide LuxuryBackdrop behind the profile, one visual
+          language across the app. pointerEvents:none, zero layout impact. */}
+      <LuxuryBackdrop />
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.title} accessibilityRole="header">PROFILE</Text>
         <Text style={styles.playerName}>{playerName}</Text>
@@ -69,7 +73,9 @@ const styles = StyleSheet.create({
   title: { color: '#4FD6A8', fontSize: rf(28), fontWeight: '900', letterSpacing: 4, textAlign: 'center', paddingTop: rs(16), marginBottom: rs(4) },
   playerName: { color: 'rgba(255,255,255,0.87)', fontSize: rf(13), textAlign: 'center', marginBottom: rs(20) },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rs(8), paddingHorizontal: rs(16), marginBottom: rs(20) },
-  statCard: { flex: 1, minWidth: '45%', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.20)', borderRadius: rv(12), padding: rs(14), alignItems: 'center' },
+  // EVERY-SCREEN luxury pass — gilded stat cards: a brass hairline + a soft lift over the felt,
+  // the same identity as the game header pills and the home. mint value text unchanged.
+  statCard: { flex: 1, minWidth: '45%', backgroundColor: 'rgba(0,0,0,0.28)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.45)', borderRadius: rv(12), padding: rs(14), alignItems: 'center', ...Platform.select({ web: { boxShadow: '0 3px 10px rgba(0,0,0,0.4)' } as any, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6 } }) },
   statValue: { color: '#4FD6A8', fontSize: rf(22), fontWeight: '900' },
   statLabel: { color: 'rgba(255,255,255,0.87)', fontSize: rf(10), fontWeight: '700', letterSpacing: 1, marginTop: rs(2) },
   menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: rs(16), paddingHorizontal: rs(20), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
