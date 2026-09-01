@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { LuxuryBackdrop } from '../components/LuxuryBackdrop';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
@@ -166,6 +167,10 @@ export default function ShopScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* EVERY-SCREEN luxury pass — the app-wide LuxuryBackdrop behind the shop, one visual
+          language. A shop that looks cheap sells nothing; the felt gives it a premium ground.
+          pointerEvents:none, zero layout impact. */}
+      <LuxuryBackdrop />
       {/* Header */}
       <ScreenHeader
         title="🎰 Chip Shop"
