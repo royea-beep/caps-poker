@@ -6,7 +6,7 @@
       "localStorage": [
         {
           "name": "sb-gxrpunvhjcrzqnitbqah-auth-token",
-          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6ImExMWZhMWJkLWVmODgtNGQwMS04NTVmLWZmZTIyZDRmZTk1NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d4cnB1bnZoamNyenFuaXRicWFoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJlZmRlY2EwNy0xNmM3LTRiZTQtOTQ0MC1kZjllNWM0ZGVlZTEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg3ODU4ODkwLCJpYXQiOjE3ODc4NTUyOTAsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODc4NTUyOTB9XSwic2Vzc2lvbl9pZCI6Ijg0NTA2MTQwLTJmMDYtNDM5My1iYTE2LTI3YTdlN2I4YTQ4MCIsImlzX2Fub255bW91cyI6dHJ1ZX0.giNuXYvzIcbIpNv0z6Ugs1juoY2Dp30x7iaONyr16woMR2OSyAKL528r7gJGaWMHSc3qEjxk-SCvni_RHfIUnw\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1787858890,\"refresh_token\":\"3mo6guyidhmw\",\"user\":{\"id\":\"efdeca07-16c7-4be4-9440-df9e5c4deee1\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"\",\"phone\":\"\",\"last_sign_in_at\":\"2026-08-27T18:28:10.297062137Z\",\"app_metadata\":{},\"user_metadata\":{},\"identities\":[],\"created_at\":\"2026-08-27T18:28:10.294588Z\",\"updated_at\":\"2026-08-27T18:28:10.307781Z\",\"is_anonymous\":true}}"
+          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6ImExMWZhMWJkLWVmODgtNGQwMS04NTVmLWZmZTIyZDRmZTk1NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d4cnB1bnZoamNyenFuaXRicWFoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI1NjUxNTc0OS04Yjg5LTQ0OWItOWJlYS0xNDM1ZmM5NGI2OGYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4Mjg5MzUyLCJpYXQiOjE3ODgyODU3NTIsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODgyODU3NTJ9XSwic2Vzc2lvbl9pZCI6ImRkODVlZmExLTUyMGItNDFiOC04NGFlLTU5YjQ5NjdkYjhiMSIsImlzX2Fub255bW91cyI6dHJ1ZX0.ZDknGM1y7gMlY1FR15FMRCB1zY3n1wyOmI37ZAF2Hq6OMtnZWbgkRXI3EKkMuGmQgj9BNtcao4mavmS8hTjxGQ\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1788289352,\"refresh_token\":\"56wvdhr7mtgv\",\"user\":{\"id\":\"56515749-8b89-449b-9bea-1435fc94b68f\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"\",\"phone\":\"\",\"last_sign_in_at\":\"2026-09-01T18:02:32.497851261Z\",\"app_metadata\":{},\"user_metadata\":{},\"identities\":[],\"created_at\":\"2026-09-01T18:02:32.455474Z\",\"updated_at\":\"2026-09-01T18:02:32.535672Z\",\"is_anonymous\":true}}"
         },
         {
           "name": "caps_language",
@@ -14,7 +14,7 @@
         },
         {
           "name": "caps-device-id",
-          "value": "fc60-a6f8-d677"
+          "value": "e4fa-678a-5b0b"
         },
         {
           "name": "caps_games_played",
@@ -30,11 +30,11 @@
         },
         {
           "name": "caps-poker-storage",
-          "value": "{\"state\":{\"chips\":2530,\"cardBack\":\"classic\",\"emotePack\":\"classic\",\"config\":{\"arrangementTime\":60,\"boardRevealDuration\":5,\"turnRevealDelay\":800,\"completeBonusDisplay\":3,\"startingChips\":2000,\"potPerBoard\":25,\"completeBonusPercent\":50,\"numberOfPlayers\":3,\"botSpeedMin\":1500,\"botSpeedMax\":4000,\"soundEnabled\":true,\"soundVolume\":0.8,\"hapticsEnabled\":true,\"revealSpeed\":\"normal\",\"botDifficulty\":\"easy\",\"mpBoardReveal\":true},\"handsPlayed\":0,\"bestChips\":2000,\"handsWon\":0,\"biggestWin\":0,\"playerName\":\"Player\",\"playerAvatar\":\"👤\",\"notificationsEnabled\":true,\"cardTheme\":\"v3\",\"homeTheme\":\"dark_gold\",\"buttonStyle\":\"solid\",\"friendsBg\":\"none\",\"fourColorSuits\":false,\"skipBoardReveal\":false,\"colorblindMode\":false,\"handSortMethod\":\"caps\",\"orientation\":\"portrait\",\"visualTheme\":\"classic\",\"lastDailyRewardClaim\":\"2026-08-27T18:28:10.810Z\",\"dailyRewardStreak\":1,\"lastFreeRefill\":null,\"totalChipsEarned\":30,\"totalChipsSpent\":0,\"unlockedAchievements\":[],\"currentWinStreak\":0,\"bestWinStreak\":0},\"version\":2}"
+          "value": "{\"state\":{\"chips\":2230,\"cardBack\":\"classic\",\"emotePack\":\"classic\",\"config\":{\"arrangementTime\":60,\"boardRevealDuration\":5,\"turnRevealDelay\":800,\"completeBonusDisplay\":3,\"startingChips\":2000,\"potPerBoard\":25,\"completeBonusPercent\":50,\"numberOfPlayers\":3,\"botSpeedMin\":1500,\"botSpeedMax\":4000,\"soundEnabled\":true,\"soundVolume\":0.8,\"hapticsEnabled\":true,\"revealSpeed\":\"normal\",\"botDifficulty\":\"easy\",\"mpBoardReveal\":true},\"handsPlayed\":0,\"bestChips\":2000,\"handsWon\":0,\"biggestWin\":0,\"playerName\":\"Player\",\"playerAvatar\":\"👤\",\"notificationsEnabled\":true,\"cardTheme\":\"v3\",\"homeTheme\":\"dark_gold\",\"buttonStyle\":\"solid\",\"friendsBg\":\"none\",\"fourColorSuits\":false,\"skipBoardReveal\":false,\"colorblindMode\":false,\"handSortMethod\":\"caps\",\"orientation\":\"portrait\",\"visualTheme\":\"classic\",\"lastDailyRewardClaim\":\"2026-09-01T18:02:32.892Z\",\"dailyRewardStreak\":1,\"lastFreeRefill\":null,\"totalChipsEarned\":30,\"totalChipsSpent\":0,\"unlockedAchievements\":[],\"currentWinStreak\":0,\"bestWinStreak\":0},\"version\":2}"
         },
         {
           "name": "debug_session_id",
-          "value": "1787855289715-ipb31z"
+          "value": "1788285751554-vwk4gs"
         }
       ]
     }
