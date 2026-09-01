@@ -16,6 +16,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Refre
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { safeBack } from '../../components/BackControl';
+import { LuxuryBackdrop } from '../../components/LuxuryBackdrop';
 import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
 import { getBoardCount } from '../../constants/gameConfig';
@@ -239,6 +240,9 @@ export default function PublicLobby() {
 
   return (
     <SafeAreaView style={styles.root}>
+      {/* EVERY-SCREEN luxury pass — the app-wide LuxuryBackdrop behind the lobby, one visual
+          language across the app. pointerEvents:none, zero layout impact. */}
+      <LuxuryBackdrop />
       <View style={styles.header}>
         {/* LOBBY-LABEL 2026-08-09 — the destination of the home "משחק אונליין" CTA was itself
             all-English. Same path, same problem, fixed together. */}
