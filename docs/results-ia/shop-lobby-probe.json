@@ -1,0 +1,77 @@
+{
+ "ts": "2026-09-01T16:49:04.733Z",
+ "shots": [
+  {
+   "screen": "shop",
+   "W": 320,
+   "mounted": true,
+   "goldButtonHits": 0,
+   "buyIds": [
+    "buy-theme_classic",
+    "buy-theme_midnight",
+    "buy-theme_royal",
+    "buy-card_back_gold",
+    "buy-rebuy_500",
+    "buy-card_back_neon"
+   ],
+   "joinIds": [],
+   "firstBuyBg": "rgb(79, 214, 168)",
+   "firstJoinBg": null,
+   "errs": []
+  },
+  {
+   "screen": "shop",
+   "W": 393,
+   "mounted": true,
+   "goldButtonHits": 0,
+   "buyIds": [
+    "buy-theme_classic",
+    "buy-theme_midnight",
+    "buy-theme_royal",
+    "buy-card_back_gold",
+    "buy-rebuy_500",
+    "buy-card_back_neon"
+   ],
+   "joinIds": [],
+   "firstBuyBg": "rgb(79, 214, 168)",
+   "firstJoinBg": null,
+   "errs": []
+  },
+  {
+   "screen": "lobby",
+   "W": 320,
+   "mounted": true,
+   "goldButtonHits": 0,
+   "buyIds": [],
+   "joinIds": [
+    "join-RIVER",
+    "join-FLUSH",
+    "join-BLIND",
+    "join-RAISE",
+    "join-CHIPS",
+    "join-ALLIN"
+   ],
+   "firstBuyBg": null,
+   "firstJoinBg": "rgb(79, 214, 168)",
+   "errs": []
+  },
+  {
+   "screen": "lobby",
+   "W": 393,
+   "mounted": true,
+   "goldButtonHits": 0,
+   "buyIds": [],
+   "joinIds": [
+    "join-RIVER",
+    "join-FLUSH",
+    "join-BLIND",
+    "join-RAISE",
+    "join-CHIPS",
+    "join-ALLIN"
+   ],
+   "firstBuyBg": null,
+   "firstJoinBg": "rgb(79, 214, 168)",
+   "errs": []
+  }
+ ]
+}
