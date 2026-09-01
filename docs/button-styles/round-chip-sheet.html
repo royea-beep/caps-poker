@@ -1,0 +1,134 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* ROUND-CHIP decision sheet — E (beveled poker chip) as a TRUE CIRCLE vs an ELONGATED stadium chip.
+   RENDERED CONCEPT MOCKUP (Chromium), faithful to real app values. NOT the app bundle, NOT a device.
+   mint #4FD6A8 = action/fill · brass #C9A84C = chip edge · gold #FFD700 = WON winner cue (NEVER here). */
+:root{--mint:#4FD6A8;--ink:#08130F;--ink2:#0A1A14;--brass:#C9A84C;--sub:#cfd8d2;--won:#FFD700}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+body{background:#05070a;color:#fff;padding:22px}
+h1{font-size:18px;font-weight:800;margin-bottom:4px}
+.meta{font-size:12px;color:#9fb0aa;margin-bottom:16px;line-height:1.5;max-width:1100px}
+.legend{display:flex;gap:16px;font-size:12px;color:#c8d3ce;margin-bottom:20px;flex-wrap:wrap}
+.sw{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:5px}
+.grid{display:flex;flex-wrap:wrap;gap:20px}
+.tile{border:1px solid #1c2a25;border-radius:14px;overflow:hidden;background:#000}
+.tilehdr{background:#0e1512;padding:8px 12px;display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #1c2a25}
+.code{font-weight:900;font-size:14px;color:var(--mint);letter-spacing:.5px}
+.badge{font-size:10px;color:#9fb0aa;text-align:right}
+.badge b{color:#7CFFB0}.badge .bad{color:#ff6b6b}
+.home{position:relative;background:radial-gradient(120% 80% at 50% 0%,#0d1a14 0%,#070c0a 55%,#05080a 100%);height:820px;display:flex;flex-direction:column;align-items:center;padding-top:24px}
+.home.w320{width:320px}.home.w393{width:393px}
+.caps{font-family:Georgia,serif;font-weight:800;font-size:58px;line-height:.9;background:linear-gradient(180deg,#f4e3a1,#d9b24e 45%,#9c7a2e);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:2px}
+.home.w320 .caps{font-size:50px}
+.poker{font-family:Georgia,serif;letter-spacing:8px;font-size:14px;color:#b99a52;margin-top:2px}
+.sub{color:var(--sub);font-size:12.5px;text-align:center;max-width:82%;margin:14px auto 0;line-height:1.35}
+.chiparea{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:18px;margin-top:26px}
+.foot{color:#6a7a72;font-size:10px;text-align:center;position:absolute;bottom:74px;left:0;right:0}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:58px;background:#0D0D0D;border-top:1px solid rgba(79,214,168,.2);display:flex;justify-content:space-around;align-items:center;font-size:20px;color:#4FD6A8}
+.tabbar span{opacity:.55}
+
+/* ---- CHIP EDGE + BEVEL, shared ---- */
+.chip{position:relative;background:var(--mint);color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;
+  box-shadow:0 10px 22px rgba(0,0,0,.55),inset 0 3px 0 rgba(255,255,255,.45),inset 0 -5px 10px rgba(0,0,0,.22);cursor:pointer}
+.chip::before{content:"";position:absolute;inset:6px;border-radius:inherit;border:3px dashed var(--brass);opacity:.85;pointer-events:none}
+.chip.pressed{transform:translateY(4px);box-shadow:0 3px 8px rgba(0,0,0,.5),inset 0 2px 8px rgba(0,0,0,.28)}
+.chip .lbl{position:relative;z-index:2;padding:6px}
+.chip .emoji{font-size:26px;line-height:1;display:block}
+.chip .t{font-weight:900;letter-spacing:.3px;line-height:1.02}
+.chip .s{font-weight:700;color:var(--ink2);margin-top:2px;line-height:1.05}
+/* practice chip = dark, quiet */
+.pchip{background:#12211b;color:#9fe8cd;box-shadow:0 6px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+.pchip::before{border-color:rgba(79,214,168,.4)}
+.pchip .t{font-weight:800}
+
+/* ROUND: true circles. diameter proportional to width (RN rf/rs analog) */
+.w393 .round.play{width:230px;height:230px;border-radius:50%}
+.w320 .round.play{width:190px;height:190px;border-radius:50%}
+.w393 .round.prac{width:150px;height:150px;border-radius:50%}
+.w320 .round.prac{width:128px;height:128px;border-radius:50%}
+.round.play .t{font-size:22px}.round.play .s{font-size:12.5px}
+.w320 .round.play .t{font-size:19px}.w320 .round.play .s{font-size:11.5px}
+.round.prac .t{font-size:16px}
+
+/* ELONGATED: stadium (fully rounded rect). height proportional; row layout */
+.elong.play{width:calc(100% - 40px);min-height:74px;border-radius:999px;padding:0 26px;gap:12px}
+.w320 .elong.play{min-height:66px}
+.elong.play .lbl{display:flex;align-items:center;gap:12px;text-align:left}
+.elong.play .emoji{font-size:26px}
+.elong.play .t{font-size:20px}.elong.play .s{font-size:12.5px}
+.w320 .elong.play .t{font-size:18px}
+.elong.prac{width:calc(70% - 20px);min-height:52px;border-radius:999px}
+.elong.prac .t{font-size:16px}
+/* RTL */
+.rtl{direction:rtl}
+.rtl .elong.play .lbl{text-align:right}
+</style></head>
+<body>
+<h1>CAPS — round chip vs elongated chip · <span id="wlabel"></span></h1>
+<div class="meta">RENDERED CONCEPT MOCKUP (Chromium) — E (beveled poker-chip), faithful to real values, NOT the app bundle / not a device. Refinement 1 held: dominant <b>Play&nbsp;Now</b>, quiet <b>Practice</b>. The 320 test: does <b>Play Now · vs real players</b> fit a TRUE circle in EN <i>and</i> HE without wrap/clip? Badge = fits-circle · label:fill contrast · min-dimension(44pt floor).</div>
+<div class="legend">
+  <span><span class="sw" style="background:#4FD6A8"></span>mint #4FD6A8 = action/fill</span>
+  <span><span class="sw" style="background:#C9A84C"></span>brass #C9A84C = chip edge</span>
+  <span><span class="sw" style="background:#FFD700"></span>gold #FFD700 = WON winner cue — NEVER on this screen</span>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const W = new URLSearchParams(location.search).get('w')==='320'?320:393;
+document.getElementById('wlabel').textContent = W+'px, full home per tile';
+const STR = {
+  en:{play:'Play&nbsp;Now', sub:'vs real players', prac:'Practice vs bots', pshort:'Practice', rtl:false},
+  he:{play:'שחק עכשיו', sub:'מול שחקנים אמיתיים', prac:'תרגול מול בוטים', pshort:'תרגול', rtl:true}
+};
+function homeHTML(shape,lang){const s=STR[lang];const rtl=s.rtl?'rtl':'';
+  const play = shape==='round'
+    ? `<div class="chip round play ${rtl}"><span class="lbl"><span class="emoji">🎮</span><span class="t">${s.play}</span><span class="s">${s.sub}</span></span></div>`
+    : `<div class="chip elong play ${rtl}"><span class="lbl"><span class="emoji">🎮</span><span><span class="t">${s.play}</span> <span class="s">· ${s.sub}</span></span></span></div>`;
+  const prac = shape==='round'
+    ? `<div class="chip pchip round prac ${rtl}"><span class="lbl"><span class="t">${s.pshort}</span></span></div>`
+    : `<div class="chip pchip elong prac ${rtl}"><span class="lbl"><span class="t">${s.prac}</span></span></div>`;
+  return `<div class="caps">CAPS</div><div class="poker">P O K E R</div>
+    <div class="sub">Four cards on every board. Every board plays at once. Win the most boards, win the hand.</div>
+    <div class="chiparea">${play}${prac}</div>
+    <div class="foot">Free play | Virtual chips only | No real-money gambling | 18+</div>
+    <div class="tabbar"><span>🏠</span><span>♠️</span><span>👤</span></div>`;
+}
+const TILES=[['round','en','ROUND · EN'],['round','he','ROUND · HE'],['elong','en','ELONGATED · EN'],['elong','he','ELONGATED · HE']];
+const grid=document.getElementById('grid');
+for(const [shape,lang,name] of TILES){
+  const d=document.createElement('div');d.className='tile';
+  d.innerHTML=`<div class="tilehdr"><span class="code">${name}</span><span class="badge" id="b_${shape}_${lang}">…</span></div><div class="home w${W}">${homeHTML(shape,lang)}</div>`;
+  grid.appendChild(d);
+}
+/* ---- instrument ---- */
+function lum(r,g,b){const a=[r,g,b].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*a[0]+.7152*a[1]+.0722*a[2];}
+function ratio(a,b){const L1=lum(...a),L2=lum(...b),hi=Math.max(L1,L2),lo=Math.min(L1,L2);return (hi+.05)/(lo+.05);}
+const MINT=[79,214,168],INK=[8,19,15],DARK=[18,33,27],MINTTXT=[159,232,205];
+// fits-a-true-circle: every corner of the label block within the chip's radius (minus edge padding)
+function fitsCircle(chip){
+  const lbl=chip.querySelector('.lbl'); const cb=chip.getBoundingClientRect(), lb=lbl.getBoundingClientRect();
+  const cx=cb.left+cb.width/2, cy=cb.top+cb.height/2, R=cb.width/2 - 10; // 10px inside the dashed edge
+  const corners=[[lb.left,lb.top],[lb.right,lb.top],[lb.left,lb.bottom],[lb.right,lb.bottom]];
+  let maxD=0; for(const [x,y] of corners){ const d=Math.hypot(x-cx,y-cy); if(d>maxD)maxD=d; }
+  return {fits:maxD<=R, overBy:Math.max(0,Math.round(maxD-R)), R:Math.round(R), reach:Math.round(maxD)};
+}
+const results={};
+for(const [shape,lang] of TILES.map(t=>[t[0],t[1]])){
+  const home=document.getElementById('b_'+shape+'_'+lang).closest('.tile').querySelector('.home');
+  const play=home.querySelector('.play'), prac=home.querySelector('.prac');
+  const pr=play.getBoundingClientRect();
+  const rC=ratio(INK,MINT), rP=ratio(MINTTXT,DARK);
+  const minDim=shape==='round'?Math.round(pr.width):Math.round(pr.height);
+  const cs=getComputedStyle(play), goldHit=/255,\s*215,\s*0/.test(cs.backgroundColor)||/255,\s*215,\s*0/.test(cs.borderColor);
+  let fitInfo={fits:true,overBy:0,R:0,reach:0};
+  if(shape==='round') fitInfo=fitsCircle(play);
+  // clip check: does the label overflow the chip box?
+  const lb=play.querySelector('.lbl').getBoundingClientRect();
+  const clipped = lb.width>pr.width+1 || lb.height>pr.height+1;
+  results[shape+'_'+lang]={fits:fitInfo.fits,overBy:fitInfo.overBy,R:fitInfo.R,reach:fitInfo.reach,clipped,contrast:+rC.toFixed(2),pracContrast:+rP.toFixed(2),minDim,goldHit};
+  const b=document.getElementById('b_'+shape+'_'+lang);
+  const fitTxt = shape==='round' ? (fitInfo.fits?`<b>fits ○ (${fitInfo.reach}/${fitInfo.R}px)</b>`:`<span class=bad>OVERFLOWS ○ +${fitInfo.overBy}px</span>`) : '<b>stadium</b>';
+  b.innerHTML=`${fitTxt} · ${rC>=4.5?'<b>':'<span class=bad>'}${rC.toFixed(1)}:1${rC>=4.5?'</b>':'</span>'} · ${minDim}px ${minDim>=44?'✓':'✗'}${goldHit?' <span class=bad>GOLD!</span>':''}${clipped?' <span class=bad>CLIP</span>':''}`;
+}
+window.__CANARY__={bad:+ratio(MINT,MINT).toFixed(2),badFlagged:ratio(MINT,MINT)<4.5,good:+ratio(INK,MINT).toFixed(2),goodPass:ratio(INK,MINT)>=4.5};
+window.__RESULTS__=results;
+document.title='ready';
+</script></body></html>
