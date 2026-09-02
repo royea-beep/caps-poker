@@ -230,5 +230,79 @@ payments.
    finding is either cosmetic to a friendly tester (C1), operational rather than user-facing (E1), or
    already correctly defended.
 
-*(Visual/layout (E) and accessibility (F) and the read-as-a-person first-session (D) walk are covered
-in the section below, rendered from a fresh local export both languages at 320/393.)*
+---
+
+# D / E / F — FIRST SESSION · VISUAL · ACCESSIBILITY (fresh local export, en+he @ 320/393)
+Rendered from a clean `expo export -p web`, offline Practice flow (backend unreachable in-container),
+every metric computed twice with identical counts across the four language×width combos (a consistency
+check in itself). Evidence: `docs/total-audit/D-*.png` (20), `E2-results-{color,greyscale}.png`,
+`audit-{en,he}-{320,393}.json`, `SUMMARY.json`. The probe was verified against a planted grey-on-grey
+control (caught at 1.16:1) before any pass was trusted.
+
+## 🟠 V1 — Half-translation: English strings on the Hebrew screens. **FAIL, verified against source.**
+Hebrew-locale users see these in English (the Hebrew keys mostly exist and are simply not wired to the
+visible text):
+1. `⚔️ Challenge a Friend` — hardcoded, `app/(tabs)/index.tsx:1563` (no key).
+2. `🎁 Claim daily bonus · Day N` — hardcoded, `index.tsx:1624`.
+3. `🤖 Practice · no chips` — the in-GAME practice pill, `app/game.tsx:1458` (inconsistent: the results
+   banner correctly uses `t().practiceXpNote`).
+4. **`⚡ Auto-Place ALL`** — `components/PlayerHand.tsx:284` hardcodes the VISIBLE text while `:276`
+   sets the translated `accessibilityLabel={t().autoPlaceAll}`. So the screen reader says "מלא הכל" and
+   the eye sees "Auto-Place ALL." **Correction to handoff 158:** FINISH-HEBREW claimed this fixed — it
+   wired the a11y label, not the visible `<Text>`; the visible half is still English. Key exists
+   (`i18n.ts:510`); one-line fix. (The per-board chips beside it correctly show "מילוי".)
+5. Footer legal line `Free play | Virtual chips only | No real-money gambling | 18+` — English on he home.
+6. Poker hand names ("Two Pair, …") — English by policy (CLAUDE.md), noted for completeness, not a defect.
+
+## 🟡 V2 — Stranger snag (not a bug): "תיקו/Tie" over a "1 — 2" score. UX finding.
+A 3-player practice hand ended headline **TIE** over score **1 — 2**. Verified CORRECT: the headline is
+`deriveHandOutcome` (seat-by-seat: 3 boards one-each ⇒ no single opponent beats you ⇒ tie) while the big
+"1 — 2" is you-vs-**combined**-bots. Correct engine, but a stranger reads "1–2 = I lost" against a "Tie"
+headline. This is the same you-vs-combined split as C1 seen from the results hero. Worth a UX pass.
+
+## 🟠 V3 — E1 gold-on-CTA: primaries clean, but winner-gold WASHES on secondary CTAs. **PARTIAL FAIL.**
+The three PRIMARY CTAs are all mint `#4FD6A8` ChipButton (Play Online, READY, DEAL ME IN/REMATCH) — PASS,
+and the solid-gold `DealMeInButton` is dead code. BUT the project's own "gold nowhere on a CTA" rule is
+violated by translucent winner-gold on SECONDARY buttons: home **"Claim daily bonus"**
+`rgba(255,215,0,0.12)` + gold border (`index.tsx:2261`), share buttons (`ShareSection.tsx:143`,
+`BoardResultCard.tsx:332`), coaching (`coaching.tsx:410`), replay (`replay.tsx:456`). This is the exact
+wash the RESULTS-IA pass retinted on the coaching button — the same fix (mint tint) applies here.
+
+## PASS (visual/layout)
+- **E2 winner cue separates in greyscale** — 3px gold WON / 2px mint field / 1px neutral; confirmed on
+  `E2-results-greyscale.png` (won cards visibly thicker after desaturation). `Card.tsx:475`.
+- **E3 card sizes unchanged** — `getCardDimensions`/`CARD_SCALE` last changed 2026-03-21; the recent
+  commit only relocated primitives. (The specific "68/58 @390, 54/44 @320" figures don't match the
+  current deterministic outputs — different measurement basis — so those exact numbers are
+  COULD-NOT-VERIFY; the LOGIC is verifiably untouched, which is the load-bearing claim.)
+- **E4 no clip at 320, he+en** — `scrollWidth == innerWidth` on all 20 screen×combo rows.
+
+## F — ACCESSIBILITY
+- **Exposed (unnamed) controls: 0 on every screen, every combo — PASS.** The recurring "unnamed control"
+  defect is absent; names describe the action.
+- **Focus not trapped — PASS.** Minor finding V4: the off-canvas side drawer (Close menu / Friends /
+  BATTLE PASS / COACHING / TUTORIAL / LANGUAGE / SIGN IN) sits AHEAD of the visible home CTAs in tab
+  order even when closed — a keyboard/SR user tabs through ~8 hidden items before "Play Online."
+- **Text contrast — PASS** (34 home labels above threshold; the 6 the probe flagged at ~1.1:1 are
+  colored emoji glyphs — an instrument limitation reading CSS `color`, not real defects).
+- **🟡 V5 — Touch targets < 44px (names fine, sizes small):** placement Auto-Place chips **91×18 /
+  112×18** (the clearest, BUT documented 15dp hitSlop expands them to ~48 — so real-device tappable;
+  the probe measures the visual box, not hitSlop, so treat as a visual-size note, not a hard fail);
+  "Challenge a Friend" 164×**31**; "Show hand details" 133×**32**; onboarding "Continue" 307×**43**
+  (1px under) and 3 pagination dots at **8px** (exposed as role=button — should not be focusable);
+  reveal face-down cards 43×55 @320 (1px under, borderline, whole area is "tap to reveal"). Primary
+  CTAs all ≥52px — fine.
+
+### Per-screen table (identical en/he)
+| screen | overflow 320 | overflow 393 | controls | unnamed | tiny <44 |
+|---|---|---|---|---|---|
+| home | none | none | 16 | **0** | 1 |
+| onboarding | none | none | 21 | **0** | 6 |
+| placement | none | none | 20 | **0** | 4 (hitSlop-padded) |
+| reveal | none | none | 27 | **0** | 0 @393 / 24 cards @320 |
+| results | none | none | 5 | **0** | 1 |
+
+Console errors on `/results` (11) and reveal/placement (3) in the offline export are almost certainly
+the blocked-backend fetches (no live Supabase in-container), not render bugs — flagged as
+COULD-NOT-VERIFY-clean (needs a live backend to confirm they're network-only).
+
