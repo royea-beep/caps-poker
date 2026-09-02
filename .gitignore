@@ -23,6 +23,13 @@ felt-verify2/
 web-green-dist/
 web-control-dist/
 web-build/
+# TWO-CLEANUPS 2026-09-01 — stale committed web exports removed from history. Vercel rebuilds
+# fresh on deploy, so these never affected production, but a months-old bundle served under the
+# same filename is a local-testing trap (it already cost two phantom QA findings). The web-*-dist/
+# pattern below misses these exact names (no middle segment / leading `dist`), so they are listed.
+web-dist/
+web-dist-new/
+dist-web/
 expo-env.d.ts
 
 # Native

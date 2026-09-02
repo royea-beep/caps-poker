@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en" data-lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CAPS POKER — Multi-board poker, free in your browser</title>
+<meta name="description" content="CAPS is multi-board poker: four cards on every board, every board plays at once. Free to play, virtual chips only, right in your browser. No download, no sign-up.">
+<meta name="theme-color" content="#071C12">
+<!-- Open Graph / social cards — social taps are the entire audience for this page -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CAPS POKER — free multi-board poker in your browser">
+<meta property="og:description" content="Four cards on every board. Every board plays at once. Win the most boards, win the hand. Free · virtual chips only · no download · no sign-up.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- PRE-PAINT language pick: sets <html data-lang/dir/lang> BEFORE the body renders, so there is no
+     flash of the wrong language or direction. Precedence: explicit URL (?lang=) so a share link aimed
+     at an Israeli audience forces Hebrew > the remembered choice (localStorage) > browser language >
+     English when uncertain (the global audience is the stated default). No dependency, no network. -->
+<script>
+  (function () {
+    function ok(v){ return v === 'he' || v === 'en'; }
+    function pick(){
+      try { var q = new URLSearchParams(location.search).get('lang'); if (ok(q)) return q;
+            var h = (location.hash || '').replace('#',''); if (ok(h)) return h; } catch (e) {}
+      try { var s = localStorage.getItem('caps_lang'); if (ok(s)) return s; } catch (e) {}
+      try { var L = [navigator.language].concat(navigator.languages || []);
+            for (var i = 0; i < L.length; i++) { if (/^he\b/i.test(L[i] || '')) return 'he'; } } catch (e) {}
+      return 'en';
+    }
+    var l = pick(), r = document.documentElement;
+    r.setAttribute('data-lang', l); r.setAttribute('lang', l); r.setAttribute('dir', l === 'he' ? 'rtl' : 'ltr');
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================================================
+     CAPS POKER — social landing page. SELF-CONTAINED, phone-first, one obvious action, BILINGUAL.
+     Identity restated from the app's own tokens so it survives on any host with no build step:
+       felt greens  LuxuryBackdrop  #0C2C1D / #071C12 / #03110B  (+ the same radial vignette + beam)
+       wordmark gold #c9a84c  (the wordmark gold — NOT the winner cue #FFD700)
+       CTA          ChipButton  MINT #4FD6A8 fill · BRASS #C9A84C edge · dark #08130F label
+     English + Hebrew live in the DOM together (each string in two <span data-l>); one shows per
+     html[data-lang]. Hebrew flips to dir=rtl and mirrors the card text. No signup wall, no analytics,
+     no framework. One <a> to the game — ROOT-RELATIVE href="/", so it survives a domain move.
+     Hebrew uses the SYSTEM Hebrew font (no extra webfont / network call); the Latin wordmark keeps
+     Playfair. Hebrew phrases match the app's own (utils/i18n.ts): שחק עכשיו · שחק אונליין ·
+     מול שחקנים אמיתיים · בוטים · בורדים · 4 קלפים לכל בורד.
+     ============================================================================================ */
+  :root{
+    --felt-top:#0C2C1D; --felt-mid:#071C12; --felt-bot:#03110B;
+    --gold:#c9a84c; --gold-bright:#F2E0A6; --gold-deep:#9C7C33;
+    --mint:#4FD6A8; --brass:#C9A84C; --chip-label:#08130F;
+    --ink:#EAF2EC; --ink-dim:rgba(234,242,236,0.62); --ink-faint:rgba(234,242,236,0.40);
+    --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
+    --sans:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --hebrew:-apple-system, 'SF Hebrew', 'Arial Hebrew', 'Segoe UI', Arial, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{min-height:100%;}
+  body{
+    font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased;
+    background-color:var(--felt-mid);
+    background-image:
+      radial-gradient(120% 78% at 50% 26%, rgba(26,70,44,0.55) 0%, rgba(7,28,18,0) 46%, rgba(0,0,0,0.55) 100%),
+      linear-gradient(118deg, rgba(255,240,205,0.10) 0%, rgba(255,240,205,0.035) 12%, rgba(255,240,205,0) 27%),
+      linear-gradient(180deg, var(--felt-top) 0%, var(--felt-mid) 52%, var(--felt-bot) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    display:flex; justify-content:center;
+    padding:max(14px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
+  }
+  html[dir="rtl"] body{ font-family:var(--hebrew); }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; text-align:center;}
+
+  /* ---- language toggle : first thing on the page, centred (symmetric, no mirror), always in view ---- */
+  .langbar{display:inline-flex; gap:6px; padding:4px; margin-bottom:14px; border-radius:999px;
+    background:rgba(0,0,0,0.30); border:1px solid rgba(201,168,76,0.34);}
+  .langbtn{font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:0.2px; cursor:pointer;
+    color:var(--ink-dim); background:transparent; border:0; border-radius:999px; padding:7px 15px; min-height:36px;}
+  .langbtn[aria-pressed="true"]{ background:var(--gold); color:#0C1F17; }
+  .langbtn:last-child{ font-family:var(--hebrew); }
+
+  /* ---- language visibility : one language shows, per html[data-lang] ---- */
+  [data-l]{display:none;}
+  html[data-lang="en"] [data-l="en"]{display:inline;}
+  html[data-lang="he"] [data-l="he"]{display:inline;}
+
+  /* ---- masthead : suits / gilded serif CAPS / tracked POKER — language-neutral, always LTR ---- */
+  .masthead{padding-top:4px;}
+  .wordmark{direction:ltr; unicode-bidi:isolate;}
+  .suits{color:var(--gold); opacity:0.6; font-size:20px; letter-spacing:11px; padding-inline-start:11px; margin-bottom:14px;}
+  .caps{font-family:var(--serif); font-weight:900; line-height:0.92; font-size:clamp(64px,22vw,104px);
+    letter-spacing:-2px;
+    background:linear-gradient(180deg, var(--gold-bright) 0%, #DcBd68 34%, var(--gold) 60%, var(--gold-deep) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 2px 10px rgba(0,0,0,0.85));}
+  .poker{font-family:var(--serif); font-weight:600; color:var(--gold); font-size:clamp(15px,5vw,20px);
+    letter-spacing:11px; text-transform:uppercase; padding-inline-start:11px; margin-top:6px;}
+  .rule{width:132px; height:2px; margin:16px auto 0;
+    background:linear-gradient(90deg, rgba(201,168,76,0) 0%, rgba(201,168,76,0.55) 50%, rgba(201,168,76,0) 100%);}
+
+  /* ---- promise (hero) → mechanic (support) → multiplayer hook ---- */
+  .promise{margin-top:22px; font-family:var(--serif); font-weight:700; line-height:1.24;
+    font-size:clamp(22px,6.2vw,28px); color:var(--ink); max-width:15ch;}
+  html[dir="rtl"] .promise{font-family:var(--hebrew); font-weight:800; max-width:18ch; line-height:1.3;}
+  .mechanic{margin-top:12px; font-size:clamp(14px,4.1vw,16px); line-height:1.5; color:var(--ink-dim);
+    max-width:27ch; font-weight:500;}
+  html[dir="rtl"] .mechanic{max-width:30ch;}
+  .mp{margin-top:16px; display:inline-block; font-size:13.5px; line-height:1.45; font-weight:700;
+    letter-spacing:0.2px; color:var(--gold); text-align:center; max-width:32ch;
+    border:1px solid rgba(201,168,76,0.42); background:rgba(0,0,0,0.24); padding:9px 16px; border-radius:16px;}
+  .mp .dim{color:var(--ink-dim); font-weight:600;}
+
+  /* ---- the ONE action : ChipButton (mint fill / brass edge / dark label) — never gold ---- */
+  .cta{display:block; width:100%; margin-top:26px; text-decoration:none;
+    background:var(--mint); color:var(--chip-label); border:2px solid var(--brass); border-radius:999px;
+    padding:19px 22px 21px; position:relative; overflow:hidden; box-shadow:0 10px 22px rgba(0,0,0,0.42); min-height:44px;}
+  .cta::before{content:""; position:absolute; left:0; right:0; top:0; height:6px; background:rgba(255,255,255,0.55);}
+  .cta::after{content:""; position:absolute; left:0; right:0; bottom:0; height:11px; background:rgba(0,0,0,0.28);}
+  .cta:active{transform:translateY(2px);}
+  .cta-main{display:block; font-size:20px; font-weight:900; letter-spacing:0.3px; position:relative;}
+  .cta-sub{display:block; font-size:12.5px; font-weight:700; letter-spacing:0.4px; margin-top:3px; color:#0C1F17; opacity:0.78; position:relative;}
+  html[dir="rtl"] .cta-main, html[dir="rtl"] .cta-sub{font-family:var(--hebrew);}
+  .reassure{margin-top:12px; font-size:13px; color:var(--ink-dim); letter-spacing:0.2px;}
+
+  /* ---- product screenshots : the REAL current app, phone-framed. WebP, sized for phone width,
+         hero eager (small, above fold) + the second lazy-loaded below the fold. ---- */
+  .shot{margin:22px auto 0; width:100%; max-width:224px;}
+  .shot img{display:block; width:100%; height:auto; border-radius:20px; border:1px solid rgba(201,168,76,0.45);
+    box-shadow:0 14px 30px rgba(0,0,0,0.5); background:#0B2318;}
+  .shot figcaption{margin-top:9px; font-size:12.5px; line-height:1.45; color:var(--ink-dim); font-weight:600;}
+
+  /* ---- legal footer : quiet utility links (Privacy · Terms · Contact) — NOT a CTA ---- */
+  .footer{margin-top:24px; font-size:12px; color:var(--ink-faint); letter-spacing:0.2px;}
+  .footer a{color:var(--ink-dim); text-decoration:underline; text-underline-offset:2px; padding:6px 3px; display:inline-block;}
+  .footer .sep{opacity:0.45; padding:0 3px;}
+
+  /* ---- the four stranger questions : text starts on the reading edge (flips in RTL) ---- */
+  .faq{margin-top:34px; width:100%; display:flex; flex-direction:column; gap:12px;}
+  .q{text-align:start; background:rgba(0,0,0,0.28); border:1px solid rgba(201,168,76,0.34); border-radius:14px; padding:15px 17px;}
+  .q h2{font-family:var(--serif); font-weight:700; color:var(--gold); font-size:16px; letter-spacing:0.2px;}
+  html[dir="rtl"] .q h2{font-family:var(--hebrew);}
+  .q p{margin-top:6px; font-size:14.5px; line-height:1.5; color:var(--ink-dim);}
+
+  /* ---- legal : verbatim the app's promise (EN) / a faithful, unsoftened Hebrew ---- */
+  .legal{margin-top:30px; font-size:12.5px; line-height:1.6; color:var(--ink-faint); letter-spacing:0.3px; padding-bottom:6px;}
+  .legal strong{color:var(--ink-dim); font-weight:700;}
+  .legal .b{display:block;}
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <!-- LANGUAGE TOGGLE — first element, centred, visible without scrolling, both directions one tap -->
+    <div class="langbar" role="group" aria-label="Language / שפה">
+      <button type="button" class="langbtn" data-set="en" aria-pressed="true" onclick="__setLang('en')">English</button>
+      <button type="button" class="langbtn" data-set="he" aria-pressed="false" onclick="__setLang('he')">עברית</button>
+    </div>
+
+    <header class="masthead">
+      <div class="suits" aria-hidden="true">&#9824; &#9829; &#9830; &#9827;</div>
+      <h1 class="wordmark" style="line-height:0.9;">
+        <span class="caps">CAPS</span>
+        <span class="poker">POKER</span>
+      </h1>
+      <div class="rule"></div>
+    </header>
+
+    <!-- HERO = the promise, not the mechanic. NB: board count is dynamic (2P=4, 3P=3, 4P=2), so neither
+         language states a number — "more than one way to win" holds at every table size. -->
+    <p class="promise">
+      <span data-l="en">More than one way to win — every hand.</span>
+      <span data-l="he">יותר מדרך אחת לנצח, בכל יד.</span>
+    </p>
+    <p class="mechanic">
+      <span data-l="en">Multi-board poker: four cards on every board, all played at once. Win the most boards, win the hand.</span>
+      <span data-l="he">פוקר על מספר בורדים: 4 קלפים לכל בורד, וכולם משוחקים בבת אחת. מנצחים בהכי הרבה בורדים — מנצחים ביד.</span>
+    </p>
+    <div class="mp">
+      <span data-l="en">&#9829;&nbsp; Play online against real people <span class="dim">— or practice against bots</span></span>
+      <span data-l="he">&#9829;&nbsp; שחק אונליין מול שחקנים אמיתיים <span class="dim">— או תרגול מול בוטים</span></span>
+    </div>
+
+    <!-- SHOW THE GAME — the real, current app (a fresh web export of this branch). The three-board
+         screen is the one image that explains the product without a sentence. The app renders this
+         chrome in English regardless of locale (caps_language not applied yet), so the SAME true
+         screenshot serves both languages; the caption below it is translated. Placed before the CTA
+         so a visitor sees the game before they decide. Small + eager (above the fold, ~51KB). -->
+    <figure class="shot">
+      <img src="shots/game-boards.webp" width="660" height="1431" fetchpriority="high" decoding="async"
+           alt="CAPS Poker game screen: three boards, four cards on each, all in play at once">
+      <figcaption>
+        <span data-l="en">One hand, played across every board at once.</span>
+        <span data-l="he">יד אחת, שמשוחקת על כל הבורדים בבת אחת.</span>
+      </figcaption>
+    </figure>
+
+    <!-- The ONE action. Root-relative so it points at the game on whatever origin this page is served
+         from — no domain baked in, survives a domain move. No sign-up sits before it. -->
+    <a class="cta" href="/" aria-label="Play CAPS Poker now, free, in your browser">
+      <span class="cta-main"><span data-l="en">Play now</span><span data-l="he">שחק עכשיו</span></span>
+      <span class="cta-sub"><span data-l="en">Free · in your browser · no sign-up</span><span data-l="he">חינם · בדפדפן · בלי הרשמה</span></span>
+    </a>
+    <p class="reassure">
+      <span data-l="en">Tap and you're dealt in. Nothing to download, no account to make.</span>
+      <span data-l="he">הקשה אחת ומתחילים לשחק. אין מה להוריד, אין צורך בחשבון.</span>
+    </p>
+
+    <!-- Second real screen — the reveal, live win-odds + outs as each board plays out. Below the
+         fold, so lazy-loaded (does not touch first paint). -->
+    <figure class="shot">
+      <img src="shots/game-reveal.webp" width="660" height="1431" loading="lazy" decoding="async"
+           alt="CAPS Poker reveal: live win odds and outs as each board plays out">
+      <figcaption>
+        <span data-l="en">Live win odds and outs as each board plays out.</span>
+        <span data-l="he">סיכויים ואאוטים בזמן אמת, כשכל בורד מתגלה.</span>
+      </figcaption>
+    </figure>
+
+    <section class="faq" aria-label="What you're about to play">
+      <div class="q">
+        <h2><span data-l="en">What is this game?</span><span data-l="he">מה המשחק הזה?</span></h2>
+        <p>
+          <span data-l="en">CAPS is multi-board poker. You&rsquo;re dealt four cards on every board, and every board plays at the same time — take the most boards to win the hand.</span>
+          <span data-l="he"><span dir="ltr">CAPS</span> הוא פוקר על מספר בורדים. מחלקים 4 קלפים לכל בורד, וכל הבורדים משוחקים בו-זמנית — מנצחים בהכי הרבה בורדים כדי לזכות ביד.</span>
+        </p>
+      </div>
+      <div class="q">
+        <h2><span data-l="en">Is it free?</span><span data-l="he">זה חינם?</span></h2>
+        <p>
+          <span data-l="en">Yes — free to play, with optional in-app purchases. You start with virtual chips and earn more just by playing, so you never have to pay to keep going.</span>
+          <span data-l="he">כן — חינם לשחק, עם רכישות אופציונליות בתוך האפליקציה. מתחילים עם צ'יפים וירטואליים וצוברים עוד תוך כדי משחק, כך שאף פעם לא חייבים לשלם כדי להמשיך.</span>
+        </p>
+      </div>
+      <div class="q">
+        <h2><span data-l="en">Do I need to install anything?</span><span data-l="he">צריך להתקין משהו?</span></h2>
+        <p>
+          <span data-l="en">No. It runs right here in your browser. One tap and you&rsquo;re in — no app store, no download.</span>
+          <span data-l="he">לא. זה רץ ישירות בדפדפן. הקשה אחת ומשחקים — בלי חנות אפליקציות, בלי הורדה.</span>
+        </p>
+      </div>
+      <div class="q">
+        <h2><span data-l="en">Is it gambling?</span><span data-l="he">זה הימורים?</span></h2>
+        <p>
+          <span data-l="en">No. You play with virtual chips that have no cash value — no real-money prizes, and nothing you win can be cashed out. It&rsquo;s poker for the game itself. 18+.</span>
+          <span data-l="he">לא. משחקים עם צ'יפים וירטואליים שאין להם ערך כספי — אין פרסים בכסף אמיתי, ואי אפשר לפדות למזומן שום דבר שזוכים בו. זה פוקר לשם המשחק עצמו. <span dir="ltr">18+</span>.</span>
+        </p>
+      </div>
+    </section>
+
+    <p class="legal">
+      <strong>
+        <span data-l="en">Free play · Virtual chips only · No real-money gambling · 18+</span>
+        <span data-l="he">משחק חינם · צ'יפים וירטואליים בלבד · אין הימורים בכסף אמיתי · <span dir="ltr">18+</span></span>
+      </strong>
+      <span class="b">
+        <span data-l="en">A poker game for entertainment — no cash prizes, no payouts, no purchase required to play.</span>
+        <span data-l="he">משחק פוקר לבידור — אין פרסים במזומן, אין תשלומים, ואין צורך ברכישה כדי לשחק.</span>
+      </span>
+      <span class="b">
+        <span data-l="en">Success at social gaming does not imply future success at real-money gambling.</span>
+        <span data-l="he">הצלחה במשחקי חברה אינה מבטיחה הצלחה עתידית בהימורים בכסף אמיתי.</span>
+      </span>
+    </p>
+
+    <!-- LEGAL FOOTER — quiet utility links, matching what the app already links to. Root-relative
+         (survives a domain move); the same destinations the app opens from Settings. Small and dim
+         so they never compete with "Play now" — these are not CTAs. -->
+    <nav class="footer" aria-label="Legal and contact">
+      <a href="/privacy.html"><span data-l="en">Privacy Policy</span><span data-l="he">מדיניות פרטיות</span></a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="/terms.html"><span data-l="en">Terms of Use</span><span data-l="he">תנאי שימוש</span></a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="mailto:caps@ftable.co.il"><span data-l="en">Contact</span><span data-l="he">צור קשר</span></a>
+    </nav>
+  </main>
+
+  <!-- toggle wiring: remembers the choice (localStorage, no network) and writes ?lang= so the current
+       language is shareable; also syncs button state + <title> after the pre-paint pick above. -->
+  <script>
+    (function () {
+      function ok(v){ return v === 'he' || v === 'en'; }
+      var TITLES = { en: 'CAPS POKER — Multi-board poker, free in your browser', he: "CAPS POKER — פוקר רב-בורדים, חינם בדפדפן" };
+      function apply(l, persist){
+        var r = document.documentElement;
+        r.setAttribute('data-lang', l); r.setAttribute('lang', l); r.setAttribute('dir', l === 'he' ? 'rtl' : 'ltr');
+        try { document.title = TITLES[l]; } catch (e) {}
+        var b = document.querySelectorAll('.langbtn');
+        for (var i = 0; i < b.length; i++){ b[i].setAttribute('aria-pressed', b[i].getAttribute('data-set') === l ? 'true' : 'false'); }
+        if (persist){
+          try { localStorage.setItem('caps_lang', l); } catch (e) {}
+          try { var u = new URL(location.href); u.searchParams.set('lang', l); history.replaceState(null, '', u); } catch (e) {}
+        }
+      }
+      window.__setLang = function (l){ if (ok(l)) apply(l, true); };
+      // sync UI (buttons + title) to whatever the pre-paint script already chose
+      apply(document.documentElement.getAttribute('data-lang') === 'he' ? 'he' : 'en', false);
+    })();
+  </script>
+</body>
+</html>

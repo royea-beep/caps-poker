@@ -1,0 +1,76 @@
+{
+  "overflow_en_320": false,
+  "loop_en": {
+    "lang": "en",
+    "dir": "ltr",
+    "ctaHeight": 84,
+    "ctaFill": "rgb(79, 214, 168)",
+    "ctaBorder": "rgb(201, 168, 76)",
+    "ctaLabel": "Play now",
+    "linkControls": 1,
+    "overflowX": false,
+    "wordmarkDir": "ltr",
+    "questions": [
+      "What is this game?",
+      "CAPS is multi-board poker. You’re dealt four cards on every board, and every board plays at the same time — take the most boards to win the hand.",
+      "Is it free?",
+      "Yes — free to play, with optional in-app purchases. You start with virtual chips and earn more just by playing, so you never have to pay to keep going."
+    ],
+    "legalVisible": [
+      "Free play · Virtual chips only · No real-money gambling · 18+",
+      "A poker game for entertainment — no cash prizes, no payouts, no purchase required to play.",
+      "Success at social gaming does not imply future success at real-money gambling."
+    ]
+  },
+  "overflow_en_430": false,
+  "overflow_he_320": false,
+  "loop_he": {
+    "lang": "he",
+    "dir": "rtl",
+    "ctaHeight": 84,
+    "ctaFill": "rgb(79, 214, 168)",
+    "ctaBorder": "rgb(201, 168, 76)",
+    "ctaLabel": "שחק עכשיו",
+    "linkControls": 1,
+    "overflowX": false,
+    "wordmarkDir": "ltr",
+    "questions": [
+      "מה המשחק הזה?",
+      "CAPS הוא פוקר על מספר בורדים. מחלקים 4 קלפים לכל בורד, וכל הבורדים משוחקים בו-זמנית — מנצחים בהכי הרבה בורדים כדי לזכות ביד.",
+      "זה חינם?",
+      "כן — חינם לשחק, עם רכישות אופציונליות בתוך האפליקציה. מתחילים עם צ'יפים וירטואליים וצוברים עוד תוך כדי משחק, כך שאף פעם לא חייבים לשלם כדי להמשיך."
+    ],
+    "legalVisible": [
+      "משחק חינם · צ'יפים וירטואליים בלבד · אין הימורים בכסף אמיתי · 18+",
+      "משחק פוקר לבידור — אין פרסים במזומן, אין תשלומים, ואין צורך ברכישה כדי לשחק.",
+      "הצלחה במשחקי חברה אינה מבטיחה הצלחה עתידית בהימורים בכסף אמיתי."
+    ]
+  },
+  "overflow_he_430": false,
+  "detect_heIL": {
+    "lang": "he",
+    "dir": "rtl"
+  },
+  "detect_enUS": {
+    "lang": "en",
+    "dir": "ltr"
+  },
+  "detect_frFR": {
+    "lang": "en",
+    "dir": "ltr"
+  },
+  "toggle": {
+    "start": "en",
+    "afterHe": {
+      "lang": "he",
+      "dir": "rtl",
+      "url": "?lang=he",
+      "ls": "he"
+    },
+    "afterReload": "he",
+    "backEn": {
+      "lang": "en",
+      "dir": "ltr"
+    }
+  }
+}
