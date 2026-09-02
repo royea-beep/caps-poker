@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CAPS POKER — Multi-board poker, free in your browser</title>
+<meta name="description" content="CAPS is multi-board poker: four cards on every board, every board plays at once. Free to play, virtual chips only, right in your browser. No download, no sign-up.">
+<meta name="theme-color" content="#071C12">
+<!-- Open Graph / social cards — social taps are the entire audience for this page -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CAPS POKER — free multi-board poker in your browser">
+<meta property="og:description" content="Four cards on every board. Every board plays at once. Win the most boards, win the hand. Free · virtual chips only · no download · no sign-up.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================================================
+     CAPS POKER — social landing page. SELF-CONTAINED, phone-first, one obvious action.
+     Identity restated from the app's own tokens so it survives on any host with no build step:
+       felt greens  LuxuryBackdrop  #0C2C1D / #071C12 / #03110B  (+ the same radial vignette + beam)
+       wordmark gold #c9a84c  (the wordmark gold — NOT the winner cue #FFD700)
+       CTA          ChipButton  MINT #4FD6A8 fill · BRASS #C9A84C edge · dark #08130F label
+     No signup wall, no analytics, no external JS. One <a> to the game. Domain-move-proof:
+     the only link out is a ROOT-RELATIVE href="/" (see the CTA), so the page works verbatim on
+     any origin it is copied to — caps.ftable.co.il today, anywhere tomorrow.
+     ============================================================================================ */
+  :root{
+    --felt-top:#0C2C1D; --felt-mid:#071C12; --felt-bot:#03110B;
+    --gold:#c9a84c; --gold-bright:#F2E0A6; --gold-deep:#9C7C33;
+    --mint:#4FD6A8; --brass:#C9A84C; --chip-label:#08130F;
+    --ink:#EAF2EC; --ink-dim:rgba(234,242,236,0.62); --ink-faint:rgba(234,242,236,0.40);
+    --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
+    --sans:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{min-height:100%;}
+  body{
+    font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased;
+    background-color:var(--felt-mid);
+    background-image:
+      radial-gradient(120% 78% at 50% 26%, rgba(26,70,44,0.55) 0%, rgba(7,28,18,0) 46%, rgba(0,0,0,0.55) 100%),
+      linear-gradient(118deg, rgba(255,240,205,0.10) 0%, rgba(255,240,205,0.035) 12%, rgba(255,240,205,0) 27%),
+      linear-gradient(180deg, var(--felt-top) 0%, var(--felt-mid) 52%, var(--felt-bot) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    display:flex; justify-content:center;
+    padding:max(24px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; text-align:center;}
+
+  /* ---- masthead : the home lockup — suits / gilded serif CAPS / tracked POKER ---- */
+  .masthead{padding-top:14px;}
+  .suits{color:var(--gold); opacity:0.6; font-size:20px; letter-spacing:11px; padding-left:11px; margin-bottom:14px;}
+  .caps{
+    font-family:var(--serif); font-weight:900; line-height:0.92;
+    font-size:clamp(64px, 22vw, 104px); letter-spacing:-2px;
+    background:linear-gradient(180deg, var(--gold-bright) 0%, #DcBd68 34%, var(--gold) 60%, var(--gold-deep) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 2px 10px rgba(0,0,0,0.85));
+  }
+  .poker{
+    font-family:var(--serif); font-weight:600; color:var(--gold);
+    font-size:clamp(15px, 5vw, 20px); letter-spacing:11px; text-transform:uppercase;
+    padding-left:11px; margin-top:6px;
+  }
+  .rule{width:132px; height:2px; margin:16px auto 0;
+    background:linear-gradient(90deg, rgba(201,168,76,0) 0%, rgba(201,168,76,0.55) 50%, rgba(201,168,76,0) 100%);}
+
+  /* ---- one-line what-it-is (the app's canonical tagline) ---- */
+  .tagline{margin-top:22px; font-size:clamp(16px,4.6vw,18px); line-height:1.5; color:var(--ink);
+    max-width:24ch; font-weight:500;}
+
+  /* ---- the ONE action : ChipButton (mint fill / brass edge / dark label) — never gold ---- */
+  .cta{
+    display:block; width:100%; margin-top:26px; text-decoration:none;
+    background:var(--mint); color:var(--chip-label);
+    border:2px solid var(--brass); border-radius:999px;
+    padding:19px 22px 21px; position:relative; overflow:hidden;
+    box-shadow:0 10px 22px rgba(0,0,0,0.42);
+    min-height:44px;
+  }
+  .cta::before{content:""; position:absolute; left:0; right:0; top:0; height:6px;
+    background:rgba(255,255,255,0.55);}
+  .cta::after{content:""; position:absolute; left:0; right:0; bottom:0; height:11px;
+    background:rgba(0,0,0,0.28);}
+  .cta:active{transform:translateY(2px);}
+  .cta-main{display:block; font-size:20px; font-weight:900; letter-spacing:0.3px; position:relative;}
+  .cta-sub{display:block; font-size:12.5px; font-weight:700; letter-spacing:0.4px; margin-top:3px;
+    color:#0C1F17; opacity:0.78; position:relative;}
+  .reassure{margin-top:12px; font-size:13px; color:var(--ink-dim); letter-spacing:0.2px;}
+
+  /* ---- the four stranger questions ---- */
+  .faq{margin-top:34px; width:100%; display:flex; flex-direction:column; gap:12px;}
+  .q{
+    text-align:left; background:rgba(0,0,0,0.28); border:1px solid rgba(201,168,76,0.34);
+    border-radius:14px; padding:15px 17px;
+  }
+  .q h2{font-family:var(--serif); font-weight:700; color:var(--gold); font-size:16px; letter-spacing:0.2px;}
+  .q p{margin-top:6px; font-size:14.5px; line-height:1.5; color:var(--ink-dim);}
+
+  /* ---- legal line : verbatim the app's own promise ---- */
+  .legal{margin-top:30px; font-size:12.5px; line-height:1.6; color:var(--ink-faint);
+    letter-spacing:0.3px; padding-bottom:6px;}
+  .legal strong{color:var(--ink-dim); font-weight:700;}
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="masthead">
+      <div class="suits" aria-hidden="true">&#9824; &#9829; &#9830; &#9827;</div>
+      <h1 style="line-height:0.9;">
+        <span class="caps">CAPS</span>
+        <span class="poker">POKER</span>
+      </h1>
+      <div class="rule"></div>
+    </header>
+
+    <p class="tagline">Four cards on every board. Every board plays at once. Win the most boards, win the hand.</p>
+
+    <!-- The ONE action. Root-relative so it points at the game on whatever origin this page is
+         served from — no domain baked in, survives a domain move. No sign-up sits before it. -->
+    <a class="cta" href="/" aria-label="Play CAPS Poker now, free, in your browser">
+      <span class="cta-main">Play now</span>
+      <span class="cta-sub">Free · in your browser · no sign-up</span>
+    </a>
+    <p class="reassure">Tap and you're dealt in. Nothing to download, no account to make.</p>
+
+    <section class="faq" aria-label="What you're about to play">
+      <div class="q">
+        <h2>What is this game?</h2>
+        <p>CAPS is multi-board poker. You&rsquo;re dealt four cards on every board, and every board plays at the same time — take the most boards to win the hand.</p>
+      </div>
+      <div class="q">
+        <h2>Is it free?</h2>
+        <p>Yes — completely free to play. You start with virtual chips and there&rsquo;s nothing to buy to keep playing.</p>
+      </div>
+      <div class="q">
+        <h2>Do I need to install anything?</h2>
+        <p>No. It runs right here in your browser. One tap and you&rsquo;re in — no app store, no download.</p>
+      </div>
+      <div class="q">
+        <h2>Is it gambling?</h2>
+        <p>No. Virtual chips only — no real money goes in and none comes out. It&rsquo;s the game for its own sake. 18+.</p>
+      </div>
+    </section>
+
+    <p class="legal">
+      <strong>Free play · Virtual chips only · No real-money gambling · 18+</strong><br>
+      A poker game for entertainment. No cash, no payouts, no purchases required.
+    </p>
+  </main>
+</body>
+</html>
