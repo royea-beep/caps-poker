@@ -24,9 +24,33 @@ import { getBreadcrumbs } from '../utils/breadcrumbs';
 import { getConsoleLogs } from '../utils/logBuffer';
 import { useGameStore } from '../store/gameStore';
 import { rf, rs } from '../utils/responsive';
+import { getLanguage } from '../utils/i18n';
 
 const PROJECT = 'caps-poker';
 const APP_VERSION = Constants.expoConfig?.version ?? '2.7.0';
+
+// VAMOS PHASE-A 2026-09-02 — bilingual strings for the tester bug form. Follows the app's isHE
+// pattern (index.tsx). The REAL build number is already carried via getBuildIdentity()'s
+// `native_build` (Application.nativeBuildVersion) spread into device_info below; `language` is
+// added there too so triage sees which UI the tester was on.
+const BUG_I18N = {
+  reportABug:  { en: 'Report a bug', he: 'דיווח על באג' },
+  titleBug:    { en: '🐛 Report a bug', he: '🐛 דיווח על באג' },
+  hint:        { en: 'What went wrong? The more detail, the faster we fix it.', he: 'מה השתבש? כמה שיותר פרטים, כך נתקן מהר יותר.' },
+  namePh:      { en: 'Your name (so we can follow up)', he: 'השם שלך (כדי שנוכל לחזור אליך)' },
+  nameAria:    { en: 'Your name', he: 'השם שלך' },
+  descPh:      { en: 'Describe the bug — what you did, what you expected, what happened…', he: 'תארו את הבאג — מה עשיתם, למה ציפיתם, ומה קרה בפועל…' },
+  descAria:    { en: 'Bug description', he: 'תיאור הבאג' },
+  screen:      { en: 'Screen', he: 'מסך' },
+  errSend:     { en: "Couldn't send — check your connection and try again.", he: 'השליחה נכשלה — בדקו את החיבור ונסו שוב.' },
+  errLimited:  { en: "Not sent — that's a lot of reports in a short time. Wait a few minutes and send this again.", he: 'לא נשלח — הרבה דיווחים בזמן קצר. המתינו כמה דקות ושלחו שוב.' },
+  cancel:      { en: 'Cancel', he: 'ביטול' },
+  send:        { en: 'Send', he: 'שליחה' },
+  sendAria:    { en: 'Send report', he: 'שליחת דיווח' },
+  thanks:      { en: '✅ Thanks!', he: '✅ תודה!' },
+  sentBody:    { en: 'Your report was sent to the team.', he: 'הדיווח נשלח לצוות.' },
+  done:        { en: 'Done', he: 'סיום' },
+} as const;
 
 interface Props {
   variant?: 'fab' | 'row';
@@ -35,6 +59,9 @@ interface Props {
 export default function ReportBugButton({ variant = 'fab' }: Props) {
   const pathname = usePathname();
   const playerName = useGameStore((s) => s.playerName);
+  const isHE = getLanguage() === 'he';
+  const T = (k: keyof typeof BUG_I18N) => BUG_I18N[k][isHE ? 'he' : 'en'];
+  const dir = isHE ? { textAlign: 'right' as const, writingDirection: 'rtl' as const } : null;
 
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
@@ -99,6 +126,9 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           platform: Platform.OS,
           osVersion: String(Platform.Version ?? ''),
           appVersion: APP_VERSION,
+          // VAMOS PHASE-A — the UI language the tester was on (build/screen/device already captured;
+          // language was the missing one). getBuildIdentity() below carries the REAL native_build.
+          language: getLanguage(),
           otaUpdateId: Updates.updateId ?? 'embedded',
           source: 'tester_report_button',
           // G2 — `appVersion` is "2.7.0" on every build ever shipped and cannot identify one.
@@ -129,7 +159,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           onPress={() => setOpen(true)}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Report a bug"
+          accessibilityLabel={T('reportABug')}
           testID="report-bug-fab"
         >
           <Text style={styles.fabText}>🐛</Text>
@@ -140,12 +170,12 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           onPress={() => setOpen(true)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Report a bug"
+          accessibilityLabel={T('reportABug')}
           testID="report-bug-row"
         >
           <Text style={styles.rowIcon}>🐛</Text>
-          <Text style={styles.rowLabel}>Report a bug</Text>
-          <Text style={styles.rowChevron}>›</Text>
+          <Text style={[styles.rowLabel, dir]}>{T('reportABug')}</Text>
+          <Text style={styles.rowChevron}>{isHE ? '‹' : '›'}</Text>
         </TouchableOpacity>
       )}
 
@@ -157,32 +187,32 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           <View style={styles.sheet}>
             {status === 'done' ? (
               <View style={styles.doneWrap}>
-                <Text style={styles.doneTitle}>✅ Thanks!</Text>
-                <Text style={styles.doneBody}>Your report was sent to the team.</Text>
-                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Close">
-                  <Text style={styles.sendText}>Done</Text>
+                <Text style={styles.doneTitle}>{T('thanks')}</Text>
+                <Text style={styles.doneBody}>{T('sentBody')}</Text>
+                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel={T('done')}>
+                  <Text style={styles.sendText}>{T('done')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={styles.title}>🐛 Report a bug</Text>
+                <Text style={[styles.title, dir]}>{T('titleBug')}</Text>
                 {/* G6 — the tester supplies ONE thing: what went wrong. Build number, screen,
                     breadcrumbs, console and session are attached automatically on send. The
                     name field is pre-filled from the profile, so it is not a second ask. */}
-                <Text style={styles.hint}>What went wrong? The more detail, the faster we fix it.</Text>
+                <Text style={[styles.hint, dir]}>{T('hint')}</Text>
 
                 <TextInput
-                  style={styles.input}
-                  placeholder="Your name (so we can follow up)"
+                  style={[styles.input, dir]}
+                  placeholder={T('namePh')}
                   placeholderTextColor="#8A8A8A"
                   value={name}
                   onChangeText={setName}
                   maxLength={40}
-                  accessibilityLabel="Your name"
+                  accessibilityLabel={T('nameAria')}
                 />
                 <TextInput
-                  style={[styles.input, styles.textarea]}
-                  placeholder="Describe the bug — what you did, what you expected, what happened…"
+                  style={[styles.input, styles.textarea, dir]}
+                  placeholder={T('descPh')}
                   placeholderTextColor="#8A8A8A"
                   value={description}
                   onChangeText={setDescription}
@@ -190,32 +220,32 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
                   numberOfLines={5}
                   maxLength={1000}
                   textAlignVertical="top"
-                  accessibilityLabel="Bug description"
+                  accessibilityLabel={T('descAria')}
                   testID="report-bug-description"
                 />
-                <Text style={styles.screenNote}>Screen: {pathname || 'unknown'}</Text>
+                <Text style={[styles.screenNote, dir]}>{T('screen')}: {pathname || 'unknown'}</Text>
                 {/* FAILURE MUST BE VISIBLE. A tester who believes a report was sent when it
                     was not is worse off than one with no button at all. */}
-                {status === 'error' && <Text style={styles.errorText}>Couldn't send — check your connection and try again.</Text>}
+                {status === 'error' && <Text style={[styles.errorText, dir]}>{T('errSend')}</Text>}
                 {status === 'limited' && (
-                  <Text style={styles.errorText} testID="report-bug-limited">
-                    Not sent — that's a lot of reports in a short time. Wait a few minutes and send this again.
+                  <Text style={[styles.errorText, dir]} testID="report-bug-limited">
+                    {T('errLimited')}
                   </Text>
                 )}
 
                 <View style={styles.actions}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Cancel">
-                    <Text style={styles.cancelText}>Cancel</Text>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel={T('cancel')}>
+                    <Text style={styles.cancelText}>{T('cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.sendBtn, (!description.trim() || status === 'sending') && styles.sendBtnDisabled]}
                     onPress={send}
                     disabled={!description.trim() || status === 'sending'}
                     accessibilityRole="button"
-                    accessibilityLabel="Send report"
+                    accessibilityLabel={T('sendAria')}
                     testID="report-bug-send"
                   >
-                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>Send</Text>}
+                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>{T('send')}</Text>}
                   </TouchableOpacity>
                 </View>
               </>

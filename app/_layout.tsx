@@ -30,13 +30,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS, setCompleteBonusPctByBoards, setMpBoardRevealEnabled } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
-import { setLanguage, Language, applyHtmlLocale } from '../utils/i18n';
+import { setLanguage, Language, applyHtmlLocale, getLanguage } from '../utils/i18n';
 import * as Updates from 'expo-updates';
 // expo-insights is a passive SDK — auto-collects crashes + app opens via native integration
 // No API call needed; installing the package is sufficient
 import 'expo-insights';
 import { preloadSounds } from '../utils/sounds';
-import { registerAndSavePushToken } from '../utils/notifications';
+import { registerPushIfGranted, scheduleReturnReminders, cancelReturnReminders, promptAndScheduleReturns } from '../utils/notifications';
 import * as Notifications from 'expo-notifications';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
@@ -354,8 +354,22 @@ export default function RootLayout() {
     const sub = AppState.addEventListener('change', (state: string) => {
       if (state === 'background' || state === 'inactive') {
         markCleanExit()
+        // VAMOS PHASE-A — leaving after playing: (re)arm the day-1/day-3 return reminders from this
+        // session (no-ops until permission is granted). Only once they've actually played a hand.
+        try {
+          const played = useGameStore.getState().handsPlayed > 0;
+          if (played) void scheduleReturnReminders(getLanguage() === 'he');
+        } catch {}
       } else if (state === 'active') {
         flushCrashSessionNow()
+        // They came back — clear the pending reminders, then (at this good moment, having already
+        // played) ask for permission at most once and arm the reminders. Never on first launch:
+        // handsPlayed === 0 guards it.
+        try {
+          void cancelReturnReminders();
+          const played = useGameStore.getState().handsPlayed > 0;
+          void promptAndScheduleReturns(played, getLanguage() === 'he');
+        } catch {}
       }
     })
     return () => sub.remove()
@@ -472,7 +486,9 @@ export default function RootLayout() {
         // CI guard: sim auto-tour build sets EXPO_PUBLIC_CAPS_CI=1; skip push
         // registration so iOS doesn't fire the permission prompt that blocks deep-links.
         if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
-          registerAndSavePushToken().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
+          // VAMOS PHASE-A — launch NEVER prompts: register the push token only if permission is
+          // already granted. The permission ask moved to a good moment (foreground after a hand).
+          registerPushIfGranted().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
         }
         // Track push notification opens (fire-and-forget, never blocks UX)
         const _pushSub = Notifications.addNotificationResponseReceivedListener((response) => {

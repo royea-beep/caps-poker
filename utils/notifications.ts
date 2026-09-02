@@ -131,6 +131,89 @@ export async function cancelReengagement(): Promise<void> {
   await cancelNotification('reengagement');
 }
 
+// VAMOS PHASE-A 2026-09-02 — the two return reminders that matter (day 1 + day 3), and permission
+// asked at a GOOD MOMENT (after the player has played a hand), never on first launch. Copy is TRUE
+// on arrival: the daily-reward faucet resets each day and the player's chips persist, so "your daily
+// reward is ready / your chips are waiting" holds whenever these fire. No streak claim (that is only
+// true for some players). Bilingual — the notification shows in the language the player chose.
+const DAY = 24 * 60 * 60;
+const RETURN_COPY = {
+  day1: {
+    en: { title: 'Your daily reward is ready 🎁', body: 'A fresh stack of chips is waiting at CAPS Poker.' },
+    he: { title: 'הפרס היומי שלך מוכן 🎁', body: 'ערימת צ׳יפים טרייה מחכה לך ב-CAPS Poker.' },
+  },
+  day3: {
+    en: { title: 'Still dealt in? 🃏', body: 'Your chips — and a fresh daily reward — are waiting.' },
+    he: { title: 'עוד בפנים? 🃏', body: 'הצ׳יפים שלך — ופרס יומי טרי — מחכים לך.' },
+  },
+};
+
+/**
+ * Schedule the day-1 (24h) and day-3 (72h) return reminders, cancelling any prior pair first so
+ * each session pushes them out. Requires notification permission; if it is not granted the OS
+ * scheduling silently no-ops (scheduleLocal returns null), which is fine — no prompt happens here.
+ * `he` picks the Hebrew copy.
+ */
+export async function scheduleReturnReminders(he: boolean): Promise<void> {
+  if (!Notifications) return;
+  const lang = he ? 'he' : 'en';
+  await cancelNotification('return_day1');
+  await cancelNotification('return_day3');
+  await scheduleLocal(RETURN_COPY.day1[lang].title, RETURN_COPY.day1[lang].body, DAY, 'return_day1');
+  await scheduleLocal(RETURN_COPY.day3[lang].title, RETURN_COPY.day3[lang].body, 3 * DAY, 'return_day3');
+}
+
+/** Cancel the day-1/day-3 return reminders (call when the app opens — they came back). */
+export async function cancelReturnReminders(): Promise<void> {
+  await cancelNotification('return_day1');
+  await cancelNotification('return_day3');
+}
+
+/**
+ * Launch-safe token registration: register the push token ONLY if permission is already granted.
+ * NEVER prompts — so the OS permission dialog cannot appear on first launch. Use
+ * `promptAndScheduleReturns()` to ask at a good moment instead.
+ */
+export async function registerPushIfGranted(): Promise<void> {
+  if (!Notifications) return;
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') {
+      await registerAndSavePushToken();
+    }
+  } catch {
+    // silent — never block launch
+  }
+}
+
+/**
+ * Ask for notification permission at a GOOD MOMENT — call this only after the player has had a
+ * positive experience (e.g. finished a hand), never on first launch. Prompts at most once (guarded
+ * by an AsyncStorage flag); on grant, schedules the day-1/day-3 return reminders in `he`/en.
+ * `hasPlayed` must be true (the caller's proof the player has already played) — a guard so this can
+ * never fire before the first hand.
+ */
+export async function promptAndScheduleReturns(hasPlayed: boolean, he: boolean): Promise<void> {
+  if (!Notifications || !hasPlayed) return;
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const KEY = 'notif_return_prompted_v1';
+    const already = await AsyncStorage.getItem(KEY).catch(() => null);
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === 'granted') {
+      // Already allowed — just (re)schedule, no prompt.
+      await scheduleReturnReminders(he);
+      return;
+    }
+    if (already) return; // asked once already and not granted — do not nag
+    await AsyncStorage.setItem(KEY, '1').catch(() => {});
+    const granted = await requestPermissions();
+    if (granted) await scheduleReturnReminders(he);
+  } catch {
+    // silent
+  }
+}
+
 /** Check if notifications module is available */
 export function isNotificationsAvailable(): boolean {
   return Notifications !== null;
