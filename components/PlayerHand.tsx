@@ -364,7 +364,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
         </View>
       ) : (
         <View style={styles.emptyRow}>
-          <Text style={styles.emptyText}>All cards placed!</Text>
+          <Text style={styles.emptyText}>{t().allPlaced}</Text>
         </View>
       )}
     </View>

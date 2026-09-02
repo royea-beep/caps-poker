@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { rf } from '../utils/responsive';
 import { KILL_game } from '../utils/animationKill';
+import { t } from '../utils/i18n';
 
 // Circular timer component — depleting ring on web, pulsing circle on native
 function CircularTimer({ timeLeft, size, color, pulsing }: { timeLeft: number; size: number; color: string; pulsing: boolean }) {
@@ -151,7 +152,7 @@ export function TimerController({ countdown, total: _total, isActive, firstFinis
       </TouchableOpacity>
       {tooltipVisible && (
         <View style={tcStyles.tooltip}>
-          <Text style={tcStyles.tooltipText}>Time out = cards placed randomly</Text>
+          <Text style={tcStyles.tooltipText}>{t().timeoutTooltip}</Text>
         </View>
       )}
     </View>

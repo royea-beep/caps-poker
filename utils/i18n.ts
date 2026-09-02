@@ -300,6 +300,7 @@ interface Translations {
   revealTip1: string;
   revealTip2: string;
   revealTip3: string;
+  timeoutTooltip: string;
   // Home CTAs + teaching line (dedicated so EN design text is preserved verbatim)
   homePlayOnline: string;
   homePlayOnlineSub: string;
@@ -604,6 +605,7 @@ const he: Translations = {
   revealTip1: 'עכשיו ראה מה יש ליריב בכל בורד.',
   revealTip2: 'כל קלף משנה את היד המנצחת!',
   revealTip3: 'ירוק = ניצחון, אדום = הפסד. שים לב לבונוס COMPLETE!',
+  timeoutTooltip: 'נגמר הזמן = הקלפים יונחו אקראית',
   homePlayOnline: 'שחק אונליין',
   homePlayOnlineSub: 'שחקנים אמיתיים · שולחנות בוט מיידיים',
   homePracticeVsBots: 'תרגול מול בוטים',
@@ -856,6 +858,7 @@ const en: Translations = {
   revealTip1: 'Now see what your opponent has on each board.',
   revealTip2: 'Each card changes the winning hand!',
   revealTip3: 'Green = win, Red = loss. Watch for COMPLETE bonus!',
+  timeoutTooltip: 'Time out = cards placed randomly',
   homePlayOnline: 'Play Online',
   homePlayOnlineSub: 'Real players · instant bot tables',
   homePracticeVsBots: 'Practice vs bots',
