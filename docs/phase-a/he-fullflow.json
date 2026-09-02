@@ -5,7 +5,7 @@
     "W": 320,
     "hePct": 70,
     "he": 111,
-    "lat": 47,
+    "lat": 48,
     "overflow": false
   },
   {
@@ -14,16 +14,16 @@
     "W": 320,
     "hePct": 68,
     "he": 120,
-    "lat": 56,
+    "lat": 57,
     "overflow": false
   },
   {
     "screen": "reveal",
     "players": 2,
     "W": 320,
-    "hePct": 43,
-    "he": 101,
-    "lat": 134,
+    "hePct": 57,
+    "he": 131,
+    "lat": 97,
     "overflow": false
   },
   {
@@ -31,7 +31,7 @@
     "players": 2,
     "W": 320,
     "hePct": 97,
-    "he": 69,
+    "he": 68,
     "lat": 2,
     "overflow": false
   },
@@ -39,9 +39,9 @@
     "screen": "home",
     "players": 3,
     "W": 320,
-    "hePct": 72,
+    "hePct": 71,
     "he": 111,
-    "lat": 44,
+    "lat": 45,
     "overflow": false
   },
   {
@@ -50,24 +50,24 @@
     "W": 320,
     "hePct": 69,
     "he": 120,
-    "lat": 53,
+    "lat": 54,
     "overflow": false
   },
   {
     "screen": "reveal",
     "players": 3,
     "W": 320,
-    "hePct": 42,
-    "he": 101,
-    "lat": 139,
+    "hePct": 58,
+    "he": 131,
+    "lat": 93,
     "overflow": false
   },
   {
     "screen": "results",
     "players": 3,
     "W": 320,
-    "hePct": 98,
-    "he": 87,
+    "hePct": 97,
+    "he": 68,
     "lat": 2,
     "overflow": false
   }
