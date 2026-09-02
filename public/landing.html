@@ -67,9 +67,15 @@
   .rule{width:132px; height:2px; margin:16px auto 0;
     background:linear-gradient(90deg, rgba(201,168,76,0) 0%, rgba(201,168,76,0.55) 50%, rgba(201,168,76,0) 100%);}
 
-  /* ---- one-line what-it-is (the app's canonical tagline) ---- */
-  .tagline{margin-top:22px; font-size:clamp(16px,4.6vw,18px); line-height:1.5; color:var(--ink);
-    max-width:24ch; font-weight:500;}
+  /* ---- the PROMISE (hero), then the mechanic as support, then the multiplayer hook ---- */
+  .promise{margin-top:22px; font-family:var(--serif); font-weight:700; line-height:1.24;
+    font-size:clamp(22px,6.2vw,28px); color:var(--ink); max-width:15ch;}
+  .mechanic{margin-top:12px; font-size:clamp(14px,4.1vw,16px); line-height:1.5; color:var(--ink-dim);
+    max-width:27ch; font-weight:500;}
+  .mp{margin-top:16px; display:inline-block; font-size:13.5px; line-height:1.45;
+    font-weight:700; letter-spacing:0.2px; color:var(--gold); text-align:center;
+    border:1px solid rgba(201,168,76,0.42); background:rgba(0,0,0,0.24); padding:9px 16px; border-radius:16px;}
+  .mp span{color:var(--ink-dim); font-weight:600;}
 
   /* ---- the ONE action : ChipButton (mint fill / brass edge / dark label) — never gold ---- */
   .cta{
@@ -116,7 +122,13 @@
       <div class="rule"></div>
     </header>
 
-    <p class="tagline">Four cards on every board. Every board plays at once. Win the most boards, win the hand.</p>
+    <!-- HERO = the promise, not the mechanic. NB: board count is dynamic (2P=4, 3P=3, 4P=2), so the
+         headline never states a number — "more than one way to win" holds at every table size, where a
+         "four boards / four chances" line would be false for 3-4 players (the app removed that wordmark
+         for the same reason). The mechanic still gets said, just as support underneath. -->
+    <p class="promise">More than one way to win — every hand.</p>
+    <p class="mechanic">Multi-board poker: four cards on every board, all played at once. Win the most boards, win the hand.</p>
+    <div class="mp">&#9829;&nbsp; Play online against real people <span>— or practice against bots</span></div>
 
     <!-- The ONE action. Root-relative so it points at the game on whatever origin this page is
          served from — no domain baked in, survives a domain move. No sign-up sits before it. -->
@@ -133,7 +145,7 @@
       </div>
       <div class="q">
         <h2>Is it free?</h2>
-        <p>Yes — completely free to play. You start with virtual chips and there&rsquo;s nothing to buy to keep playing.</p>
+        <p>Yes — free to play, with optional in-app purchases. You start with virtual chips and earn more just by playing, so you never have to pay to keep going.</p>
       </div>
       <div class="q">
         <h2>Do I need to install anything?</h2>
@@ -141,13 +153,14 @@
       </div>
       <div class="q">
         <h2>Is it gambling?</h2>
-        <p>No. Virtual chips only — no real money goes in and none comes out. It&rsquo;s the game for its own sake. 18+.</p>
+        <p>No. You play with virtual chips that have no cash value — no real-money prizes, and nothing you win can be cashed out. It&rsquo;s poker for the game itself. 18+.</p>
       </div>
     </section>
 
     <p class="legal">
       <strong>Free play · Virtual chips only · No real-money gambling · 18+</strong><br>
-      A poker game for entertainment. No cash, no payouts, no purchases required.
+      A poker game for entertainment — no cash prizes, no payouts, no purchase required to play.<br>
+      Success at social gaming does not imply future success at real-money gambling.
     </p>
   </main>
 </body>
