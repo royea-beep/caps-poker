@@ -123,6 +123,18 @@
   html[dir="rtl"] .cta-main, html[dir="rtl"] .cta-sub{font-family:var(--hebrew);}
   .reassure{margin-top:12px; font-size:13px; color:var(--ink-dim); letter-spacing:0.2px;}
 
+  /* ---- product screenshots : the REAL current app, phone-framed. WebP, sized for phone width,
+         hero eager (small, above fold) + the second lazy-loaded below the fold. ---- */
+  .shot{margin:22px auto 0; width:100%; max-width:224px;}
+  .shot img{display:block; width:100%; height:auto; border-radius:20px; border:1px solid rgba(201,168,76,0.45);
+    box-shadow:0 14px 30px rgba(0,0,0,0.5); background:#0B2318;}
+  .shot figcaption{margin-top:9px; font-size:12.5px; line-height:1.45; color:var(--ink-dim); font-weight:600;}
+
+  /* ---- legal footer : quiet utility links (Privacy · Terms · Contact) — NOT a CTA ---- */
+  .footer{margin-top:24px; font-size:12px; color:var(--ink-faint); letter-spacing:0.2px;}
+  .footer a{color:var(--ink-dim); text-decoration:underline; text-underline-offset:2px; padding:6px 3px; display:inline-block;}
+  .footer .sep{opacity:0.45; padding:0 3px;}
+
   /* ---- the four stranger questions : text starts on the reading edge (flips in RTL) ---- */
   .faq{margin-top:34px; width:100%; display:flex; flex-direction:column; gap:12px;}
   .q{text-align:start; background:rgba(0,0,0,0.28); border:1px solid rgba(201,168,76,0.34); border-radius:14px; padding:15px 17px;}
@@ -168,6 +180,20 @@
       <span data-l="he">&#9829;&nbsp; שחק אונליין מול שחקנים אמיתיים <span class="dim">— או תרגול מול בוטים</span></span>
     </div>
 
+    <!-- SHOW THE GAME — the real, current app (a fresh web export of this branch). The three-board
+         screen is the one image that explains the product without a sentence. The app renders this
+         chrome in English regardless of locale (caps_language not applied yet), so the SAME true
+         screenshot serves both languages; the caption below it is translated. Placed before the CTA
+         so a visitor sees the game before they decide. Small + eager (above the fold, ~51KB). -->
+    <figure class="shot">
+      <img src="shots/game-boards.webp" width="660" height="1431" fetchpriority="high" decoding="async"
+           alt="CAPS Poker game screen: three boards, four cards on each, all in play at once">
+      <figcaption>
+        <span data-l="en">One hand, played across every board at once.</span>
+        <span data-l="he">יד אחת, שמשוחקת על כל הבורדים בבת אחת.</span>
+      </figcaption>
+    </figure>
+
     <!-- The ONE action. Root-relative so it points at the game on whatever origin this page is served
          from — no domain baked in, survives a domain move. No sign-up sits before it. -->
     <a class="cta" href="/" aria-label="Play CAPS Poker now, free, in your browser">
@@ -178,6 +204,17 @@
       <span data-l="en">Tap and you're dealt in. Nothing to download, no account to make.</span>
       <span data-l="he">הקשה אחת ומתחילים לשחק. אין מה להוריד, אין צורך בחשבון.</span>
     </p>
+
+    <!-- Second real screen — the reveal, live win-odds + outs as each board plays out. Below the
+         fold, so lazy-loaded (does not touch first paint). -->
+    <figure class="shot">
+      <img src="shots/game-reveal.webp" width="660" height="1431" loading="lazy" decoding="async"
+           alt="CAPS Poker reveal: live win odds and outs as each board plays out">
+      <figcaption>
+        <span data-l="en">Live win odds and outs as each board plays out.</span>
+        <span data-l="he">סיכויים ואאוטים בזמן אמת, כשכל בורד מתגלה.</span>
+      </figcaption>
+    </figure>
 
     <section class="faq" aria-label="What you're about to play">
       <div class="q">
@@ -224,6 +261,17 @@
         <span data-l="he">הצלחה במשחקי חברה אינה מבטיחה הצלחה עתידית בהימורים בכסף אמיתי.</span>
       </span>
     </p>
+
+    <!-- LEGAL FOOTER — quiet utility links, matching what the app already links to. Root-relative
+         (survives a domain move); the same destinations the app opens from Settings. Small and dim
+         so they never compete with "Play now" — these are not CTAs. -->
+    <nav class="footer" aria-label="Legal and contact">
+      <a href="/privacy.html"><span data-l="en">Privacy Policy</span><span data-l="he">מדיניות פרטיות</span></a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="/terms.html"><span data-l="en">Terms of Use</span><span data-l="he">תנאי שימוש</span></a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="mailto:caps@ftable.co.il"><span data-l="en">Contact</span><span data-l="he">צור קשר</span></a>
+    </nav>
   </main>
 
   <!-- toggle wiring: remembers the choice (localStorage, no network) and writes ?lang= so the current

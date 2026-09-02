@@ -1,0 +1,62 @@
+{
+  "weight": {
+    "first_paint": {
+      "totalKB": 111.3,
+      "shots": {
+        "game-boards.webp": 53238,
+        "game-reveal.webp": 40038
+      }
+    },
+    "full_scrolled": {
+      "totalKB": 111.3,
+      "shots": {
+        "game-boards.webp": 53238,
+        "game-reveal.webp": 40038
+      }
+    }
+  },
+  "loop": {
+    "en": {
+      "primaryCTA": 1,
+      "footerLinks": 3,
+      "ctaFill": "rgb(79, 214, 168)",
+      "ctaH": 84,
+      "shotsLoaded": [
+        true,
+        true
+      ],
+      "shotCount": 2,
+      "overflowX": false,
+      "footerLinkTargets": [
+        "/privacy.html",
+        "/terms.html",
+        "mailto:caps@ftable.co.il"
+      ],
+      "dir": "ltr"
+    },
+    "he": {
+      "primaryCTA": 1,
+      "footerLinks": 3,
+      "ctaFill": "rgb(79, 214, 168)",
+      "ctaH": 84,
+      "shotsLoaded": [
+        true,
+        true
+      ],
+      "shotCount": 2,
+      "overflowX": false,
+      "footerLinkTargets": [
+        "/privacy.html",
+        "/terms.html",
+        "mailto:caps@ftable.co.il"
+      ],
+      "dir": "rtl"
+    }
+  },
+  "overflow": {
+    "en_320": false,
+    "en_430": false,
+    "he_320": false,
+    "he_430": false
+  }
+}
