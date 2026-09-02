@@ -15,6 +15,7 @@ import { captureAndShare, saveHandForWebReplay, generateShareText, copyToClipboa
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getSpecificHandName, getComparisonText } from '../utils/handNames';
+import { t } from '../utils/i18n';
 import type { Card } from '../constants/gameConfig';
 
 export interface BoardRevealResult {
@@ -102,13 +103,13 @@ export const BoardResultCard = React.memo(function BoardResultCard({
 
   const doCopy = async () => {
     const url = autoShareUrl ?? (await saveHandForWebReplay(shareData).catch(() => null))?.url ?? null;
-    if (url) { await copyToClipboard(url); Alert.alert('Link copied!', url); }
+    if (url) { await copyToClipboard(url); Alert.alert(t().linkCopied, url); }
   };
 
   const handleShare = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Share Image', 'Share as Story', 'Copy Replay Link'], cancelButtonIndex: 0 },
+        { options: [t().cancel, t().shareImage, t().shareStory, t().copyReplayLink], cancelButtonIndex: 0 },
         (i) => {
           if (i === 1) doShare(boardShareRef);
           else if (i === 2) doShare(boardStoryRef);
@@ -116,11 +117,11 @@ export const BoardResultCard = React.memo(function BoardResultCard({
         }
       );
     } else {
-      Alert.alert('Share Board', undefined, [
-        { text: 'Share Image', onPress: () => doShare(boardShareRef) },
-        { text: 'Share as Story', onPress: () => doShare(boardStoryRef) },
-        { text: 'Copy Replay Link', onPress: doCopy },
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t().shareHand, undefined, [
+        { text: t().shareImage, onPress: () => doShare(boardShareRef) },
+        { text: t().shareStory, onPress: () => doShare(boardStoryRef) },
+        { text: t().copyReplayLink, onPress: doCopy },
+        { text: t().cancel, style: 'cancel' },
       ]);
     }
   };
@@ -143,13 +144,13 @@ export const BoardResultCard = React.memo(function BoardResultCard({
         {/* Header */}
         <View style={styles.boardHeader}>
           <View style={styles.boardHeaderLeft}>
-            <Text style={styles.boardLabel}>BOARD {boardIndex + 1}</Text>
+            <Text style={styles.boardLabel}>{t().boardLabel(boardIndex + 1)}</Text>
             {board.winner === 'player' ? (
               <Animated.View style={{ transform: [{ scale: winBadgeAnim }] }}>
-                <Badge label="WIN" variant="win" small />
+                <Badge label={t().winShort} variant="win" small />
               </Animated.View>
             ) : (
-              <Badge label={board.winner === 'bot' ? 'LOSS' : 'TIE'} variant={board.winner === 'bot' ? 'lose' : 'tie'} small />
+              <Badge label={board.winner === 'bot' ? t().lossShort : t().tieShort} variant={board.winner === 'bot' ? 'lose' : 'tie'} small />
             )}
           </View>
           <View style={styles.boardHeaderRight}>
@@ -183,7 +184,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
               <Text style={[styles.handLabel, board.winner === 'bot' && styles.handLabelLose]}>
                 {/* VAMOS-BOT-LABEL — never call a human "Bot". A supplied label always wins;
                     the bot wording is only the solo default. */}
-                {opponentLabels?.[botIdx] ?? (multiBot ? `Bot ${botIdx + 1}` : 'Bot')}
+                {opponentLabels?.[botIdx] ?? (multiBot ? `${t().bot} ${botIdx + 1}` : t().bot)}
               </Text>
               <View style={styles.cardsRow}>
                 {botCards.map((c: any) => (
@@ -225,7 +226,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
 
         {/* Player hand row */}
         <View style={styles.handRowVertical}>
-          <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>YOU</Text>
+          <Text style={[styles.handLabel, board.winner === 'player' && styles.handLabelWin]}>{t().equityYou}</Text>
           <View style={styles.cardsRow}>
             {(board.playerCards ?? []).map((c: any) => (
               <StaticCard key={c.id} card={c} cardWidth={cardW} cardHeight={cardH}
@@ -249,7 +250,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
           </Text>
           {(board.playerHighlightIds ?? []).length > 0 && (
             <Text style={styles.bestSelectedLabel}>
-              ★ Best hand from 9 cards
+              {t().bestHandFrom9}
             </Text>
           )}
         </View>
@@ -260,7 +261,7 @@ export const BoardResultCard = React.memo(function BoardResultCard({
             styles.boardResultLabel,
             board.winner === 'player' ? styles.boardResultWin : board.winner === 'bot' ? styles.boardResultLose : styles.boardResultTie,
           ]}>
-            {board.winner === 'player' ? '✅ YOU WIN' : board.winner === 'bot' ? '❌ YOU LOSE' : '🤝 TIE'}
+            {board.winner === 'player' ? t().youWin : board.winner === 'bot' ? t().youLose : t().tie}
           </Text>
         </View>
       </View>

@@ -201,6 +201,106 @@ interface Translations {
   waitingForOthers: (count: number) => string;
   tapToContinue: string;
 
+  // VAMOS FINISH-HEBREW 2026-09-02 — reveal + results flow (game every hand). Hand-rank NAMES
+  // stay English (HAND_RANK_NAMES constants); these are chrome only.
+  revealedAfterRiver: string;
+  autoPlaceAll: string;
+  a11yTapToPlace: string;
+  a11ySelectFirst: string;
+  equityYou: string;
+  equityOpp: string;
+  equityLead: string;
+  equityLeading: string;
+  equityTrailing: string;
+  calculatingOdds: string;
+  winShort: string;
+  lossShort: string;
+  tieShort: string;
+  shareImage: string;
+  shareStory: string;
+  copyReplayLink: string;
+  linkCopied: string;
+  backToHome: string;
+  loadingEllipsis: string;
+  handUnavailable: string;
+  youWinBig: string;
+  youLoseBig: string;
+  tieGame: string;
+  perfect: string;
+  youWonChips: (n: number) => string;
+  handWonBang: string;
+  rematch: string;
+  homeBtn: string;
+  leaveBtn: string;
+  shareHand: string;
+  currentBalance: string;
+  netResult: string;
+  thisSession: string;
+  showHandDetails: string;
+  hideHandDetails: string;
+  rankUp: string;
+  rankDown: string;
+  xpOnly: string;
+  try4Boards: string;
+  niceBang: string;
+  gameOver: string;
+  connectionLost: string;
+  hostDisconnected: string;
+  rejoin: string;
+  keepWaiting: string;
+  waitingTimedOut: string;
+  waitingTimedOutBody: string;
+  hostDisconnectedBody: string;
+  connectionLostBody: string;
+  shareCompleteBtn: string;
+  bestHandFrom9: string;
+  practiceXpNote: string;
+  boardByBoard: string;
+  viewHandHistory: string;
+  tallyWon: string;
+  tallyTied: string;
+  tallyLost: string;
+  tieBonus: (n: number) => string;
+  winStreakBadge: (n: number) => string;
+  bestStreakLabel: (n: number) => string;
+  hideDetailsToggle: string;
+  showDetailsToggle: string;
+  xpLabelGame: string;
+  xpLabelBoards: string;
+  xpLabelWin: string;
+  xpLabelComplete: string;
+  bestHandOnBoard: (name: string, board: number) => string;
+  statBoardsLabel: string;
+  statGamesLabel: string;
+  statNetLabel: string;
+  statTied: (n: number) => string;
+  completeAllBoards: string;
+  opponentSwept: string;
+  dailyStreakMsg: (day: number, amt: number) => string;
+  mpBeat: (name: string) => string;
+  mpDefeatedBy: (name: string) => string;
+  mpTiedWith: (name: string) => string;
+  vsPrefix: string;
+  // BoardReveal (the reveal screen)
+  soClose: string;
+  shareShort: string;
+  completeWonXpBonus: (xp: number) => string;
+  completeWonPctBonus: (pct: number) => string;
+  completeWonBonus: string;
+  holdToSkipAll: string;
+  tapForResults: string;
+  scoreLeading: (p: number, b: number, remaining: number) => string;
+  scoreTrailing: (p: number, b: number, remaining: number) => string;
+  scoreBoardsLeft: (remaining: number) => string;
+  scoreTied: (p: number, b: number, remaining: number) => string;
+  tieBoard: string;
+  // Home CTAs + teaching line (dedicated so EN design text is preserved verbatim)
+  homePlayOnline: string;
+  homePlayOnlineSub: string;
+  homePracticeVsBots: string;
+  homePracticeA11y: string;
+  homeTeaching: string;
+
   // Hand history (S-LOCALE-FIX)
   historyAll: (n: number) => string;
   historyWins: (n: number) => string;
@@ -321,7 +421,7 @@ const he: Translations = {
   confirm: 'אישור',
   readyCheck: '✓ מוכן',
   continueArrow: 'המשך →',
-  autoPlace: '⚡ מיקום אוטומטי',
+  autoPlace: '⚡ מילוי',
   playNow: '▶ שחק עכשיו',
   // Game screen
   // NAMING: the game board is "בורד/בורדים" everywhere (matches the onboarding, the home,
@@ -397,6 +497,103 @@ const he: Translations = {
   shopBuy: 'קנה',
   shopCantAfford: 'אין מספיק צ׳יפים',
   shopOwned: 'ברשותך',
+  // VAMOS FINISH-HEBREW 2026-09-02 — reveal + results flow. autoPlace shortened to
+  // fit 320px (was '⚡ מיקום אוטומטי' which truncated). Hand-rank NAMES stay English.
+  revealedAfterRiver: 'ייחשף אחרי הריבר',
+  autoPlaceAll: 'מלא הכל',
+  a11yTapToPlace: 'הקש כדי להניח כאן את הקלף שנבחר.',
+  a11ySelectFirst: 'בחר קלף קודם.',
+  equityYou: 'אתה',
+  equityOpp: 'יריב',
+  equityLead: 'יתרון',
+  equityLeading: 'מוביל',
+  equityTrailing: 'מפגר',
+  calculatingOdds: 'מחשב סיכויים',
+  winShort: 'ניצחת',
+  lossShort: 'הפסד',
+  tieShort: 'תיקו',
+  shareImage: 'שתף תמונה',
+  shareStory: 'שתף כסטורי',
+  copyReplayLink: 'העתק קישור שחזור',
+  linkCopied: 'הקישור הועתק!',
+  backToHome: 'חזרה לבית',
+  loadingEllipsis: 'טוען...',
+  handUnavailable: 'היד הזו כבר לא זמינה.',
+  youWinBig: 'ניצחת!',
+  youLoseBig: 'הפסדת',
+  tieGame: 'תיקו',
+  perfect: 'מושלם!',
+  youWonChips: (n) => `ניצחת ${n} צ׳יפים!`,
+  handWonBang: 'ניצחת את היד!',
+  rematch: 'שחק שוב',
+  homeBtn: 'בית',
+  leaveBtn: 'עזוב',
+  shareHand: 'שתף יד',
+  currentBalance: 'יתרה נוכחית',
+  netResult: 'תוצאה נטו',
+  thisSession: 'המושב הזה',
+  showHandDetails: 'הצג פרטי יד',
+  hideHandDetails: 'הסתר פרטי יד',
+  rankUp: 'עלייה בדרגה',
+  rankDown: 'ירידה בדרגה',
+  xpOnly: 'XP בלבד',
+  try4Boards: 'נסה 4 בורדים',
+  niceBang: 'יופי!',
+  gameOver: 'המשחק נגמר',
+  connectionLost: 'החיבור אבד',
+  hostDisconnected: 'המארח התנתק',
+  rejoin: 'הצטרף מחדש',
+  keepWaiting: 'המשך להמתין',
+  waitingTimedOut: 'זמן ההמתנה תם',
+  waitingTimedOutBody: 'אין תגובה מהשחקנים האחרים.',
+  hostDisconnectedBody: 'המארח עזב את המשחק.',
+  connectionLostBody: 'איבדת חיבור לחדר המשחק. אפשר לנסות להצטרף מחדש.',
+  shareCompleteBtn: 'שתף COMPLETE',
+  bestHandFrom9: '★ היד הטובה ביותר מ-9 קלפים',
+  practiceXpNote: '🤖 תרגול מול הבוט — XP בלבד, בלי צ׳יפים',
+  boardByBoard: 'בורד אחר בורד',
+  viewHandHistory: 'הצג היסטוריית ידיים →',
+  tallyWon: 'ניצח',
+  tallyTied: 'תיקו',
+  tallyLost: 'הפסד',
+  tieBonus: (n) => `בונוס תיקו: +${n} צ׳יפים`,
+  winStreakBadge: (n) => `${n} רצף נצחונות!`,
+  bestStreakLabel: (n) => `שיא: ${n}`,
+  hideDetailsToggle: 'הסתר פרטים ▴',
+  showDetailsToggle: 'פרטי היד ▾',
+  xpLabelGame: 'משחק',
+  xpLabelBoards: 'בורדים',
+  xpLabelWin: 'ניצחון',
+  xpLabelComplete: 'COMPLETE',
+  bestHandOnBoard: (name, board) => `⭐ היד הטובה ביותר: ${name} בבורד ${board}`,
+  statBoardsLabel: 'בורדים',
+  statGamesLabel: 'משחקים',
+  statNetLabel: 'נטו',
+  statTied: (n) => `(${n} תיקו)`,
+  completeAllBoards: 'COMPLETE! כל הבורדים!',
+  opponentSwept: 'היריב זכה בכל הבורדים',
+  dailyStreakMsg: (day, amt) => `רצף של ${day} ימים! +${amt} צ׳יפים בונוס מחר`,
+  mpBeat: (name) => `ניצחת את ${name}!`,
+  mpDefeatedBy: (name) => `הובסת ע"י ${name}`,
+  mpTiedWith: (name) => `תיקו עם ${name}`,
+  vsPrefix: 'מול',
+  soClose: 'כמעט! 😬',
+  shareShort: 'שתף',
+  completeWonXpBonus: (xp) => `ניצחת בכל הבורדים! +${xp} XP בונוס`,
+  completeWonPctBonus: (pct) => `ניצחת בכל הבורדים! +${pct}% בונוס`,
+  completeWonBonus: 'ניצחת בכל הבורדים! בונוס COMPLETE',
+  holdToSkipAll: 'החזק לדילוג על הכל',
+  tapForResults: '▶ הקש לתוצאות',
+  scoreLeading: (p, b, remaining) => `מוביל ${p}-${b} · נותרו ${remaining}`,
+  scoreTrailing: (p, b, remaining) => `מפגר ${p}-${b} · נותרו ${remaining}`,
+  scoreBoardsLeft: (remaining) => `${remaining} בורדים`,
+  scoreTied: (p, b, remaining) => `תיקו ${p}-${b} · נותרו ${remaining}`,
+  tieBoard: 'בורד תיקו',
+  homePlayOnline: 'שחק אונליין',
+  homePlayOnlineSub: 'שחקנים אמיתיים · שולחנות בוט מיידיים',
+  homePracticeVsBots: 'תרגול מול בוטים',
+  homePracticeA11y: 'תרגול מול בוטים',
+  homeTeaching: 'ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבורדים, זכה ביד.',
 };
 
 // ---------------------------------------------------------------------------
@@ -544,6 +741,102 @@ const en: Translations = {
   shopBuy: 'Buy',
   shopCantAfford: "Can't afford",
   shopOwned: 'Owned',
+  // VAMOS FINISH-HEBREW 2026-09-02 — reveal + results flow.
+  revealedAfterRiver: 'Revealed after River',
+  autoPlaceAll: 'Auto-Place ALL',
+  a11yTapToPlace: 'Tap to place the selected card here.',
+  a11ySelectFirst: 'Select a card first.',
+  equityYou: 'YOU',
+  equityOpp: 'OPP',
+  equityLead: 'LEAD',
+  equityLeading: 'LEADING',
+  equityTrailing: 'TRAILING',
+  calculatingOdds: 'Calculating odds',
+  winShort: 'WIN',
+  lossShort: 'LOSS',
+  tieShort: 'TIE',
+  shareImage: 'Share Image',
+  shareStory: 'Share as Story',
+  copyReplayLink: 'Copy Replay Link',
+  linkCopied: 'Link copied!',
+  backToHome: 'Back to home',
+  loadingEllipsis: 'Loading...',
+  handUnavailable: 'This hand is no longer available.',
+  youWinBig: 'YOU WIN',
+  youLoseBig: 'YOU LOSE',
+  tieGame: 'TIE GAME',
+  perfect: 'PERFECT!',
+  youWonChips: (n) => `You won ${n} chips!`,
+  handWonBang: 'Hand won!',
+  rematch: 'REMATCH',
+  homeBtn: 'HOME',
+  leaveBtn: 'LEAVE',
+  shareHand: 'Share Hand',
+  currentBalance: 'Current Balance',
+  netResult: 'Net Result',
+  thisSession: 'This session',
+  showHandDetails: 'Show hand details',
+  hideHandDetails: 'Hide hand details',
+  rankUp: 'Rank up',
+  rankDown: 'Rank down',
+  xpOnly: 'XP only',
+  try4Boards: 'Try 4 boards',
+  niceBang: 'Nice!',
+  gameOver: 'GAME OVER',
+  connectionLost: 'Connection Lost',
+  hostDisconnected: 'Host Disconnected',
+  rejoin: 'Rejoin',
+  keepWaiting: 'Keep Waiting',
+  waitingTimedOut: 'Waiting Timed Out',
+  waitingTimedOutBody: 'No response from other players.',
+  hostDisconnectedBody: 'The host has left the game.',
+  connectionLostBody: 'Lost connection to the game room. You can try to rejoin.',
+  shareCompleteBtn: 'Share COMPLETE',
+  bestHandFrom9: '★ Best hand from 9 cards',
+  practiceXpNote: '🤖 Practice vs bot — XP only, no chips',
+  boardByBoard: 'Board by board',
+  viewHandHistory: 'View hand history →',
+  tallyWon: 'WON',
+  tallyTied: 'TIED',
+  tallyLost: 'LOST',
+  tieBonus: (n) => `Tie bonus: +${n} chips`,
+  winStreakBadge: (n) => `${n} WIN STREAK!`,
+  bestStreakLabel: (n) => `Best: ${n}`,
+  hideDetailsToggle: 'Hide details ▴',
+  showDetailsToggle: 'Hand details ▾',
+  xpLabelGame: 'Game',
+  xpLabelBoards: 'Boards',
+  xpLabelWin: 'Win',
+  xpLabelComplete: 'Complete',
+  bestHandOnBoard: (name, board) => `⭐ Best hand: ${name} on Board ${board}`,
+  statBoardsLabel: 'Boards',
+  statGamesLabel: 'Games',
+  statNetLabel: 'Net',
+  statTied: (n) => `(${n} tied)`,
+  completeAllBoards: 'COMPLETE! ALL BOARDS!',
+  opponentSwept: 'Opponent swept all boards',
+  dailyStreakMsg: (day, amt) => `Day ${day} streak! +${amt} bonus chips tomorrow`,
+  mpBeat: (name) => `You beat ${name}!`,
+  mpDefeatedBy: (name) => `Defeated by ${name}`,
+  mpTiedWith: (name) => `Tied with ${name}`,
+  vsPrefix: 'vs',
+  soClose: 'So close! 😬',
+  shareShort: 'Share',
+  completeWonXpBonus: (xp) => `You won ALL boards! +${xp} XP bonus`,
+  completeWonPctBonus: (pct) => `You won ALL boards! +${pct}% bonus`,
+  completeWonBonus: 'You won ALL boards! COMPLETE bonus',
+  holdToSkipAll: 'hold to skip all',
+  tapForResults: '▶ TAP FOR RESULTS',
+  scoreLeading: (p, b, remaining) => `Leading ${p}-${b} · ${remaining} left`,
+  scoreTrailing: (p, b, remaining) => `Trailing ${p}-${b} · ${remaining} left`,
+  scoreBoardsLeft: (remaining) => `${remaining} boards`,
+  scoreTied: (p, b, remaining) => `Tied ${p}-${b} · ${remaining} left`,
+  tieBoard: 'Tie board',
+  homePlayOnline: 'Play Online',
+  homePlayOnlineSub: 'Real players · instant bot tables',
+  homePracticeVsBots: 'Practice vs bots',
+  homePracticeA11y: 'Practice against bots',
+  homeTeaching: 'Four cards on every board. Every board plays at once. Win the most boards, win the hand.',
 };
 
 const translations: Record<Language, Translations> = { he, en };

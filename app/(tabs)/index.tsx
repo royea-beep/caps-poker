@@ -1479,11 +1479,11 @@ export default function HomeScreen() {
               scales them (web ignores it), and they are decoration whose only job is to stay
               small enough that the words keep their room. */}
           <View style={LABEL_COLUMN}>
-            <Text style={styles.playOnlineTitle} numberOfLines={1}>Play Online</Text>
+            <Text style={styles.playOnlineTitle} numberOfLines={1}>{t().homePlayOnline}</Text>
             {/* Shortened: the old string ellipsised at 320pt ("...instant bot …"), losing the word that
                 said what the tables were. It also carries NO liveness claim — see the live-count
                 note below; a subtitle is not the place to imply a busy room either. */}
-            <Text style={styles.playOnlineSub} numberOfLines={2}>Real players · instant bot tables</Text>
+            <Text style={styles.playOnlineSub} numberOfLines={2}>{t().homePlayOnlineSub}</Text>
           </View>
           <Text style={styles.playOnlineGo} allowFontScaling={false}>›</Text>
         </ChipButton>
@@ -1499,7 +1499,7 @@ export default function HomeScreen() {
           <ChipButton
             variant="secondary"
             onPress={handleNewHand}
-            accessibilityLabel="Practice against bots"
+            accessibilityLabel={t().homePracticeA11y}
             style={{ alignSelf: 'center', width: practiceChipWidth }}
           >
             {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
@@ -1509,7 +1509,7 @@ export default function HomeScreen() {
                 the chip's alignItems:'center' lets the Text intrinsic-size to its own
                 natural (unconstrained) width, so adjustsFontSizeToFit had no real box to
                 shrink into and the label truncated on narrow real devices instead of shrinking. */}
-            <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>Practice vs bots</Text>
+            <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{t().homePracticeVsBots}</Text>
           </ChipButton>
 
           {/* C2 — THE CONFIG LINE IS GONE. "3 boards · 3 players · Low Blinds · 25/board" measured
@@ -1537,7 +1537,7 @@ export default function HomeScreen() {
           style={[styles.titleSub, { color: '#cfd8d2' }, taglineAnimStyle]}
           numberOfLines={3}
         >
-          Four cards on every board. Every board plays at once. Win the most boards, win the hand.
+          {t().homeTeaching}
         </Animated.Text>
 
         {/* C2 — THE 2P/3P/4P SELECTOR IS GONE FROM HOME.

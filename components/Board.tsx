@@ -232,7 +232,7 @@ function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, sl
       // reports whether this slot can take the card you are holding, which is the fact the
       // sighted player reads off the active border and the screen-reader user otherwise cannot.
       accessibilityLabel={`${t().boardLabel(boardIndex + 1)}, empty slot ${slotIndex + 1} of ${CARDS_PER_BOARD}. ${
-        hasSelection ? 'Tap to place the selected card here.' : 'Select a card first.'}`}
+        hasSelection ? t().a11yTapToPlace : t().a11ySelectFirst}`}
       accessibilityState={{ disabled: !hasSelection }}
     >
       {/* S76-BOARD-ROUTING — colour overrides only; every geometry value (borderWidth,
@@ -847,7 +847,7 @@ export default function Board({
                   } : undefined}
                   accessibilityRole={!revealed ? 'button' : undefined}
                   accessibilityLabel={!revealed
-                    ? `${t().bot} ${botIdx + 1}, face-down card. Revealed after the river.`
+                    ? `${t().bot} ${botIdx + 1}, ${t().revealedAfterRiver}`
                     : undefined}
                 >
                   <CardComponent
@@ -864,7 +864,7 @@ export default function Board({
               ))}
               {!revealed && botTooltipVisible && (
                 <View style={styles.botTooltip}>
-                  <Text style={styles.botTooltipText}>Revealed after River</Text>
+                  <Text style={styles.botTooltipText}>{t().revealedAfterRiver}</Text>
                 </View>
               )}
               {/* BW1 — MP-ONLY. The branch below is gated on `revealed`, hardcoded false in
@@ -1011,7 +1011,7 @@ export default function Board({
         {winner && (
           <Animated.View style={[styles.winnerBadge, { borderTopColor: theme.boardMintHairline }, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : [styles.tieBadge, { backgroundColor: theme.boardTieBg }], bannerAnimStyle]}>
             <Text style={[styles.winnerText, { color: theme.boardCardInk }]}>
-              {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
+              {winner === 'player' ? t().winShort : winner === 'bot' ? t().lossShort : t().tieShort}
             </Text>
             {winner === 'player' && playerHandName ? (
               <Text style={[styles.bannerHandName, { color: theme.boardCardInk }]}>{playerHandName}</Text>
