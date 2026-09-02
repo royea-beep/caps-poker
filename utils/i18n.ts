@@ -53,6 +53,19 @@ if (typeof queueMicrotask !== 'undefined') {
 // table is intentionally retained for now (smaller diff, allows easy rollback),
 // but every consumer of getLanguage() is forced to 'en'. Hebrew device locales
 // will see the English UI. setLanguage() is now a no-op for the same reason.
+//
+// VAMOS-GO-LIVE-LANDING 2026-09-02 — INVESTIGATED re-enabling this (hand-rank
+// labels are English CONSTANTS in utils/handEvaluator.ts, so the 'en' force was
+// over-broad). But a rendered 320 walk (he-IL) of a fresh build showed the flip
+// half-translates the RESULTS/REVEAL flow: home 75% Hebrew and game-place 72%
+// (both coherent, no overflow), BUT the reveal is only 26% — "הפסדת" sits beside
+// hardcoded "Board 1 / BOT 1 / COMMUNITY / So close!". Those live in components
+// that still hardcode English: Board.tsx (~33), EquityBar.tsx (~13),
+// BoardResultCard.tsx (~18) and results.tsx (~60). Enabling here without wiring
+// those to t() first ships a jarring EN/HE mix on the app's tightest screen, so
+// the switch stays forced-'en' until that focused pass lands (see the
+// LANDING-SCREENSHOTS/GO-LIVE handoff). The board-term standardisation to
+// "בורד/בורדים" is applied now so it is correct the day the switch flips.
 export function getLanguage(): Language {
   _lang = 'en';
   return 'en';
@@ -311,9 +324,12 @@ const he: Translations = {
   autoPlace: '⚡ מיקום אוטומטי',
   playNow: '▶ שחק עכשיו',
   // Game screen
-  boardLabel: (n) => `לוח ${n}`,
+  // NAMING: the game board is "בורד/בורדים" everywhere (matches the onboarding, the home,
+  // boardsPlayers, and the landing page). "לוח" is kept ONLY for the leaderboard terms below
+  // (לוח מנצחים / לוח תוצאות) — a different concept, not the game board.
+  boardLabel: (n) => `בורד ${n}`,
   arrangeCards: (n) => `סדר ${n} קלפים`,
-  botRowSub: (players, boards) => `${players} שחקנים · ${boards} לוחות · מיידי`,
+  botRowSub: (players, boards) => `${players} שחקנים · ${boards} בורדים · מיידי`,
   timeUpAutoplaced: '⏱ הזמן נגמר — קלפים הונחו אוטומטית',
   botSingular: 'בוט',
   botPlural: (r, t) => `בוטים ${r}/${t}`,

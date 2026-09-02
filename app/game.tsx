@@ -67,7 +67,7 @@ const TIPS = [
   // S71 — teach the Auto-Place fast path alongside tap-to-place (placing 4×N cards by hand
   // is the biggest first-hand friction; Auto-Place fills a board in one tap).
   () => TIP('Tap a card then a slot — or tap Auto-Place to fill a board fast.', 'לחץ קלף ואז מקום ריק — או Auto-Place למילוי מהיר.'),
-  () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הלוח הזה.'),
+  () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הבורד הזה.'),
   () => TIP('Hand strength shown here. Better hands win more!', 'עוצמת היד מוצגת כאן. ידיים טובות יותר מנצחות יותר!'),
   // Tip 5 (index 4): Omaha hand selection — the game picks the best 2+3 automatically.
   () => TIP(
