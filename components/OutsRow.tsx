@@ -26,6 +26,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import CardComponent from './Card';
 import { Card } from '../constants/gameConfig';
 import { rf, rs } from '../utils/responsive';
+import { t } from '../utils/i18n';
 
 interface Props {
   outs: Card[];
@@ -50,7 +51,7 @@ export function OutsRow({ outs, dead = [], mode, screenW, cardWidth, cardHeight,
   if (pending) {
     return (
       <View style={styles.row} testID="outs-row">
-        <Text style={[styles.badge, { fontSize: rf(11, undefined, undefined, screenW) }]}>CALCULATING…</Text>
+        <Text style={[styles.badge, { fontSize: rf(11, undefined, undefined, screenW) }]}>{t().outsCalculating}</Text>
       </View>
     );
   }
@@ -78,14 +79,14 @@ export function OutsRow({ outs, dead = [], mode, screenW, cardWidth, cardHeight,
   const shownLive = outs.slice(0, room);
   const overflow = outs.length - shownLive.length;
 
-  const label = mode === 'chasing' ? 'OUTS' : 'DANGER';
+  const label = mode === 'chasing' ? t().outsLabel : t().dangerLabel;
 
   return (
     <View style={styles.row} testID="outs-row">
       <Text
         testID="outs-count"
         style={[styles.badge, { fontSize: rf(11, undefined, undefined, screenW) }]}
-        accessibilityLabel={`${outs.length} ${mode === 'chasing' ? 'outs to win' : 'cards that lose it'}`}
+        accessibilityLabel={`${outs.length} ${mode === 'chasing' ? t().a11yOutsToWin : t().a11yOutsToLose}`}
       >
         {outs.length} {label}
       </Text>

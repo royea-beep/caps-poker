@@ -1,0 +1,74 @@
+[
+  {
+    "screen": "home",
+    "players": 2,
+    "W": 320,
+    "hePct": 70,
+    "he": 111,
+    "lat": 47,
+    "overflow": false
+  },
+  {
+    "screen": "game-place",
+    "players": 2,
+    "W": 320,
+    "hePct": 68,
+    "he": 120,
+    "lat": 56,
+    "overflow": false
+  },
+  {
+    "screen": "reveal",
+    "players": 2,
+    "W": 320,
+    "hePct": 43,
+    "he": 101,
+    "lat": 134,
+    "overflow": false
+  },
+  {
+    "screen": "results",
+    "players": 2,
+    "W": 320,
+    "hePct": 97,
+    "he": 69,
+    "lat": 2,
+    "overflow": false
+  },
+  {
+    "screen": "home",
+    "players": 3,
+    "W": 320,
+    "hePct": 72,
+    "he": 111,
+    "lat": 44,
+    "overflow": false
+  },
+  {
+    "screen": "game-place",
+    "players": 3,
+    "W": 320,
+    "hePct": 69,
+    "he": 120,
+    "lat": 53,
+    "overflow": false
+  },
+  {
+    "screen": "reveal",
+    "players": 3,
+    "W": 320,
+    "hePct": 42,
+    "he": 101,
+    "lat": 139,
+    "overflow": false
+  },
+  {
+    "screen": "results",
+    "players": 3,
+    "W": 320,
+    "hePct": 98,
+    "he": 87,
+    "lat": 2,
+    "overflow": false
+  }
+]

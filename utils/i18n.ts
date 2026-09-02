@@ -49,30 +49,27 @@ if (typeof queueMicrotask !== 'undefined') {
   setTimeout(() => { try { applyHtmlLocale(); } catch {} }, 0);
 }
 
-// VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — English-only. The Hebrew translation
-// table is intentionally retained for now (smaller diff, allows easy rollback),
-// but every consumer of getLanguage() is forced to 'en'. Hebrew device locales
-// will see the English UI. setLanguage() is now a no-op for the same reason.
+// VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — was English-only (forced 'en') because the
+// results/reveal flow half-translated: ~120 strings across Board/EquityBar/
+// BoardResultCard/results/BoardReveal + home CTAs hardcoded English, so a Hebrew
+// device saw "הפסדת" beside "Board 1 / BOT 1 / COMMUNITY / So close!".
 //
-// VAMOS-GO-LIVE-LANDING 2026-09-02 — INVESTIGATED re-enabling this (hand-rank
-// labels are English CONSTANTS in utils/handEvaluator.ts, so the 'en' force was
-// over-broad). But a rendered 320 walk (he-IL) of a fresh build showed the flip
-// half-translates the RESULTS/REVEAL flow: home 75% Hebrew and game-place 72%
-// (both coherent, no overflow), BUT the reveal is only 26% — "הפסדת" sits beside
-// hardcoded "Board 1 / BOT 1 / COMMUNITY / So close!". Those live in components
-// that still hardcode English: Board.tsx (~33), EquityBar.tsx (~13),
-// BoardResultCard.tsx (~18) and results.tsx (~60). Enabling here without wiring
-// those to t() first ships a jarring EN/HE mix on the app's tightest screen, so
-// the switch stays forced-'en' until that focused pass lands (see the
-// LANDING-SCREENSHOTS/GO-LIVE handoff). The board-term standardisation to
-// "בורד/בורדים" is applied now so it is correct the day the switch flips.
+// VAMOS FINISH-HEBREW 2026-09-02 — those strings are now all wired to t() (he/en at
+// full 202/202 key parity, tsc + 2649 jest green, rendered coverage verified at 320
+// across 2P/3P/4P), so the force is LIFTED. getLanguage() now returns the device
+// language (Hebrew locales → Hebrew UI, everything else → English). Hand-rank NAMES
+// stay English (HAND_RANK_NAMES constants in utils/handEvaluator.ts) — that is a
+// deliberate poker-terminology choice, not a gap. The persisted `caps_language`
+// preference (set in _layout on boot, changed in SideMenu) drives setLanguage().
 export function getLanguage(): Language {
-  _lang = 'en';
-  return 'en';
+  if (_lang === 'he' || _lang === 'en') return _lang;
+  const code = detectLanguageCode();
+  _lang = code === 'he' ? 'he' : 'en';
+  return _lang;
 }
 
-export function setLanguage(_lang: Language): void {
-  // no-op — see comment on getLanguage()
+export function setLanguage(lang: Language): void {
+  _lang = lang === 'he' ? 'he' : 'en';
   applyHtmlLocale();
 }
 
@@ -294,6 +291,15 @@ interface Translations {
   scoreBoardsLeft: (remaining: number) => string;
   scoreTied: (p: number, b: number, remaining: number) => string;
   tieBoard: string;
+  playerFallback: string;
+  outsLabel: string;
+  dangerLabel: string;
+  outsCalculating: string;
+  a11yOutsToWin: string;
+  a11yOutsToLose: string;
+  revealTip1: string;
+  revealTip2: string;
+  revealTip3: string;
   // Home CTAs + teaching line (dedicated so EN design text is preserved verbatim)
   homePlayOnline: string;
   homePlayOnlineSub: string;
@@ -589,6 +595,15 @@ const he: Translations = {
   scoreBoardsLeft: (remaining) => `${remaining} בורדים`,
   scoreTied: (p, b, remaining) => `תיקו ${p}-${b} · נותרו ${remaining}`,
   tieBoard: 'בורד תיקו',
+  playerFallback: 'שחקן 1',
+  outsLabel: 'אאוטים',
+  dangerLabel: 'סכנה',
+  outsCalculating: 'מחשב…',
+  a11yOutsToWin: 'אאוטים לניצחון',
+  a11yOutsToLose: 'קלפים שמפסידים',
+  revealTip1: 'עכשיו ראה מה יש ליריב בכל בורד.',
+  revealTip2: 'כל קלף משנה את היד המנצחת!',
+  revealTip3: 'ירוק = ניצחון, אדום = הפסד. שים לב לבונוס COMPLETE!',
   homePlayOnline: 'שחק אונליין',
   homePlayOnlineSub: 'שחקנים אמיתיים · שולחנות בוט מיידיים',
   homePracticeVsBots: 'תרגול מול בוטים',
@@ -832,6 +847,15 @@ const en: Translations = {
   scoreBoardsLeft: (remaining) => `${remaining} boards`,
   scoreTied: (p, b, remaining) => `Tied ${p}-${b} · ${remaining} left`,
   tieBoard: 'Tie board',
+  playerFallback: 'Player 1',
+  outsLabel: 'OUTS',
+  dangerLabel: 'DANGER',
+  outsCalculating: 'CALCULATING…',
+  a11yOutsToWin: 'outs to win',
+  a11yOutsToLose: 'cards that lose it',
+  revealTip1: 'Now see what your opponent has on each board.',
+  revealTip2: 'Each card changes the winning hand!',
+  revealTip3: 'Green = win, Red = loss. Watch for COMPLETE bonus!',
   homePlayOnline: 'Play Online',
   homePlayOnlineSub: 'Real players · instant bot tables',
   homePracticeVsBots: 'Practice vs bots',

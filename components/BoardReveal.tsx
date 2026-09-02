@@ -75,9 +75,9 @@ const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
 
 // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — English-only.
 const REVEAL_TIPS = [
-  () => 'Now see what your opponent has on each board.',
-  () => 'Each card changes the winning hand!',
-  () => 'Green = win, Red = loss. Watch for COMPLETE bonus!',
+  () => t().revealTip1,
+  () => t().revealTip2,
+  () => t().revealTip3,
 ];
 
 function getScoreText(pWins: number, bWins: number, idx: number, total: number): string {
@@ -124,7 +124,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const { width: rawW } = useWindowDimensions();
   const screenW = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
-  const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
+  const playerDisplayName = useGameStore((s) => s.playerName) || t().playerFallback;
   const opponentName = useGameStore((s) => s.opponentName);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const revealBg = getTheme(visualTheme).background; // #161922 for Five-O, #0a0a0a for Classic
