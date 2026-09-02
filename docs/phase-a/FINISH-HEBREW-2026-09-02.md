@@ -83,8 +83,13 @@ regardless of locale" (no longer true). Both shots are coherent Hebrew; the boar
   autoPlaceAll, playerFallback — all ×1); escaped-unicode Hebrew markers present (אאוטים ×1,
   כמעט ×1); `detectLanguageCode` in the getLanguage path (the un-force). Deploy shipped.
 - **Bumped 514:** ios.buildNumber 513 → 514 (513 is on TestFlight; Apple rejects a re-upload).
-- **iOS build:** dispatched `ios-testflight.yml` on main (run 33634940856). Delivery line + byte
-  size vs 513: _pending build completion — see the run / follow-up note below._
+- **iOS build 514 — DELIVERED.** `ios-testflight.yml` run 33634940856 on main @ 8da8cbb,
+  conclusion success (~19 min). altool, quoted verbatim:
+  `UPLOAD SUCCEEDED with no errors` / `Delivery UUID: c6ec704a-0c2c-4804-97fa-1a9caa05bf4a` /
+  `Transferred 23948355 bytes in 0.413 seconds` / `No errors uploading archive at
+  '.../CapsPoker.ipa'.` (BUILD_NUMBER 514, MARKETING_VERSION 2.7.0). **IPA byte size vs 513:**
+  514 = 23,948,355 B vs 513 = 23,224,751 B → **+723,604 B (+3.1%)**, consistent with the added
+  i18n table + wiring (JS-only growth; the two re-shot webp are web-only, not in the IPA).
 
 ## BackstopJS baselines — CURRENT, not stale (no regen)
 BackstopJS seeds `caps_language=en` (en-US locale), so it renders the **English** UI. Every English
