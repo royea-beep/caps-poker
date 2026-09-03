@@ -514,6 +514,17 @@ interface Translations {
   setChooseStyle: string;
   setAdvanced: string;
   chipsWord: string;
+  setRevealEachBoard: string;
+  setInstantResults: string;
+  setSuits2Color: string;
+  setSuits4Color: string;
+  setColorblindOn: string;
+  setColorblindOff: string;
+  setBetaMode: string;
+  setYourRankTitle: string;
+  setLegalBlock: string;
+  setDeleteAccountSub: string;
+  back: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -919,6 +930,17 @@ const he: Translations = {
   setChooseStyle: 'בחר את הסגנון שלך',
   setAdvanced: '⚙️ מתקדם',
   chipsWord: 'צ׳יפים',
+  setRevealEachBoard: 'חשיפה בורד-אחר-בורד (ברירת מחדל)',
+  setInstantResults: 'סיכום תוצאות מיידי',
+  setSuits2Color: '2 צבעים: אדום / שחור',
+  setSuits4Color: '4 צבעים: ♥אדום ♦כחול ♠שחור ♣ירוק',
+  setColorblindOn: 'כעת: כחול = ניצחון, כתום = הפסד',
+  setColorblindOff: 'כעת: ירוק = ניצחון, אדום = הפסד',
+  setBetaMode: 'מצב בטא',
+  setYourRankTitle: 'הדירוג שלך',
+  setLegalBlock: 'CAPS Poker הוא משחק חינמי עם צ׳יפים וירטואליים בלבד.\nללא הימורים בכסף אמיתי.\nמגיל 18 ומעלה.',
+  setDeleteAccountSub: 'הפעולה תמחק לצמיתות את כל הנתונים שלך',
+  back: 'חזרה',
 };
 
 // ---------------------------------------------------------------------------
@@ -1326,6 +1348,17 @@ const en: Translations = {
   setChooseStyle: 'Choose your style',
   setAdvanced: '⚙️ ADVANCED',
   chipsWord: 'chips',
+  setRevealEachBoard: 'Reveal each board (default)',
+  setInstantResults: 'Instant results summary',
+  setSuits2Color: '2-color: red / black',
+  setSuits4Color: '4-color: ♥red ♦blue ♠black ♣green',
+  setColorblindOn: 'Now: Blue = Win, Orange = Lose',
+  setColorblindOff: 'Now: Green = Win, Red = Lose',
+  setBetaMode: 'BETA MODE',
+  setYourRankTitle: 'Your Rank',
+  setLegalBlock: 'CAPS Poker is a free game with virtual chips only.\nNo real-money gambling.\nFor ages 18+.',
+  setDeleteAccountSub: 'This will permanently delete all your data',
+  back: 'Back',
 };
 
 const translations: Record<Language, Translations> = { he, en };

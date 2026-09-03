@@ -28,6 +28,7 @@ import React from 'react';
 import { Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { rf, rs } from '../utils/responsive';
+import { t, isRTL, getLanguage } from '../utils/i18n';
 
 /**
  * Navigate back if there is anywhere to go back to, otherwise go home.
@@ -64,7 +65,10 @@ interface Props {
 /** Minimum comfortable touch target. The a11y sweeps of 2026-08-10/11 settled on 44. */
 const MIN_TARGET = 44;
 
-export function BackControl({ label = '‹  Back', onBeforeBack, tint = '#E8B563' }: Props) {
+export function BackControl({ label, onBeforeBack, tint = '#E8B563' }: Props) {
+  // FULL-I18N 2026-09-03 — the default was the literal '‹  Back'. The chevron follows reading
+  // direction; the word comes from the table. An explicit `label` prop still wins.
+  const resolved = label ?? `${isRTL() ? '›' : '‹'}  ${t().back}`;
   const { width: screenW } = useWindowDimensions();
   const safeBack = useSafeBack();
 
@@ -81,7 +85,8 @@ export function BackControl({ label = '‹  Back', onBeforeBack, tint = '#E8B563
     <Pressable
       testID="back-control"
       accessibilityRole="button"
-      accessibilityLabel="Back"
+      accessibilityLabel={t().back}
+      accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
       onPress={handle}
       hitSlop={12}
       style={[
@@ -89,7 +94,7 @@ export function BackControl({ label = '‹  Back', onBeforeBack, tint = '#E8B563
         { minWidth: rs(MIN_TARGET, screenW), minHeight: rs(MIN_TARGET, screenW), paddingHorizontal: rs(8, screenW) },
       ]}
     >
-      <Text style={[styles.txt, { color: tint, fontSize: rf(17, undefined, undefined, screenW) }]}>{label}</Text>
+      <Text style={[styles.txt, { color: tint, fontSize: rf(17, undefined, undefined, screenW) }]}>{resolved}</Text>
     </Pressable>
   );
 }

@@ -52,7 +52,7 @@ export default function SideMenu({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
-  const playerName = useGameStore((s) => s.playerName) || 'Player';
+  const playerName = useGameStore((s) => s.playerName) || t().playerFallback;
   // Subscribe to languageVersion so the menu re-renders when language changes
   const languageVersion = useGameStore((s) => s.languageVersion);
   void languageVersion; // suppress unused warning
@@ -150,7 +150,7 @@ export default function SideMenu({
               {user?.user_metadata?.full_name ?? playerName}
             </Text>
             <Text style={styles.profileChips}>
-              {'💰 '}{(chips ?? 0).toLocaleString()}{' chips'}
+              {'💰 '}{(chips ?? 0).toLocaleString()}{' '}{t().chipsWord}
             </Text>
           </View>
 

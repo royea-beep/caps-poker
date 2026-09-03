@@ -45,35 +45,22 @@ tables hold exactly the same 361.
 
 ## Per screen, measured like-for-like at 393 / chromium
 
+Every screen the brief enumerated is now at **zero**.
+
 | screen | before | after | |
 |---|---:|---:|---|
 | `/play` | 7 | **0** | done |
-| `/theme-pick` | 11 | **2** | the 2 are the theme NAMES (CLASSIC, FIVE-O) |
-| `/profile` | 6 | **1 → 0** | the last was the `'Player'` fallback, now `t().playerFallback` |
-| `/` (Home) | 5 | **3 → 0** | the 3 were the name fallback, a `chips` label, and ROYAL FLUSH |
-| `/settings` | 49 | **33** | the remaining 33 are the DEVELOPER section (see below) |
-| `/missions` | 5 | 3 | |
-| `/game` | 1 | **1 → 0** | the last was `Auto-Place ALL`, whose a11y label already used the key |
-| **total, 24 routes** | **235** | **194** | |
+| `/profile` | 6 | **0** | done |
+| `/` (Home) | 5 | **0** | done |
+| `/game` | 1 | **0** | done |
+| `/theme-pick` | 11 | **0** | done |
+| `/missions` | 5 | **0** | done |
+| `/settings` | 49 | **2** | the 2 left are a build hash — `(build` and `6068fb99` |
+| **the six enumerated screens + settings** | **84** | **2** | |
+| everything else (17 routes, outside the brief) | 151 | 151 | reported below, untouched |
+| **total, 24 routes** | **235** | **153** | |
 
-## What was translated
-
-- **Play** — all three mode cards and their subtitles, plus the a11y labels: Single Player,
-  Multiplayer Lobby, Quick Private Table. Fully done.
-- **Profile** — the title and all five stat labels (HANDS, WIN RATE, STREAK, CHIPS), plus the
-  player-name fallback.
-- **Home** — 47 sites: the chip header, the menu and shop labels, the daily-bonus chip in all
-  three of its states, the streak lines, Play of the Day, the progress and competition cards, the
-  recent-wins feed, the hand-history row, the whole referral card and its modal, and the legal line.
-- **Settings** — 42 sites: every section header, every row label and hint, the notification toggle,
-  reveal speed, players, bot difficulty, suit colours, colourblind mode, card sort, the version and
-  legal rows, and the theme tags.
-- **Components** — `BoardReveal` "COMPLETE!", `CompleteBanner` "+N bonus chips!", the tutorial's
-  COMPLETE badge, `game.tsx` "Calculating results…" and the practice pill in both its states,
-  `PlayerHand` "Auto-Place ALL".
-- **theme-pick** — the subtitle, both tags, both descriptions, both SELECT buttons and the hint.
-
-## Two small behaviour changes worth naming
+## Two small behaviour changes worth naming## Two small behaviour changes worth naming
 
 - **The player-name fallback now reads "Player 1", not "Player".** Home and Profile hardcoded
   `'Player'` while Settings already defaulted to `playerFallback` (`'Player 1'` / `'שחקן 1'`). All
@@ -92,16 +79,16 @@ theme names are exempt for the same reason.
 
 ## What is NOT translated, and why — stated, not hidden
 
-- **`/settings` DEVELOPER section (33 of the remaining 194).** Gated behind `devUnlocked`, invisible
-  to players, and full of build numbers and debug switches. Not worth a translation key.
 - **`/battle-pass` (34).** The entry was hidden last sprint because the screen promises 60 rewards
   and delivers none. Translating a screen no player can reach would be work on a feature that is
   about to change.
-- **`/referral` (17), `/lobby` + `/lobby/private` (25), `/achievements` (11),
-  `/orientation-pick` (11), `/leaderboard` (8), `/friends` (7), and nine smaller screens.**
-  These were outside the list the brief enumerated. They are real gaps, they are counted above, and
-  they are the natural next sprint. **A Hebrew player can still read every one of them** — they show
-  English, which the ruling allows.
+- **`/referral` (17), `/lobby` (11) + `/lobby/private` (12), `/achievements` (11),
+  `/orientation-pick` (10), `/leaderboard` (8), `/friends` (7), and ten smaller screens
+  (`/stats`, `/rank`, `/hand-history`, `/coaching`, `/gameover`, `/shop`, `/chip-store`,
+  `/replay`, `/spectate` — 3 to 5 each).** These were outside the list the brief enumerated. They
+  are real gaps, they are counted above, and they are the natural next sprint.
+  **A Hebrew player can still read every one of them** — they show English, which the ruling allows.
+- **A build hash (`(build 6068fb99)`) on Settings.** Not text.
 
 ## Both tables in sync — proven two ways
 
