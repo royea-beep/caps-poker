@@ -55,7 +55,7 @@ Every screen the brief enumerated is now at **zero**.
 | `/game` | 1 | **0** | done |
 | `/theme-pick` | 11 | **0** | done |
 | `/missions` | 5 | **0** | done |
-| `/settings` | 49 | **2** | the 2 left are a build hash — `(build` and `6068fb99` |
+| `/settings` | 49 | **2** | a build hash, not text — and **1** at the worst of the eight engine × width combinations |
 | **the six enumerated screens + settings** | **84** | **2** | |
 | everything else (17 routes, outside the brief) | 151 | 151 | reported below, untouched |
 | **total, 24 routes** | **235** | **153** | |
@@ -103,13 +103,13 @@ theme names are exempt for the same reason.
 
 ## Which matrix produced which number — provenance, so nothing is over-claimed
 
-- **Hebrew on English = 0** — measured on **two complete matrices** (26 routes × 2 engines ×
-  4 widths × 2 languages), canary green in both engines on both. A third confirmation run on the
-  final build was still in flight when this was written; it cannot change the result, because the
-  only changes after run 2 removed English from Hebrew screens and wired keys whose English is
-  byte-identical, and the parity test proves the English table holds no Hebrew at all.
-- **The per-screen gap table** — measured at **393 / chromium** on the final build, which is the
-  slice the before-numbers were taken at, so the two are like for like.
+- **Hebrew on English = 0** — measured on **three complete matrices** (26 routes × 2 engines ×
+  4 widths × 2 languages = 416 page loads each), canary green in both engines on all three. The
+  third ran on the final build and is the one committed in `docs/full-i18n/loop/i18n-loop.json`.
+- **The per-screen gap table** — quoted at **393 / chromium**, the slice the before-numbers were
+  taken at, so the two compare like for like. The **worst case across all eight engine × width
+  combinations is the same or better**: every enumerated screen is 0 at every width in both
+  engines, and Settings' worst case is **1**, not 2 — the token `(build`, part of the build hash.
 
 ---
 
