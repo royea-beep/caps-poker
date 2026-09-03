@@ -61,7 +61,7 @@ import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
 import { themeAxes } from '../../constants/visualThemes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
-import { fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
+import { fetchCardDisplayConfig, fetchPokerShop, recordReward, callRPC } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
 import { trackEvent } from '../../utils/heatmap';
 import { getSupabase } from '../../utils/supabase';
@@ -743,7 +743,10 @@ export default function HomeScreen() {
       const deviceId = await getDeviceId();
       const sb = getSupabase();
       if (!sb) return 'error';
-      const { data: claim } = await sb.rpc('claim_daily_reward', { p_device_id: deviceId });
+      // AE2 — routed through callRPC so it inherits the app-open auth gate. A direct sb.rpc here
+      // bypassed the choke point; claim_daily_reward IS econ_bind_ok-gated, so a session-less
+      // app-open call is exactly what would be refused once S1 closes.
+      const claim = await callRPC<any>('claim_daily_reward', { p_device_id: deviceId });
       const store = useGameStore.getState();
       const now = new Date();
       if (claim?.success) {
@@ -906,7 +909,9 @@ export default function HomeScreen() {
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
-        const { data } = await sb.rpc('claim_daily_streak', { p_device_id: deviceId });
+        // AE2 — same choke point. This was one of the RPCs proven to arrive with auth.uid() = NULL
+        // at launch (MEMORY.md 2026-08-01, patched-fetch experiment).
+        const data = await callRPC<any>('claim_daily_streak', { p_device_id: deviceId });
         if (!data) return;
         if (data.claimed) {
           const store = useGameStore.getState();
@@ -1883,17 +1888,21 @@ export default function HomeScreen() {
             <TextInput
               style={styles.codeInput}
               value={referralCodeInput}
-              onChangeText={v => setReferralCodeInput(v.toUpperCase().slice(0, 6))}
-              placeholder="A3F2B1"
+              // THE-NEGLECTED 2026-09-03 — same truncation as /referral carried a SECOND copy here.
+              // Codes are EIGHT characters; `.slice(0, 6)` cut them and still passed the >=6 check.
+              onChangeText={v => setReferralCodeInput(normaliseReferralCode(v).slice(0, REFERRAL_CODE_MAX))}
+              placeholder="A3F2B1C7"
               placeholderTextColor="rgba(255,255,255,0.25)"
               autoCapitalize="characters"
               maxLength={REFERRAL_CODE_MAX}
               returnKeyType="done"
               onSubmitEditing={handleRedeemCode}
             />
-            {/* S89: 6-char counter clarifies what the 6 means */}
+            {/* THE-NEGLECTED 2026-09-03 — the counter said "/6" while the database issues eight,
+                so it actively taught the wrong length. The client is deliberately permissive
+                (constants/appLinks.ts): show what has been typed, assert no fixed length. */}
             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rf(11), alignSelf: 'flex-end', marginTop: rs(-4) }}>
-              {referralCodeInput.length}/6 characters
+              {referralCodeInput.length} characters
             </Text>
             <Pressable
               style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}

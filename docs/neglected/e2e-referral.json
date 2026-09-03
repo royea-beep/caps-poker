@@ -1,0 +1,17 @@
+{
+  "code": "1786A8C3",
+  "redeemer": "NEG-REDEEMER-F",
+  "typed": "1786A8C3",
+  "survived": true,
+  "rpcCalls": [
+    {
+      "fn": "create_referral_link",
+      "body": "{\"p_device_id\":\"NEG-REDEEMER-F\"}"
+    },
+    {
+      "fn": "redeem_referral",
+      "body": "{\"p_device_id\":\"NEG-REDEEMER-F\",\"p_code\":\"1786A8C3\"}"
+    }
+  ],
+  "screen": "‹ | Back | Invite Friends | 🎁 | Invite friends | You get 300 💰, they get 100 💰 when they join! | Your code | Share to WhatsApp 💬 | 0 | Friends joined | 0 | Chips earned | Got a friend's code? | Enter it here and get 100 💰 | How it works | 1️⃣ | Share your code with a friend | 2️⃣ | Your friend downloads CAPS and enters the code | 3️⃣ | You get 300 💰, they get 100 💰 instantly!"
+}
