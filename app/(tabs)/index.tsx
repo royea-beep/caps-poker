@@ -389,7 +389,7 @@ function DailyRewardModal({
           {isHE ? 'פרס יומי!' : 'Daily Reward!'}
         </Text>
         <Text style={dailyRewardModalStyles.chips}>
-          {`+${(reward ?? 0).toLocaleString()} ${t().profileChips}`}
+          {`+${(reward ?? 0).toLocaleString()} ${t().chipsWord}`}
         </Text>
         {streak > 1 && (
           <Text style={dailyRewardModalStyles.streak} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={isHE ? `${streak} ימים ברצף` : `${streak}-day streak!`}>

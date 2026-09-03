@@ -59,6 +59,26 @@
   did. A client-written `hand_history` row records history and moves no ladder — that is what
   closed the device_id forge. The lobby is empty (0 rooms have ever finished), so nobody climbs
   today. This is deliberate; do not "fix" it back.
+- **S1 CLOSED — server-side, on production, 2026-09-03.** `econ_bind_ok` no longer returns true for
+  a caller with **no session**, and no longer returns true from its `WHEN OTHERS` handler.
+  ⚠️ IT REFUSES **NO SESSION**, NOT **ANONYMOUS** — anonymous players arrive with role
+  `authenticated` and a `sub` claim, so they pass exactly as before. Do NOT "simplify" this into a
+  check on `auth.users.is_anonymous`, and do NOT re-add a `v_uid IS NULL -> true` shortcut: either
+  change locks out ~99.7% of real devices. `service_role` is allowed FIRST and on purpose, because
+  `resolve-hand` settles multiplayer with no user session and is the only writer that can pay a
+  dropped seat. `submit_score` gained the guard it never had — it was the third mint vector, and
+  PART 1 alone would have left it open. Proven: raw anon minted 2,000 before and 0 after; a
+  brand-new anonymous device cold-launched against production still gets its grant and plays.
+  ⚠️ STILL OPEN: `submit_score` moves `leaderboard.total_chips` with NO `chip_transactions` row, so
+  it can break the gap invariant. Gated now, but still unledgered.
+- **The catch-all 404 is fixed (2026-09-03).** `vercel.json`'s last rewrite excludes dotted paths,
+  so a missing FILE 404s instead of returning 200 with the app's HTML. That trap twice made a stale
+  or absent file read as "deployed". SPA routes are unaffected — 0 of them contain a dot, and
+  `tests/vercel-rewrites.test.ts` pins both halves.
+- **FIVE-O is NAVY, not red (corrected 2026-09-03).** `visual.fiveo` paints surface `#1A1A2E` with a
+  mint `#4FD6A8` accent. The picker showed a `#5c0000` red preview and said "Red felt / Bold action";
+  both are corrected. Same class as the maroon-felt line above — a description contradicting the
+  product. If you are about to "restore the red", read `constants/paintThemes.ts` first.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs

@@ -73,6 +73,15 @@ tables hold exactly the same 361.
   `PlayerHand` "Auto-Place ALL".
 - **theme-pick** — the subtitle, both tags, both descriptions, both SELECT buttons and the hint.
 
+## Two small behaviour changes worth naming
+
+- **The player-name fallback now reads "Player 1", not "Player".** Home and Profile hardcoded
+  `'Player'` while Settings already defaulted to `playerFallback` (`'Player 1'` / `'שחקן 1'`). All
+  three now use the same key, so the three screens agree where they used to disagree by one word.
+- **The daily-reward modal says "chips", not "CHIPS".** It first got wired to `profileChips`, which
+  is the uppercase STAT LABEL, and rendered "+500 CHIPS". A separate `chipsWord` key holds the
+  lowercase noun. Caught by reading the diff, not by a test.
+
 ## Hand-rank names left English — CONFIRMED, in both languages
 
 They are a standing product rule, not an oversight, and the Hebrew table already keeps them that

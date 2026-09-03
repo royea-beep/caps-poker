@@ -513,6 +513,7 @@ interface Translations {
   setChangeAnytime: string;
   setChooseStyle: string;
   setAdvanced: string;
+  chipsWord: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -917,6 +918,7 @@ const he: Translations = {
   setChangeAnytime: 'ניתן לשנות בכל עת בהגדרות',
   setChooseStyle: 'בחר את הסגנון שלך',
   setAdvanced: '⚙️ מתקדם',
+  chipsWord: 'צ׳יפים',
 };
 
 // ---------------------------------------------------------------------------
@@ -1323,6 +1325,7 @@ const en: Translations = {
   setChangeAnytime: 'Can be changed anytime in Settings',
   setChooseStyle: 'Choose your style',
   setAdvanced: '⚙️ ADVANCED',
+  chipsWord: 'chips',
 };
 
 const translations: Record<Language, Translations> = { he, en };
