@@ -223,16 +223,30 @@ Battle Pass · Coaching · Tutorial · Language toggle (EN/עברית) · Sign i
 per-hand `earn_chips` credits; the second ELO writer (`update_leaderboard_elo`); the direct client
 `hand_history` insert; subscriptions.
 
-### 4d · Hebrew coverage — measured, not assumed
-Measured as % Hebrew characters of visible text on each captured screen:
+### 4d · Language — ENGLISH-FIRST (corrected 2026-09-03)
 
-| Fully/mostly Hebrew | Partial | **Still 100% English** |
+⚠️ **CORRECTION TO THIS DOCUMENT'S ORIGINAL FRAMING.** The first version of §4d was headed
+"Hebrew coverage" and listed ten screens as "**Still** 100% English", implying a gap. **That was
+wrong, and it is retracted.** CAPS is a GLOBAL app: **English is the default and primary
+language**, and Hebrew exists for the Israeli pilot only — a pilot that will itself include
+players from anywhere. Hebrew is an addition, never the requirement. **A screen rendering English
+is the correct state, not a defect.**
+
+**The real defect is the half-state**, and it is a consistency problem, not a translation
+shortfall: the app *offers* Hebrew and then delivers English on most screens, and leaks English
+strings into the screens it did translate. Either a screen is translated, or the app should not
+claim that language for it.
+
+Measured as % Hebrew characters of visible text per screen (evidence, not a target):
+
+| Translated | Partly translated | English only (correct default) |
 |---|---|---|
-| cups 100% · profile 63% · home 61% · game 48–51% · results 41% · play 37% | hand-history 23% · friends 10% · settings 4% | **shop · achievements · leaderboard · stats · rank · referral · coaching · battle-pass · lobby · lobby-private** |
+| cups 100% · profile 63% · home 61% · game 48–51% · results 41% · play 37% | hand-history 23% · friends 10% · settings 4% | shop · achievements · leaderboard · stats · rank · referral · coaching · battle-pass · lobby · lobby-private |
 
-Two visible leaks on the otherwise-Hebrew **home**: the daily-bonus chip ("🎁 Claim daily bonus ·
-Day 2") and the legal line stay English. This matches FINISH-HEBREW, which wired only the
-game/reveal/results/home flow — the secondary screens were never wired to `t()`.
+Two live leaks on the otherwise-Hebrew **home** — the daily-bonus chip ("🎁 Claim daily bonus ·
+Day 2") and the legal line stay English. These are the half-state made visible, and are the part
+worth fixing. FINISH-HEBREW wired only the game/reveal/results/home flow, which is why the split
+falls where it does.
 
 ### 4e · Flows
 
@@ -339,8 +353,10 @@ git log --oneline -1 -- docs/product-map/     # this map + the 44 shots
 ### MISSING (genuinely does not exist)
 - **Any screenshot set of the secondary screens** until this sprint — now filled (44 shots).
 - **A product map** — this document is the first.
-- **Hebrew on 10 screens** (shop, achievements, leaderboard, stats, rank, referral, coaching,
-  battle-pass, lobby, lobby-private) + two leaks on home.
+- **Consistency of the language offer** — NOT translation. English on those ten screens is
+  correct; the defect is that the app offers Hebrew and then does not deliver it uniformly, and
+  leaks English into the two Hebrew-home strings above. Fix the *claim*, or fix the leaks — do not
+  mass-translate.
 - **Any footage of multiplayer** — impossible today: 0 rooms have ever finished.
 - **A character / mascot / voice for CAPS** — none exists in this repo. (`trivia-mascots` is 9Soccer's.)
 - **App-store screenshot set** at required device sizes.
@@ -371,7 +387,8 @@ Hebrew UI to Hebrew visitors (it currently shows English chrome shots to both).
    stills, kills the staleness problem at its root. *Do this first.*
 2. **Re-shoot the two landing heroes** — minutes, from the same run.
 3. **Fix CLAUDE.md's stale nav/ladder lines** — minutes, prevents the next stale-map error.
-4. **Wire the 10 untranslated screens to `t()`** — a day; the app claims Hebrew and half of it is not.
+4. **Resolve the language half-state** — close the two Hebrew-home leaks, or stop offering Hebrew
+   on screens that do not deliver it. English-first is correct; do NOT mass-translate.
 5. **App-store screenshot set** — needed before submission regardless.
 6. **A CAPS character/voice** — highest cost, lowest urgency; decide only after BAILEY is opened.
 

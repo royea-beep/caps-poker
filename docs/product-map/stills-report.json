@@ -1,0 +1,38 @@
+[
+  {
+    "file": "docs/product-map/heroes/game-boards.png",
+    "bytes": 288210
+  },
+  {
+    "file": "docs/product-map/heroes/game-reveal.png",
+    "bytes": 90848
+  },
+  {
+    "file": "docs/product-map/store/01-home.png",
+    "bytes": 3211806
+  },
+  {
+    "file": "docs/product-map/store/02-play.png",
+    "bytes": 154746
+  },
+  {
+    "file": "docs/product-map/store/03-shop.png",
+    "bytes": 1318022
+  },
+  {
+    "file": "docs/product-map/store/04-achievements.png",
+    "bytes": 86237
+  },
+  {
+    "file": "docs/product-map/store/05-game-placement.png",
+    "bytes": 1252173
+  },
+  {
+    "file": "docs/product-map/store/06-game-reveal.png",
+    "bytes": 276274
+  },
+  {
+    "file": "docs/product-map/store/07-results.png",
+    "bytes": 949367
+  }
+]
