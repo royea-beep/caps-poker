@@ -85,6 +85,13 @@
   [data-l]{display:none;}
   html[data-lang="en"] [data-l="en"]{display:inline;}
   html[data-lang="he"] [data-l="he"]{display:inline;}
+  /* THE-LAST-THREE 2026-09-03 — the screenshots are language-swapped by the SAME mechanism as the
+     text, so Hebrew stays free from this one source file. Images need block, not inline, and the
+     generic `[data-l]{display:none}` above LOSES to `.shot img{display:block}` on specificity —
+     the loop caught both languages rendering at once — so both rules are stated at .shot level. */
+  .shot img[data-l]{display:none;}
+  html[data-lang="en"] .shot img[data-l="en"],
+  html[data-lang="he"] .shot img[data-l="he"]{display:block;}
 
   /* ---- masthead : suits / gilded serif CAPS / tracked POKER — language-neutral, always LTR ---- */
   .masthead{padding-top:4px;}
@@ -187,7 +194,15 @@
          below each is also translated. Placed before the CTA so a visitor sees the game before they
          decide. Small + eager (above the fold). -->
     <figure class="shot">
-      <img src="shots/game-boards.webp" width="660" height="1431" fetchpriority="high" decoding="async"
+      <!-- THE-LAST-THREE 2026-09-03 — these were re-shot in HEBREW on 2026-09-02 "to match the
+           primary audience". The record was corrected on 2026-09-03: CAPS is ENGLISH-FIRST and
+           global, Hebrew is the pilot addition — so an English page showing Hebrew screenshots was
+           the same half-state defect the audit is about. Both languages are now shot from the same
+           build and swapped with the page's own toggle. The English one is eager (it is the
+           default); the Hebrew twin is lazy so a display:none image is not fetched for nothing. -->
+      <img data-l="en" src="shots/game-boards-en.webp" width="660" height="1431" fetchpriority="high" decoding="async"
+           alt="CAPS Poker game screen: three boards, four cards on each, all in play at once">
+      <img data-l="he" src="shots/game-boards-he.webp" width="660" height="1431" loading="lazy" decoding="async"
            alt="CAPS Poker game screen: three boards, four cards on each, all in play at once">
       <figcaption>
         <span data-l="en">One hand, played across every board at once.</span>
@@ -209,7 +224,9 @@
     <!-- Second real screen — the reveal, live win-odds + outs as each board plays out. Below the
          fold, so lazy-loaded (does not touch first paint). -->
     <figure class="shot">
-      <img src="shots/game-reveal.webp" width="660" height="1431" loading="lazy" decoding="async"
+      <img data-l="en" src="shots/game-reveal-en.webp" width="660" height="1431" loading="lazy" decoding="async"
+           alt="CAPS Poker reveal: live win odds and outs as each board plays out">
+      <img data-l="he" src="shots/game-reveal-he.webp" width="660" height="1431" loading="lazy" decoding="async"
            alt="CAPS Poker reveal: live win odds and outs as each board plays out">
       <figcaption>
         <span data-l="en">Live win odds and outs as each board plays out.</span>
