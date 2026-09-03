@@ -99,7 +99,17 @@ theme names are exempt for the same reason.
    every function-valued key returns a non-empty string in both languages, and — twice, for strings
    and for functions — **no Hebrew in the English table**.
 
-`tsc` exit 0 · `jest` **2,706 / 2,706 across 44 suites**.
+`tsc` exit 0 · `jest` **2,706 / 2,706 across 44 suites** (2,656 before — +50 new assertions).
+
+## Which matrix produced which number — provenance, so nothing is over-claimed
+
+- **Hebrew on English = 0** — measured on **two complete matrices** (26 routes × 2 engines ×
+  4 widths × 2 languages), canary green in both engines on both. A third confirmation run on the
+  final build was still in flight when this was written; it cannot change the result, because the
+  only changes after run 2 removed English from Hebrew screens and wired keys whose English is
+  byte-identical, and the parity test proves the English table holds no Hebrew at all.
+- **The per-screen gap table** — measured at **393 / chromium** on the final build, which is the
+  slice the before-numbers were taken at, so the two are like for like.
 
 ---
 
