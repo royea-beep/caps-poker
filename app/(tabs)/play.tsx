@@ -48,7 +48,7 @@ export default function PlayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header">PLAY</Text>
+      <Text style={styles.title} accessibilityRole="header">{t().play}</Text>
       <Text style={styles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playChooseMode}</Text>
 
       <ScrollView contentContainerStyle={{ paddingBottom: rs(24) }} showsVerticalScrollIndicator={false}>

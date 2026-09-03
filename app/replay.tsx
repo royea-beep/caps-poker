@@ -453,7 +453,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.gold,
     borderRadius: rv(16),
-    backgroundColor: 'rgba(255,215,0,0.08)',
+    // THE-LAST-THREE 2026-09-03 — fill was the winner cue rgba(255,215,0,·) while the border and
+    // text were already COLORS.gold #c9a84c (the wordmark gold). Fill now matches its own border.
+    backgroundColor: 'rgba(201,168,76,0.08)',
     alignSelf: 'center',
   },
   coachingBtnText: {

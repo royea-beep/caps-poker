@@ -59,11 +59,15 @@ export default function ThemePickScreen() {
             <Text style={styles.fiveoPreviewText}>♠</Text>
             <View style={styles.fiveoPreviewBar} />
           </View>
-          <Text style={[styles.cardName, { color: '#FFD700' }]}>FIVE-O</Text>
-          <Text style={[styles.cardTag, { color: '#FFD700' }]}>Arcade</Text>
+          <Text style={[styles.cardName, { color: '#4FD6A8' }]}>FIVE-O</Text>
+          <Text style={[styles.cardTag, { color: '#4FD6A8' }]}>Arcade</Text>
           <Text style={styles.cardDesc}>Red felt{'\n'}Bold action</Text>
-          <View style={[styles.selectBtn, styles.selectBtnFiveo]}>
-            <Text style={[styles.selectBtnText, { color: '#000000' }]}>SELECT</Text>
+          {/* THE-LAST-THREE 2026-09-03 — this SELECT was a SOLID #4FD6A8 fill. #4FD6A8 is the
+              winner cue; no control may wear it. Both SELECT controls now share one neutral
+              chrome, and FIVE-O's identity stays where it belongs: the preview swatch, the
+              gold card name/tag, and the card border. */}
+          <View style={styles.selectBtn}>
+            <Text style={styles.selectBtnText}>SELECT</Text>
           </View>
         </Pressable>
       </View>
@@ -73,6 +77,16 @@ export default function ThemePickScreen() {
   );
 }
 
+// THE-LAST-THREE 2026-09-03 — FIVE-O's swatch accent was #4FD6A8, the WINNER cue, and the whole
+// card is a Pressable, so the loop measured it as gold ON a control in both engines at all four
+// widths. Checked against what the theme actually paints (constants/paintThemes.ts `visual.fiveo`):
+//   accent #4FD6A8 · surface #1A1A2E · boardGold #c9a84c
+// FIVE-O renders NO #4FD6A8 anywhere. The swatch was advertising a colour the theme does not
+// have, and that colour was the one reserved for WON. It now uses the theme's own accent token.
+// ⚠️ STILL WRONG, LEFT FOR A DECISION: the preview box is #5c0000 and the copy says "Red felt",
+// while `visual.fiveo` paints surface #1A1A2E (navy). Same class of error as the maroon-felt line
+// corrected in CLAUDE.md — a swatch describing an app that no longer exists. Not changed here
+// because rewriting product copy is outside a gold-on-controls pass.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -112,17 +126,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fiveoCard: {
-    borderColor: '#FFD700',
+    borderColor: '#4FD6A8',
     ...Platform.select({
       ios: {
-        shadowColor: '#FFD700',
+        shadowColor: '#4FD6A8',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
       },
       android: { elevation: 6 },
       default: {
-        boxShadow: '0 0 16px rgba(255,215,0,0.2)',
+        boxShadow: '0 0 16px rgba(79,214,168,0.2)',
       } as any,
     }),
   },
@@ -158,21 +172,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#5c0000',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: '#4FD6A8',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
     marginBottom: 4,
   },
   fiveoPreviewText: {
-    color: '#FFD700',
+    color: '#4FD6A8',
     fontSize: 22,
     fontWeight: '900',
   },
   fiveoPreviewBar: {
     width: 40,
     height: 4,
-    backgroundColor: '#FFD700',
+    backgroundColor: '#4FD6A8',
     borderRadius: 2,
     opacity: 0.8,
   },
@@ -204,10 +218,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#3d2010',
     backgroundColor: 'transparent',
-  },
-  selectBtnFiveo: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
   },
   selectBtnText: {
     color: '#c9a84c',

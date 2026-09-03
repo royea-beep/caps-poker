@@ -1917,11 +1917,11 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setShowReferralModal(false)}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t().cancel}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginTop: rs(8) }}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>{t().cancel}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -2267,9 +2267,12 @@ const styles = StyleSheet.create({
 
   // Daily reward pill
   dailyPill: {
-    backgroundColor: 'rgba(255,215,0,0.12)',
+    // THE-LAST-THREE 2026-09-03 — this pill is a Pressable when the bonus is claimable, and it
+    // wore the winner cue rgba(255,215,0,·) while its own text is #e8c96a (wordmark gold family).
+    // Fill and border now match the text; #FFD700 stays reserved for WON.
+    backgroundColor: 'rgba(201,168,76,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.3)',
+    borderColor: 'rgba(201,168,76,0.30)',
     borderRadius: rv(24),
     paddingVertical: rs(10),
     paddingHorizontal: rs(22),

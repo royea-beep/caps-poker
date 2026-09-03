@@ -169,7 +169,23 @@ export default function SideMenu({
                 · Stats, Hand History, Settings → canonical: the Profile tab's menu rows.
               The drawer now holds only what has no other home: Battle Pass, Coaching, Tutorial,
               Language, and auth. (Leaderboard was already deduped to the Play tab.) */}
-          <MenuItem icon="⚔️" label={t().battlePass} onPress={() => navigate('/battle-pass')} />
+          {/* THE-LAST-THREE 2026-09-03 — BATTLE PASS ENTRY HIDDEN. The route, the screen, the store
+              and the config all stay; only this door is closed. Measured, not assumed:
+                · app_config.battle_pass_enabled = false since 2026-03-27, and NO client code reads
+                  it (the constant was dropped from constants/economyConfig.ts on 2026-08-31), so
+                  the flag could never have gated this link.
+                · stores/battlePassStore.ts claimFreeReward()/claimPremiumReward() only append the
+                  tier number to a local AsyncStorage array. They credit NO chips and unlock NO
+                  cosmetic. Tier 1 advertises "500 chips" and pays zero.
+                · upgradeToPremium() asks "Spend 5,000 chips to unlock the Premium track?" and then
+                  charges nothing at all.
+                · 0 of the 60 reward ids in constants/battlePassConfig.ts resolve anywhere in the
+                  app. (`ocean`/`emerald` exist in constants/homeThemes.ts as HOME BACKGROUNDS —
+                  a different namespace that no claim path touches.)
+              A screen that promises sixty rewards and delivers none is the "no half-done features
+              visible" release rule, so the link comes off the drawer until the rewards are real.
+              To restore: delete this comment and uncomment the line below. */}
+          {/* <MenuItem icon="⚔️" label={t().battlePass} onPress={() => navigate('/battle-pass')} /> */}
           <MenuItem icon="🎓" label={t().coaching} onPress={() => navigate('/coaching')} />
 
           <View style={styles.divider} />

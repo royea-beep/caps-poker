@@ -677,7 +677,11 @@ function VisualThemePicker() {
   const { skus, ready } = useOwnedSkus();
   const ALL_THEMES: { id: VisualTheme; label: string; tag: string; bg: string; accent: string; sku: string | null }[] = [
     { id: 'classic', label: 'CLASSIC', tag: 'Timeless', bg: '#1a0800', accent: '#c9a84c', sku: null },
-    { id: 'fiveo',   label: 'FIVE-O',  tag: 'Arcade',   bg: '#5c0000', accent: '#FFD700', sku: null },
+    // THE-LAST-THREE 2026-09-03 — accent was #FFD700 (the winner cue) on a Pressable tile; the
+    // loop caught it in both engines at all four widths. #4FD6A8 is what `visual.fiveo`
+    // actually paints as its accent, so the swatch is now both cue-free and truthful about
+    // the accent. (The `bg` here is still the old red — see the note in app/theme-pick.tsx.)
+    { id: 'fiveo',   label: 'FIVE-O',  tag: 'Arcade',   bg: '#5c0000', accent: '#4FD6A8', sku: null },
     { id: 'streetStencil', label: 'STREET', tag: 'Concrete', bg: '#2b2b30', accent: '#F2C230', sku: 'buy_table_theme' },
   ];
   const options = ALL_THEMES.filter((o) => isUnlocked(o.sku, skus));
@@ -1761,8 +1765,10 @@ const orientationStyles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   tileLabelActive: {
-    // PR-J: brighten the active gold so it stays distinguishable from inactive cream.
-    color: '#FFD700',
+    // PR-J: brighten the active label so it stays distinguishable from inactive cream.
+    // THE-LAST-THREE 2026-09-03 — was #FFD700, the winner cue, on a tile whose active border and
+    // check mark are already COLORS.mint. One accent per state.
+    color: COLORS.mint,
   },
   check: {
     fontSize: rf(10),

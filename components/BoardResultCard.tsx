@@ -329,7 +329,10 @@ const styles = StyleSheet.create({
   // and the shrink is a no-op (the lesson from the settings overflow).
   handName: { color: COLORS.textMuted, fontSize: rf(10, 10), fontWeight: '600', marginLeft: rs(4), flex: 1, flexShrink: 1, minWidth: 0 },
   handNameWin: { color: COLORS.goldLight, fontWeight: '800' },
-  shareBtn: { paddingHorizontal: rs(8), paddingVertical: 3, borderRadius: rv(8), backgroundColor: 'rgba(255,215,0,0.12)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)' },
+  // THE-LAST-THREE 2026-09-03 — this share Pressable sat gold-on-gold beside `boardResultWin`
+  // (#FFD700, the winner cue) two lines below, so the control and the WON signal competed in
+  // the same card. It now takes the mint action accent, matching ShareSection's share controls.
+  shareBtn: { paddingHorizontal: rs(8), paddingVertical: 3, borderRadius: rv(8), backgroundColor: 'rgba(79,214,168,0.12)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.30)' },
   shareBtnText: { fontSize: rf(13) },
   offscreen: { position: 'absolute', left: -9999, top: 0, opacity: 0, zIndex: -1 },
   boardResultRow: { alignItems: 'center', paddingTop: rs(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', marginTop: rs(4) },
