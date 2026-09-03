@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore, VisualTheme } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
+import { t, getLanguage } from '../utils/i18n';
 
 export default function ThemePickScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function ThemePickScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>CAPS POKER</Text>
-      <Text style={styles.subtitle}>CHOOSE YOUR STYLE</Text>
+      <Text style={styles.subtitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setChooseStyle}</Text>
 
       <View style={styles.cardsRow}>
         {/* CLASSIC */}
@@ -34,17 +35,17 @@ export default function ThemePickScreen() {
           style={styles.card}
           onPress={() => pick('classic')}
           accessibilityRole="button"
-          accessibilityLabel="Choose Classic style, timeless dark gold, elegant look"
+          accessibilityLabel={`${t().setThemeTimeless} — ${t().setThemeClassicDesc.replace(String.fromCharCode(10), ", ")}`} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
         >
           <View style={styles.classicPreview}>
             <Text style={styles.classicPreviewText}>♠</Text>
             <View style={styles.classicPreviewBar} />
           </View>
           <Text style={styles.cardName}>CLASSIC</Text>
-          <Text style={styles.cardTag}>Timeless</Text>
-          <Text style={styles.cardDesc}>Dark gold{'\n'}Elegant look</Text>
+          <Text style={styles.cardTag} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeTimeless}</Text>
+          <Text style={styles.cardDesc} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeClassicDesc}</Text>
           <View style={styles.selectBtn}>
-            <Text style={styles.selectBtnText}>SELECT</Text>
+            <Text style={styles.selectBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSelect}</Text>
           </View>
         </Pressable>
 
@@ -53,40 +54,41 @@ export default function ThemePickScreen() {
           style={[styles.card, styles.fiveoCard]}
           onPress={() => pick('fiveo')}
           accessibilityRole="button"
-          accessibilityLabel="Choose Five-O style, arcade red felt, bold action"
+          accessibilityLabel={`${t().setThemeModern} — ${t().setThemeFiveoDesc.replace(String.fromCharCode(10), ", ")}`} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
         >
           <View style={styles.fiveoPreview}>
             <Text style={styles.fiveoPreviewText}>♠</Text>
             <View style={styles.fiveoPreviewBar} />
           </View>
           <Text style={[styles.cardName, { color: '#4FD6A8' }]}>FIVE-O</Text>
-          <Text style={[styles.cardTag, { color: '#4FD6A8' }]}>Arcade</Text>
-          <Text style={styles.cardDesc}>Red felt{'\n'}Bold action</Text>
+          <Text style={[styles.cardTag, { color: '#4FD6A8' }]} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeModern}</Text>
+          <Text style={styles.cardDesc} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeFiveoDesc}</Text>
           {/* THE-LAST-THREE 2026-09-03 — this SELECT was a SOLID #4FD6A8 fill. #4FD6A8 is the
               winner cue; no control may wear it. Both SELECT controls now share one neutral
               chrome, and FIVE-O's identity stays where it belongs: the preview swatch, the
               gold card name/tag, and the card border. */}
           <View style={styles.selectBtn}>
-            <Text style={styles.selectBtnText}>SELECT</Text>
+            <Text style={styles.selectBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSelect}</Text>
           </View>
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>Can be changed anytime in Settings</Text>
+      <Text style={styles.hint} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setChangeAnytime}</Text>
     </SafeAreaView>
   );
 }
 
-// THE-LAST-THREE 2026-09-03 — FIVE-O's swatch accent was #4FD6A8, the WINNER cue, and the whole
+// THE-LAST-THREE 2026-09-03 — FIVE-O's swatch accent was #FFD700, THE WINNER CUE, and the whole
 // card is a Pressable, so the loop measured it as gold ON a control in both engines at all four
-// widths. Checked against what the theme actually paints (constants/paintThemes.ts `visual.fiveo`):
-//   accent #4FD6A8 · surface #1A1A2E · boardGold #c9a84c
-// FIVE-O renders NO #4FD6A8 anywhere. The swatch was advertising a colour the theme does not
-// have, and that colour was the one reserved for WON. It now uses the theme's own accent token.
-// ⚠️ STILL WRONG, LEFT FOR A DECISION: the preview box is #5c0000 and the copy says "Red felt",
-// while `visual.fiveo` paints surface #1A1A2E (navy). Same class of error as the maroon-felt line
-// corrected in CLAUDE.md — a swatch describing an app that no longer exists. Not changed here
-// because rewriting product copy is outside a gold-on-controls pass.
+// widths. (A previous edit here rewrote this very note with a blanket colour replace and left it
+// claiming the cue was #4FD6A8. It is not. #FFD700 is the cue; #4FD6A8 is the mint that replaced
+// it. Corrected 2026-09-03.)
+//
+// FULL-I18N 2026-09-03 — the rest of the swatch is now corrected too. constants/paintThemes.ts
+// `visual.fiveo` paints:   accent #4FD6A8 · surface #1A1A2E (navy) · boardGold #c9a84c
+// The preview box was #5c0000 and the copy said "Red felt / Bold action". FIVE-O has not been red
+// for a long time, so the swatch was describing a theme that no longer exists — the same class of
+// error as the maroon-felt line corrected in CLAUDE.md. Preview and copy now match the paint.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
   fiveoPreview: {
     width: 60,
     height: 50,
-    backgroundColor: '#5c0000',
+    backgroundColor: '#1A1A2E',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#4FD6A8',

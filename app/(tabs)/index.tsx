@@ -381,7 +381,7 @@ function DailyRewardModal({
         style={StyleSheet.absoluteFillObject}
         onPress={() => dismiss(onDismiss)}
         accessibilityRole="button"
-        accessibilityLabel="Close dialog"
+        accessibilityLabel={t().homeCloseDialog} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
       />
       <AnimatedRN.View style={[dailyRewardModalStyles.card, { transform: [{ scale }] }]}>
         <Text style={dailyRewardModalStyles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🎁</Text>
@@ -389,7 +389,7 @@ function DailyRewardModal({
           {isHE ? 'פרס יומי!' : 'Daily Reward!'}
         </Text>
         <Text style={dailyRewardModalStyles.chips}>
-          {`+${(reward ?? 0).toLocaleString()} chips`}
+          {`+${(reward ?? 0).toLocaleString()} ${t().profileChips}`}
         </Text>
         {streak > 1 && (
           <Text style={dailyRewardModalStyles.streak} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={isHE ? `${streak} ימים ברצף` : `${streak}-day streak!`}>
@@ -541,7 +541,7 @@ export default function HomeScreen() {
 
   const user = useAuthUser();
   const prevUserRef = useRef<typeof user>(undefined);
-  const playerName = useGameStore((s) => s.playerName) || 'Player';
+  const playerName = useGameStore((s) => s.playerName) || t().playerFallback;
   // (DEDUPE-QA) hasStartedGame + WebLandingHero removed — web lands straight in the app.
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1323,17 +1323,17 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
-                accessibilityLabel="Get chips"
+                accessibilityLabel={t().homeGetChipsA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipGetBtn}
               >
-                <Text style={styles.topChipGetText}>GET CHIPS</Text>
+                <Text style={styles.topChipGetText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeGetChips}</Text>
               </Pressable>
             ) : (
               <Pressable
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
-                accessibilityLabel="Open chip shop"
+                accessibilityLabel={t().homeOpenChipShop} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipBtn}
               >
@@ -1360,7 +1360,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setMenuOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="Open menu"
+              accessibilityLabel={t().homeOpenMenu} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -1469,7 +1469,7 @@ export default function HomeScreen() {
         <ChipButton
           variant="primary"
           onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
-          accessibilityLabel="Play online, open the multiplayer lobby"
+          accessibilityLabel={t().homePlayOnlineA11y}
           style={{ marginHorizontal: rs(16), marginTop: rs(12) }}
         >
           {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
@@ -1562,10 +1562,10 @@ export default function HomeScreen() {
             style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: rs(6), paddingVertical: rs(8), paddingHorizontal: rs(14), marginTop: rs(10) }}
             onPress={handleFriendChallenge}
             accessibilityRole="button"
-            accessibilityLabel="Challenge a Friend"
+            accessibilityLabel={t().homeChallengeFriendA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(13), fontWeight: '600' }}>⚔️ Challenge a Friend</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(13), fontWeight: '600' }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeChallengeFriend}</Text>
           </Pressable>
         )}
 
@@ -1600,10 +1600,10 @@ export default function HomeScreen() {
               setShowCompleteBanner(false);
             }}
             accessibilityRole="button"
-            accessibilityLabel="Share your COMPLETE win"
+            accessibilityLabel={t().homeShareCompleteA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
             style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1.5, borderColor: '#c9a84c', borderRadius: rv(12), paddingVertical: rs(10), paddingHorizontal: rs(16), marginBottom: rs(4), alignItems: 'center' }}
           >
-            <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }}>🏆 You got COMPLETE! Share it?</Text>
+            <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeShareComplete}</Text>
           </Pressable>
         )}
 
@@ -1612,7 +1612,7 @@ export default function HomeScreen() {
         {justClaimed ? (
           <AnimatedRN.View style={{ opacity: ackAnim }} accessibilityLiveRegion="polite" testID="daily-claimed-ack">
             <View style={[styles.dailyPill, styles.dailyPillClaim]}>
-              <Text style={styles.dailyPillText}>✅ +{justClaimed.reward} claimed · Day {justClaimed.streak} streak</Text>
+              <Text style={styles.dailyPillText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeDailyClaimed(justClaimed.reward, justClaimed.streak)}</Text>
             </View>
           </AnimatedRN.View>
         ) : canClaim ? (
@@ -1620,13 +1620,13 @@ export default function HomeScreen() {
             <Pressable
               onPress={handleClaimDailyReward}
               accessibilityRole="button"
-              accessibilityLabel="Claim daily bonus"
+              accessibilityLabel={t().homeDailyClaimA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               style={[styles.dailyPill, styles.dailyPillClaim]}
             >
               {dailyRewardStreak >= 6 ? (
-                <Text style={styles.dailyPillText}>🔥 Day {dailyRewardStreak + 1} streak! +500 chips!</Text>
+                <Text style={styles.dailyPillText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeDailyStreakClaim(dailyRewardStreak + 1, 500)}</Text>
               ) : (
-                <Text style={styles.dailyPillText}>🎁 Claim daily bonus · Day {dailyRewardStreak + 1}</Text>
+                <Text style={styles.dailyPillText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeDailyClaim(dailyRewardStreak + 1)}</Text>
               )}
             </Pressable>
           </AnimatedRN.View>
@@ -1636,10 +1636,10 @@ export default function HomeScreen() {
               const nextStreak = dailyRewardStreak + 1;
               const nextReward = calculateDailyReward(nextStreak);
               const isMilestone = nextStreak === 7 || nextStreak === 30;
-              const milestoneLabel = nextStreak === 30 ? ' (Monthly bonus!)' : nextStreak === 7 ? ' (Weekly bonus!)' : '';
+              const milestoneLabel = nextStreak === 30 ? t().homeMilestoneMonthly : nextStreak === 7 ? t().homeMilestoneWeekly : '';
               return (
-                <Text style={styles.dailyStreakInfoText} accessibilityLabel={`Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}>
-                  {`🔥 Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}
+                <Text style={styles.dailyStreakInfoText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={`${t().dailyStreakMsg(dailyRewardStreak, nextReward)}${milestoneLabel}`}>
+                  {`🔥 ${t().dailyStreakMsg(dailyRewardStreak, nextReward)}${milestoneLabel}`}
                 </Text>
               );
             })()}
@@ -1649,9 +1649,9 @@ export default function HomeScreen() {
         {/* Win streak — beginner+ only */}
         {show_streak && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
-            <Text style={styles.homeStreakText} accessibilityLabel={`${currentWinStreak} wins in a row`}>🔥 {currentWinStreak} win streak</Text>
+            <Text style={styles.homeStreakText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homeWinStreakA11y(currentWinStreak)}>{t().homeWinStreak(currentWinStreak)}</Text>
             {bestWinStreak > currentWinStreak && (
-              <Text style={styles.homeStreakBest}> · Best: {bestWinStreak}</Text>
+              <Text style={styles.homeStreakBest} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}> · {t().bestStreakLabel(bestWinStreak)}</Text>
             )}
           </View>
         )}
@@ -1659,11 +1659,11 @@ export default function HomeScreen() {
         {/* Play of the Day card (D10) — only shown when player name is known */}
         {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
-            <Text style={styles.potdTitle} accessibilityRole="header" accessibilityLabel="Play of the Day">🏆 Play of the Day</Text>
+            <Text style={styles.potdTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homePotdA11y}>{t().homePotd}</Text>
             <Text style={styles.potdPlayer} numberOfLines={1}>
-              {potd.player} · {potd.data.hand_name ?? 'Winning hand'}
+              {potd.player} · {potd.data.hand_name ?? t().homePotdWinningHand}
             </Text>
-            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLabel={`Pot: ${(potd.data.pot_won ?? 0).toLocaleString()} chips`}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homePotdPotA11y((potd.data.pot_won ?? 0).toLocaleString())}>{t().homePotdPot((potd.data.pot_won ?? 0).toLocaleString())}</Text>}
           </View>
         )}
 
@@ -1674,7 +1674,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/hand-history' as any)}
             accessibilityRole="button"
-            accessibilityLabel={`Hand history, ${totalHandCount} hands saved`}
+            accessibilityLabel={t().homeHandsSavedA11y(totalHandCount)} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.statsBtn}
           >
@@ -1690,7 +1690,7 @@ export default function HomeScreen() {
                 handsPlayed, AsyncStorage caps_games_played, and this history length — and only
                 this one is displayed. Same shape as "+75 chips" and the 2,530 balance: correct
                 behaviour, misleading presentation. */}
-            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands saved</Text>
+            <Text style={styles.statsBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeHandsSaved(totalHandCount)}</Text>
           </Pressable>
         )}
 
@@ -1702,12 +1702,12 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push('/achievements' as any)}
               accessibilityRole="button"
-              accessibilityLabel="My Progress"
+              accessibilityLabel={t().homeMyProgress} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>My Progress</Text>
+              <Text style={homeDataCardStyles.label} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeMyProgress}</Text>
               <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
-              <Text style={homeDataCardStyles.sub}>Achievements · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} win rate</Text>
+              <Text style={homeDataCardStyles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeProgressSub(handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—')}</Text>
             </Pressable>
             <Pressable
               // Re-pointed 2026-07-20 /missions → /leaderboard: the Missions claim path
@@ -1715,15 +1715,15 @@ export default function HomeScreen() {
               // display; tap now goes to the leaderboard, never to the broken claim screen.
               onPress={() => router.push('/leaderboard' as any)}
               accessibilityRole="button"
-              accessibilityLabel="Competition"
+              accessibilityLabel={t().homeCompetition} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>Competition</Text>
+              <Text style={homeDataCardStyles.label} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeCompetition}</Text>
               {/* Was `missionData.progress/total` over a "Missions ·" sub-label. Missions are
                   retired, so the value showed a permanent dash under the name of a feature that no
                   longer exists. The card has always opened the leaderboard; it now says so. */}
               <Text style={homeDataCardStyles.value}>{leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank}` : '—'}</Text>
-              <Text style={homeDataCardStyles.sub}>{leaderboardData && leaderboardData.rank > 0 ? 'Leaderboard rank' : 'Play to be ranked'}</Text>
+              <Text style={homeDataCardStyles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{leaderboardData && leaderboardData.rank > 0 ? t().homeLeaderboardRank : t().homePlayToBeRanked}</Text>
             </Pressable>
           </View>
         )}
@@ -1731,19 +1731,19 @@ export default function HomeScreen() {
         {/* Activity Feed + Recent Hands — veteran only */}
         {show_veteran && (
           <View style={styles.feedSection}>
-            <Text style={styles.feedTitle} accessibilityRole="header" accessibilityLabel="Recent wins">🏆 Recent Wins</Text>
+            <Text style={styles.feedTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homeRecentWinsA11y}>{t().homeRecentWins}</Text>
             {activityFeed.length === 0 ? (
-              <Text style={styles.feedEmpty}>Play Sit and Go to see your history</Text>
+              <Text style={styles.feedEmpty} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeNoHistoryYet}</Text>
             ) : (
               activityFeed.map((item, i) => {
                 // The RPC decides this now; the client no longer sees either device_id.
                 const won = item.won;
                 return (
                   <View key={i} style={styles.feedItem}>
-                    <Text style={styles.feedItemText} accessibilityLabel={won ? `You won Sit and Go — +${item.chips_won ?? 0} chips` : `Sit and Go — next time`}>
+                    <Text style={styles.feedItemText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={won ? t().homeSitAndGoWinA11y(item.chips_won ?? 0) : t().homeSitAndGoLossA11y}>
                       {won
-                        ? `✅ Won Sit and Go — +${item.chips_won ?? 0} 💰`
-                        : `❌ Sit and Go — next time`}
+                        ? t().homeSitAndGoWin(item.chips_won ?? 0)
+                        : t().homeSitAndGoLoss}
                     </Text>
                     <Text style={styles.feedItemTime}>
                       {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}
@@ -1758,7 +1758,7 @@ export default function HomeScreen() {
         {/* Recent Hands — veteran only */}
         {show_veteran && recentHands.length > 0 && (
           <View style={{ width: '100%', marginTop: 4 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Recent Hands</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeRecentHands}</Text>
             {recentHands.map((hand, i) => {
               const boardsWon = hand.boards.filter(b => b.winner === 'player').length;
               const effPct = Math.round(boardsWon / hand.boardCount * 100);
@@ -1769,14 +1769,14 @@ export default function HomeScreen() {
                   key={hand.id}
                   onPress={() => router.push(`/hand-history?handId=${hand.id}` as any)}
                   accessibilityRole="button"
-                  accessibilityLabel="View hand history"
+                  accessibilityLabel={t().homeViewHandHistory} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
                 >
                   <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
                     {boardsWon}/{hand.boardCount} boards
                   </Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rs(12) }}>{effPct}% eff</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rs(12) }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeEff(effPct)}</Text>
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11) }}>{timeStr}</Text>
                 </Pressable>
               );
@@ -1788,26 +1788,26 @@ export default function HomeScreen() {
         <View style={styles.referralRow}>
           {myReferralCode ? (
             <View style={styles.referralCard}>
-              <Text style={styles.referralCardLabel}>YOUR CODE</Text>
+              <Text style={styles.referralCardLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeYourCode}</Text>
               <Text style={styles.referralCardCode}>{myReferralCode}</Text>
               <View style={styles.referralCardButtons}>
                 <Pressable
                   onPress={handleCopyCode}
                   accessibilityRole="button"
-                  accessibilityLabel="Copy referral code"
+                  accessibilityLabel={t().homeCopyA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.referralActionBtn}
                 >
-                  <Text style={styles.referralActionBtnText}>📋 Copy</Text>
+                  <Text style={styles.referralActionBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeCopy}</Text>
                 </Pressable>
                 <Pressable
                   onPress={handleInviteFriends}
                   accessibilityRole="button"
-                  accessibilityLabel="Share referral code"
+                  accessibilityLabel={t().homeShareA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.referralActionBtn}
                 >
-                  <Text style={styles.referralActionBtnText}>📤 Share</Text>
+                  <Text style={styles.referralActionBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeShare}</Text>
                 </Pressable>
               </View>
             </View>
@@ -1848,7 +1848,7 @@ export default function HomeScreen() {
           marginTop: rs(18),
           marginBottom: rs(6),
         }}>
-          {"Free play | Virtual chips only | No real-money gambling | 18+"}
+          {t().legalLine}
         </Text>
 
       </ScrollView>
@@ -1881,10 +1881,10 @@ export default function HomeScreen() {
             style={styles.modalCard}
             onPress={() => {}}
             accessibilityRole="none"
-            accessibilityLabel="Invite code dialog"
+            accessibilityLabel={t().homeInviteDialogA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
           >
-            <Text style={styles.modalTitle} accessibilityRole="header" accessibilityLabel="Enter Invite Code">🎁 Enter Invite Code</Text>
-            <Text style={styles.modalSub}>Enter the code your friend shared</Text>
+            <Text style={styles.modalTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homeEnterInviteCode}>{t().homeEnterInviteCode}</Text>
+            <Text style={styles.modalSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeEnterInviteCodeSub}</Text>
             <TextInput
               style={styles.codeInput}
               value={referralCodeInput}
@@ -1902,17 +1902,17 @@ export default function HomeScreen() {
                 so it actively taught the wrong length. The client is deliberately permissive
                 (constants/appLinks.ts): show what has been typed, assert no fixed length. */}
             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rf(11), alignSelf: 'flex-end', marginTop: rs(-4) }}>
-              {referralCodeInput.length} characters
+              {t().homeCharacters(referralCodeInput.length)}
             </Text>
             <Pressable
               style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}
               onPress={handleRedeemCode}
               accessibilityRole="button"
-              accessibilityLabel="Redeem invite code for 100 chips"
+              accessibilityLabel={t().homeRedeemA11y(100)} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               accessibilityState={{ disabled: referralSubmitting, busy: referralSubmitting }}
               disabled={referralSubmitting}
             >
-              <Text style={styles.redeemBtnText}>{referralSubmitting ? 'Checking...' : 'Redeem +100 💰'}</Text>
+              <Text style={styles.redeemBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{referralSubmitting ? t().homeChecking : t().homeRedeemBtn(100)}</Text>
             </Pressable>
             <Pressable
               onPress={() => setShowReferralModal(false)}

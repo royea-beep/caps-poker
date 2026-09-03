@@ -1011,7 +1011,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
               )}
               {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
                 <View style={styles.completeBanner}>
-                  <Text style={styles.completeBannerText}>COMPLETE!</Text>
+                  <Text style={styles.completeBannerText}>{t().completeShort}</Text>
                   {/* CN-LEAK 2026-08-08 — this sub-line was gated ONLY on sweeping every board,
                       with no isPractice guard, while the same component guards the chip counter
                       (:889), FloatingChips (:974) and the pot line (:1014). "+50% bonus" is a

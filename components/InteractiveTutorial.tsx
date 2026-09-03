@@ -214,7 +214,7 @@ function Step3Visual() {
           { transform: [{ scale: badgeScale }], opacity: badgeOpacity },
         ]}
       >
-        <Text style={vis.completeBadgeText}>🏆 COMPLETE +50%</Text>
+        <Text style={vis.completeBadgeText}>{t().tutorialCompleteBadge}</Text>
       </Animated.View>
     </View>
   );

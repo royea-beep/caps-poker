@@ -1,0 +1,7213 @@
+{
+ "dist": "/tmp/webi18n",
+ "ts": "2026-09-03T10:23:10.965Z",
+ "engines": {
+  "chromium": {
+   "canary": {
+    "hebrew_caught": true,
+    "latin_caught": true,
+    "hidden_not_counted": true
+   },
+   "runs": {
+    "en-320-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 58
+    },
+    "en-320-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend"
+     ],
+     "nodes": 23
+    },
+    "en-320-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings"
+     ],
+     "nodes": 33
+    },
+    "en-320-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-320-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-320-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-320-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-320-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-320-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-320-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 58
+    },
+    "en-320-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-320-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-320-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-320-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-320-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-320-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-320-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "en-320-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-320-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "en-320-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner."
+     ],
+     "nodes": 8
+    },
+    "en-320-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Play 5 games",
+      "Win 3 in a row",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "en-320-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-320-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-320-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-320-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-320-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "en-375-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 58
+    },
+    "en-375-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend"
+     ],
+     "nodes": 23
+    },
+    "en-375-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings"
+     ],
+     "nodes": 33
+    },
+    "en-375-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-375-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-375-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-375-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-375-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-375-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-375-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 58
+    },
+    "en-375-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-375-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-375-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-375-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-375-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-375-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-375-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "en-375-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-375-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "en-375-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner."
+     ],
+     "nodes": 8
+    },
+    "en-375-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Win 5 boards",
+      "Win all boards",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "en-375-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-375-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-375-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-375-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-375-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "en-393-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 61
+    },
+    "en-393-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 26
+    },
+    "en-393-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 36
+    },
+    "en-393-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-393-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-393-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-393-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-393-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-393-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-393-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 61
+    },
+    "en-393-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-393-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-393-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-393-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-393-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-393-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-393-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "en-393-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-393-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 16
+    },
+    "en-393-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner.",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 11
+    },
+    "en-393-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 5 games",
+      "Win with a Flush",
+      "Win 5 boards",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "en-393-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-393-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-393-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-393-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-393-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "en-430-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 61
+    },
+    "en-430-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 26
+    },
+    "en-430-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 36
+    },
+    "en-430-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-430-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-430-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-430-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-430-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-430-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-430-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 61
+    },
+    "en-430-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-430-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-430-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-430-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-430-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-430-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-430-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "en-430-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-430-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 16
+    },
+    "en-430-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner.",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 11
+    },
+    "en-430-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Win 5 boards",
+      "Play 3 games",
+      "Win with a Flush",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "en-430-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-430-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-430-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-430-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-430-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "he-320-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 58
+    },
+    "he-320-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר"
+     ],
+     "latin": [],
+     "nodes": 23
+    },
+    "he-320-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 33
+    },
+    "he-320-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-320-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-320-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-320-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-320-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-320-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-320-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 58
+    },
+    "he-320-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-320-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-320-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-320-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-320-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-320-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-320-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "he-320-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-320-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "he-320-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד."
+     ],
+     "latin": [],
+     "nodes": 8
+    },
+    "he-320-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Win all boards",
+      "Win 5 boards",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "he-320-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-320-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-320-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-320-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-320-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    },
+    "he-375-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 58
+    },
+    "he-375-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר"
+     ],
+     "latin": [],
+     "nodes": 23
+    },
+    "he-375-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 33
+    },
+    "he-375-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-375-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-375-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-375-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-375-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-375-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-375-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 58
+    },
+    "he-375-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-375-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-375-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-375-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-375-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-375-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-375-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "he-375-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-375-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "he-375-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד."
+     ],
+     "latin": [],
+     "nodes": 8
+    },
+    "he-375-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Win all boards",
+      "Play 5 games",
+      "Play 3 games",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "he-375-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-375-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-375-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-375-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-375-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    },
+    "he-393-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-393-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר",
+      "בית",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 26
+    },
+    "he-393-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות",
+      "בית",
+      "שחק"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 36
+    },
+    "he-393-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-393-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-393-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-393-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-393-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-393-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-393-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-393-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-393-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-393-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-393-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-393-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-393-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-393-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "he-393-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-393-/friends": {
+     "hebrew": [
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 16
+    },
+    "he-393-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 11
+    },
+    "he-393-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Win 3 in a row",
+      "Play 3 games",
+      "Win 5 boards",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "he-393-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-393-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-393-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-393-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-393-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    },
+    "he-430-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-430-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר",
+      "בית",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 26
+    },
+    "he-430-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות",
+      "בית",
+      "שחק"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 36
+    },
+    "he-430-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-430-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-430-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-430-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-430-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-430-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-430-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-430-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-430-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-430-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-430-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-430-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-430-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-430-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 32
+    },
+    "he-430-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-430-/friends": {
+     "hebrew": [
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 16
+    },
+    "he-430-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 11
+    },
+    "he-430-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Win 5 boards",
+      "Win with a Flush",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "he-430-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-430-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-430-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-430-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-430-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    }
+   }
+  },
+  "webkit": {
+   "canary": {
+    "hebrew_caught": true,
+    "latin_caught": true,
+    "hidden_not_counted": true
+   },
+   "runs": {
+    "en-320-/": {
+     "hebrew": [],
+     "latin": [],
+     "nodes": 0
+    },
+    "en-320-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend"
+     ],
+     "nodes": 23
+    },
+    "en-320-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings"
+     ],
+     "nodes": 33
+    },
+    "en-320-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-320-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-320-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-320-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-320-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-320-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-320-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 58
+    },
+    "en-320-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-320-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-320-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-320-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-320-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-320-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-320-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "en-320-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-320-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "en-320-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner."
+     ],
+     "nodes": 8
+    },
+    "en-320-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 5 games",
+      "Play an online game",
+      "Play 3 games",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "en-320-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-320-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-320-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-320-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-320-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "en-375-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 61
+    },
+    "en-375-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend"
+     ],
+     "nodes": 23
+    },
+    "en-375-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings"
+     ],
+     "nodes": 33
+    },
+    "en-375-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-375-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-375-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-375-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-375-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-375-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-375-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18"
+     ],
+     "nodes": 58
+    },
+    "en-375-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-375-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-375-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-375-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-375-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-375-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-375-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "en-375-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-375-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "en-375-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner."
+     ],
+     "nodes": 8
+    },
+    "en-375-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Beat Hard bot",
+      "Win 3 in a row",
+      "Play 5 games",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "en-375-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-375-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-375-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-375-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-375-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "en-393-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 64
+    },
+    "en-393-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 26
+    },
+    "en-393-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 36
+    },
+    "en-393-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-393-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-393-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-393-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-393-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-393-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-393-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 61
+    },
+    "en-393-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-393-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-393-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-393-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-393-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-393-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-393-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "en-393-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-393-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 16
+    },
+    "en-393-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner.",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 11
+    },
+    "en-393-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Win with a Flush",
+      "Win 5 boards",
+      "Beat Hard bot",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "en-393-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-393-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-393-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-393-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-393-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "en-430-/": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 64
+    },
+    "en-430-/play": {
+     "hebrew": [],
+     "latin": [
+      "PLAY",
+      "Choose your game mode",
+      "Single Player",
+      "Practice vs bots · 4 boards",
+      "Multiplayer Lobby",
+      "Join an open public table · auto-start when full",
+      "Quick Private Table",
+      "One-off table · share a code or join one",
+      "Leaderboard",
+      "See where you rank globally",
+      "Invite Friends",
+      "Share your code · +300 💰 per friend",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 26
+    },
+    "en-430-/profile": {
+     "hebrew": [],
+     "latin": [
+      "PROFILE",
+      "Player",
+      "HANDS",
+      "WIN RATE",
+      "STREAK",
+      "CHIPS",
+      "Achievements",
+      "Hand History",
+      "Detailed Stats",
+      "Cups",
+      "Settings",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 36
+    },
+    "en-430-/settings": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "SETTINGS",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "Timeless",
+      "FIVE-O",
+      "Modern",
+      "PROFILE",
+      "Player 1",
+      "Shown on leaderboard · Tap to edit",
+      "EDIT",
+      "GAMEPLAY",
+      "Players",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Skip board-by-board reveal",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "Suit Colors",
+      "2-color: red / black",
+      "Colorblind Mode",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "Sound Volume",
+      "Vibration",
+      "Ambient Sound",
+      "Casino background music",
+      "Push Notifications",
+      "TOOLS",
+      "Report a bug",
+      "📖 Show Tutorial Again",
+      "BETA MODE",
+      "Version",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Privacy Policy",
+      "Terms of Use",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "en-430-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-430-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "en-430-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "en-430-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-430-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "en-430-/missions": {
+     "hebrew": [],
+     "latin": [
+      "Player",
+      "chips",
+      "Friends",
+      "COACHING",
+      "TUTORIAL",
+      "🌐 LANGUAGE: English",
+      "SIGN IN",
+      "ROYAL FLUSH",
+      "Play Online",
+      "Real players · instant bot tables",
+      "Practice vs bots",
+      "Four cards on every board. Every board plays at once. Win th",
+      "🎁 Claim daily bonus · Day 1",
+      "Free play | Virtual chips only | No real-money gambling | 18",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 61
+    },
+    "en-430-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-430-/hand-history": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "All (0)",
+      "Wins (0)",
+      "Losses (0)",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "en-430-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "en-430-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "en-430-/theme-pick": {
+     "hebrew": [],
+     "latin": [
+      "Choose your style",
+      "CLASSIC",
+      "Timeless",
+      "Dark gold\nElegant look",
+      "SELECT",
+      "FIVE-O",
+      "Modern",
+      "Navy table\nMint accents",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 13
+    },
+    "en-430-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "en-430-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "en-430-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "en-430-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 16
+    },
+    "en-430-/cups": {
+     "hebrew": [],
+     "latin": [
+      "CUPS",
+      "0/0 cups · 4 cards. Every board. 1 winner.",
+      "Home",
+      "Play",
+      "Profile"
+     ],
+     "nodes": 11
+    },
+    "en-430-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Beat Hard bot",
+      "Win all boards",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "en-430-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "en-430-/results": {
+     "hebrew": [],
+     "latin": [
+      "This hand is no longer available.",
+      "Back to home"
+     ],
+     "nodes": 2
+    },
+    "en-430-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "en-430-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "en-430-/game": {
+     "hebrew": [],
+     "latin": [
+      "Place 16 cards",
+      "Board 1",
+      "Auto-Place",
+      "Board 2",
+      "Board 3",
+      "Board 4",
+      "YOUR HAND",
+      "Auto-Place ALL",
+      "Cancel",
+      "Confirm"
+     ],
+     "nodes": 117
+    },
+    "he-320-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-320-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר"
+     ],
+     "latin": [],
+     "nodes": 23
+    },
+    "he-320-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 33
+    },
+    "he-320-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-320-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-320-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-320-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-320-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-320-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-320-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 58
+    },
+    "he-320-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-320-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-320-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-320-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-320-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-320-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-320-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "he-320-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-320-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "he-320-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד."
+     ],
+     "latin": [],
+     "nodes": 8
+    },
+    "he-320-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Win 5 boards",
+      "Win 3 in a row",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "he-320-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-320-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-320-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-320-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-320-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    },
+    "he-375-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-375-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר"
+     ],
+     "latin": [],
+     "nodes": 23
+    },
+    "he-375-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 33
+    },
+    "he-375-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-375-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-375-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-375-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-375-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-375-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-375-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי "
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 58
+    },
+    "he-375-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-375-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-375-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-375-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-375-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-375-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-375-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "he-375-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-375-/friends": {
+     "hebrew": [],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 13
+    },
+    "he-375-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד."
+     ],
+     "latin": [],
+     "nodes": 8
+    },
+    "he-375-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Win 5 boards",
+      "Win all boards",
+      "WEEKLY MISSION",
+      "Win 15 games"
+     ],
+     "nodes": 172
+    },
+    "he-375-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-375-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-375-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-375-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-375-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    },
+    "he-393-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 64
+    },
+    "he-393-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר",
+      "בית",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 26
+    },
+    "he-393-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות",
+      "בית",
+      "שחק"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 36
+    },
+    "he-393-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-393-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-393-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-393-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-393-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-393-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-393-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-393-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-393-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-393-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-393-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-393-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-393-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-393-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "he-393-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-393-/friends": {
+     "hebrew": [
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 16
+    },
+    "he-393-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 11
+    },
+    "he-393-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Beat Hard bot",
+      "Play an online game",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "he-393-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-393-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-393-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-393-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-393-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    },
+    "he-430-/": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 64
+    },
+    "he-430-/play": {
+     "hebrew": [
+      "שחק",
+      "בחר מצב משחק",
+      "שחקן יחיד",
+      "תרגול מול בוטים · 4 בורדים",
+      "לובי רב-משתתפים",
+      "הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא",
+      "שולחן פרטי מהיר",
+      "שולחן חד-פעמי · שתף קוד או הצטרף עם קוד",
+      "לוח תוצאות",
+      "ראה את הדירוג שלך גלובלית",
+      "הזמן חברים",
+      "שתף את הקוד שלך · +300 💰 לכל חבר",
+      "בית",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 26
+    },
+    "he-430-/profile": {
+     "hebrew": [
+      "פרופיל",
+      "ידיים",
+      "אחוז ניצחון",
+      "רצף",
+      "צ׳יפים",
+      "הישגים",
+      "היסטוריית ידיים",
+      "סטטיסטיקות מפורטות",
+      "כוסות",
+      "הגדרות",
+      "בית",
+      "שחק"
+     ],
+     "latin": [
+      "Player"
+     ],
+     "nodes": 36
+    },
+    "he-430-/settings": {
+     "hebrew": [
+      "הגדרות",
+      "נצחי",
+      "מודרני",
+      "מוצג בלוח המנצחים · הקש לעריכה",
+      "עריכה",
+      "שחקנים",
+      "דלג על החשיפה בורד-אחר-בורד",
+      "צבעי הסדרות",
+      "מצב עיוורון צבעים",
+      "עוצמת השמע",
+      "רטט",
+      "מוזיקת רקע",
+      "מוזיקת רקע של קזינו",
+      "התראות",
+      "פועל",
+      "דיווח על באג",
+      "📖 הצג מדריך מחדש",
+      "גרסה",
+      "מדיניות פרטיות",
+      "תנאי שימוש"
+     ],
+     "latin": [
+      "Back",
+      "VISUAL STYLE",
+      "CLASSIC",
+      "FIVE-O",
+      "PROFILE",
+      "Player 1",
+      "GAMEPLAY",
+      "2 Players (vs 1 Bot)",
+      "4 boards, 16 cards each",
+      "Reveal each board (default)",
+      "OFF",
+      "ON",
+      "🃏 CARDS",
+      "2-color: red / black",
+      "Now: Green = Win, Red = Lose",
+      "Off",
+      "On",
+      "AUDIO & NOTIFICATIONS",
+      "TOOLS",
+      "BETA MODE",
+      "(build",
+      "b0dd0729",
+      "DANGER ZONE",
+      "Reset All Progress",
+      "CREDITS",
+      "🤖 Pro Quotes: AI digital simulation — fictional quotes",
+      "🔊 Voice Clips: AI-generated voices via ElevenLabs",
+      "⚠️ Not affiliated with any poker player mentioned",
+      "Voices are parody / entertainment only",
+      "Your Rank",
+      "CAPS Poker is a free game with virtual chips only.\nNo real-m",
+      "Delete Account",
+      "This will permanently delete all your data"
+     ],
+     "nodes": 77
+    },
+    "he-430-/shop": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-430-/chip-store": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "🎰 Chip Shop",
+      "Shop is empty right now.",
+      "Retry"
+     ],
+     "nodes": 8
+    },
+    "he-430-/leaderboard": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "LEADERBOARD",
+      "🪙 Chips",
+      "% Win Rate",
+      "Player",
+      "Chips",
+      "No players yet",
+      "Play a hand to get on the board!"
+     ],
+     "nodes": 10
+    },
+    "he-430-/stats": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "STATS",
+      "No stats yet",
+      "Play a few hands and your stats appear here",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-430-/achievements": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Achievements",
+      "No achievements yet",
+      "All",
+      "Skill",
+      "Streak",
+      "Milestone",
+      "Social",
+      "Collection",
+      "No achievements found",
+      "Keep playing to unlock rewards"
+     ],
+     "nodes": 13
+    },
+    "he-430-/missions": {
+     "hebrew": [
+      "חברים",
+      "אימון",
+      "מדריך",
+      "🌐 שפה: עברית",
+      "כניסה",
+      "שחק אונליין",
+      "שחקנים אמיתיים · שולחנות בוט מיידיים",
+      "תרגול מול בוטים",
+      "ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבור",
+      "🎁 קבל בונוס יומי · יום 1",
+      "משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי ",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "Player",
+      "chips",
+      "ROYAL FLUSH"
+     ],
+     "nodes": 61
+    },
+    "he-430-/rank": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "YOUR RANK",
+      "No rank yet",
+      "Play a game to claim your spot on the ladder",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-430-/hand-history": {
+     "hebrew": [
+      "הכל (0)",
+      "ניצחונות (0)",
+      "הפסדים (0)"
+     ],
+     "latin": [
+      "Back",
+      "HAND HISTORY",
+      "No hands yet",
+      "Your past hands will show here",
+      "Play Now"
+     ],
+     "nodes": 13
+    },
+    "he-430-/referral": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Invite Friends",
+      "Invite friends",
+      "You get",
+      "💰, they get",
+      "💰 when they join!",
+      "Your code",
+      "Share to WhatsApp 💬",
+      "Friends joined",
+      "Chips earned",
+      "Got a friend's code?",
+      "Enter it here and get 100 💰",
+      "Redeem",
+      "How it works",
+      "Share your code with a friend",
+      "Your friend downloads CAPS and enters the code",
+      "You get 300 💰, they get 100 💰 instantly!"
+     ],
+     "nodes": 27
+    },
+    "he-430-/coaching": {
+     "hebrew": [],
+     "latin": [
+      "Back",
+      "Coaching",
+      "No coaching yet",
+      "Play hands to get personalized tips",
+      "Play Now"
+     ],
+     "nodes": 7
+    },
+    "he-430-/theme-pick": {
+     "hebrew": [
+      "בחר את הסגנון שלך",
+      "נצחי",
+      "זהב כהה\nמראה אלגנטי",
+      "בחר",
+      "מודרני",
+      "שולחן כחול כהה\nהדגשים במנטה",
+      "ניתן לשנות בכל עת בהגדרות"
+     ],
+     "latin": [
+      "CLASSIC",
+      "FIVE-O"
+     ],
+     "nodes": 13
+    },
+    "he-430-/orientation-pick": {
+     "hebrew": [],
+     "latin": [
+      "CHOOSE YOUR PLAY STYLE",
+      "PORTRAIT",
+      "Classic",
+      "Phone held vertically",
+      "Standard layout",
+      "SELECT",
+      "WIDESCREEN",
+      "Pro",
+      "Phone/tablet horizontal",
+      "Side-by-side boards",
+      "Can be changed anytime in Settings"
+     ],
+     "nodes": 15
+    },
+    "he-430-/lobby": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "LOBBY",
+      "Public tables · auto-start when full",
+      "player",
+      "online now",
+      "👤 REAL PLAYERS — TABLES FOR FRIENDS",
+      "A real person joins here · invite a friend or wait at a tabl",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Opening a table…",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 35
+    },
+    "he-430-/lobby/private": {
+     "hebrew": [],
+     "latin": [
+      "‹ Back",
+      "PRIVATE TABLE",
+      "Play your friends with a shared code",
+      "Join a friend's table",
+      "Join",
+      "Create a table to share",
+      "Heads-Up",
+      "players ·",
+      "boards",
+      "Create ›",
+      "3-Player",
+      "4-Player"
+     ],
+     "nodes": 24
+    },
+    "he-430-/friends": {
+     "hebrew": [
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [
+      "CLUBS",
+      "Your circle · play only your friends",
+      "You're not in a club yet — create one or join with a code.",
+      "Create a Club",
+      "Create",
+      "Join a Club",
+      "Join"
+     ],
+     "nodes": 16
+    },
+    "he-430-/cups": {
+     "hebrew": [
+      "כוסות",
+      "0/0 כוסות · ארבע קלפים. ארבעה בורדים. מנצח אחד.",
+      "בית",
+      "שחק",
+      "פרופיל"
+     ],
+     "latin": [],
+     "nodes": 11
+    },
+    "he-430-/battle-pass": {
+     "hebrew": [],
+     "latin": [
+      "‹  Back",
+      "Season 1 — First Deal",
+      "h remaining",
+      "Tier",
+      "Total XP:",
+      "TIER TRACK",
+      "FREE",
+      "PREM",
+      "⭐ UNLOCK PREMIUM —",
+      "chips",
+      "UPCOMING REWARDS",
+      "500 Chips",
+      "Card Back: Royal Red",
+      "300 Chips",
+      "1000 Chips",
+      "Avatar: Fox",
+      "Table Theme: Ocean",
+      "400 Chips",
+      "Emote Pack: Reactions 1",
+      "Card Back: Neon Green",
+      "1500 Chips",
+      "Avatar: Wolf",
+      "Avatar: Cat",
+      "Profile Frame: Bronze",
+      "600 Chips",
+      "Table Theme: Emerald",
+      "2000 Chips",
+      "Card Back: Casino Gold",
+      "Daily Missions",
+      "Play 3 games",
+      "Win 5 boards",
+      "Win with a Flush",
+      "WEEKLY MISSION",
+      "Play 25 games"
+     ],
+     "nodes": 172
+    },
+    "he-430-/replay": {
+     "hebrew": [],
+     "latin": [
+      "No hand selected",
+      "Open a hand from your history to replay it card by card.",
+      "HAND HISTORY",
+      "← BACK"
+     ],
+     "nodes": 4
+    },
+    "he-430-/results": {
+     "hebrew": [
+      "היד הזו כבר לא זמינה.",
+      "חזרה לבית"
+     ],
+     "latin": [],
+     "nodes": 2
+    },
+    "he-430-/gameover": {
+     "hebrew": [],
+     "latin": [
+      "GAME OVER",
+      "Not enough chips to continue",
+      "Final Balance",
+      "PLAY AGAIN",
+      "MAIN MENU"
+     ],
+     "nodes": 6
+    },
+    "he-430-/spectate": {
+     "hebrew": [],
+     "latin": [
+      "← BACK",
+      "SPECTATE",
+      "No room code provided"
+     ],
+     "nodes": 4
+    },
+    "he-430-/game": {
+     "hebrew": [
+      "סדר 16 קלפים",
+      "בוט 1",
+      "בורד 1",
+      "מילוי",
+      "בורד 2",
+      "בורד 3",
+      "בורד 4",
+      "היד שלך",
+      "ביטול",
+      "אישור"
+     ],
+     "latin": [
+      "Auto-Place ALL"
+     ],
+     "nodes": 117
+    }
+   }
+  }
+ }
+}

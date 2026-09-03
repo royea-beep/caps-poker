@@ -37,7 +37,7 @@ export default function PlayScreen() {
     if (ECONOMY_FLAGS.matchCostEnabled) {
       const cost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
       if (!canAffordMatch(chips, cost)) {
-        Alert.alert('Not Enough Chips', `You need ${cost} chips to play.`);
+        Alert.alert(t().notEnoughChips, t().needChipsToPlay(cost));
         return;
       }
     }
@@ -53,34 +53,34 @@ export default function PlayScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: rs(24) }} showsVerticalScrollIndicator={false}>
         {/* Single Player vs bots — the unified game screen (Home has the player-count picker) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Single Player. Practice vs bots" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#F5B546' }]} onPress={playSinglePlayer}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={t().playSinglePlayerA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#F5B546' }]} onPress={playSinglePlayer}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🤖</Text>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Single Player</Text>
-            <Text style={styles.cardSub}>Practice vs bots · {getBoardCount(config.numberOfPlayers)} boards</Text>
+            <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playSinglePlayer}</Text>
+            <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playSinglePlayerSub(getBoardCount(config.numberOfPlayers))}</Text>
           </View>
         </Pressable>
 
         {/* Multiplayer lobby (public 6-table pool) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Multiplayer Lobby. Join an open public table" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={t().playMpLobbyA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4FD6A8' }]} onPress={() => router.push('/lobby' as any)}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🌐</Text>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Multiplayer Lobby</Text>
-            <Text style={styles.cardSub}>Join an open public table · auto-start when full</Text>
+            <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playMpLobby}</Text>
+            <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playMpLobbySub}</Text>
           </View>
         </Pressable>
 
         {/* Quick private table (one-off invite code) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Quick Private Table. Create a one-off table to share, or join by code" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/private' as any)}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={t().playPrivateTableA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#60a5fa' }]} onPress={() => router.push('/lobby/private' as any)}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Quick Private Table</Text>
-            <Text style={styles.cardSub}>One-off table · share a code or join one</Text>
+            <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playPrivateTable}</Text>
+            <Text style={styles.cardSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().playPrivateTableSub}</Text>
           </View>
         </Pressable>
 
         {/* Global leaderboard (moved here from Friends) */}
-        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel="Leaderboard. See where you rank globally" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4ade80' }]} onPress={() => router.push('/leaderboard' as any)}>
+        <Pressable accessible={true} accessibilityRole="button" accessibilityLabel={t().playLeaderboardA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={[styles.card, { borderColor: '#4ade80' }]} onPress={() => router.push('/leaderboard' as any)}>
           <Text style={styles.cardEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">📊</Text>
           <View style={styles.cardBody}>
             <Text style={styles.cardTitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().friendsLeaderboardCard}</Text>

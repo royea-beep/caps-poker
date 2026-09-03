@@ -1414,7 +1414,7 @@ function GameScreenInner() {
             </Text>
           )}
           {playerReady && allBotsReady && !showContinueButton && !showSafeReveal && (
-            <Text style={styles.calculatingText} accessibilityLiveRegion="polite">Calculating results...</Text>
+            <Text style={styles.calculatingText} accessibilityLiveRegion="polite">{t().calculatingResults}</Text>
           )}
         </>
       }
@@ -1450,13 +1450,13 @@ function GameScreenInner() {
               note, the PLACE string is the actual instruction during placement, so it wins the narrow
               band; the "no chips" reassurance drops on tiny screens only. Unchanged ≥375. */}
           {isPractice && screenW > 340 && (
-            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? 'Practice, no chips at stake' : `Practice, this session ${practiceSessionNet > 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)} chips`}>
+            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? t().practiceA11yNoChips : t().practiceA11yNet(practiceSessionNet)}>
               {/* "Session +0" is dev jargon — until the player has actually won/lost, just say
                   what matters (no real chips). Show the running tally only once it's non-zero. */}
               <Text style={styles.practiceSessionText}>
                 {practiceSessionNet === 0
-                  ? '🤖 Practice · no chips'
-                  : `🤖 Practice · ${practiceSessionNet > 0 ? '+' : ''}${practiceSessionNet} chips`}
+                  ? t().practiceNoChips
+                  : t().practiceSessionNet(practiceSessionNet)}
               </Text>
             </View>
           )}

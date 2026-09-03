@@ -360,6 +360,159 @@ interface Translations {
   shopBuy: string;
   shopCantAfford: string;
   shopOwned: string;
+
+  // FULL-I18N 2026-09-03 — Roye: "Translate everything." English must NEVER show Hebrew;
+  // Hebrew may show English. Hand-rank NAMES and the CAPS loanwords (COMPLETE, CAPS, Sit and Go)
+  // stay English in BOTH tables on purpose — that is a standing product rule, not a gap.
+  playSinglePlayer: string;
+  playSinglePlayerSub: (boards: number) => string;
+  playSinglePlayerA11y: string;
+  playMpLobby: string;
+  playMpLobbySub: string;
+  playMpLobbyA11y: string;
+  playPrivateTable: string;
+  playPrivateTableSub: string;
+  playPrivateTableA11y: string;
+  playLeaderboardA11y: string;
+  notEnoughChips: string;
+  needChipsToPlay: (n: number) => string;
+  profileTitle: string;
+  profileHands: string;
+  profileWinRate: string;
+  profileStreak: string;
+  profileChips: string;
+  homeGetChips: string;
+  homeGetChipsA11y: string;
+  homeOpenChipShop: string;
+  homeOpenMenu: string;
+  homePlayOnlineA11y: string;
+  homeChallengeFriend: string;
+  homeChallengeFriendA11y: string;
+  homeShareComplete: string;
+  homeShareCompleteA11y: string;
+  homeDailyClaimed: (amount: number, streak: number) => string;
+  homeDailyClaimA11y: string;
+  homeDailyStreakClaim: (day: number, amount: number) => string;
+  homeDailyClaim: (day: number) => string;
+  homeMilestoneWeekly: string;
+  homeMilestoneMonthly: string;
+  homeWinStreak: (n: number) => string;
+  homeWinStreakA11y: (n: number) => string;
+  homePotd: string;
+  homePotdA11y: string;
+  homePotdWinningHand: string;
+  homePotdPot: (pot: string) => string;
+  homePotdPotA11y: (pot: string) => string;
+  homeHandsSaved: (n: number) => string;
+  homeHandsSavedA11y: (n: number) => string;
+  homeMyProgress: string;
+  homeWinRateLabel: (pct: string) => string;
+  homeCompetition: string;
+  homeLeaderboardRank: string;
+  homePlayToBeRanked: string;
+  homeRecentWins: string;
+  homeRecentWinsA11y: string;
+  homeNoHistoryYet: string;
+  homeSitAndGoLoss: string;
+  homeRecentHands: string;
+  homeViewHandHistory: string;
+  homeEff: (pct: number) => string;
+  homeYourCode: string;
+  homeCopy: string;
+  homeCopyA11y: string;
+  homeShare: string;
+  homeShareA11y: string;
+  homeEnterInviteCode: string;
+  homeEnterInviteCodeSub: string;
+  homeInviteDialogA11y: string;
+  homeRedeemA11y: (n: number) => string;
+  homeCharacters: (n: number) => string;
+  homeFriendsCode: string;
+  homeCloseDialog: string;
+  homeSaveAcrossDevices: string;
+  legalLine: string;
+  setProfile: string;
+  setGameplay: string;
+  setCards: string;
+  setCardsA11y: string;
+  setAudioNotifications: string;
+  setTools: string;
+  setDangerZone: string;
+  setCredits: string;
+  setVisualStyle: string;
+  setShownOnLeaderboard: string;
+  setEdit: string;
+  setPushNotifications: string;
+  setEnableNotifications: string;
+  setRegistering: string;
+  setRevealSpeed: string;
+  setSpeedFast: string;
+  setSpeedNormal: string;
+  setSpeedCinematic: string;
+  setVibration: string;
+  setSoundVolume: string;
+  setAmbientSound: string;
+  setAmbientSoundSub: string;
+  setPlayers: string;
+  setPlayersLabel: (n: number) => string;
+  setBoardsCards: (boards: number, cards: number) => string;
+  setBotDifficulty: string;
+  setBotEasy: string;
+  setBotMedium: string;
+  setBotHard: string;
+  setBotEasyHint: string;
+  setBotMediumHint: string;
+  setBotHardHint: string;
+  setOrientationPortrait: string;
+  setOrientationWide: string;
+  setSkipReveal: string;
+  setOffCaps: string;
+  setOnCaps: string;
+  setOff: string;
+  setOn: string;
+  setSuitColors: string;
+  setColorblindMode: string;
+  setCardSort: string;
+  setSortAuto: string;
+  setSortPairs: string;
+  setThemeTimeless: string;
+  setThemeArcade: string;
+  setThemeConcrete: string;
+  setVersion: string;
+  setPrivacyPolicy: string;
+  setTermsOfUse: string;
+  setDeleteAccount: string;
+  setResetAllProgress: string;
+  setResetConfirmBody: string;
+  setResetDone: string;
+  setResetDoneBody: string;
+  setGoBack: string;
+  setYourRank: string;
+  setCreditQuotes: string;
+  setCreditVoices: string;
+  setCreditNotAffiliated: string;
+  setCreditParody: string;
+  completeShort: string;
+  completeBonusChips: (n: number) => string;
+  tutorialCompleteBadge: string;
+  calculatingResults: string;
+  practiceNoChips: string;
+  practiceSessionNet: (net: number) => string;
+  practiceA11yNoChips: string;
+  practiceA11yNet: (net: number) => string;
+  homeProgressSub: (pct: string) => string;
+  homeChecking: string;
+  homeRedeemBtn: (n: number) => string;
+  homeSitAndGoWin: (chips: number) => string;
+  homeSitAndGoWinA11y: (chips: number) => string;
+  homeSitAndGoLossA11y: string;
+  setThemeModern: string;
+  setThemeClassicDesc: string;
+  setThemeFiveoDesc: string;
+  setSelect: string;
+  setChangeAnytime: string;
+  setChooseStyle: string;
+  setAdvanced: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -611,6 +764,159 @@ const he: Translations = {
   homePracticeVsBots: 'תרגול מול בוטים',
   homePracticeA11y: 'תרגול מול בוטים',
   homeTeaching: 'ארבעה קלפים בכל בורד. כל הבורדים משוחקים יחד. הנצח ברוב הבורדים, זכה ביד.',
+
+  // FULL-I18N 2026-09-03 — Roye: "Translate everything." English must NEVER show Hebrew;
+  // Hebrew may show English. Hand-rank NAMES and the CAPS loanwords (COMPLETE, CAPS, Sit and Go)
+  // stay English in BOTH tables on purpose — that is a standing product rule, not a gap.
+  playSinglePlayer: 'שחקן יחיד',
+  playSinglePlayerSub: (boards) => `תרגול מול בוטים · ${boards} בורדים`,
+  playSinglePlayerA11y: 'שחקן יחיד. תרגול מול בוטים',
+  playMpLobby: 'לובי רב-משתתפים',
+  playMpLobbySub: 'הצטרף לשולחן ציבורי פתוח · מתחיל אוטומטית כשמתמלא',
+  playMpLobbyA11y: 'לובי רב-משתתפים. הצטרף לשולחן ציבורי פתוח',
+  playPrivateTable: 'שולחן פרטי מהיר',
+  playPrivateTableSub: 'שולחן חד-פעמי · שתף קוד או הצטרף עם קוד',
+  playPrivateTableA11y: 'שולחן פרטי מהיר. צור שולחן חד-פעמי לשיתוף, או הצטרף עם קוד',
+  playLeaderboardA11y: 'לוח מנצחים. ראה את הדירוג העולמי שלך',
+  notEnoughChips: 'אין מספיק צ׳יפים',
+  needChipsToPlay: (n) => `צריך ${n} צ׳יפים כדי לשחק.`,
+  profileTitle: 'פרופיל',
+  profileHands: 'ידיים',
+  profileWinRate: 'אחוז ניצחון',
+  profileStreak: 'רצף',
+  profileChips: 'צ׳יפים',
+  homeGetChips: 'קבל צ׳יפים',
+  homeGetChipsA11y: 'קבל צ׳יפים',
+  homeOpenChipShop: 'פתח את חנות הצ׳יפים',
+  homeOpenMenu: 'פתח תפריט',
+  homePlayOnlineA11y: 'שחק אונליין, פתח את הלובי',
+  homeChallengeFriend: '⚔️ אתגר חבר',
+  homeChallengeFriendA11y: 'אתגר חבר',
+  homeShareComplete: '🏆 עשית COMPLETE! לשתף?',
+  homeShareCompleteA11y: 'שתף את ניצחון ה-COMPLETE שלך',
+  homeDailyClaimed: (amount, streak) => `✅ +${amount} נאסף · יום ${streak} ברצף`,
+  homeDailyClaimA11y: 'קבל בונוס יומי',
+  homeDailyStreakClaim: (day, amount) => `🔥 יום ${day} ברצף! +${amount} צ׳יפים!`,
+  homeDailyClaim: (day) => `🎁 קבל בונוס יומי · יום ${day}`,
+  homeMilestoneWeekly: ' (בונוס שבועי!)',
+  homeMilestoneMonthly: ' (בונוס חודשי!)',
+  homeWinStreak: (n) => `🔥 ${n} ניצחונות ברצף`,
+  homeWinStreakA11y: (n) => `${n} ניצחונות ברצף`,
+  homePotd: '🏆 המהלך של היום',
+  homePotdA11y: 'המהלך של היום',
+  homePotdWinningHand: 'יד מנצחת',
+  homePotdPot: (pot) => `קופה: ${pot} 💰`,
+  homePotdPotA11y: (pot) => `קופה: ${pot} צ׳יפים`,
+  homeHandsSaved: (n) => `📊 ${n} ידיים שמורות`,
+  homeHandsSavedA11y: (n) => `היסטוריית ידיים, ${n} ידיים שמורות`,
+  homeMyProgress: 'ההתקדמות שלי',
+  homeWinRateLabel: (pct) => `${pct} אחוז ניצחון`,
+  homeCompetition: 'תחרות',
+  homeLeaderboardRank: 'דירוג בלוח המנצחים',
+  homePlayToBeRanked: 'שחק כדי להיכנס לדירוג',
+  homeRecentWins: '🏆 ניצחונות אחרונים',
+  homeRecentWinsA11y: 'ניצחונות אחרונים',
+  homeNoHistoryYet: 'שחק Sit and Go כדי לראות היסטוריה',
+  homeSitAndGoLoss: '❌ Sit and Go — בפעם הבאה',
+  homeRecentHands: 'ידיים אחרונות',
+  homeViewHandHistory: 'צפה בהיסטוריית הידיים',
+  homeEff: (pct) => `${pct}% יעילות`,
+  homeYourCode: 'הקוד שלך',
+  homeCopy: '📋 העתק',
+  homeCopyA11y: 'העתק קוד הזמנה',
+  homeShare: '📤 שתף',
+  homeShareA11y: 'שתף קוד הזמנה',
+  homeEnterInviteCode: '🎁 הזן קוד הזמנה',
+  homeEnterInviteCodeSub: 'הזן את הקוד שחבר שיתף איתך',
+  homeInviteDialogA11y: 'חלון קוד הזמנה',
+  homeRedeemA11y: (n) => `מימוש קוד הזמנה עבור ${n} צ׳יפים`,
+  homeCharacters: (n) => `${n} תווים`,
+  homeFriendsCode: 'קוד ההזמנה של החבר',
+  homeCloseDialog: 'סגור חלון',
+  homeSaveAcrossDevices: 'הניצחונות, הצ׳יפים וההיסטוריה שלך יישמרו בכל המכשירים.',
+  legalLine: 'משחק חינם | צ׳יפים וירטואליים בלבד | ללא הימורים בכסף אמיתי | 18+',
+  setProfile: 'פרופיל',
+  setGameplay: 'משחק',
+  setCards: 'קלפים',
+  setCardsA11y: 'קלפים',
+  setAudioNotifications: 'שמע והתראות',
+  setTools: 'כלים',
+  setDangerZone: 'אזור מסוכן',
+  setCredits: 'קרדיטים',
+  setVisualStyle: 'סגנון חזותי',
+  setShownOnLeaderboard: 'מוצג בלוח המנצחים · הקש לעריכה',
+  setEdit: 'עריכה',
+  setPushNotifications: 'התראות',
+  setEnableNotifications: 'הפעל התראות',
+  setRegistering: 'רושם…',
+  setRevealSpeed: 'מהירות החשיפה',
+  setSpeedFast: 'מהיר',
+  setSpeedNormal: 'רגיל',
+  setSpeedCinematic: 'קולנועי',
+  setVibration: 'רטט',
+  setSoundVolume: 'עוצמת השמע',
+  setAmbientSound: 'מוזיקת רקע',
+  setAmbientSoundSub: 'מוזיקת רקע של קזינו',
+  setPlayers: 'שחקנים',
+  setPlayersLabel: (n) => `${n} שחקנים (מול ${n - 1} ${n === 2 ? 'בוט' : 'בוטים'})`,
+  setBoardsCards: (boards, cards) => `${boards} בורדים, ${cards} קלפים כל אחד`,
+  setBotDifficulty: 'רמת הבוט',
+  setBotEasy: 'קל',
+  setBotMedium: 'בינוני',
+  setBotHard: 'קשה',
+  setBotEasyHint: 'הנחה אקראית',
+  setBotMediumHint: 'מקבץ קלפים באותה סדרה',
+  setBotHardHint: 'משחק כדי לנצח בכל בורד',
+  setOrientationPortrait: 'לאורך',
+  setOrientationWide: 'מסך רחב',
+  setSkipReveal: 'דלג על החשיפה בורד-אחר-בורד',
+  setOffCaps: 'כבוי',
+  setOnCaps: 'פועל',
+  setOff: 'כבוי',
+  setOn: 'פועל',
+  setSuitColors: 'צבעי הסדרות',
+  setColorblindMode: 'מצב עיוורון צבעים',
+  setCardSort: 'מיון הקלפים',
+  setSortAuto: 'אוטומטי',
+  setSortPairs: 'זוגות',
+  setThemeTimeless: 'נצחי',
+  setThemeArcade: 'ארקייד',
+  setThemeConcrete: 'בטון',
+  setVersion: 'גרסה',
+  setPrivacyPolicy: 'מדיניות פרטיות',
+  setTermsOfUse: 'תנאי שימוש',
+  setDeleteAccount: 'מחיקת חשבון',
+  setResetAllProgress: 'איפוס כל ההתקדמות',
+  setResetConfirmBody: 'הפעולה תמחק את כל הצ׳יפים, הרמה, ההיסטוריה והרצף. להמשיך?',
+  setResetDone: 'ההתקדמות אופסה',
+  setResetDoneBody: 'כל ההתקדמות נמחקה. הפעל מחדש את האפליקציה כדי להשלים.',
+  setGoBack: 'חזרה',
+  setYourRank: 'הדירוג שלך',
+  setCreditQuotes: '🤖 ציטוטי מקצוענים: סימולציה דיגיטלית של AI — ציטוטים בדיוניים',
+  setCreditVoices: '🔊 קטעי קול: קולות שנוצרו ב-AI באמצעות ElevenLabs',
+  setCreditNotAffiliated: '⚠️ ללא כל שיוך לשחקני הפוקר המוזכרים',
+  setCreditParody: 'הקולות הם פרודיה / בידור בלבד',
+  completeShort: 'COMPLETE!',
+  completeBonusChips: (n) => `+${n} צ׳יפים בונוס!`,
+  tutorialCompleteBadge: '🏆 COMPLETE +50%',
+  calculatingResults: 'מחשב תוצאות...',
+  practiceNoChips: '🤖 תרגול · בלי צ׳יפים',
+  practiceSessionNet: (net) => `🤖 תרגול · ${net > 0 ? '+' : ''}${net} צ׳יפים`,
+  practiceA11yNoChips: 'תרגול, בלי צ׳יפים על הכף',
+  practiceA11yNet: (net) => `תרגול, במפגש הזה ${net > 0 ? 'פלוס' : 'מינוס'} ${Math.abs(net)} צ׳יפים`,
+  homeProgressSub: (pct) => `הישגים · ${pct} אחוז ניצחון`,
+  homeChecking: 'בודק...',
+  homeRedeemBtn: (n) => `מימוש +${n} 💰`,
+  homeSitAndGoWin: (chips) => `✅ ניצחון ב-Sit and Go — +${chips} 💰`,
+  homeSitAndGoWinA11y: (chips) => `ניצחת ב-Sit and Go — +${chips} צ׳יפים`,
+  homeSitAndGoLossA11y: 'Sit and Go — בפעם הבאה',
+  setThemeModern: 'מודרני',
+  setThemeClassicDesc: 'זהב כהה\nמראה אלגנטי',
+  setThemeFiveoDesc: 'שולחן כחול כהה\nהדגשים במנטה',
+  setSelect: 'בחר',
+  setChangeAnytime: 'ניתן לשנות בכל עת בהגדרות',
+  setChooseStyle: 'בחר את הסגנון שלך',
+  setAdvanced: '⚙️ מתקדם',
 };
 
 // ---------------------------------------------------------------------------
@@ -864,6 +1170,159 @@ const en: Translations = {
   homePracticeVsBots: 'Practice vs bots',
   homePracticeA11y: 'Practice against bots',
   homeTeaching: 'Four cards on every board. Every board plays at once. Win the most boards, win the hand.',
+
+  // FULL-I18N 2026-09-03 — Roye: "Translate everything." English must NEVER show Hebrew;
+  // Hebrew may show English. Hand-rank NAMES and the CAPS loanwords (COMPLETE, CAPS, Sit and Go)
+  // stay English in BOTH tables on purpose — that is a standing product rule, not a gap.
+  playSinglePlayer: 'Single Player',
+  playSinglePlayerSub: (boards) => `Practice vs bots · ${boards} boards`,
+  playSinglePlayerA11y: 'Single Player. Practice vs bots',
+  playMpLobby: 'Multiplayer Lobby',
+  playMpLobbySub: 'Join an open public table · auto-start when full',
+  playMpLobbyA11y: 'Multiplayer Lobby. Join an open public table',
+  playPrivateTable: 'Quick Private Table',
+  playPrivateTableSub: 'One-off table · share a code or join one',
+  playPrivateTableA11y: 'Quick Private Table. Create a one-off table to share, or join by code',
+  playLeaderboardA11y: 'Leaderboard. See where you rank globally',
+  notEnoughChips: 'Not Enough Chips',
+  needChipsToPlay: (n) => `You need ${n} chips to play.`,
+  profileTitle: 'PROFILE',
+  profileHands: 'HANDS',
+  profileWinRate: 'WIN RATE',
+  profileStreak: 'STREAK',
+  profileChips: 'CHIPS',
+  homeGetChips: 'GET CHIPS',
+  homeGetChipsA11y: 'Get chips',
+  homeOpenChipShop: 'Open chip shop',
+  homeOpenMenu: 'Open menu',
+  homePlayOnlineA11y: 'Play online, open the multiplayer lobby',
+  homeChallengeFriend: '⚔️ Challenge a Friend',
+  homeChallengeFriendA11y: 'Challenge a Friend',
+  homeShareComplete: '🏆 You got COMPLETE! Share it?',
+  homeShareCompleteA11y: 'Share your COMPLETE win',
+  homeDailyClaimed: (amount, streak) => `✅ +${amount} claimed · Day ${streak} streak`,
+  homeDailyClaimA11y: 'Claim daily bonus',
+  homeDailyStreakClaim: (day, amount) => `🔥 Day ${day} streak! +${amount} chips!`,
+  homeDailyClaim: (day) => `🎁 Claim daily bonus · Day ${day}`,
+  homeMilestoneWeekly: ' (Weekly bonus!)',
+  homeMilestoneMonthly: ' (Monthly bonus!)',
+  homeWinStreak: (n) => `🔥 ${n} win streak`,
+  homeWinStreakA11y: (n) => `${n} wins in a row`,
+  homePotd: '🏆 Play of the Day',
+  homePotdA11y: 'Play of the Day',
+  homePotdWinningHand: 'Winning hand',
+  homePotdPot: (pot) => `Pot: ${pot} 💰`,
+  homePotdPotA11y: (pot) => `Pot: ${pot} chips`,
+  homeHandsSaved: (n) => `📊 ${n} hands saved`,
+  homeHandsSavedA11y: (n) => `Hand history, ${n} hands saved`,
+  homeMyProgress: 'My Progress',
+  homeWinRateLabel: (pct) => `${pct} win rate`,
+  homeCompetition: 'Competition',
+  homeLeaderboardRank: 'Leaderboard rank',
+  homePlayToBeRanked: 'Play to be ranked',
+  homeRecentWins: '🏆 Recent Wins',
+  homeRecentWinsA11y: 'Recent wins',
+  homeNoHistoryYet: 'Play Sit and Go to see your history',
+  homeSitAndGoLoss: '❌ Sit and Go — next time',
+  homeRecentHands: 'Recent Hands',
+  homeViewHandHistory: 'View hand history',
+  homeEff: (pct) => `${pct}% eff`,
+  homeYourCode: 'YOUR CODE',
+  homeCopy: '📋 Copy',
+  homeCopyA11y: 'Copy referral code',
+  homeShare: '📤 Share',
+  homeShareA11y: 'Share referral code',
+  homeEnterInviteCode: '🎁 Enter Invite Code',
+  homeEnterInviteCodeSub: 'Enter the code your friend shared',
+  homeInviteDialogA11y: 'Invite code dialog',
+  homeRedeemA11y: (n) => `Redeem invite code for ${n} chips`,
+  homeCharacters: (n) => `${n} characters`,
+  homeFriendsCode: "Friend's referral code",
+  homeCloseDialog: 'Close dialog',
+  homeSaveAcrossDevices: 'Your wins, bankroll & history will be saved across devices.',
+  legalLine: 'Free play | Virtual chips only | No real-money gambling | 18+',
+  setProfile: 'PROFILE',
+  setGameplay: 'GAMEPLAY',
+  setCards: 'CARDS',
+  setCardsA11y: 'Cards',
+  setAudioNotifications: 'AUDIO & NOTIFICATIONS',
+  setTools: 'TOOLS',
+  setDangerZone: 'DANGER ZONE',
+  setCredits: 'CREDITS',
+  setVisualStyle: 'VISUAL STYLE',
+  setShownOnLeaderboard: 'Shown on leaderboard · Tap to edit',
+  setEdit: 'EDIT',
+  setPushNotifications: 'Push Notifications',
+  setEnableNotifications: 'Enable Notifications',
+  setRegistering: 'Registering…',
+  setRevealSpeed: 'Reveal Speed',
+  setSpeedFast: 'Fast',
+  setSpeedNormal: 'Normal',
+  setSpeedCinematic: 'Cinematic',
+  setVibration: 'Vibration',
+  setSoundVolume: 'Sound Volume',
+  setAmbientSound: 'Ambient Sound',
+  setAmbientSoundSub: 'Casino background music',
+  setPlayers: 'Players',
+  setPlayersLabel: (n) => `${n} Players (vs ${n - 1} ${n === 2 ? 'Bot' : 'Bots'})`,
+  setBoardsCards: (boards, cards) => `${boards} boards, ${cards} cards each`,
+  setBotDifficulty: 'Bot Difficulty',
+  setBotEasy: 'Easy',
+  setBotMedium: 'Medium',
+  setBotHard: 'Hard',
+  setBotEasyHint: 'Random placement',
+  setBotMediumHint: 'Groups suited cards',
+  setBotHardHint: 'Plays to win each board',
+  setOrientationPortrait: 'Portrait',
+  setOrientationWide: 'Widescreen',
+  setSkipReveal: 'Skip board-by-board reveal',
+  setOffCaps: 'OFF',
+  setOnCaps: 'ON',
+  setOff: 'Off',
+  setOn: 'On',
+  setSuitColors: 'Suit Colors',
+  setColorblindMode: 'Colorblind Mode',
+  setCardSort: 'Card Sort',
+  setSortAuto: 'Auto',
+  setSortPairs: 'Pairs',
+  setThemeTimeless: 'Timeless',
+  setThemeArcade: 'Arcade',
+  setThemeConcrete: 'Concrete',
+  setVersion: 'Version',
+  setPrivacyPolicy: 'Privacy Policy',
+  setTermsOfUse: 'Terms of Use',
+  setDeleteAccount: 'Delete Account',
+  setResetAllProgress: 'Reset All Progress',
+  setResetConfirmBody: 'This will delete all chips, level, history and streak. Are you sure?',
+  setResetDone: 'Progress Reset',
+  setResetDoneBody: 'All progress has been cleared. Restart the app to apply fully.',
+  setGoBack: 'Go back',
+  setYourRank: 'Your rank',
+  setCreditQuotes: '🤖 Pro Quotes: AI digital simulation — fictional quotes',
+  setCreditVoices: '🔊 Voice Clips: AI-generated voices via ElevenLabs',
+  setCreditNotAffiliated: '⚠️ Not affiliated with any poker player mentioned',
+  setCreditParody: 'Voices are parody / entertainment only',
+  completeShort: 'COMPLETE!',
+  completeBonusChips: (n) => `+${n} bonus chips!`,
+  tutorialCompleteBadge: '🏆 COMPLETE +50%',
+  calculatingResults: 'Calculating results...',
+  practiceNoChips: '🤖 Practice · no chips',
+  practiceSessionNet: (net) => `🤖 Practice · ${net > 0 ? '+' : ''}${net} chips`,
+  practiceA11yNoChips: 'Practice, no chips at stake',
+  practiceA11yNet: (net) => `Practice, this session ${net > 0 ? 'plus' : 'minus'} ${Math.abs(net)} chips`,
+  homeProgressSub: (pct) => `Achievements · ${pct} win rate`,
+  homeChecking: 'Checking...',
+  homeRedeemBtn: (n) => `Redeem +${n} 💰`,
+  homeSitAndGoWin: (chips) => `✅ Won Sit and Go — +${chips} 💰`,
+  homeSitAndGoWinA11y: (chips) => `You won Sit and Go — +${chips} chips`,
+  homeSitAndGoLossA11y: 'Sit and Go — next time',
+  setThemeModern: 'Modern',
+  setThemeClassicDesc: 'Dark gold\nElegant look',
+  setThemeFiveoDesc: 'Navy table\nMint accents',
+  setSelect: 'SELECT',
+  setChangeAnytime: 'Can be changed anytime in Settings',
+  setChooseStyle: 'Choose your style',
+  setAdvanced: '⚙️ ADVANCED',
 };
 
 const translations: Record<Language, Translations> = { he, en };

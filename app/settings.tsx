@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import AvatarPicker from '../components/AvatarPicker';
 import { rf, rs, rv, rb } from '../utils/responsive';
-import { t } from '../utils/i18n';
+import { t, getLanguage } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
@@ -129,7 +129,7 @@ function AdvancedSection() {
         accessibilityLabel={`Advanced tuning, ${open ? 'expanded' : 'collapsed'}`}
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}
       >
-        <Text style={styles.sectionTitle} accessibilityRole="header">⚙️ ADVANCED</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setAdvanced}</Text>
         <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: rf(16), fontWeight: '700' }}>{open ? '▾' : '▸'}</Text>
       </Pressable>
       {open && (
@@ -170,9 +170,9 @@ function ProfileSection() {
         <Text style={styles.profileAvatar}>{displayAvatar}</Text>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{displayName}</Text>
-          <Text style={styles.profileHint}>Shown on leaderboard · Tap to edit</Text>
+          <Text style={styles.profileHint} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setShownOnLeaderboard}</Text>
         </View>
-        <Text style={styles.profileEdit}>EDIT</Text>
+        <Text style={styles.profileEdit} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setEdit}</Text>
       </Pressable>
       <AvatarPicker
         visible={pickerVisible}
@@ -207,17 +207,17 @@ function NotificationsToggle() {
     <View>
       <View style={styles.row}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>Push Notifications</Text>
+          <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setPushNotifications}</Text>
         </View>
         <Pressable
           onPress={() => { setEnabled(!enabled); CapsHooks.settingsChanged('notifications', !enabled); }}
           style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
           accessibilityRole="switch"
-          accessibilityLabel="Push notifications"
+          accessibilityLabel={t().setPushNotifications} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
           accessibilityState={{ checked: enabled }} aria-checked={enabled}
         >
           <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
-            {enabled ? 'ON' : 'OFF'}
+            {enabled ? t().setOnCaps : t().setOffCaps}
           </Text>
         </Pressable>
       </View>
@@ -227,11 +227,11 @@ function NotificationsToggle() {
           onPress={handleRetry}
           disabled={retrying}
           accessibilityRole="button"
-          accessibilityLabel="Enable notifications"
+          accessibilityLabel={t().setEnableNotifications} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
           accessibilityLiveRegion="polite"
         >
           <Text style={styles.retryPushText}>
-            {retrying ? 'Registering…' : 'Enable Notifications'}
+            {retrying ? t().setRegistering : t().setEnableNotifications}
           </Text>
         </Pressable>
       )}
@@ -243,16 +243,16 @@ function RevealSpeedSelector() {
   const value = useGameStore((s) => s.config.revealSpeed) ?? 'normal';
   const updateConfig = useGameStore((s) => s.updateConfig);
   const options: Array<{ key: 'fast' | 'normal' | 'cinematic'; label: string }> = [
-    { key: 'fast', label: 'Fast' },
-    { key: 'normal', label: 'Normal' },
-    { key: 'cinematic', label: 'Cinematic' },
+    { key: 'fast', label: t().setSpeedFast },
+    { key: 'normal', label: t().setSpeedNormal },
+    { key: 'cinematic', label: t().setSpeedCinematic },
   ];
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Reveal Speed</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setRevealSpeed}</Text>
       </View>
-      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Reveal speed">
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel={t().setRevealSpeed} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
         {options.map((o) => (
           <Pressable
             key={o.key}
@@ -281,13 +281,13 @@ function HapticsToggle() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Vibration</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setVibration}</Text>
       </View>
       <Pressable
         onPress={() => { updateConfig({ hapticsEnabled: !hapticsEnabled }); CapsHooks.settingsChanged('hapticsEnabled', !hapticsEnabled); }}
         style={[styles.toggleBtn, hapticsEnabled && styles.toggleBtnActive]}
         accessibilityRole="switch"
-        accessibilityLabel="Vibration enabled"
+        accessibilityLabel={t().setVibration} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
         accessibilityState={{ checked: hapticsEnabled }} aria-checked={hapticsEnabled}
       >
         <Text style={[styles.toggleText, hapticsEnabled && styles.toggleTextActive]}>
@@ -308,7 +308,7 @@ function SoundToggle() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Sound Volume</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSoundVolume}</Text>
       </View>
       {/* flexShrink+minWidth:0 so the volume readout stops running off a 320px screen — this
           row measured 219px wide in 150px of space, pushing "80%" to x 328 past a 320 edge. */}
@@ -317,7 +317,7 @@ function SoundToggle() {
           onPress={() => { updateConfig({ soundEnabled: !soundEnabled }); CapsHooks.settingsChanged('soundEnabled', !soundEnabled); }}
           style={[styles.toggleBtn, soundEnabled && styles.toggleBtnActive]}
           accessibilityRole="switch"
-          accessibilityLabel="Sound enabled"
+          accessibilityLabel={t().setSoundVolume} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
           accessibilityState={{ checked: soundEnabled }} aria-checked={soundEnabled}
         >
           <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
@@ -348,10 +348,10 @@ function AmbientToggle() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Ambient Sound</Text>
-        <Text style={styles.rowHint}>Casino background music</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setAmbientSound}</Text>
+        <Text style={styles.rowHint} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setAmbientSoundSub}</Text>
       </View>
-      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel="Ambient sound" accessibilityState={{ checked: ambientEnabled }} aria-checked={ambientEnabled}>
+      <Pressable onPress={toggle} style={[styles.toggleBtn, ambientEnabled && styles.toggleBtnActive]} accessibilityRole="switch" accessibilityLabel={t().setAmbientSound} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityState={{ checked: ambientEnabled }} aria-checked={ambientEnabled}>
         <Text style={[styles.toggleText, ambientEnabled && styles.toggleTextActive]}>
           {ambientEnabled ? 'ON' : 'OFF'}
         </Text>
@@ -381,10 +381,10 @@ function PlayerCountSelector() {
     <>
       <View style={styles.row}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>Players</Text>
+          <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setPlayers}</Text>
           <Text style={styles.rowHint}>{labels[value] || `${value} Players`}</Text>
         </View>
-        <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
+        <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel={t().setPlayers} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
           {([2, 3, 4] as const).map((n) => (
             <Pressable
               key={n}
@@ -419,10 +419,10 @@ function BotDifficultySelector() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Bot Difficulty</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setBotDifficulty}</Text>
         <Text style={styles.rowHint}>{options.find(o => o.key === value)?.hint ?? ''}</Text>
       </View>
-      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Bot difficulty">
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel={t().setBotDifficulty} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
         {options.map((o) => (
           <Pressable
             key={o.key}
@@ -502,10 +502,10 @@ function SkipRevealToggle() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Skip board-by-board reveal</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSkipReveal}</Text>
         <Text style={styles.rowHint}>{skip ? 'Instant results summary' : 'Reveal each board (default)'}</Text>
       </View>
-      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Skip board reveal">
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel={t().setSkipReveal} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
         <Pressable
           onPress={() => { hapticLight(); setSkip(false); }}
           style={[styles.selectorBtn, !skip && styles.selectorBtnActive]}
@@ -536,7 +536,7 @@ function FourColorSuitsToggle() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Suit Colors</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSuitColors}</Text>
         <Text style={styles.rowHint}>{fourColorSuits ? '4-color: ♥red ♦blue ♠black ♣green' : '2-color: red / black'}</Text>
       </View>
       <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Four color suits">
@@ -570,7 +570,7 @@ function ColorblindToggle() {
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowLabel}>Colorblind Mode</Text>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setColorblindMode}</Text>
         {/* A5 — filed as "the subtitle says Green = Win, Red = Lose on the toggle that REPLACES
             green and red". The string was NOT wrong: it is a live status line and it already
             switched to Blue/Orange when the mode was on. But sitting unlabelled under "Colorblind
@@ -580,7 +580,7 @@ function ColorblindToggle() {
             changing the mapping. */}
         <Text style={styles.rowHint}>{colorblindMode ? 'Now: Blue = Win, Orange = Lose' : 'Now: Green = Win, Red = Lose'}</Text>
       </View>
-      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Colorblind mode">
+      <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel={t().setColorblindMode} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
         <Pressable
           onPress={() => { hapticLight(); setColorblindMode(false); }}
           style={[styles.selectorBtn, !colorblindMode && styles.selectorBtnActive]}
@@ -629,7 +629,7 @@ function HandSortToggle() {
     <>
       <View style={styles.row}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowLabel}>Card Sort</Text>
+          <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setCardSort}</Text>
           <Text style={styles.rowHint}>{handSortMethod === 'caps' ? 'Auto (Trips→Pairs→Suits)' : 'Pairs+Suits'}</Text>
         </View>
         <View style={styles.selectorRow} accessibilityRole="radiogroup" accessibilityLabel="Hand sort">
@@ -676,13 +676,17 @@ function VisualThemePicker() {
   // buy_table_theme row unlocks it. CLASSIC and FIVE-O keep their exact entries and stay free.
   const { skus, ready } = useOwnedSkus();
   const ALL_THEMES: { id: VisualTheme; label: string; tag: string; bg: string; accent: string; sku: string | null }[] = [
-    { id: 'classic', label: 'CLASSIC', tag: 'Timeless', bg: '#1a0800', accent: '#c9a84c', sku: null },
+    { id: 'classic', label: 'CLASSIC', tag: t().setThemeTimeless, bg: '#1a0800', accent: '#c9a84c', sku: null },
     // THE-LAST-THREE 2026-09-03 — accent was #FFD700 (the winner cue) on a Pressable tile; the
     // loop caught it in both engines at all four widths. #4FD6A8 is what `visual.fiveo`
     // actually paints as its accent, so the swatch is now both cue-free and truthful about
     // the accent. (The `bg` here is still the old red — see the note in app/theme-pick.tsx.)
-    { id: 'fiveo',   label: 'FIVE-O',  tag: 'Arcade',   bg: '#5c0000', accent: '#4FD6A8', sku: null },
-    { id: 'streetStencil', label: 'STREET', tag: 'Concrete', bg: '#2b2b30', accent: '#F2C230', sku: 'buy_table_theme' },
+    // FULL-I18N 2026-09-03 — bg was #5c0000 (red) and the tag said 'Arcade'. constants/
+    // paintThemes.ts `visual.fiveo` paints surface #1A1A2E (navy) with accent #4FD6A8, and has
+    // for a long time. The swatch was describing a theme that no longer exists — the same class
+    // of error as the maroon-felt line corrected in CLAUDE.md. Both now match the paint.
+    { id: 'fiveo',   label: 'FIVE-O',  tag: t().setThemeModern, bg: '#1A1A2E', accent: '#4FD6A8', sku: null },
+    { id: 'streetStencil', label: 'STREET', tag: t().setThemeConcrete, bg: '#2b2b30', accent: '#F2C230', sku: 'buy_table_theme' },
   ];
   const options = ALL_THEMES.filter((o) => isUnlocked(o.sku, skus));
 
@@ -699,7 +703,7 @@ function VisualThemePicker() {
         <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🎨 </Text>
         VISUAL STYLE
       </Text>
-      <View style={vtStyles.row} accessibilityRole="radiogroup" accessibilityLabel="Visual theme">
+      <View style={vtStyles.row} accessibilityRole="radiogroup" accessibilityLabel={t().setVisualStyle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
         {options.map((opt) => (
           <Pressable
             key={opt.id}
@@ -954,7 +958,7 @@ function ResetProgressButton() {
       onPress={handleReset}
       style={{ marginBottom: rs(12), paddingVertical: rs(12), borderRadius: rv(10), borderWidth: 1, borderColor: '#C62828', alignItems: 'center', minHeight: 44 }}
       accessibilityRole="button"
-      accessibilityLabel="Reset all progress"
+      accessibilityLabel={t().setResetAllProgress} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
     >
       <Text style={{ color: '#C62828', fontSize: rf(13), fontWeight: '700' }}>Reset All Progress</Text>
     </Pressable>
@@ -1099,7 +1103,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={safeBack} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable onPress={safeBack} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={t().setGoBack} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
           <Text style={styles.backText}>
             <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">← </Text>
             Back
@@ -1140,7 +1144,7 @@ export default function SettingsScreen() {
                 only. The multiplayer stake comes from the server (app_config.pot_per_board), so a
                 player reading this as "my stake" was reading a number that does not apply. */}
 
-        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel="Cards">🃏 CARDS</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLabel={t().setCardsA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>🃏 CARDS</Text>
         <FourColorSuitsToggle />
         <ColorblindToggle />
         {/* HandSortToggle REMOVED — its label said "pairs" while the stored value was "user"; the
@@ -1300,7 +1304,7 @@ export default function SettingsScreen() {
                 }
               }}
             >
-              <Text style={styles.rowLabel}>Version</Text>
+              <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setVersion}</Text>
               {/* G2 2026-08-08 — WAS `extra.buildNumber`, a HAND-MAINTAINED field that had
                   drifted: it still reads "330" while the binary shipped on 2026-08-06 is
                   CFBundleVersion 508 (commit e346e70 bumped ios.buildNumber and left extra
@@ -1364,7 +1368,7 @@ export default function SettingsScreen() {
           onPress={() => router.push('/rank' as any)}
           style={styles.privacyLink}
           accessibilityRole="button"
-          accessibilityLabel="Your rank"
+          accessibilityLabel={t().setYourRank} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
         >
           <Text style={styles.privacyLinkText}>
             <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆 </Text>
@@ -1400,21 +1404,21 @@ export default function SettingsScreen() {
             onPress={() => Linking.openURL('https://caps.ftable.co.il/privacy.html')}
             style={{ marginTop: 4, minHeight: 44, paddingHorizontal: rs(12), justifyContent: 'center', alignItems: 'center' }}
             hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
-            accessibilityRole="link" accessibilityLabel="Privacy policy">
-            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Privacy Policy</Text>
+            accessibilityRole="link" accessibilityLabel={t().setPrivacyPolicy} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setPrivacyPolicy}</Text>
           </Pressable>
           <Pressable
             onPress={() => Linking.openURL('https://caps.ftable.co.il/terms.html')}
             style={{ minHeight: 44, paddingHorizontal: rs(12), justifyContent: 'center', alignItems: 'center' }}
             hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
-            accessibilityRole="link" accessibilityLabel="Terms of use">
-            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }}>Terms of Use</Text>
+            accessibilityRole="link" accessibilityLabel={t().setTermsOfUse} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
+            <Text style={{ color: '#c9c9c9', fontSize: rf(11), textDecorationLine: 'underline' }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setTermsOfUse}</Text>
           </Pressable>
         </View>
 
         {/* Danger zone — account deletion (Apple/Google requirement) */}
         <View style={{ marginTop: 40, paddingTop: 20, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.1)' }}>
-          <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Delete account">
+          <Pressable onPress={handleDeleteAccount} style={{ paddingVertical: 14, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel={t().setDeleteAccount} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>
             <Text style={{ color: '#ef4444', fontSize: rf(14) }}>Delete Account</Text>
           </Pressable>
           <Text style={{ color: '#b8b8b8', fontSize: rf(11), textAlign: 'center', marginTop: 4 }}>
