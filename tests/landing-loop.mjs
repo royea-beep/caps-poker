@@ -19,9 +19,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve('public');
-const OUT = 'docs/last-three/landing';
+const OUT = process.env.OUT || 'docs/last-three/landing';
 const PORT = Number(process.env.PORT || 8997);
-const WIDTHS = [320, 393, 430];
+// LANDING-AND-AUTOSWEEP 2026-09-05 — 375 added: it is the iPhone SE/8 width the tap-list sweep
+// uses for every other screen, and the landing page was the only surface not measured there.
+const WIDTHS = [320, 375, 393, 430];
 const LANGS = ['en', 'he'];
 fs.mkdirSync(OUT, { recursive: true });
 

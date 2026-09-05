@@ -1,0 +1,423 @@
+{
+ "ts": "2026-09-05T09:22:59.870Z",
+ "engines": {
+  "chromium": {
+   "canary": {
+    "overflow_caught": true,
+    "contrast_flagged_bad": true,
+    "contrast_passed_good": true
+   },
+   "runs": {
+    "en-320": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 320,
+     "innerWidth": 320,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-320-chromium.png"
+    },
+    "en-375": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 375,
+     "innerWidth": 375,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-375-chromium.png"
+    },
+    "en-393": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 393,
+     "innerWidth": 393,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-393-chromium.png"
+    },
+    "en-430": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 430,
+     "innerWidth": 430,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-430-chromium.png"
+    },
+    "he-320": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 320,
+     "innerWidth": 320,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-320-chromium.png"
+    },
+    "he-375": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 375,
+     "innerWidth": 375,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-375-chromium.png"
+    },
+    "he-393": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 393,
+     "innerWidth": 393,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-393-chromium.png"
+    },
+    "he-430": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 430,
+     "innerWidth": 430,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-430-chromium.png"
+    }
+   }
+  },
+  "webkit": {
+   "canary": {
+    "overflow_caught": true,
+    "contrast_flagged_bad": true,
+    "contrast_passed_good": true
+   },
+   "runs": {
+    "en-320": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 320,
+     "innerWidth": 320,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-320-webkit.png"
+    },
+    "en-375": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 375,
+     "innerWidth": 375,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-375-webkit.png"
+    },
+    "en-393": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 393,
+     "innerWidth": 393,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-393-webkit.png"
+    },
+    "en-430": {
+     "lang": "en",
+     "dir": "ltr",
+     "overflows": false,
+     "scrollWidth": 430,
+     "innerWidth": 430,
+     "visibleImgs": [
+      "shots/game-boards-en.webp",
+      "shots/game-reveal-en.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-en-430-webkit.png"
+    },
+    "he-320": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 320,
+     "innerWidth": 320,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-320-webkit.png"
+    },
+    "he-375": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 375,
+     "innerWidth": 375,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-375-webkit.png"
+    },
+    "he-393": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 393,
+     "innerWidth": 393,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-393-webkit.png"
+    },
+    "he-430": {
+     "lang": "he",
+     "dir": "rtl",
+     "overflows": false,
+     "scrollWidth": 430,
+     "innerWidth": 430,
+     "visibleImgs": [
+      "shots/game-boards-he.webp",
+      "shots/game-reveal-he.webp"
+     ],
+     "ctas": [
+      "/"
+     ],
+     "otherLinks": [
+      "/privacy.html",
+      "/terms.html",
+      "mailto:caps@ftable.co.il"
+     ],
+     "buttons": 2,
+     "contrast": [],
+     "formatInText": true,
+     "storeDate": false,
+     "inventedNumbers": false,
+     "shot": "landing-he-430-webkit.png"
+    }
+   }
+  }
+ }
+}

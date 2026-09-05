@@ -118,6 +118,24 @@
     border:1px solid rgba(201,168,76,0.42); background:rgba(0,0,0,0.24); padding:9px 16px; border-radius:16px;}
   .mp .dim{color:var(--ink-dim); font-weight:600;}
 
+  /* ---- HOW A HAND WORKS — the format, IN WORDS. LANDING-AND-AUTOSWEEP 2026-09-05: this project
+     proved twice that a rules fact is READ, not seen — the six mockup directions that tried to
+     SHOW the format were the dullest images of the thirty. So the format lives here, in three
+     lines a stranger can read in about eight seconds, and the screenshot below is evidence that
+     the thing exists, not the explanation of it. Numbered, start-aligned, so it survives RTL. ---- */
+  .how{margin-top:24px; width:100%; text-align:start;
+    background:rgba(0,0,0,0.26); border:1px solid rgba(201,168,76,0.30); border-radius:16px; padding:16px 18px;}
+  .how h2{font-family:var(--serif); font-weight:700; color:var(--gold); font-size:15px;
+    letter-spacing:0.4px; text-transform:uppercase; margin-bottom:11px;}
+  .how ol{list-style:none; counter-reset:step; display:flex; flex-direction:column; gap:10px;}
+  .how li{counter-increment:step; position:relative; padding-inline-start:30px;
+    font-size:14.5px; line-height:1.45; color:var(--ink);}
+  .how li::before{content:counter(step); position:absolute; inset-inline-start:0; top:1px;
+    width:21px; height:21px; border-radius:50%; font-size:12px; font-weight:800; line-height:21px;
+    text-align:center; color:var(--gold-bright); background:rgba(201,168,76,0.16);
+    border:1px solid rgba(201,168,76,0.5);}
+  .how .note{margin-top:12px; font-size:12.5px; line-height:1.45; color:var(--ink-faint);}
+
   /* ---- the ONE action : ChipButton (mint fill / brass edge / dark label) — never gold ---- */
   .cta{display:block; width:100%; margin-top:26px; text-decoration:none;
     background:var(--mint); color:var(--chip-label); border:2px solid var(--brass); border-radius:999px;
@@ -187,6 +205,32 @@
       <span data-l="he">&#9829;&nbsp; שחק אונליין מול שחקנים אמיתיים <span class="dim">— או תרגול מול בוטים</span></span>
     </div>
 
+    <!-- THE FORMAT, IN WORDS — deliberately BEFORE the first screenshot, and deliberately not
+         carried by it. A stranger who never looks at an image must still finish this page knowing
+         what CAPS is. NB: the board count is DYNAMIC (2P=4, 3P=3, 4P=2), so no number is stated
+         anywhere here — "every board" is true at every table size, "three boards" would not be. -->
+    <section class="how" aria-label="How a hand works">
+      <h2><span data-l="en">How a hand works</span><span data-l="he">איך יד עובדת</span></h2>
+      <ol>
+        <li>
+          <span data-l="en">You get four cards on <strong>every</strong> board — not four cards in total.</span>
+          <span data-l="he">מקבלים 4 קלפים <strong>לכל</strong> בורד — לא 4 קלפים בסך הכול.</span>
+        </li>
+        <li>
+          <span data-l="en">You choose which cards go where. That decision is the game.</span>
+          <span data-l="he">אתם מחליטים איזה קלף הולך לאן. ההחלטה הזאת היא המשחק.</span>
+        </li>
+        <li>
+          <span data-l="en">Every board is played at once. Win the most boards and you win the hand.</span>
+          <span data-l="he">כל הבורדים משוחקים בבת אחת. מנצחים בהכי הרבה בורדים — ומנצחים ביד.</span>
+        </li>
+      </ol>
+      <p class="note">
+        <span data-l="en">The number of boards changes with how many people are at the table, so no two tables play quite the same.</span>
+        <span data-l="he">מספר הבורדים משתנה לפי כמות השחקנים בשולחן, כך ששני שולחנות אף פעם לא משוחקים בדיוק אותו דבר.</span>
+      </p>
+    </section>
+
     <!-- SHOW THE GAME — the real, current app (a fresh web export of this branch). The three-board
          screen is the one image that explains the product without a sentence. VAMOS FINISH-HEBREW
          2026-09-02: the app now renders in the visitor's language (getLanguage un-forced), so these
@@ -199,7 +243,14 @@
            global, Hebrew is the pilot addition — so an English page showing Hebrew screenshots was
            the same half-state defect the audit is about. Both languages are now shot from the same
            build and swapped with the page's own toggle. The English one is eager (it is the
-           default); the Hebrew twin is lazy so a display:none image is not fetched for nothing. -->
+           default); the Hebrew twin is lazy so a display:none image is not fetched for nothing.
+
+           LANDING-AND-AUTOSWEEP 2026-09-05 — ALL FOUR RE-SHOT, and two of them were wrong before:
+             · the Hebrew pair predated FULL-I18N (+159 keys), so it showed an app that no longer
+               exists — and it showed the RTL header collision fixed in this same sprint;
+             · game-reveal-*.webp were byte-identical in content to the boards shot, so the page
+               captioned a PLACING screen "live win odds and outs". The reveal is now the reveal.
+           Rig: tests/landing-hero-shots.mjs, from a fresh export of this branch. -->
       <img data-l="en" src="shots/game-boards-en.webp" width="660" height="1431" fetchpriority="high" decoding="async"
            alt="CAPS Poker game screen: three boards, four cards on each, all in play at once">
       <img data-l="he" src="shots/game-boards-he.webp" width="660" height="1431" loading="lazy" decoding="async"
@@ -245,8 +296,8 @@
       <div class="q">
         <h2><span data-l="en">Is it free?</span><span data-l="he">זה חינם?</span></h2>
         <p>
-          <span data-l="en">Yes — free to play, with optional in-app purchases. You start with virtual chips and earn more just by playing, so you never have to pay to keep going.</span>
-          <span data-l="he">כן — חינם לשחק, עם רכישות אופציונליות בתוך האפליקציה. מתחילים עם צ'יפים וירטואליים וצוברים עוד תוך כדי משחק, כך שאף פעם לא חייבים לשלם כדי להמשיך.</span>
+          <span data-l="en">Yes. You start with virtual chips and earn more just by playing. There is nothing to buy — CAPS takes no payments today, so there is no upgrade, no paywall and nothing to skip past.</span>
+          <span data-l="he">כן. מתחילים עם צ'יפים וירטואליים וצוברים עוד תוך כדי משחק. אין מה לקנות — <span dir="ltr">CAPS</span> לא גובה תשלום כיום, כך שאין שדרוג, אין תשלום חובה ואין על מה לדלג.</span>
         </p>
       </div>
       <div class="q">

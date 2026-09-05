@@ -43,7 +43,7 @@ import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rh, rs, rv, rb } from '../utils/responsive';
-import { t, getLanguage } from '../utils/i18n';
+import { t, getLanguage, isRTL } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
 import GuidedTooltip from '../components/GuidedTooltip';
 import { TimerController, TimerBar } from '../components/TimerController';
@@ -1450,7 +1450,7 @@ function GameScreenInner() {
               note, the PLACE string is the actual instruction during placement, so it wins the narrow
               band; the "no chips" reassurance drops on tiny screens only. Unchanged ≥375. */}
           {isPractice && screenW > 340 && (
-            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? t().practiceA11yNoChips : t().practiceA11yNet(practiceSessionNet)}>
+            <View style={[styles.practiceSessionPill, isRTL() ? { right: rs(64) } : { left: rs(64) }]} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? t().practiceA11yNoChips : t().practiceA11yNet(practiceSessionNet)}>
               {/* "Session +0" is dev jargon — until the player has actually won/lost, just say
                   what matters (no real chips). Show the running tally only once it's non-zero. */}
               <Text style={styles.practiceSessionText}>
@@ -1672,7 +1672,23 @@ const styles = StyleSheet.create({
     // that string is the actual instruction during placement. That trades down, not up.
     // NOT stacked onto its own row: the gap between the header row (bottom y 39) and the bot
     // status row (top y 57) is 18px for a 16px pill. 1px of clearance is not a fix.
-    left: rs(64),
+    //
+    // LANDING-AND-AUTOSWEEP 2026-09-05 — this anchor was DIRECTION-BLIND, and Hebrew paid for it.
+    // Every reason above is about clearing the ✕ BUTTON. In RTL the ✕ moves to the right and the
+    // allPlaced / "PLACE N CARDS" pill moves to the left — so a hard `left: 64` stopped clearing
+    // the ✕ and started sitting on top of that pill. Measured rendering, in Hebrew at 440 CSS px:
+    // practice pill x 82-199 against the status pill x 18-163 = 81px of horizontal overlap, with
+    // "🤖 תרגול · בלי צ׳יפים" drawn across "כל הקלפים הונחו!". English was clean (overlapX 0).
+    //
+    // ⚠️ TWO FIXES WERE TRIED AND MEASURED FIRST; BOTH FAILED, AND BOTH FAILED SILENTLY.
+    //   1. `start: rs(64)`. Compiled, exported, and the pill did not move — still x 82 in Hebrew,
+    //      still 81px of overlap. RN-Web did not map it to insetInlineStart in this build.
+    //   2. Keeping `left` here and overriding with `{ left: undefined, right: rs(64) }` at the
+    //      call site. `undefined` does not REMOVE a StyleSheet value, so the pill rendered with
+    //      left:64px AND right:64px and stretched to 302px wide — worse than the bug.
+    // So the anchor is not stated here at all. It is supplied at the call site, one edge at a
+    // time, from isRTL(). The 64px and its whole derivation above are unchanged — only which
+    // edge it is counted from. No `left`/`right`/`start` key belongs in this block.
     backgroundColor: 'rgba(245,181,70,0.16)',
     borderWidth: 1,
     borderColor: 'rgba(245,181,70,0.5)',
