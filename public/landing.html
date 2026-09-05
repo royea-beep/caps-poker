@@ -245,6 +245,18 @@
            build and swapped with the page's own toggle. The English one is eager (it is the
            default); the Hebrew twin is lazy so a display:none image is not fetched for nothing.
 
+           ⚠️ LANDING-LANG-BUG 2026-09-05 — shots/game-boards.webp and shots/game-reveal.webp (NO
+           language suffix) are ALSO in this folder and are deliberately NOT referenced here. They
+           are not dead. The DEPLOYED landing.html — main's, which is what caps.ftable.co.il serves
+           — has no image swap at all: two plain <img src> tags pointing at exactly those two
+           un-suffixed names, and on main those two files hold the HEBREW screenshots. That is why
+           the live ENGLISH page shows Hebrew. Those two names now hold the ENGLISH images
+           (byte-identical to the -en pair), so the deployed HTML serves English the moment the
+           assets ship, whether or not this file ships with them. Under Roye's rule that is a
+           strict improvement: English showing Hebrew is zero-tolerance, Hebrew showing English is
+           acceptable. DO NOT DELETE THEM as unreferenced, and DO NOT let them drift back to Hebrew.
+           tests/landing-image-lang.mjs reads the pixels and fails if either happens.
+
            LANDING-AND-AUTOSWEEP 2026-09-05 — ALL FOUR RE-SHOT, and two of them were wrong before:
              · the Hebrew pair predated FULL-I18N (+159 keys), so it showed an app that no longer
                exists — and it showed the RTL header collision fixed in this same sprint;

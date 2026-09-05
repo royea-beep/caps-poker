@@ -107,6 +107,23 @@ for (const LANG of ['en', 'he']) {
     textLen: (document.body.innerText || '').length,
     hasCanvasOrCards: document.querySelectorAll('[data-testid], img, svg').length,
   }));
+
+  // ⚠️ LANDING-LANG-BUG 2026-09-05 — GUARD THE LANGUAGE AT THE MOMENT OF CAPTURE.
+  // The live English landing page shipped a fully Hebrew screenshot and every sweep passed it,
+  // because a word baked into a PNG is not a text node. Checking here is the cheapest possible
+  // place: the image IS this DOM, so the DOM's script settles the image's script with no OCR and
+  // no recognition error. A `-en` shot that can see Hebrew must never be written to disk.
+  const script = await page.evaluate(() => {
+    const t = document.body.innerText || '';
+    return { hebrew: (t.match(/[֐-׿]/g) || []).length, latin: (t.match(/[A-Za-z]/g) || []).length };
+  });
+  report[`${LANG}-script`] = script;
+  if (LANG === 'en' && script.hebrew > 0) {
+    throw new Error(`REFUSING TO WRITE THE ENGLISH HERO: ${script.hebrew} Hebrew characters on screen`);
+  }
+  if (LANG === 'he' && script.hebrew === 0) {
+    throw new Error('REFUSING TO WRITE THE HEBREW HERO: no Hebrew on screen — caps_language did not take');
+  }
   report[LANG].sawAutoPlace = sawAuto;
   await ctx.close();
 }

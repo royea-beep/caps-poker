@@ -1,0 +1,182 @@
+{
+ "target": "local",
+ "base": "http://localhost:8984",
+ "canary": {
+  "vocabSize": 452,
+  "knownHebrew": {
+   "hits": [
+    "היד",
+    "שלך",
+    "מוכן",
+    "הקלפים",
+    "הונחו",
+    "בוט",
+    "קלפים",
+    "בורד",
+    "לפי",
+    "נצח",
+    "ידיים",
+    "ביטול",
+    "כאן",
+    "בוטים",
+    "מוצג",
+    "עוצמת"
+   ],
+   "hitCount": 16,
+   "sample": "> כל הקלפים הונחו! מא בוטים 2ו2 ( > מוכן (בורד 3) 8 10 1 \"| + 10 6 2 4 (בורד 8)2 0 0 2 |*|"
+  },
+  "knownEnglish": {
+   "hits": [],
+   "hitCount": 0,
+   "sample": "ופפסאום 5םאאס ווה 0 +סא=ה 4 22 פדסם ₪ סהאסף) | 10 זס 8 7 7 . . . .5 .4 8 7 7 6( האס ) 5 | "
+  },
+  "flagsHebrew": true,
+  "clearsEnglish": true
+ },
+ "rows": [
+  {
+   "engine": "chromium",
+   "lang": "en",
+   "width": 320,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-en.webp",
+    "game-reveal-en.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "chromium",
+   "lang": "en",
+   "width": 393,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-en.webp",
+    "game-reveal-en.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "chromium",
+   "lang": "he",
+   "width": 320,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-he.webp",
+    "game-reveal-he.webp"
+   ],
+   "hebrewWordsInImages": 14,
+   "words": [
+    "היד",
+    "מוכן",
+    "הקלפים",
+    "הונחו",
+    "בוט",
+    "קלפים",
+    "בורד",
+    "לפי"
+   ]
+  },
+  {
+   "engine": "chromium",
+   "lang": "he",
+   "width": 393,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-he.webp",
+    "game-reveal-he.webp"
+   ],
+   "hebrewWordsInImages": 14,
+   "words": [
+    "היד",
+    "מוכן",
+    "הקלפים",
+    "הונחו",
+    "בוט",
+    "קלפים",
+    "בורד",
+    "לפי"
+   ]
+  },
+  {
+   "engine": "webkit",
+   "lang": "en",
+   "width": 320,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-en.webp",
+    "game-reveal-en.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "webkit",
+   "lang": "en",
+   "width": 393,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-en.webp",
+    "game-reveal-en.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "webkit",
+   "lang": "he",
+   "width": 320,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-he.webp",
+    "game-reveal-he.webp"
+   ],
+   "hebrewWordsInImages": 14,
+   "words": [
+    "היד",
+    "מוכן",
+    "הקלפים",
+    "הונחו",
+    "בוט",
+    "קלפים",
+    "בורד",
+    "לפי"
+   ]
+  },
+  {
+   "engine": "webkit",
+   "lang": "he",
+   "width": 393,
+   "images": 2,
+   "cssBackgroundImages": 0,
+   "srcs": [
+    "game-boards-he.webp",
+    "game-reveal-he.webp"
+   ],
+   "hebrewWordsInImages": 14,
+   "words": [
+    "היד",
+    "מוכן",
+    "הקלפים",
+    "הונחו",
+    "בוט",
+    "קלפים",
+    "בורד",
+    "לפי"
+   ]
+  }
+ ],
+ "failures": [],
+ "failureCount": 0,
+ "notes": [],
+ "noteCount": 0
+}
