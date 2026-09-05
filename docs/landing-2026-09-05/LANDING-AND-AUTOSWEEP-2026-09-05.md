@@ -138,7 +138,7 @@ One rig, one export, read out of the painted DOM: `tests/tap-list-sweep.mjs`. Ar
 | 2d | No shop prompt in the post-hand flow | **PASS** — 0 matches for Buy / Get chips / Store / Shop / חנות / קנה |
 | 2e | Tie tally sums to the board count | **PASS**, all three table sizes: 2P **2+2=4**, 3P **1+2=3**, 4P **1+1=2** |
 | 3 | Referral, proven by TYPING | **PASS** — see below |
-| 4a | Lobby practice row | **INCONCLUSIVE HERE** — the rows are DB-sourced and this rig is offline. Proven present in production data: `list_public_tables()` returns 9 tables, **3 `bot_practice`** (2P/3P/4P) + 6 `human`. Rendering them needs a live-network browser, which this container does not have |
+| 4a | Lobby practice row | **INCONCLUSIVE HERE** — the rows are DB-sourced and this rig is offline. Proven present in production data: `list_public_tables()` returns 9 tables, **3 `bot_practice`** (2P/3P/4P) + 6 `human`, exactly what the lobby code expects. Rendering them needs a live-network browser, which this container does not have. ⚠️ My first read of that RPC reported `table_kind` NULL and "the server migration has not landed" — that was my probe counting the returned JSON **array** as a single row. The probe was wrong, not the function |
 | 4b | REMATCH | **DEVICE / TWO-CLIENT** — `mp-rematch` is gated on `isMultiplayer`; reaching it needs a real multiplayer hand over realtime, which this container cannot open |
 | 5 | Gilded shop / lobby / profile at 320-430, both engines | **PASS** — 40 combinations (5 screens × 4 widths × 2 engines), **0 with horizontal overflow**, 0 blank |
 | 6a | Zero gold on any CTA | **PASS** — the winner cue `#FFD700` appears on **0** controls across all 40 combinations and on the first-run Home |
