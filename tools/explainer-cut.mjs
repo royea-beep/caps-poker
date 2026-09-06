@@ -46,51 +46,61 @@ const cue = ({ t, d, text, size = FONT_SIZE }) =>
   `box=1:boxcolor=black@0.78:boxborderw=18:x=(w-text_w)/2:y=h-h/4.2:` +
   `enable='between(t,${t},${t + d})'`;
 
+/**
+ * WINDOWS RE-DERIVED 2026-09-06 for the SPLASH-ASSETS-EXPLAINERS-MAP re-capture.
+ *
+ * The offsets below belong to ONE take. Re-running the rig produces a new take with different
+ * timings, so reusing the previous windows would have cut the wrong screens under the right
+ * captions — the exact failure this file's original header warns about. A filmstrip was pulled
+ * from the new raw take every 3 seconds and LOOKED AT; these are read off it:
+ *   take A  home 0-11 · placement 15-27 · reveal 30-38 · results 39-50 · history 51-61 · profile 63-76
+ *   take B  lobby 0-13 · (transition 15) · shop 18-28
+ */
 const CLIPS = [
-  { id: '01-home', src: A, start: 1.5, duration: 11.0, cues: [
-    { t: 0,   d: 3.4, text: 'HOME — where every session starts' },
-    { t: 3.5, d: 3.7, text: 'Play Online, or practise against bots' },
-    { t: 7.3, d: 3.7, text: 'A daily bonus tops up your chips' },
+  { id: '01-home', src: A, start: 3.0, duration: 8.0, cues: [
+    { t: 0,   d: 2.6, text: 'HOME — where every session starts' },
+    { t: 2.7, d: 2.6, text: 'Play Online, or practise against bots' },
+    { t: 5.4, d: 2.6, text: 'A daily bonus tops up your chips' },
   ] },
-  { id: '02-placement', src: A, start: 17.0, duration: 11.5, cues: [
-    { t: 0,   d: 3.4, text: 'PLACING — the decision that is the game' },
-    { t: 3.5, d: 3.9, text: 'Four cards per board. You choose where' },
-    { t: 7.5, d: 4.0, text: 'Auto-Place fills a board fast. Then READY' },
+  { id: '02-placement', src: A, start: 15.0, duration: 11.0, cues: [
+    { t: 0,   d: 3.5, text: 'PLACING — the decision that is the game' },
+    { t: 3.6, d: 3.6, text: 'Four cards per board. You choose where' },
+    { t: 7.3, d: 3.6, text: 'Auto-Place fills a board fast. Then READY' },
   ] },
-  { id: '03-reveal', src: A, start: 29.0, duration: 8.5, cues: [
-    { t: 0,   d: 3.2, text: 'REVEAL — the boards play out one at a time' },
-    { t: 3.3, d: 2.6, text: 'Live odds while cards are still to come' },
-    { t: 6.0, d: 2.5, text: 'Each board is named and settled on its own' },
+  { id: '03-reveal', src: A, start: 29.5, duration: 8.0, cues: [
+    { t: 0,   d: 3.0, text: 'REVEAL — the boards play out one at a time' },
+    { t: 3.1, d: 2.5, text: 'Live odds while cards are still to come' },
+    { t: 5.7, d: 2.3, text: 'Each board is named and settled on its own' },
   ] },
   // WINDOW SHORTENED after watching: at 12.5s this clip ran past the navigation away from results
   // and spent its last two seconds on the CAPS splash, under a caption about "Deal me in".
-  { id: '04-results', src: A, start: 40.5, duration: 10.0, cues: [
-    { t: 0,   d: 3.2, text: 'RESULTS — boards decide the hand' },
-    { t: 3.3, d: 3.2, text: 'The score is boards won, not chips' },
-    { t: 6.6, d: 3.4, text: 'Hand details opens the breakdown' },
+  { id: '04-results', src: A, start: 39.5, duration: 9.0, cues: [
+    { t: 0,   d: 3.0, text: 'RESULTS — boards decide the hand' },
+    { t: 3.1, d: 2.9, text: 'The score is boards won, not chips' },
+    { t: 6.1, d: 2.9, text: 'Hand details opens the breakdown' },
   ] },
-  { id: '05-hand-history', src: A, start: 53.5, duration: 10.5, cues: [
-    { t: 0,   d: 3.4, text: 'HAND HISTORY — your past hands' },
-    { t: 3.5, d: 3.7, text: 'Practice hands are not recorded' },
-    { t: 7.4, d: 3.0, text: 'Play for chips and every hand lands here' },
+  { id: '05-hand-history', src: A, start: 53.5, duration: 7.0, cues: [
+    { t: 0,   d: 2.3, text: 'HAND HISTORY — your past hands' },
+    { t: 2.4, d: 2.3, text: 'Practice hands are not recorded' },
+    { t: 4.8, d: 2.2, text: 'Play for chips and every hand lands here' },
   ] },
-  { id: '06-profile', src: A, start: 64.5, duration: 13.5, cues: [
-    { t: 0,   d: 3.4, text: 'PROFILE — hands, win rate, streak and chips' },
-    { t: 3.5, d: 4.4, text: 'Achievements, hand history and detailed stats' },
-    { t: 8.0, d: 5.4, text: 'Cups and settings live here too' },
+  { id: '06-profile', src: A, start: 68.0, duration: 9.5, cues: [
+    { t: 0,   d: 3.1, text: 'PROFILE — hands, win rate, streak and chips' },
+    { t: 3.2, d: 3.1, text: 'Achievements, hand history and detailed stats' },
+    { t: 6.4, d: 3.1, text: 'Cups and settings live here too' },
   ] },
   // WINDOW SHORTENED after watching: at 14.0s this clip was already showing the SHOP under a
   // caption about board counts, and 8.0s still caught the splash on the way out — 6.8s is the
   // last frame that is unambiguously the lobby. The tables read "Opening a table..." because the capture runs
   // with the network blocked — the clip shows the lobby's SHAPE, which is what the caption says.
-  { id: '07-lobby', src: B, start: 8.5, duration: 6.8, cues: [
-    { t: 0,   d: 2.2, text: 'LOBBY — tables against real people' },
-    { t: 2.3, d: 2.2, text: 'Heads-up, 3-player or 4-player' },
-    { t: 4.6, d: 2.2, text: 'Fewer players, more boards: 2 play 4' },
+  { id: '07-lobby', src: B, start: 2.5, duration: 10.5, cues: [
+    { t: 0,   d: 3.4, text: 'LOBBY — tables against real people' },
+    { t: 3.5, d: 3.4, text: 'Heads-up, 3-player or 4-player' },
+    { t: 7.0, d: 3.5, text: 'Fewer players, more boards: 2 play 4' },
   ] },
-  { id: '08-shop', src: B, start: 23.5, duration: 6.5, cues: [
-    { t: 0,   d: 3.2, text: 'CHIP SHOP — reached from your chip count' },
-    { t: 3.3, d: 3.1, text: 'Empty today. Nothing is for sale' },
+  { id: '08-shop', src: B, start: 18.5, duration: 9.5, cues: [
+    { t: 0,   d: 4.6, text: 'CHIP SHOP — reached from your chip count' },
+    { t: 4.7, d: 4.7, text: 'Empty today. Nothing is for sale' },
   ] },
 ];
 
