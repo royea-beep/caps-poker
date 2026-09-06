@@ -8,6 +8,7 @@ import { rf, rs, rv, rb } from '../utils/responsive';
 import { t, getLanguage, isRTL } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
+import { resetDismissedTips } from '../utils/tipsSeen';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
 // Lazy haptics — web-safe
@@ -1175,6 +1176,9 @@ export default function SettingsScreen() {
           variant="secondary"
           onPress={async () => {
             await AsyncStorage.removeItem(INTERACTIVE_TUTORIAL_KEY).catch(() => {});
+            // Replaying the onboarding replays ALL of it. Without this the overlay comes back but
+            // the six in-game tips stay retired, which is a half-replay the player cannot explain.
+            await resetDismissedTips();
             router.replace('/');
           }}
           style={{ marginBottom: 12 }}

@@ -53,6 +53,7 @@ import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
 import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
 import { getPracticeLiveState, requestPracticeLiveJumpNow } from '../utils/practiceLiveSession';
+import { loadDismissedTips, isTipDismissed, markTipDismissed, gameTipId, BOARD_HINT_ID } from '../utils/tipsSeen';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -332,57 +333,80 @@ function GameScreenInner() {
 
   // ÂÂ Guided first game tooltips ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
   const advanceTooltip = useCallback(() => {
+    // DISMISS-THE-TIPS 2026-09-06 — a dismissal is now RECORDED, per device, for ever. Before
+    // this the only thing standing between a player and the same six tips was
+    // `caps_games_played === 0`, a counter written solely when a hand REACHES THE REVEAL. Open a
+    // hand, read the tips, leave: nothing was recorded, and the next hand taught you again.
+    // Measured: four abandoned hands, six tips every time, counter still null.
+    markTipDismissed(gameTipId(tooltipStep));
     setTooltipVisible(false);
     // Tip 2 auto-shows 300ms after tip 1 dismissed — handled by step watcher below
+  }, [tooltipStep]);
+
+  /**
+   * Show a tip UNLESS this device has already dismissed it.
+   *
+   * The step still advances when a tip is suppressed: every hand-off in the chain below is
+   * driven either by a game event (a card placed, a board filled) or by `tooltipVisible`
+   * falling back to false, which a suppressed tip satisfies immediately. So a returning player
+   * walks the whole sequence silently instead of stalling on a tip they have already read.
+   */
+  const showTip = useCallback((step: number) => {
+    setTooltipStep(step);
+    setTooltipVisible(!isTipDismissed(gameTipId(step)));
   }, []);
 
   // Tip 1 — cards dealt (step 0 Â 1)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 0 || playerHand.length === 0) return;
-    const id = setTimeout(() => { setTooltipStep(1); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => showTip(1), 500);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, playerHand.length]);
+  }, [isFirstGame, tooltipStep, playerHand.length, showTip]);
 
   // Tip 2 — auto after tip 1 dismissed (step 1 Â 2, tooltipVisible just became false)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 1 || tooltipVisible) return;
-    const id = setTimeout(() => { setTooltipStep(2); setTooltipVisible(true); }, 300);
+    const id = setTimeout(() => showTip(2), 300);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, tooltipVisible]);
+  }, [isFirstGame, tooltipStep, tooltipVisible, showTip]);
 
   // Tip 3 — first card placed (step 2 Â 3)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 2) return;
     const anyCardPlaced = boards.some((b) => b.playerCards.length >= 1);
     if (!anyCardPlaced) return;
-    const id = setTimeout(() => { setTooltipStep(3); setTooltipVisible(true); }, 200);
+    // The board hint reads "Tap a card from your hand, then tap a board to place it". The player
+    // has just done that, so it has taught its lesson and is retired for good — it was on the
+    // same broken `gamesPlayed < 1` gate and repeated on every abandoned hand too.
+    markTipDismissed(BOARD_HINT_ID);
+    const id = setTimeout(() => showTip(3), 200);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, boards]);
+  }, [isFirstGame, tooltipStep, boards, showTip]);
 
   // Tip 4 — first board full (step 3 Â 4)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 3) return;
     const hasFullBoard = boards.some((b) => b.playerCards.length === CARDS_PER_BOARD);
     if (!hasFullBoard) return;
-    const id = setTimeout(() => { setTooltipStep(4); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => showTip(4), 500);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, boards]);
+  }, [isFirstGame, tooltipStep, boards, showTip]);
 
   // Tip 5 — auto after tip 4 dismissed (step 4 Â 5): 2-of-4 rule explainer
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 4 || tooltipVisible) return;
-    const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 400);
+    const id = setTimeout(() => showTip(5), 400);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, tooltipVisible]);
+  }, [isFirstGame, tooltipStep, tooltipVisible, showTip]);
 
   // Tip 6 — all boards full (step 5 Â 6): ready to submit
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 5) return;
     const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
     if (!allFull) return;
-    const id = setTimeout(() => { setTooltipStep(6); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => showTip(6), 500);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, boards]);
+  }, [isFirstGame, tooltipStep, boards, showTip]);
   // ÂÂ End guided tooltips ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   // Start 30s countdown
@@ -553,6 +577,9 @@ function GameScreenInner() {
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
       AsyncStorage.getItem(GUIDED_FORCED_KEY),
+      // Hydrated in the SAME await as the counter, so the first render that can show a tip
+      // already knows which tips this device has retired.
+      loadDismissedTips(),
     ]).then(([gamesVal, guidedVal]) => {
       const played = parseInt(gamesVal ?? '0', 10);
       setGamesPlayed(played);
@@ -1480,12 +1507,12 @@ function GameScreenInner() {
           )}
 
           {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
-          {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
+          {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= TIPS.length && (
             <GuidedTooltip
               text={TIPS[tooltipStep - 1]?.() ?? ''}
               visible={tooltipVisible}
               onDismiss={advanceTooltip}
-              position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
+              position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === TIPS.length ? 'top' : 'bottom'}
               // REVERTED 2026-08-13, same day it shipped. This passed
               // `_handZoneActualH + rs(20, screenW)` and MADE THE SCREEN WORSE: measured live,
               // coverage went from 6 cards to TWELVE (78% @375, 81% @393, 75% @1706x960). The

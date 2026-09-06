@@ -1,0 +1,33 @@
+[
+  {
+    "hand": 1,
+    "tipAny": true,
+    "boardHint": true,
+    "counter": null
+  },
+  {
+    "hand": 2,
+    "tipAny": false,
+    "boardHint": true,
+    "counter": null
+  },
+  {
+    "hand": 3,
+    "tipAny": false,
+    "boardHint": true,
+    "counter": null
+  },
+  {
+    "hand": 4,
+    "tipAny": false,
+    "boardHint": true,
+    "counter": null
+  },
+  {
+    "hand": 6,
+    "note": "after placing cards then abandoning",
+    "tipAny": false,
+    "boardHint": false,
+    "counter": null
+  }
+]

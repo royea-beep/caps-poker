@@ -55,6 +55,7 @@ import { CapsHooks } from '../../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../../utils/auth';
 import { FriendsBg } from '../../components/FriendsBg';
 import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../../components/InteractiveTutorial';
+import { resetDismissedTips } from '../../utils/tipsSeen';
 import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
@@ -1306,6 +1307,8 @@ export default function HomeScreen() {
           // Replay the single onboarding (InteractiveTutorial).
           setMenuOpen(false);
           AsyncStorage.removeItem(INTERACTIVE_TUTORIAL_KEY).catch(() => {});
+          // Same as Settings: a replay replays the in-game tips too, not just the overlay.
+          void resetDismissedTips();
           setTimeout(() => setShowInteractiveTutorial(true), 60);
         }}
         chips={chips}
