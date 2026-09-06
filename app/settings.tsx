@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { debugLog } from '../components/DebugOverlay';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking } from 'react-native';
 import Constants from 'expo-constants';
@@ -8,7 +8,7 @@ import { rf, rs, rv, rb } from '../utils/responsive';
 import { t, getLanguage, isRTL } from '../utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INTERACTIVE_TUTORIAL_KEY } from '../components/InteractiveTutorial';
-import { resetDismissedTips } from '../utils/tipsSeen';
+import { resetDismissedTips, areTipsEnabled, setTipsEnabled, loadDismissedTips } from '../utils/tipsSeen';
 // CSSProperties used for web-only <img> elements inside FriendsBgPicker
 
 // Lazy haptics — web-safe
@@ -293,6 +293,59 @@ function HapticsToggle() {
       >
         <Text style={[styles.toggleText, hapticsEnabled && styles.toggleTextActive]}>
           {hapticsEnabled ? t().setOnCaps : t().setOffCaps}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * SHOW TIPS — the one control this sprint adds, and the only one.
+ *
+ * ON by default, and "off" is never a default: a first-time player must still be taught, because
+ * the tester round depends on a stranger working the game out unaided. Off suppresses ALL THREE
+ * explanations — the onboarding overlay, the six guided tooltips and the board hint — because
+ * "the opening explanations" means all of them, and a switch that silenced two of three would
+ * read as broken.
+ *
+ * Turning it back ON restores them, which is why setTipsEnabled(true) also clears the dismissals:
+ * otherwise the switch works once and then does nothing, since everything is still marked seen.
+ *
+ * WHY A SWITCH AT ALL, GIVEN THE PERSISTENCE FIX. The fix stops the tips naturally once they have
+ * been read. That is the right default and it is not enough: a player who wants them gone NOW
+ * should not have to read six of them first. Different questions, both worth answering.
+ */
+function ShowTipsToggle() {
+  const [enabled, setEnabled] = useState(areTipsEnabled());
+
+  useEffect(() => {
+    // The flag lives in AsyncStorage, so the first paint shows the default until it resolves.
+    void loadDismissedTips().then(() => setEnabled(areTipsEnabled()));
+  }, []);
+
+  const onToggle = useCallback(() => {
+    const next = !enabled;
+    setEnabled(next);
+    void setTipsEnabled(next);
+    CapsHooks.settingsChanged('showTips', next);
+  }, [enabled]);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setShowTips}</Text>
+        <Text style={styles.rowHint} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setShowTipsHint}</Text>
+      </View>
+      <Pressable
+        onPress={onToggle}
+        style={[styles.toggleBtn, enabled && styles.toggleBtnActive]}
+        accessibilityRole="switch"
+        accessibilityLabel={t().setShowTips} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
+        accessibilityState={{ checked: enabled }} aria-checked={enabled}
+        testID="settings-show-tips"
+      >
+        <Text style={[styles.toggleText, enabled && styles.toggleTextActive]}>
+          {enabled ? t().setOnCaps : t().setOffCaps}
         </Text>
       </Pressable>
     </View>
@@ -1165,6 +1218,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setTools}</Text>
         {/* Discoverable bug-report entry for testers — writes to bug_reports (AI triage +
             Telegram/GitHub fire via the on_bug_report_inserted trigger). */}
+        <ShowTipsToggle />
         <View style={{ marginBottom: 12 }}>
           <ReportBugButton variant="row" />
         </View>

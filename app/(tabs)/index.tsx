@@ -55,7 +55,7 @@ import { CapsHooks } from '../../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../../utils/auth';
 import { FriendsBg } from '../../components/FriendsBg';
 import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../../components/InteractiveTutorial';
-import { resetDismissedTips } from '../../utils/tipsSeen';
+import { resetDismissedTips, areTipsEnabled, loadDismissedTips } from '../../utils/tipsSeen';
 import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
@@ -876,8 +876,16 @@ export default function HomeScreen() {
     // Interactive tutorial (S98) — THE single first-run onboarding, shown if not yet seen.
     // CI guard: when EXPO_PUBLIC_CAPS_CI=1 (sim auto-tour build), never show the tutorial.
     if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
-      AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY).then(val => {
-        if (!val) setShowInteractiveTutorial(true);
+      // SHOW-TIPS 2026-09-06 — the Settings switch covers ALL THREE explanations, and this is the
+      // first of them. Suppressing only the in-game tooltips would leave a player who turned tips
+      // off still meeting a full-screen overlay, which reads as a broken switch.
+      // The switch is read AFTER the store hydrates, so the default (ON) can never flash the
+      // overlay at someone who turned it off.
+      void Promise.all([
+        AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY),
+        loadDismissedTips(),
+      ]).then(([val]) => {
+        if (!val && areTipsEnabled()) setShowInteractiveTutorial(true);
       }).catch(() => {});
     }
     Promise.all([

@@ -450,6 +450,8 @@ interface Translations {
   setSpeedNormal: string;
   setSpeedCinematic: string;
   setVibration: string;
+  setShowTips: string;
+  setShowTipsHint: string;
   setSoundVolume: string;
   setAmbientSound: string;
   setAmbientSoundSub: string;
@@ -866,6 +868,8 @@ const he: Translations = {
   setSpeedNormal: 'רגיל',
   setSpeedCinematic: 'קולנועי',
   setVibration: 'רטט',
+  setShowTips: 'הצגת טיפים',
+  setShowTipsHint: 'הסברי הפתיחה בתחילת יד. כיבוי מסתיר את כולם.',
   setSoundVolume: 'עוצמת השמע',
   setAmbientSound: 'מוזיקת רקע',
   setAmbientSoundSub: 'מוזיקת רקע של קזינו',
@@ -1284,6 +1288,8 @@ const en: Translations = {
   setSpeedNormal: 'Normal',
   setSpeedCinematic: 'Cinematic',
   setVibration: 'Vibration',
+  setShowTips: 'Show tips',
+  setShowTipsHint: 'The opening explanations at the start of a hand. Off hides all of them.',
   setSoundVolume: 'Sound Volume',
   setAmbientSound: 'Ambient Sound',
   setAmbientSoundSub: 'Casino background music',

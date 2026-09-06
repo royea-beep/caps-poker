@@ -23,7 +23,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   loadDismissedTips, isTipDismissed, markTipDismissed, resetDismissedTips,
-  gameTipId, BOARD_HINT_ID, TIPS_DISMISSED_KEY, __resetTipsCacheForTest,
+  gameTipId, BOARD_HINT_ID, TIPS_DISMISSED_KEY, TIPS_ENABLED_KEY,
+  areTipsEnabled, setTipsEnabled, __resetTipsCacheForTest,
 } from '../tipsSeen';
 
 const ROOT = join(__dirname, '..', '..');
@@ -105,7 +106,86 @@ describe('the screens consult it', () => {
   it('both existing replay controls replay the tips too — no third control was added', () => {
     expect(code('app/settings.tsx')).toContain('resetDismissedTips()');
     expect(code('app/(tabs)/index.tsx')).toContain('resetDismissedTips()');
-    // The standing rule: Settings went 42 controls -> 23 deliberately. Nothing new here.
-    expect(code('app/settings.tsx')).not.toMatch(/showTips|show_tips|tipsEnabled/);
+    // SUPERSEDED 2026-09-06. This line used to assert that NO tips control existed anywhere,
+    // written when the previous sprint concluded the bug fix made a switch unnecessary. That
+    // conclusion was mine to report, not to make: Roye asked for the button and still wants it.
+    // The standing rule it was guarding — Settings went 42 controls to 23, so anything added back
+    // must earn its place alone — is now enforced by the "exactly ONE control" block below.
+  });
+});
+
+describe('the Show tips switch', () => {
+  it('is ON when nothing has ever been stored — "off" is never a default', async () => {
+    await loadDismissedTips();
+    expect(areTipsEnabled()).toBe(true);
+  });
+
+  it('only an explicit false turns it off; a corrupt value still teaches', async () => {
+    store.set(TIPS_ENABLED_KEY, 'banana');
+    await loadDismissedTips();
+    expect(areTipsEnabled()).toBe(true);
+  });
+
+  it('off suppresses EVERY explanation, not just the ones already seen', async () => {
+    await setTipsEnabled(false);
+    for (let i = 1; i <= 6; i++) expect(isTipDismissed(gameTipId(i))).toBe(true);
+    expect(isTipDismissed(BOARD_HINT_ID)).toBe(true);
+  });
+
+  it('turning it back ON shows them again — otherwise it works once and is not a switch', async () => {
+    markTipDismissed(gameTipId(1));
+    markTipDismissed(BOARD_HINT_ID);
+    await setTipsEnabled(false);
+    await setTipsEnabled(true);
+    expect(areTipsEnabled()).toBe(true);
+    expect(isTipDismissed(gameTipId(1))).toBe(false);
+    expect(isTipDismissed(BOARD_HINT_ID)).toBe(false);
+    // and the onboarding overlay comes back with them
+    expect(store.has('has_seen_interactive_tutorial')).toBe(false);
+  });
+
+  it('the state survives a relaunch', async () => {
+    await setTipsEnabled(false);
+    __resetTipsCacheForTest();
+    expect(areTipsEnabled()).toBe(true);        // default until hydration
+    await loadDismissedTips();
+    expect(areTipsEnabled()).toBe(false);       // and then the stored answer
+  });
+
+  it('the onboarding key string cannot drift from the component that owns it', () => {
+    const tutorial = readFileSync(join(ROOT, 'components/InteractiveTutorial.tsx'), 'utf8');
+    const declared = /INTERACTIVE_TUTORIAL_KEY = '([^']+)'/.exec(tutorial)?.[1];
+    const mirrored = /ONBOARDING_SEEN_KEY = '([^']+)'/.exec(readFileSync(join(ROOT, 'utils/tipsSeen.ts'), 'utf8'))?.[1];
+    expect(declared).toBe('has_seen_interactive_tutorial');
+    expect(mirrored).toBe(declared);
+  });
+});
+
+describe('exactly ONE control was added', () => {
+  const settings = code('app/settings.tsx');
+
+  it('the switch exists, is a switch, and is reachable by accessibility label', () => {
+    expect(settings).toContain('function ShowTipsToggle()');
+    expect(settings).toContain('<ShowTipsToggle />');
+    expect(settings).toContain("accessibilityRole=\"switch\"");
+    expect(settings).toContain('testID="settings-show-tips"');
+  });
+
+  it('is mounted exactly once', () => {
+    expect((settings.match(/<ShowTipsToggle \/>/g) ?? []).length).toBe(1);
+  });
+
+  it('adds no second tips control — no per-tip preference crept in', () => {
+    expect(settings).not.toMatch(/ShowTutorialToggle|TipStyleSelector|PerTipToggle|tipsFrequency/);
+  });
+
+  it('the home overlay obeys the same switch', () => {
+    expect(code('app/(tabs)/index.tsx')).toContain('if (!val && areTipsEnabled()) setShowInteractiveTutorial(true);');
+  });
+
+  it('both languages carry the new strings', () => {
+    const i18n = readFileSync(join(ROOT, 'utils/i18n.ts'), 'utf8');
+    expect((i18n.match(/setShowTips:/g) ?? []).length).toBe(3);      // interface + 2 tables
+    expect((i18n.match(/setShowTipsHint:/g) ?? []).length).toBe(3);
   });
 });

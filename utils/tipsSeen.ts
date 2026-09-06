@@ -24,6 +24,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const TIPS_DISMISSED_KEY = 'caps_tips_dismissed';
 
+/**
+ * THE SWITCH. Roye asked for one and he was right to: the persistence fix stops the tips
+ * NATURALLY once they have been read, but a player who wants them gone NOW should not have to
+ * read six of them first. The two answer different questions and both are needed.
+ *
+ * ABSENT MEANS ON. A first-time player must still be taught — the tester round depends on a
+ * stranger working the game out — so the flag is only ever written when someone deliberately
+ * moves it, and "off" is never a default.
+ */
+export const TIPS_ENABLED_KEY = 'caps_show_tips';
+
+/**
+ * Must equal InteractiveTutorial's INTERACTIVE_TUTORIAL_KEY. Declared here rather than imported
+ * so this module stays free of React: importing the component would drag the whole overlay into
+ * every consumer. tipsSeen.test.ts asserts the two strings are identical, so they cannot drift.
+ */
+const ONBOARDING_SEEN_KEY = 'has_seen_interactive_tutorial';
+
 /** Stable ids. The board hint is one of these too — it repeats on the same broken gate. */
 export const gameTipId = (step: number) => `game-tip-${step}`;
 export const BOARD_HINT_ID = 'board-hint';
@@ -31,13 +49,20 @@ export const BOARD_HINT_ID = 'board-hint';
 let cache = new Set<string>();
 let hydrated = false;
 let inflight: Promise<Set<string>> | null = null;
+let enabled = true;   // absent means ON — see TIPS_ENABLED_KEY
 
 /** Resolves once the persisted set is in memory. Safe to call repeatedly. */
 export function loadDismissedTips(): Promise<Set<string>> {
   if (hydrated) return Promise.resolve(cache);
   if (inflight) return inflight;
-  inflight = AsyncStorage.getItem(TIPS_DISMISSED_KEY)
-    .then((raw) => {
+  inflight = Promise.all([
+    AsyncStorage.getItem(TIPS_DISMISSED_KEY),
+    AsyncStorage.getItem(TIPS_ENABLED_KEY),
+  ])
+    .then(([raw, enabledRaw]) => {
+      // Only an explicit 'false' turns them off. A missing key, a corrupt key and a stray value
+      // all mean ON, so no storage accident can silently un-teach a new player.
+      enabled = enabledRaw !== 'false';
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
@@ -54,8 +79,35 @@ export function loadDismissedTips(): Promise<Set<string>> {
   return inflight;
 }
 
+/** Synchronous — for render. Defaults to ON before hydration, which errs toward TEACHING. */
+export function areTipsEnabled(): boolean {
+  return enabled;
+}
+
+/**
+ * Moves the switch.
+ *
+ * Turning it back ON also clears every dismissal AND the onboarding-seen flag, so the
+ * explanations genuinely come back. Without that the switch would work exactly once — off, then
+ * on, then nothing, because everything is still marked seen — and a switch that only works in one
+ * direction is not a switch.
+ */
+export async function setTipsEnabled(on: boolean): Promise<void> {
+  enabled = on;
+  hydrated = true;
+  await AsyncStorage.setItem(TIPS_ENABLED_KEY, on ? 'true' : 'false').catch(() => {});
+  if (on) {
+    cache = new Set();
+    await AsyncStorage.removeItem(TIPS_DISMISSED_KEY).catch(() => {});
+    await AsyncStorage.removeItem(ONBOARDING_SEEN_KEY).catch(() => {});
+  }
+}
+
 /** Synchronous — for render. False until hydration lands, which errs toward SHOWING a tip. */
 export function isTipDismissed(id: string): boolean {
+  // The switch is checked HERE, not at each call site, so every surface that already consults
+  // this — the six tooltips and the board hint — is covered by one line and none can be missed.
+  if (!enabled) return true;
   return cache.has(id);
 }
 
@@ -82,4 +134,5 @@ export function __resetTipsCacheForTest(): void {
   cache = new Set();
   hydrated = false;
   inflight = null;
+  enabled = true;
 }
