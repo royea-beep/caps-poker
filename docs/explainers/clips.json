@@ -1,0 +1,97 @@
+[
+ {
+  "id": "01-home",
+  "seconds": 11,
+  "size": "1080,1920",
+  "bytes": 1079028,
+  "audioStreams": 0,
+  "captions": [
+   "HOME — where every session starts",
+   "Play Online, or practise against bots",
+   "A daily bonus tops up your chips"
+  ]
+ },
+ {
+  "id": "02-placement",
+  "seconds": 11.52,
+  "size": "1080,1920",
+  "bytes": 943150,
+  "audioStreams": 0,
+  "captions": [
+   "PLACING — the decision that is the game",
+   "Four cards per board. You choose where",
+   "Auto-Place fills a board fast. Then READY"
+  ]
+ },
+ {
+  "id": "03-reveal",
+  "seconds": 8.52,
+  "size": "1080,1920",
+  "bytes": 1362269,
+  "audioStreams": 0,
+  "captions": [
+   "REVEAL — the boards play out one at a time",
+   "Live odds while cards are still to come",
+   "Each board is named and settled on its own"
+  ]
+ },
+ {
+  "id": "04-results",
+  "seconds": 10,
+  "size": "1080,1920",
+  "bytes": 1193369,
+  "audioStreams": 0,
+  "captions": [
+   "RESULTS — boards decide the hand",
+   "The score is boards won, not chips",
+   "Hand details opens the breakdown"
+  ]
+ },
+ {
+  "id": "05-hand-history",
+  "seconds": 10.52,
+  "size": "1080,1920",
+  "bytes": 202686,
+  "audioStreams": 0,
+  "captions": [
+   "HAND HISTORY — your past hands",
+   "Practice hands are not recorded",
+   "Play for chips and every hand lands here"
+  ]
+ },
+ {
+  "id": "06-profile",
+  "seconds": 13.52,
+  "size": "1080,1920",
+  "bytes": 648176,
+  "audioStreams": 0,
+  "captions": [
+   "PROFILE — hands, win rate, streak and chips",
+   "Achievements, hand history and detailed stats",
+   "Cups and settings live here too"
+  ]
+ },
+ {
+  "id": "07-lobby",
+  "seconds": 6.8,
+  "size": "1080,1920",
+  "bytes": 362054,
+  "audioStreams": 0,
+  "captions": [
+   "LOBBY — tables against real people",
+   "Heads-up, 3-player or 4-player",
+   "Fewer players, more boards: 2 play 4"
+  ]
+ },
+ {
+  "id": "08-shop",
+  "seconds": 6.52,
+  "size": "1080,1920",
+  "bytes": 223919,
+  "audioStreams": 0,
+  "captions": [
+   "CHIP SHOP — reached from your chip count",
+   "Empty today. Nothing is for sale"
+  ]
+ }
+]

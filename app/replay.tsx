@@ -18,6 +18,7 @@ import { rf, rs, rv } from '../utils/responsive';
 import { getHand, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { safeBack } from '../components/BackControl';
 import { tallyBoards, tallyLine, tallySpoken } from '../utils/boardTally';
+import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -107,8 +108,11 @@ function SummaryView({ hand, onCoach }: { hand: HandRecord; onCoach: () => void 
   const tally = tallyBoards(hand.boards);
   const playerWins = tally.won;
   const botWins = tally.lost;
-  const outcome: 'win' | 'loss' | 'tie' =
-    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+  // AUDIT-REST 2026-09-05 — C1 CLOSED HERE, same change as hand-history.tsx and for the same
+  // reason: `playerWins > botWins` is the COLLAPSED count, and it disagreed with every other
+  // reader of the same stored hand on three players / three boards / one board each. The two
+  // numbers printed below are unchanged; only the verdict moved onto the one derivation.
+  const outcome: HandOutcome = deriveHandOutcome(hand.boards);
 
   return (
     <View style={styles.summaryContainer}>

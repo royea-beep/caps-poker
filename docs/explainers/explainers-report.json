@@ -1,0 +1,115 @@
+{
+ "guard": {
+  "home": {
+   "en": {
+    "bytes": 409283,
+    "hebrew": 0,
+    "latin": 278
+   },
+   "he": {
+    "bytes": 402339,
+    "hebrew": 222,
+    "latin": 28
+   },
+   "bytesDiffer": true,
+   "enHasNoHebrew": true,
+   "heHasHebrew": true,
+   "pass": true
+  },
+  "play": {
+   "en": {
+    "bytes": 42214,
+    "hebrew": 0,
+    "latin": 239
+   },
+   "he": {
+    "bytes": 35594,
+    "hebrew": 205,
+    "latin": 0
+   },
+   "bytesDiffer": true,
+   "enHasNoHebrew": true,
+   "heHasHebrew": true,
+   "pass": true
+  },
+  "profile": {
+   "en": {
+    "bytes": 227121,
+    "hebrew": 0,
+    "latin": 99
+   },
+   "he": {
+    "bytes": 224190,
+    "hebrew": 94,
+    "latin": 0
+   },
+   "bytesDiffer": true,
+   "enHasNoHebrew": true,
+   "heHasHebrew": true,
+   "pass": true
+  },
+  "shop": {
+   "en": {
+    "bytes": 202900,
+    "hebrew": 0,
+    "latin": 36
+   },
+   "he": {
+    "bytes": 202913,
+    "hebrew": 0,
+    "latin": 36
+   },
+   "bytesDiffer": true,
+   "enHasNoHebrew": true,
+   "heHasHebrew": false,
+   "pass": true
+  },
+  "lobby": {
+   "en": {
+    "bytes": 281185,
+    "hebrew": 0,
+    "latin": 248
+   },
+   "he": {
+    "bytes": 280973,
+    "hebrew": 0,
+    "latin": 248
+   },
+   "bytesDiffer": true,
+   "enHasNoHebrew": true,
+   "heHasHebrew": false,
+   "pass": true
+  },
+  "history": {
+   "en": {
+    "bytes": 22575,
+    "hebrew": 0,
+    "latin": 70
+   },
+   "he": {
+    "bytes": 23079,
+    "hebrew": 17,
+    "latin": 57
+   },
+   "bytesDiffer": true,
+   "enHasNoHebrew": true,
+   "heHasHebrew": true,
+   "pass": true
+  }
+ },
+ "clips": [],
+ "facts": {
+  "home": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real",
+  "place": "✕ PLACE 12 CARDS 🤖 BOTS 2/2 ✓ READY BOARD 1 ⚡ Auto-Place C J ♠ ♠ C 10 ♠ ♠ C Q ♣ ♣ C 5 ♣ ♣ C 7 ♠ ♠ BOARD 2 ⚡ Auto-Place C A ♣ ♣ C 10 ♥ ♥ C 8 ♦ ♦ C 9 ♥ ♥ C A ♥ ♥ BOARD 3 ⚡ Auto-Place C 5 ♥ ♥ C 8 ♠ ♠ C ",
+  "reveal": "TIE GAME 🤖 Practice vs bot — XP only, no chips This session: +0 1 — 2 Hand details ▾ Board 1 LOSS Bot 1 6 ♣ ♣ 6 ♥ ♥ 6 ♦ ♦ Q ♥ ♥ Pair of Queens Bot 2 8 ♣ ♣ 10 ♣ ♣ K ♣ ♣ A ♠ ♠ Straight J ♠ ♠ 10 ♠ ♠ Q ♣",
+  "results": "TIE GAME 🤖 Practice vs bot — XP only, no chips This session: +0 1 — 2 Hand details ▾ Board 1 LOSS Bot 1 6 ♣ ♣ 6 ♥ ♥ 6 ♦ ♦ Q ♥ ♥ Pair of Queens Bot 2 8 ♣ ♣ 10 ♣ ♣ K ♣ ♣ A ♠ ♠ Straight J ♠ ♠ 10 ♠ ♠ Q ♣ ♣ 5 ♣ ♣ 7 ♠ ♠ YOU 2 ♠ ♠ 2 ♣ ♣ 3 ♦ ♦ 3 ♣",
+  "history": "‹ Back HAND HISTORY All (0) Wins (0) Losses (0) 🃏 No hands yet Your past hands will show here ♠ ♠ ♠ Play Now",
+  "profile": "PROFILE Player 1 1 HANDS 0% WIN RATE 0 STREAK 2,000 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile",
+  "lobby": "‹ Back LOBBY Public tables · auto-start when full 👤 REAL PLAYERS — TABLES FOR FRIENDS A real person joins here · invite a friend or wait at a table HEADS-UP 2 players · 4 boards Opening a table… … Opening a table… … 3-PLAYER 3 players · 3 ",
+  "shop": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty right now. Retry"
+ },
+ "untranslatedInHebrew": [
+  "shop",
+  "lobby"
+ ]
+}
