@@ -1,7 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const TELEGRAM_BOT_TOKEN        = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
 const TELEGRAM_CHAT_ID          = Deno.env.get('TELEGRAM_CHAT_ID')!;
 const GITHUB_TOKEN              = Deno.env.get('GITHUB_TOKEN')!;
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL')!;
@@ -11,9 +10,33 @@ const AUTO_FIX_KEY = 'caps_auto_fix_mode';
 const REPLY_WINDOW = 10 * 60 * 1000;
 const REPO_MAP: Record<string, string> = { 'caps-poker': 'royea-beep/caps-poker', 'wingman': 'royea-beep/wingman' };
 
+// TOKEN ROTATION 2026-09-06 — SECURITY INCIDENT.
+//
+// This handler read the bot token from the TELEGRAM_BOT_TOKEN Edge Function secret. That secret
+// still holds the token that leaked in the public repo and was REVOKED via BotFather, so every
+// send from here would silently fail until someone edits it by hand in the dashboard. The vault
+// copy is the one that was actually rotated, so the vault is asked FIRST and the env var is only
+// a fallback for a future where it has been updated too. If neither yields a token this THROWS —
+// a handler that cannot reach Telegram must say so, not return a quiet false.
+let TG_TOKEN = '';
+async function telegramToken(): Promise<string> {
+  if (TG_TOKEN) return TG_TOKEN;
+  try {
+    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data } = await sb.rpc('get_caps_bug_telegram_config');
+    const tok = (data as Record<string, unknown> | null)?.bot_token as string | undefined;
+    if (tok) { TG_TOKEN = tok; return tok; }
+  } catch { /* fall through to the env var below */ }
+  const env = Deno.env.get('TELEGRAM_BOT_TOKEN');
+  if (env) { TG_TOKEN = env; return env; }
+  throw new Error('TELEGRAM CONFIG UNAVAILABLE: neither the vault nor the TELEGRAM_BOT_TOKEN env '
+    + 'var yielded a bot token. Refusing to send.');
+}
+
 async function sendTelegram(chatId: string, text: string): Promise<boolean> {
+  const token = await telegramToken();
   const res = await fetch(
-    `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+    `https://api.telegram.org/bot${token}/sendMessage`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }) },
   );
   const data = await res.json().catch(() => ({}));

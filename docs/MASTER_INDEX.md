@@ -234,7 +234,14 @@ WHERE id = 1;
 
 ## 🔑 Critical Identities
 
-- Telegram bot: `@caps_bug_bot`, token `8732793466:AAEI5_92OWkGvFGyr1aOH5tyBK3-0U4XZYM`, chat `5002917348`
+- Telegram bot: `@caps_bug_bot` — credentials live ONLY in the Supabase vault
+  (`TELEGRAM_BOT_TOKEN`, `CAPS_BUG_CHAT_ID`), read through `get_caps_bug_telegram_config()`.
+  ⚠️ 2026-09-06 SECURITY INCIDENT: the previous token, and the chat id, were written out in
+  full on this line and in `supabase/functions/retriage-pending/index.ts`. This repository is
+  PUBLIC. A third party used the token to rewrite the bot's display name and description, and
+  could equally have read every bug report submitted through it. Roye revoked that token via
+  BotFather; the revoke is what protects. **Never write a credential — or the chat id — into
+  this file again. Names and read paths only.**
 - Supabase project: `gxrpunvhjcrzqnitbqah`
 - GitHub repo: `royea-beep/caps-poker`
 - App bundle ID: `com.capspoker.app`

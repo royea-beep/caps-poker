@@ -1,3 +1,9 @@
+> ⚠️ 2026-09-06 — a live-shaped Google API key was written out in full in this file and has
+> been public in this repository's history since 2026-03-21. It is replaced above with an
+> environment-variable reference. The key itself tested DEAD on 2026-09-06 (Google returned
+> `API_KEY_INVALID`, not merely a disabled API), so there is nothing to revoke — but it is
+> still in git history and removing it here only prevents the next leak.
+
 # VAMOS CAPS CHECK-BUG-REPORT
 **Date:** 2026-03-21 09:43 IST
 **Priority:** Check if in-app bug report arrived + process it
@@ -40,7 +46,7 @@ grep -ri "caps.*folder\|CAPS.*DRIVE" C:\Projects\DRIVE_FOLDERS.md C:\Projects\Ca
 List files in all PROJECTS DEBUG subfolders:
 ```
 # Root folder
-curl -s "https://www.googleapis.com/drive/v3/files?q='1bwbtdpHbJ1qoJr-y-rrKx-h4iNYFkCHx'+in+parents&fields=files(id,name,mimeType)&key=AIzaSyA-8lYjlM83tPgCdVVyZ7pEnX5Wz2pil0Q" 2>/dev/null
+curl -s "https://www.googleapis.com/drive/v3/files?q='1bwbtdpHbJ1qoJr-y-rrKx-h4iNYFkCHx'+in+parents&fields=files(id,name,mimeType)&key=$GOOGLE_DRIVE_API_KEY" 2>/dev/null
 ```
 
 For each subfolder found, list its contents too (look for today's files).

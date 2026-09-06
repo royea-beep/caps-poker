@@ -7,33 +7,64 @@ const ANTHROPIC = Deno.env.get('ANTHROPIC_API_KEY')!;
 const OPENAI = Deno.env.get('OPENAI_API_KEY') ?? '';
 const CURRENT_OTA = 'd36473c0';
 
-// De-hardcoded 2026-05-24: BOT_TOKEN and CHAT_ID now come from vault via
-// public.get_caps_bug_telegram_config() RPC (service-role only). Env-var
-// fallback so Roye can later set CAPS_BUG_BOT_TOKEN / CAPS_BUG_CHAT_ID
-// in the dashboard and skip the RPC round-trip.
+// TOKEN ROTATION 2026-09-06 — SECURITY INCIDENT, AND WHY THERE IS NO FALLBACK HERE.
+//
+// A LIVE Telegram bot token and the chat id were literals in this file, in a PUBLIC repository,
+// from the day it was first committed. A third party read them and rewrote @caps_bug_bot's display
+// name and description; they could equally have read every bug report submitted through it — free
+// text, device ids, breadcrumbs — sent messages as the bot, or deleted them. Roye revoked that
+// token via BotFather. THE REVOKE IS THE PROTECTION. Removing the literal from this file only
+// prevents the NEXT leak; the old value is in git history forever and cannot be taken back.
+//
+// The replacement lives ONLY in the Supabase vault as TELEGRAM_BOT_TOKEN, read through
+// get_caps_bug_telegram_config(). Deno.env is preferred if an Edge Function secret of the same
+// name has been set; otherwise the vault. If NEITHER yields a token this THROWS.
+//
+// ⚠️ DO NOT ADD A FALLBACK TO CAPS_BUG_BOT_TOKEN. That vault row still holds the REVOKED token,
+// and falling back onto it would look exactly like working while delivering nothing — which is
+// precisely how the triage bug hid for months.
 let TG_BOT_TOKEN = '';
 let TG_CHAT_ID = '';
 
 async function loadTelegramConfig(supabase: ReturnType<typeof createClient>): Promise<void> {
   if (TG_BOT_TOKEN && TG_CHAT_ID) return; // cached for the lifetime of this isolate
-  const envTok = Deno.env.get('CAPS_BUG_BOT_TOKEN');
-  const envCid = Deno.env.get('CAPS_BUG_CHAT_ID');
-  if (envTok && envCid) {
-    TG_BOT_TOKEN = envTok;
-    TG_CHAT_ID = envCid;
-    return;
-  }
+
+  // THE VAULT IS FIRST, AND THAT ORDER IS LOAD-BEARING. An Edge Function secret named
+  // TELEGRAM_BOT_TOKEN already exists for telegram-bot-handler and, until someone updates it by
+  // hand in the dashboard, it still holds the REVOKED token. Preferring the environment would
+  // therefore have quietly reinstated the dead credential the moment this shipped. The vault is
+  // the copy that was actually rotated, so the vault wins; the env var is only a fallback for a
+  // future where it has been updated too.
   const { data, error } = await supabase.rpc('get_caps_bug_telegram_config');
-  if (error || !data) throw new Error('Failed to load telegram config from vault: ' + (error?.message ?? 'no data'));
-  TG_BOT_TOKEN = envTok ?? (data.bot_token as string);
-  TG_CHAT_ID = envCid ?? (data.chat_id as string);
+  const vaultTok = (data as Record<string, unknown> | null)?.bot_token as string | undefined;
+  const vaultCid = (data as Record<string, unknown> | null)?.chat_id as string | undefined;
+  if (vaultTok && vaultCid) { TG_BOT_TOKEN = vaultTok; TG_CHAT_ID = vaultCid; return; }
+
+  const envTok = Deno.env.get('TELEGRAM_BOT_TOKEN');
+  const envCid = Deno.env.get('CAPS_BUG_CHAT_ID') ?? Deno.env.get('TELEGRAM_CHAT_ID');
+  if (envTok && envCid) { TG_BOT_TOKEN = envTok; TG_CHAT_ID = envCid; return; }
+
+  throw new Error('TELEGRAM CONFIG UNAVAILABLE: neither the vault nor the TELEGRAM_BOT_TOKEN '
+    + 'env var yielded credentials. Refusing to run. ' + (error?.message ?? 'no vault data'));
 }
 
-async function tgSend(text: string) {
-  await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' }),
-  }).catch(() => {});
+// TOKEN ROTATION 2026-09-06 — tgSend USED TO SWALLOW EVERY FAILURE (`.catch(() => {})`), so a
+// revoked token, a wrong chat id and a Telegram outage all looked identical to success: silent.
+// That is the same silent-failure class as the triage bug, and it is exactly what would have
+// hidden a botched rotation. It now returns Telegram's own verdict and processReport records it.
+async function tgSend(text: string): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const d = (await r.json().catch(() => null)) as Record<string, unknown> | null;
+    if (r.ok && d?.ok === true) return { ok: true, detail: 'sent' };
+    return { ok: false, detail: `http_${r.status}:${String(d?.description ?? 'no description').slice(0, 160)}` };
+  } catch (e) {
+    return { ok: false, detail: `network:${(e as Error)?.name ?? 'unknown'}` };
+  }
 }
 
 async function transcribe(audioUrl: string): Promise<string | null> {
@@ -274,5 +305,13 @@ async function processReport(rep: Record<string, unknown>, supabase: ReturnType<
     }).catch(() => {});
   }
 
-  await tgSend(msg);
+  const delivery = await tgSend(msg);
+
+  // The row now records whether the report actually REACHED Roye. Before this, a report could be
+  // triaged perfectly and never arrive, with nothing anywhere saying so — which is precisely how
+  // a botched token rotation would have gone unnoticed.
+  await supabase.from('bug_reports').update({
+    telegram_notified: delivery.ok,
+    metadata: { ...meta, triage_at: new Date().toISOString(), triage_ai_error: aiError, telegram_delivery: delivery.detail },
+  }).eq('id', id);
 }
