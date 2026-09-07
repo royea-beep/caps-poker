@@ -45,6 +45,7 @@ on:
         type: choice
         options:
           - compare-apps
+          - entitlement
           - resend-invite
           - build-state
           - list-testers
@@ -133,6 +134,13 @@ jobs:
           case "$ACTION" in
             "compare-apps")
               ruby tools/asc/compare_apps.rb
+              ;;
+
+            "entitlement")
+              # ⚠️ THE QUESTION build-state CANNOT ANSWER.
+              # It proves a build is installable by SOMEBODY internal. This proves whether a
+              # NAMED Apple ID can install it — which is per-tester-per-group, not per-build.
+              ruby tools/asc/entitlement.rb
               ;;
 
             "resend-invite")

@@ -1,0 +1,160 @@
+# frozen_string_literal: true
+#
+# WHICH BUILDS CAN THIS APPLE ID ACTUALLY INSTALL — AND THROUGH WHICH GROUP.
+#
+# ⚠️ THIS EXISTS BECAUSE `internalBuildState` IS NOT PROOF THAT A GIVEN TESTER CAN INSTALL.
+# Build 515 was VALID and IN_BETA_TESTING while the phone read "No TestFlight builds are
+# available for this app". Both statements were true at the same time. `build-state` asks
+# "is this build installable by SOMEBODY internal"; that is a different question from
+# "is this build installable by ROYE", and the second one is the one the phone answers.
+#
+# ENTITLEMENT IS PER-TESTER-PER-GROUP, NOT PER-BUILD:
+#
+#     builds this tester can install
+#       = builds served by every group this tester BELONGS TO
+#       + builds this tester is assigned to INDIVIDUALLY
+#       - builds that have EXPIRED
+#
+# A tester in an external group sees only what that external group serves, no matter how
+# healthy a build looks on the internal side. That is the whole bug.
+#
+# ⚠️ EVERY TESTER RECORD ON THE APP IS READ, NOT ONLY THE ONE MATCHING THE EMAIL.
+# Accepting a PUBLIC LINK creates its OWN tester record — anonymous, no email — and that
+# record, not the emailed one, can be what the device is bound to. Filtering by email would
+# have hidden the exact row that explains the phone.
+#
+# ⚠️ AND A FAILED READ IS AN UNKNOWN, NEVER A FINDING. Same rule as lib.rb.
+
+require_relative "lib"
+
+raw   = ENV["TESTER_EMAIL"].to_s.strip
+EMAIL = raw.empty? ? "royearguan@gmail.com" : raw
+APP   = ENV.fetch("ASC_APP_ID")
+WANT  = ENV["BUILD_NUMBER"].to_s.strip
+
+tok = ASC.token
+
+def build_line(b)
+  a = b["attributes"]
+  "#{a['version'].to_s.rjust(4)}  v#{a['preReleaseVersion'] || ''}" \
+    "#{a['processingState'].to_s.ljust(12)} expired=#{a['expired'].to_s.ljust(6)} " \
+    "expires=#{a['expirationDate']}"
+end
+
+# ── 1. THE GROUPS, AND WHAT EACH ONE SERVES ────────────────────────────────────────────────
+gcode, g = ASC.get("/v1/apps/#{APP}/betaGroups?limit=50", tok)
+abort("⚠️ could not read beta groups: HTTP #{gcode} — this is an UNKNOWN, not a finding") unless gcode == 200
+
+groups = {}
+puts "=== BETA GROUPS ON THIS APP, AND THE BUILDS EACH ONE SERVES ==="
+(g["data"] || []).each do |grp|
+  ga = grp["attributes"]
+  bc, b = ASC.get("/v1/builds?filter[betaGroups]=#{grp['id']}&limit=30&sort=-uploadedDate", tok)
+  serves = bc == 200 ? (b["data"] || []) : nil
+  groups[grp["id"]] = {
+    "name" => ga["name"], "internal" => ga["isInternalGroup"],
+    "all_builds" => ga["hasAccessToAllBuilds"], "serves" => serves
+  }
+  puts "  #{ga['name']} — #{ga['isInternalGroup'] ? 'INTERNAL' : 'EXTERNAL'} — " \
+       "hasAccessToAllBuilds=#{ga['hasAccessToAllBuilds'].inspect} — id #{grp['id']}"
+  if serves.nil?
+    puts "    ⚠️ builds it serves: could not read (HTTP #{bc}) — UNKNOWN, not 'none'"
+  elsif serves.empty?
+    puts "    builds it serves: NONE"
+  else
+    serves.each do |bd|
+      ba = bd["attributes"]
+      flag = ba["expired"] ? "  ← EXPIRED, a phone cannot install it" : ""
+      puts "    #{ba['version'].to_s.rjust(5)}  #{ba['processingState'].to_s.ljust(11)} " \
+           "expired=#{ba['expired'].to_s.ljust(5)} expires #{ba['expirationDate']}#{flag}"
+    end
+  end
+end
+puts
+
+# ── 2. EVERY TESTER RECORD ON THE APP ──────────────────────────────────────────────────────
+tcode, t = ASC.get("/v1/betaTesters?filter[apps]=#{APP}&limit=200&include=betaGroups", tok)
+abort("⚠️ could not read testers: HTTP #{tcode} — UNKNOWN, not a finding") unless tcode == 200
+
+records = t["data"] || []
+puts "=== EVERY TESTER RECORD ON THIS APP (#{records.length}) ==="
+puts "  ⚠️ a PUBLIC_LINK acceptance makes its own record with no email — that is why this is"
+puts "     the full list and not a filter[email] query."
+records.each do |r|
+  ra   = r["attributes"]
+  gids = (r.dig("relationships", "betaGroups", "data") || []).map { |d| d["id"] }
+  gn   = gids.map { |id| groups[id] ? "#{groups[id]['name']}(#{groups[id]['internal'] ? 'int' : 'ext'})" : id }
+  puts "  #{(ra['email'] || '(no email — anonymous)').to_s.ljust(30)} " \
+       "#{[ra['firstName'], ra['lastName']].compact.join(' ').to_s.ljust(16)} " \
+       "invite=#{ra['inviteType'].to_s.ljust(12)} state=#{ra['state'].inspect.ljust(12)} " \
+       "groups=#{gn.empty? ? 'NONE' : gn.join(', ')}"
+end
+puts
+
+# ── 3. THE PROVER — WHAT CAN *THIS* APPLE ID INSTALL RIGHT NOW ─────────────────────────────
+mine = records.select { |r| r.dig("attributes", "email").to_s.downcase == EMAIL.downcase }
+anon = records.select { |r| r.dig("attributes", "email").to_s.strip.empty? }
+
+puts "=== ENTITLEMENT FOR #{EMAIL} ==="
+if mine.empty?
+  puts "  ⚠️ NO TESTER RECORD CARRIES THIS EMAIL. The phone can only be bound through an"
+  puts "     anonymous public-link record (#{anon.length} of those exist), and Apple does not"
+  puts "     tell us which Apple ID owns one. That is an UNKNOWN, not a NO."
+end
+
+entitled = {} # build version => [reasons]
+mine.each do |r|
+  ra   = r["attributes"]
+  gids = (r.dig("relationships", "betaGroups", "data") || []).map { |d| d["id"] }
+  puts "  record #{r['id']} — invite=#{ra['inviteType']} state=#{ra['state'].inspect}"
+  if gids.empty?
+    puts "    belongs to NO group — this record entitles nothing by itself"
+  end
+  gids.each do |gid|
+    grp = groups[gid]
+    next puts("    group #{gid} — ⚠️ not in the app's group list (UNKNOWN)") if grp.nil?
+    if grp["serves"].nil?
+      puts "    via #{grp['name']} — ⚠️ builds unreadable, entitlement through it is UNKNOWN"
+      next
+    end
+    live = grp["serves"].reject { |b| b.dig("attributes", "expired") }
+    puts "    via #{grp['name']} (#{grp['internal'] ? 'INTERNAL' : 'EXTERNAL'}) — " \
+         "installable: #{live.empty? ? 'NONE (every build it serves has expired)' : live.map { |b| b.dig('attributes', 'version') }.join(', ')}"
+    live.each { |b| (entitled[b.dig("attributes", "version")] ||= []) << grp["name"] }
+  end
+end
+
+# Individually-assigned builds — the other half of entitlement.
+unless WANT.empty?
+  bc, bb = ASC.get("/v1/builds?filter[app]=#{APP}&limit=50&sort=-uploadedDate", tok)
+  target = bc == 200 ? (bb["data"] || []).find { |x| x.dig("attributes", "version") == WANT } : nil
+  if target
+    ic, ib = ASC.get("/v1/betaTesters?filter[builds]=#{target['id']}&limit=200", tok)
+    if ic == 200
+      names = (ib["data"] || []).map { |x| x.dig("attributes", "email") || "(anonymous)" }
+      puts "  individually assigned to build #{WANT}: #{names.empty? ? 'nobody' : names.join(', ')}"
+      if names.any? { |n| n.to_s.downcase == EMAIL.downcase }
+        (entitled[WANT] ||= []) << "individual assignment"
+      end
+    else
+      puts "  ⚠️ individual assignment for build #{WANT}: could not read (HTTP #{ic}) — UNKNOWN"
+    end
+  end
+end
+
+puts
+puts "=== VERDICT ==="
+if entitled.empty?
+  puts "  #{EMAIL} is entitled to install NOTHING right now."
+else
+  puts "  #{EMAIL} can install: " +
+       entitled.map { |v, why| "#{v} (via #{why.uniq.join(' + ')})" }.join(", ")
+end
+unless WANT.empty?
+  if entitled.key?(WANT)
+    puts "  ✅ BUILD #{WANT} IS AMONG THEM — via #{entitled[WANT].uniq.join(' + ')}."
+  else
+    puts "  ❌ BUILD #{WANT} IS **NOT** AMONG THEM. Being VALID and IN_BETA_TESTING does not"
+    puts "     entitle a tester who is not in a group that serves it."
+  end
+end
