@@ -1,5 +1,5 @@
 {
-  "ts": "2026-09-07T06:58:57.940Z",
+  "ts": "2026-09-07T08:15:35.557Z",
   "font": "Playfair Display (google/fonts variable roman, SIL OFL) — tools/icon/fonts/PlayfairDisplay.ttf",
   "golds": [
     "#c9a84c",
@@ -7,173 +7,408 @@
     "#8d6f24"
   ],
   "sizes": {
-    "20": {
-      "fontPx": 6.02,
-      "boundBy": "width",
-      "blockW": 16,
-      "blockH": 10.1,
-      "widthShare": 79.9,
-      "heightShare": 50.5
+    "full": {
+      "20": {
+        "fontPx": 6.02,
+        "boundBy": "width",
+        "blockW": 16,
+        "blockH": 10.1,
+        "widthShare": 79.9,
+        "heightShare": 50.5,
+        "halfDiagShare": 47.3
+      },
+      "29": {
+        "fontPx": 8.73,
+        "boundBy": "width",
+        "blockW": 23.2,
+        "blockH": 14.7,
+        "widthShare": 79.9,
+        "heightShare": 50.5,
+        "halfDiagShare": 47.3
+      },
+      "40": {
+        "fontPx": 12.04,
+        "boundBy": "width",
+        "blockW": 32,
+        "blockH": 20.2,
+        "widthShare": 79.9,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "48": {
+        "fontPx": 14.45,
+        "boundBy": "width",
+        "blockW": 38.4,
+        "blockH": 24.3,
+        "widthShare": 79.9,
+        "heightShare": 50.5,
+        "halfDiagShare": 47.3
+      },
+      "58": {
+        "fontPx": 17.46,
+        "boundBy": "width",
+        "blockW": 46.4,
+        "blockH": 29.3,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "60": {
+        "fontPx": 18.07,
+        "boundBy": "width",
+        "blockW": 48,
+        "blockH": 30.3,
+        "widthShare": 79.9,
+        "heightShare": 50.5,
+        "halfDiagShare": 47.3
+      },
+      "72": {
+        "fontPx": 21.68,
+        "boundBy": "width",
+        "blockW": 57.5,
+        "blockH": 36.4,
+        "widthShare": 79.9,
+        "heightShare": 50.5,
+        "halfDiagShare": 47.3
+      },
+      "76": {
+        "fontPx": 22.88,
+        "boundBy": "width",
+        "blockW": 60.8,
+        "blockH": 38.4,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "80": {
+        "fontPx": 24.09,
+        "boundBy": "width",
+        "blockW": 64,
+        "blockH": 40.5,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "87": {
+        "fontPx": 26.19,
+        "boundBy": "width",
+        "blockW": 69.6,
+        "blockH": 44,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "96": {
+        "fontPx": 28.9,
+        "boundBy": "width",
+        "blockW": 76.8,
+        "blockH": 48.5,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "120": {
+        "fontPx": 36.13,
+        "boundBy": "width",
+        "blockW": 96,
+        "blockH": 60.7,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "144": {
+        "fontPx": 43.36,
+        "boundBy": "width",
+        "blockW": 115.2,
+        "blockH": 72.8,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "152": {
+        "fontPx": 45.77,
+        "boundBy": "width",
+        "blockW": 121.6,
+        "blockH": 76.9,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "167": {
+        "fontPx": 50.28,
+        "boundBy": "width",
+        "blockW": 133.6,
+        "blockH": 84.5,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "180": {
+        "fontPx": 54.2,
+        "boundBy": "width",
+        "blockW": 144,
+        "blockH": 91,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "192": {
+        "fontPx": 57.81,
+        "boundBy": "width",
+        "blockW": 153.6,
+        "blockH": 97.1,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "512": {
+        "fontPx": 154.16,
+        "boundBy": "width",
+        "blockW": 409.6,
+        "blockH": 259,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      },
+      "1024": {
+        "fontPx": 308.31,
+        "boundBy": "width",
+        "blockW": 819.2,
+        "blockH": 518,
+        "widthShare": 80,
+        "heightShare": 50.6,
+        "halfDiagShare": 47.3
+      }
     },
-    "29": {
-      "fontPx": 8.73,
-      "boundBy": "width",
-      "blockW": 23.2,
-      "blockH": 14.7,
-      "widthShare": 79.9,
-      "heightShare": 50.5
-    },
-    "40": {
-      "fontPx": 12.04,
-      "boundBy": "width",
-      "blockW": 32,
-      "blockH": 20.2,
-      "widthShare": 79.9,
-      "heightShare": 50.6
-    },
-    "48": {
-      "fontPx": 14.45,
-      "boundBy": "width",
-      "blockW": 38.4,
-      "blockH": 24.3,
-      "widthShare": 79.9,
-      "heightShare": 50.5
-    },
-    "58": {
-      "fontPx": 17.46,
-      "boundBy": "width",
-      "blockW": 46.4,
-      "blockH": 29.3,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "60": {
-      "fontPx": 18.07,
-      "boundBy": "width",
-      "blockW": 48,
-      "blockH": 30.3,
-      "widthShare": 79.9,
-      "heightShare": 50.5
-    },
-    "72": {
-      "fontPx": 21.68,
-      "boundBy": "width",
-      "blockW": 57.5,
-      "blockH": 36.4,
-      "widthShare": 79.9,
-      "heightShare": 50.5
-    },
-    "76": {
-      "fontPx": 22.88,
-      "boundBy": "width",
-      "blockW": 60.8,
-      "blockH": 38.4,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "80": {
-      "fontPx": 24.09,
-      "boundBy": "width",
-      "blockW": 64,
-      "blockH": 40.5,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "87": {
-      "fontPx": 26.19,
-      "boundBy": "width",
-      "blockW": 69.6,
-      "blockH": 44,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "96": {
-      "fontPx": 28.9,
-      "boundBy": "width",
-      "blockW": 76.8,
-      "blockH": 48.5,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "120": {
-      "fontPx": 36.13,
-      "boundBy": "width",
-      "blockW": 96,
-      "blockH": 60.7,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "144": {
-      "fontPx": 43.36,
-      "boundBy": "width",
-      "blockW": 115.2,
-      "blockH": 72.8,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "152": {
-      "fontPx": 45.77,
-      "boundBy": "width",
-      "blockW": 121.6,
-      "blockH": 76.9,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "167": {
-      "fontPx": 50.28,
-      "boundBy": "width",
-      "blockW": 133.6,
-      "blockH": 84.5,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "180": {
-      "fontPx": 54.2,
-      "boundBy": "width",
-      "blockW": 144,
-      "blockH": 91,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "192": {
-      "fontPx": 57.81,
-      "boundBy": "width",
-      "blockW": 153.6,
-      "blockH": 97.1,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "512": {
-      "fontPx": 154.16,
-      "boundBy": "width",
-      "blockW": 409.6,
-      "blockH": 259,
-      "widthShare": 80,
-      "heightShare": 50.6
-    },
-    "1024": {
-      "fontPx": 308.31,
-      "boundBy": "width",
-      "blockW": 819.2,
-      "blockH": 518,
-      "widthShare": 80,
-      "heightShare": 50.6
+    "compact": {
+      "20": {
+        "fontPx": 6.32,
+        "boundBy": "width",
+        "blockW": 16.8,
+        "blockH": 8.7,
+        "widthShare": 83.9,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "29": {
+        "fontPx": 9.17,
+        "boundBy": "width",
+        "blockW": 24.3,
+        "blockH": 12.6,
+        "widthShare": 83.9,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "40": {
+        "fontPx": 12.65,
+        "boundBy": "width",
+        "blockW": 33.5,
+        "blockH": 17.4,
+        "widthShare": 83.9,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "48": {
+        "fontPx": 15.17,
+        "boundBy": "width",
+        "blockW": 40.3,
+        "blockH": 20.9,
+        "widthShare": 83.9,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "58": {
+        "fontPx": 18.34,
+        "boundBy": "width",
+        "blockW": 48.7,
+        "blockH": 25.3,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "60": {
+        "fontPx": 18.97,
+        "boundBy": "width",
+        "blockW": 50.4,
+        "blockH": 26.2,
+        "widthShare": 83.9,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "72": {
+        "fontPx": 22.76,
+        "boundBy": "width",
+        "blockW": 60.5,
+        "blockH": 31.4,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "76": {
+        "fontPx": 24.03,
+        "boundBy": "width",
+        "blockW": 63.8,
+        "blockH": 33.2,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "80": {
+        "fontPx": 25.29,
+        "boundBy": "width",
+        "blockW": 67.2,
+        "blockH": 34.9,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "87": {
+        "fontPx": 27.5,
+        "boundBy": "width",
+        "blockW": 73.1,
+        "blockH": 37.9,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "96": {
+        "fontPx": 30.35,
+        "boundBy": "width",
+        "blockW": 80.6,
+        "blockH": 41.9,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "120": {
+        "fontPx": 37.94,
+        "boundBy": "width",
+        "blockW": 100.8,
+        "blockH": 52.3,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "144": {
+        "fontPx": 45.52,
+        "boundBy": "width",
+        "blockW": 120.9,
+        "blockH": 62.8,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "152": {
+        "fontPx": 48.05,
+        "boundBy": "width",
+        "blockW": 127.7,
+        "blockH": 66.3,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "167": {
+        "fontPx": 52.79,
+        "boundBy": "width",
+        "blockW": 140.3,
+        "blockH": 72.8,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "180": {
+        "fontPx": 56.9,
+        "boundBy": "width",
+        "blockW": 151.2,
+        "blockH": 78.5,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "192": {
+        "fontPx": 60.7,
+        "boundBy": "width",
+        "blockW": 161.3,
+        "blockH": 83.8,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "512": {
+        "fontPx": 161.86,
+        "boundBy": "width",
+        "blockW": 430,
+        "blockH": 223.4,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      },
+      "1024": {
+        "fontPx": 323.72,
+        "boundBy": "width",
+        "blockW": 860.1,
+        "blockH": 446.7,
+        "widthShare": 84,
+        "heightShare": 43.6,
+        "halfDiagShare": 47.3
+      }
     }
   },
+  "threshold": {
+    "px": 128,
+    "source": "docs/f-icon/f-threshold.json",
+    "rule": "all five of POKER's letter cells hold >=2 ink px, and keep holding at every larger size"
+  },
+  "rebalance": {
+    "fullBoxAtProbe100": {
+      "w": 265.7,
+      "h": 168
+    },
+    "compactBoxAtProbe100": {
+      "w": 265.7,
+      "h": 138
+    },
+    "rule": "compact is grown until its bounding box's half-diagonal equals full's — same footprint radius, so both variants sit inside the same circle",
+    "growth": 1.05
+  },
+  "responsive": {
+    "20": "compact",
+    "29": "compact",
+    "40": "compact",
+    "48": "compact",
+    "58": "compact",
+    "60": "compact",
+    "72": "compact",
+    "76": "compact",
+    "80": "compact",
+    "87": "compact",
+    "96": "compact",
+    "120": "compact",
+    "144": "full",
+    "152": "full",
+    "167": "full",
+    "180": "full",
+    "192": "full",
+    "512": "full",
+    "1024": "full"
+  },
   "adaptive": {
+    "variant": "compact",
     "canvas": 432,
     "safeDiameter": 288,
-    "fontPx": 88.87,
-    "blockW": 236.1,
-    "blockH": 149.3,
+    "fontPx": 93.31,
+    "blockW": 247.9,
+    "blockH": 128.8,
     "worstCornerRadius": 139.7,
     "safeRadius": 144,
     "clearancePct": 3,
-    "fitsSafeCircle": true
+    "fitsSafeCircle": true,
+    "effectiveTileAt108dp": 73.8,
+    "whyCompact": "the block inside the safe circle renders like a 73.8px tile at 108dp, below the 128 threshold"
   },
   "forbiddenGold": {
     "value": "#FFD700",
-    "filesScanned": 23,
+    "filesScanned": 80,
     "pixelHits": 0,
     "byFile": {}
   }

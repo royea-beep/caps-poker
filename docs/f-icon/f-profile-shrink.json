@@ -1,0 +1,1586 @@
+{
+  "ts": "2026-09-07T08:21:58.834Z",
+  "note": "each shipped profile file progressively downscaled; the display size at which POKER loses a letter",
+  "rows": {
+    "caps-profile-1024.png": {
+      "native": 1024,
+      "holdsDownTo": 100,
+      "breaksAt": 96,
+      "trail": [
+        {
+          "display": 1024,
+          "weakestCell": 439
+        },
+        {
+          "display": 1020,
+          "weakestCell": 440
+        },
+        {
+          "display": 1016,
+          "weakestCell": 459
+        },
+        {
+          "display": 1012,
+          "weakestCell": 446
+        },
+        {
+          "display": 1008,
+          "weakestCell": 437
+        },
+        {
+          "display": 1004,
+          "weakestCell": 436
+        },
+        {
+          "display": 1000,
+          "weakestCell": 430
+        },
+        {
+          "display": 996,
+          "weakestCell": 417
+        },
+        {
+          "display": 992,
+          "weakestCell": 409
+        },
+        {
+          "display": 988,
+          "weakestCell": 419
+        },
+        {
+          "display": 984,
+          "weakestCell": 409
+        },
+        {
+          "display": 980,
+          "weakestCell": 392
+        },
+        {
+          "display": 976,
+          "weakestCell": 419
+        },
+        {
+          "display": 972,
+          "weakestCell": 421
+        },
+        {
+          "display": 968,
+          "weakestCell": 408
+        },
+        {
+          "display": 964,
+          "weakestCell": 399
+        },
+        {
+          "display": 960,
+          "weakestCell": 388
+        },
+        {
+          "display": 956,
+          "weakestCell": 399
+        },
+        {
+          "display": 952,
+          "weakestCell": 366
+        },
+        {
+          "display": 948,
+          "weakestCell": 385
+        },
+        {
+          "display": 944,
+          "weakestCell": 371
+        },
+        {
+          "display": 940,
+          "weakestCell": 390
+        },
+        {
+          "display": 936,
+          "weakestCell": 374
+        },
+        {
+          "display": 932,
+          "weakestCell": 389
+        },
+        {
+          "display": 928,
+          "weakestCell": 387
+        },
+        {
+          "display": 924,
+          "weakestCell": 385
+        },
+        {
+          "display": 920,
+          "weakestCell": 357
+        },
+        {
+          "display": 916,
+          "weakestCell": 352
+        },
+        {
+          "display": 912,
+          "weakestCell": 347
+        },
+        {
+          "display": 908,
+          "weakestCell": 347
+        },
+        {
+          "display": 904,
+          "weakestCell": 328
+        },
+        {
+          "display": 900,
+          "weakestCell": 328
+        },
+        {
+          "display": 896,
+          "weakestCell": 345
+        },
+        {
+          "display": 892,
+          "weakestCell": 345
+        },
+        {
+          "display": 888,
+          "weakestCell": 324
+        },
+        {
+          "display": 884,
+          "weakestCell": 327
+        },
+        {
+          "display": 880,
+          "weakestCell": 330
+        },
+        {
+          "display": 876,
+          "weakestCell": 328
+        },
+        {
+          "display": 872,
+          "weakestCell": 318
+        },
+        {
+          "display": 868,
+          "weakestCell": 309
+        },
+        {
+          "display": 864,
+          "weakestCell": 316
+        },
+        {
+          "display": 860,
+          "weakestCell": 295
+        },
+        {
+          "display": 856,
+          "weakestCell": 310
+        },
+        {
+          "display": 852,
+          "weakestCell": 312
+        },
+        {
+          "display": 848,
+          "weakestCell": 312
+        },
+        {
+          "display": 844,
+          "weakestCell": 298
+        },
+        {
+          "display": 840,
+          "weakestCell": 309
+        },
+        {
+          "display": 836,
+          "weakestCell": 303
+        },
+        {
+          "display": 832,
+          "weakestCell": 290
+        },
+        {
+          "display": 828,
+          "weakestCell": 295
+        },
+        {
+          "display": 824,
+          "weakestCell": 270
+        },
+        {
+          "display": 820,
+          "weakestCell": 299
+        },
+        {
+          "display": 816,
+          "weakestCell": 300
+        },
+        {
+          "display": 812,
+          "weakestCell": 308
+        },
+        {
+          "display": 808,
+          "weakestCell": 271
+        },
+        {
+          "display": 804,
+          "weakestCell": 286
+        },
+        {
+          "display": 800,
+          "weakestCell": 283
+        },
+        {
+          "display": 796,
+          "weakestCell": 267
+        },
+        {
+          "display": 792,
+          "weakestCell": 265
+        },
+        {
+          "display": 788,
+          "weakestCell": 268
+        },
+        {
+          "display": 784,
+          "weakestCell": 274
+        },
+        {
+          "display": 780,
+          "weakestCell": 249
+        },
+        {
+          "display": 776,
+          "weakestCell": 273
+        },
+        {
+          "display": 772,
+          "weakestCell": 265
+        },
+        {
+          "display": 768,
+          "weakestCell": 271
+        },
+        {
+          "display": 764,
+          "weakestCell": 251
+        },
+        {
+          "display": 760,
+          "weakestCell": 257
+        },
+        {
+          "display": 756,
+          "weakestCell": 254
+        },
+        {
+          "display": 752,
+          "weakestCell": 256
+        },
+        {
+          "display": 748,
+          "weakestCell": 240
+        },
+        {
+          "display": 744,
+          "weakestCell": 238
+        },
+        {
+          "display": 740,
+          "weakestCell": 222
+        },
+        {
+          "display": 736,
+          "weakestCell": 234
+        },
+        {
+          "display": 732,
+          "weakestCell": 226
+        },
+        {
+          "display": 728,
+          "weakestCell": 235
+        },
+        {
+          "display": 724,
+          "weakestCell": 243
+        },
+        {
+          "display": 720,
+          "weakestCell": 222
+        },
+        {
+          "display": 716,
+          "weakestCell": 233
+        },
+        {
+          "display": 712,
+          "weakestCell": 203
+        },
+        {
+          "display": 708,
+          "weakestCell": 234
+        },
+        {
+          "display": 704,
+          "weakestCell": 191
+        },
+        {
+          "display": 700,
+          "weakestCell": 216
+        },
+        {
+          "display": 696,
+          "weakestCell": 204
+        },
+        {
+          "display": 692,
+          "weakestCell": 230
+        },
+        {
+          "display": 688,
+          "weakestCell": 192
+        },
+        {
+          "display": 684,
+          "weakestCell": 219
+        },
+        {
+          "display": 680,
+          "weakestCell": 198
+        },
+        {
+          "display": 676,
+          "weakestCell": 203
+        },
+        {
+          "display": 672,
+          "weakestCell": 193
+        },
+        {
+          "display": 668,
+          "weakestCell": 185
+        },
+        {
+          "display": 664,
+          "weakestCell": 196
+        },
+        {
+          "display": 660,
+          "weakestCell": 181
+        },
+        {
+          "display": 656,
+          "weakestCell": 188
+        },
+        {
+          "display": 652,
+          "weakestCell": 187
+        },
+        {
+          "display": 648,
+          "weakestCell": 186
+        },
+        {
+          "display": 644,
+          "weakestCell": 186
+        },
+        {
+          "display": 640,
+          "weakestCell": 176
+        },
+        {
+          "display": 636,
+          "weakestCell": 175
+        },
+        {
+          "display": 632,
+          "weakestCell": 172
+        },
+        {
+          "display": 628,
+          "weakestCell": 171
+        },
+        {
+          "display": 624,
+          "weakestCell": 156
+        },
+        {
+          "display": 620,
+          "weakestCell": 162
+        },
+        {
+          "display": 616,
+          "weakestCell": 171
+        },
+        {
+          "display": 612,
+          "weakestCell": 162
+        },
+        {
+          "display": 608,
+          "weakestCell": 162
+        },
+        {
+          "display": 604,
+          "weakestCell": 164
+        },
+        {
+          "display": 600,
+          "weakestCell": 163
+        },
+        {
+          "display": 596,
+          "weakestCell": 152
+        },
+        {
+          "display": 592,
+          "weakestCell": 154
+        },
+        {
+          "display": 588,
+          "weakestCell": 155
+        },
+        {
+          "display": 584,
+          "weakestCell": 132
+        },
+        {
+          "display": 580,
+          "weakestCell": 136
+        },
+        {
+          "display": 576,
+          "weakestCell": 133
+        },
+        {
+          "display": 572,
+          "weakestCell": 155
+        },
+        {
+          "display": 568,
+          "weakestCell": 154
+        },
+        {
+          "display": 564,
+          "weakestCell": 143
+        },
+        {
+          "display": 560,
+          "weakestCell": 142
+        },
+        {
+          "display": 556,
+          "weakestCell": 132
+        },
+        {
+          "display": 552,
+          "weakestCell": 143
+        },
+        {
+          "display": 548,
+          "weakestCell": 114
+        },
+        {
+          "display": 544,
+          "weakestCell": 123
+        },
+        {
+          "display": 540,
+          "weakestCell": 114
+        },
+        {
+          "display": 536,
+          "weakestCell": 127
+        },
+        {
+          "display": 532,
+          "weakestCell": 114
+        },
+        {
+          "display": 528,
+          "weakestCell": 119
+        },
+        {
+          "display": 524,
+          "weakestCell": 120
+        },
+        {
+          "display": 520,
+          "weakestCell": 119
+        },
+        {
+          "display": 516,
+          "weakestCell": 111
+        },
+        {
+          "display": 512,
+          "weakestCell": 107
+        },
+        {
+          "display": 508,
+          "weakestCell": 112
+        },
+        {
+          "display": 504,
+          "weakestCell": 95
+        },
+        {
+          "display": 500,
+          "weakestCell": 99
+        },
+        {
+          "display": 496,
+          "weakestCell": 104
+        },
+        {
+          "display": 492,
+          "weakestCell": 103
+        },
+        {
+          "display": 488,
+          "weakestCell": 98
+        },
+        {
+          "display": 484,
+          "weakestCell": 101
+        },
+        {
+          "display": 480,
+          "weakestCell": 103
+        },
+        {
+          "display": 476,
+          "weakestCell": 99
+        },
+        {
+          "display": 472,
+          "weakestCell": 98
+        },
+        {
+          "display": 468,
+          "weakestCell": 91
+        },
+        {
+          "display": 464,
+          "weakestCell": 93
+        },
+        {
+          "display": 460,
+          "weakestCell": 85
+        },
+        {
+          "display": 456,
+          "weakestCell": 84
+        },
+        {
+          "display": 452,
+          "weakestCell": 91
+        },
+        {
+          "display": 448,
+          "weakestCell": 87
+        },
+        {
+          "display": 444,
+          "weakestCell": 91
+        },
+        {
+          "display": 440,
+          "weakestCell": 81
+        },
+        {
+          "display": 436,
+          "weakestCell": 76
+        },
+        {
+          "display": 432,
+          "weakestCell": 81
+        },
+        {
+          "display": 428,
+          "weakestCell": 66
+        },
+        {
+          "display": 424,
+          "weakestCell": 73
+        },
+        {
+          "display": 420,
+          "weakestCell": 72
+        },
+        {
+          "display": 416,
+          "weakestCell": 76
+        },
+        {
+          "display": 412,
+          "weakestCell": 70
+        },
+        {
+          "display": 408,
+          "weakestCell": 64
+        },
+        {
+          "display": 404,
+          "weakestCell": 65
+        },
+        {
+          "display": 400,
+          "weakestCell": 65
+        },
+        {
+          "display": 396,
+          "weakestCell": 64
+        },
+        {
+          "display": 392,
+          "weakestCell": 53
+        },
+        {
+          "display": 388,
+          "weakestCell": 59
+        },
+        {
+          "display": 384,
+          "weakestCell": 57
+        },
+        {
+          "display": 380,
+          "weakestCell": 53
+        },
+        {
+          "display": 376,
+          "weakestCell": 55
+        },
+        {
+          "display": 372,
+          "weakestCell": 59
+        },
+        {
+          "display": 368,
+          "weakestCell": 59
+        },
+        {
+          "display": 364,
+          "weakestCell": 53
+        },
+        {
+          "display": 360,
+          "weakestCell": 52
+        },
+        {
+          "display": 356,
+          "weakestCell": 52
+        },
+        {
+          "display": 352,
+          "weakestCell": 51
+        },
+        {
+          "display": 348,
+          "weakestCell": 40
+        },
+        {
+          "display": 344,
+          "weakestCell": 47
+        },
+        {
+          "display": 340,
+          "weakestCell": 43
+        },
+        {
+          "display": 336,
+          "weakestCell": 47
+        },
+        {
+          "display": 332,
+          "weakestCell": 43
+        },
+        {
+          "display": 328,
+          "weakestCell": 48
+        },
+        {
+          "display": 324,
+          "weakestCell": 48
+        },
+        {
+          "display": 320,
+          "weakestCell": 47
+        },
+        {
+          "display": 316,
+          "weakestCell": 41
+        },
+        {
+          "display": 312,
+          "weakestCell": 39
+        },
+        {
+          "display": 308,
+          "weakestCell": 42
+        },
+        {
+          "display": 304,
+          "weakestCell": 38
+        },
+        {
+          "display": 300,
+          "weakestCell": 31
+        },
+        {
+          "display": 296,
+          "weakestCell": 33
+        },
+        {
+          "display": 292,
+          "weakestCell": 40
+        },
+        {
+          "display": 288,
+          "weakestCell": 36
+        },
+        {
+          "display": 284,
+          "weakestCell": 32
+        },
+        {
+          "display": 280,
+          "weakestCell": 26
+        },
+        {
+          "display": 276,
+          "weakestCell": 38
+        },
+        {
+          "display": 272,
+          "weakestCell": 22
+        },
+        {
+          "display": 268,
+          "weakestCell": 31
+        },
+        {
+          "display": 264,
+          "weakestCell": 22
+        },
+        {
+          "display": 260,
+          "weakestCell": 32
+        },
+        {
+          "display": 256,
+          "weakestCell": 31
+        },
+        {
+          "display": 252,
+          "weakestCell": 25
+        },
+        {
+          "display": 248,
+          "weakestCell": 26
+        },
+        {
+          "display": 244,
+          "weakestCell": 17
+        },
+        {
+          "display": 240,
+          "weakestCell": 27
+        },
+        {
+          "display": 236,
+          "weakestCell": 14
+        },
+        {
+          "display": 232,
+          "weakestCell": 20
+        },
+        {
+          "display": 228,
+          "weakestCell": 16
+        },
+        {
+          "display": 224,
+          "weakestCell": 20
+        },
+        {
+          "display": 220,
+          "weakestCell": 20
+        },
+        {
+          "display": 216,
+          "weakestCell": 18
+        },
+        {
+          "display": 212,
+          "weakestCell": 19
+        },
+        {
+          "display": 208,
+          "weakestCell": 14
+        },
+        {
+          "display": 204,
+          "weakestCell": 17
+        },
+        {
+          "display": 200,
+          "weakestCell": 11
+        },
+        {
+          "display": 196,
+          "weakestCell": 15
+        },
+        {
+          "display": 192,
+          "weakestCell": 10
+        },
+        {
+          "display": 188,
+          "weakestCell": 13
+        },
+        {
+          "display": 184,
+          "weakestCell": 10
+        },
+        {
+          "display": 180,
+          "weakestCell": 14
+        },
+        {
+          "display": 176,
+          "weakestCell": 12
+        },
+        {
+          "display": 172,
+          "weakestCell": 10
+        },
+        {
+          "display": 168,
+          "weakestCell": 11
+        },
+        {
+          "display": 164,
+          "weakestCell": 10
+        },
+        {
+          "display": 160,
+          "weakestCell": 10
+        },
+        {
+          "display": 156,
+          "weakestCell": 8
+        },
+        {
+          "display": 152,
+          "weakestCell": 7
+        },
+        {
+          "display": 148,
+          "weakestCell": 8
+        },
+        {
+          "display": 144,
+          "weakestCell": 6
+        },
+        {
+          "display": 140,
+          "weakestCell": 7
+        },
+        {
+          "display": 136,
+          "weakestCell": 7
+        },
+        {
+          "display": 132,
+          "weakestCell": 6
+        },
+        {
+          "display": 128,
+          "weakestCell": 7
+        },
+        {
+          "display": 124,
+          "weakestCell": 4
+        },
+        {
+          "display": 120,
+          "weakestCell": 5
+        },
+        {
+          "display": 116,
+          "weakestCell": 3
+        },
+        {
+          "display": 112,
+          "weakestCell": 4
+        },
+        {
+          "display": 108,
+          "weakestCell": 4
+        },
+        {
+          "display": 104,
+          "weakestCell": 2
+        },
+        {
+          "display": 100,
+          "weakestCell": 3
+        },
+        {
+          "display": 96,
+          "weakestCell": 0
+        }
+      ]
+    },
+    "caps-profile-facebook-360.png": {
+      "native": 360,
+      "holdsDownTo": 100,
+      "breaksAt": 96,
+      "trail": [
+        {
+          "display": 360,
+          "weakestCell": 60
+        },
+        {
+          "display": 356,
+          "weakestCell": 60
+        },
+        {
+          "display": 352,
+          "weakestCell": 55
+        },
+        {
+          "display": 348,
+          "weakestCell": 53
+        },
+        {
+          "display": 344,
+          "weakestCell": 53
+        },
+        {
+          "display": 340,
+          "weakestCell": 55
+        },
+        {
+          "display": 336,
+          "weakestCell": 50
+        },
+        {
+          "display": 332,
+          "weakestCell": 49
+        },
+        {
+          "display": 328,
+          "weakestCell": 49
+        },
+        {
+          "display": 324,
+          "weakestCell": 48
+        },
+        {
+          "display": 320,
+          "weakestCell": 48
+        },
+        {
+          "display": 316,
+          "weakestCell": 45
+        },
+        {
+          "display": 312,
+          "weakestCell": 49
+        },
+        {
+          "display": 308,
+          "weakestCell": 39
+        },
+        {
+          "display": 304,
+          "weakestCell": 44
+        },
+        {
+          "display": 300,
+          "weakestCell": 44
+        },
+        {
+          "display": 296,
+          "weakestCell": 42
+        },
+        {
+          "display": 292,
+          "weakestCell": 41
+        },
+        {
+          "display": 288,
+          "weakestCell": 39
+        },
+        {
+          "display": 284,
+          "weakestCell": 39
+        },
+        {
+          "display": 280,
+          "weakestCell": 31
+        },
+        {
+          "display": 276,
+          "weakestCell": 35
+        },
+        {
+          "display": 272,
+          "weakestCell": 34
+        },
+        {
+          "display": 268,
+          "weakestCell": 31
+        },
+        {
+          "display": 264,
+          "weakestCell": 27
+        },
+        {
+          "display": 260,
+          "weakestCell": 27
+        },
+        {
+          "display": 256,
+          "weakestCell": 27
+        },
+        {
+          "display": 252,
+          "weakestCell": 23
+        },
+        {
+          "display": 248,
+          "weakestCell": 25
+        },
+        {
+          "display": 244,
+          "weakestCell": 25
+        },
+        {
+          "display": 240,
+          "weakestCell": 22
+        },
+        {
+          "display": 236,
+          "weakestCell": 21
+        },
+        {
+          "display": 232,
+          "weakestCell": 22
+        },
+        {
+          "display": 228,
+          "weakestCell": 22
+        },
+        {
+          "display": 224,
+          "weakestCell": 21
+        },
+        {
+          "display": 220,
+          "weakestCell": 21
+        },
+        {
+          "display": 216,
+          "weakestCell": 20
+        },
+        {
+          "display": 212,
+          "weakestCell": 22
+        },
+        {
+          "display": 208,
+          "weakestCell": 11
+        },
+        {
+          "display": 204,
+          "weakestCell": 20
+        },
+        {
+          "display": 200,
+          "weakestCell": 18
+        },
+        {
+          "display": 196,
+          "weakestCell": 18
+        },
+        {
+          "display": 192,
+          "weakestCell": 17
+        },
+        {
+          "display": 188,
+          "weakestCell": 16
+        },
+        {
+          "display": 184,
+          "weakestCell": 21
+        },
+        {
+          "display": 180,
+          "weakestCell": 13
+        },
+        {
+          "display": 176,
+          "weakestCell": 16
+        },
+        {
+          "display": 172,
+          "weakestCell": 10
+        },
+        {
+          "display": 168,
+          "weakestCell": 13
+        },
+        {
+          "display": 164,
+          "weakestCell": 9
+        },
+        {
+          "display": 160,
+          "weakestCell": 8
+        },
+        {
+          "display": 156,
+          "weakestCell": 10
+        },
+        {
+          "display": 152,
+          "weakestCell": 8
+        },
+        {
+          "display": 148,
+          "weakestCell": 9
+        },
+        {
+          "display": 144,
+          "weakestCell": 7
+        },
+        {
+          "display": 140,
+          "weakestCell": 9
+        },
+        {
+          "display": 136,
+          "weakestCell": 6
+        },
+        {
+          "display": 132,
+          "weakestCell": 4
+        },
+        {
+          "display": 128,
+          "weakestCell": 5
+        },
+        {
+          "display": 124,
+          "weakestCell": 6
+        },
+        {
+          "display": 120,
+          "weakestCell": 6
+        },
+        {
+          "display": 116,
+          "weakestCell": 7
+        },
+        {
+          "display": 112,
+          "weakestCell": 6
+        },
+        {
+          "display": 108,
+          "weakestCell": 6
+        },
+        {
+          "display": 104,
+          "weakestCell": 4
+        },
+        {
+          "display": 100,
+          "weakestCell": 4
+        },
+        {
+          "display": 96,
+          "weakestCell": 1
+        }
+      ]
+    },
+    "caps-profile-instagram-320.png": {
+      "native": 320,
+      "holdsDownTo": 84,
+      "breaksAt": 80,
+      "trail": [
+        {
+          "display": 320,
+          "weakestCell": 42
+        },
+        {
+          "display": 316,
+          "weakestCell": 42
+        },
+        {
+          "display": 312,
+          "weakestCell": 38
+        },
+        {
+          "display": 308,
+          "weakestCell": 36
+        },
+        {
+          "display": 304,
+          "weakestCell": 38
+        },
+        {
+          "display": 300,
+          "weakestCell": 36
+        },
+        {
+          "display": 296,
+          "weakestCell": 38
+        },
+        {
+          "display": 292,
+          "weakestCell": 33
+        },
+        {
+          "display": 288,
+          "weakestCell": 39
+        },
+        {
+          "display": 284,
+          "weakestCell": 36
+        },
+        {
+          "display": 280,
+          "weakestCell": 33
+        },
+        {
+          "display": 276,
+          "weakestCell": 31
+        },
+        {
+          "display": 272,
+          "weakestCell": 31
+        },
+        {
+          "display": 268,
+          "weakestCell": 32
+        },
+        {
+          "display": 264,
+          "weakestCell": 26
+        },
+        {
+          "display": 260,
+          "weakestCell": 29
+        },
+        {
+          "display": 256,
+          "weakestCell": 28
+        },
+        {
+          "display": 252,
+          "weakestCell": 24
+        },
+        {
+          "display": 248,
+          "weakestCell": 23
+        },
+        {
+          "display": 244,
+          "weakestCell": 23
+        },
+        {
+          "display": 240,
+          "weakestCell": 24
+        },
+        {
+          "display": 236,
+          "weakestCell": 22
+        },
+        {
+          "display": 232,
+          "weakestCell": 18
+        },
+        {
+          "display": 228,
+          "weakestCell": 18
+        },
+        {
+          "display": 224,
+          "weakestCell": 18
+        },
+        {
+          "display": 220,
+          "weakestCell": 20
+        },
+        {
+          "display": 216,
+          "weakestCell": 16
+        },
+        {
+          "display": 212,
+          "weakestCell": 18
+        },
+        {
+          "display": 208,
+          "weakestCell": 19
+        },
+        {
+          "display": 204,
+          "weakestCell": 21
+        },
+        {
+          "display": 200,
+          "weakestCell": 15
+        },
+        {
+          "display": 196,
+          "weakestCell": 17
+        },
+        {
+          "display": 192,
+          "weakestCell": 15
+        },
+        {
+          "display": 188,
+          "weakestCell": 11
+        },
+        {
+          "display": 184,
+          "weakestCell": 11
+        },
+        {
+          "display": 180,
+          "weakestCell": 9
+        },
+        {
+          "display": 176,
+          "weakestCell": 14
+        },
+        {
+          "display": 172,
+          "weakestCell": 14
+        },
+        {
+          "display": 168,
+          "weakestCell": 15
+        },
+        {
+          "display": 164,
+          "weakestCell": 9
+        },
+        {
+          "display": 160,
+          "weakestCell": 13
+        },
+        {
+          "display": 156,
+          "weakestCell": 8
+        },
+        {
+          "display": 152,
+          "weakestCell": 7
+        },
+        {
+          "display": 148,
+          "weakestCell": 6
+        },
+        {
+          "display": 144,
+          "weakestCell": 7
+        },
+        {
+          "display": 140,
+          "weakestCell": 7
+        },
+        {
+          "display": 136,
+          "weakestCell": 6
+        },
+        {
+          "display": 132,
+          "weakestCell": 7
+        },
+        {
+          "display": 128,
+          "weakestCell": 5
+        },
+        {
+          "display": 124,
+          "weakestCell": 8
+        },
+        {
+          "display": 120,
+          "weakestCell": 5
+        },
+        {
+          "display": 116,
+          "weakestCell": 3
+        },
+        {
+          "display": 112,
+          "weakestCell": 5
+        },
+        {
+          "display": 108,
+          "weakestCell": 4
+        },
+        {
+          "display": 104,
+          "weakestCell": 4
+        },
+        {
+          "display": 100,
+          "weakestCell": 3
+        },
+        {
+          "display": 96,
+          "weakestCell": 3
+        },
+        {
+          "display": 92,
+          "weakestCell": 4
+        },
+        {
+          "display": 88,
+          "weakestCell": 2
+        },
+        {
+          "display": 84,
+          "weakestCell": 2
+        },
+        {
+          "display": 80,
+          "weakestCell": 1
+        }
+      ]
+    },
+    "caps-profile-tiktok-200.png": {
+      "native": 200,
+      "holdsDownTo": 100,
+      "breaksAt": 96,
+      "trail": [
+        {
+          "display": 200,
+          "weakestCell": 18
+        },
+        {
+          "display": 196,
+          "weakestCell": 17
+        },
+        {
+          "display": 192,
+          "weakestCell": 14
+        },
+        {
+          "display": 188,
+          "weakestCell": 12
+        },
+        {
+          "display": 184,
+          "weakestCell": 15
+        },
+        {
+          "display": 180,
+          "weakestCell": 10
+        },
+        {
+          "display": 176,
+          "weakestCell": 16
+        },
+        {
+          "display": 172,
+          "weakestCell": 11
+        },
+        {
+          "display": 168,
+          "weakestCell": 16
+        },
+        {
+          "display": 164,
+          "weakestCell": 10
+        },
+        {
+          "display": 160,
+          "weakestCell": 10
+        },
+        {
+          "display": 156,
+          "weakestCell": 12
+        },
+        {
+          "display": 152,
+          "weakestCell": 6
+        },
+        {
+          "display": 148,
+          "weakestCell": 9
+        },
+        {
+          "display": 144,
+          "weakestCell": 8
+        },
+        {
+          "display": 140,
+          "weakestCell": 11
+        },
+        {
+          "display": 136,
+          "weakestCell": 7
+        },
+        {
+          "display": 132,
+          "weakestCell": 7
+        },
+        {
+          "display": 128,
+          "weakestCell": 7
+        },
+        {
+          "display": 124,
+          "weakestCell": 8
+        },
+        {
+          "display": 120,
+          "weakestCell": 4
+        },
+        {
+          "display": 116,
+          "weakestCell": 4
+        },
+        {
+          "display": 112,
+          "weakestCell": 8
+        },
+        {
+          "display": 108,
+          "weakestCell": 6
+        },
+        {
+          "display": 104,
+          "weakestCell": 6
+        },
+        {
+          "display": 100,
+          "weakestCell": 4
+        },
+        {
+          "display": 96,
+          "weakestCell": 0
+        }
+      ]
+    }
+  }
+}
