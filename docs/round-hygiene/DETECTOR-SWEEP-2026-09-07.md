@@ -81,3 +81,38 @@ they are before anything happens to them at all.
 ## Nothing was deleted this sprint
 
 `devices 500 · played 25 · hands 78 · bindings 7 · gap 0` — identical before and after.
+
+---
+
+## Re-checked 2026-09-07, after the simulator purge — report only, nothing changed
+
+**`v_grant_without_session`: still exactly 7. It has not grown.**
+
+| Device | Chips | Events | First seen |
+|---|---|---|---|
+| `fc73-e913-d915` | 2,000 | 1 | 2026-08-12 13:19:10 |
+| `8aae-140a-e386` | 2,000 | 1 | 2026-08-12 13:19:44 |
+| `e2ad-8c4a-f926` | 2,000 | 1 | 2026-08-23 17:45:44 |
+| `edf3-1472-edd6` | 2,000 | 1 | 2026-08-23 17:46:03 |
+| `fe22-b58a-ed64` | 2,000 | 1 | 2026-08-23 17:46:24 |
+| `af60-894c-ec02` | 2,000 | 1 | 2026-08-23 17:46:44 |
+| `9a78-c473-fc62` | 2,000 | **0** | — no analytics event at all |
+
+The same seven, the same 14,000 chips, nothing since 2026-08-23. Four of them twenty seconds
+apart. ⚠️ **Still quarantined and still out of `v_harness_devices_v2`,** for the reason it was
+quarantined in the first place: a real phone that crashed on launch leaves an identical trace, so
+this is a thing to look at and never a thing to purge by.
+
+**Class F: still bounded, still contains real players, still not harness.**
+
+| | |
+|---|---|
+| Devices | **209** |
+| Of those, with real play | **11** |
+| First seen, earliest | 2026-06-29 |
+| First seen, latest | **2026-08-01** |
+| Latest activity of any of them | 2026-08-19 |
+
+The window has not moved: no device has entered class F since 2026-08-01, which is what you would
+expect if the class is simply "recorded before the fingerprint block was added to analytics".
+⚠️ **Eleven of them have really played. Nobody should ever sweep this class.**
