@@ -30,7 +30,7 @@
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
-- Tests: **2,819/2,819 across 51 suites** (was 2,474 — that figure was 345 tests stale)
+- Tests: **2,824/2,824 across 52 suites** (was 2,474 — that figure was 350 tests stale)
 - **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
   Functions" — two of the three were low and the Edge Function count was high)
 - Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
@@ -110,6 +110,27 @@
   balance 499,900). The video is **English on both language pages** and only the chrome translates;
   that is correct, not a gap. `tests/film-verify.mjs` asserts all of it across 2 engines × 2
   languages × 320/393.
+- ⚠️ **THE APP STORE LISTING IS BLANK — not stale, blank (read from Apple 2026-09-08).** Every
+  text field is `null`: subtitle, description, keywords, promo text, what's new, support URL,
+  marketing URL, privacy policy URL, both categories. **Zero screenshots.** The age-rating
+  questionnaire has **never been answered** (`gamblingSimulated: null`, override NONE), so the app
+  is not 12+ or 17+ — it is unrated. The version record still reads **1.0, created 2026-03-11**,
+  and the listing name is `CAPS - Card game` while everything else says CAPS POKER. Every one of
+  those was an HTTP 200 read, so they are findings, not failed reads. **The app therefore cannot
+  be submitted today**: Apple requires a description, support URL, privacy URL, category, an
+  answered age rating and one screenshot. Drafted copy is in
+  `docs/last-gaps/THE-LAST-GAPS-2026-09-08.md`; NOTHING was changed and nothing submitted. Re-read
+  it any time with Actions → Manage TestFlight → `store-listing` (GET only).
+  The store screenshot set is `docs/product-map/store/` — 7 shots at 1290×2796 from 2026-09-03.
+  ⚠️ It is NOT provably current for 515 (eleven later commits touched the render path of five of
+  the seven), Apple's primary iPhone size is now 6.9″/1320×2868, and **two of the seven show empty
+  states** — an empty shop and "No achievements found".
+- ⚠️ **`/gameover` states a falsehood on a cold visit.** `app/gameover.tsx:117-122` renders
+  "GAME OVER / Not enough chips to continue" **unconditionally**, above the player's real balance.
+  Typed by someone holding 2,000 chips it says they have run out, over the number 2,000. Same class
+  as the battle pass: reachable by URL, gated by nothing. Not fixed — one conditional would do it.
+  `/multiplayer-game` is the second of the pair: cold, it draws a seat, a balance and a green READY
+  button for a room that does not exist, while `/lobby/table` handles the same case honestly.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs
@@ -141,6 +162,14 @@
 - Never suggest App Store submission unless Roye says so
 - GitHub Actions builds (not EAS)
 - VAMOS = always .md file, never chat-only instructions
+- ⚠️ **A FILENAME IS NOT EVIDENCE. Verify by CONTENT, and verify at the place that actually SHIPS.**
+  This shape has now cost this project six times: Hebrew screenshots under two names · the icon
+  overwritten six times in place · a stale bundle under an unchanged hash · three different files
+  called `caps-explainer-FINAL.mp4` · the catch-all 404 fixed in `vercel.json` when prod reads
+  `dist/vercel.json` · and `variant="gold"` on a button that has painted MINT since the theme sweep.
+  Before believing a file is what its name says: read its bytes, and check which copy the deploy,
+  the CI gate or the bundler actually consumes. A test that certifies the wrong file is worse than
+  no test — it is a green check over an open hole, and one stood for five days.
 
 ## Before ANY release
 1. Full test suite green
@@ -167,15 +196,21 @@ or different font rendering is baked into every scenario:
 ```bash
 gh workflow run backstop-baseline.yml
 ```
-Then review and commit `backstop_data/bitmaps_reference/`. Confirm the diff is only what you
-intended — a baseline commit that silently absorbs an unrelated regression is worse than a
-failing check.
-
-After intentional UI changes, update baselines:
+Then LOOK at every changed reference before committing it, and commit only that directory:
 ```bash
-npm run visual-qa:update
-git add tests/visual/baselines/
-git commit -m "chore: update visual QA baselines after [reason]"
+git add backstop_data/bitmaps_reference
+git commit -m "chore: update BackstopJS baselines after [reason]"
 ```
+Confirm the diff is only what you intended — a baseline commit that silently absorbs an unrelated
+regression is worse than a failing check.
 
-This prevents accidentally breaking the UI without noticing.
+⚠️ **AND THE UPDATE RECIPE THAT USED TO BE PRINTED HERE COULD NOT RUN (corrected 2026-09-08).**
+It said `npm run visual-qa:update && git add tests/visual/baselines/`. **`tests/visual/baselines/`
+does not exist** — not empty, absent — so the `git add` fails outright, and the Playwright snapshots
+that `--update-snapshots` does refresh are not what CI compares. It is the same shape as the 404
+fix: a documented command aimed at a file the thing that ships never reads. The ONLY baselines that
+matter are `backstop_data/bitmaps_reference/`, regenerated on Linux by the dispatch above.
+
+`npm run visual-qa` (`playwright test`, testDir `tests/visual`, 6 tests in 2 specs) is still worth
+running before a UI change — it just is not the CI gate, and it has no committed baselines to
+update.
