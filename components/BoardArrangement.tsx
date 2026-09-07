@@ -31,6 +31,7 @@ import { PRD } from '../utils/prdTokens';
 // directly, so any other zone height here = dead gap + clipped bottom row.
 const HAND_ZONE_HEIGHT = PRD.zone.handMinH;
 import { t } from '../utils/i18n';
+import { isTipDismissed, BOARD_HINT_ID } from '../utils/tipsSeen';
 
 export interface BoardArrangementProps {
   boards: BoardState[];
@@ -436,9 +437,13 @@ export function BoardArrangement({
           The third-game tip (Tap a placed card to remove it) was permanently eating
           vertical budget for repeat players. First-game user still sees the orientation
           hint; everyone else gets the screen back. */}
-      {isArranging && !boardError && gamesPlayed < 1 && (
+      {/* DISMISS-THE-TIPS 2026-09-06 — was `gamesPlayed < 1`, and `caps_games_played` only moves
+          when a hand REACHES THE REVEAL. Open a hand and leave and this came back, for ever;
+          measured at four abandoned hands in a row. It now retires the moment the player does the
+          thing it describes (first card placed), recorded per device. */}
+      {isArranging && !boardError && !isTipDismissed(BOARD_HINT_ID) && (
         <View style={baStyles.firstTimeHint}>
-          <Text style={baStyles.firstTimeHintText}>{t().hintTexts[Math.min(gamesPlayed, 2)]}</Text>
+          <Text style={baStyles.firstTimeHintText}>{t().hintTexts[0]}</Text>
         </View>
       )}
 

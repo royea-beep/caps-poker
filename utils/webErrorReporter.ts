@@ -15,6 +15,7 @@ import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 import { getBreadcrumbs } from './breadcrumbs';
 import { getAppVersion, getBuildIdentity } from './analytics';
+import { getDeviceId, getCachedDeviceId } from './leaderboard';
 
 let installed = false;
 let lastSentAt = 0;
@@ -45,7 +46,11 @@ function isBenign(message: string, stack?: string): boolean {
     m.includes('the request is not allowed by the user agent') ||
     m.includes('notallowederror') ||
     s.includes('playsound') ||
-    s.includes('expo-audio')
+    s.includes('expo-audio') ||
+    // PRE-INVITE 2026-09-06 — the newest live crash row, and the same class as the four above:
+    // pausing audio while its play() promise is still pending rejects with this exact wording.
+    // Non-actionable, and it fires on every navigation away from a screen with a sound.
+    m.includes('play() request was interrupted')
   ) return true;
   // ResizeObserver loop notifications are benign browser messages, not errors.
   if (m.includes('resizeobserver loop')) return true;
@@ -82,6 +87,13 @@ function report(message: string, stack?: string): void {
         // row could not be traced to a build. The native build number rides in `device`, which
         // is an existing jsonb column, so this needs no migration.
         device: { platform: 'web', userAgent: ua, ...getBuildIdentity() },
+        // PRE-INVITE 2026-09-06 — `device_id` was NULL on all 350 crash rows, 191 of them written
+        // right here. The other two crash writers (crash-evidence, notifications) have set it
+        // since AU2.1; this one never did, so a web crash could not be joined to the device's
+        // analytics_events, its bug reports, or its session — which is the whole point of having
+        // the column. Read from the cache warmed in initWebErrorReporter(): this handler must
+        // stay synchronous, so it cannot await.
+        device_id: getCachedDeviceId(),
         status: 'new',
       })
       .then(() => {}, () => {});
@@ -94,6 +106,10 @@ export function initWebErrorReporter(): void {
   if (installed || Platform.OS !== 'web') return;
   if (typeof window === 'undefined' || !window.addEventListener) return;
   installed = true;
+
+  // Warm the device-id cache so report() can read it synchronously. Fire-and-forget: the
+  // reporter must never depend on this resolving, and a crash before it does writes null.
+  void getDeviceId().catch(() => {});
 
   window.addEventListener('error', (e: any) => {
     const msg = e?.message || e?.error?.message || 'Uncaught error';

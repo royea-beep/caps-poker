@@ -45,7 +45,7 @@ import { queueHandResult } from '../utils/handOutbox';
 import { shouldPromptLogin } from '../utils/auth';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
-import { claimShareReward, earnChips, recordHandNet, recordReward } from '../utils/supabaseEconomy';
+import { claimShareReward, earnChips, recordHandNet, recordReward, callRPC } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
 import { FloatingChips } from '../components/FloatingChips';
@@ -618,10 +618,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // READER 4 - the server-side mission tick. Missions are inactive, but it decided a win
         // from chips like the rest and would have disagreed the moment they were switched on.
         const isWin = handOutcome === 'win';
+        // AE2 — through callRPC so these inherit the app-open auth gate. update_mission_progress is
+        // econ_bind_ok-gated; a direct sb.rpc bypassed the choke point. The gate is shared, so these
+        // three await an already-resolved promise rather than three sign-ins.
         await Promise.all([
-          sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_played', p_amount: 1 }),
-          ...(isWin ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_won', p_amount: 1 })] : []),
-          ...(boardsWon > 0 ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'boards_won', p_amount: boardsWon })] : []),
+          callRPC('update_mission_progress', { p_device_id: deviceId, p_type: 'games_played', p_amount: 1 }),
+          ...(isWin ? [callRPC('update_mission_progress', { p_device_id: deviceId, p_type: 'games_won', p_amount: 1 })] : []),
+          ...(boardsWon > 0 ? [callRPC('update_mission_progress', { p_device_id: deviceId, p_type: 'boards_won', p_amount: boardsWon })] : []),
         ]);
       } catch {} // Silent — never crash the game
     })();

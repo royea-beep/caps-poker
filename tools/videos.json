@@ -271,7 +271,9 @@
           "d": 1.7,
           "text": "Fixed."
         }
-      ]
+      ],
+      "publishBlocked": true,
+      "captionNote": "THE-NEGLECTED 2026-09-03 — the video's on-screen 'Fixed.' card was FALSE when cut: the validators had been widened but app/referral.tsx and the Home redeem modal still did .slice(0, 6). Both are fixed in this sprint (plus placeholder, a11y label and the /6 counter). The 'Fixed.' card becomes true only once this build is MERGED AND SHIPPED. DO NOT PUBLISH until then."
     },
     {
       "id": "dev-achievements",
@@ -280,7 +282,7 @@
       "start": 0.0,
       "duration": 18.0,
       "payoff": "The achievements screen could only ever say 0/36 — server and client never agreed on a field name.",
-      "caption": "Our achievements screen could only ever say 0 of 36. The server and the app never agreed what to call the field. Play free in your browser.",
+      "caption": "Our achievements screen could only ever say 0 of 24. The server and the app never agreed what to call the field. Play free in your browser.",
       "cues": [
         {
           "t": 0.0,
@@ -307,7 +309,8 @@
           "d": 3.2,
           "text": "on one\nfield name"
         }
-      ]
+      ],
+      "captionNote": "THE-NEGLECTED 2026-09-03 — was '0 of 36'. achievement_definitions holds 36 rows but only 24 are is_active=true, so 24 is the denominator a player actually sees. (An earlier report of '12' counted the client-side ACHIEVEMENTS array in utils/achievements.ts, which is a different, smaller list — that figure was wrong.)"
     },
     {
       "id": "dev-wcag",

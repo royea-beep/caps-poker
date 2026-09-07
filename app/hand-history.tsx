@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { COLORS, Card } from '../constants/gameConfig';
 import { getHandHistory, clearHandHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
+import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
 import { FullGameShareCard } from '../components/ShareCard';
 import { captureAndShare, generateShareText, ShareData } from '../utils/shareHand';
 import { RevealBoardData } from '../types/gameTypes';
@@ -118,13 +119,30 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
    * blank opponent hand.
    *
    * And the two ends disagreed: the client showed a net-zero hand as a WIN while the same hand was
-   * written to hand_history as result='lost'. Measured in production: 127 of 243 rows are net-zero,
-   * and of the 22 genuinely board-tied hands, 15 are stored 'lost' and 5 'won' -- the same outcome
-   * recorded both ways. Storing a third value needs a CHECK-constraint change and a decision about
-   * those rows, so it is reported; the DISPLAY is corrected here, from the boards, which are right.
+   * written to hand_history as result='lost'. Storing a third value needs a CHECK-constraint change
+   * and a decision about those rows, so it is reported; the DISPLAY is corrected here, from the
+   * boards, which are right.
+   *
+   * ⚠️ The figure this comment used to quote -- "of the 22 genuinely board-tied hands, 15 are
+   * stored 'lost' and 5 'won'" -- IS NOT REPRODUCIBLE and has been removed rather than repeated.
+   * `hand_history.boards_data` is NULL in all 76 production rows (results.tsx:448 records that the
+   * column was dropped for exactly that reason), so production holds no per-board detail and cannot
+   * adjudicate any historical row. Whatever those numbers counted, it was not this table.
+   *
+   * AUDIT-REST 2026-09-05 — C1 CLOSED HERE. This line was
+   *     playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie'
+   * which is the COLLAPSED count: it merges every opponent into one bucket, the one thing
+   * boardTally.ts says its `lost` must not be used for. results.tsx, statsEngine, shareHand and
+   * achievements all read deriveHandOutcome(); history and replay did not, so ONE stored hand had
+   * TWO answers. The reachable divergence is three players, three boards, one board each: the
+   * server and every other reader call that a TIE, this line called it a LOSS and filed the hand
+   * under "Losses" with a red border. Production has four rows at exactly that shape.
+   * The two NUMBERS below are unchanged -- they are the collapsed scoreboard the app has always
+   * printed. Only the verdict now comes from the one derivation. Old rows are unaffected:
+   * deriveHandOutcome falls back to this very count when `winnerSeat` is absent, and that fallback
+   * is provably identical everywhere except the 3P shape (utils/handOutcome.ts + its test).
    */
-  const outcome: 'win' | 'loss' | 'tie' =
-    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+  const outcome: HandOutcome = deriveHandOutcome(hand.boards);
   const isWin = outcome === 'win';
   const bestHand = getBestHandName(hand);
   const isBigHand = BIG_HANDS.includes(bestHand);

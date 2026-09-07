@@ -1,0 +1,72 @@
+[
+  {
+    "lang": "en",
+    "name": "game-placement",
+    "bytes": 593029,
+    "hebrewPct": 0,
+    "url": "http://localhost:8097/game?practice=true&players=2&fresh=1"
+  },
+  {
+    "lang": "en",
+    "name": "game-placed",
+    "bytes": 535890,
+    "hebrewPct": 0,
+    "url": "http://localhost:8097/game?practice=true&players=2&fresh=1"
+  },
+  {
+    "lang": "en",
+    "name": "game-reveal",
+    "bytes": 153327,
+    "hebrewPct": 0,
+    "url": "http://localhost:8097/game?practice=true&players=2&fresh=1"
+  },
+  {
+    "lang": "en",
+    "name": "results",
+    "bytes": 470856,
+    "hebrewPct": 0,
+    "url": "http://localhost:8097/results"
+  },
+  {
+    "lang": "en",
+    "name": "results-details",
+    "bytes": 572962,
+    "hebrewPct": 0,
+    "url": "http://localhost:8097/results"
+  },
+  {
+    "lang": "he",
+    "name": "game-placement",
+    "bytes": 573691,
+    "hebrewPct": 48,
+    "url": "http://localhost:8097/game?practice=true&players=2&fresh=1"
+  },
+  {
+    "lang": "he",
+    "name": "game-placed",
+    "bytes": 521651,
+    "hebrewPct": 51,
+    "url": "http://localhost:8097/game?practice=true&players=2&fresh=1"
+  },
+  {
+    "lang": "he",
+    "name": "game-reveal",
+    "bytes": 145915,
+    "hebrewPct": 41,
+    "url": "http://localhost:8097/game?practice=true&players=2&fresh=1"
+  },
+  {
+    "lang": "he",
+    "name": "results",
+    "bytes": 460740,
+    "hebrewPct": 41,
+    "url": "http://localhost:8097/results"
+  },
+  {
+    "lang": "he",
+    "name": "results-details",
+    "bytes": 562420,
+    "hebrewPct": 40,
+    "url": "http://localhost:8097/results"
+  }
+]

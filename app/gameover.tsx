@@ -14,7 +14,7 @@ import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
-import { fetchPokerShop } from '../utils/supabaseEconomy';
+import { fetchPokerShop, callRPC } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
 import { getSupabase } from '../utils/supabase';
 
@@ -87,7 +87,9 @@ export default function GameOverScreen() {
           if (balance === 0) {
             const client = getSupabase();
             if (client) {
-              const { data } = await client.rpc('claim_emergency_chips', { p_device_id: deviceId });
+              // AE2 — through callRPC for the app-open auth gate; claim_emergency_chips is
+              // econ_bind_ok-gated and this is the zero-chip rescue, the worst place to be refused.
+              const data = await callRPC<any>('claim_emergency_chips', { p_device_id: deviceId });
               // Refusals ('already_claimed_today', 'still_have_chips') are normal, not errors:
               // the player simply stays where they are and the daily faucet is their way back.
               if (data?.ok && typeof data.new_balance === 'number') balance = data.new_balance;

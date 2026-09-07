@@ -33,7 +33,9 @@ const SCENES = {
   // The four-day-old green felt, and the slot outlines raised yesterday. No action: this is the
   // table, held still, so the surface is the subject.
   felt: { players: 2, seed: 3, skipReveal: false, async run(page) {
-    await page.waitForTimeout(6000);
+    // 9s, not 6s: cut.mjs needs actionStart(2s) + 9s = 11.0s of usable take, and a 6s hold
+    // produced a 10.84s take — 0.16s short — which failed the cut's own length assertion.
+    await page.waitForTimeout(9000);
     return { note: 'static table — felt, board panels, empty slot outlines' };
   } },
 

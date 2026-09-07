@@ -281,7 +281,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
               style={({ pressed }) => [styles.autoAllChip, pressed && { opacity: 0.85 }]}
             >
               <Text style={styles.autoAllChipText} allowFontScaling={false}>
-                <Text style={styles.autoAllChipBolt}>⚡</Text> Auto-Place ALL
+                <Text style={styles.autoAllChipBolt}>⚡</Text> {t().autoPlaceAll}
               </Text>
             </Pressable>
           </>

@@ -36,8 +36,49 @@
   ADDED in 3ed2b8a on 2026-08-22, the same commit that introduced the paint-theme system
   and set cardFace to #FCFAF3 — so it described the app it was replacing and was false the
   day it was written. The app has never rendered #FFFEF8 since.)
-- 5 tabs: בית/שחק/חברים/כוסות/פרופיל
-- UI language: English (hand labels English-only since 2026-06-17; caps_language pref currently not applied)
+- **3 tabs: Home · Play · Profile** (corrected 2026-09-03). It was five until `eaf9201`
+  (2026-08-31) cut it to three. `friends` and `cups` are STILL ROUTES but are registered
+  `href: null` in `app/(tabs)/_layout.tsx` — off the tab bar, reached from Home / the SideMenu.
+  Do not "restore" them to the bar: the removal was deliberate (de-duplicate destinations).
+- **LANGUAGE — CAPS IS ENGLISH-FIRST, AND THAT IS THE CORRECT STATE (recorded 2026-09-03).**
+  CAPS is a GLOBAL app. **English is the default and the primary language.** Hebrew exists for the
+  Israeli pilot only — and that pilot will include players from anywhere. Hebrew is an ADDITION,
+  never the requirement.
+  ⚠️ A screen rendering English is NOT a defect and NOT a gap. Two earlier docs framed
+  "ten screens are still 100% English" as something to fix; that framing was WRONG and is
+  retracted here so no future session re-derives "the app should be Hebrew" and starts translating.
+  THE REAL DEFECT IS THE HALF-STATE: the app offers Hebrew, then delivers English on most screens,
+  and leaks English strings into the screens it did translate (the home daily-bonus chip and the
+  legal line are live examples). Either a screen is translated or the app should not claim that
+  language for it. **Consistency is the defect; the English is not.**
+  Mechanics: Hebrew went live 2026-09-02 (`52df7cc` un-forced `getLanguage()`); `caps_language`
+  is applied; hand-rank NAMES stay English on purpose (poker terminology).
+- **LADDER — server-authoritative since 2026-09-03 (CLOSE-S2).** `elo`/`games_played`/`wins` move
+  ONLY for the service-role writer (the `resolve-hand` edge function adjudicating multiplayer).
+  Solo-vs-bots (`quick_poker`) NO LONGER moves the competitive ladder, exactly as practice never
+  did. A client-written `hand_history` row records history and moves no ladder — that is what
+  closed the device_id forge. The lobby is empty (0 rooms have ever finished), so nobody climbs
+  today. This is deliberate; do not "fix" it back.
+- **S1 CLOSED — server-side, on production, 2026-09-03.** `econ_bind_ok` no longer returns true for
+  a caller with **no session**, and no longer returns true from its `WHEN OTHERS` handler.
+  ⚠️ IT REFUSES **NO SESSION**, NOT **ANONYMOUS** — anonymous players arrive with role
+  `authenticated` and a `sub` claim, so they pass exactly as before. Do NOT "simplify" this into a
+  check on `auth.users.is_anonymous`, and do NOT re-add a `v_uid IS NULL -> true` shortcut: either
+  change locks out ~99.7% of real devices. `service_role` is allowed FIRST and on purpose, because
+  `resolve-hand` settles multiplayer with no user session and is the only writer that can pay a
+  dropped seat. `submit_score` gained the guard it never had — it was the third mint vector, and
+  PART 1 alone would have left it open. Proven: raw anon minted 2,000 before and 0 after; a
+  brand-new anonymous device cold-launched against production still gets its grant and plays.
+  ⚠️ STILL OPEN: `submit_score` moves `leaderboard.total_chips` with NO `chip_transactions` row, so
+  it can break the gap invariant. Gated now, but still unledgered.
+- **The catch-all 404 is fixed (2026-09-03).** `vercel.json`'s last rewrite excludes dotted paths,
+  so a missing FILE 404s instead of returning 200 with the app's HTML. That trap twice made a stale
+  or absent file read as "deployed". SPA routes are unaffected — 0 of them contain a dot, and
+  `tests/vercel-rewrites.test.ts` pins both halves.
+- **FIVE-O is NAVY, not red (corrected 2026-09-03).** `visual.fiveo` paints surface `#1A1A2E` with a
+  mint `#4FD6A8` accent. The picker showed a `#5c0000` red preview and said "Red felt / Bold action";
+  both are corrected. Same class as the maroon-felt line above — a description contradicting the
+  product. If you are about to "restore the red", read `constants/paintThemes.ts` first.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs

@@ -1,0 +1,26 @@
+{
+  "caps-profile-1024.png": {
+    "mark_px": 268832,
+    "outside_circle": 0,
+    "min_margin_px": 122.9,
+    "min_margin_pct_of_radius": 24.0
+  },
+  "caps-profile-facebook-360.png": {
+    "mark_px": 33458,
+    "outside_circle": 0,
+    "min_margin_px": 42.4,
+    "min_margin_pct_of_radius": 23.6
+  },
+  "caps-profile-instagram-320.png": {
+    "mark_px": 26098,
+    "outside_circle": 0,
+    "min_margin_px": 38.2,
+    "min_margin_pct_of_radius": 23.9
+  },
+  "caps-profile-tiktok-200.png": {
+    "mark_px": 10293,
+    "outside_circle": 0,
+    "min_margin_px": 23.7,
+    "min_margin_pct_of_radius": 23.7
+  }
+}

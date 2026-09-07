@@ -36,6 +36,7 @@ import { t } from '../utils/i18n';
 import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
 import { BoardState } from '../utils/gameLogic';
+import { deriveHandOutcome } from '../utils/handOutcome';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -760,6 +761,16 @@ function MultiplayerGameScreenInner() {
       handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
 
+    // PRE-INVITE 2026-09-06 — `outcome` DERIVED FROM BOARDS, mirroring solo `game_ended`.
+    //
+    // `won: myDelta > 0` is a statement about CHIPS. A hand where the boards tie records
+    // `won:false` for every seat, so a tie is indistinguishable from a loss in the event stream —
+    // and a fifth place deciding who won from chips is exactly the two-sources-of-truth defect
+    // this project already closed on the screen, the ladder and the record. `outcome` comes from
+    // deriveHandOutcome over the SAME revealBoards the celebration reads, so the analytics row
+    // and the screen can never disagree. `won` is kept unchanged for compatibility with the 19
+    // events already recorded and anything reading them.
+    const outcome = deriveHandOutcome(revealBoards);
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
     track('mp_game_ended', {
       role: 'host',
@@ -768,6 +779,7 @@ function MultiplayerGameScreenInner() {
       board_count: boardCount,
       net_chips: myDelta,
       won: myDelta > 0,
+      outcome,
       is_complete: handResult.completeWinner !== null,
     }, 'multiplayer-game');
     // Host owns the lobby room — mark it finished + clear its roster (kills the 'playing'
@@ -910,6 +922,10 @@ function MultiplayerGameScreenInner() {
       handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
 
+    // Same derivation as the host path. The guest builds its OWN revealBoards from the
+    // broadcast, so adding `outcome` only on the host would have left half the table's events
+    // still chips-derived — the same asymmetry the winnerSeat rotation had to fix.
+    const outcome = deriveHandOutcome(revealBoards);
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
     track('mp_game_ended', {
       role: 'guest',
@@ -918,6 +934,7 @@ function MultiplayerGameScreenInner() {
       board_count: boardCount,
       net_chips: myDelta,
       won: myDelta > 0,
+      outcome,
       is_complete: result.isComplete,
     }, 'multiplayer-game');
     // If this was a club table, submit the FULL roster. Guest builds it from the

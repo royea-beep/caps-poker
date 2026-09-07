@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore, VisualTheme } from '../store/gameStore';
 import { COLORS } from '../constants/gameConfig';
+import { t, getLanguage } from '../utils/i18n';
 
 export default function ThemePickScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function ThemePickScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>CAPS POKER</Text>
-      <Text style={styles.subtitle}>CHOOSE YOUR STYLE</Text>
+      <Text style={styles.subtitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setChooseStyle}</Text>
 
       <View style={styles.cardsRow}>
         {/* CLASSIC */}
@@ -34,17 +35,17 @@ export default function ThemePickScreen() {
           style={styles.card}
           onPress={() => pick('classic')}
           accessibilityRole="button"
-          accessibilityLabel="Choose Classic style, timeless dark gold, elegant look"
+          accessibilityLabel={`${t().setThemeTimeless} — ${t().setThemeClassicDesc.replace(String.fromCharCode(10), ", ")}`} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
         >
           <View style={styles.classicPreview}>
             <Text style={styles.classicPreviewText}>♠</Text>
             <View style={styles.classicPreviewBar} />
           </View>
           <Text style={styles.cardName}>CLASSIC</Text>
-          <Text style={styles.cardTag}>Timeless</Text>
-          <Text style={styles.cardDesc}>Dark gold{'\n'}Elegant look</Text>
+          <Text style={styles.cardTag} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeTimeless}</Text>
+          <Text style={styles.cardDesc} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeClassicDesc}</Text>
           <View style={styles.selectBtn}>
-            <Text style={styles.selectBtnText}>SELECT</Text>
+            <Text style={styles.selectBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSelect}</Text>
           </View>
         </Pressable>
 
@@ -53,26 +54,41 @@ export default function ThemePickScreen() {
           style={[styles.card, styles.fiveoCard]}
           onPress={() => pick('fiveo')}
           accessibilityRole="button"
-          accessibilityLabel="Choose Five-O style, arcade red felt, bold action"
+          accessibilityLabel={`${t().setThemeModern} — ${t().setThemeFiveoDesc.replace(String.fromCharCode(10), ", ")}`} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
         >
           <View style={styles.fiveoPreview}>
             <Text style={styles.fiveoPreviewText}>♠</Text>
             <View style={styles.fiveoPreviewBar} />
           </View>
-          <Text style={[styles.cardName, { color: '#FFD700' }]}>FIVE-O</Text>
-          <Text style={[styles.cardTag, { color: '#FFD700' }]}>Arcade</Text>
-          <Text style={styles.cardDesc}>Red felt{'\n'}Bold action</Text>
-          <View style={[styles.selectBtn, styles.selectBtnFiveo]}>
-            <Text style={[styles.selectBtnText, { color: '#000000' }]}>SELECT</Text>
+          <Text style={[styles.cardName, { color: '#4FD6A8' }]}>FIVE-O</Text>
+          <Text style={[styles.cardTag, { color: '#4FD6A8' }]} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeModern}</Text>
+          <Text style={styles.cardDesc} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setThemeFiveoDesc}</Text>
+          {/* THE-LAST-THREE 2026-09-03 — this SELECT was a SOLID #4FD6A8 fill. #4FD6A8 is the
+              winner cue; no control may wear it. Both SELECT controls now share one neutral
+              chrome, and FIVE-O's identity stays where it belongs: the preview swatch, the
+              gold card name/tag, and the card border. */}
+          <View style={styles.selectBtn}>
+            <Text style={styles.selectBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setSelect}</Text>
           </View>
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>Can be changed anytime in Settings</Text>
+      <Text style={styles.hint} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setChangeAnytime}</Text>
     </SafeAreaView>
   );
 }
 
+// THE-LAST-THREE 2026-09-03 — FIVE-O's swatch accent was #FFD700, THE WINNER CUE, and the whole
+// card is a Pressable, so the loop measured it as gold ON a control in both engines at all four
+// widths. (A previous edit here rewrote this very note with a blanket colour replace and left it
+// claiming the cue was #4FD6A8. It is not. #FFD700 is the cue; #4FD6A8 is the mint that replaced
+// it. Corrected 2026-09-03.)
+//
+// FULL-I18N 2026-09-03 — the rest of the swatch is now corrected too. constants/paintThemes.ts
+// `visual.fiveo` paints:   accent #4FD6A8 · surface #1A1A2E (navy) · boardGold #c9a84c
+// The preview box was #5c0000 and the copy said "Red felt / Bold action". FIVE-O has not been red
+// for a long time, so the swatch was describing a theme that no longer exists — the same class of
+// error as the maroon-felt line corrected in CLAUDE.md. Preview and copy now match the paint.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -112,17 +128,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fiveoCard: {
-    borderColor: '#FFD700',
+    borderColor: '#4FD6A8',
     ...Platform.select({
       ios: {
-        shadowColor: '#FFD700',
+        shadowColor: '#4FD6A8',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
       },
       android: { elevation: 6 },
       default: {
-        boxShadow: '0 0 16px rgba(255,215,0,0.2)',
+        boxShadow: '0 0 16px rgba(79,214,168,0.2)',
       } as any,
     }),
   },
@@ -155,24 +171,24 @@ const styles = StyleSheet.create({
   fiveoPreview: {
     width: 60,
     height: 50,
-    backgroundColor: '#5c0000',
+    backgroundColor: '#1A1A2E',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: '#4FD6A8',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
     marginBottom: 4,
   },
   fiveoPreviewText: {
-    color: '#FFD700',
+    color: '#4FD6A8',
     fontSize: 22,
     fontWeight: '900',
   },
   fiveoPreviewBar: {
     width: 40,
     height: 4,
-    backgroundColor: '#FFD700',
+    backgroundColor: '#4FD6A8',
     borderRadius: 2,
     opacity: 0.8,
   },
@@ -204,10 +220,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#3d2010',
     backgroundColor: 'transparent',
-  },
-  selectBtnFiveo: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
   },
   selectBtnText: {
     color: '#c9a84c',

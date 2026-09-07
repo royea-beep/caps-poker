@@ -34,10 +34,19 @@ import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 import { t } from '../../utils/i18n';
 import { LABEL_COLUMN } from '../../constants/labelColumn';
 
+/**
+ * AUDIT-REST 2026-09-05 — the board count is READ, not restated. These three numbers were
+ * literals (4 / 3 / 2), which is a SECOND source of truth for the rule CLAUDE.md makes a hard
+ * rule: "DO NOT hardcode board counts — use getBoardCount()". They happened to be right, and
+ * that is exactly why it was worth changing: a duplicated rule is a rule waiting to disagree
+ * with itself, and this file is the screen that TELLS a player what the table will deal them.
+ * The rendered output is byte-identical — getBoardCount returns 4 / 3 / 2 for 2 / 3 / 4 players,
+ * pinned by utils/__tests__/one-outcome-derivation.test.ts's sibling assertion.
+ */
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
-  { n: 2, label: 'Heads-Up', boards: 4 },
-  { n: 3, label: '3-Player', boards: 3 },
-  { n: 4, label: '4-Player', boards: 2 },
+  { n: 2, label: 'Heads-Up', boards: getBoardCount(2) },
+  { n: 3, label: '3-Player', boards: getBoardCount(3) },
+  { n: 4, label: '4-Player', boards: getBoardCount(4) },
 ];
 
 const TABLES_PER_TYPE = 2;

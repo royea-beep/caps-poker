@@ -1,0 +1,578 @@
+{
+  "chromium-en-320": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "chromium-en-393": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "chromium-he-320": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "chromium-he-393": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "webkit-en-320": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "webkit-en-393": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "webkit-he-320": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  },
+  "webkit-he-393": {
+    "newDeviceHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "showTips": null,
+      "dismissed": null,
+      "tutorialSeen": null
+    },
+    "newDeviceGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "flipOff": {
+      "found": true,
+      "before": "true",
+      "after": "false"
+    },
+    "offGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "offStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    },
+    "flipOn": {
+      "found": true,
+      "before": "false",
+      "after": "true"
+    },
+    "onAgainHome": {
+      "tutorial": true,
+      "tips": false,
+      "boardHint": false
+    },
+    "onAgainGame": {
+      "tutorial": false,
+      "tips": true,
+      "boardHint": true
+    },
+    "afterReloadHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tips": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "showTips": "false",
+      "dismissed": "[\"game-tip-1\"]",
+      "tutorialSeen": "true"
+    }
+  }
+}

@@ -13,7 +13,7 @@ export default function ProfileScreen() {
   const handsPlayed = useGameStore(s => s.handsPlayed);
   const handsWon = useGameStore(s => s.handsWon);
   const chips = useGameStore(s => s.chips);
-  const playerName = useGameStore(s => s.playerName) || 'Player';
+  const playerName = useGameStore(s => s.playerName) || t().playerFallback;
   const currentWinStreak = useGameStore(s => s.currentWinStreak);
   const bestWinStreak = useGameStore(s => s.bestWinStreak);
 
@@ -31,14 +31,14 @@ export default function ProfileScreen() {
           language across the app. pointerEvents:none, zero layout impact. */}
       <LuxuryBackdrop />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title} accessibilityRole="header">PROFILE</Text>
+        <Text style={styles.title} accessibilityRole="header" accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}>{t().profileTitle}</Text>
         <Text style={styles.playerName}>{playerName}</Text>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${handsPlayed ?? 0} hands`}><Text style={styles.statValue}>{handsPlayed ?? 0}</Text><Text style={styles.statLabel}>HANDS</Text></View>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${winRate ?? 0}% win rate`}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>WIN RATE</Text></View>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${currentWinStreak ?? 0} streak`}><Text style={styles.statValue}>{currentWinStreak ?? 0}</Text><Text style={styles.statLabel}>STREAK</Text></View>
-          <View style={styles.statCard} accessible={true} accessibilityLabel={`${(chips ?? 0).toLocaleString()} chips`}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel="CHIPS">CHIPS 💰</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${handsPlayed ?? 0} ${t().profileHands}`} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}><Text style={styles.statValue}>{handsPlayed ?? 0}</Text><Text style={styles.statLabel}>{t().profileHands}</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${winRate ?? 0}% ${t().profileWinRate}`} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}><Text style={styles.statValue}>{winRate}%</Text><Text style={styles.statLabel}>{t().profileWinRate}</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${currentWinStreak ?? 0} ${t().profileStreak}`} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}><Text style={styles.statValue}>{currentWinStreak ?? 0}</Text><Text style={styles.statLabel}>{t().profileStreak}</Text></View>
+          <View style={styles.statCard} accessible={true} accessibilityLabel={`${(chips ?? 0).toLocaleString()} ${t().profileChips}`} accessibilityLanguage={getLanguage() === "he" ? "he" : undefined}><Text style={styles.statValue}>{(chips ?? 0).toLocaleString()}</Text><Text style={styles.statLabel} accessibilityLabel={t().profileChips}>{t().profileChips} 💰</Text></View>
         </View>
 
         <Pressable style={styles.menuRow} onPress={() => router.push('/achievements' as any)} accessibilityRole="button" accessibilityLabel={t().profileMenuAchievements} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

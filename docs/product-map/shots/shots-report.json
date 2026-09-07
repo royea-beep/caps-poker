@@ -1,0 +1,296 @@
+[
+  {
+    "lang": "en",
+    "name": "home",
+    "bytes": 1286915,
+    "hebrewPct": 0,
+    "chars": 477
+  },
+  {
+    "lang": "en",
+    "name": "play",
+    "bytes": 100491,
+    "hebrewPct": 0,
+    "chars": 339
+  },
+  {
+    "lang": "en",
+    "name": "profile",
+    "bytes": 658516,
+    "hebrewPct": 0,
+    "chars": 174
+  },
+  {
+    "lang": "en",
+    "name": "friends",
+    "bytes": 55979,
+    "hebrewPct": 0,
+    "chars": 175
+  },
+  {
+    "lang": "en",
+    "name": "cups",
+    "bytes": 27764,
+    "hebrewPct": 0,
+    "chars": 83
+  },
+  {
+    "lang": "en",
+    "name": "shop",
+    "bytes": 570225,
+    "hebrewPct": 0,
+    "chars": 62
+  },
+  {
+    "lang": "en",
+    "name": "settings",
+    "bytes": 107704,
+    "hebrewPct": 0,
+    "chars": 998
+  },
+  {
+    "lang": "en",
+    "name": "achievements",
+    "bytes": 51111,
+    "hebrewPct": 0,
+    "chars": 140
+  },
+  {
+    "lang": "en",
+    "name": "leaderboard",
+    "bytes": 38237,
+    "hebrewPct": 0,
+    "chars": 101
+  },
+  {
+    "lang": "en",
+    "name": "hand-history",
+    "bytes": 52008,
+    "hebrewPct": 0,
+    "chars": 109
+  },
+  {
+    "lang": "en",
+    "name": "stats",
+    "bytes": 39310,
+    "hebrewPct": 0,
+    "chars": 81
+  },
+  {
+    "lang": "en",
+    "name": "rank",
+    "bytes": 40572,
+    "hebrewPct": 0,
+    "chars": 85
+  },
+  {
+    "lang": "en",
+    "name": "referral",
+    "bytes": 113093,
+    "hebrewPct": 0,
+    "chars": 359
+  },
+  {
+    "lang": "en",
+    "name": "coaching",
+    "bytes": 43322,
+    "hebrewPct": 0,
+    "chars": 79
+  },
+  {
+    "lang": "en",
+    "name": "battle-pass",
+    "bytes": 102119,
+    "hebrewPct": 0,
+    "chars": 836
+  },
+  {
+    "lang": "en",
+    "name": "lobby",
+    "bytes": 778182,
+    "hebrewPct": 0,
+    "chars": 352
+  },
+  {
+    "lang": "en",
+    "name": "lobby-private",
+    "bytes": 70252,
+    "hebrewPct": 0,
+    "chars": 225
+  },
+  {
+    "lang": "en",
+    "name": "game-placement",
+    "bytes": 593029,
+    "hebrewPct": 0,
+    "chars": 475
+  },
+  {
+    "lang": "en",
+    "name": "game-placed",
+    "bytes": 535890,
+    "hebrewPct": 0,
+    "chars": 434
+  },
+  {
+    "lang": "en",
+    "name": "game-reveal",
+    "bytes": 535890,
+    "hebrewPct": 0,
+    "chars": 434
+  },
+  {
+    "lang": "en",
+    "name": "results",
+    "bytes": 535890,
+    "hebrewPct": 0,
+    "chars": 434
+  },
+  {
+    "lang": "he",
+    "name": "home",
+    "bytes": 1261621,
+    "hebrewPct": 61,
+    "chars": 441
+  },
+  {
+    "lang": "he",
+    "name": "play",
+    "bytes": 89843,
+    "hebrewPct": 37,
+    "chars": 317
+  },
+  {
+    "lang": "he",
+    "name": "profile",
+    "bytes": 650310,
+    "hebrewPct": 63,
+    "chars": 171
+  },
+  {
+    "lang": "he",
+    "name": "friends",
+    "bytes": 54951,
+    "hebrewPct": 10,
+    "chars": 172
+  },
+  {
+    "lang": "he",
+    "name": "cups",
+    "bytes": 24487,
+    "hebrewPct": 100,
+    "chars": 86
+  },
+  {
+    "lang": "he",
+    "name": "shop",
+    "bytes": 569845,
+    "hebrewPct": 0,
+    "chars": 62
+  },
+  {
+    "lang": "he",
+    "name": "settings",
+    "bytes": 106512,
+    "hebrewPct": 4,
+    "chars": 991
+  },
+  {
+    "lang": "he",
+    "name": "achievements",
+    "bytes": 51585,
+    "hebrewPct": 0,
+    "chars": 140
+  },
+  {
+    "lang": "he",
+    "name": "leaderboard",
+    "bytes": 38199,
+    "hebrewPct": 0,
+    "chars": 101
+  },
+  {
+    "lang": "he",
+    "name": "hand-history",
+    "bytes": 52400,
+    "hebrewPct": 23,
+    "chars": 113
+  },
+  {
+    "lang": "he",
+    "name": "stats",
+    "bytes": 39423,
+    "hebrewPct": 0,
+    "chars": 81
+  },
+  {
+    "lang": "he",
+    "name": "rank",
+    "bytes": 41083,
+    "hebrewPct": 0,
+    "chars": 85
+  },
+  {
+    "lang": "he",
+    "name": "referral",
+    "bytes": 112643,
+    "hebrewPct": 0,
+    "chars": 359
+  },
+  {
+    "lang": "he",
+    "name": "coaching",
+    "bytes": 42861,
+    "hebrewPct": 0,
+    "chars": 79
+  },
+  {
+    "lang": "he",
+    "name": "battle-pass",
+    "bytes": 98397,
+    "hebrewPct": 0,
+    "chars": 836
+  },
+  {
+    "lang": "he",
+    "name": "lobby",
+    "bytes": 778554,
+    "hebrewPct": 0,
+    "chars": 352
+  },
+  {
+    "lang": "he",
+    "name": "lobby-private",
+    "bytes": 70162,
+    "hebrewPct": 0,
+    "chars": 225
+  },
+  {
+    "lang": "he",
+    "name": "game-placement",
+    "bytes": 573691,
+    "hebrewPct": 48,
+    "chars": 443
+  },
+  {
+    "lang": "he",
+    "name": "game-placed",
+    "bytes": 521651,
+    "hebrewPct": 51,
+    "chars": 423
+  },
+  {
+    "lang": "he",
+    "name": "game-reveal",
+    "bytes": 521651,
+    "hebrewPct": 51,
+    "chars": 423
+  },
+  {
+    "lang": "he",
+    "name": "results",
+    "bytes": 521651,
+    "hebrewPct": 51,
+    "chars": 423
+  }
+]

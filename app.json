@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.capspoker.app",
-      "buildNumber": "514",
+      "buildNumber": "515",
       "infoPlist": {
         "UIRequiresFullScreen": true,
         "UISupportedInterfaceOrientations": [
@@ -36,7 +36,7 @@
       ],
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
-        "backgroundColor": "#1C0508",
+        "backgroundColor": "#003115",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -83,11 +83,12 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#1C0508",
+          "color": "#071C12",
           "defaultChannel": "default"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "./plugins/withResponsiveIcons"
     ],
     "owner": "royea"
   }

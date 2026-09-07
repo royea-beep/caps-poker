@@ -212,7 +212,7 @@ export default function ReferralScreen() {
             <ActivityIndicator color={ACCENT} style={{ marginVertical: rv(12) }} />
           ) : (
             <Text style={styles.codeValue} selectable>
-              {myCode ?? '------'}
+              {myCode ?? '--------'}
             </Text>
           )}
           <Pressable
@@ -246,8 +246,13 @@ export default function ReferralScreen() {
             <TextInput
               style={styles.redeemInput}
               value={redeemInput}
-              onChangeText={v => setRedeemInput(v.toUpperCase().slice(0, 6))}
-              placeholder="XXXXXX"
+              // THE-NEGLECTED 2026-09-03 — was `.slice(0, 6)`. The database issues EIGHT-character
+              // codes, so this silently truncated a real code to six, which then PASSED
+              // isPlausibleReferralCode (6 is the minimum) and sent a WRONG code to the server.
+              // 2,008 codes, zero redemptions ever. Normalise + cap at the MAX the constant
+              // declares; never re-derive the generator's length here (see constants/appLinks.ts).
+              onChangeText={v => setRedeemInput(normaliseReferralCode(v).slice(0, REFERRAL_CODE_MAX))}
+              placeholder="A3F2B1C7"
               placeholderTextColor="#666"
               maxLength={REFERRAL_CODE_MAX}
               autoCapitalize="characters"
@@ -256,7 +261,7 @@ export default function ReferralScreen() {
               // HALF-BUILT-SCREENS 2026-08-21 — this input had NO accessible name; the control
               // enumerator read it as a literal empty label "". Text inputs get their name from an
               // explicit label or nothing at all, and there is no visible <label> in RN.
-              accessibilityLabel="Friend's referral code, 6 characters"
+              accessibilityLabel="Friend's referral code"
               textAlign={Platform.OS === 'ios' ? 'right' : undefined}
             />
             <Pressable

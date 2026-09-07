@@ -1,0 +1,11 @@
+#!/bin/sh
+# Standing guard, installed 2026-09-06 after a live Telegram bot token was found committed in
+# plaintext in this PUBLIC repository for 81 days.
+#
+# ENABLE IT ONCE PER CLONE:   git config core.hooksPath .githooks
+# (Git does not ship hooks between clones. Without that line this file does nothing, which is why
+#  the CI check in .github/workflows/secret-scan.yml exists as well — the hook is the fast local
+#  no, the workflow is the one that cannot be skipped.)
+#
+# Emergency override, for a false positive only:  git commit --no-verify
+exec node scripts/scan-secrets.mjs --staged
