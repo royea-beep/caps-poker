@@ -1,5 +1,5 @@
 {
-  "ts": "2026-09-07T08:15:35.557Z",
+  "ts": "2026-09-07T08:40:51.043Z",
   "font": "Playfair Display (google/fonts variable roman, SIL OFL) — tools/icon/fonts/PlayfairDisplay.ttf",
   "golds": [
     "#c9a84c",
@@ -406,9 +406,46 @@
     "effectiveTileAt108dp": 73.8,
     "whyCompact": "the block inside the safe circle renders like a 73.8px tile at 108dp, below the 128 threshold"
   },
+  "adaptiveDensities": {
+    "mdpi": {
+      "canvas": 108,
+      "safeRadius": 36,
+      "worstCornerRadius": 34.9,
+      "fitsSafeCircle": true,
+      "clearancePct": 3
+    },
+    "hdpi": {
+      "canvas": 162,
+      "safeRadius": 54,
+      "worstCornerRadius": 52.4,
+      "fitsSafeCircle": true,
+      "clearancePct": 3
+    },
+    "xhdpi": {
+      "canvas": 216,
+      "safeRadius": 72,
+      "worstCornerRadius": 69.8,
+      "fitsSafeCircle": true,
+      "clearancePct": 3
+    },
+    "xxhdpi": {
+      "canvas": 324,
+      "safeRadius": 108,
+      "worstCornerRadius": 104.8,
+      "fitsSafeCircle": true,
+      "clearancePct": 3
+    },
+    "xxxhdpi": {
+      "canvas": 432,
+      "safeRadius": 144,
+      "worstCornerRadius": 139.7,
+      "fitsSafeCircle": true,
+      "clearancePct": 3
+    }
+  },
   "forbiddenGold": {
     "value": "#FFD700",
-    "filesScanned": 80,
+    "filesScanned": 95,
     "pixelHits": 0,
     "byFile": {}
   }

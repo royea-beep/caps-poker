@@ -302,6 +302,35 @@ for (const S of ALL) {
   await tile(path.join(BUILT, 'android-icon-monochrome.png'), S, fit.px, { ground: false, mono: true, withPoker: false });
   /** favicon 64 — below the threshold, so compact. */
   await tile(path.join(BUILT, 'favicon.png'), 64, (await fitFontSize(64, WIDE_FRAC, TALL_FRAC, false)).px, { withPoker: false });
+
+  /**
+   * THE ADAPTIVE LAYERS AT EVERY ANDROID DENSITY, RENDERED HERE RATHER THAN SCALED LATER.
+   * Android wants the 108dp adaptive canvas at mdpi 108 / hdpi 162 / xhdpi 216 / xxhdpi 324 /
+   * xxxhdpi 432 px. The config plugin must be able to COPY an exact-size file and nothing else —
+   * a plugin that resamples is a plugin that can silently produce something nobody looked at, and
+   * that is the failure mode this project has been bitten by most. So every density is laid out
+   * here, through the same measured fit, and the plugin becomes a file copy.
+   */
+  const DENSITIES = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 };
+  report.adaptiveDensities = {};
+  for (const [dpi, C] of Object.entries(DENSITIES)) {
+    const dir = path.join(BUILT, 'adaptive', dpi);
+    fs.mkdirSync(dir, { recursive: true });
+    const safe = C * SAFE_FRACTION;
+    const pr = await fitFontSize(C, 1, 1, false);
+    const a = pr.probe.w / pr.probe.h;
+    const dg = Math.sqrt(1 + 1 / (a * a));
+    const f = await fitFontSize(C, (safe / C) / dg * 0.97, 1, false);
+    const box = await tile(path.join(dir, 'foreground.png'), C, f.px, { ground: false, withPoker: false });
+    await tile(path.join(dir, 'background.png'), C, 1, { ground: true, withPoker: false });
+    await tile(path.join(dir, 'monochrome.png'), C, f.px, { ground: false, mono: true, withPoker: false });
+    const cx = C / 2, cy = C / 2;
+    const worstC = Math.max(...[[box.x, box.y], [box.x + box.w, box.y], [box.x, box.y + box.h], [box.x + box.w, box.y + box.h]]
+      .map(([x, y]) => Math.hypot(x - cx, y - cy)));
+    report.adaptiveDensities[dpi] = { canvas: C, safeRadius: +(safe / 2).toFixed(1),
+      worstCornerRadius: +worstC.toFixed(1), fitsSafeCircle: worstC <= safe / 2,
+      clearancePct: +(((safe / 2 - worstC) / (safe / 2)) * 100).toFixed(1) };
+  }
 }
 
 // ── the guard: no winner-cue gold anywhere in anything we just drew ──────────────────────────
@@ -331,6 +360,11 @@ console.log(`  full lockup  : ${ALL.filter((S) => S >= THRESHOLD).join(', ')}`);
 console.log(`  compact      : ${ALL.filter((S) => S < THRESHOLD).join(', ')}`);
 console.log(`  adaptive fg  : compact — ${report.adaptive.whyCompact}`);
 console.log(`  favicon 64   : compact`);
+console.log('\nadaptive layers per Android density (the plugin copies these, it never resamples):');
+for (const [dpi, r] of Object.entries(report.adaptiveDensities)) {
+  console.log(`  ${dpi.padEnd(8)} ${String(r.canvas).padStart(4)}px canvas · worst corner ${String(r.worstCornerRadius).padStart(6)}px ` +
+    `of ${String(r.safeRadius).padStart(5)}px safe radius · clearance ${String(r.clearancePct).padStart(5)}% · fits ${r.fitsSafeCircle ? 'YES' : 'NO'}`);
+}
 console.log(`\nadaptive safe circle: corners reach ${report.adaptive.worstCornerRadius}px of a ` +
   `${report.adaptive.safeRadius}px safe radius — clearance ${report.adaptive.clearancePct}%, ` +
   `fits: ${report.adaptive.fitsSafeCircle ? 'YES' : 'NO'}`);
