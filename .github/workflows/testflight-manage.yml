@@ -98,6 +98,7 @@ jobs:
           APPLE_TEAM_ID: 3K9KJNGL9U
           ASC_APP_ID: "6760429619"
           TESTER_EMAIL: ${{ github.event.inputs.email }}
+          DEFAULT_TESTER_EMAIL: royearguan@gmail.com
           BUILD_NUMBER: ${{ github.event.inputs.build }}
         run: |
           set -eu

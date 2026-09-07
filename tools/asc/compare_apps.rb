@@ -10,7 +10,11 @@
 
 require_relative "lib"
 
-EMAIL = ENV.fetch("TESTER_EMAIL", "royearguan@gmail.com")
+# ⚠️ AN EMPTY WORKFLOW INPUT ARRIVES AS "", NOT AS UNSET, so ENV.fetch's default never fired and
+# the first run queried filter[email]= with nothing after it. Apple answered HTTP 400 and the one
+# field that decides this whole question came back unreadable. Treat blank as absent.
+raw = ENV["TESTER_EMAIL"].to_s.strip
+EMAIL = raw.empty? ? "royearguan@gmail.com" : raw
 CAPS_ID = ENV.fetch("ASC_APP_ID")
 tok = ASC.token
 
@@ -25,14 +29,43 @@ list.each do |a|
 end
 puts
 
-caps = list.find { |a| a["id"] == CAPS_ID }
-nine = list.find do |a|
-  "#{a.dig('attributes', 'name')} #{a.dig('attributes', 'bundleId')}".downcase =~ /9\s?soccer|ninesoccer|soccer/
+# ⚠️ THERE ARE THREE SOCCER APPS ON THIS ACCOUNT — 9Soccer-Mascots, 9Soccer and 90Soccer — and the
+# first run matched the first one it saw and compared against it. Picking one and calling it "the"
+# 9soccer is a guess dressed as a comparison. So the tester state is now read for EVERY app the key
+# can see, and the table below shows which apps this Apple ID has actually INSTALLED. That answers
+# "what is different" without needing to know in advance which app reaches the phone.
+puts "=== #{EMAIL} — STATE ON EVERY APP ==="
+puts "  #{'app'.ljust(26)} #{'bundle'.ljust(34)} #{'state'.ljust(12)} groups"
+summary = []
+list.each do |a|
+  tc, t = ASC.get("/v1/betaTesters?filter[apps]=#{a['id']}&filter[email]=#{ASC.esc(EMAIL)}&include=betaGroups", tok)
+  if tc != 200
+    puts "  #{a.dig('attributes', 'name').to_s[0, 25].ljust(26)} #{a.dig('attributes', 'bundleId').to_s.ljust(34)} ⚠️ HTTP #{tc} (unknown)"
+    next
+  end
+  rec = (t["data"] || []).first
+  if rec.nil?
+    puts "  #{a.dig('attributes', 'name').to_s[0, 25].ljust(26)} #{a.dig('attributes', 'bundleId').to_s.ljust(34)} #{'NOT A TESTER'.ljust(12)}"
+    next
+  end
+  inc = t["included"] || []
+  gids = (rec.dig("relationships", "betaGroups", "data") || []).map { |d| d["id"] }
+  gn = inc.select { |i| i["type"] == "betaGroups" && gids.include?(i["id"]) }
+          .map { |i| "#{i.dig('attributes', 'name')}#{i.dig('attributes', 'isInternalGroup') ? '(int)' : '(ext)'}" }
+  st = rec.dig("attributes", "state").to_s
+  puts "  #{a.dig('attributes', 'name').to_s[0, 25].ljust(26)} #{a.dig('attributes', 'bundleId').to_s.ljust(34)} #{st.ljust(12)} #{gn.join(', ')}"
+  summary << [a.dig("attributes", "name"), st]
 end
-if nine.nil?
-  puts "⚠️ COULD NOT IDENTIFY 9soccer by name or bundle id among the apps above."
-  puts "   Everything below is CAPS only."
-  puts
+puts
+installed = summary.select { |_, st| st == "INSTALLED" }.map(&:first)
+invited   = summary.select { |_, st| st == "INVITED"   }.map(&:first)
+puts "  INSTALLED on: #{installed.empty? ? '(none)' : installed.join(', ')}"
+puts "  INVITED (never accepted) on: #{invited.empty? ? '(none)' : invited.join(', ')}"
+puts
+
+caps = list.find { |a| a["id"] == CAPS_ID }
+soccers = list.select do |a|
+  "#{a.dig('attributes', 'name')} #{a.dig('attributes', 'bundleId')}".downcase =~ /soccer/
 end
 
 def dump(label, app, tok, email)
@@ -120,4 +153,4 @@ def dump(label, app, tok, email)
 end
 
 dump("CAPS", caps, tok, EMAIL)
-dump("9SOCCER", nine, tok, EMAIL)
+soccers.each { |a| dump("SOCCER: #{a.dig('attributes', 'name')}", a, tok, EMAIL) }
