@@ -39,12 +39,18 @@ on:
         required: true
         type: choice
         options:
+          - build-state
           - list-testers
           - list-builds
+          - answer-export-compliance
           - add-tester
           - enable-public-link
       email:
         description: 'Tester email (for add-tester action)'
+        required: false
+        type: string
+      build:
+        description: 'Build number (for build-state / answer-export-compliance)'
         required: false
         type: string
 
@@ -85,6 +91,7 @@ jobs:
           APPLE_TEAM_ID: 3K9KJNGL9U
           ASC_APP_ID: "6760429619"
           TESTER_EMAIL: ${{ github.event.inputs.email }}
+          BUILD_NUMBER: ${{ github.event.inputs.build }}
         run: |
           set -eu
           ACTION="${{ github.event.inputs.action }}"
@@ -116,6 +123,165 @@ jobs:
           RUBY
 
           case "$ACTION" in
+            "build-state")
+              # ⚠️ RAW REST, NOT THE SPACESHIP MODEL WRAPPER, AND THAT IS DELIBERATE.
+              # build.get_beta_groups raises NoMethodError on this Spaceship version — it already
+              # cost one report. "Uploaded" and "installable" are different states and every one of
+              # the ways they diverge (still PROCESSING, processing failed, expired, export
+              # compliance unanswered, never attached to a group) is a FIELD in Apple's API. So this
+              # asks Apple directly and prints what comes back, including the raw JSON, rather than
+              # asking a wrapper that may not expose the field that matters.
+              ruby -e '
+                require "jwt"; require "net/http"; require "json"; require "uri"
+
+                key_id    = ENV.fetch("APPLE_API_KEY_ID")
+                issuer_id = ENV.fetch("APPLE_API_ISSUER_ID")
+                pem       = File.read(File.expand_path("~/private_keys/AuthKey_#{key_id}.p8"))
+                token = JWT.encode(
+                  { iss: issuer_id, exp: Time.now.to_i + 600, aud: "appstoreconnect-v1" },
+                  OpenSSL::PKey::EC.new(pem), "ES256", { kid: key_id, typ: "JWT" }
+                )
+
+                def get(path, token)
+                  uri = URI("https://api.appstoreconnect.apple.com#{path}")
+                  req = Net::HTTP::Get.new(uri)
+                  req["Authorization"] = "Bearer #{token}"
+                  res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+                  [res.code.to_i, (JSON.parse(res.body) rescue { "raw" => res.body })]
+                end
+
+                app_id = ENV.fetch("ASC_APP_ID")
+                want   = ENV["BUILD_NUMBER"].to_s.strip
+
+                code, body = get("/v1/builds?filter[app]=#{app_id}&limit=10&sort=-uploadedDate" \
+                                 "&include=buildBetaDetail,preReleaseVersion", token)
+                abort("builds query failed: HTTP #{code} #{body}") unless code == 200
+
+                included = (body["included"] || [])
+                detail_for = lambda do |b|
+                  rel = b.dig("relationships", "buildBetaDetail", "data")
+                  rel && included.find { |i| i["type"] == "buildBetaDetails" && i["id"] == rel["id"] }
+                end
+
+                builds = body["data"] || []
+                target = want.empty? ? builds.first : builds.find { |b| b.dig("attributes", "version") == want }
+
+                if target.nil?
+                  puts "❌ BUILD #{want.empty? ? "(latest)" : want} IS NOT IN APP STORE CONNECT."
+                  puts "   Newest #{builds.length} builds Apple has:"
+                  builds.each { |b| puts "     #{b.dig("attributes","version")} — #{b.dig("attributes","processingState")} — #{b.dig("attributes","uploadedDate")}" }
+                  exit 1
+                end
+
+                a  = target["attributes"]
+                bd = detail_for.call(target)
+                bda = bd && bd["attributes"]
+
+                puts "=== BUILD #{a["version"]} — WHAT APPLE ACTUALLY HOLDS ==="
+                puts "  id                        #{target["id"]}"
+                puts "  version (build number)    #{a["version"]}"
+                puts "  uploaded                  #{a["uploadedDate"]}"
+                puts "  processingState           #{a["processingState"]}"
+                puts "  expired                   #{a["expired"]}"
+                puts "  expirationDate            #{a["expirationDate"]}"
+                puts "  usesNonExemptEncryption   #{a["usesNonExemptEncryption"].inspect}   <- nil means EXPORT COMPLIANCE UNANSWERED"
+                puts "  minOsVersion              #{a["minOsVersion"]}"
+                if bda
+                  puts "  internalBuildState        #{bda["internalBuildState"]}"
+                  puts "  externalBuildState        #{bda["externalBuildState"]}"
+                  puts "  autoNotifyEnabled         #{bda["autoNotifyEnabled"]}"
+                end
+                puts ""
+
+                puts "=== IS IT ATTACHED TO A BETA GROUP? ==="
+                gcode, gbody = get("/v1/builds/#{target["id"]}/betaGroups?limit=50", token)
+                groups = (gbody["data"] || [])
+                if gcode != 200
+                  puts "  query failed: HTTP #{gcode} #{gbody}"
+                elsif groups.empty?
+                  puts "  ⚠️ NOT ATTACHED TO ANY BETA GROUP"
+                else
+                  groups.each do |g|
+                    ga = g["attributes"]
+                    puts "  #{ga["name"]} — #{ga["isInternalGroup"] ? "INTERNAL" : "EXTERNAL"} — hasAccessToAllBuilds: #{ga["hasAccessToAllBuilds"]}"
+                  end
+                end
+                puts ""
+
+                puts "=== WHAT APPLE SAYS ABOUT THE TESTERS ==="
+                tcode, tbody = get("/v1/betaTesters?filter[apps]=#{app_id}&limit=50&include=betaGroups", token)
+                if tcode != 200
+                  puts "  query failed: HTTP #{tcode}"
+                else
+                  inc = (tbody["included"] || [])
+                  (tbody["data"] || []).each do |t|
+                    ta = t["attributes"]
+                    gids = (t.dig("relationships","betaGroups","data") || []).map { |d| d["id"] }
+                    gnames = inc.select { |i| i["type"] == "betaGroups" && gids.include?(i["id"]) }
+                                .map { |i| i.dig("attributes","name") }
+                    puts "  #{ta["email"]} — #{[ta["firstName"], ta["lastName"]].compact.join(" ")} — " \
+                         "inviteType: #{ta["inviteType"]} — state: #{ta["state"].inspect} — groups: #{gnames.join(", ")}"
+                  end
+                end
+                puts ""
+
+                # ── THE VERDICT, DERIVED FROM THOSE FIELDS AND NOTHING ELSE ──────────────────────
+                blockers = []
+                blockers << "processingState is #{a["processingState"]}, not VALID" unless a["processingState"] == "VALID"
+                blockers << "the build is EXPIRED"                                   if a["expired"]
+                blockers << "export compliance is UNANSWERED (usesNonExemptEncryption is null)" if a["usesNonExemptEncryption"].nil?
+                internal = groups.any? { |g| g.dig("attributes","isInternalGroup") }
+                blockers << "not attached to any INTERNAL beta group" unless internal
+                if bda && bda["internalBuildState"] && bda["internalBuildState"] != "READY_FOR_BETA_TESTING" && bda["internalBuildState"] != "IN_BETA_TESTING"
+                  blockers << "internalBuildState is #{bda["internalBuildState"]}"
+                end
+
+                puts "=== IS IT INSTALLABLE BY AN INTERNAL TESTER RIGHT NOW? ==="
+                if blockers.empty?
+                  puts "  YES — build #{a["version"]} is VALID, not expired, export compliance answered, and attached to an internal group."
+                else
+                  puts "  NO. Blockers:"
+                  blockers.each { |b| puts "    - #{b}" }
+                end
+              '
+              ;;
+
+            "answer-export-compliance")
+              # The one blocker that is fixable from here. An unanswered usesNonExemptEncryption
+              # holds a build in limbo indefinitely and shows nothing on a phone.
+              # ⚠️ THIS IS NOT AN APP REVIEW SUBMISSION and changes no metadata, pricing or
+              # availability — it answers one boolean Apple asks about every upload.
+              if [ -z "${BUILD_NUMBER:-}" ]; then echo "::error::build number required"; exit 1; fi
+              ruby -e '
+                require "jwt"; require "net/http"; require "json"; require "uri"
+                key_id    = ENV.fetch("APPLE_API_KEY_ID")
+                issuer_id = ENV.fetch("APPLE_API_ISSUER_ID")
+                pem       = File.read(File.expand_path("~/private_keys/AuthKey_#{key_id}.p8"))
+                token = JWT.encode({ iss: issuer_id, exp: Time.now.to_i + 600, aud: "appstoreconnect-v1" },
+                                   OpenSSL::PKey::EC.new(pem), "ES256", { kid: key_id, typ: "JWT" })
+                def req!(m, path, token, payload = nil)
+                  uri = URI("https://api.appstoreconnect.apple.com#{path}")
+                  r = (m == :get ? Net::HTTP::Get : Net::HTTP::Patch).new(uri)
+                  r["Authorization"] = "Bearer #{token}"; r["Content-Type"] = "application/json"
+                  r.body = payload.to_json if payload
+                  res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(r) }
+                  [res.code.to_i, (JSON.parse(res.body) rescue { "raw" => res.body })]
+                end
+                app_id = ENV.fetch("ASC_APP_ID"); want = ENV.fetch("BUILD_NUMBER")
+                _, body = req!(:get, "/v1/builds?filter[app]=#{app_id}&limit=20&sort=-uploadedDate", token)
+                b = (body["data"] || []).find { |x| x.dig("attributes","version") == want }
+                abort("build #{want} not found") if b.nil?
+                if !b.dig("attributes","usesNonExemptEncryption").nil?
+                  puts "Already answered: usesNonExemptEncryption = #{b.dig("attributes","usesNonExemptEncryption")}. Nothing to do."
+                  exit 0
+                end
+                code, res = req!(:patch, "/v1/builds/#{b["id"]}", token,
+                  { data: { type: "builds", id: b["id"], attributes: { usesNonExemptEncryption: false } } })
+                puts "PATCH -> HTTP #{code}"
+                puts "usesNonExemptEncryption now: #{res.dig("data","attributes","usesNonExemptEncryption").inspect}"
+              '
+              ;;
+
             "list-testers")
               ruby -e '
                 load "/tmp/asc_auth.rb"
