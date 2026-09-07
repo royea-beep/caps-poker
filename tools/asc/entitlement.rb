@@ -32,6 +32,12 @@ EMAIL = raw.empty? ? "royearguan@gmail.com" : raw
 APP   = ENV.fetch("ASC_APP_ID")
 WANT  = ENV["BUILD_NUMBER"].to_s.strip
 
+# ⚠️ ATTACHING A BUILD TO AN EXTERNAL GROUP DOES NOT DELIVER IT. Apple parks it at
+# READY_FOR_BETA_SUBMISSION until Beta App Review passes, and only then does the group actually
+# serve it. Treating the attachment as delivery would repeat this sprint's whole mistake one
+# level down: a relationship that exists, an entitlement that does not.
+DELIVERING = %w[READY_FOR_BETA_TESTING IN_BETA_TESTING].freeze
+
 tok = ASC.token
 
 def build_line(b)
@@ -49,8 +55,17 @@ groups = {}
 puts "=== BETA GROUPS ON THIS APP, AND THE BUILDS EACH ONE SERVES ==="
 (g["data"] || []).each do |grp|
   ga = grp["attributes"]
-  bc, b = ASC.get("/v1/builds?filter[betaGroups]=#{grp['id']}&limit=30&sort=-uploadedDate", tok)
-  serves = bc == 200 ? (b["data"] || []) : nil
+  bc, b = ASC.get("/v1/builds?filter[betaGroups]=#{grp['id']}&limit=30&sort=-uploadedDate" \
+                  "&include=buildBetaDetail", tok)
+  serves = nil
+  if bc == 200
+    inc = b["included"] || []
+    serves = (b["data"] || []).map do |bd|
+      rel = bd.dig("relationships", "buildBetaDetail", "data")
+      det = rel && inc.find { |i| i["type"] == "buildBetaDetails" && i["id"] == rel["id"] }
+      bd.merge("betaDetail" => det && det["attributes"])
+    end
+  end
   groups[grp["id"]] = {
     "name" => ga["name"], "internal" => ga["isInternalGroup"],
     "all_builds" => ga["hasAccessToAllBuilds"], "serves" => serves
@@ -64,9 +79,13 @@ puts "=== BETA GROUPS ON THIS APP, AND THE BUILDS EACH ONE SERVES ==="
   else
     serves.each do |bd|
       ba = bd["attributes"]
-      flag = ba["expired"] ? "  ← EXPIRED, a phone cannot install it" : ""
+      st = ga["isInternalGroup"] ? bd.dig("betaDetail", "internalBuildState") \
+                                 : bd.dig("betaDetail", "externalBuildState")
+      flag = if ba["expired"] then "  ← EXPIRED, a phone cannot install it"
+             elsif !DELIVERING.include?(st) then "  ← #{st} — attached but NOT yet delivered"
+             else "" end
       puts "    #{ba['version'].to_s.rjust(5)}  #{ba['processingState'].to_s.ljust(11)} " \
-           "expired=#{ba['expired'].to_s.ljust(5)} expires #{ba['expirationDate']}#{flag}"
+           "expired=#{ba['expired'].to_s.ljust(5)} #{st.to_s.ljust(26)} expires #{ba['expirationDate']}#{flag}"
     end
   end
 end
@@ -144,9 +163,20 @@ mine.each do |r|
       puts "    via #{grp['name']} — ⚠️ builds unreadable, entitlement through it is UNKNOWN"
       next
     end
-    live = grp["serves"].reject { |b| b.dig("attributes", "expired") }
-    puts "    via #{grp['name']} (#{grp['internal'] ? 'INTERNAL' : 'EXTERNAL'}) — " \
-         "installable: #{live.empty? ? 'NONE (every build it serves has expired)' : live.map { |b| b.dig('attributes', 'version') }.join(', ')}"
+    unexpired = grp["serves"].reject { |b| b.dig("attributes", "expired") }
+    live = unexpired.select do |b|
+      DELIVERING.include?(grp["internal"] ? b.dig("betaDetail", "internalBuildState")
+                                          : b.dig("betaDetail", "externalBuildState"))
+    end
+    withheld = unexpired - live
+    reason = if !grp["serves"].empty? && unexpired.empty? then "NONE (every build it serves has expired)"
+             elsif live.empty? then "NONE"
+             else live.map { |b| b.dig("attributes", "version") }.join(", ") end
+    puts "    via #{grp['name']} (#{grp['internal'] ? 'INTERNAL' : 'EXTERNAL'}) — installable: #{reason}"
+    withheld.each do |b|
+      st = grp["internal"] ? b.dig("betaDetail", "internalBuildState") : b.dig("betaDetail", "externalBuildState")
+      puts "      #{b.dig('attributes', 'version')} is ATTACHED to this group but NOT delivered — #{st}"
+    end
 
     # ⚠️ AN INTERNAL GROUP ENTITLES NOTHING TO A NON-TEAM APPLE ID.
     if grp["internal"]

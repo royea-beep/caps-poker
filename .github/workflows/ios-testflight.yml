@@ -240,6 +240,14 @@ jobs:
       # a real review with a real wait and can be rejected. Internal needs none. Turn it on
       # deliberately, per release, from the "Manage TestFlight" workflow's `distribute` action.
       # ========================================================================
+      # ⚠️ ITS OWN RUBY. The runner's system Ruby cannot `gem install` without sudo, and a
+      # distribution step that dies on a missing gem after a successful upload is the worst
+      # possible place to save two lines.
+      - name: Set up Ruby for the distribution step
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
       - name: Distribute the build (export compliance + beta groups) and read it back
         env:
           APPLE_API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
