@@ -30,7 +30,7 @@
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
-- Tests: **2,813/2,813 across 51 suites** (was 2,474 — that figure was 339 tests stale)
+- Tests: **2,819/2,819 across 51 suites** (was 2,474 — that figure was 345 tests stale)
 - **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
   Functions" — two of the three were low and the Edge Function count was high)
 - Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
@@ -88,14 +88,28 @@
   brand-new anonymous device cold-launched against production still gets its grant and plays.
   ⚠️ STILL OPEN: `submit_score` moves `leaderboard.total_chips` with NO `chip_transactions` row, so
   it can break the gap invariant. Gated now, but still unledgered.
-- **The catch-all 404 is fixed (2026-09-03).** `vercel.json`'s last rewrite excludes dotted paths,
-  so a missing FILE 404s instead of returning 200 with the app's HTML. That trap twice made a stale
-  or absent file read as "deployed". SPA routes are unaffected — 0 of them contain a dot, and
-  `tests/vercel-rewrites.test.ts` pins both halves.
+- ⚠️ **The catch-all 404 was fixed in the WRONG FILE on 2026-09-03 and only went live 2026-09-07.**
+  The exclusion went into the ROOT `vercel.json`. **PRODUCTION NEVER READS THAT FILE** — the deploy
+  runs `npx vercel --prod` from `dist/`, and **`scripts/fix-web-html.js` writes `dist/vercel.json`**,
+  which still carried `{ source: "/(.*)" }`. Measured on the live site four days later: `/nope.png`,
+  `/nope.mp4` and `/definitely-missing.html` all returned **200 with 1,902 bytes of the app's HTML**.
+  The generator's own comment had said since 2026-08-15 that the root file is never read in prod.
+  **EDIT `scripts/fix-web-html.js` FOR ANYTHING THAT MUST SHIP — headers, rewrites, redirects.**
+  The root file is kept identical so `vercel dev` matches; `tests/vercel-rewrites.test.ts` now reads
+  the GENERATOR's source and fails if the two disagree (proven to fire).
 - **FIVE-O is NAVY, not red (corrected 2026-09-03).** `visual.fiveo` paints surface `#1A1A2E` with a
   mint `#4FD6A8` accent. The picker showed a `#5c0000` red preview and said "Red felt / Bold action";
   both are corrected. Same class as the maroon-felt line above — a description contradicting the
   product. If you are about to "restore the red", read `constants/paintThemes.ts` first.
+- **The landing page carries the explainer video (2026-09-07).** `public/landing.html`, between the
+  one-line mechanic and the call to action. The mp4 is **hosted on Supabase Storage, not vendored**;
+  its sha256 and byte size are pinned in a comment beside the embed because **three files have worn
+  that filename**. Muted, `controls`, no autoplay, `preload="metadata"`, poster
+  `public/shots/explainer-poster.webp` (the clip's end card — a gameplay frame loses because
+  Chromium's control bar covers the burnt-in caption, and every placement frame shows the demo
+  balance 499,900). The video is **English on both language pages** and only the chrome translates;
+  that is correct, not a gap. `tests/film-verify.mjs` asserts all of it across 2 engines × 2
+  languages × 320/393.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs
