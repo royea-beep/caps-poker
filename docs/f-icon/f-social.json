@@ -1,0 +1,48 @@
+{
+  "ts": "2026-09-07T07:04:20.428Z",
+  "aspectRatio": 1.582,
+  "profiles": {
+    "caps-profile-1024.png": {
+      "size": 1024,
+      "fontPx": 280.14,
+      "markPx": 41609,
+      "outsideCircle": 0,
+      "clearancePctOfRadius": 28.9
+    },
+    "caps-profile-facebook-360.png": {
+      "size": 360,
+      "fontPx": 98.49,
+      "markPx": 5248,
+      "outsideCircle": 0,
+      "clearancePctOfRadius": 29.1
+    },
+    "caps-profile-instagram-320.png": {
+      "size": 320,
+      "fontPx": 87.54,
+      "markPx": 3991,
+      "outsideCircle": 0,
+      "clearancePctOfRadius": 29
+    },
+    "caps-profile-tiktok-200.png": {
+      "size": 200,
+      "fontPx": 54.71,
+      "markPx": 1534,
+      "outsideCircle": 0,
+      "clearancePctOfRadius": 29.7
+    }
+  },
+  "cover": {
+    "OPTIONAL-cover-facebook-1640x664.png": {
+      "w": 1640,
+      "h": 664,
+      "fontPx": 133,
+      "note": "OPTIONAL — the shipped cover in docs/social/ is kept as instructed; this is the same drawing in the real face"
+    },
+    "OPTIONAL-cover-wide-1920x1080.png": {
+      "w": 1920,
+      "h": 1080,
+      "fontPx": 216,
+      "note": "OPTIONAL — the shipped cover in docs/social/ is kept as instructed; this is the same drawing in the real face"
+    }
+  }
+}

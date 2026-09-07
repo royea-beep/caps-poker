@@ -1,0 +1,81 @@
+{
+  "ts": "2026-09-07T07:00:45.408Z",
+  "method": "chromium stamps of the 1024 master (the shipping path), maths verbatim from tools/thirty-directions/icon-legibility.mjs",
+  "rows": [
+    {
+      "size": 1024,
+      "shipped": {
+        "subjectArea": 5.3,
+        "contrast": 2.35,
+        "bigRegions": 3,
+        "crispness": 0.015
+      },
+      "native": {
+        "subjectArea": 5.3,
+        "contrast": 2.35,
+        "bigRegions": 3,
+        "crispness": 0.015
+      },
+      "layers": {
+        "caps": 308.31,
+        "poker": 61.66,
+        "suits": 67.83
+      }
+    },
+    {
+      "size": 240,
+      "shipped": {
+        "subjectArea": 5.5,
+        "contrast": 2.16,
+        "bigRegions": 2,
+        "crispness": 0.035
+      },
+      "native": null,
+      "layers": {
+        "caps": 72.26,
+        "poker": 14.45,
+        "suits": 15.9
+      }
+    },
+    {
+      "size": 120,
+      "shipped": {
+        "subjectArea": 5.7,
+        "contrast": 2,
+        "bigRegions": 1,
+        "crispness": 0.039
+      },
+      "native": {
+        "subjectArea": 6.5,
+        "contrast": 2.04,
+        "bigRegions": 2,
+        "crispness": 0.046
+      },
+      "layers": {
+        "caps": 36.13,
+        "poker": 7.23,
+        "suits": 7.95
+      }
+    },
+    {
+      "size": 60,
+      "shipped": {
+        "subjectArea": 5.3,
+        "contrast": 1.9,
+        "bigRegions": 2,
+        "crispness": 0.043
+      },
+      "native": {
+        "subjectArea": 6.9,
+        "contrast": 2.04,
+        "bigRegions": 3,
+        "crispness": 0.068
+      },
+      "layers": {
+        "caps": 18.07,
+        "poker": 3.61,
+        "suits": 3.98
+      }
+    }
+  ]
+}
