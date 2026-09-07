@@ -91,6 +91,33 @@ records.each do |r|
 end
 puts
 
+# ── 2b. IS AN "INTERNAL" TESTER ACTUALLY INTERNAL? ─────────────────────────────────────────
+# ⚠️ THE BRIEF'S EXACT WARNING: do not assume the listing means the phone is treated as internal.
+# Apple only serves internal builds to testers who are ALSO App Store Connect users on this team.
+# A betaTester row can sit inside an internal group while the Apple ID behind it is not a team
+# member — the row is real, the entitlement it implies is not. So the group listing is checked
+# against the team roster, and a name that is in one but not the other is called out.
+ucode, u = ASC.get("/v1/users?limit=200&include=visibleApps", tok)
+asc_users = nil
+if ucode == 200
+  asc_users = (u["data"] || []).map do |x|
+    xa = x["attributes"]
+    vis = (x.dig("relationships", "visibleApps", "data") || []).map { |d| d["id"] }
+    { "email" => xa["username"].to_s.downcase, "roles" => xa["roles"],
+      "all_apps" => xa["allAppsVisible"], "apps" => vis }
+  end
+  puts "=== APP STORE CONNECT TEAM USERS (#{asc_users.length}) — WHO CAN BE AN INTERNAL TESTER ==="
+  asc_users.each do |x|
+    scope = x["all_apps"] ? "all apps" : (x["apps"].include?(APP) ? "this app" : "NOT this app")
+    puts "  #{x['email'].ljust(30)} roles=#{Array(x['roles']).join(',').ljust(24)} sees #{scope}"
+  end
+else
+  puts "=== APP STORE CONNECT TEAM USERS ==="
+  puts "  ⚠️ could not read (HTTP #{ucode}) — whether the internal group's members are real team"
+  puts "     users is an UNKNOWN, not a no."
+end
+puts
+
 # ── 3. THE PROVER — WHAT CAN *THIS* APPLE ID INSTALL RIGHT NOW ─────────────────────────────
 mine = records.select { |r| r.dig("attributes", "email").to_s.downcase == EMAIL.downcase }
 anon = records.select { |r| r.dig("attributes", "email").to_s.strip.empty? }
@@ -120,6 +147,26 @@ mine.each do |r|
     live = grp["serves"].reject { |b| b.dig("attributes", "expired") }
     puts "    via #{grp['name']} (#{grp['internal'] ? 'INTERNAL' : 'EXTERNAL'}) — " \
          "installable: #{live.empty? ? 'NONE (every build it serves has expired)' : live.map { |b| b.dig('attributes', 'version') }.join(', ')}"
+
+    # ⚠️ AN INTERNAL GROUP ENTITLES NOTHING TO A NON-TEAM APPLE ID.
+    if grp["internal"]
+      if asc_users.nil?
+        puts "      ⚠️ cannot confirm this Apple ID is an App Store Connect team user — the roster"
+        puts "         read failed, so entitlement through an INTERNAL group is UNKNOWN, not proven."
+      else
+        me = asc_users.find { |x| x["email"] == EMAIL.downcase }
+        if me.nil?
+          puts "      ⚠️ #{EMAIL} IS NOT AN APP STORE CONNECT TEAM USER. Apple lists the tester in"
+          puts "         this internal group, but internal builds are served to team members only."
+          puts "         THE MEMBERSHIP IS REAL AND THE ENTITLEMENT IS NOT."
+          next
+        elsif !me["all_apps"] && !me["apps"].include?(APP)
+          puts "      ⚠️ #{EMAIL} is a team user but this app is NOT in their visible apps."
+          next
+        end
+      end
+    end
+
     live.each { |b| (entitled[b.dig("attributes", "version")] ||= []) << grp["name"] }
   end
 end
