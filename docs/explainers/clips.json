@@ -1,9 +1,9 @@
 [
  {
   "id": "01-home",
-  "seconds": 8,
+  "seconds": 7,
   "size": "1080,1920",
-  "bytes": 765768,
+  "bytes": 625210,
   "audioStreams": 0,
   "captions": [
    "HOME — where every session starts",
@@ -15,7 +15,7 @@
   "id": "02-placement",
   "seconds": 11,
   "size": "1080,1920",
-  "bytes": 1052480,
+  "bytes": 950172,
   "audioStreams": 0,
   "captions": [
    "PLACING — the decision that is the game",
@@ -25,9 +25,9 @@
  },
  {
   "id": "03-reveal",
-  "seconds": 8,
+  "seconds": 7.52,
   "size": "1080,1920",
-  "bytes": 1289913,
+  "bytes": 1118884,
   "audioStreams": 0,
   "captions": [
    "REVEAL — the boards play out one at a time",
@@ -39,7 +39,7 @@
   "id": "04-results",
   "seconds": 9,
   "size": "1080,1920",
-  "bytes": 1320178,
+  "bytes": 1206130,
   "audioStreams": 0,
   "captions": [
    "RESULTS — boards decide the hand",
@@ -51,7 +51,7 @@
   "id": "05-hand-history",
   "seconds": 7,
   "size": "1080,1920",
-  "bytes": 157018,
+  "bytes": 115515,
   "audioStreams": 0,
   "captions": [
    "HAND HISTORY — your past hands",
@@ -63,7 +63,7 @@
   "id": "06-profile",
   "seconds": 9.52,
   "size": "1080,1920",
-  "bytes": 363813,
+  "bytes": 367758,
   "audioStreams": 0,
   "captions": [
    "PROFILE — hands, win rate, streak and chips",
@@ -75,7 +75,7 @@
   "id": "07-lobby",
   "seconds": 10.52,
   "size": "1080,1920",
-  "bytes": 693532,
+  "bytes": 692166,
   "audioStreams": 0,
   "captions": [
    "LOBBY — tables against real people",
@@ -87,7 +87,7 @@
   "id": "08-shop",
   "seconds": 9.52,
   "size": "1080,1920",
-  "bytes": 280583,
+  "bytes": 277035,
   "audioStreams": 0,
   "captions": [
    "CHIP SHOP — reached from your chip count",

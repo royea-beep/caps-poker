@@ -47,30 +47,37 @@ const cue = ({ t, d, text, size = FONT_SIZE }) =>
   `enable='between(t,${t},${t + d})'`;
 
 /**
- * WINDOWS RE-DERIVED 2026-09-06 for the SPLASH-ASSETS-EXPLAINERS-MAP re-capture.
+ * WINDOWS RE-DERIVED 2026-09-07 for the THREE-BEFORE-TESTERS re-capture (build 515 code).
  *
  * The offsets below belong to ONE take. Re-running the rig produces a new take with different
  * timings, so reusing the previous windows would have cut the wrong screens under the right
- * captions — the exact failure this file's original header warns about. A filmstrip was pulled
- * from the new raw take every 3 seconds and LOOKED AT; these are read off it:
- *   take A  home 0-11 · placement 15-27 · reveal 30-38 · results 39-50 · history 51-61 · profile 63-76
- *   take B  lobby 0-13 · (transition 15) · shop 18-28
+ * captions — the exact failure this file's original header warns about, and three of the eight
+ * previous windows really would have missed this time. A filmstrip was pulled from the new raw
+ * take (A every 3s, B every 2s) and LOOKED AT; these are read off it:
+ *   take A  splash 0-2 · home 3-10 · WHITE FRAME at 12 · placement 15-27 · reveal 30-37 ·
+ *           results 39-48 · history 51-63 · profile 66-75 · black tail from ~78
+ *   take B  splash 0-1 · lobby 2-14 · splash again 16 · shop 18-28
+ *
+ * ⚠️ THE THREE THAT MOVED, and why each would have been wrong:
+ *   home     3.0+8.0 ended at 11.0, one second before a WHITE navigation frame. Now 7.0s.
+ *   reveal   29.5 started on the "ALL CARDS PLACED / READY" screen, not the reveal. Now 30.0.
+ *   profile  68.0+9.5 ran to 77.5 and this take goes black at ~78. Now 66.0+9.5.
  */
 const CLIPS = [
-  { id: '01-home', src: A, start: 3.0, duration: 8.0, cues: [
-    { t: 0,   d: 2.6, text: 'HOME — where every session starts' },
-    { t: 2.7, d: 2.6, text: 'Play Online, or practise against bots' },
-    { t: 5.4, d: 2.6, text: 'A daily bonus tops up your chips' },
+  { id: '01-home', src: A, start: 3.0, duration: 7.0, cues: [
+    { t: 0,   d: 2.3, text: 'HOME — where every session starts' },
+    { t: 2.4, d: 2.3, text: 'Play Online, or practise against bots' },
+    { t: 4.8, d: 2.2, text: 'A daily bonus tops up your chips' },
   ] },
   { id: '02-placement', src: A, start: 15.0, duration: 11.0, cues: [
     { t: 0,   d: 3.5, text: 'PLACING — the decision that is the game' },
     { t: 3.6, d: 3.6, text: 'Four cards per board. You choose where' },
     { t: 7.3, d: 3.6, text: 'Auto-Place fills a board fast. Then READY' },
   ] },
-  { id: '03-reveal', src: A, start: 29.5, duration: 8.0, cues: [
-    { t: 0,   d: 3.0, text: 'REVEAL — the boards play out one at a time' },
-    { t: 3.1, d: 2.5, text: 'Live odds while cards are still to come' },
-    { t: 5.7, d: 2.3, text: 'Each board is named and settled on its own' },
+  { id: '03-reveal', src: A, start: 30.0, duration: 7.5, cues: [
+    { t: 0,   d: 2.9, text: 'REVEAL — the boards play out one at a time' },
+    { t: 3.0, d: 2.3, text: 'Live odds while cards are still to come' },
+    { t: 5.4, d: 2.1, text: 'Each board is named and settled on its own' },
   ] },
   // WINDOW SHORTENED after watching: at 12.5s this clip ran past the navigation away from results
   // and spent its last two seconds on the CAPS splash, under a caption about "Deal me in".
@@ -84,7 +91,7 @@ const CLIPS = [
     { t: 2.4, d: 2.3, text: 'Practice hands are not recorded' },
     { t: 4.8, d: 2.2, text: 'Play for chips and every hand lands here' },
   ] },
-  { id: '06-profile', src: A, start: 68.0, duration: 9.5, cues: [
+  { id: '06-profile', src: A, start: 66.0, duration: 9.5, cues: [
     { t: 0,   d: 3.1, text: 'PROFILE — hands, win rate, streak and chips' },
     { t: 3.2, d: 3.1, text: 'Achievements, hand history and detailed stats' },
     { t: 6.4, d: 3.1, text: 'Cups and settings live here too' },
