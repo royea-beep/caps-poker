@@ -19,10 +19,17 @@ name: Manage TestFlight
 # NO NEW SECRET IS NEEDED — APPLE_API_KEY_ID, APPLE_API_ISSUER_ID and APPLE_API_KEY_BASE64 already
 # exist and are already proven.
 #
-# ⚠️ API-KEY AUTH CANNOT SEE OR CREATE **INTERNAL** TESTERS ON SOME ACCOUNT SETUPS, because an
-# internal tester is an App Store Connect *user* rather than a plain email. list-testers therefore
-# prints the beta GROUPS and says which are internal, so the report can be honest about what was
-# and was not visible, instead of presenting an external-only list as if it were everything.
+# ⚠️ AND ONE CAVEAT I WROTE AND THEN DISPROVED, KEPT HERE SO NOBODY RE-ADDS IT. I first warned that
+# API-key auth might not see INTERNAL testers, since an internal tester is an App Store Connect
+# user rather than a plain email. Run 34104520373 showed otherwise: it listed a tester who belongs
+# to BOTH "Internal Testers" and "Friends". The key sees both groups. The listing still prints the
+# groups, because which group a tester is in decides whether they wait on Beta App Review — but it
+# prints them as useful information, not as an apology for a blind spot that does not exist.
+#
+# ⚠️ EVERY ATTRIBUTE IS READ THROUGH `safe()`. That same run died on `undefined method 'state'` —
+# a field that does not exist on this Spaceship version — AFTER it had already authenticated,
+# found the app and printed both groups. One wrong attribute name threw the whole listing away.
+# A reporting job must not be able to lose the report it already has.
 
 on:
   workflow_dispatch:
@@ -93,6 +100,19 @@ jobs:
               Spaceship::ConnectAPI.auth(key_id: key_id, issuer_id: issuer_id, filepath: path)
               puts "Authenticated to App Store Connect with API key #{key_id}."
             end
+
+            # Read an attribute without letting a missing one kill the whole listing.
+            def safe(obj, *names)
+              names.each do |n|
+                begin
+                  v = obj.public_send(n)
+                  return v unless v.nil?
+                rescue StandardError
+                  next
+                end
+              end
+              nil
+            end
           RUBY
 
           case "$ACTION" in
@@ -119,10 +139,12 @@ jobs:
                   puts "  (none returned)"
                 else
                   testers.each do |t|
-                    name = [t.first_name, t.last_name].compact.join(" ").strip
+                    name = [safe(t, :first_name), safe(t, :last_name)].compact.join(" ").strip
                     name = "(no name)" if name.empty?
-                    gs = (t.beta_groups || []).map(&:name).join(", ")
-                    puts "  #{t.email} — #{name} — state: #{t.state} — invite: #{t.invite_type} — groups: #{gs.empty? ? "-" : gs}"
+                    gs = (safe(t, :beta_groups) || []).map { |g| safe(g, :name) }.compact
+                    internal = (safe(t, :beta_groups) || []).any? { |g| safe(g, :is_internal_group) }
+                    puts "  #{safe(t, :email)} — #{name} — invite: #{safe(t, :invite_type)} — " \
+                         "#{internal ? "INTERNAL" : "external"} — groups: #{gs.empty? ? "-" : gs.join(", ")}"
                   end
                 end
                 puts ""
@@ -131,15 +153,21 @@ jobs:
 
                 # ⚠️ BEING A TESTER AND THE BUILD BEING SHARED WITH THE GROUP ARE TWO DIFFERENT THINGS.
                 puts "=== BUILDS, AND WHICH GROUPS THEY ARE SHARED WITH ==="
-                builds = Spaceship::ConnectAPI::Build.all(app_id: app.id, sort: "-uploadedDate", limit: 5)
+                builds = begin
+                  Spaceship::ConnectAPI::Build.all(app_id: app.id, sort: "-uploadedDate", limit: 5)
+                rescue StandardError => e
+                  puts "  (could not list builds: #{e.class}: #{e.message})"
+                  []
+                end
                 builds.each do |b|
                   shared = begin
-                    b.get_beta_groups.map(&:name).join(", ")
+                    b.get_beta_groups.map { |g| safe(g, :name) }.compact.join(", ")
                   rescue StandardError => e
                     "(could not read: #{e.class})"
                   end
                   shared = "NOT SHARED WITH ANY GROUP" if shared.to_s.strip.empty?
-                  puts "  build #{b.version} (#{b.app_version}) uploaded #{b.uploaded_date} — processing: #{b.processing_state} — groups: #{shared}"
+                  puts "  build #{safe(b, :version)} (v#{safe(b, :app_version)}) uploaded #{safe(b, :uploaded_date)} — " \
+                       "processing: #{safe(b, :processing_state)} — expired: #{safe(b, :expired)} — groups: #{shared}"
                 end
               '
               ;;
@@ -150,7 +178,8 @@ jobs:
                 asc_login!
                 app = Spaceship::ConnectAPI::App.find(ENV["APP_IDENTIFIER"])
                 Spaceship::ConnectAPI::Build.all(app_id: app.id, sort: "-uploadedDate", limit: 20).each do |b|
-                  puts "build #{b.version} (v#{b.app_version}) — #{b.processing_state} — uploaded #{b.uploaded_date} — expired: #{b.expired}"
+                  puts "build #{safe(b, :version)} (v#{safe(b, :app_version)}) — #{safe(b, :processing_state)} — " \
+                       "uploaded #{safe(b, :uploaded_date)} — expired: #{safe(b, :expired)}"
                 end
               '
               ;;
@@ -170,7 +199,9 @@ jobs:
                 # ⚠️ REFUSE TO CREATE A DUPLICATE. Check first, exactly as the brief asked.
                 existing = Spaceship::ConnectAPI::BetaTester.all(filter: { apps: app.id, email: email })
                 unless existing.empty?
-                  puts "ALREADY A TESTER: #{email} — state #{existing.first.state}. Nothing added."
+                  t = existing.first
+                  gs = (safe(t, :beta_groups) || []).map { |g| safe(g, :name) }.compact.join(", ")
+                  puts "ALREADY A TESTER: #{email} — invite #{safe(t, :invite_type)} — groups: #{gs}. Nothing added."
                   exit 0
                 end
 
@@ -187,7 +218,7 @@ jobs:
                 puts "Added: #{email} to #{group.name}"
 
                 after = Spaceship::ConnectAPI::BetaTester.all(filter: { apps: app.id, email: email })
-                puts "Read back: #{after.map { |t| "#{t.email} state=#{t.state}" }.join(", ")}"
+                puts "Read back: #{after.map { |t| "#{safe(t, :email)} invite=#{safe(t, :invite_type)}" }.join(", ")}"
               '
               ;;
 
