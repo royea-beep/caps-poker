@@ -193,11 +193,20 @@ jobs:
                 end
                 puts ""
 
+                # ⚠️ THE RELATIONSHIP IS READ FROM THE GROUP SIDE, AND THE FIRST VERSION OF THIS GOT
+                # IT WRONG. GET /v1/builds/{id}/betaGroups returns HTTP 403 — "The relationship
+                # 'betaGroups' does not allow 'GET_RELATED'. Allowed operations are: CREATE,
+                # DELETE." Apple only exposes that edge in the other direction. Asking the wrong way
+                # produced an empty list, and the verdict below then reported "not attached to any
+                # INTERNAL beta group" — A FAILED READ PRESENTED AS A FINDING, which is the exact
+                # mistake this whole action exists to prevent.
                 puts "=== IS IT ATTACHED TO A BETA GROUP? ==="
-                gcode, gbody = get("/v1/builds/#{target["id"]}/betaGroups?limit=50", token)
+                gcode, gbody = get("/v1/betaGroups?filter[builds]=#{target["id"]}&limit=50", token)
                 groups = (gbody["data"] || [])
-                if gcode != 200
-                  puts "  query failed: HTTP #{gcode} #{gbody}"
+                groups_readable = (gcode == 200)
+                if !groups_readable
+                  puts "  ⚠️ COULD NOT READ: HTTP #{gcode} #{gbody}"
+                  puts "  (this is an UNKNOWN, not a NO — the verdict below says so)"
                 elsif groups.empty?
                   puts "  ⚠️ NOT ATTACHED TO ANY BETA GROUP"
                 else
@@ -226,22 +235,39 @@ jobs:
                 puts ""
 
                 # ── THE VERDICT, DERIVED FROM THOSE FIELDS AND NOTHING ELSE ──────────────────────
+                # ⚠️ A BLOCKER IS SOMETHING APPLE SAID, NEVER SOMETHING I FAILED TO READ.
+                # internalBuildState is the field that actually decides internal availability:
+                # Apple sets IN_BETA_TESTING only once the build is live to internal testers, and
+                # READY_FOR_BETA_TESTING once it is eligible. The group attachment is corroborating
+                # detail, so an unreadable one is reported as UNKNOWN and never as a blocker.
                 blockers = []
+                unknowns = []
                 blockers << "processingState is #{a["processingState"]}, not VALID" unless a["processingState"] == "VALID"
                 blockers << "the build is EXPIRED"                                   if a["expired"]
                 blockers << "export compliance is UNANSWERED (usesNonExemptEncryption is null)" if a["usesNonExemptEncryption"].nil?
-                internal = groups.any? { |g| g.dig("attributes","isInternalGroup") }
-                blockers << "not attached to any INTERNAL beta group" unless internal
-                if bda && bda["internalBuildState"] && bda["internalBuildState"] != "READY_FOR_BETA_TESTING" && bda["internalBuildState"] != "IN_BETA_TESTING"
-                  blockers << "internalBuildState is #{bda["internalBuildState"]}"
+
+                ibs = bda && bda["internalBuildState"]
+                if ibs.nil?
+                  unknowns << "internalBuildState could not be read"
+                elsif !%w[READY_FOR_BETA_TESTING IN_BETA_TESTING].include?(ibs)
+                  blockers << "internalBuildState is #{ibs}"
+                end
+
+                if !groups_readable
+                  unknowns << "beta-group attachment could not be read (Apple forbids GET on that relationship)"
+                elsif !groups.any? { |g| g.dig("attributes","isInternalGroup") }
+                  blockers << "not attached to any INTERNAL beta group"
                 end
 
                 puts "=== IS IT INSTALLABLE BY AN INTERNAL TESTER RIGHT NOW? ==="
                 if blockers.empty?
-                  puts "  YES — build #{a["version"]} is VALID, not expired, export compliance answered, and attached to an internal group."
+                  puts "  YES — build #{a["version"]} is VALID, not expired, export compliance answered" +
+                       (ibs ? ", and internalBuildState is #{ibs}." : ".")
+                  unknowns.each { |u| puts "    (unknown, not a blocker: #{u})" }
                 else
                   puts "  NO. Blockers:"
                   blockers.each { |b| puts "    - #{b}" }
+                  unknowns.each { |u| puts "    (unknown, not a blocker: #{u})" }
                 end
               '
               ;;
