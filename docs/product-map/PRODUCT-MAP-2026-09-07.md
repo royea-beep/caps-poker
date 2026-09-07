@@ -97,7 +97,7 @@ tab bar since `eaf9201`, reached from Home and the side menu. A de-duplication, 
 | `/chip-store` | **Redirects to `/shop`.** | **→** |
 | `/simulate` | **Redirects to Home, always** — `router.replace('/')` at line 33 | **→** |
 | `/debug` | **Redirects to Home unless dev-unlocked** — `if (!allowed) router.replace('/')` | **→ U** |
-| `/battle-pass` | **Renders in full. Nothing links to it.** See §2 | **U** |
+| `/battle-pass` | **Redirects to Home** as of 2026-09-07. It used to render in full. See §2 | **→** |
 
 ⚠️ **"No UI path" was the wrong description and it mattered.** These are not dead routes a typed
 URL falls through; four of them are deliberate **redirects**, so a tester who types the URL always
@@ -141,8 +141,8 @@ Several screens need state a cold visit does not have. Captured as they actually
 | Feature | State | Evidence |
 |---|---|---|
 | **Payments / IAP** | **OFF** | `iap_enabled = false`, `web_payments_enabled = false`. **0 purchases, ever.** The shop renders "Shop is empty right now." |
-| **Battle pass** | ⚠️ **UNREACHABLE, BUT NOT DARK** | See below — three corrections |
-| **Missions** | **Retired to a redirect** | `/missions` redirects to Home. Its content survives only as the "Daily Missions" block inside the unreachable battle-pass screen. |
+| **Battle pass** | ⚠️ **CLOSED 2026-09-07 — the route redirects to Home** | See below |
+| **Missions** | **Retired to a redirect** | `/missions` redirects to Home. Its content survives only as the "Daily Missions" block inside the battle-pass screen, which is now also behind a redirect. ⚠️ That block is a separate local pool from the retired `daily_missions` table — do not conflate them. |
 | **`KILL_Board`** | **Engaged — the board pulse is dead** | A kill switch deliberately on. |
 | **Multiplayer** | **Never reached `playing`** | 0 rooms, ever. The lobby has never seated two strangers. |
 | **Solo ELO** | **No longer moves the ladder** | Since 2026-09-03 only the `resolve-hand` service-role writer moves `elo`. |
@@ -161,10 +161,36 @@ dark."* Checked today against source and a live capture:
    · 55d 23h remaining"*, a tier track, *"★ UNLOCK PREMIUM — 5,000 chips"*, locked upcoming
    rewards, and Daily Missions with XP values.
 
-So the honest description is **unreachable but fully rendered, and gated by nothing** — a
-countdown that has been running for months behind a door with no handle. That is the exact shape
+So the honest description was **unreachable but fully rendered, and gated by nothing** — a
+countdown that had been running for months behind a door with no handle. That is the exact shape
 this map exists to catch, and the previous version of this map is where it was hiding.
-Screenshot: `screens-515/battle-pass.png`.
+Screenshot of what it looked like: `screens-515/battle-pass.png`.
+
+### ✅ CLOSED 2026-09-07 — redirect, not delete
+
+`app/battle-pass.tsx` is now `<Redirect href="/" />`. Proven by visiting the URL in a rebuilt
+bundle: it lands on `/` and no countdown, tier track or premium button renders.
+
+**Two more numbers decided it, both measured today:**
+
+| | |
+|---|---|
+| The premium button asks | **5,000 chips** |
+| The richest balance in the entire database | **3,250 chips** |
+| Devices that could pay it | **0 of 393** |
+| Battle-pass events ever recorded | **0** |
+
+The offer was unacceptable as well as unbacked, and the countdown got worse on its own — left
+alone, the first tester to type the URL would have met an expired season.
+
+**Everything is kept.** The screen moved to `components/BattlePassScreen.tsx` intact; the store,
+the config and the utils are untouched. ⚠️ **Reopening is one line** — return `<BattlePassScreen />`
+instead of the redirect. The route file carries the reopen note: real players, a calibrated
+economy, rewards that resolve, and a season that rolls over. `tests/battle-pass-closed.test.ts`
+pins all of it, including that nothing outside the closed screen reads the season clock.
+
+**XP was deliberately not touched.** It accrues after every hand (`results.tsx` calls `addXP`),
+tiers advance, and the XP bar on the results screen shows it. Only the rewards were hollow.
 
 ### Retired — do not reinstate
 
