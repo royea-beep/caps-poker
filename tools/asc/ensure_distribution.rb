@@ -178,6 +178,37 @@ puts
 puts serving.empty? ? "RESULT: no group serves build #{a['version']}." \
                     : "RESULT: build #{a['version']} is served by #{serving.join(', ')}."
 
+# ── 6. THE THING THAT WILL GO STALE AGAIN ──────────────────────────────────────────────────
+# ⚠️ ALWAYS REPORTED, NEVER SILENTLY FIXED. An external group cannot be given a build without
+# Beta App Review, so the pipeline must not quietly submit one on every push. But a public link
+# that serves only EXPIRED builds is a real defect — a stranger who clicks it installs nothing —
+# and it stayed invisible for months precisely because nothing said it out loud. So say it.
+puts
+puts "=== EXTERNAL GROUPS — ARE THEY STALE? ==="
+all.reject { |grp| grp.dig("attributes", "isInternalGroup") }.each do |grp|
+  bc, b = ASC.get("/v1/builds?filter[betaGroups]=#{grp['id']}&limit=50&sort=-uploadedDate", tok)
+  if bc != 200
+    puts "  #{grp.dig('attributes', 'name')} — ⚠️ could not read (HTTP #{bc}) — UNKNOWN"
+    next
+  end
+  served = b["data"] || []
+  live   = served.reject { |x| x.dig("attributes", "expired") }
+  newest = served.first && served.first.dig("attributes", "version")
+  if live.empty?
+    puts "  #{grp.dig('attributes', 'name')} — ⚠️ SERVES NOTHING INSTALLABLE. Newest build attached " \
+         "is #{newest || 'none'}, and every build it serves has expired."
+    puts "     A tester in this group — including anyone arriving through its public link — gets"
+    puts "     \"No TestFlight builds are available for this app\"."
+    puts "     Fixing it means attaching a current build, which needs BETA APP REVIEW: usually"
+    puts "     under a day, sometimes a couple of days, and it can be rejected. Run the"
+    puts "     \"Manage TestFlight\" workflow with action=distribute and submit_beta_review=true."
+  elsif newest != a["version"]
+    puts "  #{grp.dig('attributes', 'name')} — newest attached build is #{newest}, not #{a['version']}."
+  else
+    puts "  #{grp.dig('attributes', 'name')} — current (serves #{a['version']})."
+  end
+end
+
 unless failures.empty?
   puts
   puts "::error::distribution finished with problems:"
