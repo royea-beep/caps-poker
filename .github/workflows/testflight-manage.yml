@@ -45,6 +45,9 @@ on:
         type: choice
         options:
           - compare-apps
+          - entitlement
+          - distribute
+          - pipeline-distribute-selftest
           - resend-invite
           - build-state
           - list-testers
@@ -52,14 +55,29 @@ on:
           - answer-export-compliance
           - add-tester
           - enable-public-link
+          - set-public-link
       email:
         description: 'Tester email (for add-tester action)'
         required: false
         type: string
       build:
-        description: 'Build number (for build-state / answer-export-compliance)'
+        description: 'Build number (for build-state / answer-export-compliance / distribute)'
         required: false
         type: string
+      link_enabled:
+        description: 'set-public-link: true re-enables the public link, false disables it'
+        required: false
+        default: false
+        type: boolean
+      groups:
+        description: 'Comma-separated beta group names (distribute; blank = every group)'
+        required: false
+        type: string
+      submit_beta_review:
+        description: 'distribute: also submit for Beta App Review (EXTERNAL testing only — this is a real review with a real wait)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   manage:
@@ -100,6 +118,9 @@ jobs:
           TESTER_EMAIL: ${{ github.event.inputs.email }}
           DEFAULT_TESTER_EMAIL: royearguan@gmail.com
           BUILD_NUMBER: ${{ github.event.inputs.build }}
+          DISTRIBUTE_GROUPS: ${{ github.event.inputs.groups }}
+          SUBMIT_BETA_REVIEW: ${{ github.event.inputs.submit_beta_review }}
+          LINK_ENABLED: ${{ github.event.inputs.link_enabled }}
         run: |
           set -eu
           ACTION="${{ github.event.inputs.action }}"
@@ -133,6 +154,41 @@ jobs:
           case "$ACTION" in
             "compare-apps")
               ruby tools/asc/compare_apps.rb
+              ;;
+
+            "entitlement")
+              # ⚠️ THE QUESTION build-state CANNOT ANSWER.
+              # It proves a build is installable by SOMEBODY internal. This proves whether a
+              # NAMED Apple ID can install it — which is per-tester-per-group, not per-build.
+              ruby tools/asc/entitlement.rb
+              ;;
+
+            "distribute")
+              # ⚠️ THE STEP THE BUILD PIPELINE NEVER HAD. An upload is not a distribution:
+              # ios-testflight.yml ends at altool, so nothing has ever attached a CAPS build to a
+              # group. Internal picked builds up anyway (hasAccessToAllBuilds), which is precisely
+              # what hid the gap. Same script the pipeline now runs — see tools/asc/ensure_distribution.rb.
+              ruby tools/asc/ensure_distribution.rb
+              ;;
+
+            "pipeline-distribute-selftest")
+              # ⚠️ THE POINT OF THIS ACTION IS THAT IT IS NOT A READING OF THE WORKFLOW.
+              # It runs tools/asc/distribute_current_build.sh with the SAME environment
+              # ios-testflight.yml gives it, so the build number really is read from app.json and
+              # the attachment really is attempted against every group. The only thing it does not
+              # do is produce the .ipa — and an archive is not what was ever in doubt.
+              export DISTRIBUTE_GROUPS=""
+              export SUBMIT_BETA_REVIEW="false"
+              export WAIT_MINUTES="0"
+              bash tools/asc/distribute_current_build.sh
+              ;;
+
+            "set-public-link")
+              # ⚠️ THE VERDICT COMES FROM THE READ-BACK, NOT FROM THE PATCH STATUS.
+              # This turns the public link off (or back on) and then asks Apple what it holds.
+              # It submits nothing for review and removes no tester — disabling a link closes the
+              # door, it does not evict anyone already inside.
+              ruby tools/asc/public_link.rb
               ;;
 
             "resend-invite")

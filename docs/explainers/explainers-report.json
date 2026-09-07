@@ -2,12 +2,12 @@
  "guard": {
   "home": {
    "en": {
-    "bytes": 409300,
+    "bytes": 409258,
     "hebrew": 0,
     "latin": 278
    },
    "he": {
-    "bytes": 402267,
+    "bytes": 402225,
     "hebrew": 222,
     "latin": 28
    },
@@ -100,11 +100,11 @@
  "clips": [],
  "facts": {
   "home": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real",
-  "place": "✕ PLACE 12 CARDS 🤖 BOTS 2/2 ✓ READY BOARD 1 ⚡ Auto-Place C Q ♦ ♦ C Q ♠ ♠ C A ♦ ♦ C 4 ♦ ♦ C K ♦ ♦ BOARD 2 ⚡ Auto-Place C 5 ♠ ♠ C 6 ♦ ♦ C 5 ♥ ♥ C K ♠ ♠ C 8 ♣ ♣ BOARD 3 ⚡ Auto-Place C 8 ♠ ♠ C 2 ♥ ♥ C A ",
-  "reveal": "Hand won! 🎉 YOU WIN 🤖 Practice vs bot — XP only, no chips This session: +75 2 — 1 Hand details ▾ Board 1 WIN Bot 1 9 ♠ ♠ 9 ♣ ♣ 9 ♦ ♦ 4 ♠ ♠ Two Pair, Queens and Nines Bot 2 7 ♦ ♦ 7 ♥ ♥ A ♠ ♠ K ♣ ♣ Tw",
-  "results": "YOU WIN 🤖 Practice vs bot — XP only, no chips This session: +75 2 — 1 Hand details ▾ Board 1 WIN Bot 1 9 ♠ ♠ 9 ♣ ♣ 9 ♦ ♦ 4 ♠ ♠ Two Pair, Queens and Nines Bot 2 7 ♦ ♦ 7 ♥ ♥ A ♠ ♠ K ♣ ♣ Two Pair Q ♦ ♦ Q ♠ ♠ A ♦ ♦ 4 ♦ ♦ K ♦ ♦ YOU 10 ♥ ♥ 10 ♣ ",
+  "place": "✕ PLACE 12 CARDS 🤖 BOTS 2/2 ✓ READY BOARD 1 ⚡ Auto-Place C 7 ♣ ♣ C Q ♦ ♦ C K ♦ ♦ C 10 ♥ ♥ C 8 ♦ ♦ BOARD 2 ⚡ Auto-Place C 4 ♥ ♥ C 10 ♦ ♦ C 9 ♥ ♥ C 5 ♠ ♠ C 2 ♦ ♦ BOARD 3 ⚡ Auto-Place C 5 ♥ ♥ C 3 ♣ ♣ C ",
+  "reveal": "YOU LOSE 🤖 Practice vs bot — XP only, no chips This session: -75 0 — 3 Hand details ▾ Board 1 LOSS Bot 1 6 ♣ ♣ 6 ♦ ♦ A ♦ ♦ J ♣ ♣ Ace-High Flush Bot 2 9 ♠ ♠ K ♠ ♠ J ♠ ♠ 10 ♠ ♠ Straight 7 ♣ ♣ Q ♦ ♦ K ♦",
+  "results": "YOU LOSE 🤖 Practice vs bot — XP only, no chips This session: -75 0 — 3 Hand details ▾ Board 1 LOSS Bot 1 6 ♣ ♣ 6 ♦ ♦ A ♦ ♦ J ♣ ♣ Ace-High Flush Bot 2 9 ♠ ♠ K ♠ ♠ J ♠ ♠ 10 ♠ ♠ Straight 7 ♣ ♣ Q ♦ ♦ K ♦ ♦ 10 ♥ ♥ 8 ♦ ♦ YOU 3 ♠ ♠ 3 ♦ ♦ 5 ♦ ♦ 5 ",
   "history": "‹ Back HAND HISTORY All (0) Wins (0) Losses (0) 🃏 No hands yet Your past hands will show here ♠ ♠ ♠ Play Now",
-  "profile": "PROFILE Player 1 1 HANDS 100% WIN RATE 0 STREAK 2,000 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile",
+  "profile": "PROFILE Player 1 1 HANDS 0% WIN RATE 0 STREAK 2,000 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile",
   "lobby": "‹ Back LOBBY Public tables · auto-start when full 👤 REAL PLAYERS — TABLES FOR FRIENDS A real person joins here · invite a friend or wait at a table HEADS-UP 2 players · 4 boards Opening a table… … Opening a table… … 3-PLAYER 3 players · 3 ",
   "shop": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty right now. Retry"
  },

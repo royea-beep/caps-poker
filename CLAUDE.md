@@ -26,10 +26,27 @@
 - Code: getBoardCount() + getCardsPerPlayer() in constants/gameConfig.ts
 - NEVER hardcode board counts
 
-## Current state (Apr 2026)
-- Version: 2.7.0 | Build: B458 (building)
-- Tests: 2,474/2,474
-- 56 tables, 127 RPCs, 16 Edge Functions
+## Current state (corrected 2026-09-07 — every number below was measured, not recalled)
+- Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
+  (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
+  device telemetry — never from a number typed here or into `app_config`.)
+- Tests: **2,813/2,813 across 51 suites** (was 2,474 — that figure was 339 tests stale)
+- **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
+  Functions" — two of the three were low and the Edge Function count was high)
+- Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
+  ledger gap 0 · 0 rooms have ever reached `playing` · 0 purchases, ever**
+- **THE PRODUCT MAP IS `docs/product-map/PRODUCT-MAP-2026-09-07.md`** and it regenerates its
+  route list from `app/`. Read it before describing a screen or a feature to anyone.
+- ✅ **`/battle-pass` is CLOSED as of 2026-09-07 — the route redirects to Home.** It used to be
+  unreachable but NOT dark: nothing linked to it, `battle_pass_enabled = false` gated nothing (no
+  client code reads it), and typing the URL rendered a full screen with a running "55d 23h
+  remaining" countdown and a premium button asking 5,000 chips — when the richest balance in the
+  database is 3,250 and 0 of 60 reward ids resolve. ⚠️ **REDIRECT, NOT DELETE.** The screen lives
+  at `components/BattlePassScreen.tsx` with its store, config and utils; reopening is ONE LINE and
+  the route file carries the note saying what must be true first. **XP was not touched** — it
+  accrues after every hand and shows on the results screen.
+- ⚠️ **The TestFlight public link is DISABLED** since 2026-09-07, proven by Apple's read-back.
+  Re-enabling it makes it resolve again but installs nothing until 515 passes Beta App Review.
 - Visual: green felt — `FELT_GRADIENT.classic` `['#003115','#062E18']`, which BoardSurface
   lifts to rgb(26,70,44) for the table top. Card face **#FCFAF3**, red/black suits.
   (Was "maroon felt #5C1818, warm cards #FFFEF8" — wrong on BOTH halves. That line was
