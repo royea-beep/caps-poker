@@ -47,6 +47,7 @@ on:
           - compare-apps
           - entitlement
           - distribute
+          - pipeline-distribute-selftest
           - resend-invite
           - build-state
           - list-testers
@@ -161,6 +162,18 @@ jobs:
               # group. Internal picked builds up anyway (hasAccessToAllBuilds), which is precisely
               # what hid the gap. Same script the pipeline now runs — see tools/asc/ensure_distribution.rb.
               ruby tools/asc/ensure_distribution.rb
+              ;;
+
+            "pipeline-distribute-selftest")
+              # ⚠️ THE POINT OF THIS ACTION IS THAT IT IS NOT A READING OF THE WORKFLOW.
+              # It runs tools/asc/distribute_current_build.sh with the SAME environment
+              # ios-testflight.yml gives it, so the build number really is read from app.json and
+              # the attachment really is attempted against every group. The only thing it does not
+              # do is produce the .ipa — and an archive is not what was ever in doubt.
+              export DISTRIBUTE_GROUPS=""
+              export SUBMIT_BETA_REVIEW="false"
+              export WAIT_MINUTES="0"
+              bash tools/asc/distribute_current_build.sh
               ;;
 
             "resend-invite")

@@ -236,9 +236,17 @@ jobs:
       # the PREVIOUS build to a group because this one failed is exactly the kind of quiet wrong
       # action this repo keeps paying for.
       #
-      # ⚠️ SUBMIT_BETA_REVIEW IS OFF. Attaching to an external group needs Beta App Review, which is
-      # a real review with a real wait and can be rejected. Internal needs none. Turn it on
-      # deliberately, per release, from the "Manage TestFlight" workflow's `distribute` action.
+      # ⚠️ IT ATTACHES TO EVERY GROUP, INTERNAL AND EXTERNAL — that is the whole point, and it is
+      # what 9Soccer's builds have and CAPS's never did. DISTRIBUTE_GROUPS is left blank, which
+      # means every beta group on the app, so adding a group in App Store Connect does not require
+      # editing this file. A named list here would go stale the first time someone adds a group.
+      #
+      # ⚠️ SUBMIT_BETA_REVIEW IS OFF, AND ATTACHING IS NOT DELIVERING. An external group only
+      # serves a build once Beta App Review passes; until then Apple parks it at
+      # READY_FOR_BETA_SUBMISSION. Attaching costs nothing and queues nothing, so the pipeline
+      # does it every time; submitting is a review with a real wait that can be rejected, so it
+      # stays a deliberate act — the "Manage TestFlight" workflow, action `distribute`,
+      # submit_beta_review true.
       # ========================================================================
       # ⚠️ ITS OWN RUBY. The runner's system Ruby cannot `gem install` without sudo, and a
       # distribution step that dies on a missing gem after a successful upload is the worst
@@ -253,11 +261,7 @@ jobs:
           APPLE_API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           ASC_APP_ID: "6760429619"
-          DISTRIBUTE_GROUPS: "Internal Testers"
+          DISTRIBUTE_GROUPS: ""
           SUBMIT_BETA_REVIEW: "false"
           WAIT_MINUTES: "30"
-        run: |
-          set -eu
-          gem install jwt --no-document
-          BUILD=$(node -p "require('./app.json').expo.ios.buildNumber")
-          BUILD_NUMBER="$BUILD" ruby tools/asc/ensure_distribution.rb
+        run: bash tools/asc/distribute_current_build.sh
