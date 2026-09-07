@@ -118,6 +118,26 @@
     border:1px solid rgba(201,168,76,0.42); background:rgba(0,0,0,0.24); padding:9px 16px; border-radius:16px;}
   .mp .dim{color:var(--ink-dim); font-weight:600;}
 
+  /* ---- THE EXPLAINER — the only moving thing on the page. EMBED-THE-VIDEO 2026-09-07.
+         Sized like the phone-framed .shot (a portrait 9:16 clip in a 260px column is ~462px tall,
+         which still leaves the CTA reachable at 320px); aspect-ratio is declared so the box does
+         not collapse-then-jump when metadata lands. NEVER autoplay, NEVER sound: `muted` +
+         `controls` + no `autoplay` means nothing moves and nothing plays until a finger asks. ---- */
+  .film{margin:24px auto 0; width:100%; max-width:260px;}
+  .film h2{font-family:var(--serif); font-weight:700; color:var(--gold); font-size:15px;
+    letter-spacing:0.4px; text-transform:uppercase; margin-bottom:10px;}
+  html[dir="rtl"] .film h2{font-family:var(--hebrew); letter-spacing:0;}
+  .film video{display:block; width:100%; height:auto; aspect-ratio:9/16; background:#03110B;
+    border-radius:20px; border:1px solid rgba(201,168,76,0.45); box-shadow:0 14px 30px rgba(0,0,0,0.5);}
+  .film figcaption{margin-top:9px; font-size:12.5px; line-height:1.45; color:var(--ink-dim); font-weight:600;}
+  .film .hint{margin-top:4px; font-size:11.5px; color:var(--ink-faint); font-weight:600;}
+  /* Same specificity trap the .shot images hit, and the reason it is spelled out again: the hint
+     needs display:BLOCK (its own line), and any `.film .hint{display:block}` would beat the generic
+     `[data-l]{display:none}` — so the HEBREW hint would paint on the ENGLISH page. Zero tolerance.
+     Both halves are therefore restated at .film level, exactly as .shot img does. */
+  .film .hint[data-l]{display:none;}
+  html[data-lang="he"] .film .hint[data-l="he"]{display:block;}
+
   /* ---- HOW A HAND WORKS — the format, IN WORDS. LANDING-AND-AUTOSWEEP 2026-09-05: this project
      proved twice that a rules fact is READ, not seen — the six mockup directions that tried to
      SHOW the format were the dullest images of the thirty. So the format lives here, in three
@@ -204,6 +224,56 @@
       <span data-l="en">&#9829;&nbsp; Play online against real people <span class="dim">— or practice against bots</span></span>
       <span data-l="he">&#9829;&nbsp; שחק אונליין מול שחקנים אמיתיים <span class="dim">— או תרגול מול בוטים</span></span>
     </div>
+
+    <!-- ═══ THE EXPLAINER ═══════════════════════════════════════════════════════════════════════
+         Placed AFTER the promise and the one-line mechanic and BEFORE the fold's call to action,
+         so a stranger can watch the format before they are asked to do anything.
+
+         ⚠️ HOSTED, NOT VENDORED. The file lives in Supabase Storage (bucket `bly-review`); 5MB of
+         binary does not belong in git and Vercel does not need to serve it. THE EXPECTED BYTES ARE
+         PINNED HERE BECAUSE THREE DIFFERENT FILES HAVE WORN THIS FILENAME — a name is a claim about
+         content, not the content. If the object is ever swapped, these two lines are what lets the
+         next person notice instead of shipping somebody else's video:
+
+             url    https://vjxqlqtlywovnbidovit.supabase.co/storage/v1/object/public/bly-review/caps/caps-explainer-FINAL.mp4
+             sha256 fb456341645d554b50b48dfaff9eea446c5d628fbe835239e11f63e9382b9ecd
+             bytes  5358156        (h264 1080x1920 + aac, 29.64s — verified 2026-09-07)
+
+           curl -sL <url> | sha256sum      # must print the sha256 above
+
+         The POSTER is one still cut from that exact file at 28.6s — its end card — so the section
+         is the wordmark rather than a black rectangle before anyone presses play. 10KB of WebP; one
+         frame is not the video, so this one IS in the repo.
+         ⚠️ WHY THE END CARD AND NOT A GAME FRAME, since a game frame is the obvious choice. Two
+         measured reasons, both found by rendering it and looking:
+           1. CHROMIUM DRAWS ITS CONTROL BAR OVER THE BOTTOM OF THE POSTER. Every gameplay frame in
+              this clip carries its burnt-in caption in exactly that band, so the poster shipped a
+              half-covered sentence. The end card's bottom 12% is empty felt — brightest pixel 54
+              out of 255 — so the bar covers nothing.
+           2. Every PLACEMENT frame carries the demo balance 499,900, and the richest real player in
+              the database holds 3,250. A poster must not promise what the product cannot pay.
+         The page already carries two gameplay screenshots below; the poster does not need to be a
+         third.
+
+         BOTH LANGUAGES GET THE VIDEO. The video itself is English and stays English — that is the
+         correct state, CAPS is English-first. Only the chrome around it translates, and the Hebrew
+         caption is the one that says so, because a Hebrew reader is the one who needs telling.
+         ══════════════════════════════════════════════════════════════════════════════════════ -->
+    <figure class="film">
+      <h2><span data-l="en">Watch a hand</span><span data-l="he">ככה נראית יד</span></h2>
+      <video
+        controls muted playsinline preload="metadata"
+        poster="shots/explainer-poster.webp"
+        width="1080" height="1920"
+        src="https://vjxqlqtlywovnbidovit.supabase.co/storage/v1/object/public/bly-review/caps/caps-explainer-FINAL.mp4"
+        aria-label="Thirty seconds of CAPS Poker: cards placed across every board, then every board revealed at once">
+      </video>
+      <figcaption>
+        <span data-l="en">Thirty seconds: the cards go down, then every board reveals at once.</span>
+        <span data-l="he">שלושים שניות: מניחים את הקלפים, ואז כל הבורדים מתגלים בבת אחת.</span>
+        <span class="hint" data-l="he">הסרטון באנגלית.</span>
+      </figcaption>
+    </figure>
 
     <!-- THE FORMAT, IN WORDS — deliberately BEFORE the first screenshot, and deliberately not
          carried by it. A stranger who never looks at an image must still finish this page knowing

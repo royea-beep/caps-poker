@@ -37,6 +37,15 @@ const FILE_PATHS = [
   '/definitely-missing-abc123.html', '/landing.htm', '/Landing.html', '/index.js',
   '/robots.txt', '/favicon.ico', '/sitemap.xml', '/shots/game-boards-en.webp',
   '/_expo/static/js/web/index-deadbeef.js',
+  // EMBED-THE-VIDEO 2026-09-07 — the brief names .html, .png and .mp4 by extension, and .png and
+  // .mp4 were the two it named that this list did not actually cover. A missing poster or a missing
+  // clip must 404 rather than hand back the app's HTML with a 200: that 200 is exactly what made an
+  // absent file read as "deployed" twice before.
+  // ⚠️ ONLY GENUINELY-MISSING NAMES BELONG HERE. The assertion is "the catch-all does not match",
+  // which for a file that EXISTS means "the real file is served" — a true statement under a test
+  // title that says 404. explainer-poster.webp is real, so it is asserted separately, below.
+  '/shots/explainer-poster-missing.png', '/caps-explainer-FINAL.mp4',
+  '/docs/explainers/01-home.mp4',
 ];
 
 describe('vercel.json catch-all rewrite', () => {
@@ -58,6 +67,53 @@ describe('vercel.json catch-all rewrite', () => {
 
   it('the app navigates to no route containing a dot, so nothing regresses', () => {
     expect(SPA_ROUTES.filter((r) => r.includes('.'))).toEqual([]);
+  });
+
+  // EMBED-THE-VIDEO 2026-09-07 — the landing page's poster is the one dotted path on this page that
+  // MUST resolve. The rewrite exclusion means Vercel serves the static file, so the file has to be
+  // there: a name is a claim about content, and this asserts the claim.
+  it('the landing page poster it references is a real file on disk', () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'landing.html'), 'utf-8');
+    const m = html.match(/poster="([^"]+)"/);
+    expect(m).not.toBeNull();
+    const rel = m![1];
+    expect(rel).not.toMatch(/^https?:/);       // the poster is ours, not a third party's
+    expect(fs.existsSync(path.join(__dirname, '..', 'public', rel))).toBe(true);
+    expect(catchAll.source).toBeDefined();
+    expect(new RegExp(`^${catchAll.source.replace(/^\//, '/')}$`).test('/' + rel)).toBe(false);
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  // ⚠️ THE FILE THAT ACTUALLY SHIPS. Added 2026-09-07, after the live site was measured.
+  //
+  // Everything above this line reads the ROOT vercel.json. Production never does: the deploy step
+  // runs `npx vercel --prod` from dist/, and scripts/fix-web-html.js writes dist/vercel.json. So
+  // the 2026-09-03 catch-all fix — and this whole test file with it — was pinning a config that is
+  // not served, while /nope.png went on returning 200 with the app's HTML for four days.
+  //
+  // These two tests are the ones that would have caught it: read the GENERATOR's source, and
+  // require the shipped catch-all to be character-identical to the root one.
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  const generator = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'fix-web-html.js'), 'utf8');
+
+  it('the vercel.json that SHIPS excludes dotted paths too', () => {
+    const m = generator.match(/const CATCH_ALL_NO_DOTS = "(.*)";/);
+    expect(m).not.toBeNull();
+    // eslint-disable-next-line no-eval
+    const shipped: string = eval('"' + m![1] + '"');   // the JS string literal, as node builds it
+    expect(shipped).toBe(catchAll.source);             // identical to the root config, character for character
+    expect(generator).not.toMatch(/source: "\/\(\.\*\)", destination: "\/index\.html"/);
+  });
+
+  it('the shipped catch-all keeps every SPA route and drops every dotted path', () => {
+    const m = generator.match(/const CATCH_ALL_NO_DOTS = "(.*)";/)!;
+    // eslint-disable-next-line no-eval
+    const shipped: string = eval('"' + m[1] + '"');
+    const shippedRe = new RegExp('^' + shipped + '$');
+    for (const r of SPA_ROUTES) expect([r, shippedRe.test(r)]).toEqual([r, true]);
+    for (const f of FILE_PATHS) expect([f, shippedRe.test(f)]).toEqual([f, false]);
+    // and the landing page's own poster, which must be served as a file rather than rewritten
+    expect(shippedRe.test('/shots/explainer-poster.webp')).toBe(false);
   });
 
   it('landing.html keeps an explicit rewrite of its own', () => {
