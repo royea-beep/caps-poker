@@ -9,7 +9,8 @@
    "HOME — where every session starts",
    "Play Online, or practise against bots",
    "A daily bonus tops up your chips"
-  ]
+  ],
+  "hookDiffFromSplash": 19.68
  },
  {
   "id": "02-placement",
@@ -21,7 +22,8 @@
    "PLACING — the decision that is the game",
    "Four cards per board. You choose where",
    "Auto-Place fills a board fast. Then READY"
-  ]
+  ],
+  "hookDiffFromSplash": 42.35
  },
  {
   "id": "03-reveal",
@@ -33,7 +35,8 @@
    "REVEAL — the boards play out one at a time",
    "Live odds while cards are still to come",
    "Each board is named and settled on its own"
-  ]
+  ],
+  "hookDiffFromSplash": 50.13
  },
  {
   "id": "04-results",
@@ -45,7 +48,8 @@
    "RESULTS — boards decide the hand",
    "The score is boards won, not chips",
    "Hand details opens the breakdown"
-  ]
+  ],
+  "hookDiffFromSplash": 47.49
  },
  {
   "id": "05-hand-history",
@@ -57,19 +61,21 @@
    "HAND HISTORY — your past hands",
    "Practice hands are not recorded",
    "Play for chips and every hand lands here"
-  ]
+  ],
+  "hookDiffFromSplash": 16.25
  },
  {
   "id": "06-profile",
-  "seconds": 9.52,
+  "seconds": 9,
   "size": "1080,1920",
-  "bytes": 367758,
+  "bytes": 291682,
   "audioStreams": 0,
   "captions": [
    "PROFILE — hands, win rate, streak and chips",
    "Achievements, hand history and detailed stats",
    "Cups and settings live here too"
-  ]
+  ],
+  "hookDiffFromSplash": 8.76
  },
  {
   "id": "07-lobby",
@@ -81,7 +87,8 @@
    "LOBBY — tables against real people",
    "Heads-up, 3-player or 4-player",
    "Fewer players, more boards: 2 play 4"
-  ]
+  ],
+  "hookDiffFromSplash": 8.85
  },
  {
   "id": "08-shop",
@@ -92,6 +99,7 @@
   "captions": [
    "CHIP SHOP — reached from your chip count",
    "Empty today. Nothing is for sale"
-  ]
+  ],
+  "hookDiffFromSplash": 6.8
  }
 ]

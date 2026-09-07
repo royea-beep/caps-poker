@@ -18,6 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { PNG } from 'pngjs';
 
 const RAW = '/tmp/explainers-raw';
 const OUT = process.env.OUT || 'docs/explainers';
@@ -91,10 +92,13 @@ const CLIPS = [
     { t: 2.4, d: 2.3, text: 'Practice hands are not recorded' },
     { t: 4.8, d: 2.2, text: 'Play for chips and every hand lands here' },
   ] },
-  { id: '06-profile', src: A, start: 66.0, duration: 9.5, cues: [
-    { t: 0,   d: 3.1, text: 'PROFILE — hands, win rate, streak and chips' },
-    { t: 3.2, d: 3.1, text: 'Achievements, hand history and detailed stats' },
-    { t: 6.4, d: 3.1, text: 'Cups and settings live here too' },
+  // ⚠️ 66.0 WAS THE SPLASH. Fine-sampled at 0.5s: 63.0-64.5 hand history, 65.0 a WHITE frame,
+  // 65.5-66.0 the CAPS splash, 66.5 profile still painting, 67.0 profile complete. The previous
+  // cut opened on the wordmark under the caption "PROFILE — hands, win rate…". Starts at 67.5.
+  { id: '06-profile', src: A, start: 67.5, duration: 9.0, cues: [
+    { t: 0,   d: 2.9, text: 'PROFILE — hands, win rate, streak and chips' },
+    { t: 3.0, d: 2.9, text: 'Achievements, hand history and detailed stats' },
+    { t: 6.0, d: 3.0, text: 'Cups and settings live here too' },
   ] },
   // WINDOW SHORTENED after watching: at 14.0s this clip was already showing the SHOP under a
   // caption about board counts, and 8.0s still caught the splash on the way out — 6.8s is the
@@ -133,5 +137,56 @@ for (const c of CLIPS) {
   if (dur > MAX_SECONDS) throw new Error(`${c.id}: output is ${dur}s`);
   built.push({ id: c.id, seconds: +dur.toFixed(2), size: probe(dest, 'stream=width,height').split('\n')[0], bytes: fs.statSync(dest).size, audioStreams: 0, captions: c.cues.map((q) => q.text) });
 }
+/**
+ * ⚠️ THE HOOK GUARD — because the one failure this project keeps repeating is a clip that OPENS
+ * on the splash under a caption naming a screen. It happened again on 06-profile, and the
+ * final-frame check missed it entirely because the final frame was correct.
+ *
+ * ⚠️ TWO MEASUREMENTS WERE TRIED AND DISCARDED BEFORE THIS ONE. Both looked rigorous.
+ *   1. "Fraction of pixels far from the dominant colour." Separated nothing: the splash scored
+ *      0.169 while the LEGITIMATE hand-history frame scored 0.046 and lobby scored 0.169. It
+ *      would have passed the splash and failed a good clip.
+ *   2. ffmpeg's signalstats YUV average difference. The splash-opening frame scored 3.45 and the
+ *      legitimate lobby scored 3.47 — a global luma average cannot tell a dark screen from a dark
+ *      splash. Worse, the floor had been calibrated on measurement 3 below and enforced with this
+ *      one: two instruments, one number, which is how a guard fires on a frame that is fine.
+ *
+ * What works is not a statistic but an IDENTITY CHECK: the splash is a known image, so compare
+ * frame 0 to it per pixel. Mean absolute RGB difference at 96x171, this take:
+ *     06-profile at 66.0s (the defect) ..... 0.00   <- the splash, wearing a caption
+ *     08-shop .............................. 5.58   <- nearest legitimate frame
+ *     06-profile at 67.5s (fixed) .......... 7.64
+ *     07-lobby ............................. 7.95
+ *     05-hand-history ..................... 15.32
+ *     01-home ............................. 19.31
+ *     02/03/04 ...................... 46.13-49.76
+ * Floor 3.0. ⚠️ The 0.00 is exact only because the reference frame was taken from this same take;
+ * a splash from another recording would score a little above zero, nowhere near 5.58. The real
+ * margin is the 5.58, and it is stated rather than dressed up.
+ */
+const SPLASH_REF = path.join(OUT, 'verification/splash-reference.png');
+if (!fs.existsSync(SPLASH_REF)) throw new Error(`no splash reference at ${SPLASH_REF}`);
+const SPLASH_FLOOR = 3.0;
+const png = (file) => {
+  const small = `/tmp/hook-${path.basename(file)}.png`;
+  execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', file, '-frames:v', '1',
+    '-vf', 'scale=96:171', small], { stdio: ['ignore', 'pipe', 'pipe'] });
+  return PNG.sync.read(fs.readFileSync(small));
+};
+const ref = png(SPLASH_REF);
+for (const c of built) {
+  const f = png(path.join(OUT, `${c.id}.mp4`));
+  let sum = 0;
+  for (let i = 0; i < ref.data.length; i += 4)
+    sum += Math.abs(f.data[i] - ref.data[i]) + Math.abs(f.data[i + 1] - ref.data[i + 1]) +
+           Math.abs(f.data[i + 2] - ref.data[i + 2]);
+  const diff = sum / ((ref.data.length / 4) * 3);
+  c.hookDiffFromSplash = +diff.toFixed(2);
+  if (diff < SPLASH_FLOOR)
+    throw new Error(`${c.id}: HOOK IS THE SPLASH — frame 0 is ${diff.toFixed(2)} from the splash reference (floor ${SPLASH_FLOOR})`);
+}
+console.log('hook guard, difference from the splash (floor 3.0):',
+  JSON.stringify(Object.fromEntries(built.map((c) => [c.id, c.hookDiffFromSplash]))));
+
 fs.writeFileSync(path.join(OUT, 'clips.json'), JSON.stringify(built, null, 1));
 console.log(JSON.stringify(built, null, 1));
