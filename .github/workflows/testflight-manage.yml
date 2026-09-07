@@ -39,6 +39,8 @@ on:
         required: true
         type: choice
         options:
+          - compare-apps
+          - resend-invite
           - build-state
           - list-testers
           - list-builds
@@ -123,6 +125,177 @@ jobs:
           RUBY
 
           case "$ACTION" in
+            "compare-apps")
+              # ⚠️ READ-ONLY, BOTH APPS. 9soccer reaches the phone and CAPS does not, on the same
+              # device, the same Apple ID and the same TestFlight app. So the difference is not the
+              # device — it is how the two apps are configured in App Store Connect. This puts them
+              # side by side and prints what Apple holds, field by field, WITHOUT touching either.
+              # 9soccer is a different product and is read here and never written.
+              ruby -e '
+                require "jwt"; require "net/http"; require "json"; require "uri"
+                key_id    = ENV.fetch("APPLE_API_KEY_ID")
+                issuer_id = ENV.fetch("APPLE_API_ISSUER_ID")
+                pem       = File.read(File.expand_path("~/private_keys/AuthKey_#{key_id}.p8"))
+                token = JWT.encode({ iss: issuer_id, exp: Time.now.to_i + 900, aud: "appstoreconnect-v1" },
+                                   OpenSSL::PKey::EC.new(pem), "ES256", { kid: key_id, typ: "JWT" })
+                def get(path, token)
+                  uri = URI("https://api.appstoreconnect.apple.com#{path}")
+                  r = Net::HTTP::Get.new(uri); r["Authorization"] = "Bearer #{token}"
+                  res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(r) }
+                  [res.code.to_i, (JSON.parse(res.body) rescue { "raw" => res.body })]
+                end
+                EMAIL = "royearguan@gmail.com"
+
+                code, apps = get("/v1/apps?limit=200", token)
+                abort("apps query failed: HTTP #{code}") unless code == 200
+                puts "=== EVERY APP THIS KEY CAN SEE (#{(apps["data"]||[]).length}) ==="
+                (apps["data"] || []).each do |a|
+                  at = a["attributes"]
+                  puts "  #{a["id"].to_s.ljust(12)} #{at["bundleId"].to_s.ljust(34)} #{at["name"]}"
+                end
+                puts ""
+
+                caps = (apps["data"] || []).find { |a| a["id"] == ENV["ASC_APP_ID"] }
+                nine = (apps["data"] || []).find { |a|
+                  "#{a.dig("attributes","name")} #{a.dig("attributes","bundleId")}".downcase =~ /9 ?soccer|ninesoccer|soccer/ }
+
+                if nine.nil?
+                  puts "⚠️ COULD NOT IDENTIFY 9soccer among the apps above by name or bundle id."
+                  puts "   Everything below is CAPS only. Name the app explicitly if it is in that list."
+                end
+
+                def dump(label, app, token, email)
+                  return puts("=== #{label}: NOT FOUND ===") if app.nil?
+                  at = app["attributes"]
+                  puts "==================== #{label} ===================="
+                  puts "  name / bundle        #{at["name"]} / #{at["bundleId"]}"
+                  puts "  id                   #{app["id"]}"
+                  puts "  sku                  #{at["sku"]}"
+                  puts "  primaryLocale        #{at["primaryLocale"]}"
+                  puts "  contentRights        #{at["contentRightsDeclaration"].inspect}"
+
+                  gcode, g = get("/v1/apps/#{app["id"]}/betaGroups?limit=50", token)
+                  puts "  --- BETA GROUPS ---"
+                  if gcode != 200
+                    puts "    could not read: HTTP #{gcode}"
+                  else
+                    (g["data"] || []).each do |grp|
+                      ga = grp["attributes"]
+                      puts "    #{ga["name"]}"
+                      puts "      id                    #{grp["id"]}"
+                      puts "      isInternalGroup       #{ga["isInternalGroup"]}"
+                      puts "      hasAccessToAllBuilds  #{ga["hasAccessToAllBuilds"].inspect}"
+                      puts "      publicLinkEnabled     #{ga["publicLinkEnabled"].inspect}"
+                      puts "      publicLink            #{ga["publicLink"].inspect}"
+                      puts "      createdDate           #{ga["createdDate"]}"
+                      bcode, b = get("/v1/builds?filter[betaGroups]=#{grp["id"]}&limit=3&sort=-uploadedDate", token)
+                      if bcode == 200
+                        bl = (b["data"] || []).map { |x| x.dig("attributes","version") }
+                        puts "      builds it serves      #{bl.empty? ? "NONE" : bl.join(", ")}"
+                      else
+                        puts "      builds it serves      could not read: HTTP #{bcode}"
+                      end
+                    end
+                  end
+
+                  puts "  --- TESTER #{email} ---"
+                  tcode, t = get("/v1/betaTesters?filter[apps]=#{app["id"]}&filter[email]=#{URI.encode_www_form_component(email)}&include=betaGroups", token)
+                  if tcode != 200
+                    puts "    could not read: HTTP #{tcode}"
+                  elsif (t["data"] || []).empty?
+                    puts "    ⚠️ NOT A TESTER ON THIS APP"
+                  else
+                    inc = (t["included"] || [])
+                    (t["data"] || []).each do |x|
+                      xa = x["attributes"]
+                      gids = (x.dig("relationships","betaGroups","data") || []).map { |d| d["id"] }
+                      gn = inc.select { |i| i["type"]=="betaGroups" && gids.include?(i["id"]) }.map { |i| i.dig("attributes","name") }
+                      puts "    id          #{x["id"]}"
+                      puts "    name        #{[xa["firstName"], xa["lastName"]].compact.join(" ")}"
+                      puts "    inviteType  #{xa["inviteType"].inspect}"
+                      puts "    state       #{xa["state"].inspect}   <- INSTALLED means the invite was accepted; INVITED means it never was"
+                      puts "    groups      #{gn.join(", ")}"
+                    end
+                  end
+
+                  puts "  --- NEWEST BUILDS ---"
+                  bcode, b = get("/v1/builds?filter[app]=#{app["id"]}&limit=3&sort=-uploadedDate&include=buildBetaDetail", token)
+                  if bcode != 200
+                    puts "    could not read: HTTP #{bcode}"
+                  else
+                    inc = (b["included"] || [])
+                    (b["data"] || []).each do |bd|
+                      ba = bd["attributes"]
+                      rel = bd.dig("relationships","buildBetaDetail","data")
+                      det = rel && inc.find { |i| i["type"]=="buildBetaDetails" && i["id"]==rel["id"] }
+                      da = det && det["attributes"]
+                      puts "    build #{ba["version"]}  processing=#{ba["processingState"]}  expired=#{ba["expired"]}  " \
+                           "compliance=#{ba["usesNonExemptEncryption"].inspect}  minOs=#{ba["minOsVersion"]}"
+                      puts "      internalBuildState  #{da && da["internalBuildState"]}"
+                      puts "      externalBuildState  #{da && da["externalBuildState"]}"
+                      gcode2, g2 = get("/v1/betaGroups?filter[builds]=#{bd["id"]}&limit=20", token)
+                      names = gcode2 == 200 ? (g2["data"]||[]).map { |x| "#{x.dig("attributes","name")}#{x.dig("attributes","isInternalGroup") ? "(int)" : "(ext)"}" } : ["could not read HTTP #{gcode2}"]
+                      puts "      attached to groups  #{names.empty? ? "NONE" : names.join(", ")}"
+                    end
+                  end
+                  puts ""
+                end
+
+                dump("CAPS", caps, token, EMAIL)
+                dump("9SOCCER", nine, token, EMAIL)
+              '
+              ;;
+
+            "resend-invite")
+              # THE AUTOMATIC FIX for an invitation that was never accepted. POST
+              # /v1/betaTesterInvitations makes Apple send the TestFlight invitation email again.
+              # ⚠️ IT DOES NOT ADD, REMOVE OR MODIFY A TESTER — the tester already exists; this only
+              # re-sends the mail. The tap on the phone is still required and always will be; that
+              # is how Apple binds a tester to a device, not a gap in the automation.
+              if [ -z "${TESTER_EMAIL:-}" ]; then echo "::error::email required"; exit 1; fi
+              ruby -e '
+                require "jwt"; require "net/http"; require "json"; require "uri"
+                key_id    = ENV.fetch("APPLE_API_KEY_ID")
+                issuer_id = ENV.fetch("APPLE_API_ISSUER_ID")
+                pem       = File.read(File.expand_path("~/private_keys/AuthKey_#{key_id}.p8"))
+                token = JWT.encode({ iss: issuer_id, exp: Time.now.to_i + 600, aud: "appstoreconnect-v1" },
+                                   OpenSSL::PKey::EC.new(pem), "ES256", { kid: key_id, typ: "JWT" })
+                def req!(m, path, token, payload = nil)
+                  uri = URI("https://api.appstoreconnect.apple.com#{path}")
+                  r = (m == :get ? Net::HTTP::Get : Net::HTTP::Post).new(uri)
+                  r["Authorization"] = "Bearer #{token}"; r["Content-Type"] = "application/json"
+                  r.body = payload.to_json if payload
+                  res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(r) }
+                  [res.code.to_i, (JSON.parse(res.body) rescue { "raw" => res.body })]
+                end
+                app_id = ENV.fetch("ASC_APP_ID"); email = ENV.fetch("TESTER_EMAIL")
+
+                c, t = req!(:get, "/v1/betaTesters?filter[apps]=#{app_id}&filter[email]=#{URI.encode_www_form_component(email)}", token)
+                abort("tester lookup failed HTTP #{c}") unless c == 200
+                tester = (t["data"] || []).first
+                abort("#{email} is not a tester on this app — nothing to resend") if tester.nil?
+                puts "BEFORE: #{email} state=#{tester.dig("attributes","state").inspect} inviteType=#{tester.dig("attributes","inviteType").inspect}"
+
+                pc, pr = req!(:post, "/v1/betaTesterInvitations", token, {
+                  data: { type: "betaTesterInvitations", relationships: {
+                    app:        { data: { type: "apps",        id: app_id } },
+                    betaTester: { data: { type: "betaTesters", id: tester["id"] } } } } })
+                puts "POST /v1/betaTesterInvitations -> HTTP #{pc}"
+                puts pr.inspect unless pc.between?(200, 299)
+                abort("resend failed") unless pc.between?(200, 299)
+
+                # ⚠️ VERIFY FROM APPLE, NOT FROM THE 200.
+                sleep 5
+                c2, t2 = req!(:get, "/v1/betaTesters?filter[apps]=#{app_id}&filter[email]=#{URI.encode_www_form_component(email)}", token)
+                after = (t2["data"] || []).first
+                puts "AFTER (re-read from Apple): state=#{after&.dig("attributes","state").inspect} inviteType=#{after&.dig("attributes","inviteType").inspect}"
+                puts ""
+                puts "The invitation email has been sent to #{email}."
+                puts "state stays INVITED until it is ACCEPTED ON A DEVICE — that tap is how Apple binds a"
+                puts "tester to a device and cannot be done from an API."
+              '
+              ;;
+
             "build-state")
               # ⚠️ RAW REST, NOT THE SPACESHIP MODEL WRAPPER, AND THAT IS DELIBERATE.
               # build.get_beta_groups raises NoMethodError on this Spaceship version — it already
