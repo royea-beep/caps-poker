@@ -55,6 +55,7 @@ on:
           - answer-export-compliance
           - add-tester
           - enable-public-link
+          - set-public-link
       email:
         description: 'Tester email (for add-tester action)'
         required: false
@@ -63,6 +64,11 @@ on:
         description: 'Build number (for build-state / answer-export-compliance / distribute)'
         required: false
         type: string
+      link_enabled:
+        description: 'set-public-link: true re-enables the public link, false disables it'
+        required: false
+        default: false
+        type: boolean
       groups:
         description: 'Comma-separated beta group names (distribute; blank = every group)'
         required: false
@@ -114,6 +120,7 @@ jobs:
           BUILD_NUMBER: ${{ github.event.inputs.build }}
           DISTRIBUTE_GROUPS: ${{ github.event.inputs.groups }}
           SUBMIT_BETA_REVIEW: ${{ github.event.inputs.submit_beta_review }}
+          LINK_ENABLED: ${{ github.event.inputs.link_enabled }}
         run: |
           set -eu
           ACTION="${{ github.event.inputs.action }}"
@@ -174,6 +181,14 @@ jobs:
               export SUBMIT_BETA_REVIEW="false"
               export WAIT_MINUTES="0"
               bash tools/asc/distribute_current_build.sh
+              ;;
+
+            "set-public-link")
+              # ⚠️ THE VERDICT COMES FROM THE READ-BACK, NOT FROM THE PATCH STATUS.
+              # This turns the public link off (or back on) and then asks Apple what it holds.
+              # It submits nothing for review and removes no tester — disabling a link closes the
+              # door, it does not evict anyone already inside.
+              ruby tools/asc/public_link.rb
               ;;
 
             "resend-invite")
