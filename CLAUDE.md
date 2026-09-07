@@ -121,16 +121,30 @@
   answered age rating and one screenshot. Drafted copy is in
   `docs/last-gaps/THE-LAST-GAPS-2026-09-08.md`; NOTHING was changed and nothing submitted. Re-read
   it any time with Actions → Manage TestFlight → `store-listing` (GET only).
-  The store screenshot set is `docs/product-map/store/` — 7 shots at 1290×2796 from 2026-09-03.
-  ⚠️ It is NOT provably current for 515 (eleven later commits touched the render path of five of
-  the seven), Apple's primary iPhone size is now 6.9″/1320×2868, and **two of the seven show empty
-  states** — an empty shop and "No achievements found".
-- ⚠️ **`/gameover` states a falsehood on a cold visit.** `app/gameover.tsx:117-122` renders
-  "GAME OVER / Not enough chips to continue" **unconditionally**, above the player's real balance.
-  Typed by someone holding 2,000 chips it says they have run out, over the number 2,000. Same class
-  as the battle pass: reachable by URL, gated by nothing. Not fixed — one conditional would do it.
-  `/multiplayer-game` is the second of the pair: cold, it draws a seat, a balance and a green READY
-  button for a room that does not exist, while `/lobby/table` handles the same case honestly.
+  ✅ **THE SCREENSHOTS ARE RE-SHOT: `docs/product-map/store-515/`** — 7 screens × 2 sizes, 1320×2868
+  (6.9″, Apple's current primary) and 1290×2796 (6.7″), every file's real pixel size asserted after
+  writing. Hands are genuinely played by the rig, so home, hand history and results carry earned
+  content. ⚠️ **The empty-shop shot is GONE and was NOT faked** — payments are off, so a stocked
+  shop is a state no player can reach; hand history takes its slot. The achievements screen is
+  served the product's own 24 definitions with a plausible earned subset — staged progress, never a
+  staged capability. `docs/product-map/store/SUPERSEDED.md` marks the old set do-not-upload.
+- ✅ **The three cold-visit defects are CLOSED (2026-09-08).**
+  ⚠️ **THE BUY-IN IS CHARGED ON COMMIT, NOT ON MOUNT.** Typing `/game` used to take 75 chips the
+  instant the page rendered — measured 2,000 → 1,925, no prompt, no hand. It now fires from
+  `chargeBuyInOnce()` (`app/game.tsx:320`) via `confirmPlacement()`, which BOTH commit paths call:
+  READY, and the arrangement clock expiring (that second path resolves a hand without ever calling
+  `handleReady`, which is how `cards_placed` under-fired for months). `doNavigate()` calls the same
+  guarded function as a backstop so no completed hand is free. **The amount and every rule are
+  unchanged — only the moment moved.** Proven by `tests/buyin-on-commit.mjs`: abandoned URL 0,
+  played hand exactly the derived buy-in, practice 0; and the probe was proven to fire by putting
+  the defect back (3/6). ⚠️ Do not measure this with the BALANCE — a hand resolves and winnings land
+  in the same tick (two runs gave 1,925 and 2,262). Use `totalChipsSpent`.
+  · `/gameover` now redirects Home unless the balance is genuinely below `getMatchCost(...)` — it
+  used to say "Not enough chips to continue" above the number 2,000.
+  · `/multiplayer-game` with no room now renders `/lobby/table`'s EXISTING sentence, "Online
+  multiplayer is unavailable right now" — deliberately not a third wording for one fact.
+  ⚠️ STILL OPEN, reported and left for Roye: `/lobby` promises "auto-start when full" while 0 rooms
+  have ever reached `playing`, and `/club/DEMO` renders a full club for any typed code.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs

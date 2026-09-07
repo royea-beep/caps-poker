@@ -296,6 +296,51 @@ function GameScreenInner() {
   const isDealingRef = useRef(false);
   // FUNNEL 2026-08-16 — one cards_placed per hand, whichever path confirms the placement.
   const cardsPlacedTrackedRef = useRef(false);
+  // ⚠️ FIX-THE-FOUR 2026-09-08 — THE BUY-IN IS TAKEN WHEN THE PLAYER COMMITS, NOT WHEN THE SCREEN
+  // MOUNTS. It used to be charged inside the deal effect below, which runs on mount. Measured:
+  // typing /game and closing the tab took 75 chips, 2,000 -> 1,925, with no confirmation asked and
+  // no hand played. A URL must not be able to spend somebody's balance.
+  //
+  // ⚠️ THE BUY-IN IS NOT REMOVED — ONLY MOVED. A played hand still costs exactly what it cost.
+  // It is charged at the moment placement is CONFIRMED, which is the point of no return: after it
+  // the boards resolve and winnings are paid. Both routes to that point call confirmPlacement()
+  // below — pressing READY, and letting the arrangement clock run out — so neither can drift from
+  // the other, and doNavigate() calls the same guarded function as a backstop so no COMPLETED hand
+  // can ever be free. The ref makes it exactly once per hand; it is reset with the deal.
+  const buyInChargedRef = useRef(false);
+
+  /**
+   * Take the match buy-in, at most once per hand, never in practice.
+   *
+   * ⚠️ THE AMOUNT AND THE RULE ARE UNCHANGED — only the MOMENT moved. Same getMatchCost, same
+   * potPerBoard, same DYNAMIC boardCount (2P=4, 3P=3, 4P=2 — never a literal), same
+   * matchCostEnabled gate on the spend tracker, same practice exemption. A played hand costs
+   * exactly what it cost yesterday.
+   */
+  const chargeBuyInOnce = useCallback(() => {
+    if (isPractice || buyInChargedRef.current) return;
+    buyInChargedRef.current = true;
+    const buyIn = getMatchCost(config.potPerBoard, boardCount);
+    addChips(-buyIn);
+    if (ECONOMY_FLAGS.matchCostEnabled) trackChipsSpent(buyIn);
+    debugLog(`buy-in charged on commit: -${buyIn}`);
+  }, [isPractice, config.potPerBoard, boardCount, addChips, trackChipsSpent]);
+
+  /**
+   * The single "the player has committed to this hand" gate.
+   *
+   * ⚠️ TWO ROUTES REACH IT AND THEY MUST NOT DRIFT APART — pressing READY, and letting the
+   * arrangement clock run out (which resolves the hand without ever calling handleReady; that is
+   * how cards_placed under-fired for months). Folding the tracking and the charge into ONE
+   * function is what stops a future edit from fixing one path and forgetting the other.
+   */
+  const confirmPlacement = useCallback((source: 'ready' | 'timeout') => {
+    if (cardsPlacedTrackedRef.current) return;
+    cardsPlacedTrackedRef.current = true;
+    track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
+      source }, 'game');
+    chargeBuyInOnce();
+  }, [isPractice, numberOfPlayers, boardCount, chargeBuyInOnce]);
   // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — fail-safe to release the isDealingRef
   // lock if a navigate silently fails to occur. Without this, a successful
   // handleReady that hits the `doNavigateRef.current(...)` happy path never
@@ -494,11 +539,8 @@ function GameScreenInner() {
       // FUNNEL 2026-08-16 — this branch completes the hand WITHOUT going through handleReady, so
       // it never emitted cards_placed. A player who let the clock run out finished a hand with no
       // placement step: 58 devices placed cards while 88 completed a hand, which cannot happen.
-      if (!cardsPlacedTrackedRef.current) {
-        cardsPlacedTrackedRef.current = true;
-        track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
-          source: 'timeout' }, 'game');
-      }
+      // The clock expiring IS a commitment: the boards fill and the hand resolves from here.
+      confirmPlacement('timeout');
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
       const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, boardsRef.current);
 
@@ -544,7 +586,7 @@ function GameScreenInner() {
       // Navigate directly with the filled boards
       doNavigateRef.current(filledBoards);
     }
-  }, [countdownActive, countdown, playerReady]);
+  }, [countdownActive, countdown, playerReady, confirmPlacement]);
 
   // Cleanup
   useEffect(() => {
@@ -634,14 +676,11 @@ function GameScreenInner() {
     track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount,
       auto_sim: autoSim === 'true' }, 'game');
 
-    // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
-    const buyIn = getMatchCost(config.potPerBoard, boardCount);
-    if (!isPractice) {
-      addChips(-buyIn);
-      if (ECONOMY_FLAGS.matchCostEnabled) {
-        trackChipsSpent(buyIn);
-      }
-    }
+    // ⚠️ THE BUY-IN USED TO BE DEDUCTED HERE, ON MOUNT, AND THAT IS THE BUG THIS COMMENT MARKS.
+    // This effect runs the moment /game renders — before the player has agreed to anything. Typing
+    // the URL and closing the tab cost 75 chips: measured 2,000 -> 1,925, no prompt, no hand.
+    // It now happens in chargeBuyInOnce(), called when placement is CONFIRMED. Do not move it back.
+    buyInChargedRef.current = false;
 
     // Bot timers — when first bot finishes, it triggers the countdown
     for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
@@ -674,6 +713,10 @@ function GameScreenInner() {
     if (hasNavigatedRef.current || !mountedRef.current) { debugLog('1.1 already navigated or unmounted — abort'); return; }
     debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
+    // BACKSTOP. Every completed hand passes through here, and it is guarded by the same ref, so it
+    // cannot double-charge. If a future path ever reaches results without confirmPlacement(), the
+    // hand is still paid for rather than silently free.
+    chargeBuyInOnce();
 
     // PRACTICE-TO-LIVE — if a real opponent is mid-countdown, this bot hand just reached its
     // natural end: cut here and jump to the live game rather than waiting the full 30s. The
@@ -897,7 +940,7 @@ function GameScreenInner() {
       debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
     }
-  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim, liveMode]);
+  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim, liveMode, chargeBuyInOnce]);
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
@@ -1197,11 +1240,7 @@ function GameScreenInner() {
     // flipped never got counted, so cards_placed under-fired relative to hands
     // completed (11 vs 13, an impossible ratio). Track unconditionally, right where a
     // placement is confirmed — guaranteed once per hand via the guards above.
-    if (!cardsPlacedTrackedRef.current) {
-      cardsPlacedTrackedRef.current = true;
-      track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
-        source: 'ready' }, 'game');
-    }
+    confirmPlacement('ready');
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     debugLog('H3 hapticNotify');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
@@ -1241,7 +1280,7 @@ function GameScreenInner() {
         }
       }, 8000);
     }
-  }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
+  }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots, confirmPlacement]);
 
   // Demo deep-link (caps-poker://game?demo=1): auto-fill all 4 boards + auto-ready,
   // so the iOS simulator auto-tour (ios-simulator-smoke.yml) can capture the full

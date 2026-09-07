@@ -1,0 +1,142 @@
+{
+ "sizes": [
+  {
+   "label": "6.9in",
+   "viewport": {
+    "width": 440,
+    "height": 956
+   },
+   "scale": 3,
+   "px": {
+    "w": 1320,
+    "h": 2868
+   }
+  },
+  {
+   "label": "6.7in",
+   "viewport": {
+    "width": 430,
+    "height": 932
+   },
+   "scale": 3,
+   "px": {
+    "w": 1290,
+    "h": 2796
+   }
+  }
+ ],
+ "shots": [
+  {
+   "size": "6.9in",
+   "name": "05-game-placement",
+   "file": "docs/product-map/store-515/05-game-placement-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "06-game-reveal",
+   "file": "docs/product-map/store-515/06-game-reveal-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "07-results",
+   "file": "docs/product-map/store-515/07-results-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "01-home",
+   "file": "docs/product-map/store-515/01-home-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "02-play",
+   "file": "docs/product-map/store-515/02-play-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "03-hand-history",
+   "file": "docs/product-map/store-515/03-hand-history-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "04-achievements",
+   "file": "docs/product-map/store-515/04-achievements-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "05-game-placement",
+   "file": "docs/product-map/store-515/05-game-placement-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "06-game-reveal",
+   "file": "docs/product-map/store-515/06-game-reveal-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "07-results",
+   "file": "docs/product-map/store-515/07-results-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "01-home",
+   "file": "docs/product-map/store-515/01-home-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "02-play",
+   "file": "docs/product-map/store-515/02-play-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "03-hand-history",
+   "file": "docs/product-map/store-515/03-hand-history-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "04-achievements",
+   "file": "docs/product-map/store-515/04-achievements-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  }
+ ]
+}

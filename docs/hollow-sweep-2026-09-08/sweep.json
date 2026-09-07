@@ -186,7 +186,7 @@
    "route": "/game",
    "landed": "/game",
    "redirected": false,
-   "chars": 479,
+   "chars": 478,
    "buttons": [
     "✕",
     "⚡ Auto-Place",
@@ -203,20 +203,35 @@
     "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
     "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
    ],
-   "text": "✕ PLACE 12 CARDS 💰 1,925 🤖 BOTS 2/2 ✓ READY BOARD 1 ⚡ Auto-Place C J ♣ ♣ C 10 ♣ ♣ C 3 ♥ ♥ C 8 ♣ ♣ C 3 ♠ ♠ BOARD 2 ⚡ Auto-Place C 2 ♦ ♦ C 3 ♣ ♣ C 6 ♠ ♠ C 10 ♦ ♦ C 4 ♣ ♣ BOARD 3 ⚡ Auto-Place C 8 ♥ ♥ C A ♠ ♠ C 7 ♣ ♣ C 5 ♥ ♥ C 5 ♣ ♣ YOUR HAND 12 ⚡ Auto-Place ALL C 9 ♠ ♠ C 9 ♥ ♥ C Q ♠ ♠ C Q ♣ ♣ C 7 ♠ ♠ C 2 ♥ ♥ C 6 ♥ ♥ C J ♥ ♥ C K ♥ ♥ C 3 ♦ ♦ C 5 ♦ ♦ C 8 ♦ ♦ 👆 Tap a card from your hand, then tap a board to place it Canc"
+   "text": "✕ PLACE 12 CARDS 💰 2,000 🤖 BOTS 2/2 ✓ READY BOARD 1 ⚡ Auto-Place C 4 ♦ ♦ C 6 ♥ ♥ C 5 ♥ ♥ C 5 ♣ ♣ C 3 ♣ ♣ BOARD 2 ⚡ Auto-Place C 3 ♥ ♥ C 8 ♦ ♦ C K ♠ ♠ C A ♣ ♣ C 8 ♠ ♠ BOARD 3 ⚡ Auto-Place C 4 ♥ ♥ C 4 ♣ ♣ C 10 ♦ ♦ C J ♠ ♠ C Q ♠ ♠ YOUR HAND 12 ⚡ Auto-Place ALL C 2 ♥ ♥ C 2 ♣ ♣ C 7 ♠ ♠ C 7 ♦ ♦ C 9 ♠ ♠ C 9 ♦ ♦ C J ♥ ♥ C J ♣ ♣ C 6 ♦ ♦ C Q ♦ ♦ C A ♦ ♦ C K ♣ ♣ 👆 Tap a card from your hand, then tap a board to place it Cance"
   },
   {
    "route": "/gameover",
-   "landed": "/gameover",
-   "redirected": false,
-   "chars": 79,
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
    "buttons": [
-    "PLAY AGAIN",
-    "MAIN MENU"
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
    ],
-   "hits": {},
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
    "pageErrors": [],
-   "text": "GAME OVER Not enough chips to continue FINAL BALANCE 1,925 PLAY AGAIN MAIN MENU"
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
   },
   {
    "route": "/hand-history",
@@ -246,7 +261,7 @@
     "📖 TUTORIAL",
     "🌐 🌐 LANGUAGE: English",
     "🔵 SIGN IN",
-    "🪙 1,925",
+    "🪙 2,000",
     "👤",
     "🎮 Play Online Real players · instant bot tables ›",
     "Practice vs bots",
@@ -254,14 +269,14 @@
    ],
    "hits": {
     "price": [
-     "1,925 chips"
+     "2,000 chips"
     ],
     "claim": [
      "Claim"
     ]
    },
    "pageErrors": [],
-   "text": "👤 Player 1 💰 1,925 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 1,925 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
   },
   {
    "route": "/invite/DEMO",
@@ -352,7 +367,7 @@
     "📖 TUTORIAL",
     "🌐 🌐 LANGUAGE: English",
     "🔵 SIGN IN",
-    "🪙 1,925",
+    "🪙 2,000",
     "👤",
     "🎮 Play Online Real players · instant bot tables ›",
     "Practice vs bots",
@@ -360,28 +375,30 @@
    ],
    "hits": {
     "price": [
-     "1,925 chips"
+     "2,000 chips"
     ],
     "claim": [
      "Claim"
     ]
    },
    "pageErrors": [],
-   "text": "👤 Player 1 💰 1,925 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 1,925 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
   },
   {
    "route": "/multiplayer-game",
    "landed": "/multiplayer-game",
    "redirected": false,
-   "chars": 166,
+   "chars": 58,
    "buttons": [
-    "✕",
-    "Cancel",
-    "✓ READY"
+    "Back to Lobby"
    ],
-   "hits": {},
+   "hits": {
+    "deadend": [
+     "unavailable"
+    ]
+   },
    "pageErrors": [],
-   "text": "✕ ALL CARDS PLACED! 💰 1,925 2P GUEST · Seat 1 YOUR HAND 0 All cards placed! 👆 Tap a card from your hand, then tap a board to place it WIN ALL → +0 🟡 Cancel ✓ READY"
+   "text": "Online multiplayer is unavailable right now. Back to Lobby"
   },
   {
    "route": "/orientation-pick",
@@ -423,11 +440,11 @@
    ],
    "hits": {
     "price": [
-     "1,925 CHIPS"
+     "2,000 CHIPS"
     ]
    },
    "pageErrors": [],
-   "text": "PROFILE Player 1 0 HANDS 0% WIN RATE 0 STREAK 1,925 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile"
+   "text": "PROFILE Player 1 0 HANDS 0% WIN RATE 0 STREAK 2,000 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile"
   },
   {
    "route": "/rank",
@@ -502,7 +519,7 @@
     "👤 Player 1 Shown on leaderboard · Tap to edit EDIT",
     "🐛 Report a bug ›",
     "📖 Show Tutorial Again",
-    "Version 2.7.0 (build fb623bed)",
+    "Version 2.7.0 (build 0f636d2d)",
     "Reset All Progress",
     "🏆 Your Rank",
     "Delete Account"
@@ -526,7 +543,7 @@
     ]
    },
    "pageErrors": [],
-   "text": "‹ Back 🎰 Chip Shop 💰 1,925 🃏 Shop is empty right now. Retry"
+   "text": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty right now. Retry"
   },
   {
    "route": "/simulate",
@@ -539,7 +556,7 @@
     "📖 TUTORIAL",
     "🌐 🌐 LANGUAGE: English",
     "🔵 SIGN IN",
-    "🪙 1,925",
+    "🪙 2,000",
     "👤",
     "🎮 Play Online Real players · instant bot tables ›",
     "Practice vs bots",
@@ -547,14 +564,14 @@
    ],
    "hits": {
     "price": [
-     "1,925 chips"
+     "2,000 chips"
     ],
     "claim": [
      "Claim"
     ]
    },
    "pageErrors": [],
-   "text": "👤 Player 1 💰 1,925 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 1,925 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
   },
   {
    "route": "/spectate",
