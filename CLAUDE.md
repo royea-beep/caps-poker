@@ -171,6 +171,51 @@
   the centre rank. `Card.tsx:23` says the corners are "DELIBERATELY UNTOUCHED" — it is a decision,
   not a defect, and it is Roye's to reverse or confirm. Also `Card.tsx:25` claims the bottom-right
   index shows at 3P; measured 0 at BOTH 2P (40px) and 3P (46px) — both under its 54px gate.
+- ✅ **THE SECRET GUARD EXISTS AND HAS BEEN WATCHED REFUSING A REAL COMMIT (2026-09-08).** Both
+  halves, since `41b534d` on 2026-09-06: `.githooks/pre-commit` (installed by a `prepare` script in
+  `package.json`, because `core.hooksPath` is local config a fresh clone does not get) and
+  `.github/workflows/secret-scan.yml` on every push and PR — the hook is the fast local no, the
+  workflow is the one `--no-verify` cannot skip. `scripts/scan-secrets.mjs` walks **`git ls-files`**,
+  so **`docs/**` and every `.json` are in scope**; the token leaked in `docs/MASTER_INDEX.md` as well
+  as in source, and a source-only scanner would have caught half of it.
+  **Proven three ways, not asserted:** `--rev a40ea15` and `--rev 345c327` BLOCK the two commits that
+  actually leaked the bot token, naming `docs/MASTER_INDEX.md` first; a real `git commit` carrying a
+  fake token in a `.ts`, a `.md` and a `.json` exited 1 with HEAD unmoved; and over **820 commits /
+  4,142 files those two are the ONLY refusals — 0 false positives**, now a standing CI step
+  (`tests/secret-scan-falsepos.mjs`). Current tree: **clean**. Nothing rotated.
+  ⚠️ **TWO SILENT HOLES WERE FOUND AND CLOSED, and both are this project's signature shape.**
+  `--staged` read the WORKING TREE, so staging a secret then scrubbing the file passed — it now reads
+  the INDEX (`git show :<path>`), which is what `git commit` writes. And a shell-interpolated path
+  made git die on `app/(tabs)/index.tsx` — parentheses are shell syntax — with the throw swallowed by
+  a `catch`, so the app's 2,475-line home screen was never opened while the scanner printed "clean".
+  Every git call is `execFileSync` with an argument array now. **Caught by looking at the output.**
+- ⚠️ **THE ROOT `vercel.json` IS KEPT ON PURPOSE, AND IT NOW LABELS ITSELF (2026-09-08).** It is NOT
+  read by the deploy that serves caps.ftable.co.il — that is `dist/vercel.json` from
+  `scripts/fix-web-html.js` — but it IS read by Vercel's Git integration (that schema check is what
+  failed 29 deploys), and its `buildCommand` is a WORKING build, so it is the correct fallback if the
+  Ignored Build Step is ever switched off. Deleting it would swap a labelled trap for a silent
+  zero-config deploy of the repo root onto the production domain.
+  **The warning is the VALUE of `installCommand`, the file's first key** — a legal string in a legal
+  field, NOT a new property, so the closed schema is untouched, and it prints into the build log of
+  any deploy that ever uses this config. It still ends in `npm install`. Four tests hold it; two were
+  proven to fire by stripping the warning and by planting an apostrophe. ⚠️ A note BESIDE a trap is
+  not a label ON it: the generator has carried the same sentence in a real comment since 2026-08-15
+  and it stopped nobody, me included.
+  Sibling sweep: no shadow copies exist today (`public/privacy.html`, `public/terms.html`,
+  `public/bugs`, `public/hand` all absent), and no generated output is tracked. But
+  **`.github/workflows/ios-testflight-DISABLED.yml` is still `workflow_dispatch`-able** despite the
+  name, and signs with a cert its own header calls revoked; and `ios-simulator-smoke.yml` runs
+  `eas build` on push while `ios-testflight.yml` says the Expo account is gone. Both REPORTED, not
+  changed — Roye's call.
+- ⚠️ **THE `paths-ignore` RULE HAS NEVER FIRED. BUILDS DID NOT DROP (measured 2026-09-08).** It is on
+  the branch, **not on `origin/main`**, and it only triggers on pushes to main. The last Web Deploy
+  run started at 07:39:12Z; the rule was committed at 08:25:34Z — **46 minutes later**. Successful
+  runs per day went 7 (09-07) → 1 (09-08), and that is a quiet day, not a saving.
+  What it WOULD save, measured the same way: of **70 successful runs, 24 (34%)** had a diff entirely
+  of `docs/**` or `**/*.md`. Aimed correctly, saved nothing yet. **First thing to check after the
+  next merge to main: a docs-only push must show NO Web Deploy run.** No dollar figure is claimed —
+  this session has no billing access. Red deploys still cost nothing (`buildingAt == ready`, no
+  build-log events, no container).
 - ⚠️ **`vercel.json` IS JSON — A COMMENT IN IT KILLED EVERY GIT DEPLOY FOR FIVE DAYS (2026-09-08).**
   The SAME 2026-09-03 commit that put the 404 fix in the wrong file also added a `_comment_rewrites`
   array to the ROOT `vercel.json` to explain the change. JSON has no comment syntax, so that is a
