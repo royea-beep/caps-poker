@@ -70,6 +70,9 @@ def get!(label, path)
   body
 end
 
+# Same as get!, named for the places where an unreadable answer must stop the run outright.
+def read_or_die(label, path) = get!(label, path)
+
 def patch!(label, path, payload)
   code, body = ASC.request(:patch, path, TOK, payload)
   puts format("  PATCH %-34s HTTP %-3s %s", label, code, path)
@@ -198,24 +201,52 @@ end
 # CATEGORY — relationships on the appInfo, and the category ids are RESOLVED, never guessed.
 # ────────────────────────────────────────────────────────────────────────────────────────────
 if FIELD == "category"
-  cats = get!("appCategories", "/v1/appCategories?filter[platforms]=IOS&include=subcategories&limit=50")
-  subs = (cats["included"] || []).select { |i| i["type"] == "appCategories" }
-  all  = ((cats["data"] || []) + subs)
-  find = lambda do |id|
-    hit = all.find { |c| c["id"] == id }
-    die("category #{id} not offered by Apple for IOS — refusing to guess an id") if hit.nil?
-    hit["id"]
-  end
-  primary   = find.call("GAMES_CARD")
-  secondary = find.call("GAMES_STRATEGY")
-  puts "  resolved primary   #{primary}"
-  puts "  resolved secondary #{secondary}"
+  # ⚠️ AN ID THAT EXISTS IS NOT AN ID IN THE RIGHT ROLE, AND THE FIRST VERSION OF THIS GOT IT WRONG.
+  # It listed appCategories with include=subcategories, merged `data` and `included` into one pool,
+  # found "GAMES_CARD" in it and reported `resolved primary GAMES_CARD`. The id was real. Its ROLE
+  # was not: GAMES_CARD is a SUBCATEGORY of GAMES, never a top-level category. Apple refused with
+  # HTTP 409 ENTITY_ERROR.RELATIONSHIP.INVALID pointing at BOTH /data/relationships/primaryCategory
+  # and /data/relationships/secondaryCategory, and the read-back showed nothing changed.
+  #
+  # Apple's real model, and App Store Connect's own screen: ONE primary category (Games) plus up to
+  # TWO subcategories. "Games › Card" and "Games › Strategy" are those two subcategories — they are
+  # not a primary and a secondary. `secondaryCategory` is a whole different top-level category and
+  # CAPS does not want one, so it is not written at all.
+  #
+  # So top-level categories are read with exists[parent]=false, and each id is checked against the
+  # place it must come from: GAMES from `data`, the two subcategories from GAMES's own
+  # `subcategories` relationship. Anything else refuses rather than guessing a second time.
+  cats = read_or_die("appCategories (top level)",
+                     "/v1/appCategories?filter[platforms]=IOS&exists[parent]=false&include=subcategories&limit=50")
+  tops = cats["data"] || []
+  inc  = (cats["included"] || [])
 
-  before = get!("before", "/v1/appInfos/#{APP_INFO_ID}?include=primaryCategory,secondaryCategory")
+  games = tops.find { |c| c["id"] == "GAMES" }
+  die("GAMES is not a top-level iOS category in Apple's own list — refusing to guess") if games.nil?
+
+  sub_ids = (games.dig("relationships", "subcategories", "data") || []).map { |d| d["id"] }
+  puts "  GAMES subcategories Apple offers: #{sub_ids.join(', ')}"
+  %w[GAMES_CARD GAMES_STRATEGY].each do |want|
+    unless sub_ids.include?(want)
+      die("#{want} is not a subcategory of GAMES in Apple's list — refusing to guess")
+    end
+    unless inc.any? { |i| i["id"] == want }
+      puts "  (note: #{want} is in the relationship but not the include payload)"
+    end
+  end
+  puts "  primary        GAMES"
+  puts "  subcategory 1  GAMES_CARD"
+  puts "  subcategory 2  GAMES_STRATEGY"
+  puts "  secondaryCategory: NOT WRITTEN — CAPS wants one category with two subcategories."
+
+  incl = "include=primaryCategory,primarySubcategoryOne,primarySubcategoryTwo,secondaryCategory"
+  before = read_or_die("before", "/v1/appInfos/#{APP_INFO_ID}?#{incl}")
   rel = before.dig("data", "relationships") || {}
+  rid = ->(k) { rel.dig(k, "data", "id") }
   puts
-  puts "BEFORE  primary=#{rel.dig('primaryCategory', 'data', 'id').inspect} secondary=#{rel.dig('secondaryCategory', 'data', 'id').inspect}"
-  puts "INTEND  primary=#{primary.inspect} secondary=#{secondary.inspect}"
+  puts "BEFORE  primary=#{rid.call('primaryCategory').inspect} sub1=#{rid.call('primarySubcategoryOne').inspect} " \
+       "sub2=#{rid.call('primarySubcategoryTwo').inspect} secondary=#{rid.call('secondaryCategory').inspect}"
+  puts "INTEND  primary=\"GAMES\" sub1=\"GAMES_CARD\" sub2=\"GAMES_STRATEGY\" secondary=(untouched)"
   puts
 
   unless APPLY
@@ -223,22 +254,24 @@ if FIELD == "category"
     exit 0
   end
 
-  patch!("write categories", "/v1/appInfos/#{APP_INFO_ID}",
+  patch!("write category + subcategories", "/v1/appInfos/#{APP_INFO_ID}",
          { data: { type: "appInfos", id: APP_INFO_ID,
                    relationships: {
-                     primaryCategory:   { data: { type: "appCategories", id: primary } },
-                     secondaryCategory: { data: { type: "appCategories", id: secondary } },
+                     primaryCategory:       { data: { type: "appCategories", id: "GAMES" } },
+                     primarySubcategoryOne: { data: { type: "appCategories", id: "GAMES_CARD" } },
+                     primarySubcategoryTwo: { data: { type: "appCategories", id: "GAMES_STRATEGY" } },
                    } } })
 
   puts
-  after = get!("read-back", "/v1/appInfos/#{APP_INFO_ID}?include=primaryCategory,secondaryCategory")
+  after = read_or_die("read-back", "/v1/appInfos/#{APP_INFO_ID}?#{incl}")
   arel = after.dig("data", "relationships") || {}
-  gotp = arel.dig("primaryCategory", "data", "id")
-  gots = arel.dig("secondaryCategory", "data", "id")
+  aid = ->(k) { arel.dig(k, "data", "id") }
+  got = { primary: aid.call("primaryCategory"), sub1: aid.call("primarySubcategoryOne"), sub2: aid.call("primarySubcategoryTwo") }
   puts
-  puts "AFTER   primary=#{gotp.inspect} secondary=#{gots.inspect}"
-  if gotp == primary && gots == secondary
-    puts "✅ LANDED."
+  puts "AFTER   primary=#{got[:primary].inspect} sub1=#{got[:sub1].inspect} sub2=#{got[:sub2].inspect} " \
+       "secondary=#{aid.call('secondaryCategory').inspect}"
+  if got == { primary: "GAMES", sub1: "GAMES_CARD", sub2: "GAMES_STRATEGY" }
+    puts "✅ LANDED — Apple serves back Games / Card / Strategy."
     exit 0
   else
     puts "❌ DID NOT LAND."
