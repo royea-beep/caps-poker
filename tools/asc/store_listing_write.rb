@@ -74,6 +74,19 @@ def patch!(label, path, payload)
   code, body = ASC.request(:patch, path, TOK, payload)
   puts format("  PATCH %-34s HTTP %-3s %s", label, code, path)
   # ⚠️ The status is PRINTED, never TRUSTED. The read-back below is the verdict.
+  # ⚠️ AND WHEN APPLE REFUSES, PRINT WHAT APPLE SAID. The first category attempt came back
+  # HTTP 409 and this function threw the reason away, which would have produced "the credential
+  # cannot set a category" — a failed write reported as a permission finding, with the actual
+  # cause unread. Apple's `errors` array carries a title, a detail and often the exact field.
+  unless code.between?(200, 299)
+    Array(body["errors"]).each_with_index do |e, i|
+      puts "    APPLE SAYS [#{i}] #{e['status']} #{e['code']}"
+      puts "      title:  #{e['title']}"
+      puts "      detail: #{e['detail']}"
+      puts "      source: #{e['source'].inspect}" if e["source"]
+    end
+    puts "    (raw: #{body.to_json[0, 600]})" if Array(body["errors"]).empty?
+  end
   [code, body]
 end
 
