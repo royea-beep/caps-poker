@@ -1,0 +1,93 @@
+VAMOS CAPS STOP-THE-VERCEL-BLEED — handoff 195 — 2026-09-08
+Branch claude/vamos-caps-align-celebration-flppo0, commit ec17b41. NOT merged. Nothing deployed.
+
+THE HEADLINE, AND IT IS THE OPPOSITE OF THE SYMPTOM:
+THE RED DEPLOYS COST NOTHING. THE GREEN ONES ARE THE BILL.
+
+§1 MEASURED BEFORE TOUCHING ANYTHING
+Window 1788775244633 -> 1788853359601 = 21.7 hours, caps-poker-web
+(prj_Xs2oTTRhOc0AXKiiJhzy4dRo3juP, team team_ayrePMw5z8jSPhRe67RiBD0k, plan pro):
+  40 deployments — 29 ERROR · 8 READY · 3 CANCELED.
+The brief's 20/16/3/2 was a shorter window from yesterday. Same disease, no improvement.
+ALREADY CHANGED? Yes, but not by this sprint and not the thing that broke: an Ignored Build Step
+ALREADY EXISTS on this project and already works. Every CANCELED row carries
+errorLink -> .../git-settings#ignored-build-step, and one of them (820b6c6) skipped a TWELVE-FILE
+commit including four screens and utils/authGate.ts. It does not filter docs — it skips everything.
+CURRENT BURN: NOT READ, and not estimated. No billing endpoint is reachable from this session and
+there is no VERCEL_TOKEN in the container. The $100.31 figure is the brief's, unverified by me.
+
+§2 THE CAUSE — READ FROM THE RECORD, NOT GUESSED
+There are no build logs. get_deployment_build_logs returns "No build log events found" on every
+failure, because no build ever started. The deployment object itself says why:
+  errorMessage: The `vercel.json` schema validation failed with the following message:
+                should NOT have additional property `_comment_rewrites`
+Identical on the newest failure and the oldest in the window. NOT Root Directory, NOT Output
+Directory, NOT the build command. A PROPERTY NAME.
+vercel.json IS JSON AND JSON HAS NO COMMENTS. Commit ae2e731 (2026-09-03) — the SAME commit that put
+the 404 fix in the file production never reads — added a `_comment_rewrites` array to the root
+vercel.json to explain the change. Vercel validates vercel.json against a CLOSED schema BEFORE it
+runs the Ignored Build Step. Validate -> ignore -> build. The prose kills it at step one.
+CONTROL CASE: 615107e on claude/caps-001-audit was CANCELED while every sibling errored. That branch
+does not contain ae2e731 (merge-base --is-ancestor), so no comment key. Same project, same day,
+one variable.
+gitRootDirectory=dist CONFIRMED, not reasoned from: web-deploy.yml builds to dist/, runs
+fix-web-html.js (which writes dist/.vercel/project.json pinning this project), then `npx vercel
+--prod` with working-directory: dist. The READY rows are CLI deploys of a PRE-BUILT directory.
+dist/vercel.json is JSON.stringify'd from an object literal so it NEVER carried the comment — which
+is exactly why production stayed green while every git deploy went red.
+
+WHERE THE MONEY ACTUALLY GOES: buildingAt == ready == createdAt to the millisecond on every ERROR
+and CANCELED row — no container is allocated, so 29 failures consumed no build compute. But 5 of the
+8 READY deploys were pushes whose ENTIRE diff was a .md or something under docs/, each running a
+full expo export + Playwright install + WCAG audit + BackstopJS + `vercel --prod` to publish a
+bundle byte-identical to the one already live.
+
+§3 WHAT CHANGED — ONE COMMIT, ec17b41
+  vercel.json                       `_comment_rewrites` deleted. 12 lines, no behaviour. The prose
+                                    was already word-for-word in scripts/fix-web-html.js, which is
+                                    JS and can hold a real comment. Rewrites + headers UNTOUCHED.
+  tests/vercel-rewrites.test.ts     Guard PROVEN TO FIRE: no top-level key outside Vercel's schema,
+                                    none starting with `_`, and the generator may not grow a
+                                    `_comment` PROPERTY. Put the defect back -> suite fails naming
+                                    the key. Restored after.
+  .github/workflows/web-deploy.yml  paths-ignore: ['docs/**', '**/*.md'].
+                                    NARROW AND VERIFIED: expo export copies public/ into dist/ and
+                                    fix-web-html.js copies the ROOT privacy.html/terms.html over the
+                                    top; docs/ is referenced by neither, no source imports docs/ or
+                                    any .md, public/ holds no .md. Nothing listed can change a served
+                                    byte. paths-ignore skips only when EVERY changed file matches, so
+                                    docs bundled with code still deploy. workflow_dispatch kept.
+NOTHING WAS DISABLED AND NO GIT INTEGRATION WAS DISCONNECTED. The brief offered those as fallbacks
+if the fix did not land. It landed, and the Ignored Build Step already provides that protection.
+wingman-api-staging (prj_itYsSzB0JjkMizzLtIbZzzded62Y): 19 CANCELED of 20 across 69.6 hours, no
+comment key. Healthy. NEEDED NOTHING AND GOT NOTHING.
+
+PROVEN LIVE, ONE PUSH, ONE READ-BACK:
+  before  dpl_9n8iqExq… (1ec1b46)  ERROR    "should NOT have additional property _comment_rewrites"
+  after   dpl_5oz1uxk8… (ec17b41)  CANCELED errorLink -> ignored-build-step docs
+Same project, same branch, one commit apart. THE RED COLUMN IS CLOSED.
+
+§4 COMMIT RHYTHM FROM NOW ON, ONE LINE:
+One commit per section of the brief, carrying its code, its tests and its documentation together —
+never a docs-only push to main.
+
+§5 THE SUSPENDED SUBSCRIPTION EXPLAINS NOTHING HERE. Every Vercel read returned 200 with real data,
+and the failure names a property in a file in this repository dated 2026-09-03 — a day BEFORE the
+2026-09-04 suspension. It is ours, and it reproduces from git history.
+
+STILL OPEN
+· THE paths-ignore IS NOT PROVEN ON A LIVE TRIGGER. It fires only on pushes to main and this sprint
+  stayed on its branch. Check the first docs-only push to main shows NO Web Deploy run. A rule that
+  looks right and does nothing is this project's most repeated failure, and this one is in that
+  state until somebody looks.
+· THE VERCEL BILL IS UNREAD. If the number keeps climbing after this merges, the remaining spend is
+  not deploys: look at bandwidth and edge requests on caps.ftable.co.il, and at the other 25
+  projects on the same team.
+· Carried forward, untouched: /lobby promises auto-start with 0 rooms ever `playing`; /club/DEMO
+  renders for any code; submit_score still unledgered; the App Store listing is still blank and the
+  age rating unanswered; achievements filter clips "Collection"; the DANGER pill reads "ANGER"; the
+  win toast overlaps the YOU WIN headline.
+
+EVIDENCE: docs/vercel/STOP-THE-VERCEL-BLEED-2026-09-08.md
+Full suite 2,848/2,848 across 53 suites (was 2,846 — the two new guards). tsc exit 0.
+Production, flags, economy, cue, layout and the security fixes: untouched. No Edge Function deployed.

@@ -161,6 +161,21 @@ git history. It is ours.
 
 ---
 
+## PROVEN LIVE — ONE PUSH, ONE READ-BACK
+
+The fix was not declared done from the diff. The commit carrying it was pushed and the deploy it
+triggered was read back from Vercel:
+
+| | before (`dpl_9n8iqExq…`, commit `1ec1b46`) | after (`dpl_5oz1uxk8…`, commit `ec17b41`) |
+|---|---|---|
+| state | **ERROR** | **CANCELED** |
+| errorMessage | `should NOT have additional property _comment_rewrites` | *(none)* |
+| errorLink | project-configuration docs | **ignored-build-step docs** |
+| buildingAt == ready | yes | yes |
+
+Same project, same branch, same settings, one commit apart. The deploy now reaches the Ignored Build
+Step and is skipped by it, which is the state this project intends. **The red column is closed.**
+
 ## STILL OPEN
 
 * **The GitHub Actions `paths-ignore` is NOT yet proven on a live trigger.** It only fires on pushes
