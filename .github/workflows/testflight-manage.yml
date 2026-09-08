@@ -57,6 +57,7 @@ on:
           - enable-public-link
           - set-public-link
           - store-listing
+          - store-listing-write
       email:
         description: 'Tester email (for add-tester action)'
         required: false
@@ -67,6 +68,28 @@ on:
         type: string
       link_enabled:
         description: 'set-public-link: true re-enables the public link, false disables it'
+        required: false
+        default: false
+        type: boolean
+      field:
+        description: 'store-listing-write: WHICH ONE FIELD to write (one per run, on purpose)'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - promotional-text
+          - subtitle
+          - description
+          - keywords
+          - support-url
+          - marketing-url
+          - privacy-url
+          - name
+          - category
+          - age-rating
+      apply:
+        description: 'store-listing-write: false previews only. true WRITES to the live App Store listing.'
         required: false
         default: false
         type: boolean
@@ -122,6 +145,8 @@ jobs:
           DISTRIBUTE_GROUPS: ${{ github.event.inputs.groups }}
           SUBMIT_BETA_REVIEW: ${{ github.event.inputs.submit_beta_review }}
           LINK_ENABLED: ${{ github.event.inputs.link_enabled }}
+          ASC_FIELD: ${{ github.event.inputs.field }}
+          ASC_APPLY: ${{ github.event.inputs.apply }}
         run: |
           set -eu
           ACTION="${{ github.event.inputs.action }}"
@@ -191,6 +216,18 @@ jobs:
               # no PATCH, no POST, nothing submitted. Metadata edits can trigger review, and Roye
               # has not asked to submit anything.
               ruby tools/asc/store_listing.rb
+              ;;
+
+            "store-listing-write")
+              # ⚠️ THE ONLY ACTION IN THIS REPO THAT CHANGES ROYE'S PUBLIC APP STORE LISTING.
+              # Roye approved the attempt on 2026-09-08, knowing Apple offers no dry run. Three
+              # things keep it small: ONE field per run (the script refuses a second), the verdict
+              # comes from a SEPARATE read-back and never from the PATCH status, and apply defaults
+              # to false so a mis-click previews instead of writing.
+              # ⚠️ IT CANNOT SUBMIT FOR REVIEW, select a build, change a version state or touch
+              # pricing — there is no code in store_listing_write.rb that reaches those endpoints.
+              if [ -z "${ASC_FIELD:-}" ]; then echo "::error::field required for store-listing-write"; exit 1; fi
+              ruby tools/asc/store_listing_write.rb
               ;;
 
             "set-public-link")
