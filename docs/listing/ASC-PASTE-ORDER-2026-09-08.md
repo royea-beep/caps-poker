@@ -1,5 +1,34 @@
 # App Store Connect — the paste order, and what I could not do
 
+> ## ⚠️ SUPERSEDED 2026-09-08 — THE FIELDS ARE WRITTEN, AND THE BOUNDARY BELOW WAS WRONG
+>
+> Roye chose the write. Seven fields are filled on the live listing and the age-rating
+> questionnaire is answered (Apple computed **17+**). Nothing was submitted for review.
+> **The record is `docs/listing/WRITE-THE-LISTING-2026-09-08.md`.**
+>
+> ⚠️ **Reason 4 in "THE BOUNDARY" below is FALSE and is retracted here.** It said a new workflow
+> action "would have to be on the default branch to be dispatchable, and merging is outside every
+> VAMOS sprint's scope". The repo's own run history disproves it: commit `09114f86` ADDED the
+> `store-listing` option on a feature branch and run `34163935410` dispatched it successfully with
+> `ref` = that branch, days before the merge. GitHub resolves a dispatch's trigger and its inputs
+> from the file ON THE TARGET REF — the same mechanism that makes the two phantom workflows
+> UNdispatchable, read the other way round. There was never a merge in the way.
+>
+> Reasons 1–3 were correct as far as they went: the key lives only as GitHub secrets, TestFlight
+> write access did not prove listing write access, and Apple offers no dry run. The answer to the
+> third was to write ONE field and read it back, which is what happened.
+>
+> ⚠️ **Two other things below are now wrong.** "Primary Category Games → Card, Secondary
+> Games → Strategy" mis-describes Apple's model: it is ONE category with up to TWO subcategories
+> (`GAMES` + `GAMES_CARD` + `GAMES_STRATEGY`), and `secondaryCategory` is a separate top-level
+> category that CAPS does not set. And the age rating is not one question: Apple requires the WHOLE
+> questionnaire in a single request and refused a lone `gamblingSimulated` with 21
+> `ATTRIBUTE.REQUIRED` errors. Simulated Gambling → Frequent/Intense is still the answer that
+> matters; it just cannot be sent alone.
+>
+> The paste order is kept below because it is still the right map of App Store Connect's screens
+> for anything done by hand.
+
 Companion to `docs/listing/LISTING-PACK-2026-09-08.md`, which holds the drafted copy. This file
 adds the three things the pack does not: the order App Store Connect presents the fields in, the
 exact age-rating question and answer, and the boundary — what I could reach and what I could not.

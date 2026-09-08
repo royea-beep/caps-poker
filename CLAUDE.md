@@ -336,8 +336,54 @@
   1284×2778). Art and background cannot separate into side bars. **NATIVE-ONLY, confirmed:**
   `dist/index.html` has **0** splash references; the only hit in `dist/` is inert expo-splash-screen
   module code. It belongs on Roye's device list and cannot be checked from a browser. Not re-done.
-- ⚠️ **THE APP STORE LISTING IS STILL BLANK AND I COULD NOT FILL IT — the boundary, precisely
-  (2026-09-08).** Re-read live today (run `34270807514`, `store-listing`, GET only): description,
+- ✅ **THE APP STORE LISTING IS WRITTEN — SEVEN FIELDS AND THE AGE RATING, ON THE LIVE LISTING
+  (2026-09-08, Roye's call). Record: `docs/listing/WRITE-THE-LISTING-2026-09-08.md`.**
+  Verified by an INDEPENDENT read (run `34282378266`, `store-listing`, GET only) after every write:
+  **promotionalText · description (1,253 chars) · subtitle `Multi-board poker, free` · keywords ·
+  privacyPolicyUrl `https://caps.ftable.co.il/privacy.html` · supportUrl · category
+  GAMES/GAMES_CARD/GAMES_STRATEGY · appStoreAgeRating `SEVENTEEN_PLUS`.**
+  ⚠️ **NOTHING SUBMITTED FOR REVIEW.** No build selected, version state still
+  `PREPARE_FOR_SUBMISSION` at 1.0, no pricing or territory touched.
+  ⚠️ **THE AGE RATING WAS ANSWERED, NOT SET.** `ageRatingOverride` reads `NONE` and is on a hard
+  never-send list with `koreaAgeRatingOverride` and `kidsAgeBand`; 17+ is Apple's own computation.
+  **Apple's questionnaire is ALL-OR-NOTHING** — a lone `gamblingSimulated` was refused with 21
+  `ENTITY_ERROR.ATTRIBUTE.REQUIRED` errors, so the whole form goes in one request. The required
+  field list and which questions are yes/no are both PARSED FROM APPLE'S OWN ERRORS, never from a
+  remembered schema. ⚠️ Apple reports a wrong type under `ENTITY_ERROR.ATTRIBUTE.TYPE`, NOT
+  `.INVALID` — watching only `.INVALID` ignored nine errors that named the booleans outright.
+  ⚠️ **THE WRITER IS `store-listing-write`, ONE FIELD PER RUN, `apply` DEFAULTS TO FALSE.**
+  `tools/asc/store_listing_write.rb`. The verdict is a SEPARATE read-back, never the PATCH status,
+  and every run prints its own undo line. The copy is PARSED AT RUNTIME from
+  `docs/listing/LISTING-PACK-2026-09-08.md` — edit the pack, not a second copy
+  (`tests/listing-copy.test.ts` pins the parse). NOT written and each a finding: `name` is still
+  `CAPS - Card game`, `marketingUrl` is null, `whatsNew` is null (correct for a first version).
+- ⚠️ **A NEW WORKFLOW ACTION IS DISPATCHABLE FROM A FEATURE BRANCH — NO MERGE NEEDED. I claimed
+  the opposite and was wrong (corrected 2026-09-08).** `ASC-PASTE-ORDER-2026-09-08.md` said a new
+  `action` choice "would have to be on the default branch to be dispatchable". FALSE: commit
+  `09114f86` added the `store-listing` option on a feature branch and run `34163935410` dispatched
+  it with `ref` = that branch, days before the merge; `set-public-link` and its `link_enabled`
+  input went the same way. **GitHub resolves a dispatch's trigger AND its inputs from the file ON
+  THE TARGET REF** — the same mechanism that makes `asc-details.yml`/`asc-list.yml` undispatchable,
+  read the other way round. That doc now carries a retraction banner.
+- ⚠️ **AN ID THAT EXISTS IS NOT AN ID IN THE RIGHT ROLE (2026-09-08, the category write).** I found
+  `GAMES_CARD` in Apple's category list and used it as a PRIMARY category. The id was real; it is a
+  SUBCATEGORY. Apple refused with `ENTITY_ERROR.RELATIONSHIP.INVALID` on both relationships. **The
+  App Store model is ONE category plus up to TWO subcategories** (`primaryCategory` +
+  `primarySubcategoryOne`/`Two`); `secondaryCategory` is a different top-level category and CAPS
+  sets none. ⚠️ **AND THE GUARD THAT CAUGHT IT THEN NEARLY FILED A FALSE FINDING:** reading
+  subcategories through `include=subcategories` returns exactly TEN — a PAGE, not the catalogue —
+  with no `GAMES_CARD`, so it reported "Apple does not offer a Card subcategory". Read
+  `/v1/appCategories/GAMES/subcategories?limit=200` and it is there. Print the count; abort on a
+  `next` link.
+  ⚠️ **STILL BLOCKING A SUBMISSION, all measured today:** **0 screenshots** (18 ready in
+  `docs/product-map/store-515/`, a separate upload API) · **export compliance never answered**
+  (`appEncryptionDeclarations` → **404**) · version still **1.0 created 2026-03-11** while the app
+  is 2.7.0/515 · a build must be selected · and the two CODE rejections, Google sign-in without
+  Sign in with Apple and the dead delete-account control.
+  ⚠️ **THE SUPPORT URL IS THE LANDING PAGE, a compromise not a choice.** `/support.html` returns
+  **404** — it does not exist. `landing.html` is 200 and carries `caps@ftable.co.il`, so it is
+  honest, but it is marketing and Apple has rejected support URLs that only sell.
+- ⚠️ **SUPERSEDED — THE LISTING WAS BLANK AND I SAID I COULD NOT FILL IT (2026-09-08).** Re-read live today (run `34270807514`, `store-listing`, GET only): description,
   keywords, what's new, promo text, support URL, marketing URL, subtitle and privacy URL all `null`;
   `screenshots []`; every age-rating field `null`, override `NONE`; version still 1.0 created
   2026-03-11, `PREPARE_FOR_SUBMISSION`.
