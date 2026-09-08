@@ -30,7 +30,7 @@
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
-- Tests: **2,824/2,824 across 52 suites** (was 2,474 — that figure was 350 tests stale)
+- Tests: **2,846/2,846 across 53 suites** (was 2,474 — that figure was 372 tests stale)
 - **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
   Functions" — two of the three were low and the Edge Function count was high)
 - Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
@@ -159,6 +159,25 @@
   multiplayer is unavailable right now" — deliberately not a third wording for one fact.
   ⚠️ STILL OPEN, reported and left for Roye: `/lobby` promises "auto-start when full" while 0 rooms
   have ever reached `playing`, and `/club/DEMO` renders a full club for any typed code.
+- ⚠️ **THE PRIVACY PAGE IS `privacy.html` AT THE REPO ROOT — NOT `public/`.** `expo export` copies
+  `public/` into `dist/`, and **then** `scripts/fix-web-html.js` copies the ROOT `privacy.html` over
+  the top, so a `public/privacy.html` would be silently overwritten. Same class as the 404 fix.
+  `tests/privacy-page.test.ts` asserts no shadow copy exists AND pins every claim to the code.
+  Rewritten 2026-09-08 from the source; the page it replaced was Hebrew-only, dated April, and
+  wrong on four counts: it promised in-app account deletion (the RPC is REVOKED —
+  `delete_user_account` is anon=false/authenticated=false, so the Settings button always fails),
+  described Apple processing payments (0 purchases, ever), claimed no third-party sharing, and said
+  12+. **Seven third parties genuinely receive data**: Supabase · Vercel · Google (only on sign-in)
+  · **Telegram** (an `on_bug_report_inserted` AFTER INSERT trigger forwards every bug report, with
+  its screenshot, to a private channel) · **Anthropic** (the Claude API summarises every report) ·
+  **OpenAI** (Whisper, only when audio is attached) · **Expo** (push delivery). ⚠️ A bug report also
+  carries a breadcrumb trail, the last 20 console lines, the device id and the build number — the
+  page now says so.
+- **THE LISTING PACK IS `docs/listing/LISTING-PACK-2026-09-08.md`** — description, subtitle,
+  keywords, promo text, what's new, support URL, privacy URL, category and the exact age-rating
+  answers, ready to paste. ⚠️ NOTHING has been written to App Store Connect. Two likely rejections
+  are named there and are CODE, not metadata: **Google sign-in without Sign in with Apple**, and the
+  **in-app delete-account control that cannot work**.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs
