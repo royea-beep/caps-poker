@@ -29,6 +29,7 @@ module ListingCopy
     "keywords"         => 100,
     "promotional-text" => 170,
     "subtitle"         => 30,
+    "name"             => 30,
     "whats-new"        => 4000,
   }.freeze
 
@@ -68,6 +69,12 @@ module ListingCopy
     out.join("\n").strip
   end
 
+  def self.app_name
+    m = pack_text.match(/\*\*Name \(30 max\):\*\* `([^`]+)`/)
+    raise "pack: name not found" if m.nil?
+    m[1]
+  end
+
   def self.subtitle
     m = pack_text.match(/\*\*Subtitle \(30 max\):\*\* `([^`]+)`/)
     raise "pack: subtitle not found" if m.nil?
@@ -94,6 +101,7 @@ module ListingCopy
       "whats-new"        => block!(3, "• A new look for the table"),
       "privacy-url"      => block!(4, "https://caps.ftable.co.il/privacy.html"),
       "subtitle"         => subtitle,
+      "name"             => app_name,
 
       # ⚠️ THE SUPPORT URL IS THE LANDING PAGE, AND THAT IS A COMPROMISE, NOT A CHOICE.
       # The pack recommends a dedicated https://caps.ftable.co.il/support.html. Measured today it

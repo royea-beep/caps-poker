@@ -55,6 +55,7 @@ const LIMITS: Record<string, number> = {
   keywords: 100,
   'promotional-text': 170,
   subtitle: 30,
+  name: 30,
   "whats-new": 4000,
 };
 
@@ -74,6 +75,7 @@ describe('the App Store listing copy the writer will send', () => {
       keywords: blocks[2].trim(),
       'whats-new': blocks[3].trim(),
       subtitle: (md.match(/\*\*Subtitle \(30 max\):\*\* `([^`]+)`/) || [])[1],
+      name: (md.match(/\*\*Name \(30 max\):\*\* `([^`]+)`/) || [])[1],
     };
     for (const [field, limit] of Object.entries(LIMITS)) {
       expect(typeof values[field]).toBe('string');
@@ -81,6 +83,9 @@ describe('the App Store listing copy the writer will send', () => {
       expect(values[field].length).toBeLessThanOrEqual(limit);
     }
     expect(values.subtitle).toBe('Multi-board poker, free');
+    // ⚠️ The listing name is the one field the product contradicted itself on: the store said
+    // "CAPS - Card game" while the icon, the home masthead and the landing page all say CAPS POKER.
+    expect(values.name).toBe('CAPS Poker');
   });
 
   it('unwraps the description so no line ends mid-sentence', () => {

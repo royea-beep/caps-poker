@@ -2,8 +2,21 @@
 
 **For Roye to paste into App Store Connect.** App `6760429619` · build 515 · version 2.7.0.
 
-⚠️ **Nothing in this document has been written to App Store Connect.** Every field below is still
-`null` on Apple's side. This is a copy-paste sheet, not a change log.
+> ## ⚠️ UPDATED 2026-09-08 — MOST OF THIS IS NOW LIVE ON APPLE'S SIDE
+>
+> The line that used to sit here said "Nothing in this document has been written to App Store
+> Connect. Every field below is still `null` on Apple's side." **That is no longer true**, and a
+> document asserting a state the product left behind is the defect this project keeps paying for.
+>
+> **WRITTEN AND READ BACK:** description · subtitle · promotional text · keywords · privacy policy
+> URL · support URL · category (Games / Card / Strategy) · the age-rating questionnaire (Apple
+> computed **17+**). Record: `docs/listing/WRITE-THE-LISTING-2026-09-08.md`.
+> **NOT WRITTEN:** What's New (correct — the field is for updates and this is version 1.0) and
+> marketing URL (optional).
+>
+> ⚠️ **THIS FILE IS NOW LOAD-BEARING, NOT A SHEET.** `tools/asc/listing_copy.rb` PARSES it at
+> runtime and hands the strings straight to a PATCH against the live listing. Editing the copy here
+> changes what Apple is sent. `tests/listing-copy.test.ts` pins the parse.
 
 ---
 
@@ -44,6 +57,13 @@ inside the game. Success at social gaming does not imply future success at real-
 
 No sign-up wall. Open it and you are dealt in.
 ```
+
+**Name (30 max):** `CAPS Poker` *(10 characters)*
+
+⚠️ **The listing name was `CAPS - Card game` and everything else in the product says CAPS POKER —
+the icon, the home masthead, the landing page.** Roye approved the change on 2026-09-08 on
+consistency grounds, with the honest caveat that there is no search data behind it. A product
+called two things is the same class of defect as a file named for content it does not have.
 
 **Subtitle (30 max):** `Multi-board poker, free` *(23 characters)*
 
