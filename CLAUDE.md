@@ -97,6 +97,26 @@
   **EDIT `scripts/fix-web-html.js` FOR ANYTHING THAT MUST SHIP — headers, rewrites, redirects.**
   The root file is kept identical so `vercel dev` matches; `tests/vercel-rewrites.test.ts` now reads
   the GENERATOR's source and fails if the two disagree (proven to fire).
+- ⚠️ **`vercel.json` IS JSON — A COMMENT IN IT KILLED EVERY GIT DEPLOY FOR FIVE DAYS (2026-09-08).**
+  The SAME 2026-09-03 commit that put the 404 fix in the wrong file also added a `_comment_rewrites`
+  array to the ROOT `vercel.json` to explain the change. JSON has no comment syntax, so that is a
+  real property, and Vercel validates `vercel.json` against a CLOSED schema **BEFORE** it runs the
+  project's Ignored Build Step. Measured over 21.7 hours: **40 deploys — 29 ERROR, 8 READY,
+  3 CANCELED**, every ERROR carrying
+  `should NOT have additional property _comment_rewrites`. Fixed by deleting the key;
+  `tests/vercel-rewrites.test.ts` now fails on any top-level key outside Vercel's schema or
+  starting with `_`, and was proven to fire by putting the defect back.
+  ⚠️ **AND THE RED WAS NOT THE BILL.** A failed deploy has `buildingAt == ready == createdAt` and
+  NO build log events — no container is ever allocated, so 29 failures cost nothing. The money went
+  to the GREEN ones: **5 of the 8 production deploys in that window were pushes whose entire diff
+  was a `.md` or something under `docs/`**, each running a full `expo export` + Playwright + WCAG +
+  BackstopJS + `vercel --prod` to publish a byte-identical bundle. `web-deploy.yml` now carries
+  `paths-ignore: ['docs/**', '**/*.md']`. ⚠️ **That ignore is NOT yet proven on a live trigger** —
+  it only fires on pushes to `main`. Check the first docs-only push to main shows NO Web Deploy run.
+  ✅ **An Ignored Build Step ALREADY EXISTS on `caps-poker-web` and on `wingman-api-staging`, and it
+  skips EVERYTHING, not just docs** — proven by a CANCELED deploy of `820b6c6`, a twelve-file
+  application-code commit. Do NOT "add" one, and do NOT disconnect the Git integration: the skip is
+  the control that was already working, and the schema error was merely running before it.
 - **FIVE-O is NAVY, not red (corrected 2026-09-03).** `visual.fiveo` paints surface `#1A1A2E` with a
   mint `#4FD6A8` accent. The picker showed a `#5c0000` red preview and said "Red felt / Bold action";
   both are corrected. Same class as the maroon-felt line above — a description contradicting the
@@ -209,6 +229,11 @@
 - Never suggest App Store submission unless Roye says so
 - GitHub Actions builds (not EAS)
 - VAMOS = always .md file, never chat-only instructions
+- ⚠️ **NEVER PUT PROSE IN A `.json` FILE.** `vercel.json`, `app.json`, `package.json` — a `_comment`
+  key is a real property and a closed schema rejects the whole file. Explanations go in the `.js`
+  that generates it (`scripts/fix-web-html.js`), in a test, or in a doc. This cost five days of red.
+- ⚠️ **BUNDLE DOCS WITH THE CODE THEY DOCUMENT.** A docs-only push to `main` used to trigger a full
+  web build and a production deploy. One commit per section of a brief — code, tests and docs together.
 - ⚠️ **A FILENAME IS NOT EVIDENCE. Verify by CONTENT, and verify at the place that actually SHIPS.**
   This shape has now cost this project six times: Hebrew screenshots under two names · the icon
   overwritten six times in place · a stale bundle under an unchanged hash · three different files

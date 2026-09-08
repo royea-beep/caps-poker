@@ -119,4 +119,43 @@ describe('vercel.json catch-all rewrite', () => {
   it('landing.html keeps an explicit rewrite of its own', () => {
     expect(cfg.rewrites.some((r: any) => r.source === '/landing.html')).toBe(true);
   });
+
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  // ⚠️ vercel.json IS JSON. IT HAS NO COMMENTS, AND VERCEL REJECTS THE WHOLE FILE FOR ONE.
+  //
+  // STOP-THE-VERCEL-BLEED 2026-09-08. The 2026-09-03 catch-all commit added a `_comment_rewrites`
+  // array to this file to explain the change. JSON has no comment syntax, so that was a real
+  // property — and Vercel validates vercel.json against a CLOSED schema BEFORE it runs the
+  // project's Ignored Build Step. Every Git-integration deploy from that commit onward died at:
+  //
+  //     The `vercel.json` schema validation failed with the following message:
+  //     should NOT have additional property `_comment_rewrites`
+  //
+  // 29 of 40 deploys in one 21.7-hour window. The skip that this project's Ignored Build Step had
+  // been performing correctly for weeks (state CANCELED, errorLink -> the ignored-build-step docs)
+  // could not run, because validation comes first. A red dashboard for five days, from prose.
+  //
+  // The prose was not even needed: scripts/fix-web-html.js — the file that ACTUALLY ships, and
+  // which is JavaScript — already carries the same explanation in a real comment. Put commentary
+  // there. This file gets data only.
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  it('the root vercel.json carries no key Vercel would reject', () => {
+    // Vercel's documented top-level properties. A key outside this set fails the deploy.
+    const ALLOWED = new Set([
+      'alias', 'build', 'buildCommand', 'cleanUrls', 'crons', 'devCommand', 'env', 'framework',
+      'functionFailoverRegions', 'functions', 'git', 'headers', 'ignoreCommand', 'images',
+      'installCommand', 'name', 'outputDirectory', 'public', 'redirects', 'regions',
+      'relatedProjects', 'rewrites', 'routes', 'scope', 'trailingSlash', 'version',
+    ]);
+    const keys = Object.keys(cfg);
+    // Named explicitly so the failure message says WHICH key, not just "some key".
+    expect(keys.filter((k) => k.startsWith('_'))).toEqual([]);
+    expect(keys.filter((k) => !ALLOWED.has(k))).toEqual([]);
+  });
+
+  it('the shipped vercel.json is built from an object literal, so it cannot carry one either', () => {
+    // dist/vercel.json is JSON.stringify'd from a literal in the generator: a JS comment beside it
+    // never reaches the file. This asserts the generator has not grown a "_comment" PROPERTY.
+    expect(generator).not.toMatch(/^\s*_[A-Za-z0-9_]*\s*:/m);
+  });
 });
