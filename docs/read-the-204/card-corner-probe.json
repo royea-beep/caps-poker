@@ -1,0 +1,38 @@
+{
+  "2P": {
+    "cards": 36,
+    "cardWidths": [
+      40
+    ],
+    "cardsWithTopLeftIndex": 28,
+    "cardsWithBottomRightIndex": 0,
+    "centreSuitGlyphs": 35,
+    "centreRankGlyphs": 0,
+    "topLeftFontPx": [
+      12
+    ],
+    "centreFontPx": [
+      9,
+      20,
+      26
+    ]
+  },
+  "3P": {
+    "cards": 27,
+    "cardWidths": [
+      46
+    ],
+    "cardsWithTopLeftIndex": 21,
+    "cardsWithBottomRightIndex": 0,
+    "centreSuitGlyphs": 22,
+    "centreRankGlyphs": 0,
+    "topLeftFontPx": [
+      14
+    ],
+    "centreFontPx": [
+      10,
+      23,
+      29
+    ]
+  }
+}

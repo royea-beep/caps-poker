@@ -97,6 +97,32 @@
   **EDIT `scripts/fix-web-html.js` FOR ANYTHING THAT MUST SHIP — headers, rewrites, redirects.**
   The root file is kept identical so `vercel dev` matches; `tests/vercel-rewrites.test.ts` now reads
   the GENERATOR's source and fails if the two disagree (proven to fire).
+- ⚠️ **THE 252 BUG REPORTS ARE 195 MACHINE PINGS — AND THE "VIDEO" REPORTER HAS NEVER SHOT A VIDEO
+  (read 2026-09-08).** Of the 204 rows with no summary: **195 are `[ping] app opened vX` dev
+  telemetry** (writer still live at `components/BugReporter.tsx:380`, `__DEV__`-gated so it cannot
+  fire from TestFlight), 1 is a self-declared test, 5 are empty video shells, and the **3 with human
+  sentences are SEEDS** — they arrived via `submit_feedback`, an RPC with **zero callers in the
+  repo**, tagged `tournament_lobby`/`cash_table`, screens CAPS does not have, and one praises
+  tournaments that have never existed. **0 of the 204 are a player's words.** The real voice is the
+  48 rows that WERE summarised and closed in March/April.
+  ⚠️ **`video_url` HOLDS A JPEG.** Measured: 29 rows have one, **29 of 29 point at
+  `/frames/bug-frame-*.jpg`, 0 are mp4/mov/webm, and 29 of 29 equal `screenshot_url`.**
+  `utils/screenRecorder.ts` samples ≤10 stills at 0.5fps (`MAX_FRAMES = 10`), `stopRecording()`'s
+  return is discarded by a leading comma, and only the LAST frame is uploaded — nine of ten are
+  thrown away every report. `report_type: 'video'` is a hardcoded literal. Losses are silent:
+  **7 of 36** `has_video` rows have no URL (5s upload timeout → null), **15 of 42** lost the audio.
+  ✅ **ZERO reports about multiplayer or the lobby, ever** — a regex over every text column across
+  all 252 returns 2 hits and neither is about multiplayer. The tester round will be the first time
+  those surfaces are exercised by anyone.
+  ⚠️ **AND THE CARD REPORT IS STILL LIVE AND WAS ANSWERED BACKWARDS.** One tester asked twelve times
+  (reports 9/22/70/72/73/74/75/77/78/81, MASTER #7, plus the May 1★ #713) to delete the top-left
+  corner index and keep a LARGE CENTRE RANK. Measured on the built app: a 2P card is 40×56px with
+  exactly three glyphs — **rank 12px in the corner, suit 9px under it, suit 26px in the centre.
+  There is NO centre rank at any player count.** So the rank appears once, at the smallest size on
+  the card, while 26px repeats the suit. 515 kept the corner, ADDED a bottom-right one, and deleted
+  the centre rank. `Card.tsx:23` says the corners are "DELIBERATELY UNTOUCHED" — it is a decision,
+  not a defect, and it is Roye's to reverse or confirm. Also `Card.tsx:25` claims the bottom-right
+  index shows at 3P; measured 0 at BOTH 2P (40px) and 3P (46px) — both under its 54px gate.
 - ⚠️ **`vercel.json` IS JSON — A COMMENT IN IT KILLED EVERY GIT DEPLOY FOR FIVE DAYS (2026-09-08).**
   The SAME 2026-09-03 commit that put the 404 fix in the wrong file also added a `_comment_rewrites`
   array to the ROOT `vercel.json` to explain the change. JSON has no comment syntax, so that is a
