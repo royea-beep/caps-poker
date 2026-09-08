@@ -310,14 +310,68 @@
   prose. Its two header lines in `ios-testflight.yml` were rewritten in the same commit, because a
   comment pointing at a deleted file is the defect being closed. Diff still available:
   `git show 9577aa5:.github/workflows/ios-testflight-DISABLED.yml`.
-  ⚠️ **STILL LYING, REPORTED NOT CHANGED:** `asc-details.yml` and `asc-list.yml` are listed by GitHub
-  as `active` workflows with **NO FILE** in the working tree, on `origin/main`, or anywhere in this
-  clone's history · `ios-testflight-free.yml` is named "FREE — no EAS cloud" and runs `eas build`
+  ⚠️ **CORRECTION 2026-09-08 — `asc-details.yml` / `asc-list.yml` ARE NOT "backed by nothing".**
+  I called them dispatchable workflows backed by nothing. Two of those claims were false. **Each RAN
+  ONCE** — 2026-05-14, `push` on branch `recovery/may4-clean`, both SUCCESS (ids 276765913 and
+  276759157) — and **each reads `APPLE_API_KEY_ID` / `APPLE_API_ISSUER_ID` / `APPLE_API_KEY_BASE64`**,
+  mints an ES256 JWT and calls Apple. Both files were read back from their own run commits
+  (`8e77cfe`, `2e25b87`); their Apple calls are **read-only** (`GET /v1/apps`, `GET /v1/builds`).
+  `recovery/may4-clean` is gone from origin's 65 branches, which is why the file resolves nowhere.
+  ✅ **AND THEY ARE NOT DISPATCHABLE — proven, not assumed.** A real dispatch attempt of each against
+  main was refused: *"Workflow does not have 'workflow_dispatch' trigger"*. Both files DO declare it;
+  GitHub resolves the trigger from the file ON THE TARGET REF, and no ref carries it. They are inert
+  history records. `state: "active"` only means GitHub never marks a workflow deleted when its branch
+  disappears. **NOT DELETED** — they ran and they hold credentials, so the rule is report; and the
+  REST API has `/enable` and `/disable` but **no delete** anyway. Nothing live to remove.
+  ⚠️ **STILL LYING, REPORTED NOT CHANGED:** `ios-testflight-free.yml` is named "FREE — no EAS cloud" and runs `eas build`
   against the dead Expo account (last run 2026-06-25) · `ios-simulator-smoke.yml` runs `eas build`
   on **push** · `variant="gold"` survives at `app/simulate.tsx:232` and `:323` and has painted MINT
   since the theme sweep · and `MEMORY.md:951` still instructs a future session to wire a new cert
   into the file just deleted. ✅ `KILL_Board`/`KILL_game` are NOT liars — `KILL_FINITE_ON_THIS_PLATFORM
   = true`, name matches state; the "false on web" line is honest history of a reverted experiment.
+- ✅ **THE SPLASH IS CURRENT AND THE EDGE FIX HOLDS — re-verified by measurement 2026-09-08.**
+  `app.json`: `./assets/splash.png`, `backgroundColor #071C12`, `resizeMode contain`. Decoded the PNG
+  and sampled **240 edge pixels**: worst deviation from the declared background is **0 channels**, on
+  both `splash.png` and `splash-icon.png` (byte-identical, md5 `3a231e9d139efb81c085c4fc2547543a`,
+  1284×2778). Art and background cannot separate into side bars. **NATIVE-ONLY, confirmed:**
+  `dist/index.html` has **0** splash references; the only hit in `dist/` is inert expo-splash-screen
+  module code. It belongs on Roye's device list and cannot be checked from a browser. Not re-done.
+- ⚠️ **THE APP STORE LISTING IS STILL BLANK AND I COULD NOT FILL IT — the boundary, precisely
+  (2026-09-08).** Re-read live today (run `34270807514`, `store-listing`, GET only): description,
+  keywords, what's new, promo text, support URL, marketing URL, subtitle and privacy URL all `null`;
+  `screenshots []`; every age-rating field `null`, override `NONE`; version still 1.0 created
+  2026-03-11, `PREPARE_FOR_SUBMISSION`.
+  **THE PASTE DOCUMENT IS `docs/listing/ASC-PASTE-ORDER-2026-09-08.md`** — field by field in ASC's
+  own order, with the age-rating question named exactly: **Contests → Simulated Gambling →
+  `Frequent/Intense`**, every other question `None`, and **no override**.
+  ⚠️ **WHY I DID NOT WRITE IT.** The credential demonstrably writes TestFlight (run `34135814835`
+  PATCHed a beta group's public link and read it back), but **beta groups and App Store metadata are
+  different permission areas** — a Developer-role key writes the first and not the second, App
+  Manager writes both, and the evidence fits either. Apple has no dry run, so "find out" and "write
+  to the live listing" are one act. And there is no ASC key in the container: every call goes through
+  a workflow dispatch, `testflight-manage.yml` validates `action` against a fixed `choice` list, and
+  a new write action must be on the DEFAULT branch to be dispatchable — which needs a merge, outside
+  sprint scope. A half-filled live listing is worse than an empty one plus a good document.
+  The four record IDs a future write needs are in the doc; `lib.rb` already does PATCH and
+  `store_listing.rb` already resolves them, so it is the merge, not the code, that is missing.
+  ⚠️ **BEYOND METADATA, STILL BLOCKING:** export compliance **has never been answered**
+  (`appEncryptionDeclarations` → **404**, none exists) · 0 screenshots uploaded (18 ready in
+  `docs/product-map/store-515/`) · version reads 1.0 while the app is 2.7.0 · a build must be
+  selected (my read did not include the build relationship — confirm in the dashboard) · and the two
+  CODE rejections: Google sign-in without Sign in with Apple, and the dead delete-account control.
+- ⚠️ **BACKUPS — WAL ARCHIVING IS HEALTHY; THE PITR ADD-ON IS STILL NOT READABLE (2026-09-08).**
+  Read from the database: `archive_mode on` · `wal_level logical` · `archive_command` is Supabase's
+  wal-g `admin-mgr wal-push` · `archive_timeout 120s` · **119,797 segments archived** since
+  2026-02-13 · last WAL `00000001000001D300000072` archived **7.2 seconds** before the query · **2
+  failures ever, the last 2026-05-05** · Postgres 17.6.
+  ⚠️ **NOT ASSERTED, and refused a second time:** whether the PITR add-on is purchased and what the
+  retention window is. `archive_mode on` is a platform default that also serves ordinary daily
+  backups — it does NOT prove PITR is enabled. The plan tier is unreadable too: `get_organization`
+  returns *"You do not have permission to perform this action"*.
+  **WHAT ROYE CHECKS:** Supabase → Project Settings → Database → Backups → the Point-in-Time
+  Recovery panel — healthy looks like PITR enabled with a stated recovery window and an
+  "earliest restore point" roughly that far back; an upgrade offer or only daily snapshots means the
+  add-on is not active.
 - ⚠️ **THE `paths-ignore` RULE HAS NEVER FIRED. BUILDS DID NOT DROP (measured 2026-09-08).** It is on
   the branch, **not on `origin/main`**, and it only triggers on pushes to main. The last Web Deploy
   run started at 07:39:12Z; the rule was committed at 08:25:34Z — **46 minutes later**. Successful
