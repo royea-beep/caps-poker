@@ -288,7 +288,28 @@ end
 # AGE RATING — ANSWER THE QUESTIONNAIRE. NEVER SET A RATING.
 # ────────────────────────────────────────────────────────────────────────────────────────────
 if FIELD == "age-rating"
-  decl = get!("ageRatingDeclaration", "/v1/appInfos/#{APP_INFO_ID}/ageRatingDeclaration")
+  # ⚠️ APPLE'S QUESTIONNAIRE IS ALL-OR-NOTHING, AND IT SAID SO ITSELF.
+  # The first attempt sent ONE answer — gamblingSimulated — because that is the one question that
+  # decides CAPS's rating. Apple refused with HTTP 409 and TWENTY-ONE separate
+  # ENTITY_ERROR.ATTRIBUTE.REQUIRED errors, one per unanswered question: "You must provide a value
+  # for the attribute 'gambling' with this request", and so on. Nothing was written — the read-back
+  # showed gamblingSimulated still nil and appStoreAgeRating still nil.
+  #
+  # That is the same rule a human meets in App Store Connect: you answer the whole form and press
+  # save once. So this submits the whole form. It is still ANSWERING, not RATING: every answer below
+  # is a statement about the product, `ageRatingOverride` is never written, and Apple computes the
+  # rating from the answers.
+  #
+  # ⚠️ AND THE FIELD LIST IS APPLE'S, NOT MINE. The required attributes are read out of Apple's own
+  # 409 response rather than typed from memory of its schema — a list I recalled would go stale the
+  # day Apple adds a question, and this project has paid for recalled facts before. Likewise which
+  # questions are enums and which are booleans: sending "NONE" everywhere makes Apple name the
+  # boolean ones in ENTITY_ERROR.ATTRIBUTE.INVALID errors, and only those get flipped to false.
+  # Apple's validator is the oracle; nothing here guesses a type.
+  #
+  # Every intermediate refusal writes NOTHING, which is what makes this safe to iterate: the whole
+  # form is rejected or the whole form is accepted.
+  decl = read_or_die("ageRatingDeclaration", "/v1/appInfos/#{APP_INFO_ID}/ageRatingDeclaration")
   decl_id = decl.dig("data", "id")
   die("no ageRatingDeclaration on this appInfo") if decl_id.nil?
   attrs = decl.dig("data", "attributes") || {}
@@ -298,48 +319,85 @@ if FIELD == "age-rating"
   attrs.keys.sort.each { |k| puts format("  %-46s %s", k, attrs[k].inspect) }
   puts
 
-  # ⚠️ THE KEY MUST EXIST ON THIS API VERSION. If Apple has renamed the question, this refuses
-  # rather than inventing a field name — a wrong age rating can get an app pulled.
   unless attrs.key?("gamblingSimulated")
     die("this API version does not expose `gamblingSimulated` — refusing to guess a question name. Leave it for the dashboard.")
   end
-  if attrs.key?("ageRatingOverride")
-    puts "  (ageRatingOverride is #{attrs['ageRatingOverride'].inspect} and is NOT written by this script.)"
+  puts "  ageRatingOverride is #{attrs['ageRatingOverride'].inspect} and is NEVER written by this script."
+  puts "  BEFORE  gamblingSimulated = #{attrs['gamblingSimulated'].inspect}, appStoreAgeRating = (see read-back)"
+  puts
+
+  GAMBLING = "FREQUENT_OR_INTENSE"
+  # Never sent, whatever Apple asks for: an override is a RATING, not an answer.
+  NEVER = %w[ageRatingOverride koreaAgeRatingOverride kidsAgeBand].freeze
+
+  def pointers(body, code)
+    Array(body["errors"]).select { |e| e["code"] == code }
+                         .map { |e| e.dig("source", "pointer").to_s.split("/").last }
+                         .reject(&:nil?).reject(&:empty?)
   end
 
-  intended_answer = "FREQUENT_OR_INTENSE"
-  puts
-  puts "BEFORE  gamblingSimulated = #{attrs['gamblingSimulated'].inspect}"
-  puts "INTEND  gamblingSimulated = #{intended_answer.inspect}   (the honest answer; Apple computes the rating)"
-  puts
+  path = "/v1/ageRatingDeclarations/#{decl_id}"
+  answers = { "gamblingSimulated" => GAMBLING }
+  booleans = []
+  final_code = nil
+  final_body = nil
 
-  unless APPLY
-    puts "PREVIEW ONLY — nothing written."
-    exit 0
+  4.times do |attempt|
+    payload = { data: { type: "ageRatingDeclarations", id: decl_id, attributes: answers } }
+    puts "ATTEMPT #{attempt + 1} — sending #{answers.size} answer(s)"
+    unless APPLY
+      puts "PREVIEW ONLY — nothing written. The answer set that WOULD be sent:"
+      answers.sort.each { |k, v| puts format("    %-46s %s", k, v.inspect) }
+      exit 0
+    end
+    code, body = patch!("answer the questionnaire", path, payload)
+    final_code = code
+    final_body = body
+    break if code.between?(200, 299)
+
+    required = pointers(body, "ENTITY_ERROR.ATTRIBUTE.REQUIRED") - NEVER - answers.keys
+    invalid  = pointers(body, "ENTITY_ERROR.ATTRIBUTE.INVALID")  - NEVER
+
+    if required.empty? && invalid.empty?
+      puts "  Apple refused with errors this script cannot act on. Stopping — nothing was written."
+      break
+    end
+
+    required.each { |k| answers[k] = "NONE" }
+    # An INVALID on a question we answered "NONE" means the question is a yes/no, not a scale.
+    invalid.each do |k|
+      next unless answers[k] == "NONE"
+      answers[k] = false
+      booleans << k
+    end
+    puts "  Apple named #{required.size} more required question(s) and #{invalid.size} type mismatch(es); retrying."
+    puts
   end
 
-  code, body = patch!("answer gamblingSimulated", "/v1/ageRatingDeclarations/#{decl_id}",
-                      { data: { type: "ageRatingDeclarations", id: decl_id,
-                                attributes: { "gamblingSimulated" => intended_answer } } })
-  puts "  (patch body: #{body.to_json[0, 400]})" unless code.between?(200, 299)
-
   puts
-  after = get!("read-back declaration", "/v1/appInfos/#{APP_INFO_ID}/ageRatingDeclaration")
-  now = (after.dig("data", "attributes") || {})["gamblingSimulated"]
-  info_after = get!("read-back appInfo", "/v1/apps/#{APP_ID}/appInfos?limit=10")
+  puts "THE ANSWERS SENT (#{answers.size}) — every one a statement about CAPS:"
+  answers.sort_by { |k, _| k }.each { |k, v| puts format("    %-46s %s", k, v.inspect) }
+  puts "    (yes/no questions, learned from Apple: #{booleans.sort.join(', ')})" unless booleans.empty?
+  puts
+
+  after = read_or_die("read-back declaration", "/v1/appInfos/#{APP_INFO_ID}/ageRatingDeclaration")
+  now = (after.dig("data", "attributes") || {})
+  info_after = read_or_die("read-back appInfo", "/v1/apps/#{APP_ID}/appInfos?limit=10")
   rating = (info_after["data"] || []).map { |i| (i["attributes"] || {})["appStoreAgeRating"] }
   puts
-  puts "AFTER   gamblingSimulated  = #{now.inspect}"
-  puts "        appStoreAgeRating  = #{rating.inspect}"
+  puts "AFTER   gamblingSimulated  = #{now['gamblingSimulated'].inspect}"
+  puts "        ageRatingOverride  = #{now['ageRatingOverride'].inspect}  (untouched)"
+  puts "        appStoreAgeRating  = #{rating.inspect}   <- Apple's, COMPUTED, not set"
   puts
 
-  if now == intended_answer
-    puts "✅ THE QUESTION IS ANSWERED. Rating above is Apple's, computed — not set."
-    puts "   ⚠️ If appStoreAgeRating is still null, Apple has not computed one yet: the remaining"
-    puts "      questions may need answering too. That is a finding to report, not a thing to guess at."
+  if now["gamblingSimulated"] == GAMBLING
+    puts "✅ THE QUESTIONNAIRE IS ANSWERED. The rating above is Apple's own, derived from the answers."
+    puts "   ⚠️ If appStoreAgeRating is still nil, Apple has not published a computed rating through"
+    puts "      this endpoint — a thing to report and check in the dashboard, never a thing to set."
     exit 0
   else
-    puts "❌ THE ANSWER DID NOT LAND. Apple serves #{now.inspect}."
+    puts "❌ THE ANSWER DID NOT LAND. Apple serves #{now['gamblingSimulated'].inspect}; last status #{final_code}."
+    puts "   Nothing was written — the questionnaire is all-or-nothing."
     exit 1
   end
 end
