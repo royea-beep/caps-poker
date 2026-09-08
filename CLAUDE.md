@@ -355,8 +355,28 @@
   `tools/asc/store_listing_write.rb`. The verdict is a SEPARATE read-back, never the PATCH status,
   and every run prints its own undo line. The copy is PARSED AT RUNTIME from
   `docs/listing/LISTING-PACK-2026-09-08.md` — edit the pack, not a second copy
-  (`tests/listing-copy.test.ts` pins the parse). NOT written and each a finding: `name` is still
-  `CAPS - Card game`, `marketingUrl` is null, `whatsNew` is null (correct for a first version).
+  (`tests/listing-copy.test.ts` pins the parse). NOT written: `marketingUrl` (optional) and
+  `whatsNew` (correct for a first version).
+- ✅ **THE LISTING NAME IS `CAPS Poker` (2026-09-08, Roye's call). Record:
+  `docs/listing/RENAME-THE-LISTING-2026-09-08.md`.** It was `CAPS - Card game`. Preview run
+  `34284889330`, write `34285144841`, read back by a SEPARATE GET: `AFTER name = "CAPS Poker"`.
+  **Apple raised no uniqueness objection** — store names are unique-checked on write and it accepted
+  this one. Revert line: set `CAPS - Card game` on
+  `/v1/appInfoLocalizations/7d60730c-a3f3-4e30-8d4c-dfafe5416b52`.
+- ⚠️ **THE PRODUCT NOW CARRIES THREE CASINGS OF ITS OWN NAME — reported, NOT changed (2026-09-08).**
+  Measured from the files and the generated artefacts, not assumed:
+  **store `CAPS Poker`** · **iOS home-screen label `Caps Poker`** (`ios/CapsPoker/Info.plist`
+  `CFBundleDisplayName`, generated from `app.json` `expo.name`; `ios/` is untracked prebuild output)
+  · **web tab title `Caps Poker`** (`dist/index.html`, same source) · **landing page title
+  `CAPS POKER`** · privacy/terms titles and the in-app onboarding card `CAPS Poker` · share cards and
+  the orientation/theme pickers `CAPS POKER`. **The cheapest fix is ONE LINE — `app.json`
+  `expo.name` → `CAPS Poker` — which moves the device label and the web tab title together because
+  both derive from it**; the landing title is a second one-liner. Neither was done: it is an
+  app-level change needing a rebuild. `com.capspoker.app` and `package.json`'s `caps-poker` are ids,
+  not display names, and are correct as they are.
+  ⚠️ **THE SOCIAL BIOS ARE ROYE'S AND I COULD NOT READ THEM.** No handle, URL or bio text for any
+  social account exists anywhere in this repo — only per-platform image assets under `docs/social/`.
+  Whether the accounts exist and what they say is unknown from here.
 - ⚠️ **A NEW WORKFLOW ACTION IS DISPATCHABLE FROM A FEATURE BRANCH — NO MERGE NEEDED. I claimed
   the opposite and was wrong (corrected 2026-09-08).** `ASC-PASTE-ORDER-2026-09-08.md` said a new
   `action` choice "would have to be on the default branch to be dispatchable". FALSE: commit
