@@ -171,6 +171,59 @@
   the centre rank. `Card.tsx:23` says the corners are "DELIBERATELY UNTOUCHED" — it is a decision,
   not a defect, and it is Roye's to reverse or confirm. Also `Card.tsx:25` claims the bottom-right
   index shows at 3P; measured 0 at BOTH 2P (40px) and 3P (46px) — both under its 54px gate.
+- ⚠️ **`submit_score` MINTS UNLEDGERED — REPRODUCED IN PRODUCTION 2026-09-08, no longer theoretical.**
+  With a real ANONYMOUS session (anyone can mint one from the public key in one HTTP call — proven:
+  `role: authenticated, is_anonymous: true`) a brand-new device was driven to **total_chips 9,000 /
+  ledger_sum 6,000 / GAP 3,000**. The 3,000 is exactly the `submit_score` gains, which write no
+  `chip_transactions` row. Bounded and the bound holds: **5,000 per device per day**, shared with
+  `record_reward`, which refused correctly with `reward_cap_daily`. But 9,000 is ~3× the richest
+  real player (3,250), reached without playing a hand.
+  ⚠️ **WHY THE LIVE GAP IS STILL 0**: `app/results.tsx` calls `submit_score` as an ABSOLUTE
+  read-back write of the balance the ledger already produced, sequenced after every ledgered delta,
+  so normal play grants nothing. The hole is that the server **CLAMPS a caller-supplied number
+  instead of DERIVING it from a verified game event**. ✅ The ladder did NOT move — `elo` stayed
+  1000, `games_played` 0 — so **S2 holds**; `hands_played` is forgeable, the competitive ladder is
+  not. **This is the single most valuable thing left to fix.**
+- ⚠️ **`finish_table` REAPS ABANDONED ROOMS BY DESIGN — and my first reading of that was wrong.**
+  A stranger with no session ended `5JT6` and `CZ9Z` (`waiting → finished`, confirmed by SELECT).
+  Reading the function shows why: `IF NOT v_is_participant AND v_has_fresh_seat THEN
+  RETURN 'not_authorized'` — a stranger is refused **only if a seat was seen in the last 90
+  seconds**. Both rooms had `roster_cleared: 0` and `room_players` is EMPTY across the whole
+  database, so what ran was the deliberate abandoned-room reaper, NOT a griefing vector.
+  The narrower real risk: room codes are **4 characters** and the protection lapses 90s after a
+  heartbeat, so a backgrounded tester's waiting room can be ended by anyone guessing the code.
+  ⚠️ **COULD NOT VERIFY** the branch that protects a LIVE seat — `create_table` refuses a forged
+  host (FK to `users`). Those two rooms are left `finished`: never hand-edit a `game_rooms` row.
+- ⚠️ **FINAL-QA 2026-09-08 — `docs/final-qa/FINAL-QA-2026-09-08.md`. Suite 2,866/2,866, tsc clean.**
+  Ground truth re-measured independently and matches: **398 devices · 25 played · 78 hands · 12
+  bindings · gap 0 · max 3,250 · 0 purchases**. Two numbers here were stale and are corrected:
+  **float is 800,920** (was 789,530) and there are **9 rooms, all `waiting`/`finished`, 0 ever
+  `playing`**. Every mint vector WITHOUT a session refuses with `identity_mismatch`; `earn_chips`
+  refuses a negative with `invalid_amount`; direct writes to `leaderboard`, `chip_transactions` and
+  `game_rooms` are all `permission denied`; `get_leaderboard` leaks **no user_id, no device_id, no
+  uuid**; `delete_user_account` is revoked for anon AND authenticated. Card face measured
+  **rgb(252,250,243) = #FCFAF3 exactly**. Privacy page md5 identical across live, repo and dist.
+  ⚠️ **A 204 IS NOT A WRITE.** An anon PATCH on `leaderboard` returned **HTTP 204** and changed
+  nothing — RLS matched zero rows. Reporting the status code would have filed a catastrophic false
+  positive. Read the row.
+  ⚠️ **STILL OVERPROMISING, all verified live and unfixed:** `/lobby` says "auto-start when full"
+  in TWO places (`app/lobby/index.tsx:280` and `utils/i18n.ts:1214`, so the Play screen says it
+  too) while 0 rooms have ever played · `/club/DEMO` opens a club for any typed code · an unknown
+  route renders Expo Router's developer page **"Unmatched Route … Go back • Sitemap"** (confirmed
+  on production: live `/nope-xyz` returns the same 1,902-byte shell as `/`) · and `/shop`,
+  `/chip-store`, `/achievements`, `/rank` have a loading state with **no failure state**, while
+  `/leaderboard` shows headers with no empty state.
+  ⚠️ **SIX INSTRUMENT FAILURES IN ONE SPRINT, every one caught by looking at the output:**
+  `python3 -m http.server` does no SPA rewrite and reported **32 of 33 routes broken** · I read the
+  card faces as grey and the measurement said #FCFAF3 · a tooltip selector matched a 393×852
+  wrapper and invented 16 overlaps · the first attack batch used wrong RPC parameter names so
+  refusals and 404s were indistinguishable · the 204 above · and my first `finish_table` verdict.
+  **`tests/serve-dist-like-prod.mjs` now serves `dist/` using `dist/vercel.json`'s OWN rules** so a
+  local walk reproduces production, honest 404s included. Use it instead of a static server.
+  ⚠️ **NEVER VERIFIED, said plainly:** native iOS rendering on a device · the reporter's media path
+  (`BugReporter.handleStart` returns early on web) · two real clients in one room · MP under load.
+  The container's browser **cannot reach Supabase or caps.ftable.co.il** — `fetch` THREW for both
+  while `curl` reached both — so every browser check runs backend-dark.
 - ✅ **THE SECRET GUARD EXISTS AND HAS BEEN WATCHED REFUSING A REAL COMMIT (2026-09-08).** Both
   halves, since `41b534d` on 2026-09-06: `.githooks/pre-commit` (installed by a `prepare` script in
   `package.json`, because `core.hooksPath` is local config a fresh clone does not get) and
