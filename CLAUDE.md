@@ -116,6 +116,23 @@
   and the ROW proved it, 252 unchanged, 0 rows with the stamp, while the rig's log said "submitted".
   ⚠️ **TWO WRITERS EXIST**: `ReportBugButton.tsx` (Settings, text only, always honest) and
   `BugReporter.tsx` (shake/FAB, the media path). Do not assume a fix to one touches the other.
+- ⚠️ **THE SOLO ARRANGEMENT PHASE HAS NO CLOCK — "MORE TIME WHERE IT SCROLLS" IS A NO-OP THERE
+  (2026-09-08).** `startCountdown()` has exactly ONE call site, inside the player's READY handler,
+  and it runs AFTER `setPlayerReady(true)` — so the timeout branch, gated on `!playerReady`, can
+  never fire; and if the bots are already done (they are, immediately) the same handler navigates on
+  the next line. `app/game.tsx:713` says it outright: *"Solo: bots never start countdown — player
+  has free thinking time."* WATCHED IT: 47s on the 320/2P placement screen, 31 samples, no countdown
+  painted, no auto-resolve (`tests/solo-clock-reachability.mjs`). **A solo player has unlimited time
+  to arrange.** The derived clock IS wired and tested (`getArrangeSeconds` in `constants/gameConfig.ts`
+  → 70s/44s/33s vs 30s base, from `boardsContentH/boardsAvailH`, the same two numbers that decide
+  `boardsScroll`) but it changes nothing a solo player feels. Kept so the day a solo clock is
+  switched on it is already layout-aware. ⚠️ **THE REAL CLOCK IS MULTIPLAYER'S** — `COUNTDOWN_SECS
+  = 60`, BROADCAST, with `DEAL_CLOCK_MS` 15s above it. Both ways to extend it break one of Roye's
+  rules: per-device desyncs players, and raising the shared constant lengthens it where the layout
+  fits. The clean fix is server-side per-room. **Roye's call; 0 rooms have ever reached `playing`.**
+  ⚠️ **PROBE LESSON, second time:** a text locator on `/READY/` grabs the BOT's "✓ READY" status pill
+  before the commit button — the click lands on a label, nothing happens, and the rig reports a
+  broken product. Use `getByRole('button')`. Trace the URL after a click before believing a failure.
 - ⚠️ **BOARD 4 SCROLLS AND CANNOT STOP WITHOUT SMALLER CARDS (measured 2026-09-08).** Both engines:
   **320/2P hides 271px** (206/477), **320/3P hides 113px** (254/367), **393/2P hides 44px**
   (512/556); 393/3P, 393/4P and 320/4P fit. 271px is NOT recoverable from spacing, and

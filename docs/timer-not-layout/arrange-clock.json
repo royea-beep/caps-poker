@@ -1,0 +1,50 @@
+{
+  "chromium-320-2P": {
+    "seen": 0,
+    "expected": 70
+  },
+  "chromium-320-3P": {
+    "seen": 0,
+    "expected": 44
+  },
+  "chromium-320-4P": {
+    "seen": 0,
+    "expected": 30
+  },
+  "chromium-393-2P": {
+    "seen": 0,
+    "expected": 33
+  },
+  "chromium-393-3P": {
+    "seen": 0,
+    "expected": 30
+  },
+  "chromium-393-4P": {
+    "seen": 0,
+    "expected": 30
+  },
+  "webkit-320-2P": {
+    "seen": 0,
+    "expected": 70
+  },
+  "webkit-320-3P": {
+    "seen": 0,
+    "expected": 44
+  },
+  "webkit-320-4P": {
+    "seen": 0,
+    "expected": 30
+  },
+  "webkit-393-2P": {
+    "seen": 0,
+    "expected": 33
+  },
+  "webkit-393-3P": {
+    "seen": 0,
+    "expected": 30
+  },
+  "webkit-393-4P": {
+    "seen": 0,
+    "expected": 30
+  }
+}

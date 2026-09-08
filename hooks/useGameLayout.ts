@@ -455,6 +455,15 @@ export function useGameLayout(opts: UseGameLayoutOpts) {
     communityScale,
     BOARD_CARD_H,
     boardsScroll: _BOARDS_SCROLL,
+    // TIMER-NOT-LAYOUT 2026-09-08 — the two numbers that ALREADY decide _BOARDS_SCROLL above,
+    // published so the arrangement clock can be derived from the same source instead of from a
+    // typed list of widths and player counts. Nothing here changes any layout value: these are
+    // the existing _availTotal / _fit figures, exported, not recomputed.
+    // boardsAvailH is the slice the BOARDS get: the total minus the hand zone and the same
+    // _FIT_SAFETY the fit search subtracts, so content/avail > 1 is exactly the condition that
+    // sets _BOARDS_SCROLL.
+    boardsContentH: _MODE_BOARDS_CONTENT,
+    boardsAvailH: Math.max(1, _availTotal - _fit.handZoneH - _FIT_SAFETY),
     gridRows: _gridRows,
     gridCols: _gridCols,
     isWeb,
