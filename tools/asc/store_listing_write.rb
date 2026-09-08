@@ -356,7 +356,14 @@ if FIELD == "age-rating"
     break if code.between?(200, 299)
 
     required = pointers(body, "ENTITY_ERROR.ATTRIBUTE.REQUIRED") - NEVER - answers.keys
-    invalid  = pointers(body, "ENTITY_ERROR.ATTRIBUTE.INVALID")  - NEVER
+    # ⚠️ APPLE NAMES A WRONG TYPE UNDER .TYPE, NOT .INVALID, AND WATCHING ONLY .INVALID COST A RUN.
+    # The all-"NONE" attempt came back with nine errors reading "Unexpected json type provided for
+    # attribute 'gambling'. Expected a BOOLEAN but got STRING" — Apple telling me precisely which
+    # questions are yes/no — and the handler ignored every one of them because it was listening for
+    # the wrong error code, then reported "errors this script cannot act on". The information was
+    # in the response the whole time.
+    invalid  = (pointers(body, "ENTITY_ERROR.ATTRIBUTE.INVALID") +
+                pointers(body, "ENTITY_ERROR.ATTRIBUTE.TYPE")) - NEVER
 
     if required.empty? && invalid.empty?
       puts "  Apple refused with errors this script cannot act on. Stopping — nothing was written."
