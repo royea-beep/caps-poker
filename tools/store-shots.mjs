@@ -7,15 +7,32 @@
  * nothing in it. Eleven commits since then also touched the render path of five of the seven, so
  * "the folder is recent" was never evidence that the pictures were current.
  *
+ * ⚠️ A CORRECTION I OWE, AND THE REASON THE SHOP IS BACK IN THIS SET.
+ * The 2026-09-08 pass dropped the shop shot and wrote that "payments are off, so a stocked shop is
+ * a state no player can reach". THAT WAS WRONG, and it was wrong in the way this project keeps
+ * getting caught: I read an empty screen and inferred a cause instead of checking it.
+ *   · `chip_config` holds TEN ACTIVE ITEMS RIGHT NOW — emote packs, card backs, avatars, a table
+ *     theme — priced 100 to 500 CHIPS. Every one is affordable on a starting 2,000 balance.
+ *   · They are bought with CHIPS through `spend_chips`. Payments being off stops you BUYING chips
+ *     with money; it has nothing to do with SPENDING them on cosmetics.
+ *   · "Shop is empty right now" appeared in my sweep because that sweep runs with the backend
+ *     ABORTED, so `get_poker_shop` never answered. The empty state was my rig's, not the product's.
+ * The old 2026-09-03 shop screenshot was almost certainly captured the same way.
+ *
  * ⚠️ WHAT IS STAGED, SAID OUT LOUD RATHER THAN LEFT TO BE DISCOVERED.
  *   · The HANDS ARE REAL. The rig plays them through the app's own controls — Auto-Place ALL, then
  *     READY — so hand history, the stats and the balance are what playing actually produces.
- *   · The ACHIEVEMENTS screen is served the product's OWN 24 active definitions (read from
+ *   · The SHOP is served the product's OWN TEN ACTIVE ITEMS, read from `chip_config` and copied
+ *     here verbatim — same event_type, same chip price, same description. Nothing is invented and
+ *     nothing is priced differently from what the live RPC would return.
+ *   · The ACHIEVEMENTS screen is served the product's OWN active definitions (read from
  *     achievement_definitions, not invented) with a plausible earned subset. It depicts a state a
  *     real player reaches by playing; the rig supplies the progress, not the feature.
- *   · THE SHOP IS NOT STAGED AND IS NOT IN THIS SET. Payments are OFF, so a stocked shop is a state
- *     NO player can reach today, and photographing one would be the exact defect this sprint is
- *     about wearing a nicer costume. Hand history takes its slot: a real feature with real content.
+ *
+ * ⚠️ AND NOTHING IS WRITTEN TO PRODUCTION TO GET ANY OF IT. The live RPCs would each INSERT a
+ * leaderboard row for the capture device — `get_poker_shop` does exactly that on its first line.
+ * So the rows are READ from the database and REPLAYED into the page, which leaves the database
+ * exactly as it was. That is checked by a fresh SELECT after the run, not assumed.
  *
  * ⚠️ THE TWO SIZES ARE DATA, DECLARED ONCE, AND THE OUTPUT IS MEASURED RATHER THAN ASSUMED.
  * Apple's primary iPhone size is now 6.9in (1320x2868); 6.7in (1290x2796) is still accepted. Each
@@ -66,6 +83,29 @@ const ACHIEVEMENTS = [
   ({ id, title, name: title, description, icon, category, chips, chips_reward: chips, xp, xp_reward: xp,
      earned, is_earned: earned, earned_at: earned ? '2026-09-06T12:00:00Z' : null }));
 
+/**
+ * The product's OWN active shop items, read from `chip_config` on 2026-09-08 (chips < 0,
+ * is_active). Ordered by price ascending, exactly as get_poker_shop orders them. `can_afford` is
+ * computed against the balance the rig has actually earned — not asserted.
+ */
+const SHOP_ITEMS = [
+  ['rebuy_500', 100, 'Rebuy 500 chips', 'רכישת 500 צ׳יפים', false],
+  ['buy_emotes', 150, 'Emote pack', 'חבילת אימוגי', true],
+  ['quick_poker_buy_in', 200, 'Quick Poker buy-in', 'דמי כניסה לפוקר מהיר', false],
+  ['buy_avatar', 200, 'Custom avatar', 'אווטאר מותאם', true],
+  ['challenge_buyin', 200, 'Challenge buy-in', 'דמי כניסה לאתגר', false],
+  ['buy_emotes_deadpan', 250, "Emote pack: Deadpan", "חבילת אימוג'ים: דדפן", true],
+  ['buy_card_back', 300, 'Card back', 'עיצוב גב קלף', true],
+  ['buy_avatar_mythic', 350, 'Avatar set: Mythic', 'סט אווטארים: מיתי', true],
+  ['buy_table_theme', 500, 'Table theme', 'ערכת שולחן', true],
+  ['buy_card_back_graphite', 500, 'Card back: Graphite', 'גב קלף: גרפיט', true],
+];
+const shopPayload = (balance) => ({
+  balance,
+  items: SHOP_ITEMS.map(([event_type, cost, description, description_he]) =>
+    ({ event_type, cost, description, description_he, can_afford: balance >= cost, owned: false })),
+});
+
 fs.mkdirSync(OUT, { recursive: true });
 const server = await serve(DIST, PORT);
 const browser = await chromium.launch({
@@ -79,8 +119,12 @@ for (const size of SIZES) {
 
   // Everything outward-bound is intercepted. The achievements RPC is FULFILLED with the product's
   // own definitions; every other backend call is aborted so nothing reaches production.
+  let liveBalance = 2000;   // refreshed from the page's own store before the shop is opened
   await ctx.route('**/*', async (route) => {
     const url = route.request().url();
+    if (/get_poker_shop/.test(url)) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(shopPayload(liveBalance)) });
+    }
     if (/get_achievements_list_d|get_achievements_list/.test(url)) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ACHIEVEMENTS) });
     }
@@ -143,7 +187,12 @@ for (const size of SIZES) {
       if (await tap.count()) await tap.click({ force: true }).catch(() => {});
       await page.waitForTimeout(1100);
     }
-    await page.waitForTimeout(1500);
+    // ⚠️ WAIT FOR THE CELEBRATION TOAST TO CLEAR BEFORE SHOOTING RESULTS.
+    // At 1.5s the "You won 50 chips! 🎉" toast sits ON TOP OF the "YOU WIN" headline and covers
+    // part of the 3 — 1 score. Found by looking at the capture, not by any assertion. The toast is
+    // transient, so the shot simply has to be taken after it goes; the OVERLAP ITSELF is a real
+    // layout defect and is reported rather than only worked around here.
+    await page.waitForTimeout(6500);
     if (last && /results/.test(page.url())) {
       const headline = await page.evaluate(() =>
         (document.body.innerText.match(/YOU WIN|YOU LOSE|TIE GAME|IT.S A TIE/i) || [''])[0]);
@@ -158,11 +207,21 @@ for (const size of SIZES) {
   }
   if (!wonShot) console.log('      NOTE: no win in the hands played; the results shot shows the real outcome it got');
 
+  // The shop prints the player's balance, so the replayed payload must carry the balance the rig
+  // actually earned — never a round number typed here, and never a demo figure.
+  liveBalance = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('caps-poker-storage') || '{}')?.state?.chips ?? 2000; }
+    catch { return 2000; }
+  });
+  console.log(`      shop payload balance (earned by the rig, not typed): ${liveBalance}`);
+
   for (const [route, name, wait] of [
     ['/', '01-home', 3200],
     ['/play', '02-play', 2600],
-    ['/hand-history', '03-hand-history', 3000],
+    ['/shop', '03-shop', 3600],
     ['/achievements', '04-achievements', 3400],
+    ['/profile', '08-profile', 3000],
+    ['/hand-history', '09-hand-history', 3000],
   ]) {
     await page.goto(`http://localhost:${PORT}${route}`, { waitUntil: 'load', timeout: 60000 });
     await page.waitForTimeout(wait);

@@ -121,13 +121,27 @@
   answered age rating and one screenshot. Drafted copy is in
   `docs/last-gaps/THE-LAST-GAPS-2026-09-08.md`; NOTHING was changed and nothing submitted. Re-read
   it any time with Actions → Manage TestFlight → `store-listing` (GET only).
-  ✅ **THE SCREENSHOTS ARE RE-SHOT: `docs/product-map/store-515/`** — 7 screens × 2 sizes, 1320×2868
+  ✅ **THE SCREENSHOTS ARE RE-SHOT: `docs/product-map/store-515/`** — 9 screens × 2 sizes, 1320×2868
   (6.9″, Apple's current primary) and 1290×2796 (6.7″), every file's real pixel size asserted after
-  writing. Hands are genuinely played by the rig, so home, hand history and results carry earned
-  content. ⚠️ **The empty-shop shot is GONE and was NOT faked** — payments are off, so a stocked
-  shop is a state no player can reach; hand history takes its slot. The achievements screen is
-  served the product's own 24 definitions with a plausible earned subset — staged progress, never a
-  staged capability. `docs/product-map/store/SUPERSEDED.md` marks the old set do-not-upload.
+  writing and every file checked BY OCR for Hebrew and for an implausible balance.
+  Hands are genuinely played by the rig, so home, profile, hand history and results carry earned
+  content. `docs/product-map/store/SUPERSEDED.md` marks the old set do-not-upload.
+  ⚠️ **AND A CORRECTION: THE SHOP IS NOT EMPTY AND NEVER WAS.** On 2026-09-08 I dropped the shop
+  shot and wrote that "payments are off, so a stocked shop is a state no player can reach". WRONG.
+  `chip_config` holds **TEN ACTIVE ITEMS** — emote packs, card backs, avatars, a table theme —
+  priced **100 to 500 CHIPS**, all affordable on a 2,000 starting balance. They are bought with
+  CHIPS via `spend_chips`; payments being off stops you BUYING chips with money, not SPENDING them.
+  "Shop is empty right now" appeared because my sweep runs with the backend ABORTED. **That empty
+  state was my rig's, not the product's** — and the 2026-09-03 shop screenshot was almost certainly
+  captured the same way. Read the RPC before inferring a cause from an empty screen.
+  ⚠️ These are WEB-EXPORT renders in headless Chromium, NOT iOS captures. One consequence is
+  visible: "⚔️ Challenge a Friend" on home renders as a thin monochrome cross, because U+2694 is
+  text-default and a text font wins even after VS16; iOS draws it in colour. Three fontconfig
+  approaches failed to move Chromium's own fallback. Capture home on a device if it must be perfect.
+  ⚠️ Three product defects the big captures exposed, all UNFIXED: the achievements filter row clips
+  "Collection"; the reveal's DANGER pill overflows the left edge and reads "ANGER"; and the
+  "You won 50 chips!" toast lands ON TOP OF the YOU WIN headline on results (the rig now waits for
+  it to clear, the overlap itself is still there).
 - ✅ **The three cold-visit defects are CLOSED (2026-09-08).**
   ⚠️ **THE BUY-IN IS CHARGED ON COMMIT, NOT ON MOUNT.** Typing `/game` used to take 75 chips the
   instant the page rendered — measured 2,000 → 1,925, no prompt, no hand. It now fires from

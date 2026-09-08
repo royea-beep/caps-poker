@@ -68,8 +68,8 @@
   },
   {
    "size": "6.9in",
-   "name": "03-hand-history",
-   "file": "docs/product-map/store-515/03-hand-history-1320x2868.png",
+   "name": "03-shop",
+   "file": "docs/product-map/store-515/03-shop-1320x2868.png",
    "measured": "1320x2868",
    "expected": "1320x2868",
    "ok": true
@@ -78,6 +78,22 @@
    "size": "6.9in",
    "name": "04-achievements",
    "file": "docs/product-map/store-515/04-achievements-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "08-profile",
+   "file": "docs/product-map/store-515/08-profile-1320x2868.png",
+   "measured": "1320x2868",
+   "expected": "1320x2868",
+   "ok": true
+  },
+  {
+   "size": "6.9in",
+   "name": "09-hand-history",
+   "file": "docs/product-map/store-515/09-hand-history-1320x2868.png",
    "measured": "1320x2868",
    "expected": "1320x2868",
    "ok": true
@@ -124,8 +140,8 @@
   },
   {
    "size": "6.7in",
-   "name": "03-hand-history",
-   "file": "docs/product-map/store-515/03-hand-history-1290x2796.png",
+   "name": "03-shop",
+   "file": "docs/product-map/store-515/03-shop-1290x2796.png",
    "measured": "1290x2796",
    "expected": "1290x2796",
    "ok": true
@@ -134,6 +150,22 @@
    "size": "6.7in",
    "name": "04-achievements",
    "file": "docs/product-map/store-515/04-achievements-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "08-profile",
+   "file": "docs/product-map/store-515/08-profile-1290x2796.png",
+   "measured": "1290x2796",
+   "expected": "1290x2796",
+   "ok": true
+  },
+  {
+   "size": "6.7in",
+   "name": "09-hand-history",
+   "file": "docs/product-map/store-515/09-hand-history-1290x2796.png",
    "measured": "1290x2796",
    "expected": "1290x2796",
    "ok": true
