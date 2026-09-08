@@ -133,6 +133,24 @@ export function BoardArrangement({
 }: BoardArrangementProps) {
   const insets = useSafeAreaInsets();
 
+  // REPORTER-AND-BOARD4 2026-09-08 — how much of the boards stack is below the fold, measured
+  // from the ScrollView itself rather than recomputed from the layout constants. Recomputing it
+  // would give a SECOND opinion on the fit that could silently disagree with the first; reading
+  // the rendered scroller cannot. All three start at 0, so the pill is hidden until a real
+  // onLayout/onContentSizeChange has arrived.
+  const boardsScrollRef = React.useRef<ScrollView>(null);
+  const [boardsScrollY, setBoardsScrollY] = React.useState(0);
+  const [boardsViewportH, setBoardsViewportH] = React.useState(0);
+  const [boardsContentH, setBoardsContentH] = React.useState(0);
+  const boardsHiddenBelow = Math.max(0, boardsContentH - boardsViewportH - boardsScrollY);
+  // How many WHOLE boards are still below. Derived from the real cell pitch, never a literal:
+  // content height / board count is this layout's own per-board pitch, whatever the grid shape.
+  // ⚠️ Iron Rule 3 — no hardcoded dimension. At least 1 whenever anything is hidden at all.
+  const _boardPitch = boards.length > 0 ? boardsContentH / boards.length : 0;
+  const boardsBelowCount = _boardPitch > 0
+    ? Math.max(1, Math.ceil(boardsHiddenBelow / _boardPitch))
+    : 1;
+
   // PARTIAL-PLACEMENT COLLISION — measured, not inferred. In the partial-placement state (some
   // cards down, so Cancel/Confirm has appeared while "Auto-Place ALL" is still on screen) the
   // Auto-Place pill lies ACROSS the tops of both action buttons: 10px of overlap at 320 wide, and
@@ -265,6 +283,16 @@ export function BoardArrangement({
           showsVerticalScrollIndicator={true}
           scrollEnabled={true}
           bounces={true}
+          ref={boardsScrollRef}
+          scrollEventThrottle={16}
+          onScroll={(e) => {
+            const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+            setBoardsScrollY(contentOffset.y);
+            setBoardsViewportH(layoutMeasurement.height);
+            setBoardsContentH(contentSize.height);
+          }}
+          onLayout={(e) => setBoardsViewportH(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_w, h) => setBoardsContentH(h)}
         >
         {boards.map((board, i) => {
           // PR-M 2026-05-29 — STRICT cell sizing. Replace flex:1 expansion (which
@@ -339,6 +367,42 @@ export function BoardArrangement({
           );
         })}
         </ScrollView>
+        {/* ══════════════════════════════════════════════════════════════════════════════════
+            REPORTER-AND-BOARD4 2026-09-08 — SAY THAT THERE ARE MORE BOARDS.
+            Measured on the built app, chromium AND webkit, before this existed:
+                393x852  2P (4 boards)   viewport 512 / content 556  =  44px hidden
+                320x568  3P (3 boards)   viewport 254 / content 367  = 113px hidden
+                320x568  2P (4 boards)   viewport 206 / content 477  = 271px hidden
+            The last board was cut mid-slot-row with NOTHING on screen saying it existed, during
+            a TIMED arrangement phase. Reports 77 and 78 asked for the cards to shrink so every
+            board fits. ⚠️ ROYE RULED THE CARD FACE AND CARD SIZES STAY, and 271px cannot be
+            found in spacing — so this delivers the other half of the ask instead: make the
+            scroll obvious, and make it cost nothing. One tap pages down.
+            ⚠️ PAINT AND SCROLL ONLY. No card geometry, no cell height, no change to the
+            boardsScroll classification in useGameLayout — what scrolls, scrolls exactly as
+            before. Threshold is 8px so sub-pixel content rounding cannot flash the pill. */}
+        {boardsHiddenBelow > 8 && (
+          // ⚠️ WRAPPER + pointerEvents="box-none". The first version put left:0/right:0 straight on
+          // the Pressable, which stretched the pill across the whole board and OCCLUDED board 4's
+          // cards — an affordance hiding the thing it points at, caught by looking at the render
+          // rather than by the measurement, which was already passing. The row is full width and
+          // transparent to touch; only the pill itself is a target, and it hugs its text.
+          <View style={baStyles.moreBoardsRow} pointerEvents="box-none">
+            <Pressable
+              onPress={() => boardsScrollRef.current?.scrollTo({
+                y: boardsScrollY + boardsViewportH * 0.85, animated: true,
+              })}
+              style={baStyles.moreBoardsPill}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t().moreBoardsBelow(boardsBelowCount)}
+            >
+              <Text style={baStyles.moreBoardsPillText} allowFontScaling={false} numberOfLines={1}>
+                {t().moreBoardsBelow(boardsBelowCount)}
+              </Text>
+            </Pressable>
+          </View>
+        )}
         </BoardSurface>
       </View>
 
@@ -548,6 +612,33 @@ export function BoardArrangement({
 }
 
 const baStyles = StyleSheet.create({
+  // REPORTER-AND-BOARD4 2026-09-08 — the "there is more below" affordance. Absolute so it cannot
+  // change the boards zone's height and therefore cannot move the fit maths one pixel.
+  moreBoardsRow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: rsBase(4),
+    alignItems: 'center',
+    zIndex: 30,
+  },
+  moreBoardsPill: {
+    alignSelf: 'center',
+    paddingHorizontal: rsBase(10),
+    paddingVertical: rsBase(4),
+    borderRadius: rsBase(12),
+    backgroundColor: 'rgba(6,46,24,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,214,168,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreBoardsPillText: {
+    color: '#4FD6A8',
+    fontSize: rfBase(11),
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   boardsColumn: {
     flex: 1,
     flexDirection: 'column',

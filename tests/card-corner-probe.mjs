@@ -96,7 +96,8 @@ async function run(players) {
 
 const report = {};
 let abort = null;
-for (const players of [2, 3]) {
+const COUNTS = (process.env.CAPS_PLAYERS || '2,3').split(',').map(Number);
+for (const players of COUNTS) {
   const cards = await run(players);
   if (!cards.length) { abort = `CANARY: found 0 cards at ${players}P — the probe cannot answer.`; break; }
 

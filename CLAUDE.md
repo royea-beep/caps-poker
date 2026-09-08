@@ -97,6 +97,37 @@
   **EDIT `scripts/fix-web-html.js` FOR ANYTHING THAT MUST SHIP — headers, rewrites, redirects.**
   The root file is kept identical so `vercel dev` matches; `tests/vercel-rewrites.test.ts` now reads
   the GENERATOR's source and fails if the two disagree (proven to fire).
+- ✅ **THE REPORTER IS HONEST STILLS NOW, AND SAYS WHEN IT LOSES ONE (2026-09-08).** `report_type`
+  is DERIVED — `'frames'` when frames arrived, else `'text'` (nothing anywhere filters on it,
+  checked across the client, scripts and all 14 Edge Functions); `has_video` is `false`; the WHOLE
+  burst uploads (8s each, one 12s retry) into `metadata.frame_urls` with
+  `frames_captured`/`frames_uploaded`/`attachment_complete`; and a failed attachment writes
+  `[attachment incomplete — N of M screen frames failed to upload]` into `description` and changes
+  the toast. ⚠️ **`video_url` IS STILL WRITTEN ON PURPOSE** — four Edge Functions read it and two
+  (`analyze-bug-report:234`, `retriage-pending:195`) already assign it to a var called
+  `screenshotUrl`; it feeds the AI triage vision call and the Telegram photo, and Edge Functions
+  cannot be deployed from a VAMOS lane. It carries the LAST frame. Audio untouched — 27 real `.m4a`.
+  ⚠️ **CORRECTION to handoff 196:** the nine lost frames were NOT the "leading comma" in
+  `handleStop` — that value is a duplicate of the last frame and `crashDetector.ts:53` uses it. The
+  loss was at the upload, which only sent `frames[length-1]`.
+  ⚠️ **NO LIVE PROOF YET — needs a device.** `BugReporter.handleStart` returns early on web
+  (`:472`), so no browser can start the recorder. A settings-entry E2E also failed here: the
+  container's browser cannot reach Supabase (`TypeError: Failed to fetch`) even though curl can —
+  and the ROW proved it, 252 unchanged, 0 rows with the stamp, while the rig's log said "submitted".
+  ⚠️ **TWO WRITERS EXIST**: `ReportBugButton.tsx` (Settings, text only, always honest) and
+  `BugReporter.tsx` (shake/FAB, the media path). Do not assume a fix to one touches the other.
+- ⚠️ **BOARD 4 SCROLLS AND CANNOT STOP WITHOUT SMALLER CARDS (measured 2026-09-08).** Both engines:
+  **320/2P hides 271px** (206/477), **320/3P hides 113px** (254/367), **393/2P hides 44px**
+  (512/556); 393/3P, 393/4P and 320/4P fit. 271px is NOT recoverable from spacing, and
+  `useGameLayout` already searches card width down and sets `boardsScroll` only when the minimum
+  still does not fit — the system had already concluded it. **Roye ruled card sizes stay, so this is
+  his trade, not a defect to fix.** Shipped instead: a **"▼ N more boards below"** pill, absolutely
+  positioned in a `pointerEvents="box-none"` row so it adds ZERO height — every overflow number is
+  identical before and after — appearing only where content is hidden and paging down on one tap.
+  ⚠️ The first fit probe reported **0px in all 12 cells** because it matched any element with
+  `overflow-y:auto` containing a BOARD label (the document qualifies). A scroller that is not
+  scrolling is not the scroller — select by ACTUAL overflow. And the first pill passed every
+  assertion while **covering board 4's cards**; only looking caught it.
 - ⚠️ **THE 252 BUG REPORTS ARE 195 MACHINE PINGS — AND THE "VIDEO" REPORTER HAS NEVER SHOT A VIDEO
   (read 2026-09-08).** Of the 204 rows with no summary: **195 are `[ping] app opened vX` dev
   telemetry** (writer still live at `components/BugReporter.tsx:380`, `__DEV__`-gated so it cannot

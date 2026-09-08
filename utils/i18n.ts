@@ -177,6 +177,9 @@ interface Translations {
 
   // Game screen (S-LOCALE-FIX)
   boardLabel: (n: number) => string;
+  // REPORTER-AND-BOARD4 2026-09-08 — the boards zone overflows at 2P (4 boards) and at 320,
+  // and nothing used to say so. Names the count rather than a vague 'scroll for more'.
+  moreBoardsBelow: (n: number) => string;
   arrangeCards: (n: number) => string;
   /** OTA-COSMETIC-FIXES — lobby instant-bot row subtitle, e.g. "2P · 4 boards · instant". */
   botRowSub: (players: number, boards: number) => string;
@@ -602,6 +605,7 @@ const he: Translations = {
   // boardsPlayers, and the landing page). "לוח" is kept ONLY for the leaderboard terms below
   // (לוח מנצחים / לוח תוצאות) — a different concept, not the game board.
   boardLabel: (n) => `בורד ${n}`,
+  moreBoardsBelow: (n) => `▼ עוד ${n} בורדים למטה`,
   arrangeCards: (n) => `סדר ${n} קלפים`,
   botRowSub: (players, boards) => `${players} שחקנים · ${boards} בורדים · מיידי`,
   timeUpAutoplaced: '⏱ הזמן נגמר — קלפים הונחו אוטומטית',
@@ -1020,6 +1024,7 @@ const en: Translations = {
   playNow: '▶ Play Now',
   // Game screen
   boardLabel: (n) => `Board ${n}`,
+  moreBoardsBelow: (n) => `▼ ${n} more board${n === 1 ? '' : 's'} below`,
   arrangeCards: (n) => `Place ${n} cards`,
   botRowSub: (players, boards) => `${players}P · ${boards} boards · instant`,
   timeUpAutoplaced: '⏱ Time up — cards placed automatically',
