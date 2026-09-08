@@ -1,0 +1,92 @@
+VAMOS CAPS WRITE-THE-LISTING — handoff 204 — 2026-09-08
+Branch claude/vamos-caps-align-celebration-flppo0, commit 92c26d7. NOT merged, no bump.
+Nothing in the app changed: no economy value, flag, cue, layout, card size or 83px arc. No Edge
+Function deployed. No migration. No game_rooms row touched. NOTHING SUBMITTED TO APPLE FOR REVIEW.
+
+=== THE HEADLINE ===
+THE CREDENTIAL CAN WRITE THE APP STORE LISTING. SEVEN FIELDS ARE FILLED AND THE AGE-RATING
+QUESTIONNAIRE IS ANSWERED. Apple computed SEVENTEEN_PLUS on its own.
+Record: docs/listing/WRITE-THE-LISTING-2026-09-08.md
+
+=== FIRST FIELD, THEN THE DECISION (the brief's shape, followed exactly) ===
+Field: promotionalText — the least visible candidate, and it lives on the record carrying most of
+the rest. Preview run 34278259777 (apply=false) resolved every id and wrote nothing.
+Write run 34278446382: PATCH HTTP 200, then a SEPARATE GET read back the exact 140-char line.
+LANDED. So the rest followed, one field per run.
+A 2xx is not a write — the exit code depends only on the read-back. That rule came from the anon
+PATCH on leaderboard that returned 204 and changed nothing.
+
+=== EVERY FIELD, VERIFIED BY AN INDEPENDENT READ (run 34282378266, store-listing, GET only) ===
+  promotionalText       null -> "Four cards on every board. ... no real money, ever."   34278446382
+  description           null -> 1,253 chars, unwrapped                                  34278742972
+  subtitle              null -> "Multi-board poker, free"                               34278988106
+  keywords              null -> multiboard,omaha,...,casual  (88 chars)                 34279223477
+  privacyPolicyUrl      null -> https://caps.ftable.co.il/privacy.html                  34279476099
+  supportUrl            null -> https://caps.ftable.co.il/landing.html                  34279694347
+  category              nil  -> GAMES / GAMES_CARD / GAMES_STRATEGY                     34280822473
+  ageRating             all null -> answered; appStoreAgeRating SEVENTEEN_PLUS          34282117761
+
+NOT WRITTEN, each a finding not an omission:
+  name is still "CAPS - Card game" — an identity decision, not in the brief. One dispatch away.
+  marketingUrl null (optional). whatsNew null (correct — the field is for updates, this is 1.0).
+
+=== THE AGE RATING — ANSWERED, NEVER SET ===
+Simulated Gambling -> FREQUENT_OR_INTENSE. Everything else NONE or false.
+ageRatingOverride reads NONE and was never written — it is on a hard never-send list with
+koreaAgeRatingOverride and kidsAgeBand. 17+ is APPLE'S computation from the answers.
+APPLE'S QUESTIONNAIRE IS ALL-OR-NOTHING AND APPLE SAID SO. A lone gamblingSimulated was refused
+with 21 separate ENTITY_ERROR.ATTRIBUTE.REQUIRED errors. Nothing was written. The whole form now
+goes in one request, exactly as a human saves it once in the dashboard.
+The required field list is PARSED FROM APPLE'S OWN source.pointer values, never a remembered
+schema. Same for which questions are yes/no: send "NONE" everywhere and Apple names the booleans
+back — advertising, ageAssurance, gambling, healthOrWellnessTopics, lootBox, messagingAndChat,
+parentalControls, unrestrictedWebAccess, userGeneratedContent.
+
+=== FOUR CORRECTIONS, ALL MINE ===
+1. THE BOUNDARY I PUBLISHED LAST SPRINT WAS FALSE. ASC-PASTE-ORDER-2026-09-08.md said a new
+   workflow action "would have to be on the default branch to be dispatchable, and merging is
+   outside every VAMOS sprint scope". Commit 09114f86 ADDED the store-listing option on this very
+   branch and run 34163935410 dispatched it with ref = the branch, days before the merge.
+   GitHub resolves a dispatch trigger AND its inputs from the file ON THE TARGET REF — the same
+   mechanism that makes asc-details.yml/asc-list.yml undispatchable, read the other way round.
+   There was never a merge in the way. That doc now carries a retraction banner.
+2. AN ID THAT EXISTS IS NOT AN ID IN THE RIGHT ROLE. I found GAMES_CARD in Apple's category list
+   and used it as a PRIMARY category. The id was real; it is a SUBCATEGORY. Apple refused with
+   ENTITY_ERROR.RELATIONSHIP.INVALID on BOTH relationships. The model is ONE category plus up to
+   TWO subcategories; secondaryCategory is a different top-level category and CAPS sets none.
+3. TEN WAS A PAGE, NOT A CATALOGUE. The corrected guard read subcategories through
+   include=subcategories, got exactly ten with no GAMES_CARD, and would have had me report "Apple
+   does not offer a Card subcategory". Read /v1/appCategories/GAMES/subcategories?limit=200 and it
+   is there. The guard now prints the count and aborts on a next link.
+4. patch! DISCARDED APPLE'S ERROR BODY. The first 409 printed a status code and nothing else — one
+   step from filing "the credential cannot set a category" with the cause unread. Every non-2xx now
+   prints Apple's status, code, title, detail and source pointer.
+AND ONE I SAID OUT LOUD MID-SPRINT: I told Roye a runner had stalled twenty minutes on
+gem install fastlane and that GitHub was serving stale job state. BOTH WRONG. Background sleeps did
+not consume wall-clock time; I misread about sixty seconds as twenty minutes. No workflow was
+changed on that basis.
+
+=== STILL BLOCKING A REAL SUBMISSION — none of it metadata now ===
+  1. ZERO SCREENSHOTS uploaded ("screenshots": []). 18 are ready in docs/product-map/store-515/.
+     Not uploaded: a different API (reserve, chunked upload, commit) and the brief said not to
+     unless it was trivially part of a field write.
+  2. EXPORT COMPLIANCE NEVER ANSWERED — appEncryptionDeclarations still HTTP 404.
+  3. Version record still 1.0 created 2026-03-11 while the app is 2.7.0 build 515.
+  4. A build must be selected on the version — confirm in the dashboard, I did not read it.
+  5. Store name still "CAPS - Card game".
+  6. TWO CODE REJECTIONS, unchanged: Google sign-in without Sign in with Apple, and the in-app
+     delete-account control that cannot work (delete_user_account revoked for anon AND
+     authenticated).
+COMPROMISE, REPORTED NOT HIDDEN: the support URL is the landing page. /support.html returns 404 —
+the page does not exist. landing.html is 200 and carries caps@ftable.co.il, so it is honest and
+reachable, but it is marketing and Apple has rejected support URLs that only sell.
+
+=== THE TOOL ===
+Actions -> Manage TestFlight -> store-listing-write, one field, apply=false previews and
+apply=true writes. tools/asc/store_listing_write.rb. One field per run ON PURPOSE: a run that wrote
+five and hit a wall on the third would leave a half-filled live listing. Every run prints its own
+undo line. It cannot submit, select a build, change a version state or touch pricing.
+The copy is PARSED AT RUNTIME from docs/listing/LISTING-PACK-2026-09-08.md — edit the pack, there
+is no second copy to drift. tests/listing-copy.test.ts pins the parse: 5/5 green, tsc clean.
+
+Commits: 9c05e6d, 70cd600, 7c7530e, f45fc0b, 628f816, 5e2a41b, 92c26d7
