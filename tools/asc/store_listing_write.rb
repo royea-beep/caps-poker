@@ -217,22 +217,27 @@ if FIELD == "category"
   # place it must come from: GAMES from `data`, the two subcategories from GAMES's own
   # `subcategories` relationship. Anything else refuses rather than guessing a second time.
   cats = read_or_die("appCategories (top level)",
-                     "/v1/appCategories?filter[platforms]=IOS&exists[parent]=false&include=subcategories&limit=50")
-  tops = cats["data"] || []
-  inc  = (cats["included"] || [])
+                     "/v1/appCategories?filter[platforms]=IOS&exists[parent]=false&limit=50")
+  tops = (cats["data"] || []).map { |c| c["id"] }
+  puts "  top-level iOS categories (#{tops.size}): #{tops.join(', ')}"
+  die("GAMES is not a top-level iOS category in Apple's own list — refusing to guess") unless tops.include?("GAMES")
 
-  games = tops.find { |c| c["id"] == "GAMES" }
-  die("GAMES is not a top-level iOS category in Apple's own list — refusing to guess") if games.nil?
-
-  sub_ids = (games.dig("relationships", "subcategories", "data") || []).map { |d| d["id"] }
-  puts "  GAMES subcategories Apple offers: #{sub_ids.join(', ')}"
+  # ⚠️ THE SUBCATEGORIES COME FROM THEIR OWN ENDPOINT, NOT FROM AN `include`, AND THE FIRST VERSION
+  # OF THIS CHECK GOT IT WRONG A SECOND TIME. Reading them through include=subcategories returned
+  # exactly TEN ids and no GAMES_CARD, and the guard duly refused. But a relationship array inside
+  # an include is PAGED — ten is the default page size, not the catalogue. "Apple does not offer
+  # Card" and "I read the first page of Apple's list" are different sentences and a guard that
+  # cannot tell them apart produces a confident wrong finding. So this asks the relationship
+  # endpoint directly, with an explicit limit, and PRINTS THE COUNT so a truncation is visible.
+  subs_body = read_or_die("GAMES subcategories", "/v1/appCategories/GAMES/subcategories?limit=200")
+  sub_ids = (subs_body["data"] || []).map { |c| c["id"] }
+  puts "  GAMES subcategories Apple offers (#{sub_ids.size}): #{sub_ids.join(', ')}"
+  if subs_body.dig("links", "next")
+    die("Apple paged the subcategory list (a `next` link is present) — refusing to decide from a partial list")
+  end
   %w[GAMES_CARD GAMES_STRATEGY].each do |want|
-    unless sub_ids.include?(want)
-      die("#{want} is not a subcategory of GAMES in Apple's list — refusing to guess")
-    end
-    unless inc.any? { |i| i["id"] == want }
-      puts "  (note: #{want} is in the relationship but not the include payload)"
-    end
+    next if sub_ids.include?(want)
+    die("#{want} is NOT among the #{sub_ids.size} subcategories Apple offers for GAMES — refusing to guess")
   end
   puts "  primary        GAMES"
   puts "  subcategory 1  GAMES_CARD"
