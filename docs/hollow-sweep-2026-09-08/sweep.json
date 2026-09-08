@@ -1,0 +1,617 @@
+{
+ "routes": 33,
+ "mode": "backend unreachable (aborted)",
+ "rows": [
+  {
+   "route": "/",
+   "landed": "/",
+   "redirected": false,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/achievements",
+   "landed": "/achievements",
+   "redirected": false,
+   "chars": 140,
+   "buttons": [
+    "‹ Back"
+   ],
+   "hits": {
+    "claim": [
+     "unlock"
+    ],
+    "deadend": [
+     "No achievements yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back Achievements No achievements yet All Skill Streak Milestone Social Collection 🏆 No achievements found Keep playing to unlock rewards"
+  },
+  {
+   "route": "/battle-pass",
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/chip-store",
+   "landed": "/shop",
+   "redirected": true,
+   "chars": 62,
+   "buttons": [
+    "‹ Back",
+    "Retry"
+   ],
+   "hits": {
+    "deadend": [
+     "empty right now"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty right now. Retry"
+  },
+  {
+   "route": "/club/DEMO",
+   "landed": "/club/DEMO",
+   "redirected": false,
+   "chars": 278,
+   "buttons": [
+    "‹ Back",
+    "CLUB CODE DEMO 📤 Share",
+    "Heads-Up 2 players · 4 boards Start ›",
+    "3-Player 3 players · 3 boards Start ›",
+    "4-Player 4 players · 2 boards Start ›"
+   ],
+   "hits": {
+    "deadend": [
+     "No open tables — start one below START A CLUB TABLE Heads-Up 2 players · 4 boards Start › 3-Player 3 players · 3 boards Start › 4-Player 4 players · 2 boards Start › MINI-LEAGUE No games yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back Club CLUB CODE DEMO 📤 Share CLUB TABLES No open tables — start one below START A CLUB TABLE Heads-Up 2 players · 4 boards Start › 3-Player 3 players · 3 boards Start › 4-Player 4 players · 2 boards Start › MINI-LEAGUE No games yet — play a club table to start the league"
+  },
+  {
+   "route": "/coaching",
+   "landed": "/coaching",
+   "redirected": false,
+   "chars": 79,
+   "buttons": [
+    "‹ Back",
+    "Play Now"
+   ],
+   "hits": {
+    "deadend": [
+     "No coaching yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back Coaching 💡 No coaching yet Play hands to get personalized tips Play Now"
+  },
+  {
+   "route": "/cups",
+   "landed": "/cups",
+   "redirected": false,
+   "chars": 83,
+   "buttons": [],
+   "hits": {},
+   "pageErrors": [],
+   "text": "CUPS 0/0 cups · 4 cards. Every board. 1 winner. 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile"
+  },
+  {
+   "route": "/debug",
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/friends",
+   "landed": "/friends",
+   "redirected": false,
+   "chars": 175,
+   "buttons": [
+    "Create",
+    "Join"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "CLUBS Your circle · play only your friends You're not in a club yet — create one or join with a code. CREATE A CLUB Create JOIN A CLUB Join 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile"
+  },
+  {
+   "route": "/game",
+   "landed": "/game",
+   "redirected": false,
+   "chars": 478,
+   "buttons": [
+    "✕",
+    "⚡ Auto-Place",
+    "⚡ Auto-Place",
+    "⚡ Auto-Place",
+    "⚡ Auto-Place ALL",
+    "Cancel",
+    "Confirm",
+    "These are your cards. Place 4 on each board. ✕"
+   ],
+   "hits": {},
+   "pageErrors": [
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ],
+   "text": "✕ PLACE 12 CARDS 💰 2,000 🤖 BOTS 2/2 ✓ READY BOARD 1 ⚡ Auto-Place C 4 ♦ ♦ C 6 ♥ ♥ C 5 ♥ ♥ C 5 ♣ ♣ C 3 ♣ ♣ BOARD 2 ⚡ Auto-Place C 3 ♥ ♥ C 8 ♦ ♦ C K ♠ ♠ C A ♣ ♣ C 8 ♠ ♠ BOARD 3 ⚡ Auto-Place C 4 ♥ ♥ C 4 ♣ ♣ C 10 ♦ ♦ C J ♠ ♠ C Q ♠ ♠ YOUR HAND 12 ⚡ Auto-Place ALL C 2 ♥ ♥ C 2 ♣ ♣ C 7 ♠ ♠ C 7 ♦ ♦ C 9 ♠ ♠ C 9 ♦ ♦ C J ♥ ♥ C J ♣ ♣ C 6 ♦ ♦ C Q ♦ ♦ C A ♦ ♦ C K ♣ ♣ 👆 Tap a card from your hand, then tap a board to place it Cance"
+  },
+  {
+   "route": "/gameover",
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/hand-history",
+   "landed": "/hand-history",
+   "redirected": false,
+   "chars": 109,
+   "buttons": [
+    "‹ Back",
+    "Play Now"
+   ],
+   "hits": {
+    "deadend": [
+     "No hands yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back HAND HISTORY All (0) Wins (0) Losses (0) 🃏 No hands yet Your past hands will show here ♠ ♠ ♠ Play Now"
+  },
+  {
+   "route": "/heatmap",
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/invite/DEMO",
+   "landed": "/invite/DEMO",
+   "redirected": false,
+   "chars": 85,
+   "buttons": [
+    "Continue to CAPS"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "🃏 CAPS Poker Invite This invite link does not contain a valid code. Continue to CAPS"
+  },
+  {
+   "route": "/leaderboard",
+   "landed": "/leaderboard",
+   "redirected": false,
+   "chars": 101,
+   "buttons": [
+    "‹ Back"
+   ],
+   "hits": {
+    "deadend": [
+     "No players yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back LEADERBOARD 🪙 Chips % Win Rate # Player Chips No players yet Play a hand to get on the board!"
+  },
+  {
+   "route": "/lobby",
+   "landed": "/lobby",
+   "redirected": false,
+   "chars": 352,
+   "buttons": [
+    "‹ Back",
+    "…",
+    "…",
+    "…",
+    "…",
+    "…",
+    "…"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "‹ Back LOBBY Public tables · auto-start when full 👤 REAL PLAYERS — TABLES FOR FRIENDS A real person joins here · invite a friend or wait at a table HEADS-UP 2 players · 4 boards Opening a table… … Opening a table… … 3-PLAYER 3 players · 3 boards Opening a table… … Opening a table… … 4-PLAYER 4 players · 2 boards Opening a table… … Opening a table… …"
+  },
+  {
+   "route": "/lobby/private",
+   "landed": "/lobby/private",
+   "redirected": false,
+   "chars": 225,
+   "buttons": [
+    "‹ Back",
+    "Join",
+    "Heads-Up 2 players · 4 boards Create ›",
+    "3-Player 3 players · 3 boards Create ›",
+    "4-Player 4 players · 2 boards Create ›"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "‹ Back PRIVATE TABLE Play your friends with a shared code JOIN A FRIEND'S TABLE Join CREATE A TABLE TO SHARE Heads-Up 2 players · 4 boards Create › 3-Player 3 players · 3 boards Create › 4-Player 4 players · 2 boards Create ›"
+  },
+  {
+   "route": "/lobby/table",
+   "landed": "/lobby/table",
+   "redirected": false,
+   "chars": 58,
+   "buttons": [
+    "Back to Lobby"
+   ],
+   "hits": {
+    "deadend": [
+     "unavailable"
+    ]
+   },
+   "pageErrors": [],
+   "text": "Online multiplayer is unavailable right now. Back to Lobby"
+  },
+  {
+   "route": "/missions",
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/multiplayer-game",
+   "landed": "/multiplayer-game",
+   "redirected": false,
+   "chars": 58,
+   "buttons": [
+    "Back to Lobby"
+   ],
+   "hits": {
+    "deadend": [
+     "unavailable"
+    ]
+   },
+   "pageErrors": [],
+   "text": "Online multiplayer is unavailable right now. Back to Lobby"
+  },
+  {
+   "route": "/orientation-pick",
+   "landed": "/orientation-pick",
+   "redirected": false,
+   "chars": 203,
+   "buttons": [],
+   "hits": {},
+   "pageErrors": [],
+   "text": "CAPS POKER CHOOSE YOUR PLAY STYLE 📱 PORTRAIT Classic Phone held vertically Standard layout SELECT 🖥️ WIDESCREEN Pro Phone/tablet horizontal Side-by-side boards SELECT Can be changed anytime in Settings"
+  },
+  {
+   "route": "/play",
+   "landed": "/play",
+   "redirected": false,
+   "chars": 339,
+   "buttons": [
+    "🤖 Single Player Practice vs bots · 3 boards",
+    "🌐 Multiplayer Lobby Join an open public table · auto-start when full",
+    "🔒 Quick Private Table One-off table · share a code or join one",
+    "📊 Leaderboard See where you rank globally",
+    "🎁 Invite Friends Share your code · +300 💰 per friend"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "PLAY Choose your game mode 🤖 Single Player Practice vs bots · 3 boards 🌐 Multiplayer Lobby Join an open public table · auto-start when full 🔒 Quick Private Table One-off table · share a code or join one 📊 Leaderboard See where you rank globally 🎁 Invite Friends Share your code · +300 💰 per friend 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile"
+  },
+  {
+   "route": "/profile",
+   "landed": "/profile",
+   "redirected": false,
+   "chars": 176,
+   "buttons": [
+    "🥇 Achievements ›",
+    "📖 Hand History ›",
+    "📊 Detailed Stats ›",
+    "🏆 Cups ›",
+    "⚙️ Settings ›"
+   ],
+   "hits": {
+    "price": [
+     "2,000 CHIPS"
+    ]
+   },
+   "pageErrors": [],
+   "text": "PROFILE Player 1 0 HANDS 0% WIN RATE 0 STREAK 2,000 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile"
+  },
+  {
+   "route": "/rank",
+   "landed": "/rank",
+   "redirected": false,
+   "chars": 85,
+   "buttons": [
+    "‹ Back",
+    "Play Now"
+   ],
+   "hits": {
+    "claim": [
+     "claim"
+    ],
+    "deadend": [
+     "No rank yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back YOUR RANK 🏆 No rank yet Play a game to claim your spot on the ladder Play Now"
+  },
+  {
+   "route": "/referral",
+   "landed": "/referral",
+   "redirected": false,
+   "chars": 361,
+   "buttons": [
+    "‹ Back",
+    "Share to WhatsApp 💬",
+    "Redeem"
+   ],
+   "hits": {
+    "claim": [
+     "Redeem"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back Invite Friends 🎁 Invite friends You get 300 💰, they get 100 💰 when they join! Your code -------- Share to WhatsApp 💬 0 Friends joined 0 Chips earned Got a friend's code? Enter it here and get 100 💰 Redeem How it works 1️⃣ Share your code with a friend 2️⃣ Your friend downloads CAPS and enters the code 3️⃣ You get 300 💰, they get 100 💰 instantly!"
+  },
+  {
+   "route": "/replay",
+   "landed": "/replay",
+   "redirected": false,
+   "chars": 93,
+   "buttons": [
+    "HAND HISTORY",
+    "← BACK"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "No hand selected Open a hand from your history to replay it card by card. HAND HISTORY ← BACK"
+  },
+  {
+   "route": "/results",
+   "landed": "/results",
+   "redirected": false,
+   "chars": 46,
+   "buttons": [
+    "Back to home"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "This hand is no longer available. Back to home"
+  },
+  {
+   "route": "/settings",
+   "landed": "/settings",
+   "redirected": false,
+   "chars": 1023,
+   "buttons": [
+    "← Back",
+    "👤 Player 1 Shown on leaderboard · Tap to edit EDIT",
+    "🐛 Report a bug ›",
+    "📖 Show Tutorial Again",
+    "Version 2.7.0 (build 0f636d2d)",
+    "Reset All Progress",
+    "🏆 Your Rank",
+    "Delete Account"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "← Back SETTINGS 🎨 VISUAL STYLE ♠ CLASSIC Timeless ✓ ♠ FIVE-O Modern PROFILE 👤 Player 1 Shown on leaderboard · Tap to edit EDIT GAMEPLAY Players 3 Players (vs 2 Bots) 2 3 4 3 boards, 12 cards each 🃏 CARDS Suit Colors 2-color: red / black 2 4 Colorblind Mode Now: Green = Win, Red = Lose Off On AUDIO & NOTIFICATIONS Sound Volume ON Vibration ON Ambient Sound Casino background music ON Push Notifications ON TOOLS Show"
+  },
+  {
+   "route": "/shop",
+   "landed": "/shop",
+   "redirected": false,
+   "chars": 62,
+   "buttons": [
+    "‹ Back",
+    "Retry"
+   ],
+   "hits": {
+    "deadend": [
+     "empty right now"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty right now. Retry"
+  },
+  {
+   "route": "/simulate",
+   "landed": "/",
+   "redirected": true,
+   "chars": 464,
+   "buttons": [
+    "👥 Friends",
+    "🎓 COACHING",
+    "📖 TUTORIAL",
+    "🌐 🌐 LANGUAGE: English",
+    "🔵 SIGN IN",
+    "🪙 2,000",
+    "👤",
+    "🎮 Play Online Real players · instant bot tables ›",
+    "Practice vs bots",
+    "🎁 Claim daily bonus · Day 1"
+   ],
+   "hits": {
+    "price": [
+     "2,000 chips"
+    ],
+    "claim": [
+     "Claim"
+    ]
+   },
+   "pageErrors": [],
+   "text": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠ C A ♠ ♠ ROYAL FLUSH 🎮 Play Online Real players · instant bot tables › Practice vs bots Four cards on every board. Every board plays at once. Win the most boards, win the hand. 🎁 Claim daily bonus · Day 1 Free play | Virtual chips only | No real-money gambli"
+  },
+  {
+   "route": "/spectate",
+   "landed": "/spectate",
+   "redirected": false,
+   "chars": 40,
+   "buttons": [],
+   "hits": {},
+   "pageErrors": [],
+   "text": "← BACK SPECTATE ⚠️ No room code provided"
+  },
+  {
+   "route": "/stats",
+   "landed": "/stats",
+   "redirected": false,
+   "chars": 81,
+   "buttons": [
+    "‹ Back",
+    "Play Now"
+   ],
+   "hits": {
+    "deadend": [
+     "No stats yet"
+    ]
+   },
+   "pageErrors": [],
+   "text": "‹ Back STATS 📊 No stats yet Play a few hands and your stats appear here Play Now"
+  },
+  {
+   "route": "/theme-pick",
+   "landed": "/theme-pick",
+   "redirected": false,
+   "chars": 159,
+   "buttons": [
+    "♠ CLASSIC Timeless Dark gold Elegant look SELECT",
+    "♠ FIVE-O Modern Navy table Mint accents SELECT"
+   ],
+   "hits": {},
+   "pageErrors": [],
+   "text": "CAPS POKER Choose your style ♠ CLASSIC Timeless Dark gold Elegant look SELECT ♠ FIVE-O Modern Navy table Mint accents SELECT Can be changed anytime in Settings"
+  }
+ ]
+}

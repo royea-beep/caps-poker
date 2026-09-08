@@ -56,6 +56,7 @@ on:
           - add-tester
           - enable-public-link
           - set-public-link
+          - store-listing
       email:
         description: 'Tester email (for add-tester action)'
         required: false
@@ -181,6 +182,15 @@ jobs:
               export SUBMIT_BETA_REVIEW="false"
               export WAIT_MINUTES="0"
               bash tools/asc/distribute_current_build.sh
+              ;;
+
+            "store-listing")
+              # ⚠️ THE-LAST-GAPS 2026-09-08 — THE ONLY ACTION HERE THAT IS NOT ABOUT TESTFLIGHT.
+              # It reads the App Store listing: name, subtitle, description, keywords, categories,
+              # age rating, privacy URLs, support URL and every screenshot. STRICTLY READ ONLY —
+              # no PATCH, no POST, nothing submitted. Metadata edits can trigger review, and Roye
+              # has not asked to submit anything.
+              ruby tools/asc/store_listing.rb
               ;;
 
             "set-public-link")

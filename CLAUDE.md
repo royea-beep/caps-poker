@@ -30,7 +30,7 @@
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
-- Tests: **2,819/2,819 across 51 suites** (was 2,474 — that figure was 345 tests stale)
+- Tests: **2,824/2,824 across 52 suites** (was 2,474 — that figure was 350 tests stale)
 - **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
   Functions" — two of the three were low and the Edge Function count was high)
 - Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
@@ -110,6 +110,55 @@
   balance 499,900). The video is **English on both language pages** and only the chrome translates;
   that is correct, not a gap. `tests/film-verify.mjs` asserts all of it across 2 engines × 2
   languages × 320/393.
+- ⚠️ **THE APP STORE LISTING IS BLANK — not stale, blank (read from Apple 2026-09-08).** Every
+  text field is `null`: subtitle, description, keywords, promo text, what's new, support URL,
+  marketing URL, privacy policy URL, both categories. **Zero screenshots.** The age-rating
+  questionnaire has **never been answered** (`gamblingSimulated: null`, override NONE), so the app
+  is not 12+ or 17+ — it is unrated. The version record still reads **1.0, created 2026-03-11**,
+  and the listing name is `CAPS - Card game` while everything else says CAPS POKER. Every one of
+  those was an HTTP 200 read, so they are findings, not failed reads. **The app therefore cannot
+  be submitted today**: Apple requires a description, support URL, privacy URL, category, an
+  answered age rating and one screenshot. Drafted copy is in
+  `docs/last-gaps/THE-LAST-GAPS-2026-09-08.md`; NOTHING was changed and nothing submitted. Re-read
+  it any time with Actions → Manage TestFlight → `store-listing` (GET only).
+  ✅ **THE SCREENSHOTS ARE RE-SHOT: `docs/product-map/store-515/`** — 9 screens × 2 sizes, 1320×2868
+  (6.9″, Apple's current primary) and 1290×2796 (6.7″), every file's real pixel size asserted after
+  writing and every file checked BY OCR for Hebrew and for an implausible balance.
+  Hands are genuinely played by the rig, so home, profile, hand history and results carry earned
+  content. `docs/product-map/store/SUPERSEDED.md` marks the old set do-not-upload.
+  ⚠️ **AND A CORRECTION: THE SHOP IS NOT EMPTY AND NEVER WAS.** On 2026-09-08 I dropped the shop
+  shot and wrote that "payments are off, so a stocked shop is a state no player can reach". WRONG.
+  `chip_config` holds **TEN ACTIVE ITEMS** — emote packs, card backs, avatars, a table theme —
+  priced **100 to 500 CHIPS**, all affordable on a 2,000 starting balance. They are bought with
+  CHIPS via `spend_chips`; payments being off stops you BUYING chips with money, not SPENDING them.
+  "Shop is empty right now" appeared because my sweep runs with the backend ABORTED. **That empty
+  state was my rig's, not the product's** — and the 2026-09-03 shop screenshot was almost certainly
+  captured the same way. Read the RPC before inferring a cause from an empty screen.
+  ⚠️ These are WEB-EXPORT renders in headless Chromium, NOT iOS captures. One consequence is
+  visible: "⚔️ Challenge a Friend" on home renders as a thin monochrome cross, because U+2694 is
+  text-default and a text font wins even after VS16; iOS draws it in colour. Three fontconfig
+  approaches failed to move Chromium's own fallback. Capture home on a device if it must be perfect.
+  ⚠️ Three product defects the big captures exposed, all UNFIXED: the achievements filter row clips
+  "Collection"; the reveal's DANGER pill overflows the left edge and reads "ANGER"; and the
+  "You won 50 chips!" toast lands ON TOP OF the YOU WIN headline on results (the rig now waits for
+  it to clear, the overlap itself is still there).
+- ✅ **The three cold-visit defects are CLOSED (2026-09-08).**
+  ⚠️ **THE BUY-IN IS CHARGED ON COMMIT, NOT ON MOUNT.** Typing `/game` used to take 75 chips the
+  instant the page rendered — measured 2,000 → 1,925, no prompt, no hand. It now fires from
+  `chargeBuyInOnce()` (`app/game.tsx:320`) via `confirmPlacement()`, which BOTH commit paths call:
+  READY, and the arrangement clock expiring (that second path resolves a hand without ever calling
+  `handleReady`, which is how `cards_placed` under-fired for months). `doNavigate()` calls the same
+  guarded function as a backstop so no completed hand is free. **The amount and every rule are
+  unchanged — only the moment moved.** Proven by `tests/buyin-on-commit.mjs`: abandoned URL 0,
+  played hand exactly the derived buy-in, practice 0; and the probe was proven to fire by putting
+  the defect back (3/6). ⚠️ Do not measure this with the BALANCE — a hand resolves and winnings land
+  in the same tick (two runs gave 1,925 and 2,262). Use `totalChipsSpent`.
+  · `/gameover` now redirects Home unless the balance is genuinely below `getMatchCost(...)` — it
+  used to say "Not enough chips to continue" above the number 2,000.
+  · `/multiplayer-game` with no room now renders `/lobby/table`'s EXISTING sentence, "Online
+  multiplayer is unavailable right now" — deliberately not a third wording for one fact.
+  ⚠️ STILL OPEN, reported and left for Roye: `/lobby` promises "auto-start when full" while 0 rooms
+  have ever reached `playing`, and `/club/DEMO` renders a full club for any typed code.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs
@@ -141,6 +190,14 @@
 - Never suggest App Store submission unless Roye says so
 - GitHub Actions builds (not EAS)
 - VAMOS = always .md file, never chat-only instructions
+- ⚠️ **A FILENAME IS NOT EVIDENCE. Verify by CONTENT, and verify at the place that actually SHIPS.**
+  This shape has now cost this project six times: Hebrew screenshots under two names · the icon
+  overwritten six times in place · a stale bundle under an unchanged hash · three different files
+  called `caps-explainer-FINAL.mp4` · the catch-all 404 fixed in `vercel.json` when prod reads
+  `dist/vercel.json` · and `variant="gold"` on a button that has painted MINT since the theme sweep.
+  Before believing a file is what its name says: read its bytes, and check which copy the deploy,
+  the CI gate or the bundler actually consumes. A test that certifies the wrong file is worse than
+  no test — it is a green check over an open hole, and one stood for five days.
 
 ## Before ANY release
 1. Full test suite green
@@ -167,15 +224,21 @@ or different font rendering is baked into every scenario:
 ```bash
 gh workflow run backstop-baseline.yml
 ```
-Then review and commit `backstop_data/bitmaps_reference/`. Confirm the diff is only what you
-intended — a baseline commit that silently absorbs an unrelated regression is worse than a
-failing check.
-
-After intentional UI changes, update baselines:
+Then LOOK at every changed reference before committing it, and commit only that directory:
 ```bash
-npm run visual-qa:update
-git add tests/visual/baselines/
-git commit -m "chore: update visual QA baselines after [reason]"
+git add backstop_data/bitmaps_reference
+git commit -m "chore: update BackstopJS baselines after [reason]"
 ```
+Confirm the diff is only what you intended — a baseline commit that silently absorbs an unrelated
+regression is worse than a failing check.
 
-This prevents accidentally breaking the UI without noticing.
+⚠️ **AND THE UPDATE RECIPE THAT USED TO BE PRINTED HERE COULD NOT RUN (corrected 2026-09-08).**
+It said `npm run visual-qa:update && git add tests/visual/baselines/`. **`tests/visual/baselines/`
+does not exist** — not empty, absent — so the `git add` fails outright, and the Playwright snapshots
+that `--update-snapshots` does refresh are not what CI compares. It is the same shape as the 404
+fix: a documented command aimed at a file the thing that ships never reads. The ONLY baselines that
+matter are `backstop_data/bitmaps_reference/`, regenerated on Linux by the dispatch above.
+
+`npm run visual-qa` (`playwright test`, testDir `tests/visual`, 6 tests in 2 specs) is still worth
+running before a UI change — it just is not the CI gate, and it has no committed baselines to
+update.

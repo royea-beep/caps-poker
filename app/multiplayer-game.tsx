@@ -16,7 +16,7 @@ import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../c
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound, startAmbient, stopAmbient } from '../utils/sounds';
 import { sortHand } from '../utils/sortHand';
-import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMultiplayer';
+import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot, isOnlineMultiplayerAvailable } from '../utils/realtimeMultiplayer';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
@@ -1640,7 +1640,44 @@ function MultiplayerGameScreenInner() {
  * line 2020). Crashes in placement/wait UI now hit the boundary instead of tearing
  * down the realtime/lobby chain above.
  */
+/**
+ * ⚠️ FIX-THE-FOUR 2026-09-08 — NO ROOM, NO TABLE. This screen used to render cold.
+ *
+ * Typing /multiplayer-game with no room drew the whole thing: a seat ("2P GUEST · Seat 1"), the
+ * player's real chip balance, the placement instruction and a green ✓ READY button — for a game
+ * that does not exist and cannot start. A control that promises something it cannot do is the same
+ * defect as the battle pass's 5,000-chip button, in a different costume.
+ *
+ * ⚠️ THE WORDING IS NOT NEW, AND DELIBERATELY SO. app/lobby/table.tsx:111-113 already handles the
+ * identical case honestly — same condition, same sentence, same way out. Inventing a third phrasing
+ * for the same fact is how a product ends up saying two things about one situation. If that string
+ * ever changes, change it in both places.
+ *
+ * The guard is on the OUTER component so the inner screen never mounts without a room: none of its
+ * timers, channels or seat heartbeats start for a table that isn't there.
+ */
 export default function MultiplayerGameScreen() {
+  const router = useRouter();
+  const roomCode = useGameStore((s) => s.roomCode);
+
+  if (!roomCode || !isOnlineMultiplayerAvailable()) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.noRoomCenter}>
+          <Text style={styles.noRoomText}>Online multiplayer is unavailable right now.</Text>
+          <Pressable
+            style={styles.noRoomBtn}
+            onPress={() => router.replace('/lobby' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Back to lobby"
+          >
+            <Text style={styles.noRoomBtnText}>Back to Lobby</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <MultiplayerGameScreenInner />
@@ -1656,6 +1693,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     // backgroundColor applied inline via theme.background
+  },
+  // The no-room state. Deliberately plain: it is a dead end that says so, not a screen.
+  noRoomCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rs(16),
+    padding: rs(24),
+    backgroundColor: COLORS.background,
+  },
+  noRoomText: {
+    color: COLORS.textSecondary,
+    fontSize: rf(16),
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  noRoomBtn: {
+    paddingHorizontal: rs(22),
+    paddingVertical: rs(12),
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: rv(999),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  noRoomBtnText: {
+    color: COLORS.text,
+    fontSize: rf(15),
+    fontWeight: '700',
   },
   topBar: {
     flexDirection: 'row',
