@@ -171,7 +171,47 @@
   the centre rank. `Card.tsx:23` says the corners are "DELIBERATELY UNTOUCHED" — it is a decision,
   not a defect, and it is Roye's to reverse or confirm. Also `Card.tsx:25` claims the bottom-right
   index shows at 3P; measured 0 at BOTH 2P (40px) and 3P (46px) — both under its 54px gate.
-- ⚠️ **`submit_score` MINTS UNLEDGERED — REPRODUCED IN PRODUCTION 2026-09-08, no longer theoretical.**
+- ✅ **`submit_score` IS CLOSED — IT NO LONGER WRITES CHIPS AT ALL (2026-09-08, applied to prod).**
+  Migration `supabase/migrations/20260908000000_close_submit_score_chip_faucet.sql`. Doc:
+  `docs/economy/CLOSE-SUBMIT-SCORE-2026-09-08.md`.
+  ⚠️ **THE GRANT WAS REMOVED, NOT RE-DERIVED, AND THAT IS THE RIGHT ANSWER** — read from
+  `app/results.tsx` before touching the function. There is exactly ONE caller
+  (`utils/leaderboard.ts:107` ← `app/results.tsx:576`), it runs LAST after `record_hand_net` and
+  `record_reward`, it passes `latest ?? gs.chips` where `latest` is **the balance the server itself
+  just returned**, and the wrapper discards the response (`return !error`). The results screen's
+  own comment calls it *"a no-op echo of the true post-delta total"*. There is no chip movement
+  here to derive — it already happened upstream and was ledgered.
+  ⚠️ **UPDATE-ONLY, NEVER AN UPSERT.** `leaderboard.total_chips` is `NOT NULL DEFAULT 2000`, so an
+  INSERT that merely omitted the column would ITSELF have granted 2,000 unledgered chips by a
+  second route. `record_hand_net` creates the row first in the same block.
+  ⚠️ **THE SIGNATURE IS UNCHANGED ON PURPOSE** — `p_total_chips` is accepted and IGNORED, because
+  build 515 is on TestFlight and still sends it. `tests/submit-score-contract.test.ts` pins that
+  the client keeps sending all six arguments and that `submit_score` stays sequenced AFTER
+  `record_hand_net`; two of its three tests were proven to fail by planting the defect.
+  **BRANCH BEFORE/AFTER** (preview `ywxjotjcexkqjgxdzhwd`; its migration replay failed at 5 tables
+  / 0 functions, so the environment was rebuilt from production's own definitions and the guards
+  stubbed permissive to test the worst case). Four identical forged calls at 999,999,999:
+  **before 2,000 → 4,000 → 6,000 → 7,000, gained_today 5,000 · after 2,000 → 2,000 → 2,000 →
+  2,000, gained_today NULL.**
+  **RE-ATTACKED ON PRODUCTION** with a real anonymous session: four forged calls refused
+  (`no_leaderboard_row`, no row created), then the REAL sequence — `record_hand_net` net 120 paid
+  rake 6 and play_grant 80 for `new_balance` **194**, `submit_score` echoed 194 with
+  `chips_written: false`, and two more forged calls **with a row present** left it at 194.
+  Read back: **total_chips 194 = ledger_sum 194, GAP 0**, rows `rake=-6, hand_net=120,
+  play_grant=80`, and **elo 1000 / games_played 0 — S2 holds.** Anonymous players still work
+  (`econ_bind_ok` true). Verified on prod: the function no longer writes `total_chips`, no longer
+  touches `econ_score_gain_daily`, keeps both guards, and has exactly ONE overload.
+  ⚠️ **STILL FORGEABLE, DELIBERATELY LEFT:** `hands_played` / `hands_won` / `biggest_win` are still
+  caller-supplied, so a player can inflate their OWN displayed stats (the forged device came out
+  `biggest_win 999999`). No chips, no ELO, no ladder. Reported, not folded in, so the diff stays
+  exactly "chips removed".
+  ⚠️ **AND A THING FOUND ON THE WAY: THE STARTING 2,000 HAS NEVER BEEN LEDGERED AT GRANT TIME.**
+  It comes from the column default via `ensure_leaderboard_row`, and the whole-DB gap is 0 only
+  because a one-off `reset_baseline` backfill on 2026-09-01 wrote matching rows for every device
+  then alive — three sampled devices all carry that identical timestamp as their first row. A
+  device created today takes a different path: `record_hand_net` creates its row and every chip is
+  ledgered from the first hand. **Do not read the 0 as proof the signup grant is ledgered.**
+- ⚠️ **SUPERSEDED, kept for the shape — `submit_score` MINTED UNLEDGERED until 2026-09-08.**
   With a real ANONYMOUS session (anyone can mint one from the public key in one HTTP call — proven:
   `role: authenticated, is_anonymous: true`) a brand-new device was driven to **total_chips 9,000 /
   ledger_sum 6,000 / GAP 3,000**. The 3,000 is exactly the `submit_score` gains, which write no
