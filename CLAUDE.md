@@ -202,11 +202,29 @@
   not a label ON it: the generator has carried the same sentence in a real comment since 2026-08-15
   and it stopped nobody, me included.
   Sibling sweep: no shadow copies exist today (`public/privacy.html`, `public/terms.html`,
-  `public/bugs`, `public/hand` all absent), and no generated output is tracked. But
-  **`.github/workflows/ios-testflight-DISABLED.yml` is still `workflow_dispatch`-able** despite the
-  name, and signs with a cert its own header calls revoked; and `ios-simulator-smoke.yml` runs
-  `eas build` on push while `ios-testflight.yml` says the Expo account is gone. Both REPORTED, not
-  changed — Roye's call.
+  `public/bugs`, `public/hand` all absent), and no generated output is tracked.
+- ✅ **`ios-testflight-DISABLED.yml` IS DELETED (2026-09-08, Roye's call).** The name said off; GitHub
+  said `state: "active"` and it carried a live `workflow_dispatch:`. It had **never run once —
+  `total_count: 0`** — while still importing a p12 and signing with the cert its own header calls
+  revoked (`45EBC138DF94E77658BA9558EAAE19FC`). Apple hard-limits ~10 uploads per app per day.
+  ⚠️ **`.github/workflows/ios-testflight.yml` IS THE ONLY WORKFLOW THAT BUILDS CAPS**, and that was
+  CHECKED, not read off the names: run 1227 (`34107249013`), `workflow_dispatch` on main, **success**,
+  head `b8b7ae1a3` — and `git show b8b7ae1a3:app.json` reads `ios.buildNumber: 515`, which is the
+  input its own step reads via `node -p "require('./app.json').expo.ios.buildNumber"`. Same workflow
+  succeeded for 509→515, seven in a row. The deleted file's stated keep-condition — *"KEPT until this
+  one produces a successful build"* — was met seven times over. Nothing referenced it: no
+  `workflow_call`, no `uses: ./`, no script, no dispatch by display name; the seven hits were all
+  prose. Its two header lines in `ios-testflight.yml` were rewritten in the same commit, because a
+  comment pointing at a deleted file is the defect being closed. Diff still available:
+  `git show 9577aa5:.github/workflows/ios-testflight-DISABLED.yml`.
+  ⚠️ **STILL LYING, REPORTED NOT CHANGED:** `asc-details.yml` and `asc-list.yml` are listed by GitHub
+  as `active` workflows with **NO FILE** in the working tree, on `origin/main`, or anywhere in this
+  clone's history · `ios-testflight-free.yml` is named "FREE — no EAS cloud" and runs `eas build`
+  against the dead Expo account (last run 2026-06-25) · `ios-simulator-smoke.yml` runs `eas build`
+  on **push** · `variant="gold"` survives at `app/simulate.tsx:232` and `:323` and has painted MINT
+  since the theme sweep · and `MEMORY.md:951` still instructs a future session to wire a new cert
+  into the file just deleted. ✅ `KILL_Board`/`KILL_game` are NOT liars — `KILL_FINITE_ON_THIS_PLATFORM
+  = true`, name matches state; the "false on web" line is honest history of a reverted experiment.
 - ⚠️ **THE `paths-ignore` RULE HAS NEVER FIRED. BUILDS DID NOT DROP (measured 2026-09-08).** It is on
   the branch, **not on `origin/main`**, and it only triggers on pushes to main. The last Web Deploy
   run started at 07:39:12Z; the rule was committed at 08:25:34Z — **46 minutes later**. Successful

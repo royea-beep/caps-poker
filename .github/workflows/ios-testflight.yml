@@ -5,14 +5,26 @@ name: iOS TestFlight (Expo-free)
 #
 # The Expo account is disabled and is not coming back, so `eas build --local`,
 # `eas build:version:*` and EAS-managed credentials are all gone. This workflow
-# is a copy of ios-testflight-DISABLED.yml -- which was ALREADY prebuild +
-# xcodebuild + altool and was disabled in May 2026 only because its signing
-# certificate had been revoked, not because the approach failed.
+# began as a copy of the May 2026 workflow -- which was ALREADY prebuild +
+# xcodebuild + altool and was retired only because its signing certificate had
+# been revoked, not because the approach failed.
 #
-# ios-testflight-DISABLED.yml is deliberately KEPT until this one produces a
-# successful build, so there is a diff to compare against when something breaks.
+# THIS IS THE ONLY WORKFLOW THAT BUILDS CAPS. It has produced builds 509, 510,
+# 511, 512, 513, 514 and 515, every one a successful workflow_dispatch on main.
+# 515 came from run 1227 on 2026-09-07, building b8b7ae1a3, whose app.json reads
+# ios.buildNumber 515 -- which is the input step 'Read version + build number
+# from app.json' below consumes. Checked against the run record, not assumed.
 #
-# WHAT CHANGED FROM THE DISABLED VERSION
+# ios-testflight-DISABLED.yml WAS KEPT as a diff to compare against until this
+# workflow produced a successful build. That condition was met seven times over,
+# so it was DELETED on 2026-09-08 (DELETE-THE-LIAR). It had never run once --
+# zero runs in its entire existence -- while GitHub still listed it as `active`
+# and dispatchable, and it signed with revoked cert 45EBC138DF94E77658BA9558EAAE19FC.
+# A file named DISABLED that anyone could fire was a name that did not match its
+# state, and Apple hard-limits roughly ten uploads per app per day.
+# The diff is not lost: `git show 9577aa5:.github/workflows/ios-testflight-DISABLED.yml`.
+#
+# WHAT CHANGED FROM THAT EARLIER VERSION
 #   - removed `expo/expo-github-action` and every use of EXPO_TOKEN
 #   - removed `eas build:version:get` / `:set`; the build number now comes from
 #     app.json (eas.json appVersionSource is now "local")
