@@ -33,7 +33,7 @@ export default function OrientationPickScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>CAPS POKER</Text>
+      <Text style={styles.title}>CAPS Poker</Text>
       <Text style={styles.subtitle}>CHOOSE YOUR PLAY STYLE</Text>
 
       <View style={styles.cardsRow}>
