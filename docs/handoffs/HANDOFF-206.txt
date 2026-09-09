@@ -1,0 +1,98 @@
+VAMOS CAPS ONE-NAME — handoff 206 — 2026-09-09
+Branch claude/vamos-caps-align-celebration-flppo0, commit 7b92312. NOT merged, no bump — the name
+ships with the next build. Store listing untouched, nothing submitted for review.
+Production unchanged: no economy value, flag, winner cue, card size, 83px arc, layout or security
+fix. No Edge Function. No migration. No game_rooms row.
+
+=== SURFACES CHANGED ===
+  app.json:3    expo.name              "Caps Poker"      -> "CAPS Poker"
+  app.json:79   microphonePermission   "Allow Caps Poker to record audio..." -> "Allow CAPS Poker..."
+  public/landing.html:6    <title>     "CAPS POKER — ..." -> "CAPS Poker — ..."
+  public/landing.html:11   og:title    "CAPS POKER — ..." -> "CAPS Poker — ..."
+  public/landing.html:433  TITLES.en   "CAPS POKER — ..." -> "CAPS Poker — ..."
+  public/landing.html:433  TITLES.he   "CAPS POKER — פוקר..." -> "CAPS Poker — פוקר..."
+  components/ShareCard.tsx  x4         "♠ CAPS POKER ♦"  -> "♠ CAPS Poker ♦"
+  app/orientation-pick.tsx:36          "CAPS POKER"      -> "CAPS Poker"
+  app/theme-pick.tsx:26                "CAPS POKER"      -> "CAPS Poker"
+  web-replay/index.html:242            "♠ CAPS POKER ♦"  -> "♠ CAPS Poker ♦"
+  web-replay/index.html:250            "PLAY CAPS POKER" -> "Play CAPS Poker"
+
+APP.JSON expo.name SET ONCE, ARTEFACT NOT EDITED. ios/ is untracked prebuild output; BOTH
+ios/CapsPoker/Info.plist CFBundleDisplayName AND dist/index.html <title> are generated from that
+one line. Change the source, never the artefact.
+
+IDENTIFIERS UNTOUCHED — ASSERTED IN THE EDIT SCRIPT, NOT EYEBALLED: slug caps-poker · scheme
+caps-poker · ios.bundleIdentifier com.capspoker.app · android.package com.capspoker.app ·
+package.json name caps-poker. The script would have aborted on any drift.
+
+BOTH LANGUAGES: the Hebrew TITLES.he moved with the English. utils/i18n.ts:949 and :1370 — the
+legal block in both tables — already read "CAPS Poker" and needed no change.
+
+=== SWEPT, AND TWO SURFACES TURNED UP THAT NEITHER LIST HAD ===
+  1. web-replay/index.html — THE HAND-REPLAY PAGE, AND IT SHIPS. scripts/fix-web-html.js:171
+     copies it into dist/, and /hand returns HTTP 200 live. It carried a CAPS POKER wordmark and a
+     PLAY CAPS POKER button. Both changed.
+  2. app.json microphonePermission — the iOS SYSTEM DIALOG shown the first time a bug report
+     records audio. A permission prompt is about as user-visible as text gets, and a
+     display-surface sweep never thinks to check it.
+  store/app-store-description.txt and store/privacy-policy.md also carry the name, already
+  correctly cased, and are referenced by NO build step — stale artefacts, left alone.
+  Three remaining hits are CODE COMMENTS (constants/theme.ts:1, utils/debug-suite.ts:2,
+  utils/sounds.ts:2) — not rendered, left alone.
+
+=== ONE SURFACE DELIBERATELY NOT CHANGED — ROYE'S TO OVERRULE ===
+THE LANDING MASTHEAD IS NOT A STRING. It is a two-part gilded lockup:
+  <span class="caps">CAPS</span>    serif 900, clamp(64px,22vw,104px), gold gradient
+  <span class="poker">POKER</span>  serif 600, clamp(15px,5vw,20px), letter-spacing 11px,
+                                    text-transform: uppercase
+Unifying it means redesigning the page's central visual identity, not editing a word — and POKER is
+uppercased by CSS as well as in the source. I judged it a LOGO rather than a name: all-caps
+wordmarks are ordinary and do not read to a player as a second name, and the defect Roye was fixing
+was a player meeting two different names, which was the store-versus-device-label mismatch, now
+closed. TWO EDITS REVERSE MY CALL: >Poker< in the span, and drop text-transform:uppercase from
+.poker at public/landing.html:105. The same open question applies to the icon and splash wordmarks,
+which were not in scope.
+
+=== RENDERED CHECK — tests/one-name-render.mjs, 13/13 ===
+Read from the BUILT dist/, served by dist/vercel.json's OWN rules. Not a grep.
+  web tab title        "CAPS Poker"
+  landing title        "CAPS Poker — Multi-board poker, free in your browser"
+  landing spelling     every element spells "CAPS Poker"
+  landing wordmark     renders "♠ ♥ ♦ ♣ CAPS POKER" — LOCKUP, reported not failed
+  privacy page         "CAPS Poker — Privacy Policy", no stale casing
+  terms page           "CAPS Poker — תנאי שימוש", no stale casing
+  hand replay          "CAPS Poker", no stale casing
+  orientation-pick     renders "CAPS Poker"
+  theme-pick           renders "CAPS Poker"
+  home (onboarding)    renders "CAPS Poker"
+IOS HOME-SCREEN LABEL: NOT CHECKABLE HERE — native-only, a browser cannot show it. The source that
+generates it now reads CAPS Poker and the Info.plist will follow at the next prebuild. ON ROYE'S
+DEVICE LIST, alongside the masthead and the icon.
+Suite 2,874/2,874 across 57 suites. tsc clean.
+
+=== THREE RIG FAILURES, ALL MINE, AND THE THIRD PRINTED A FALSE GREEN ===
+  1. THE RIG POINTED AT A PORT WITH NOTHING ON IT. tests/serve-dist-like-prod.mjs HARDCODES 8899
+     and ignores any argument; I passed 8931. Every goto hung and the run produced NO OUTPUT AT
+     ALL. A rig aimed at the wrong port looks exactly like a broken product.
+  2. innerText APPLIES CSS text-transform. The first check read document.body.innerText and
+     reported the landing page as still saying CAPS POKER — a defect filed against a typographic
+     treatment. Spelling is now judged from textContent; text-transform is reported separately.
+  3. THE FIX INTRODUCED A BLIND SPOT THAT PRINTED A FALSE GREEN. The corrected probe scanned only
+     LEAF elements whose own text matched /CAPS/i. The masthead is split across two spans, so
+     NEITHER LEAF MATCHED and the rig announced "every element spells CAPS Poker" while the page
+     painted CAPS POKER. Caught ONLY because two rigs disagreed and I chased the disagreement
+     instead of believing the green one. Containers are now read by rendered innerText too.
+  And a fourth already in this project's notes that I did anyway: pkill -f matched its own shell
+  and killed the command mid-run (exit 144).
+
+=== FOR ROYE — THE SOCIAL ACCOUNTS, NOT CHANGED, NOT REACHABLE FROM HERE ===
+No handle, URL or bio text for any social account exists in this repo; only per-platform image
+assets under docs/social/. What they should say:
+  Name / display name: CAPS Poker
+  Bio line 1: Multi-board poker. Four cards on every board — you decide which goes where.
+  Bio line 2 (if allowed): Free play, virtual chips only. No real money. 18+.
+  Link: https://caps.ftable.co.il
+The subtitle and disclaimer match the App Store listing exactly, so the two agree.
+
+Record: docs/brand/ONE-NAME-2026-09-09.md
+Commits: 90bdeb4, 7b92312
