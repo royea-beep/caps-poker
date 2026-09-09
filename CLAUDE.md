@@ -363,7 +363,38 @@
   **Apple raised no uniqueness objection** — store names are unique-checked on write and it accepted
   this one. Revert line: set `CAPS - Card game` on
   `/v1/appInfoLocalizations/7d60730c-a3f3-4e30-8d4c-dfafe5416b52`.
-- ⚠️ **THE PRODUCT NOW CARRIES THREE CASINGS OF ITS OWN NAME — reported, NOT changed (2026-09-08).**
+- ✅ **ONE NAME EVERYWHERE — `CAPS Poker`, PROVEN WHERE IT RENDERS (2026-09-09, Roye's call).**
+  Record: `docs/brand/ONE-NAME-2026-09-09.md`. Changed: `app.json` `expo.name` AND
+  `microphonePermission` · `public/landing.html` (`<title>`, `og:title`, and the `TITLES` map in
+  BOTH languages) · `components/ShareCard.tsx` ×4 · `app/orientation-pick.tsx:36` ·
+  `app/theme-pick.tsx:26` · `web-replay/index.html` ×2.
+  ⚠️ **`app.json` `expo.name` IS THE SINGLE SOURCE FOR TWO ARTEFACTS** — the iOS home-screen label
+  (`ios/CapsPoker/Info.plist` `CFBundleDisplayName`) and the web tab title (`dist/index.html`).
+  `ios/` is untracked prebuild output: change the line, never the artefact.
+  ✅ **IDENTIFIERS UNTOUCHED and asserted in the edit script, not eyeballed:** `slug`/`scheme`
+  `caps-poker`, `com.capspoker.app` ×2, `package.json` `caps-poker`. They are ids, not names.
+  ⚠️ **TWO SURFACES NO LIST HAD:** `web-replay/index.html` SHIPS (`scripts/fix-web-html.js:171`
+  copies it, `/hand` is live 200) and carried a `CAPS POKER` wordmark; and `app.json`'s
+  **microphonePermission**, the iOS system dialog shown when a bug report records audio — a
+  permission prompt is user-visible text that a display-surface sweep never thinks to check.
+  ⚠️ **THE LANDING MASTHEAD IS DELIBERATELY UNCHANGED and is Roye's to overrule.** It is not a
+  string but a two-part lockup — `<span class="caps">CAPS</span>` at up to 104px with a gold
+  gradient plus `<span class="poker">POKER</span>` at 20px, `letter-spacing:11px`,
+  `text-transform:uppercase`. Unifying it is a redesign, not a word. Two edits reverse it:
+  `>Poker<` and dropping the uppercase rule at `public/landing.html:105`.
+  **RENDERED CHECK: `tests/one-name-render.mjs`, 13/13**, reading the BUILT `dist/` served by
+  `dist/vercel.json`'s own rules. ⚠️ **The iOS label is native-only — a browser cannot show it.**
+  On Roye's device list. Suite 2,874/2,874 across 57 suites, tsc clean.
+- ⚠️ **THREE RIG FAILURES IN THAT ONE SPRINT, AND THE THIRD PRINTED A FALSE GREEN (2026-09-09).**
+  (1) `tests/serve-dist-like-prod.mjs` **HARDCODES PORT 8899** and ignores any argument — a rig
+  passing 8931 hung on every `goto` and produced no output at all. (2) **`innerText` APPLIES CSS
+  `text-transform`**, so a page whose source says `CAPS Poker` reads back as `CAPS POKER`; judging
+  spelling from `innerText` files a defect against a typographic treatment. Judge spelling from
+  `textContent`. (3) **A LEAF-ONLY SCAN CANNOT SEE A WORDMARK SPLIT ACROSS TWO SPANS** — neither
+  `CAPS` nor `POKER` matches a `/CAPS POKER/` test on its own, so the rig announced "every element
+  spells CAPS Poker" while the page painted the opposite. Only two rigs disagreeing caught it.
+  ⚠️ And `pkill -f` matched its own shell again (exit 144) — it is already in these notes.
+- ⚠️ **SUPERSEDED — THE PRODUCT CARRIED THREE CASINGS (2026-09-08, closed 2026-09-09).**
   Measured from the files and the generated artefacts, not assumed:
   **store `CAPS Poker`** · **iOS home-screen label `Caps Poker`** (`ios/CapsPoker/Info.plist`
   `CFBundleDisplayName`, generated from `app.json` `expo.name`; `ios/` is untracked prebuild output)
