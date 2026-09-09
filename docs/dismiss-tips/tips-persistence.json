@@ -1,0 +1,674 @@
+{
+  "chromium-en-320": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "chromium-en-393": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "chromium-he-320": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "chromium-he-393": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "webkit-en-320": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "webkit-en-393": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "webkit-he-320": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  },
+  "webkit-he-393": {
+    "newDevice": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newDeviceStore": {
+      "tutorialSeen": null,
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "skipClicked": true,
+    "afterSkipStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": null,
+      "tipsOff": null
+    },
+    "afterSkipSurfaces": {
+      "tutorial": false,
+      "tipCards": true,
+      "tipTapCard": false,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterReload": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "firstHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": true,
+      "tipAny": true,
+      "boardHint": true
+    },
+    "afterFirstHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "1",
+      "tipsOff": null
+    },
+    "secondHand": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "afterSecondHandStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "newSessionHome": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionGame": {
+      "tutorial": false,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    },
+    "newSessionStore": {
+      "tutorialSeen": "true",
+      "gamesPlayed": "2",
+      "tipsOff": null
+    },
+    "clearedCache": {
+      "tutorial": true,
+      "tipCards": false,
+      "tipTapCard": false,
+      "tipAny": false,
+      "boardHint": false
+    }
+  }
+}

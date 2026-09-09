@@ -1,0 +1,175 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* BUTTON-STYLES contact sheet — 8 treatments, faithful mockup of the CAPS home screen.
+   RENDERED CONCEPT MOCKUP (Chromium), grounded in the real app values:
+   mint #4FD6A8 (primary/field), dark ink #08130F on mint, winner-cue gold #FFD700 (NEVER a CTA),
+   brass #C9A84C (gold-edge treatment only), subtitle #cfd8d2. NOT the app bundle. */
+:root{ --mint:#4FD6A8; --ink:#08130F; --ink2:#0A1A14; --won:#FFD700; --brass:#C9A84C; --sub:#cfd8d2; }
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+body{background:#05070a;color:#fff;padding:22px}
+h1{font-size:18px;font-weight:800;margin-bottom:4px}
+.meta{font-size:12px;color:#9fb0aa;margin-bottom:18px;line-height:1.5}
+.legend{display:flex;gap:14px;align-items:center;margin:8px 0 20px;font-size:12px;color:#c8d3ce;flex-wrap:wrap}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:5px}
+.grid{display:flex;flex-wrap:wrap;gap:20px}
+.tile{border:1px solid #1c2a25;border-radius:14px;overflow:hidden;background:#000}
+.tilehdr{background:#0e1512;padding:8px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid #1c2a25}
+.code{font-weight:900;font-size:15px;color:var(--mint);letter-spacing:1px}
+.tname{font-size:11px;color:#cfd8d2;text-transform:uppercase;letter-spacing:1px}
+.badge{font-size:10px;color:#9fb0aa}
+.badge b{color:#7CFFB0}
+.badge .bad{color:#ff6b6b}
+
+/* ---- the home screen ---- */
+.home{position:relative;background:radial-gradient(120% 80% at 50% 0%, #0d1a14 0%, #070c0a 55%, #05080a 100%);height:852px;display:flex;flex-direction:column;align-items:center;padding-top:26px}
+.home.w320{width:320px}.home.w393{width:393px}
+.pips{color:#5a6b63;letter-spacing:10px;font-size:13px;margin-bottom:8px}
+.caps{font-family:Georgia,'Times New Roman',serif;font-weight:800;font-size:64px;line-height:.92;
+  background:linear-gradient(180deg,#f4e3a1 0%,#d9b24e 45%,#9c7a2e 100%);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:2px}
+.home.w320 .caps{font-size:54px}
+.poker{font-family:Georgia,serif;letter-spacing:9px;font-size:15px;color:#b99a52;margin-top:2px}
+.sub{color:var(--sub);font-size:13px;text-align:center;max-width:80%;margin:16px auto 0;line-height:1.35}
+.home.w320 .sub{font-size:12px}
+.btns{width:100%;padding:0 16px;margin-top:26px;display:flex;flex-direction:column;gap:12px}
+.foot{color:#6a7a72;font-size:10px;text-align:center;margin-top:22px}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:60px;background:#0D0D0D;border-top:1px solid rgba(79,214,168,.2);display:flex;justify-content:space-around;align-items:center;font-size:20px;color:#4FD6A8}
+.tabbar span{opacity:.55}
+
+/* Base button skeletons — hierarchy is FIXED (refinement 1): .play dominant, .prac quiet. Treatments restyle. */
+.play,.prac{border-radius:16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden}
+.play{min-height:64px;padding:16px}
+.prac{min-height:52px;padding:13px 16px;justify-content:center}
+.play .emoji{font-size:24px}
+.play .txt{flex:1}
+.play .t{font-size:19px;font-weight:900;letter-spacing:.5px;line-height:1.05}
+.play .s{font-size:12px;font-weight:700;margin-top:2px;opacity:.92}
+.play .go{font-size:24px;font-weight:900}
+.prac .pt{font-size:16px;font-weight:800;letter-spacing:.3px}
+
+/* ============ TREATMENTS ============ */
+/* A · DEPTH — raised mint, soft shadow, top inner highlight; .pressed sinks */
+.A .play{background:linear-gradient(180deg,#63e6bd,#3cbf93);box-shadow:0 8px 0 #1f6f56,0 12px 22px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.5);color:var(--ink)}
+.A .play .s{color:var(--ink2)} .A .play.pressed{transform:translateY(6px);box-shadow:0 2px 0 #1f6f56,inset 0 2px 6px rgba(0,0,0,.3)}
+.A .prac{background:#12211b;box-shadow:0 4px 0 #0a130f,inset 0 1px 0 rgba(255,255,255,.06);color:#9fe8cd;border:1px solid #24413550}
+
+/* B · FELT INLAY — mint face with an inlaid felt panel + stitch; practice = felt ghost */
+.B .play{background:var(--mint);color:var(--ink);box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.B .play::after{content:"";position:absolute;inset:5px;border-radius:12px;background:repeating-linear-gradient(45deg,#0c3a26 0 3px,#0a3221 3px 6px);opacity:.16;pointer-events:none}
+.B .play .s{color:var(--ink2)}
+.B .prac{background:radial-gradient(100% 120% at 50% 0,#0f4630,#0a3020);border:1px dashed #2f6b4d;color:#bfeeda;box-shadow:inset 0 0 20px rgba(0,0,0,.5)}
+
+/* C · GOLD-EDGED — dark fill, thin BRASS rule (edge only, NOT winner gold), mint label */
+.C .play{background:#0d1512;border:1.5px solid var(--brass);color:var(--mint);box-shadow:0 0 0 1px rgba(201,168,76,.15),0 6px 16px rgba(0,0,0,.5)}
+.C .play .s{color:#9fbfae} .C .play .go{color:var(--brass)}
+.C .prac{background:#0b100e;border:1px solid rgba(201,168,76,.5);color:#cdb981}
+
+/* D · GLASS — translucent mint over the felt, top sheen, light hairline */
+.D .play{background:rgba(79,214,168,.20);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(3px);color:#eafff6;box-shadow:0 6px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+.D .play .s{color:#bfe9d9}
+.D .prac{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#dff6ee}
+
+/* E · BEVELED CHIP — poker-chip edge (dashed rim) around a mint face */
+.E .play{background:var(--mint);color:var(--ink);border-radius:18px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.E .play::before{content:"";position:absolute;inset:3px;border-radius:15px;border:3px dashed rgba(8,19,15,.55);pointer-events:none}
+.E .play .s{color:var(--ink2)}
+.E .prac{background:#122019;border-radius:16px;color:#a9e9ce;position:relative}
+.E .prac::before{content:"";position:absolute;inset:3px;border-radius:13px;border:2px dashed rgba(79,214,168,.35)}
+
+/* F · OUTLINE + GLOW — mint outline, controlled bloom; practice thin no-glow */
+.F .play{background:rgba(79,214,168,.10);border:2px solid var(--mint);color:#eafff6;box-shadow:0 0 18px rgba(79,214,168,.55),0 0 4px rgba(79,214,168,.8)}
+.F .play .t{color:#daffee} .F .play .s{color:#9fe8cd}
+.F .prac{background:transparent;border:1px solid rgba(79,214,168,.4);color:#8fd9bd}
+
+/* G · ICON-SOLID — solid mint, OVERSIZED icon leads; practice quiet ghost */
+.G .play{background:var(--mint);color:var(--ink);padding:12px 16px}
+.G .play .emoji{font-size:44px;line-height:1}
+.G .play .t{font-size:20px}.G .play .s{color:var(--ink2)}
+.G .prac{background:#101c17;color:#9fe0c6;border:1px solid #24413588;font-weight:700}
+.G .prac .emoji{font-size:20px;margin-right:6px}
+
+/* H · SPLIT primary/secondary (refinement 1 literal) — filled CTA + ghost */
+.H .play{background:var(--mint);color:var(--ink);box-shadow:0 8px 22px rgba(79,214,168,.28),0 4px 10px rgba(0,0,0,.4)}
+.H .play .s{color:var(--ink2)}
+.H .prac{background:transparent;border:1.5px solid #2d4c40;color:#8bb8a6;min-height:46px;font-weight:600}
+</style></head>
+<body>
+<h1>CAPS — home button treatments · <span id="wlabel"></span></h1>
+<div class="meta">RENDERED CONCEPT MOCKUP (Chromium screenshot) — faithful to the real home values, but NOT the app bundle. Hierarchy fixed per refinement 1: one dominant <b>Play&nbsp;Now</b>, a quieter <b>Practice</b> beneath. Each tile labelled with its CODE. Floor badge: contrast(label:fill) · min-height · pressed-state defined.</div>
+<div class="legend">
+  <span><span class="sw" style="background:#4FD6A8"></span>mint #4FD6A8 = primary/field/CTA</span>
+  <span><span class="sw" style="background:#FFD700"></span>gold #FFD700 = WON winner cue (never a CTA)</span>
+  <span><span class="sw" style="background:#C9A84C"></span>brass #C9A84C = gold-edge treatment (edge only)</span>
+</div>
+<div class="grid" id="grid"></div>
+
+<script>
+const W = new URLSearchParams(location.search).get('w')==='320' ? 320 : 393;
+document.getElementById('wlabel').textContent = W+'px wide, full home per tile';
+const TREAT = [['A','Depth'],['B','Felt inlay'],['C','Gold-edged'],['D','Glass'],['E','Beveled chip'],['F','Outline + glow'],['G','Icon-solid'],['H','Split primary/secondary']];
+const HOME = (code)=>`
+  <div class="pips">♠ ♥ ♦ ♣</div>
+  <div class="caps">CAPS</div><div class="poker">P O K E R</div>
+  <div class="sub">Four cards on every board. Every board plays at once. Win the most boards, win the hand.</div>
+  <div class="btns ${code}">
+    <div class="play"><span class="emoji">🎮</span><span class="txt"><span class="t">Play Now</span><span class="s">Real players · instant bot tables</span></span><span class="go">›</span></div>
+    <div class="prac"><span class="pt">Practice vs bots</span></div>
+  </div>
+  <div class="foot">Free play | Virtual chips only | No real-money gambling | 18+</div>
+  <div class="tabbar"><span>🏠</span><span>♠️</span><span>👤</span></div>`;
+const grid=document.getElementById('grid');
+for(const [c,name] of TREAT){
+  const tile=document.createElement('div'); tile.className='tile';
+  tile.innerHTML=`<div class="tilehdr"><span class="code">${c}</span><span class="tname">${name}</span><span class="badge" id="b_${c}">measuring…</span></div><div class="home w${W}">${HOME(c)}</div>`;
+  grid.appendChild(tile);
+}
+
+/* ---------- MEASUREMENT INSTRUMENT (label:fill contrast, height) ---------- */
+function lum(r,g,b){const a=[r,g,b].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*a[0]+.7152*a[1]+.0722*a[2];}
+function ratio(rgb1,rgb2){const L1=lum(...rgb1),L2=lum(...rgb2);const hi=Math.max(L1,L2),lo=Math.min(L1,L2);return (hi+.05)/(lo+.05);}
+function parse(str){ // returns rgb from rgb()/rgba() composited over a bg if alpha<1
+  const m=str.match(/rgba?\(([^)]+)\)/); if(!m) return [0,0,0];
+  const p=m[1].split(',').map(s=>parseFloat(s)); return p.length===4?[p[0],p[1],p[2],p[3]]:[p[0],p[1],p[2],1];
+}
+function over(fg,bg){const a=fg[3]??1;return [Math.round(fg[0]*a+bg[0]*(1-a)),Math.round(fg[1]*a+bg[1]*(1-a)),Math.round(fg[2]*a+bg[2]*(1-a))];}
+const PAGEBG=[10,18,14]; // approx home bg where the buttons sit
+function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function gradientAvg(bgImage){ // FIX for gradient fills: average the gradient's colour stops (not the glyph)
+  const hexes=(bgImage.match(/#[0-9a-fA-F]{3,6}/g)||[]).map(hex2rgb);
+  const rgbs=(bgImage.match(/rgba?\([^)]+\)/g)||[]).map(s=>over(parse(s),PAGEBG));
+  const all=[...hexes,...rgbs]; if(!all.length) return null;
+  return [0,1,2].map(i=>Math.round(all.reduce((s,c)=>s+c[i],0)/all.length));
+}
+function effFill(el){ // composite the element's real fill over the page bg; handle solid, rgba, AND gradients
+  const cs=getComputedStyle(el); const bg=parse(cs.backgroundColor);
+  const solidAlpha=bg[3]??1;
+  const hasGrad = cs.backgroundImage && cs.backgroundImage.includes('gradient');
+  if(solidAlpha>0.02 && !(bg[0]===0&&bg[1]===0&&bg[2]===0&&solidAlpha===0)){
+    // a real solid/tinted fill — but if it's fully transparent-black default, fall through
+    if(!(bg[0]===0&&bg[1]===0&&bg[2]===0&&hasGrad)) return solidAlpha<1?over(bg,PAGEBG):bg.slice(0,3);
+  }
+  if(hasGrad){ const g=gradientAvg(cs.backgroundImage); if(g) return g; }
+  return PAGEBG; // true ghost (no fill) → text sits on the page bg
+}
+function textColor(el){ return over(parse(getComputedStyle(el).color), effFill(el)); }
+const results={};
+for(const [c] of TREAT){
+  const home=document.querySelector('.badge#b_'+c).closest('.tile').querySelector('.home');
+  const play=home.querySelector('.play'), prac=home.querySelector('.prac');
+  const pf=effFill(play), pt=textColor(play);
+  const cf=effFill(prac), ct=textColor(prac);
+  const rPlay=ratio(pt,pf), rPrac=ratio(ct,cf);
+  const hPlay=play.getBoundingClientRect().height, hPrac=prac.getBoundingClientRect().height;
+  // gold check: is any CTA fill/border the winner-cue gold #FFD700 (255,215,0)?
+  const cs=getComputedStyle(play); const isWon = /255,\s*215,\s*0/.test(cs.backgroundColor)|| /255,\s*215,\s*0/.test(cs.borderColor);
+  results[c]={rPlay:+rPlay.toFixed(2),rPrac:+rPrac.toFixed(2),hPlay:Math.round(hPlay),hPrac:Math.round(hPrac),wonCTA:isWon,fill:pf.join(',')};
+  const okP=rPlay>=4.5, okS=rPrac>=4.5, okH=hPlay>=44&&hPrac>=44;
+  document.getElementById('b_'+c).innerHTML=
+    `play ${okP?'<b>':'<span class=bad>'}${rPlay.toFixed(1)}:1${okP?'</b>':'</span>'} · prac ${okS?'<b>':'<span class=bad>'}${rPrac.toFixed(1)}:1${okS?'</b>':'</span>'} · h ${Math.round(hPlay)}/${Math.round(hPrac)}px ${okH?'✓':'✗'}${isWon?' · <span class=bad>GOLD-CTA!</span>':''}`;
+}
+/* ---------- CANARY: the instrument must FLAG a known-bad pair ---------- */
+const canaryBad = ratio([79,214,168],[79,214,168]); // mint on mint = 1:1
+const canaryGood = ratio([8,19,15],[79,214,168]);    // real Play Online ink on mint
+window.__CANARY__ = { bad:+canaryBad.toFixed(2), badFlagged: canaryBad<4.5, good:+canaryGood.toFixed(2), goodPass: canaryGood>=4.5 };
+window.__RESULTS__ = results;
+document.title = 'ready';
+</script>
+</body></html>

@@ -12,7 +12,7 @@
  *   - variant="fab": a small floating 🐛 affordance (mount on main screens).
  *   - variant="row": a Settings-style row.
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, ActivityIndicator, KeyboardAvoidingView } from 'react-native';
 import { usePathname } from 'expo-router';
 import Constants from 'expo-constants';
@@ -24,9 +24,49 @@ import { getBreadcrumbs } from '../utils/breadcrumbs';
 import { getConsoleLogs } from '../utils/logBuffer';
 import { useGameStore } from '../store/gameStore';
 import { rf, rs } from '../utils/responsive';
+import { getLanguage } from '../utils/i18n';
 
 const PROJECT = 'caps-poker';
 const APP_VERSION = Constants.expoConfig?.version ?? '2.7.0';
+
+// PRE-INVITE 2026-09-06 — THE FORM HAD NO CEILING.
+// `send()` awaited the insert with no timeout and no interim feedback, so a tester on a bad
+// connection watched a bare spinner for however long the request took — measured at 9 to 25
+// seconds before it failed on its own — with nothing on screen to say whether it was working,
+// stuck, or already sent. A tester who cannot tell those apart either gives up on the round or
+// files the same report four times. 12s is the ceiling; 3s is when the screen admits it is slow.
+const SEND_TIMEOUT_MS = 12000;
+const SLOW_HINT_MS = 3000;
+
+// VAMOS PHASE-A 2026-09-02 — bilingual strings for the tester bug form. Follows the app's isHE
+// pattern (index.tsx). The REAL build number is already carried via getBuildIdentity()'s
+// `native_build` (Application.nativeBuildVersion) spread into device_info below; `language` is
+// added there too so triage sees which UI the tester was on.
+const BUG_I18N = {
+  reportABug:  { en: 'Report a bug', he: 'דיווח על באג' },
+  titleBug:    { en: '🐛 Report a bug', he: '🐛 דיווח על באג' },
+  hint:        { en: 'What went wrong? The more detail, the faster we fix it.', he: 'מה השתבש? כמה שיותר פרטים, כך נתקן מהר יותר.' },
+  namePh:      { en: 'Your name (so we can follow up)', he: 'השם שלך (כדי שנוכל לחזור אליך)' },
+  nameAria:    { en: 'Your name', he: 'השם שלך' },
+  descPh:      { en: 'Describe the bug — what you did, what you expected, what happened…', he: 'תארו את הבאג — מה עשיתם, למה ציפיתם, ומה קרה בפועל…' },
+  descAria:    { en: 'Bug description', he: 'תיאור הבאג' },
+  screen:      { en: 'Screen', he: 'מסך' },
+  errSend:     { en: "Couldn't send — check your connection and try again.", he: 'השליחה נכשלה — בדקו את החיבור ונסו שוב.' },
+  // PRE-INVITE 2026-09-06 — a tester used to watch an unlabelled spinner for as long as the
+  // request took, with no ceiling at all. These three strings are the whole difference between
+  // "it is working" and "it is stuck": what is happening, that it is taking longer than usual,
+  // and that it has given up so they can retry.
+  sending:     { en: 'Sending…', he: 'שולח…' },
+  stillSending:{ en: 'Still sending — this is taking longer than usual.', he: 'עדיין שולח — זה לוקח יותר זמן מהרגיל.' },
+  errTimeout:  { en: "Gave up after 12 seconds — your report wasn't sent. Your text is still here, tap Send to try again.", he: 'הפסקנו לנסות אחרי 12 שניות — הדיווח לא נשלח. הטקסט נשמר, הקישו שליחה כדי לנסות שוב.' },
+  errLimited:  { en: "Not sent — that's a lot of reports in a short time. Wait a few minutes and send this again.", he: 'לא נשלח — הרבה דיווחים בזמן קצר. המתינו כמה דקות ושלחו שוב.' },
+  cancel:      { en: 'Cancel', he: 'ביטול' },
+  send:        { en: 'Send', he: 'שליחה' },
+  sendAria:    { en: 'Send report', he: 'שליחת דיווח' },
+  thanks:      { en: '✅ Thanks!', he: '✅ תודה!' },
+  sentBody:    { en: 'Your report was sent to the team.', he: 'הדיווח נשלח לצוות.' },
+  done:        { en: 'Done', he: 'סיום' },
+} as const;
 
 interface Props {
   variant?: 'fab' | 'row';
@@ -35,16 +75,33 @@ interface Props {
 export default function ReportBugButton({ variant = 'fab' }: Props) {
   const pathname = usePathname();
   const playerName = useGameStore((s) => s.playerName);
+  const isHE = getLanguage() === 'he';
+  const T = (k: keyof typeof BUG_I18N) => BUG_I18N[k][isHE ? 'he' : 'en'];
+  const dir = isHE ? { textAlign: 'right' as const, writingDirection: 'rtl' as const } : null;
 
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [name, setName] = useState(playerName || '');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error' | 'limited'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error' | 'limited' | 'timeout'>('idle');
+  // Shown while still sending, once the send has run past SLOW_HINT_MS.
+  const [slow, setSlow] = useState(false);
+  const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimers = useCallback(() => {
+    if (slowTimer.current) { clearTimeout(slowTimer.current); slowTimer.current = null; }
+    if (abortTimer.current) { clearTimeout(abortTimer.current); abortTimer.current = null; }
+  }, []);
+
+  // A modal closed mid-send must not leave timers running against an unmounted screen.
+  useEffect(() => () => clearTimers(), [clearTimers]);
 
   const reset = useCallback(() => {
     setDescription('');
     setStatus('idle');
-  }, []);
+    setSlow(false);
+    clearTimers();
+  }, [clearTimers]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -55,6 +112,15 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
     const desc = description.trim();
     if (!desc || status === 'sending') return;
     setStatus('sending');
+    setSlow(false);
+    // THE CEILING AND THE INTERIM SIGNAL. `abortSignal` genuinely cancels the request rather
+    // than just stopping the wait, so a hung send cannot come back later and overwrite a state
+    // the tester has since moved on from.
+    const ac = new AbortController();
+    let timedOut = false;
+    clearTimers();
+    slowTimer.current = setTimeout(() => setSlow(true), SLOW_HINT_MS);
+    abortTimer.current = setTimeout(() => { timedOut = true; ac.abort(); }, SEND_TIMEOUT_MS);
     try {
       const sb = getSupabase();
       if (!sb) { setStatus('error'); return; }
@@ -99,6 +165,9 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           platform: Platform.OS,
           osVersion: String(Platform.Version ?? ''),
           appVersion: APP_VERSION,
+          // VAMOS PHASE-A — the UI language the tester was on (build/screen/device already captured;
+          // language was the missing one). getBuildIdentity() below carries the REAL native_build.
+          language: getLanguage(),
           otaUpdateId: Updates.updateId ?? 'embedded',
           source: 'tester_report_button',
           // G2 — `appVersion` is "2.7.0" on every build ever shipped and cannot identify one.
@@ -106,20 +175,24 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           ...buildId,
           reportedAtLocal: new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jerusalem' }),
         },
-      });
+      }).abortSignal(ac.signal);
       // FLOOD 2026-08-16 — the rate limit refuses with a check_violation. Falling into the generic
       // error would tell a tester to "check your connection", which is both wrong and unactionable:
       // nothing is wrong with their connection and retrying immediately cannot work.
       if (error) {
+        if (timedOut) { setStatus('timeout'); return; }
         const limited = error.code === '23514' || (error.message ?? '').includes('bug_report_rate_limit');
         setStatus(limited ? 'limited' : 'error');
         return;
       }
       setStatus('done');
     } catch {
-      setStatus('error');
+      setStatus(timedOut ? 'timeout' : 'error');
+    } finally {
+      clearTimers();
+      setSlow(false);
     }
-  }, [description, name, pathname, status]);
+  }, [description, name, pathname, status, clearTimers]);
 
   return (
     <>
@@ -129,7 +202,7 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           onPress={() => setOpen(true)}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Report a bug"
+          accessibilityLabel={T('reportABug')}
           testID="report-bug-fab"
         >
           <Text style={styles.fabText}>🐛</Text>
@@ -140,12 +213,12 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           onPress={() => setOpen(true)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Report a bug"
+          accessibilityLabel={T('reportABug')}
           testID="report-bug-row"
         >
           <Text style={styles.rowIcon}>🐛</Text>
-          <Text style={styles.rowLabel}>Report a bug</Text>
-          <Text style={styles.rowChevron}>›</Text>
+          <Text style={[styles.rowLabel, dir]}>{T('reportABug')}</Text>
+          <Text style={styles.rowChevron}>{isHE ? '‹' : '›'}</Text>
         </TouchableOpacity>
       )}
 
@@ -157,32 +230,32 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
           <View style={styles.sheet}>
             {status === 'done' ? (
               <View style={styles.doneWrap}>
-                <Text style={styles.doneTitle}>✅ Thanks!</Text>
-                <Text style={styles.doneBody}>Your report was sent to the team.</Text>
-                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Close">
-                  <Text style={styles.sendText}>Done</Text>
+                <Text style={styles.doneTitle}>{T('thanks')}</Text>
+                <Text style={styles.doneBody}>{T('sentBody')}</Text>
+                <TouchableOpacity style={styles.sendBtn} onPress={close} accessibilityRole="button" accessibilityLabel={T('done')}>
+                  <Text style={styles.sendText}>{T('done')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={styles.title}>🐛 Report a bug</Text>
+                <Text style={[styles.title, dir]}>{T('titleBug')}</Text>
                 {/* G6 — the tester supplies ONE thing: what went wrong. Build number, screen,
                     breadcrumbs, console and session are attached automatically on send. The
                     name field is pre-filled from the profile, so it is not a second ask. */}
-                <Text style={styles.hint}>What went wrong? The more detail, the faster we fix it.</Text>
+                <Text style={[styles.hint, dir]}>{T('hint')}</Text>
 
                 <TextInput
-                  style={styles.input}
-                  placeholder="Your name (so we can follow up)"
+                  style={[styles.input, dir]}
+                  placeholder={T('namePh')}
                   placeholderTextColor="#8A8A8A"
                   value={name}
                   onChangeText={setName}
                   maxLength={40}
-                  accessibilityLabel="Your name"
+                  accessibilityLabel={T('nameAria')}
                 />
                 <TextInput
-                  style={[styles.input, styles.textarea]}
-                  placeholder="Describe the bug — what you did, what you expected, what happened…"
+                  style={[styles.input, styles.textarea, dir]}
+                  placeholder={T('descPh')}
                   placeholderTextColor="#8A8A8A"
                   value={description}
                   onChangeText={setDescription}
@@ -190,32 +263,40 @@ export default function ReportBugButton({ variant = 'fab' }: Props) {
                   numberOfLines={5}
                   maxLength={1000}
                   textAlignVertical="top"
-                  accessibilityLabel="Bug description"
+                  accessibilityLabel={T('descAria')}
                   testID="report-bug-description"
                 />
-                <Text style={styles.screenNote}>Screen: {pathname || 'unknown'}</Text>
+                <Text style={[styles.screenNote, dir]}>{T('screen')}: {pathname || 'unknown'}</Text>
                 {/* FAILURE MUST BE VISIBLE. A tester who believes a report was sent when it
                     was not is worse off than one with no button at all. */}
-                {status === 'error' && <Text style={styles.errorText}>Couldn't send — check your connection and try again.</Text>}
+                {status === 'sending' && (
+                  <Text style={[styles.sendingText, dir]} testID="report-bug-sending">
+                    {slow ? T('stillSending') : T('sending')}
+                  </Text>
+                )}
+                {status === 'error' && <Text style={[styles.errorText, dir]}>{T('errSend')}</Text>}
+                {status === 'timeout' && (
+                  <Text style={[styles.errorText, dir]} testID="report-bug-timeout">{T('errTimeout')}</Text>
+                )}
                 {status === 'limited' && (
-                  <Text style={styles.errorText} testID="report-bug-limited">
-                    Not sent — that's a lot of reports in a short time. Wait a few minutes and send this again.
+                  <Text style={[styles.errorText, dir]} testID="report-bug-limited">
+                    {T('errLimited')}
                   </Text>
                 )}
 
                 <View style={styles.actions}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel="Cancel">
-                    <Text style={styles.cancelText}>Cancel</Text>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={close} accessibilityRole="button" accessibilityLabel={T('cancel')}>
+                    <Text style={styles.cancelText}>{T('cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.sendBtn, (!description.trim() || status === 'sending') && styles.sendBtnDisabled]}
                     onPress={send}
                     disabled={!description.trim() || status === 'sending'}
                     accessibilityRole="button"
-                    accessibilityLabel="Send report"
+                    accessibilityLabel={T('sendAria')}
                     testID="report-bug-send"
                   >
-                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>Send</Text>}
+                    {status === 'sending' ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>{T('send')}</Text>}
                   </TouchableOpacity>
                 </View>
               </>
@@ -262,6 +343,8 @@ const styles = StyleSheet.create({
   textarea: { minHeight: rs(110) },
   screenNote: { color: '#7C736A', fontSize: rf(12) },
   errorText: { color: '#FF6B6B', fontSize: rf(13) },
+  // Interim send feedback — deliberately calm, not an error colour: nothing has gone wrong yet.
+  sendingText: { color: '#C9C4B8', fontSize: rf(13) },
   actions: { flexDirection: 'row', gap: rs(12), marginTop: rs(8) },
   cancelBtn: { flex: 1, paddingVertical: rs(14), borderRadius: rs(12), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
   cancelText: { color: '#C9BFB2', fontSize: rf(16), fontWeight: '700' },

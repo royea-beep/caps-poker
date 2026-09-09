@@ -1,4 +1,5 @@
 import { HandRecord } from './handHistory';
+import { deriveHandOutcome } from './handOutcome';
 
 export const HAND_RANK_ORDER = [
   'High Card',
@@ -115,24 +116,40 @@ export function computeStats(hands: HandRecord[]): PlayerStats {
 
   for (const hand of ordered) {
     const net = hand.netChips;
+    // ONE DEFINITION OF WINNING, HERE TOO. Every counter below used to key off `net`, so this
+    // whole screen - win rate, recent form, both streak figures - carried the CHIPS definition
+    // while the record, the ladder and the celebration derive a win from BOARDS. That is the
+    // same split the align-the-celebration ruling closed on /results, surviving one file over.
+    // WHAT SPLITS AND WHAT DOES NOT: the OUTCOME counters ask the boards; the MONEY counters
+    // still ask the chips, because "biggest win" and "total chips won" are statements about
+    // money and a board win that nets zero is not a bigger one. They are no longer the same
+    // branch, which is precisely why they could not disagree before.
+    const outcome = deriveHandOutcome(hand.boards);
 
+    // MONEY - unchanged, and deliberately still keyed on the net.
     if (net > 0) {
-      handsWon++;
       totalChipsWon += net;
       biggestWin = Math.max(biggestWin, net);
+    } else if (net < 0) {
+      totalChipsLost += Math.abs(net);
+      biggestLoss = Math.max(biggestLoss, Math.abs(net));
+    }
+
+    // OUTCOME - boards decide it, and a tie is a third state rather than "not a win".
+    // The streaks mirror what /results already does live (app/results.tsx): a win extends the
+    // win streak, a loss ends it, and A TIE DOES NEITHER. Previously a net-zero hand reset both,
+    // so a tie broke a streak exactly as a loss did.
+    if (outcome === 'win') {
+      handsWon++;
       currentWinStreak++;
       currentLoseStreak = 0;
       bestWinStreak = Math.max(bestWinStreak, currentWinStreak);
-    } else if (net < 0) {
+    } else if (outcome === 'loss') {
       handsLost++;
-      totalChipsLost += Math.abs(net);
-      biggestLoss = Math.max(biggestLoss, Math.abs(net));
       currentLoseStreak++;
       currentWinStreak = 0;
     } else {
       handsTied++;
-      currentWinStreak = 0;
-      currentLoseStreak = 0;
     }
 
     if (hand.isComplete) completeCount++;
@@ -169,7 +186,9 @@ export function computeStats(hands: HandRecord[]): PlayerStats {
 
   // Recent form: hands[0..9] are newest
   const last10 = hands.slice(0, 10);
-  const last10Won = last10.filter((h) => h.netChips > 0).length;
+  // Recent form asked the chips while the all-time win rate three lines up now asks the boards,
+  // which would have put two different win rates on one screen.
+  const last10Won = last10.filter((h) => deriveHandOutcome(h.boards) === 'win').length;
   const last10WinRate = last10.length > 0 ? Math.round((last10Won / last10.length) * 1000) / 10 : 0;
   const last10NetChips = last10.reduce((s, h) => s + h.netChips, 0);
 

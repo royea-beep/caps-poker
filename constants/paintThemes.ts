@@ -527,19 +527,49 @@ export const currentPaint = {
       // of content; chrome is exactly what it is.
       boardSlotFillSelected: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
       boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
-      boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
-      boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
+      // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75. THE TOKEN IS NOT THE PIXEL HERE, and the gap is
+      // not antialiasing. EmptySlotAnimated renders the WHOLE slot at opacity 0.6 - a
+      // useSharedValue(0.6) initial belonging to a pulse that never runs, because KILL_Board is a
+      // hardcoded true from the unfinished 2026-03 crash bisect. So the border composites over
+      // the 0.045 fill (-> 0.3315) and is then MULTIPLIED BY 0.6, landing at an effective 0.199.
+      // Predicted rgb(70,96,83); measured off the render rgb(68,95,82). That is 1.73:1 against
+      // the fill it encloses and 1.82:1 against the panel outside it - not the 2.59 previously
+      // reported, which was an analytic composite against one neighbour and overstated the real
+      // contrast by about 40%.
+      // 0.75 measures 3.70 vs fill and 3.87 vs panel on the real render. Swept, not solved on
+      // paper: width and border-style do not move the ratio at all (they change how many pixels
+      // the line covers, not their colour), so alpha was the only lever.
+      // ⚠️ THIS VALUE IS CALIBRATED AGAINST THE 0.6 MULTIPLIER. If KILL_Board is ever flipped,
+      // the pulse runs 0.72<->1.0 and this outline paints far brighter than intended, and pulses.
+      // Fix the dead pulse and this comes back down - see the handoff.
+      boardSlotDash: 'rgba(255,255,255,0.75)',     // resting outline
+      // Raised with the resting outline above, and ONLY to keep the order intact: at resting 0.75
+      // a 0.72 "active" would have been DIMMER than the resting state it is supposed to escalate
+      // from. Active is also solid and 1.5px against resting's dashed 1px, so the step does not
+      // rest on alpha alone.
+      boardSlotDashActive: 'rgba(255,255,255,0.95)', // the invitation, when a card is in hand
       boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
       boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
       boardAutoText: '#4FD6A8',                    // OBSIDIAN.autoText
       boardAutoBolt: '#4FD6A8',                    // OBSIDIAN.autoBolt
 
-      // ── PANEL-FELT batch: board panel -> ~0.55 alpha (0x8C) so the root felt reads through
-      //    the play area. fallback -> transparent so native's fallback+gradient stack does NOT
-      //    double the opacity (the gradient is the sole 0.55 paint on both native and web). ──
-      boardPanelTop: '#1C1F268C',                  // OBSIDIAN.bgTop @ ~0.55
-      boardPanelBottom: '#1012188C',               // OBSIDIAN.bgBottom @ ~0.55
+      // ── SHIP-V1 2026-08-27: 0x8C (~0.55) -> 0x40 (~0.25). THIS IS A LEGIBILITY FIX, not a look
+      //    change. At 0x8C the panel rendered rgb(23,33,33) and the DEFAULT card back (cardBacks
+      //    CLASSIC #18181c) sits on it at 1.08:1 — SIX steps of grey out of 255. Face-down cards
+      //    were all but invisible on the surface they rest on, on the back every player has. 0x40
+      //    renders rgb(23,51,37) and takes that to 1.30:1, while the PURCHASED slate back stays
+      //    ahead at 1.68:1 — the two options measured below it (0x00 and a lighter tint) flattened
+      //    slate's advantage to 1.03x and then inverted it to 0.61x, i.e. the free back beating the
+      //    one people pay for.
+      //    CARD FACE 15.76 -> 13.09, still well clear of the 10.28 floor. Chosen over full
+      //    transparency because each board stays its own recessed region: in a game whose whole
+      //    idea is four separate boards, melting them into one surface works against the product.
+      //    THE ALPHA HERE IS NOW THE ALPHA THAT RENDERS. It was not before — Board.tsx painted this
+      //    gradient a second time on web, so 0.55 composited to 0.80. That duplicate is gone.
+      //    fallback stays transparent so native's fallback+gradient stack does not double it. ──
+      boardPanelTop: '#1C1F2640',                  // OBSIDIAN.bgTop @ ~0.25
+      boardPanelBottom: '#10121840',               // OBSIDIAN.bgBottom @ ~0.25
       boardPanelFallback: 'rgba(22,25,34,0)',      // was #161922 — alpha 0 (transparent) so alpha isn't doubled on native; kept as an rgba() colour, not 'transparent', for the colour-invariant guard
       boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
       boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
@@ -591,8 +621,27 @@ export const currentPaint = {
       // of content; chrome is exactly what it is.
       boardSlotFillSelected: 'rgba(255,255,255,0.10)',    // slot fill while a card is selected
       boardSlotFill: 'rgba(255,255,255,0.045)',    // resting fill - a marked place, not a hole
-      boardSlotDash: 'rgba(255,255,255,0.30)',     // resting outline
-      boardSlotDashActive: 'rgba(255,255,255,0.72)', // the invitation, when a card is in hand
+      // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75. THE TOKEN IS NOT THE PIXEL HERE, and the gap is
+      // not antialiasing. EmptySlotAnimated renders the WHOLE slot at opacity 0.6 - a
+      // useSharedValue(0.6) initial belonging to a pulse that never runs, because KILL_Board is a
+      // hardcoded true from the unfinished 2026-03 crash bisect. So the border composites over
+      // the 0.045 fill (-> 0.3315) and is then MULTIPLIED BY 0.6, landing at an effective 0.199.
+      // Predicted rgb(70,96,83); measured off the render rgb(68,95,82). That is 1.73:1 against
+      // the fill it encloses and 1.82:1 against the panel outside it - not the 2.59 previously
+      // reported, which was an analytic composite against one neighbour and overstated the real
+      // contrast by about 40%.
+      // 0.75 measures 3.70 vs fill and 3.87 vs panel on the real render. Swept, not solved on
+      // paper: width and border-style do not move the ratio at all (they change how many pixels
+      // the line covers, not their colour), so alpha was the only lever.
+      // ⚠️ THIS VALUE IS CALIBRATED AGAINST THE 0.6 MULTIPLIER. If KILL_Board is ever flipped,
+      // the pulse runs 0.72<->1.0 and this outline paints far brighter than intended, and pulses.
+      // Fix the dead pulse and this comes back down - see the handoff.
+      boardSlotDash: 'rgba(255,255,255,0.75)',     // resting outline
+      // Raised with the resting outline above, and ONLY to keep the order intact: at resting 0.75
+      // a 0.72 "active" would have been DIMMER than the resting state it is supposed to escalate
+      // from. Active is also solid and 1.5px against resting's dashed 1px, so the step does not
+      // rest on alpha alone.
+      boardSlotDashActive: 'rgba(255,255,255,0.95)', // the invitation, when a card is in hand
       boardCardInk: '#1B1B24',                     // OBSIDIAN.cardInk
       boardAutoBg: 'rgba(79,214,168,0.10)',        // OBSIDIAN.autoBg
       boardAutoBorder: 'rgba(79,214,168,0.35)',    // OBSIDIAN.autoBorder
@@ -603,9 +652,11 @@ export const currentPaint = {
       //    panel reads OBSIDIAN.* (theme-independent — fiveo has never had its own
       //    panel colour) and the other three are raw literals. Both themes render
       //    these exact pixels today, so pinning them equal is a proof, not a choice.
-      // PANEL-FELT batch: fiveo panel matches classic — ~0.55 alpha + transparent fallback.
-      boardPanelTop: '#1C1F268C',                  // OBSIDIAN.bgTop @ ~0.55
-      boardPanelBottom: '#1012188C',               // OBSIDIAN.bgBottom @ ~0.55
+      // SHIP-V1 2026-08-27: fiveo tracks classic, as it always has — the panel reads OBSIDIAN.*
+      // and fiveo has never had its own panel colour, so pinning them equal stays a proof rather
+      // than a choice. ~0.25 alpha + transparent fallback. Reasoning in the classic block above.
+      boardPanelTop: '#1C1F2640',                  // OBSIDIAN.bgTop @ ~0.25
+      boardPanelBottom: '#10121840',               // OBSIDIAN.bgBottom @ ~0.25
       boardPanelFallback: 'rgba(22,25,34,0)',      // was #161922 — alpha 0 (transparent) so alpha isn't doubled on native; kept as an rgba() colour, not 'transparent', for the colour-invariant guard
       boardHintIcon: 'rgba(201,168,76,0.7)',       // raw literal — gold AT 0.7 ALPHA, so NOT boardGold
       boardTieBg: 'rgba(79,214,168,0.92)',         // raw literal — "mint at 92% reads neutral"
@@ -765,7 +816,21 @@ export const FELT_GRADIENT: Record<'classic' | 'fiveo' | 'streetStencil', readon
   // dark and tasteful but actually reads as green felt through the 0.55 panels. The "buried under
   // rgb(10,10,10)" the panel saw was navigator/WebContainer chrome BEHIND the felt (contentStyle
   // #0a0a0a + WebContainer #050f0a gutter), not a layer over it — the felt was simply too dark.
-  classic:       ['#10281A', '#0E2418'], // top rgb(16,40,26) -> bottom rgb(14,36,24), visible green felt
+  // SHIP-THE-GREEN 2026-08-27. Roye picked a green felt off a side-by-side panel. The surface
+  // already existed and was already green — it was simply too dark to read as one (measured on
+  // the live /game capture: the lifted table top came out rgb(21,51,41)). So this raises the
+  // green rather than inventing a layer.
+  //
+  // THE VALUES ARE TOKENS FOR THE TOKEN, NOT FOR THE SCREEN. BoardSurface lifts the base
+  // toward white (0.10 top / 0.055 bottom at full intensity) so the table top catches more
+  // light than the room, so what SHIPS is the lifted result: top rgb(26,70,44), which is the
+  // lightness Roye chose. Writing his rgb(21,71,52) here would have rendered lighter again.
+  //
+  // HUE IS DELIBERATE AND IS NOT HIS LITERAL VALUE. The winner cue's mint is #4FD6A8 at hue
+  // 159.6. This felt renders at 144.5 — 15 degrees away, exactly where today's felt already
+  // sits. His nominal rgb(21,71,52) is hue 157.2, i.e. 2.4 degrees from mint, which would put
+  // the FIELD MARKER on its own background. Same lightness, hue held where it was.
+  classic:       ['#003115', '#062E18'], // -> lifted top rgb(26,70,44) / bottom rgb(20,57,37)
   fiveo:         ['#28101A', '#0C070A'], // dark maroon felt (harmonises with fiveo's #5A1520 lean) — UNTOUCHED
   streetStencil: ['#4E4E54', '#42424A'], // dormant — concrete-grey, matches its existing bg/feltLight
 };

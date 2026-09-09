@@ -19,6 +19,7 @@ import { WEB_MAX_WIDTH } from '../../components/WebContainer';
 import { track } from '../../utils/analytics';
 import { getDeviceId } from '../../utils/leaderboard';
 import { createTable, joinTable, PlayerCount } from '../../utils/lobbyApi';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -163,7 +164,7 @@ export default function PrivateLobby() {
         <Text style={styles.blockTitle}>Create a table to share</Text>
         {TYPES.map(({ n, label, boards }) => (
           <Pressable key={n} style={[styles.createBtn, busy && styles.btnDisabled]} disabled={busy} onPress={() => handleCreate(n)} accessibilityRole="button" accessibilityLabel={`Create a ${n}-player private table`}>
-            <View style={{ flex: 1 }}>
+            <View style={LABEL_COLUMN}>
               <Text style={styles.createTitle}>{label}</Text>
               <Text style={styles.createSub}>{n} players · {boards} boards</Text>
             </View>

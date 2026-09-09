@@ -356,8 +356,14 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     // Pins follow the ship; do not revert them to mint.
     boardSlotFillSelected: 'rgba(255,255,255,0.10)',
     boardSlotFill: 'rgba(255,255,255,0.045)',
-    boardSlotDash: 'rgba(255,255,255,0.30)',
-    boardSlotDashActive: 'rgba(255,255,255,0.72)',
+    // SLOT-OUTLINES 2026-08-27: 0.30 -> 0.75 and 0.72 -> 0.95, by design. The slot renders at
+    // opacity 0.6 (a dead pulse's initial value, KILL_Board being hardcoded true), so 0.30
+    // composited to an effective 0.199 and PAINTED 1.73:1 against the fill it encloses - not the
+    // 2.59 previously reported analytically. 0.75 paints 3.70 vs fill / 3.87 vs panel. Active
+    // rose with it purely to keep active brighter than resting. These pins exist so the
+    // compensation cannot be "tidied" back down without someone reading why it is there.
+    boardSlotDash: 'rgba(255,255,255,0.75)',
+    boardSlotDashActive: 'rgba(255,255,255,0.95)',
     boardCardInk: '#1B1B24',
     boardAutoBg: 'rgba(79,214,168,0.10)',
     boardAutoBorder: 'rgba(79,214,168,0.35)',
@@ -366,8 +372,13 @@ describe('S76-BOARD pins — classic === fiveo === Board.tsx TODAY', () => {
     // S76-BOARD-LITERALS/PANEL — panel backdrop + the 3 live raw literals.
     // PANEL-FELT batch: classic===fiveo panel dropped to ~0.55 alpha (0x8C) + transparent fallback
     // so the root felt gradient reads through the play area (values changed by design this batch).
-    boardPanelTop: '#1C1F268C',
-    boardPanelBottom: '#1012188C',
+    // SHIP-V1 2026-08-27: 0x8C -> 0x40 (~0.25), by design. At 0x8C the panel rendered rgb(23,33,33)
+    // and the DEFAULT card back #18181c sat on it at 1.08:1 — six greys out of 255, i.e. face-down
+    // cards effectively invisible on the back every player has. 0x40 renders rgb(23,51,37), takes
+    // that to 1.30:1, and keeps the purchased slate back ahead at 1.68:1. Card face 13.09, clear of
+    // the 10.28 floor. These pins are the point of this table: changing them has to be deliberate.
+    boardPanelTop: '#1C1F2640',
+    boardPanelBottom: '#10121840',
     boardPanelFallback: 'rgba(22,25,34,0)',
     boardHintIcon: 'rgba(201,168,76,0.7)',
     boardTieBg: 'rgba(79,214,168,0.92)',
@@ -549,6 +560,27 @@ describe('S76-BOARD-ROUTING — Board.tsx consumes the pinned keys, safely', () 
     expect(boardSrc).toMatch(/theme\.boardHintIcon/);
     expect(boardSrc).toMatch(/theme\.boardTieBg/);
     expect(boardSrc).toMatch(/theme\.boardChipFloat/);
+  });
+
+  // SHIP-V1 2026-08-27 — THE PANEL HAS EXACTLY ONE PAINTER, AND WEB MUST NOT GROW A SECOND.
+  // Board.tsx used to carry a CSS `background: linear-gradient(...)` on the container AND the
+  // absolute-fill <LinearGradient> child below it. Both painted the panel, at different angles,
+  // both at the token's alpha — so web composited to 1-(1-a)^2 while native, which never sees the
+  // CSS branch, painted the single `a` the token asks for. Nothing failed; the two platforms just
+  // quietly disagreed, and every statement about "the panel is ~55% opaque" was wrong on web.
+  //
+  // The child is the survivor because it is the layer native already uses. This asserts the shape
+  // rather than the colour: a re-added CSS gradient would restore the divergence without changing
+  // a single token, which is exactly the kind of regression a colour-value test cannot see.
+  it('the board panel is painted ONCE — no CSS gradient beside the LinearGradient', () => {
+    // The panel's own gradient must not be re-introduced as a CSS background on web.
+    expect(boardSrc).not.toMatch(/background:\s*`linear-gradient\([^`]*boardPanel/);
+    // Exactly one element consumes the pair, and it is the LinearGradient's colours array.
+    expect(boardSrc.match(/theme\.boardPanelTop/g)).toHaveLength(1);
+    expect(boardSrc.match(/theme\.boardPanelBottom/g)).toHaveLength(1);
+    // The web branch survives for boxShadow — web's stand-in for the native elevation. Losing it
+    // would be a different regression, so it is pinned here too.
+    expect(boardSrc).toMatch(/boxShadow:/);
   });
 
   // HOUSE-STYLE, asserted so nobody "tidies" it away: colour is overridden at the JSX

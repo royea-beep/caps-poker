@@ -18,6 +18,7 @@ import { rf, rs, rv } from '../../utils/responsive';
 import { track } from '../../utils/analytics';
 import { joinTable, OpenTable, PlayerCount } from '../../utils/lobbyApi';
 import { clubLeaderboard, listClubTables, createClubTable, ClubMember } from '../../utils/clubApi';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
   { n: 2, label: 'Heads-Up', boards: 4 },
@@ -195,7 +196,7 @@ export default function ClubDetail() {
           <Text style={[styles.sectionTitle, { marginTop: rv(14) }]}>Start a Club Table</Text>
           {TYPES.map(({ n, label, boards }) => (
             <Pressable key={n} style={[styles.createBtn, busy && styles.btnDisabled]} disabled={busy} onPress={() => handleStart(n)} accessibilityRole="button" accessibilityLabel={`Start a ${n}-player club table`}>
-              <View style={{ flex: 1 }}>
+              <View style={LABEL_COLUMN}>
                 <Text style={styles.createTitle}>{label}</Text>
                 <Text style={styles.createSub}>{n} players · {boards} boards</Text>
               </View>

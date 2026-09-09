@@ -1,0 +1,739 @@
+{
+ "tabs": {
+  "found": true,
+  "count": 3,
+  "labels": [
+   "Home",
+   "Play",
+   "Profile"
+  ]
+ },
+ "homeDestinations": [
+  "Close menu",
+  "Friends",
+  "COACHING",
+  "TUTORIAL",
+  "🌐 LANGUAGE: English",
+  "SIGN IN",
+  "Open chip shop",
+  "Open menu",
+  "Play online, open the multiplayer lobby",
+  "Practice against bots",
+  "Claim daily bonus",
+  "Home",
+  "Play",
+  "Profile"
+ ],
+ "routes": {
+  "/": {
+   "chars": 464,
+   "head": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACH",
+   "nodes": 210,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/play": {
+   "chars": 339,
+   "head": "PLAY Choose your game mode 🤖 Single Player Pr",
+   "nodes": 97,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/profile": {
+   "chars": 176,
+   "head": "PROFILE Player 1 0 HANDS 0% WIN RATE 0 STREAK ",
+   "nodes": 110,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/friends": {
+   "chars": 175,
+   "head": "CLUBS Your circle · play only your friends You",
+   "nodes": 83,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/cups": {
+   "chars": 83,
+   "head": "CUPS 0/0 cups · 4 cards. Every board. 1 winner",
+   "nodes": 75,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/settings": {
+   "chars": 999,
+   "head": "← Back SETTINGS 🎨 VISUAL STYLE ♠ CLASSIC Time",
+   "nodes": 168,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/leaderboard": {
+   "chars": 101,
+   "head": "‹ Back LEADERBOARD 🪙 Chips % Win Rate # Playe",
+   "nodes": 55,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/shop": {
+   "chars": 62,
+   "head": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty ",
+   "nodes": 51,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/chip-store": {
+   "chars": 62,
+   "head": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty ",
+   "nodes": 51,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/achievements": {
+   "chars": 140,
+   "head": "‹ Back Achievements No achievements yet All Sk",
+   "nodes": 59,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/missions": {
+   "chars": 464,
+   "head": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACH",
+   "nodes": 210,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/referral": {
+   "chars": 361,
+   "head": "‹ Back Invite Friends 🎁 Invite friends You ge",
+   "nodes": 77,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/stats": {
+   "chars": 81,
+   "head": "‹ Back STATS 📊 No stats yet Play a few hands ",
+   "nodes": 54,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/rank": {
+   "chars": 85,
+   "head": "‹ Back YOUR RANK 🏆 No rank yet Play a game to",
+   "nodes": 53,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/hand-history": {
+   "chars": 109,
+   "head": "‹ Back HAND HISTORY All (0) Wins (0) Losses (0",
+   "nodes": 70,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/theme-pick": {
+   "chars": 159,
+   "head": "CAPS POKER Choose your style ♠ CLASSIC Timeles",
+   "nodes": 55,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/lobby": {
+   "chars": 352,
+   "head": "‹ Back LOBBY Public tables · auto-start when f",
+   "nodes": 145,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/lobby/private": {
+   "chars": 225,
+   "head": "‹ Back PRIVATE TABLE Play your friends with a ",
+   "nodes": 67,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/coaching": {
+   "chars": 79,
+   "head": "‹ Back Coaching 💡 No coaching yet Play hands ",
+   "nodes": 51,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/heatmap": {
+   "chars": 464,
+   "head": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACH",
+   "nodes": 210,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/replay": {
+   "chars": 93,
+   "head": "No hand selected Open a hand from your history",
+   "nodes": 40,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/spectate": {
+   "chars": 40,
+   "head": "← BACK SPECTATE ⚠️ No room code provided",
+   "nodes": 41,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/battle-pass": {
+   "chars": 841,
+   "head": "‹ Back Season 1 — First Deal 55d 23h remaining",
+   "nodes": 415,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/gameover": {
+   "chars": 79,
+   "head": "GAME OVER Not enough chips to continue FINAL B",
+   "nodes": 50,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/orientation-pick": {
+   "chars": 203,
+   "head": "CAPS POKER CHOOSE YOUR PLAY STYLE 📱 PORTRAIT ",
+   "nodes": 51,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/simulate": {
+   "chars": 464,
+   "head": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACH",
+   "nodes": 210,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/debug": {
+   "chars": 464,
+   "head": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACH",
+   "nodes": 210,
+   "pageErrors": 0,
+   "sample": null
+  },
+  "/club": {
+   "chars": 273,
+   "head": "‹ Back Club CLUB CODE 📤 Share CLUB TABLES No ",
+   "nodes": 70,
+   "pageErrors": 0,
+   "sample": null
+  }
+ },
+ "results": {
+  "url": "/results",
+  "headline": "TIE GAME",
+  "headlineBox": {
+   "y": 16,
+   "h": 28
+  },
+  "numerals": "1 — 2",
+  "tallyText": null,
+  "ctaText": "DEAL ME IN",
+  "ctaBox": {
+   "y": 772,
+   "h": 72
+  },
+  "detailsToggle": true,
+  "breakdownVisible": false,
+  "shopWords": [],
+  "bodyLen": 889
+ },
+ "screens": {
+  "/shop|320|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 62
+  },
+  "/shop|375|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 62
+  },
+  "/shop|393|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 62
+  },
+  "/shop|430|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 62
+  },
+  "/lobby|320|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 352
+  },
+  "/lobby|375|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 352
+  },
+  "/lobby|393|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 352
+  },
+  "/lobby|430|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 352
+  },
+  "/profile|320|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 158
+  },
+  "/profile|375|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 158
+  },
+  "/profile|393|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 176
+  },
+  "/profile|430|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 176
+  },
+  "/play|320|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 321
+  },
+  "/play|375|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 321
+  },
+  "/play|393|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 339
+  },
+  "/play|430|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 339
+  },
+  "/|320|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 248,
+     "oy": 79
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 205,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 252,
+     "oy": 44
+    }
+   ],
+   "painted": 446
+  },
+  "/|375|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 303,
+     "oy": 72
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 240,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 253,
+     "oy": 44
+    }
+   ],
+   "painted": 446
+  },
+  "/|393|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 303,
+     "oy": 72
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 252,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 252,
+     "oy": 44
+    }
+   ],
+   "painted": 464
+  },
+  "/|430|chromium": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 303,
+     "oy": 72
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 275,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 252,
+     "oy": 44
+    }
+   ],
+   "painted": 464
+  },
+  "/shop|320|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 63
+  },
+  "/shop|375|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 63
+  },
+  "/shop|393|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 63
+  },
+  "/shop|430|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 63
+  },
+  "/lobby|320|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 378
+  },
+  "/lobby|375|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 379
+  },
+  "/lobby|393|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 379
+  },
+  "/lobby|430|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 379
+  },
+  "/profile|320|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 163
+  },
+  "/profile|375|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 163
+  },
+  "/profile|393|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 181
+  },
+  "/profile|430|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 181
+  },
+  "/play|320|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 326
+  },
+  "/play|375|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 326
+  },
+  "/play|393|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 344
+  },
+  "/play|430|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [],
+   "painted": 344
+  },
+  "/|320|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 248,
+     "oy": 79
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 205,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 263,
+     "oy": 46
+    }
+   ],
+   "painted": 456
+  },
+  "/|375|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 303,
+     "oy": 72
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 240,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 263,
+     "oy": 46
+    }
+   ],
+   "painted": 456
+  },
+  "/|393|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 303,
+     "oy": 72
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 252,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 263,
+     "oy": 46
+    }
+   ],
+   "painted": 474
+  },
+  "/|430|webkit": {
+   "overflowX": 0,
+   "goldCtas": [],
+   "overlaps": [
+    {
+     "a": "Close menu",
+     "b": "Open chip shop",
+     "ox": 74,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Open menu",
+     "ox": 44,
+     "oy": 44
+    },
+    {
+     "a": "Close menu",
+     "b": "Play online, open the mult",
+     "ox": 303,
+     "oy": 72
+    },
+    {
+     "a": "Close menu",
+     "b": "Practice against bots",
+     "ox": 275,
+     "oy": 52
+    },
+    {
+     "a": "Close menu",
+     "b": "Claim daily bonus",
+     "ox": 263,
+     "oy": 46
+    }
+   ],
+   "painted": 474
+  }
+ },
+ "lobby": {
+  "practiceRow": false,
+  "rematch": false,
+  "body": "‹ Back LOBBY Public tables · auto-start when full 👤 REAL PLAYERS — TABLES FOR FRIENDS A real person joins here · invite a friend or wait at a table HEADS-UP 2 players · 4 boards Opening a table… … Opening a table… … 3-P"
+ }
+}

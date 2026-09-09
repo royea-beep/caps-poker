@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { COLORS, Card } from '../constants/gameConfig';
 import { getHandHistory, clearHandHistory, HandRecord, HandBoardRecord } from '../utils/handHistory';
+import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
 import { FullGameShareCard } from '../components/ShareCard';
 import { captureAndShare, generateShareText, ShareData } from '../utils/shareHand';
 import { RevealBoardData } from '../types/gameTypes';
@@ -16,6 +17,7 @@ import { HandBadge } from '../components/HandBadge';
 import { EmptyState } from '../components/EmptyState';
 import { HandHistoryPreview } from '../components/EmptyStatePreviews';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { tallyBoards } from '../utils/boardTally';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -107,6 +109,9 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
   const shareRef = useRef<any>(null);
   const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
   const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
+  // Same binary-count-over-a-three-way-outcome as the results scoreboard: a tied board was in
+  // neither number, so a 4-board hand with one tie listed as "3 - 0". utils/boardTally.ts.
+  const tally = tallyBoards(hand.boards);
   /**
    * CLASS A + CLASS B, both in one line. This was `hand.netChips >= 0`, so a TIE (net 0) rendered
    * with the WIN border and a green "+0". Worse, the two lines directly above already compute the
@@ -114,13 +119,30 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
    * blank opponent hand.
    *
    * And the two ends disagreed: the client showed a net-zero hand as a WIN while the same hand was
-   * written to hand_history as result='lost'. Measured in production: 127 of 243 rows are net-zero,
-   * and of the 22 genuinely board-tied hands, 15 are stored 'lost' and 5 'won' -- the same outcome
-   * recorded both ways. Storing a third value needs a CHECK-constraint change and a decision about
-   * those rows, so it is reported; the DISPLAY is corrected here, from the boards, which are right.
+   * written to hand_history as result='lost'. Storing a third value needs a CHECK-constraint change
+   * and a decision about those rows, so it is reported; the DISPLAY is corrected here, from the
+   * boards, which are right.
+   *
+   * ⚠️ The figure this comment used to quote -- "of the 22 genuinely board-tied hands, 15 are
+   * stored 'lost' and 5 'won'" -- IS NOT REPRODUCIBLE and has been removed rather than repeated.
+   * `hand_history.boards_data` is NULL in all 76 production rows (results.tsx:448 records that the
+   * column was dropped for exactly that reason), so production holds no per-board detail and cannot
+   * adjudicate any historical row. Whatever those numbers counted, it was not this table.
+   *
+   * AUDIT-REST 2026-09-05 — C1 CLOSED HERE. This line was
+   *     playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie'
+   * which is the COLLAPSED count: it merges every opponent into one bucket, the one thing
+   * boardTally.ts says its `lost` must not be used for. results.tsx, statsEngine, shareHand and
+   * achievements all read deriveHandOutcome(); history and replay did not, so ONE stored hand had
+   * TWO answers. The reachable divergence is three players, three boards, one board each: the
+   * server and every other reader call that a TIE, this line called it a LOSS and filed the hand
+   * under "Losses" with a red border. Production has four rows at exactly that shape.
+   * The two NUMBERS below are unchanged -- they are the collapsed scoreboard the app has always
+   * printed. Only the verdict now comes from the one derivation. Old rows are unaffected:
+   * deriveHandOutcome falls back to this very count when `winnerSeat` is absent, and that fallback
+   * is provably identical everywhere except the 3P shape (utils/handOutcome.ts + its test).
    */
-  const outcome: 'win' | 'loss' | 'tie' =
-    playerWins > botWins ? 'win' : playerWins < botWins ? 'loss' : 'tie';
+  const outcome: HandOutcome = deriveHandOutcome(hand.boards);
   const isWin = outcome === 'win';
   const bestHand = getBestHandName(hand);
   const isBigHand = BIG_HANDS.includes(bestHand);
@@ -149,6 +171,10 @@ function HandCard({ hand, index, onReplay }: { hand: HandRecord; index: number; 
               <Text style={[styles.scoreText, { color: COLORS.neonGreen }]}>{playerWins}</Text>
               <Text style={styles.scoreDash}> - </Text>
               <Text style={[styles.scoreText, { color: COLORS.neonRed }]}>{botWins}</Text>
+              {/* A row this dense cannot carry the full "3 WON · 1 TIED · 0 LOST" line, so the
+                  missing board is named with the same '=' token the board rows below already use
+                  for a tie. The expanded card spells it out in full. */}
+              {tally.hasTie && <Text style={styles.scoreTied}> ={tally.tied}</Text>}
             </View>
             {bestHand ? (
               isBigHand
@@ -329,7 +355,14 @@ export default function HandHistoryScreen() {
       <ScreenHeader title="HAND HISTORY" />
 
       {/* Filter tabs */}
-      <View style={styles.filterRow}>
+      {/* THE TABLIST THAT WAS MISSING. The three children below were given accessibilityRole="tab"
+          to fix them being focusable-but-undeclared — correct as far as it went, but `tab` is one
+          of the roles axe checks a PARENT for, and this View declared nothing. Result:
+          aria-required-parent, impact CRITICAL, which is the single critical that has been failing
+          the post-deploy WCAG gate and therefore SKIPPING BackstopJS entirely on every deploy since
+          2026-08-23. Identical structure to app/leaderboard.tsx:151, which the same audit measures
+          at crit=0 — so this is the shape already proven against this instrument, not a guess. */}
+      <View style={styles.filterRow} accessibilityRole="tablist" accessibilityLabel="Filter hands">
         {(['all', 'wins', 'losses'] as FilterMode[]).map(f => (
           <TouchableOpacity
             key={f}
@@ -505,6 +538,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  scoreTied: { color: COLORS.textDim, fontSize: 13, fontWeight: '800' },
   scoreText: {
     fontSize: rf(18),
     fontWeight: '900',

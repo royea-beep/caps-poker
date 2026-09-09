@@ -1,0 +1,27 @@
+{
+  "imageAspect": 0.4622,
+  "bg": "#071C12",
+  "devices": [
+    {
+      "device": "14promax",
+      "px": "1290x2796",
+      "aspect": 0.4614,
+      "sideBarPx": 0,
+      "topBottomBarPx": 3
+    },
+    {
+      "device": "se",
+      "px": "750x1334",
+      "aspect": 0.5622,
+      "sideBarPx": 67,
+      "topBottomBarPx": 0
+    },
+    {
+      "device": "pixel7",
+      "px": "1080x2400",
+      "aspect": 0.45,
+      "sideBarPx": 0,
+      "topBottomBarPx": 32
+    }
+  ]
+}

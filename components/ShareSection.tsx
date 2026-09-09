@@ -140,9 +140,12 @@ export function ShareSection({
 
 const styles = StyleSheet.create({
   shareGameRow: { flexDirection: 'row', gap: rs(8), width: '100%' },
-  shareGameBtn: { flex: 1, backgroundColor: 'rgba(255,215,0,0.12)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.35)', borderRadius: rv(10), paddingVertical: rs(10), alignItems: 'center' },
+  // THE-LAST-THREE 2026-09-03 — was gold rgba(255,215,0,·) + #FFD700 text. #FFD700 is the WINNER
+  // cue (Card.tsx). A secondary share control must not wear it; it now takes the same mint action
+  // accent `bigShareBtn` below already uses, so both share controls read as one family.
+  shareGameBtn: { flex: 1, backgroundColor: 'rgba(79,214,168,0.12)', borderWidth: 1, borderColor: 'rgba(79,214,168,0.35)', borderRadius: rv(10), paddingVertical: rs(10), alignItems: 'center' },
   shareBtnLoading: { opacity: 0.5 },
-  shareGameBtnText: { color: '#FFD700', fontSize: rf(14), fontWeight: '700' },
+  shareGameBtnText: { color: '#4FD6A8', fontSize: rf(14), fontWeight: '700' },
   copyLinkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: rv(10), paddingVertical: rs(10), alignItems: 'center' },
   copyLinkText: { color: 'rgba(255,255,255,0.6)', fontSize: rf(14), fontWeight: '600' },
   // VAMOS UX-BATCH-2 (Item 2) — prominent big-moment CTA (mint, matches action accents)

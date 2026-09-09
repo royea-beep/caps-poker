@@ -8,7 +8,10 @@
     }
   ],
   "scenarios": [
-    { "label": "home",         "url": "https://caps.ftable.co.il/" },
+    {
+      "label": "home",
+      "url": "https://caps.ftable.co.il/"
+    },
     {
       "label": "game",
       "url": "https://caps.ftable.co.il/game",
@@ -29,18 +32,46 @@
       ],
       "misMatchThreshold": 5.0
     },
-    { "label": "settings",     "url": "https://caps.ftable.co.il/settings" },
-    { "label": "leaderboard",  "url": "https://caps.ftable.co.il/leaderboard" },
-    { "label": "profile",      "url": "https://caps.ftable.co.il/profile" },
-    { "label": "play",         "url": "https://caps.ftable.co.il/play" },
-    { "label": "friends",      "url": "https://caps.ftable.co.il/friends" },
-    { "label": "cups",         "url": "https://caps.ftable.co.il/cups" },
-    { "label": "shop",         "url": "https://caps.ftable.co.il/shop" },
-    { "label": "chip-store",   "url": "https://caps.ftable.co.il/chip-store" },
-    { "label": "host",         "url": "https://caps.ftable.co.il/lobby/host" },
-    { "label": "join",         "url": "https://caps.ftable.co.il/lobby/join" },
-    { "label": "rank",         "url": "https://caps.ftable.co.il/rank" },
-    { "label": "hand-history", "url": "https://caps.ftable.co.il/hand-history" }
+    {
+      "label": "settings",
+      "url": "https://caps.ftable.co.il/settings"
+    },
+    {
+      "label": "leaderboard",
+      "url": "https://caps.ftable.co.il/leaderboard"
+    },
+    {
+      "label": "profile",
+      "url": "https://caps.ftable.co.il/profile"
+    },
+    {
+      "label": "play",
+      "url": "https://caps.ftable.co.il/play"
+    },
+    {
+      "label": "friends",
+      "url": "https://caps.ftable.co.il/friends"
+    },
+    {
+      "label": "cups",
+      "url": "https://caps.ftable.co.il/cups"
+    },
+    {
+      "label": "shop",
+      "url": "https://caps.ftable.co.il/shop"
+    },
+    {
+      "label": "chip-store",
+      "url": "https://caps.ftable.co.il/chip-store"
+    },
+    {
+      "label": "rank",
+      "url": "https://caps.ftable.co.il/rank"
+    },
+    {
+      "label": "hand-history",
+      "url": "https://caps.ftable.co.il/hand-history"
+    }
   ],
   "scenarioDefaults": {
     "delay": 3500,
@@ -49,16 +80,20 @@
     "onBeforeScript": "puppet/onBefore.js"
   },
   "paths": {
-    "bitmaps_reference":    "backstop_data/bitmaps_reference",
-    "bitmaps_test":         "backstop_data/bitmaps_test",
-    "engine_scripts":       "backstop_data/engine_scripts",
-    "html_report":          "backstop_data/html_report",
-    "ci_report":            "backstop_data/ci_report"
+    "bitmaps_reference": "backstop_data/bitmaps_reference",
+    "bitmaps_test": "backstop_data/bitmaps_test",
+    "engine_scripts": "backstop_data/engine_scripts",
+    "html_report": "backstop_data/html_report",
+    "ci_report": "backstop_data/ci_report"
   },
-  "report": ["CI"],
+  "report": [
+    "CI"
+  ],
   "engine": "puppeteer",
   "engineOptions": {
-    "args": ["--no-sandbox"]
+    "args": [
+      "--no-sandbox"
+    ]
   },
   "asyncCaptureLimit": 2,
   "asyncCompareLimit": 25,

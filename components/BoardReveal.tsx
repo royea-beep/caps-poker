@@ -75,17 +75,18 @@ const SPEED_MULTIPLIER: Record<'fast' | 'normal' | 'cinematic', number> = {
 
 // VAMOS-HAND-LABELS-ENGLISH 2026-06-17 — English-only.
 const REVEAL_TIPS = [
-  () => 'Now see what your opponent has on each board.',
-  () => 'Each card changes the winning hand!',
-  () => 'Green = win, Red = loss. Watch for COMPLETE bonus!',
+  () => t().revealTip1,
+  () => t().revealTip2,
+  () => t().revealTip3,
 ];
 
 function getScoreText(pWins: number, bWins: number, idx: number, total: number): string {
   const remaining = total - idx;
-  if (pWins > bWins) return `Leading ${pWins}-${bWins} · ${remaining} left`;
-  if (bWins > pWins) return `Trailing ${pWins}-${bWins} · ${remaining} left`;
-  if (pWins === 0 && bWins === 0) return `${remaining} boards`;
-  return `Tied ${pWins}-${bWins} · ${remaining} left`;
+  const tt = t();
+  if (pWins > bWins) return tt.scoreLeading(pWins, bWins, remaining);
+  if (bWins > pWins) return tt.scoreTrailing(pWins, bWins, remaining);
+  if (pWins === 0 && bWins === 0) return tt.scoreBoardsLeft(remaining);
+  return tt.scoreTied(pWins, bWins, remaining);
 }
 
 interface Props {
@@ -123,7 +124,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
   const { width: rawW } = useWindowDimensions();
   const screenW = Platform.OS === 'web' ? Math.min(rawW, WEB_MAX_WIDTH) : rawW;
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
-  const playerDisplayName = useGameStore((s) => s.playerName) || 'Player 1';
+  const playerDisplayName = useGameStore((s) => s.playerName) || t().playerFallback;
   const opponentName = useGameStore((s) => s.opponentName);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const revealBg = getTheme(visualTheme).background; // #161922 for Five-O, #0a0a0a for Classic
@@ -782,7 +783,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
           {/* Header — board number (BIG) + score indicator + smart dots */}
           <View style={styles.header}>
             <Text style={styles.scoreIndicator}>{getScoreText(playerWins, botWins, currentIdx, totalBoards)}</Text>
-            <Text style={styles.boardNumber}>Board {currentIdx + 1}</Text>
+            <Text style={styles.boardNumber}>{t().boardLabel(currentIdx + 1)}</Text>
             <View style={styles.dotsRow}>
               {Array.from({ length: totalBoards }).map((_, i) => {
                 const isDone = i < currentIdx;
@@ -810,8 +811,8 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             // real devices); 3P/4P MP would need per-seat names, which RevealBoardData doesn't
             // carry today.
             const botLabel = board.allBotCards && board.allBotCards.length > 1
-              ? `🤖 Bot ${botIdx + 1}`
-              : (isFirstBot && opponentName ? opponentName : '🤖 Bot');
+              ? `🤖 ${t().bot} ${botIdx + 1}`
+              : (isFirstBot && opponentName ? opponentName : `🤖 ${t().bot}`);
             const rawBotHandName = board.allBotHandNames?.[botIdx] ?? (isFirstBot ? board.botHandName : '');
             const botHandName = getHandName(rawBotHandName, lang);
             return (
@@ -861,7 +862,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 since the community box was never matched and the comparison never ran.
                 Anchored on the ROW rather than the label, because the overlap question is
                 about where the CARDS are. */}
-            <Text style={styles.sectionLabel}>Community</Text>
+            <Text style={styles.sectionLabel}>{t().community}</Text>
             <View style={[styles.cardRow, styles.commGroupFrame]} testID="community-row">
               {allCommunity.map((c, i) => {
                 const isHighlighted = showWinHighlight && board.boardHighlightIds.includes(c.id);
@@ -971,7 +972,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             <AnimatedRN.View style={[styles.resultRow, { transform: [{ scale: resultScale }] }]}>
               <Text style={[styles.resultText, { color: resultColor }]}>{resultText}</Text>
               {isPractice ? null : board.winner === 'tie' ? (
-                <Text style={styles.chipTie}>Tie board</Text>
+                <Text style={styles.chipTie}>{t().tieBoard}</Text>
               ) : board.potAmount === 0 ? (
                 <Text style={[styles.chipDelta, { color: chipColor }]}>—</Text>
               ) : (
@@ -1006,11 +1007,11 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                 </Text>
               )}
               {isNarrowLoss && (
-                <Text style={styles.soClose}>So close! 😬</Text>
+                <Text style={styles.soClose}>{t().soClose}</Text>
               )}
               {boards.every(b => b.winner === 'player') && currentIdx === boards.length - 1 && (
                 <View style={styles.completeBanner}>
-                  <Text style={styles.completeBannerText}>COMPLETE!</Text>
+                  <Text style={styles.completeBannerText}>{t().completeShort}</Text>
                   {/* CN-LEAK 2026-08-08 — this sub-line was gated ONLY on sweeping every board,
                       with no isPractice guard, while the same component guards the chip counter
                       (:889), FloatingChips (:974) and the pot line (:1014). "+50% bonus" is a
@@ -1027,16 +1028,16 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                   <Text
                     style={styles.completeBannerSub}
                     accessibilityLabel={isPractice
-                      ? `You won ALL boards! +${BATTLE_PASS_CONFIG.xpPerComplete} XP bonus`
+                      ? t().completeWonXpBonus(BATTLE_PASS_CONFIG.xpPerComplete)
                       : typeof completeBonusPercent === 'number'
-                        ? `You won ALL boards! +${completeBonusPercent}% bonus`
-                        : 'You won ALL boards! COMPLETE bonus'}
+                        ? t().completeWonPctBonus(completeBonusPercent)
+                        : t().completeWonBonus}
                   >
                     {isPractice
-                      ? `You won ALL boards! +${BATTLE_PASS_CONFIG.xpPerComplete} XP bonus 🏆`
+                      ? `${t().completeWonXpBonus(BATTLE_PASS_CONFIG.xpPerComplete)} 🏆`
                       : typeof completeBonusPercent === 'number'
-                        ? `You won ALL boards! +${completeBonusPercent}% bonus 🏆`
-                        : 'You won ALL boards! COMPLETE bonus 🏆'}
+                        ? `${t().completeWonPctBonus(completeBonusPercent)} 🏆`
+                        : `${t().completeWonBonus} 🏆`}
                   </Text>
                 </View>
               )}
@@ -1048,7 +1049,7 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
                     Share.share({ message: `I just hit a ${label} in CAPS Poker! 🃏` });
                   }}
                 >
-                  <Text style={styles.shareBtnText}>Share 📤</Text>
+                  <Text style={styles.shareBtnText}>{t().shareShort} 📤</Text>
                 </Pressable>
               )}
             </AnimatedRN.View>
@@ -1071,9 +1072,9 @@ export default function BoardReveal({ boards, onDone, revealSpeed = 'normal', is
             <Text testID="reveal-tap-hint" style={[styles.hint, styles.hintContinue]}>
               {currentIdx + 1 < totalBoards
                 ? (currentIdx >= 1 && totalBoards - currentIdx > 1
-                    ? 'Tap to continue →   ·   hold to skip all'
-                    : 'Tap to continue →')
-                : '▶ TAP FOR RESULTS'}
+                    ? `${t().tapToContinue}   ·   ${t().holdToSkipAll}`
+                    : t().tapToContinue)
+                : t().tapForResults}
             </Text>
           ) : (
             <Text style={styles.hint}>{' '}</Text>

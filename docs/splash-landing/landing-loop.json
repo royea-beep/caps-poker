@@ -1,0 +1,86 @@
+{
+  "widths": {
+    "320": {
+      "ctaLabel": "Play CAPS Poker now, free, in your browser",
+      "ctaText": "Play now",
+      "ctaHref": "/",
+      "ctaHeight": 84,
+      "ctaWidth": 280,
+      "controls": [
+        {
+          "text": "Play now Free · in your browser · no sig",
+          "aria": "Play CAPS Poker now, free, in your browser"
+        }
+      ],
+      "unnamed": 0,
+      "ctaFill": "rgb(79, 214, 168)",
+      "ctaBorder": "rgb(201, 168, 76)",
+      "ctaLabelColor": "rgb(8, 19, 15)",
+      "questions": [
+        "What is this game?",
+        "Is it free?",
+        "Do I need to install anything?",
+        "Is it gambling?"
+      ],
+      "legal": "Free play · Virtual chips only · No real-money gambling · 18+ A poker game for entertainment — no cash prizes, no payouts, no purchase required to play. Success at social gaming does not imply future success at real-money gambling.",
+      "docWidth": 320,
+      "viewW": 320,
+      "overflowX": false
+    },
+    "393": {
+      "ctaLabel": "Play CAPS Poker now, free, in your browser",
+      "ctaText": "Play now",
+      "ctaHref": "/",
+      "ctaHeight": 84,
+      "ctaWidth": 353,
+      "controls": [
+        {
+          "text": "Play now Free · in your browser · no sig",
+          "aria": "Play CAPS Poker now, free, in your browser"
+        }
+      ],
+      "unnamed": 0,
+      "ctaFill": "rgb(79, 214, 168)",
+      "ctaBorder": "rgb(201, 168, 76)",
+      "ctaLabelColor": "rgb(8, 19, 15)",
+      "questions": [
+        "What is this game?",
+        "Is it free?",
+        "Do I need to install anything?",
+        "Is it gambling?"
+      ],
+      "legal": "Free play · Virtual chips only · No real-money gambling · 18+ A poker game for entertainment — no cash prizes, no payouts, no purchase required to play. Success at social gaming does not imply future success at real-money gambling.",
+      "docWidth": 393,
+      "viewW": 393,
+      "overflowX": false
+    },
+    "430": {
+      "ctaLabel": "Play CAPS Poker now, free, in your browser",
+      "ctaText": "Play now",
+      "ctaHref": "/",
+      "ctaHeight": 84,
+      "ctaWidth": 390,
+      "controls": [
+        {
+          "text": "Play now Free · in your browser · no sig",
+          "aria": "Play CAPS Poker now, free, in your browser"
+        }
+      ],
+      "unnamed": 0,
+      "ctaFill": "rgb(79, 214, 168)",
+      "ctaBorder": "rgb(201, 168, 76)",
+      "ctaLabelColor": "rgb(8, 19, 15)",
+      "questions": [
+        "What is this game?",
+        "Is it free?",
+        "Do I need to install anything?",
+        "Is it gambling?"
+      ],
+      "legal": "Free play · Virtual chips only · No real-money gambling · 18+ A poker game for entertainment — no cash prizes, no payouts, no purchase required to play. Success at social gaming does not imply future success at real-money gambling.",
+      "docWidth": 430,
+      "viewW": 430,
+      "overflowX": false
+    }
+  },
+  "loop": {}
+}

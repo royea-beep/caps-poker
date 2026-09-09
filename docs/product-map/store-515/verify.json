@@ -1,0 +1,13 @@
+{
+ "dir": "docs/product-map/store-515",
+ "canary": {
+  "vocabSize": 378,
+  "knownHebrewHits": 10,
+  "knownEnglishHits": 0,
+  "flagsHebrew": true,
+  "clearsEnglish": true
+ },
+ "files": 18,
+ "failures": [],
+ "failureCount": 0
+}

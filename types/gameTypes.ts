@@ -41,6 +41,15 @@ export interface RevealBoardData {
   playerCards: Card[];
   allBotCards: Card[][];
   winner: 'player' | 'bot' | 'tie';
+  /**
+   * ALIGN-THE-CELEBRATION follow-up — the seat that won this board OUTRIGHT, normalised to the
+   * local player: 0 = me, >=1 = a specific opponent, -1 = the board tied. `winner` above collapses
+   * every opponent into 'bot', which loses WHICH opponent won and so cannot distinguish "one
+   * opponent took two boards" from "two opponents took one each". The server's rule needs that
+   * distinction; see utils/handOutcome.ts. One small integer per board — RevealData is size-
+   * sensitive (it was once 25KB and WebKit rejected it silently), so nothing else rides along.
+   */
+  winnerSeat?: number;
   playerHandName: string;
   botHandName: string;
   allBotHandNames: string[];

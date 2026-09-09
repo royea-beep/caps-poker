@@ -1,0 +1,70 @@
+{
+  "ts": "2026-08-30T08:15:56.101Z",
+  "rows": [
+    {
+      "id": "C1",
+      "subjectArea": 48.8,
+      "contrast": 18.73,
+      "bigRegions": 1,
+      "crispness": 0.557,
+      "ground": 0.004,
+      "ringGround": 0.003
+    },
+    {
+      "id": "I1",
+      "subjectArea": 34.5,
+      "contrast": 8.71,
+      "bigRegions": 1,
+      "crispness": 0.155,
+      "ground": 0.003,
+      "ringGround": 0.003
+    },
+    {
+      "id": "J2",
+      "subjectArea": 96.7,
+      "contrast": 7.24,
+      "bigRegions": 1,
+      "crispness": 0.414,
+      "ground": 0.07,
+      "ringGround": 0.076,
+      "unreliable": true,
+      "why": "ground mis-identified (vignette or near-uniform tile) — NOT a finding"
+    },
+    {
+      "id": "K3",
+      "subjectArea": 47.8,
+      "contrast": 14.03,
+      "bigRegions": 1,
+      "crispness": 0.396,
+      "ground": 0.003,
+      "ringGround": 0.003
+    },
+    {
+      "id": "K7",
+      "subjectArea": 23.3,
+      "contrast": 13.93,
+      "bigRegions": 2,
+      "crispness": 0.393,
+      "ground": 0.004,
+      "ringGround": 0.004
+    },
+    {
+      "id": "K6",
+      "subjectArea": 9.3,
+      "contrast": 13.68,
+      "bigRegions": 4,
+      "crispness": 0.288,
+      "ground": 0.003,
+      "ringGround": 0.003
+    },
+    {
+      "id": "K5",
+      "subjectArea": 39.9,
+      "contrast": 13.18,
+      "bigRegions": 1,
+      "crispness": 0.45,
+      "ground": 0.006,
+      "ringGround": 0.01
+    }
+  ]
+}

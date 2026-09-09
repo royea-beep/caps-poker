@@ -1,0 +1,258 @@
+{
+  "lang": "he",
+  "width": 320,
+  "screens": {
+    "home": {
+      "sw": 320,
+      "iw": 320,
+      "overflow": false,
+      "controlCount": 16,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 1,
+      "tiny": [
+        {
+          "name": "Challenge a Friend",
+          "role": "button",
+          "w": 164,
+          "h": 31
+        }
+      ],
+      "consoleErrors": 0
+    },
+    "onboarding": {
+      "sw": 320,
+      "iw": 320,
+      "overflow": false,
+      "controlCount": 21,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 6,
+      "tiny": [
+        {
+          "name": "דלג על המדריך",
+          "role": "button",
+          "w": 74,
+          "h": 33
+        },
+        {
+          "name": "שלב 1 מתוך 3",
+          "role": "button",
+          "w": 22,
+          "h": 8
+        },
+        {
+          "name": "שלב 2 מתוך 3",
+          "role": "button",
+          "w": 8,
+          "h": 8
+        },
+        {
+          "name": "שלב 3 מתוך 3",
+          "role": "button",
+          "w": 8,
+          "h": 8
+        },
+        {
+          "name": "המשך, שלב 1 מתוך 3",
+          "role": "button",
+          "w": 234,
+          "h": 43
+        },
+        {
+          "name": "Challenge a Friend",
+          "role": "button",
+          "w": 164,
+          "h": 31
+        }
+      ],
+      "consoleErrors": 0
+    },
+    "placement": {
+      "sw": 320,
+      "iw": 320,
+      "overflow": false,
+      "controlCount": 20,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 4,
+      "tiny": [
+        {
+          "name": "מילוי — בורד 1",
+          "role": "button",
+          "w": 56,
+          "h": 18
+        },
+        {
+          "name": "מילוי — בורד 2",
+          "role": "button",
+          "w": 56,
+          "h": 18
+        },
+        {
+          "name": "מילוי — בורד 3",
+          "role": "button",
+          "w": 56,
+          "h": 18
+        },
+        {
+          "name": "מלא הכל",
+          "role": "button",
+          "w": 112,
+          "h": 18
+        }
+      ],
+      "consoleErrors": 3
+    },
+    "reveal": {
+      "sw": 320,
+      "iw": 320,
+      "overflow": false,
+      "controlCount": 27,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 24,
+      "tiny": [
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 2, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        },
+        {
+          "name": "בוט 1, ייחשף אחרי הריבר",
+          "role": "button",
+          "w": 43,
+          "h": 55
+        }
+      ],
+      "consoleErrors": 3
+    },
+    "results": {
+      "sw": 320,
+      "iw": 320,
+      "overflow": false,
+      "controlCount": 5,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 1,
+      "tiny": [
+        {
+          "name": "הצג פרטי יד",
+          "role": "button",
+          "w": 106,
+          "h": 32
+        }
+      ],
+      "consoleErrors": 11
+    }
+  }
+}

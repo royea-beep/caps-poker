@@ -16,6 +16,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Refre
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { safeBack } from '../../components/BackControl';
+import { LuxuryBackdrop } from '../../components/LuxuryBackdrop';
+import { ChipButton } from '../../components/ChipButton';
 import { useGameStore } from '../../store/gameStore';
 import { getSupabase } from '../../utils/supabase';
 import { getBoardCount } from '../../constants/gameConfig';
@@ -30,11 +32,21 @@ import { beginPracticeLive, getPracticeLiveState, isPracticeLiveActive, endPract
 import { PRACTICE_LIVE_ENABLED } from '../../constants/featureFlags';
 import { useLobbyPresence } from '../../hooks/useLobbyPresence';
 import { t } from '../../utils/i18n';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
 
+/**
+ * AUDIT-REST 2026-09-05 — the board count is READ, not restated. These three numbers were
+ * literals (4 / 3 / 2), which is a SECOND source of truth for the rule CLAUDE.md makes a hard
+ * rule: "DO NOT hardcode board counts — use getBoardCount()". They happened to be right, and
+ * that is exactly why it was worth changing: a duplicated rule is a rule waiting to disagree
+ * with itself, and this file is the screen that TELLS a player what the table will deal them.
+ * The rendered output is byte-identical — getBoardCount returns 4 / 3 / 2 for 2 / 3 / 4 players,
+ * pinned by utils/__tests__/one-outcome-derivation.test.ts's sibling assertion.
+ */
 const TYPES: { n: PlayerCount; label: string; boards: number }[] = [
-  { n: 2, label: 'Heads-Up', boards: 4 },
-  { n: 3, label: '3-Player', boards: 3 },
-  { n: 4, label: '4-Player', boards: 2 },
+  { n: 2, label: 'Heads-Up', boards: getBoardCount(2) },
+  { n: 3, label: '3-Player', boards: getBoardCount(3) },
+  { n: 4, label: '4-Player', boards: getBoardCount(4) },
 ];
 
 const TABLES_PER_TYPE = 2;
@@ -238,6 +250,9 @@ export default function PublicLobby() {
 
   return (
     <SafeAreaView style={styles.root}>
+      {/* EVERY-SCREEN luxury pass — the app-wide LuxuryBackdrop behind the lobby, one visual
+          language across the app. pointerEvents:none, zero layout impact. */}
+      <LuxuryBackdrop />
       <View style={styles.header}>
         {/* LOBBY-LABEL 2026-08-09 — the destination of the home "משחק אונליין" CTA was itself
             all-English. Same path, same problem, fixed together. */}
@@ -312,7 +327,7 @@ export default function PublicLobby() {
             testID={`bot-table-${n}`}
           >
             <View style={styles.botBadge}><Text style={styles.botBadgeText}>🤖 BOT</Text></View>
-            <View style={{ flex: 1 }}>
+            <View style={LABEL_COLUMN}>
               <Text style={styles.botRowTitle}>Practice vs Bots</Text>
               <Text style={styles.botRowSub}>{t().botRowSub(n, getBoardCount(n))}</Text>
             </View>
@@ -351,9 +366,9 @@ export default function PublicLobby() {
                       <View style={styles.tableInfo}>
                         <Text style={styles.tableCountMuted}>Opening a table…</Text>
                       </View>
-                      <View style={[styles.joinBtn, styles.joinBtnFull]}>
-                        <Text style={styles.joinTextFull}>…</Text>
-                      </View>
+                      <ChipButton variant="primary" compact disabled onPress={() => {}} accessibilityLabel="Opening a table" style={{ minWidth: rs(76) }}>
+                        <Text style={styles.joinChipText}>…</Text>
+                      </ChipButton>
                     </View>
                   );
                 }
@@ -370,21 +385,20 @@ export default function PublicLobby() {
                       <Text style={styles.tableCount}>{tbl.current_players} / {tbl.max_players}</Text>
                       <Text style={styles.tableSub}>#{tbl.room_code} · waiting</Text>
                     </View>
-                    <Pressable
-                      style={[styles.joinBtn, (full || busy) && styles.joinBtnFull]}
-                      // Measured 64x31 at 390px and 52x26 at 320px — both under the 44px
-                      // minimum on the vertical axis, on the primary action of this screen,
-                      // repeated once per table. hitSlop rather than bigger padding: it takes
-                      // the touch area to 51px / 46px without changing the pill's appearance
-                      // or reflowing the row (the width already clears 44).
-                      hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+                    {/* EVERY-SCREEN luxury pass — Join is the app's ChipButton (mint chip, brass
+                        edge), the same primary-action identity as the home / results / shop CTAs.
+                        Full or busy dims via the chip's disabled state. */}
+                    <ChipButton
+                      variant="primary"
+                      compact
                       disabled={full || busy}
                       onPress={() => handleJoin(tbl)}
-                      accessibilityRole="button"
                       accessibilityLabel={full ? `Table ${tbl.room_code} full` : `Join table ${tbl.room_code}`}
+                      testID={`join-${tbl.room_code}`}
+                      style={{ minWidth: rs(76) }}
                     >
-                      <Text style={[styles.joinText, full && styles.joinTextFull]}>{full ? 'Full' : 'Join'}</Text>
-                    </Pressable>
+                      <Text style={styles.joinChipText}>{full ? 'Full' : 'Join'}</Text>
+                    </ChipButton>
                   </View>
                 );
               })}
@@ -449,7 +463,10 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(6) },
   sectionTitle: { color: '#fff', fontSize: rf(13), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   sectionMeta: { color: 'rgba(255,255,255,0.5)', fontSize: rf(10, 10) },
-  table: { flexDirection: 'row', alignItems: 'center', gap: rs(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: rv(12), padding: rs(12), marginBottom: rv(8) },
+  // EVERY-SCREEN luxury pass — gilded human table rows, the same brass-hairline + soft-lift
+  // identity as the profile stat cards and the shop product cards. Was flat rgba(255,255,255,0.04)
+  // on a bare border. The bot rows keep their distinct green practice identity on purpose.
+  table: { flexDirection: 'row', alignItems: 'center', gap: rs(12), backgroundColor: 'rgba(0,0,0,0.28)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.45)', borderRadius: rv(12), padding: rs(12), marginBottom: rv(8), ...Platform.select({ web: { boxShadow: '0 3px 10px rgba(0,0,0,0.4)' } as any, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6 } }) },
   tablePlaceholder: { opacity: 0.5 },
   seats: { flexDirection: 'row', gap: rs(5) },
   seat: { width: rs(13), height: rs(13), borderRadius: rs(7), backgroundColor: '#2a2f3a' },
@@ -467,6 +484,9 @@ function makeStyles(rs: (v: number) => number, rf: (v: number, floor?: number) =
   joinBtnFull: { backgroundColor: 'rgba(255,255,255,0.08)' },
   joinText: { color: '#08130f', fontWeight: '800', fontSize: rf(13) },
   joinTextFull: { color: 'rgba(255,255,255,0.6)' },
+  // The Join ChipButton's label — dark on the mint fill (same contrast choice as the home /
+  // results / shop primary CTAs).
+  joinChipText: { color: '#08130f', fontWeight: '900', fontSize: rf(13), letterSpacing: 0.5 },
   btnDisabled: { opacity: 0.5 },
   errorBanner: {
     marginHorizontal: rs(16),

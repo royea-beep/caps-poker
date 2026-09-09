@@ -1,0 +1,291 @@
+{
+  "dist": "dist-live",
+  "players": 2,
+  "boards": 4,
+  "viewport": {
+    "w": 320,
+    "h": 852
+  },
+  "engine": "chromium",
+  "seconds": 10,
+  "ts": "2026-08-29T23:41:26.168Z",
+  "precondition": {
+    "hidden": false,
+    "rafCount": 121,
+    "ok": true
+  },
+  "sample": {
+    "slotCount": 16,
+    "samples": 166,
+    "canaryDistinct": 16,
+    "slotInlineOpacity": [
+      "0.859944",
+      "0.859944",
+      "0.859944",
+      "0.859944"
+    ],
+    "perSlot": [
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      },
+      {
+        "min": 0.72,
+        "max": 1,
+        "distinct": 57,
+        "first8": [
+          0.817,
+          0.789,
+          0.77,
+          0.75,
+          0.739,
+          0.728,
+          0.721,
+          0.72
+        ]
+      }
+    ],
+    "otherMotion": 40
+  },
+  "alive": true,
+  "pageErrors": [
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+    "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_FAILED",
+    "TypeError: Failed to fetch\n    at http://localhost:4365/_expo/static/js/web/index-6697cc580ae6f2c3cc71dd67d4b3f743.js:861:5619\n    at _handleRequest (http://localhost:4365/_expo/static/js/web/index-66",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+  ],
+  "consoleErrorCount": 9,
+  "verdict": "PULSING — 16/16 slots changed opacity (range 0.72..1)"
+}

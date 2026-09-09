@@ -1,0 +1,279 @@
+{
+  "ts": "2026-09-07T08:16:45.679Z",
+  "threshold": 128,
+  "method": "chromium downscale of each variant's own 1024 master — the shipping path; bands re-derived per variant",
+  "rows": {
+    "full": {
+      "bands": [
+        [
+          0.2626953125,
+          0.3017578125
+        ],
+        [
+          0.4189453125,
+          0.640625
+        ],
+        [
+          0.703125,
+          0.748046875
+        ]
+      ],
+      "sizes": {
+        "60": {
+          "suits": {
+            "inkPx": 10,
+            "contrast": 3.29,
+            "cellInk": [
+              2,
+              3,
+              2,
+              3
+            ],
+            "weakestCell": 2
+          },
+          "CAPS": {
+            "inkPx": 78,
+            "contrast": 2.56,
+            "cellInk": [
+              15,
+              15,
+              19,
+              29
+            ],
+            "weakestCell": 15
+          },
+          "POKER": {
+            "inkPx": 1,
+            "contrast": 2.66,
+            "cellInk": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            "weakestCell": 0
+          }
+        },
+        "120": {
+          "suits": {
+            "inkPx": 39,
+            "contrast": 3.92,
+            "cellInk": [
+              9,
+              10,
+              8,
+              12
+            ],
+            "weakestCell": 8
+          },
+          "CAPS": {
+            "inkPx": 461,
+            "contrast": 2.99,
+            "cellInk": [
+              109,
+              91,
+              132,
+              129
+            ],
+            "weakestCell": 91
+          },
+          "POKER": {
+            "inkPx": 36,
+            "contrast": 4.45,
+            "cellInk": [
+              7,
+              6,
+              8,
+              5,
+              10
+            ],
+            "weakestCell": 5
+          }
+        },
+        "240": {
+          "suits": {
+            "inkPx": 157,
+            "contrast": 4.17,
+            "cellInk": [
+              34,
+              39,
+              33,
+              51
+            ],
+            "weakestCell": 33
+          },
+          "CAPS": {
+            "inkPx": 2144,
+            "contrast": 3.71,
+            "cellInk": [
+              495,
+              448,
+              611,
+              590
+            ],
+            "weakestCell": 448
+          },
+          "POKER": {
+            "inkPx": 165,
+            "contrast": 6.83,
+            "cellInk": [
+              32,
+              36,
+              34,
+              25,
+              38
+            ],
+            "weakestCell": 25
+          }
+        },
+        "1024": {
+          "suits": {
+            "inkPx": 2959,
+            "contrast": 4.16,
+            "cellInk": [
+              675,
+              739,
+              597,
+              948
+            ],
+            "weakestCell": 597
+          },
+          "CAPS": {
+            "inkPx": 43202,
+            "contrast": 4.15,
+            "cellInk": [
+              9804,
+              8997,
+              12666,
+              11735
+            ],
+            "weakestCell": 8997
+          },
+          "POKER": {
+            "inkPx": 2990,
+            "contrast": 7.31,
+            "cellInk": [
+              539,
+              629,
+              628,
+              509,
+              685
+            ],
+            "weakestCell": 509
+          }
+        }
+      }
+    },
+    "compact": {
+      "bands": [
+        [
+          0.298828125,
+          0.33984375
+        ],
+        [
+          0.462890625,
+          0.6953125
+        ]
+      ],
+      "sizes": {
+        "60": {
+          "suits": {
+            "inkPx": 13,
+            "contrast": 3.25,
+            "cellInk": [
+              3,
+              4,
+              2,
+              4
+            ],
+            "weakestCell": 2
+          },
+          "CAPS": {
+            "inkPx": 88,
+            "contrast": 3.01,
+            "cellInk": [
+              18,
+              14,
+              25,
+              31
+            ],
+            "weakestCell": 14
+          }
+        },
+        "120": {
+          "suits": {
+            "inkPx": 47,
+            "contrast": 3.98,
+            "cellInk": [
+              12,
+              11,
+              8,
+              16
+            ],
+            "weakestCell": 8
+          },
+          "CAPS": {
+            "inkPx": 524,
+            "contrast": 3.64,
+            "cellInk": [
+              121,
+              107,
+              155,
+              141
+            ],
+            "weakestCell": 107
+          }
+        },
+        "240": {
+          "suits": {
+            "inkPx": 188,
+            "contrast": 4.16,
+            "cellInk": [
+              43,
+              47,
+              37,
+              61
+            ],
+            "weakestCell": 37
+          },
+          "CAPS": {
+            "inkPx": 2461,
+            "contrast": 3.76,
+            "cellInk": [
+              551,
+              518,
+              748,
+              644
+            ],
+            "weakestCell": 518
+          }
+        },
+        "1024": {
+          "suits": {
+            "inkPx": 3258,
+            "contrast": 4.17,
+            "cellInk": [
+              745,
+              819,
+              659,
+              1035
+            ],
+            "weakestCell": 659
+          },
+          "CAPS": {
+            "inkPx": 48038,
+            "contrast": 4.42,
+            "cellInk": [
+              10981,
+              10035,
+              13965,
+              13057
+            ],
+            "weakestCell": 10035
+          }
+        }
+      }
+    }
+  }
+}

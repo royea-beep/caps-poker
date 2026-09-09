@@ -1,0 +1,3276 @@
+{
+ "dist": "/tmp/webloop2",
+ "ts": "2026-09-03T08:45:08.857Z",
+ "engines": {
+  "chromium": {
+   "canary": {
+    "checks": {
+     "overflow_caught": true,
+     "clip_caught": true,
+     "under44_caught": true,
+     "contrast_flagged_bad": true,
+     "contrast_passed_good": true,
+     "gold_caught": true,
+     "mint_not_caught": true
+    },
+    "ok": true,
+    "raw": {
+     "overflow": {
+      "scrollWidth": 3000,
+      "innerWidth": 393,
+      "overflows": true
+     },
+     "clips": [
+      {
+       "tag": "div",
+       "cls": "",
+       "scrollW": 396,
+       "clientW": 40,
+       "text": "a very long child that is definitely wid"
+      }
+     ],
+     "under44": [
+      {
+       "label": "tiny",
+       "w": 37,
+       "h": 24
+      }
+     ],
+     "contrast": [
+      {
+       "text": "low contrast label",
+       "fg": "rgb(42, 42, 42)",
+       "ratio": 1.38,
+       "need": 4.5
+      }
+     ],
+     "gold": [
+      {
+       "label": "GOLD CONTROL",
+       "where": [
+        "background"
+       ]
+      }
+     ]
+    }
+   },
+   "widths": {
+    "320": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 560,
+        "clientW": 320,
+        "text": "👤\nPlayer\n💰 2,000 chips\n👥\nFriends\n🎓\nC"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-320-chromium.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-320-chromium.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 288,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-320-chromium.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-320-chromium.png",
+      "pageErrors": []
+     }
+    },
+    "375": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 656,
+        "clientW": 375,
+        "text": "👤\nPlayer\n💰 2,000 chips\n👥\nFriends\n🎓\nC"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-375-chromium.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-375-chromium.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 343,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-375-chromium.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-375-chromium.png",
+      "pageErrors": []
+     }
+    },
+    "393": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 688,
+        "clientW": 393,
+        "text": "👤\nPlayer\n💰 2,000 chips\n👥\nFriends\n🎓\nC"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-393-chromium.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-393-chromium.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 361,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-393-chromium.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-393-chromium.png",
+      "pageErrors": []
+     }
+    },
+    "430": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 753,
+        "clientW": 430,
+        "text": "👤\nPlayer\n💰 2,000 chips\n👥\nFriends\n🎓\nC"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-430-chromium.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-430-chromium.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 398,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-430-chromium.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-430-chromium.png",
+      "pageErrors": []
+     }
+    }
+   }
+  },
+  "webkit": {
+   "canary": {
+    "checks": {
+     "overflow_caught": true,
+     "clip_caught": true,
+     "under44_caught": true,
+     "contrast_flagged_bad": true,
+     "contrast_passed_good": true,
+     "gold_caught": true,
+     "mint_not_caught": true
+    },
+    "ok": true,
+    "raw": {
+     "overflow": {
+      "scrollWidth": 3000,
+      "innerWidth": 393,
+      "overflows": true
+     },
+     "clips": [
+      {
+       "tag": "div",
+       "cls": "",
+       "scrollW": 396,
+       "clientW": 40,
+       "text": "a very long child that is definitely wid"
+      }
+     ],
+     "under44": [
+      {
+       "label": "tiny",
+       "w": 46,
+       "h": 24
+      }
+     ],
+     "contrast": [
+      {
+       "text": "low contrast label",
+       "fg": "rgb(42, 42, 42)",
+       "ratio": 1.38,
+       "need": 4.5
+      }
+     ],
+     "gold": [
+      {
+       "label": "GOLD CONTROL",
+       "where": [
+        "background"
+       ]
+      }
+     ]
+    }
+   },
+   "widths": {
+    "320": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 560,
+        "clientW": 320,
+        "text": "👤\nPlayer\n💰 2,000 chips\n\n👥\nFriends\n\n🎓"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-320-webkit.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-320-webkit.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 288,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-320-webkit.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 320,
+       "innerWidth": 320,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-320-webkit.png",
+      "pageErrors": []
+     }
+    },
+    "375": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 656,
+        "clientW": 375,
+        "text": "👤\nPlayer\n💰 2,000 chips\n\n👥\nFriends\n\n🎓"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-375-webkit.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-375-webkit.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 343,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-375-webkit.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 375,
+       "innerWidth": 375,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-375-webkit.png",
+      "pageErrors": []
+     }
+    },
+    "393": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 688,
+        "clientW": 393,
+        "text": "👤\nPlayer\n💰 2,000 chips\n\n👥\nFriends\n\n🎓"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-393-webkit.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-393-webkit.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 361,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-393-webkit.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 393,
+       "innerWidth": 393,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-393-webkit.png",
+      "pageErrors": []
+     }
+    },
+    "430": {
+     "home": {
+      "controls": 14,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [
+       {
+        "tag": "div",
+        "cls": "css-g5y9jx r-13awgt0 r-1udh08x",
+        "scrollW": 753,
+        "clientW": 430,
+        "text": "👤\nPlayer\n💰 2,000 chips\n\n👥\nFriends\n\n🎓"
+       }
+      ],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 3
+       },
+       {
+        "text": "👥",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🎓",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "📖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🔵",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "home-430-webkit.png",
+      "pageErrors": []
+     },
+     "play": {
+      "controls": 8,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "🤖",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🌐",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🔒",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "📊",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🎁",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "🏠",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "♠️",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.08,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "play-430-webkit.png",
+      "pageErrors": []
+     },
+     "settings": {
+      "controls": 23,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [
+       {
+        "label": "Sound enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Vibration enabled",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Ambient sound",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Push notifications",
+        "w": 55,
+        "h": 34
+       },
+       {
+        "label": "Version 2.7.0",
+        "w": 398,
+        "h": 42
+       },
+       {
+        "label": "Your rank",
+        "w": 74,
+        "h": 38
+       }
+      ],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "👤",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.2,
+        "need": 3
+       },
+       {
+        "text": "Shown on leaderboard · Tap to edit",
+        "fg": "rgb(91, 97, 104)",
+        "ratio": 2.8,
+        "need": 4.5
+       },
+       {
+        "text": "🐛",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "DANGER ZONE",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       },
+       {
+        "text": "Reset All Progress",
+        "fg": "rgb(198, 40, 40)",
+        "ratio": 3.52,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "settings-430-webkit.png",
+      "pageErrors": []
+     },
+     "theme-pick": {
+      "controls": 2,
+      "overflow": {
+       "scrollWidth": 430,
+       "innerWidth": 430,
+       "overflows": false
+      },
+      "clips": [],
+      "under44": [],
+      "contrast": [
+       {
+        "text": "Caps Poker",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "/* These styles make the body full",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "html, body, #root { overflow-x: hi",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "You need to enable JavaScript to r",
+        "fg": "rgb(0, 0, 0)",
+        "ratio": 1.06,
+        "need": 4.5
+       },
+       {
+        "text": "CHOOSE YOUR STYLE",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.45,
+        "need": 4.5
+       },
+       {
+        "text": "Timeless",
+        "fg": "rgb(102, 102, 102)",
+        "ratio": 3.29,
+        "need": 4.5
+       },
+       {
+        "text": "Dark goldElegant look",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Red feltBold action",
+        "fg": "rgb(85, 85, 85)",
+        "ratio": 2.53,
+        "need": 4.5
+       },
+       {
+        "text": "Can be changed anytime in Settings",
+        "fg": "rgb(68, 68, 68)",
+        "ratio": 2.03,
+        "need": 4.5
+       }
+      ],
+      "gold": [],
+      "shot": "theme-pick-430-webkit.png",
+      "pageErrors": []
+     }
+    }
+   }
+  }
+ }
+}

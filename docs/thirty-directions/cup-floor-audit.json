@@ -1,0 +1,547 @@
+{
+  "ts": "2026-08-30T08:12:06.431Z",
+  "players": 3,
+  "boards": 3,
+  "widths": [
+    393,
+    320
+  ],
+  "directions": [
+    {
+      "id": "K0",
+      "family": "Cups",
+      "name": "CONTROL — real emoji vs drawn",
+      "needs": "designer",
+      "note": "Not a direction. The comparison that decides whether a cup hero is even possible.",
+      "widths": {
+        "320": {
+          "shot": "K0-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 4,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K0-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 4,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K1",
+      "family": "Cups",
+      "name": "Cups falling, caught before landing",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K1-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K1-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K2",
+      "family": "Cups",
+      "name": "Cascade, many tumbling",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K2-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K2-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K3",
+      "family": "Cups",
+      "name": "One cup, enormous, cropped",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K3-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K3-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K4",
+      "family": "Cups",
+      "name": "The five tiers stacked",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K4-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K4-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K5",
+      "family": "Cups",
+      "name": "A cup and a card",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K5-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K5-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K6",
+      "family": "Cups",
+      "name": "The cup inside the wordmark",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K6-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K6-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K7",
+      "family": "Cups",
+      "name": "A cup catching falling cards",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K7-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        },
+        "393": {
+          "shot": "K7-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K8",
+      "family": "Cups",
+      "name": "The collection, three of five",
+      "needs": "designer",
+      "note": null,
+      "widths": {
+        "320": {
+          "shot": "K8-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "PLATINUM",
+                "worst": 3.04,
+                "median": 3.04,
+                "need": 4.5,
+                "size": 7
+              },
+              {
+                "text": "DIAMOND",
+                "worst": 3.06,
+                "median": 3.06,
+                "need": 4.5,
+                "size": 7
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "K8-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "PLATINUM",
+                "worst": 3.03,
+                "median": 3.04,
+                "need": 4.5,
+                "size": 9
+              },
+              {
+                "text": "DIAMOND",
+                "worst": 3.06,
+                "median": 3.06,
+                "need": 4.5,
+                "size": 9
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    },
+    {
+      "id": "ZZ",
+      "family": "Instrument",
+      "name": "CANARY — must fail contrast",
+      "needs": "none",
+      "note": "A planted failure. If this passes, the audit is blind and no number in the run counts.",
+      "widths": {
+        "320": {
+          "shot": "ZZ-320.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "CANARY MUST FAIL CONTRAST",
+                "worst": 1.38,
+                "median": 1.38,
+                "need": 4.5,
+                "size": 12
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        },
+        "393": {
+          "shot": "ZZ-393.png",
+          "fontsLoaded": [
+            "Playfair",
+            "Inter",
+            "Bebas",
+            "Cormorant"
+          ],
+          "pageErrors": [],
+          "floor": {
+            "contrastFailures": [
+              {
+                "text": "CANARY MUST FAIL CONTRAST",
+                "worst": 1.38,
+                "median": 1.38,
+                "need": 4.5,
+                "size": 15
+              }
+            ],
+            "contrastEdges": [],
+            "gradientText": [],
+            "emojiSkipped": 3,
+            "under44": [],
+            "unnamed": 0,
+            "controls": 9,
+            "pass": false
+          }
+        }
+      }
+    }
+  ]
+}

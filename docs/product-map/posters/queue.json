@@ -1,0 +1,124 @@
+{
+  "generated": "tools/cut.mjs",
+  "note": "A QUEUE, NOT A SCHEDULE. Nothing here is published, and nothing in this repo can publish it.",
+  "constraints": {
+    "maxSeconds": 60,
+    "hookDeadlineSeconds": 0.5,
+    "audioStreams": 0,
+    "resolution": "1080x1920",
+    "fps": 25,
+    "capture": "486x864"
+  },
+  "videos": [
+    {
+      "id": "play-autoplace",
+      "kind": "gameplay",
+      "seconds": 9,
+      "dims": "1080x1920",
+      "kb": 759,
+      "source": "autoplace",
+      "hook": "16 cards. One tap.",
+      "payoff": "Sixteen cards land across four boards in a single tap.",
+      "caption": "Four boards. Sixteen cards. One tap. Play free in your browser."
+    },
+    {
+      "id": "play-reveal",
+      "kind": "gameplay",
+      "seconds": 17,
+      "dims": "1080x1920",
+      "kb": 3124,
+      "source": "reveal",
+      "hook": "One hand. Four boards.",
+      "payoff": "Four boards resolve one after another — four results from one hand.",
+      "caption": "One hand. Four boards. Four separate results. Play free in your browser."
+    },
+    {
+      "id": "play-win",
+      "kind": "gameplay",
+      "seconds": 17,
+      "dims": "1080x1920",
+      "kb": 2545,
+      "source": "win",
+      "hook": "Take one board? Fine.",
+      "payoff": "All four boards taken — the app's top celebration tier.",
+      "caption": "Taking one board is fine. Taking all four is the whole point. Play free in your browser."
+    },
+    {
+      "id": "play-tie",
+      "kind": "gameplay",
+      "seconds": 17,
+      "dims": "1080x1920",
+      "kb": 2877,
+      "source": "tie",
+      "hook": "Four boards. Four results.",
+      "payoff": "Two boards each — and the app says TIE GAME, on screen, in its own words.",
+      "caption": "Two boards each. Nobody wins. A tie is a real result, not an error. Play free in your browser."
+    },
+    {
+      "id": "play-felt",
+      "kind": "gameplay",
+      "seconds": 9,
+      "dims": "1080x1920",
+      "kb": 710,
+      "source": "felt",
+      "hook": "This green is four days old",
+      "payoff": "The playing surface, four days old, measured rather than eyeballed.",
+      "caption": "We measured this green instead of arguing about it. Play free in your browser."
+    },
+    {
+      "id": "dev-signin",
+      "kind": "development",
+      "seconds": 20,
+      "dims": "1080x1920",
+      "kb": 2951,
+      "source": "win",
+      "hook": "Our sign-in button was invisible",
+      "payoff": "The sign-in entry was never shown to anyone anonymous, because an anonymous player IS a user.",
+      "caption": "Our sign-in button was invisible to everyone who had not signed in. The check was 'is there a user'. Anonymous players are users. Play free in your browser."
+    },
+    {
+      "id": "dev-invite",
+      "kind": "development",
+      "seconds": 20,
+      "dims": "1080x1920",
+      "kb": 3194,
+      "source": "tie",
+      "hook": "Every invite code we ever issued",
+      "payoff": "Every invite code ever issued was 8 characters; every screen accepted 6. Zero redemptions, ever.",
+      "caption": "Every invite code we ever issued was unusable. The database made 8 characters. Every screen accepted 6. Zero redemptions in the history of the product. Play free in your browser."
+    },
+    {
+      "id": "dev-achievements",
+      "kind": "development",
+      "seconds": 18,
+      "dims": "1080x1920",
+      "kb": 2824,
+      "source": "reveal",
+      "hook": "Our achievements screen said 0/36",
+      "payoff": "The achievements screen could only ever say 0/36 — server and client never agreed on a field name.",
+      "caption": "Our achievements screen could only ever say 0 of 36. The server and the app never agreed what to call the field. Play free in your browser."
+    },
+    {
+      "id": "dev-wcag",
+      "kind": "development",
+      "seconds": 18,
+      "dims": "1080x1920",
+      "kb": 2888,
+      "source": "win",
+      "hook": "We have a test that measures contrast",
+      "payoff": "The contrast test was measuring a screen dimmed to 60% — for weeks.",
+      "caption": "Our accessibility test measures colour contrast. It was running on a screen dimmed to 60% the whole time. Play free in your browser."
+    },
+    {
+      "id": "dev-tie",
+      "kind": "development",
+      "seconds": 18,
+      "dims": "1080x1920",
+      "kb": 3132,
+      "source": "tie",
+      "hook": "When a hand tied",
+      "payoff": "A tie told BOTH players they had lost, because the code only knew win and not-win.",
+      "caption": "When a hand tied, we told both players they lost. The code knew 'win' and 'not win'. A tie is neither. Play free in your browser."
+    }
+  ]
+}

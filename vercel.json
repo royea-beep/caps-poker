@@ -3,10 +3,23 @@
   "outputDirectory": "web-dist",
   "framework": null,
   "installCommand": "npm install",
+  "_comment_rewrites": [
+    "FULL-I18N-AND-FIXES 2026-09-03 — THE CATCH-ALL 404.",
+    "The last rule used to be { source: /(.*) } which sent EVERY unmatched path to index.html with",
+    "a 200. A typo'd or deleted file therefore came back as a working-looking page, and that trap",
+    "twice made a stale or absent file read as 'deployed'.",
+    "The source now excludes any path containing a dot, so a request for a FILE that does not exist",
+    "falls through to Vercel's own 404 instead of impersonating the app.",
+    "SPA routes are unaffected, and that is checked rather than assumed: tests/vercel-rewrites.test.ts",
+    "asserts every route the app navigates to still matches, and that dotted paths no longer do.",
+    "Measured: 0 of the app's routes contain a dot, and every shipped asset is a real static file,",
+    "which Vercel serves before rewrites are consulted."
+  ],
   "rewrites": [
     { "source": "/privacy.html", "destination": "/privacy.html" },
     { "source": "/terms.html", "destination": "/terms.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/landing.html", "destination": "/landing.html" },
+    { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

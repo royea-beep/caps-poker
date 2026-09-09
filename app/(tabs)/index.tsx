@@ -24,7 +24,6 @@ import { WEB_MAX_WIDTH } from '../../components/WebContainer';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { setCurrentScreen, trackAction } from '../../utils/crash-evidence';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ReportBugButton from '../../components/ReportBugButton';
 import { KILL_HeroGlow } from '../../utils/animationKill';
 import HomeCupRings from '../../components/HomeCupRings';
 import Animated, {
@@ -56,13 +55,14 @@ import { CapsHooks } from '../../utils/learning';
 import { useAuthUser, signInWithGoogle, signOut } from '../../utils/auth';
 import { FriendsBg } from '../../components/FriendsBg';
 import InteractiveTutorial, { INTERACTIVE_TUTORIAL_KEY } from '../../components/InteractiveTutorial';
+import { resetDismissedTips, areTipsEnabled, loadDismissedTips } from '../../utils/tipsSeen';
 import { rf, rs, rv } from '../../utils/responsive';
 import Constants from 'expo-constants';
 import { t, getLanguage } from '../../utils/i18n';
 import { HOME_THEMES, DEFAULT_HOME_THEME } from '../../constants/homeThemes';
 import { themeAxes } from '../../constants/visualThemes';
 import { migrateGuestToUser } from '../../utils/guestMigration';
-import { fetchCardDisplayConfig, fetchPokerShop, recordReward } from '../../utils/supabaseEconomy';
+import { fetchCardDisplayConfig, fetchPokerShop, recordReward, callRPC } from '../../utils/supabaseEconomy';
 import { getDeviceId } from '../../utils/leaderboard';
 import { trackEvent } from '../../utils/heatmap';
 import { getSupabase } from '../../utils/supabase';
@@ -88,6 +88,10 @@ import { StreakPopup } from '../../components/StreakPopup';
 import { getHandHistory, HandRecord } from '../../utils/handHistory';
 import { ACHIEVEMENTS } from '../../utils/achievements';
 import { track } from '../../utils/analytics';
+import { LABEL_COLUMN } from '../../constants/labelColumn';
+import { ChipButton } from '../../components/ChipButton';
+import { LuxuryBackdrop } from '../../components/LuxuryBackdrop';
+import { RoyalFlushFan } from '../../components/RoyalFlushFan';
 
 export const GAMES_PLAYED_KEY = 'caps_games_played';
 export const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -148,6 +152,7 @@ function HeroCardFan() {
   );
 }
 
+
 const TAGLINES = [
   "Place your cards. Own every board.",
   "Every card counts. Every board matters.",
@@ -165,7 +170,29 @@ const TAGLINES = [
   "The poker game that never sleeps.",
   "Where every board is a battle.",
 ];
-const DISPLAY_FONT = Platform.select({ web: 'Playfair Display, Georgia, serif', default: undefined });
+/**
+ * D1's FACE. The wordmark is now the hero, so the face it renders in matters far more than it did
+ * when this was a 41px title.
+ *
+ * ⚠️ PLAYFAIR DISPLAY IS NOT AVAILABLE ON NATIVE AND WAS NEVER GOING TO BE. There are ZERO font
+ * files in `assets/` and `expo-font` is never imported — the same fact `CARD_BACK_FONT` in
+ * Card.tsx already records as FONT RULING A. The concept render Roye approved was set in Playfair,
+ * and on a phone it cannot be, because the font is not in the binary.
+ *
+ * `default: undefined` used to mean the system SANS face, which for a masthead is the wrong shape
+ * entirely. So the fallbacks now name real serifs that ARE present:
+ *   ios      Georgia — bundled with iOS, a genuine high-contrast serif, the closest shipped thing
+ *   android  'serif' — resolves to Noto Serif
+ *   web      Playfair Display, as before
+ * That is an ASSET-FREE improvement, and it follows the precedent rather than inventing one:
+ * when a font-infra batch bundles Playfair, this one constant changes and every platform matches.
+ */
+const DISPLAY_FONT = Platform.select({
+  web: 'Playfair Display, Georgia, serif',
+  ios: 'Georgia',
+  android: 'serif',
+  default: undefined,
+});
 
 // ─── Sign-in nudge banner — slide-up, non-blocking ─────────────────────────────
 function NudgeBanner({ onSignIn, onLater }: { onSignIn: () => void; onLater: () => void }) {
@@ -355,7 +382,7 @@ function DailyRewardModal({
         style={StyleSheet.absoluteFillObject}
         onPress={() => dismiss(onDismiss)}
         accessibilityRole="button"
-        accessibilityLabel="Close dialog"
+        accessibilityLabel={t().homeCloseDialog} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
       />
       <AnimatedRN.View style={[dailyRewardModalStyles.card, { transform: [{ scale }] }]}>
         <Text style={dailyRewardModalStyles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🎁</Text>
@@ -363,7 +390,7 @@ function DailyRewardModal({
           {isHE ? 'פרס יומי!' : 'Daily Reward!'}
         </Text>
         <Text style={dailyRewardModalStyles.chips}>
-          {`+${(reward ?? 0).toLocaleString()} chips`}
+          {`+${(reward ?? 0).toLocaleString()} ${t().chipsWord}`}
         </Text>
         {streak > 1 && (
           <Text style={dailyRewardModalStyles.streak} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={isHE ? `${streak} ימים ברצף` : `${streak}-day streak!`}>
@@ -515,7 +542,7 @@ export default function HomeScreen() {
 
   const user = useAuthUser();
   const prevUserRef = useRef<typeof user>(undefined);
-  const playerName = useGameStore((s) => s.playerName) || 'Player';
+  const playerName = useGameStore((s) => s.playerName) || t().playerFallback;
   // (DEDUPE-QA) hasStartedGame + WebLandingHero removed — web lands straight in the app.
   const [signingIn, setSigningIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -662,13 +689,10 @@ export default function HomeScreen() {
     }).catch(() => {});
   }, []);
 
-  // PLAY button scale — RN Animated (not Reanimated)
-  const playScale = useRef(new AnimatedRN.Value(1)).current;
-  // POLISH-1 (2) — Play Online lost its FIRST tap: with only onPress, react-native-web's press
-  // recognizer dropped the very first pointer press after load (the green Play button survives
-  // because its onPressIn grabs the responder on pointer-down). Give Play Online the same
-  // onPressIn/onPressOut so the first tap navigates.
-  const playOnlineScale = useRef(new AnimatedRN.Value(1)).current;
+  // BUILD-ELONGATED-CHIP 2026-09-01 — playScale / playOnlineScale removed: ChipButton owns its
+  // own press animation (a translateY "sink"), and its onPressIn/onPressOut preserve the POLISH-1
+  // (2) first-tap fix — react-native-web dropped Play Online's very first pointer press when it had
+  // only onPress, so grabbing the responder on pointer-down is still required and still present.
 
   // A2: Daily Reward pulse animation
   const dailyPulseAnim = useRef(new AnimatedRN.Value(1)).current;
@@ -720,7 +744,10 @@ export default function HomeScreen() {
       const deviceId = await getDeviceId();
       const sb = getSupabase();
       if (!sb) return 'error';
-      const { data: claim } = await sb.rpc('claim_daily_reward', { p_device_id: deviceId });
+      // AE2 — routed through callRPC so it inherits the app-open auth gate. A direct sb.rpc here
+      // bypassed the choke point; claim_daily_reward IS econ_bind_ok-gated, so a session-less
+      // app-open call is exactly what would be refused once S1 closes.
+      const claim = await callRPC<any>('claim_daily_reward', { p_device_id: deviceId });
       const store = useGameStore.getState();
       const now = new Date();
       if (claim?.success) {
@@ -849,8 +876,16 @@ export default function HomeScreen() {
     // Interactive tutorial (S98) — THE single first-run onboarding, shown if not yet seen.
     // CI guard: when EXPO_PUBLIC_CAPS_CI=1 (sim auto-tour build), never show the tutorial.
     if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
-      AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY).then(val => {
-        if (!val) setShowInteractiveTutorial(true);
+      // SHOW-TIPS 2026-09-06 — the Settings switch covers ALL THREE explanations, and this is the
+      // first of them. Suppressing only the in-game tooltips would leave a player who turned tips
+      // off still meeting a full-screen overlay, which reads as a broken switch.
+      // The switch is read AFTER the store hydrates, so the default (ON) can never flash the
+      // overlay at someone who turned it off.
+      void Promise.all([
+        AsyncStorage.getItem(INTERACTIVE_TUTORIAL_KEY),
+        loadDismissedTips(),
+      ]).then(([val]) => {
+        if (!val && areTipsEnabled()) setShowInteractiveTutorial(true);
       }).catch(() => {});
     }
     Promise.all([
@@ -883,7 +918,9 @@ export default function HomeScreen() {
         const deviceId = await getDeviceId();
         const sb = getSupabase();
         if (!sb) return;
-        const { data } = await sb.rpc('claim_daily_streak', { p_device_id: deviceId });
+        // AE2 — same choke point. This was one of the RPCs proven to arrive with auth.uid() = NULL
+        // at launch (MEMORY.md 2026-08-01, patched-fetch experiment).
+        const data = await callRPC<any>('claim_daily_streak', { p_device_id: deviceId });
         if (!data) return;
         if (data.claimed) {
           const store = useGameStore.getState();
@@ -1187,7 +1224,19 @@ export default function HomeScreen() {
     return () => anim.stop();
   }, [canClaim]);
 
-  const titleFontSize = Math.min(42, Math.floor(screenW * 0.105));
+  /**
+   * D1 — THE WORDMARK IS THE HERO NOW. Was `min(42, screenW * 0.105)`, i.e. 41pt at 393: a title
+   * sitting above the art. D1 makes it the art, so it triples.
+   *
+   * IRON RULE #3 — every value derives from the live width; nothing here is a device literal.
+   * The 126 ceiling stops a 430pt phone from rendering a wordmark larger than the design was ever
+   * measured at, and 0.30 was chosen so the widest plausible face still fits the narrowest screen:
+   * four capitals at ~0.72em advance is ~2.9em, and 0.30 x 320 x 2.9 = 278pt inside a 320pt frame.
+   * That is tight, which is why it is MEASURED at 320/375/393/430 on both engines rather than
+   * trusted — `adjustsFontSizeToFit` rescues native but is a NO-OP ON WEB, a fact this project
+   * learned from the REMATCH regression.
+   */
+  const titleFontSize = Math.min(126, Math.round(screenW * 0.30));
 
   // Web title gradient for dark_gold theme
   const webTitleGradient = isWeb && homeThemeId === 'dark_gold'
@@ -1199,15 +1248,22 @@ export default function HomeScreen() {
   // that silently drifts from the constant is exactly how this class of bug comes back. Now
   // imported, so changing WEB_MAX_WIDTH moves this with it.
   const _effectiveW = (Platform.OS === 'web' && screenW > WEB_MAX_WIDTH) ? WEB_MAX_WIDTH : screenW;
-  // RESPONSIVE-FIX 2026-07-06 — was 0.75. At narrow widths (320-375pt), 0.75 combined
-  // with the old fixed rs(32) horizontal padding left too little room for "Practice vs
-  // Bots" and it truncated on a real tester device. 0.82 gives ~9% more width at every
-  // size (paired with reduced padding + a lower font floor below) so the label has
-  // real margin to fit without relying solely on adjustsFontSizeToFit.
-  const playBtnWidth = Math.round(_effectiveW * 0.82);
+  // BUILD-ELONGATED-CHIP 2026-09-01 — Practice is the QUIET chip: 0.64 of the width so it reads
+  // clearly subordinate to the full-width primary (refinement 1 — do not equalise). The old 0.82
+  // fear of clipping "Practice vs bots" is covered by the chip's own padding + the label's
+  // adjustsFontSizeToFit(min 0.6) backstop; measured to hold at 320 and 393 (EN).
+  const practiceChipWidth = Math.round(_effectiveW * 0.64);
+  // LUXURY-HOME — the royal-flush fan card width, proportional to the screen (rv-style, no literal).
+  // Small: five fanned cards must sit under the wordmark without crowding it or the CTAs. Clamped so
+  // it neither vanishes at 320 nor bloats at 430.
+  const fanCardW = Math.max(rv(38), Math.min(rv(52), Math.round(_effectiveW * 0.12)));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* LUXURY-HOME 2026-09-01 — the deep radial-green felt vignette + diagonal beam + faint weave,
+          the base of the Luxury Dark home. First child so nothing renders between it and the frame;
+          it lifts the gilded wordmark rather than fighting it (green glow under the ~30% band). */}
+      <LuxuryBackdrop />
       {/* WebLandingHero removed (DEDUPE-QA) — web users land straight in the app + the one onboarding. */}
       <FriendsBg />
 
@@ -1259,6 +1315,8 @@ export default function HomeScreen() {
           // Replay the single onboarding (InteractiveTutorial).
           setMenuOpen(false);
           AsyncStorage.removeItem(INTERACTIVE_TUTORIAL_KEY).catch(() => {});
+          // Same as Settings: a replay replays the in-game tips too, not just the overlay.
+          void resetDismissedTips();
           setTimeout(() => setShowInteractiveTutorial(true), 60);
         }}
         chips={chips}
@@ -1276,17 +1334,17 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
-                accessibilityLabel="Get chips"
+                accessibilityLabel={t().homeGetChipsA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipGetBtn}
               >
-                <Text style={styles.topChipGetText}>GET CHIPS</Text>
+                <Text style={styles.topChipGetText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeGetChips}</Text>
               </Pressable>
             ) : (
               <Pressable
                 onPress={() => router.push('/shop' as any)}
                 accessibilityRole="button"
-                accessibilityLabel="Open chip shop"
+                accessibilityLabel={t().homeOpenChipShop} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.topChipBtn}
               >
@@ -1313,7 +1371,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setMenuOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="Open menu"
+              accessibilityLabel={t().homeOpenMenu} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -1356,7 +1414,9 @@ export default function HomeScreen() {
 
         {/* Title section */}
         <View style={styles.titleSection}>
-          <Text style={[styles.suitSymbols, { color: theme.accent }]} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+          {/* LUXURY-HOME \u2014 the four suits in gilded gold #c9a84c (the wordmark gold, NOT the winner
+              cue #FFD700), the crown above the CAPS wordmark. */}
+          <Text style={[styles.suitSymbols, { color: '#c9a84c' }]} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
             {'\u2660'} {'\u2665'} {'\u2666'} {'\u2663'}
           </Text>
           <Text
@@ -1373,15 +1433,15 @@ export default function HomeScreen() {
             CAPS
           </Text>
           <Text style={styles.titlePoker}>POKER</Text>
-          <HeroCardFan />
-          <Animated.Text
-            style={[styles.titleSub, { color: theme.subtitleColor }, taglineAnimStyle]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            {tagline}
-          </Animated.Text>
+          {/* LUXURY-HOME — the teaching sentence MOVED below the chips (it is "the tagline" in the
+              approved order: wordmark → fan → chips → tagline). See its new home after the CTAs. */}
         </View>
+
+        {/* LUXURY-HOME 2026-09-01 — the royal-flush hero fan (10 J Q K A of spades), built from the
+            REAL components/Card.tsx (not a redrawn SVG), sits BELOW the wordmark with a gilded
+            "ROYAL FLUSH" caption. It must never overlap POKER — proven at every width in the
+            harness; the content-container gap + the fan's own headroom keep it clear. */}
+        <RoyalFlushFan cardW={fanCardW} />
         {/* HOME-DECLUTTER 2026-07-05 — removed the daily-quote block + divider, and the
             redundant/false secondary "CAPS · FOUR CARDS. FOUR BOARDS. ONE WINNER." wordmark
             (duplicated the title AND was wrong: only 2P has 4 boards; 3P=3, 4P=2). Kept:
@@ -1397,108 +1457,111 @@ export default function HomeScreen() {
             lobby destroys trust in every number in the app. Restore a REAL presence count
             when there's actual concurrency (do not surface a live "2 online" — reads dead). */}
 
-        {/* PLAY button — always green, center stage. PR-C glow halo behind it. */}
+        {/* ── C5's LIVE PLAYER COUNT IS DELIBERATELY ABSENT ──────────────────────────────────
+            The panel wanted it and Roye approved it ONLY once the number is real. It is not.
+            Measured 2026-08-28: 0 distinct devices in the last hour, 31 in 24h. A live count
+            would read "0 players online" on the front door right now.
+            This app has already made this mistake once and written it down: HOME-DECLUTTER
+            2026-07-05 removed a hardcoded "32 players online" as "fake and deceptive ... '32
+            online' -> empty lobby destroys trust in every number in the app", and its own note
+            says do not surface a real-but-tiny count either, because it reads dead.
+            SO: no count, and no liveness implied in the subtitle. Add it when concurrency is
+            real, not when the query is easy. */}
+
+        {/* C2 — PLAY ONLINE, FIRST AND FILLED. The product is multiplayer; the biggest and
+            highest thing on the front door is now the thing we want pressed. Practice follows
+            it as the fallback. */}
+        {/* BUILD-ELONGATED-CHIP 2026-09-01 — the E identity, built for real. Roye ranked the
+            beveled poker-chip #1, then chose the ELONGATED stadium over the true circle because the
+            circle clips "Play Online" (HE overflows +17px at 320 AND 393; the stadium holds the
+            full label EN+HE at both). ChipButton carries the mint fill, the brass DASHED rim, the
+            bevel and the pressed sink; its onPressIn/onPressOut also preserve the POLISH-1 first-tap
+            fix. Dominant primary — Practice below stays the quiet secondary. */}
+        <ChipButton
+          variant="primary"
+          onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
+          accessibilityLabel={t().homePlayOnlineA11y}
+          style={{ marginHorizontal: rs(16), marginTop: rs(12) }}
+        >
+          {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
+              English inside a Hebrew app, on the highest-traffic route to multiplayer.
+              The emoji stays as decoration; the TEXT is what names the destination. */}
+          <Text style={styles.playOnlineEmoji} allowFontScaling={false}>🎮</Text>
+          {/* LABEL_COLUMN, not `flex: 1` — a zero-basis text column between two fixed glyphs is the
+              one arrangement Yoga and CSS lay out differently, and it is why TestFlight showed
+              a gamepad and a chevron with nothing between them. See the constant.
+
+              allowFontScaling={false} on the two glyphs for the same reason: iOS Dynamic Type
+              scales them (web ignores it), and they are decoration whose only job is to stay
+              small enough that the words keep their room. */}
+          <View style={LABEL_COLUMN}>
+            <Text style={styles.playOnlineTitle} numberOfLines={1}>{t().homePlayOnline}</Text>
+            {/* Shortened: the old string ellipsised at 320pt ("...instant bot …"), losing the word that
+                said what the tables were. It also carries NO liveness claim — see the live-count
+                note below; a subtitle is not the place to imply a busy room either. */}
+            <Text style={styles.playOnlineSub} numberOfLines={2}>{t().homePlayOnlineSub}</Text>
+          </View>
+          <Text style={styles.playOnlineGo} allowFontScaling={false}>›</Text>
+        </ChipButton>
+
+        {/* C2 — PRACTICE, SECOND. It kept its position through the first pass of this change
+            and that made the restyle cosmetic: the eye lands on whatever is highest, so a
+            demoted button above the hero is still the first thing read. Order IS the hierarchy. */}
         <View style={styles.playSection}>
-          <View style={{ position: 'relative', alignSelf: 'center' }}>
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.playGlowHalo,
-                { width: playBtnWidth + rs(28) },
-                playGlowStyle,
-              ]}
-            />
-            <AnimatedRN.View style={{ transform: [{ scale: playScale }] }}>
-              <Pressable
-                onPress={handleNewHand}
-                onPressIn={() =>
-                  AnimatedRN.timing(playScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start()
-                }
-                onPressOut={() =>
-                  AnimatedRN.timing(playScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
-                }
-                style={[styles.playBtn, { width: playBtnWidth }]}
-                accessibilityRole="button"
-                accessibilityLabel="Play"
-              >
-                <View style={styles.playBtnHighlight} pointerEvents="none" />
-                {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
-                    button is a solo game vs bots, so name it honestly. */}
-                {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
-                    LAYOUT width to the Pressable's content box (minus padding). Without it,
-                    the Pressable's default alignItems:'center' lets the Text intrinsic-size
-                    to its own natural (unconstrained) width, so adjustsFontSizeToFit had no
-                    real box to shrink into and the label truncated on narrow real devices
-                    instead of shrinking. */}
-                <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>🤖 Practice vs Bots</Text>
-              </Pressable>
-            </AnimatedRN.View>
-          </View>
-
-          {/* Board config hint — English only (S112) */}
-          <Text style={[styles.playSubtext, { color: theme.subtitleColor }]}>
-            {getBoardCount(config.numberOfPlayers)} boards · {config.numberOfPlayers} players
-            {config.potPerBoard > 0 ? ` · ${config.potPerBoard <= 25 ? 'Low' : config.potPerBoard <= 100 ? 'Mid' : 'High'} Blinds · ${config.potPerBoard}/board` : ' · Free'}
-          </Text>
-        </View>
-
-        {/* S74 — player selector lives BELOW Play now: a small centered "change players"
-            affordance, never a gate. Play always works with the remembered/default players
-            (3P on first run), so a first-time user starts a game in ONE tap without touching it. */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), marginTop: rs(10) }}>
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: rf(11, 10), fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>Players</Text>
-          <View style={{ flexDirection: 'row', gap: rs(6) }} accessibilityRole="radiogroup" accessibilityLabel="Number of players">
-            {([2, 3, 4] as const).map(n => (
-              <Pressable
-                key={n}
-                onPress={() => updateConfig({ numberOfPlayers: n })}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: config.numberOfPlayers === n }}
-                aria-checked={config.numberOfPlayers === n}
-                accessibilityLabel={`${n} players`}
-                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
-                style={{
-                  paddingHorizontal: rs(12), paddingVertical: rs(6),
-                  borderRadius: rv(16),
-                  backgroundColor: config.numberOfPlayers === n ? '#161922' : 'transparent',
-                  borderWidth: 1,
-                  borderColor: config.numberOfPlayers === n ? '#8B6914' : 'rgba(255,255,255,0.15)',
-                }}
-              >
-                <Text style={{ color: config.numberOfPlayers === n ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: rf(12, 11), fontWeight: '700' }}>
-                  {config.numberOfPlayers === n ? '✓ ' : ''}{n}P
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* HOME-MP-LINK — prominent multiplayer entry (owner asked twice). The lobby was
-            only reachable via the bottom tab; make MP discoverable from the first screen. */}
-        <AnimatedRN.View style={{ transform: [{ scale: playOnlineScale }] }}>
-          <Pressable
-            style={styles.playOnlineBtn}
-            onPress={() => { track('home_play_online_tapped', {}, 'home'); router.push('/lobby' as any); }}
-            onPressIn={() =>
-              AnimatedRN.timing(playOnlineScale, { toValue: 0.97, duration: 80, useNativeDriver: true }).start()
-            }
-            onPressOut={() =>
-              AnimatedRN.timing(playOnlineScale, { toValue: 1.0, duration: 150, useNativeDriver: true }).start()
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Play online, open the multiplayer lobby"
+          {/* C2 — the green glow halo went with the primary. A secondary button does not glow.
+              BUILD-ELONGATED-CHIP — Practice is the SAME chip, quieter: dark felt fill, MINT
+              dashed rim, smaller (rv(52) vs the primary's rv(72)) and narrower (0.64 vs full
+              width). Refinement 1 held — Play Online dominates, this does not equalise it. */}
+          <ChipButton
+            variant="secondary"
+            onPress={handleNewHand}
+            accessibilityLabel={t().homePracticeA11y}
+            style={{ alignSelf: 'center', width: practiceChipWidth }}
           >
-            {/* LOBBY-LABEL 2026-08-09 — the icon carried the meaning and the labels were in
-                English inside a Hebrew app, on the highest-traffic route to multiplayer.
-                The emoji stays as decoration; the TEXT is what names the destination. */}
-            <Text style={styles.playOnlineEmoji}>🎮</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.playOnlineTitle}>Play Online</Text>
-              <Text style={styles.playOnlineSub}>Multiplayer lobby · real players &amp; instant bot tables</Text>
-            </View>
-            <Text style={styles.playOnlineGo}>›</Text>
-          </Pressable>
-        </AnimatedRN.View>
+            {/* SHIP-BATCH-1 — label rename only (behavior unchanged): the primary
+                button is a solo game vs bots, so name it honestly. */}
+            {/* RESPONSIVE-FIX 2026-07-06 — alignSelf:'stretch' constrains this Text's
+                LAYOUT width to the chip's content box (minus padding). Without it,
+                the chip's alignItems:'center' lets the Text intrinsic-size to its own
+                natural (unconstrained) width, so adjustsFontSizeToFit had no real box to
+                shrink into and the label truncated on narrow real devices instead of shrinking. */}
+            <Text style={[styles.playBtnText, { alignSelf: 'stretch' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{t().homePracticeVsBots}</Text>
+          </ChipButton>
+
+          {/* C2 — THE CONFIG LINE IS GONE. "3 boards · 3 players · Low Blinds · 25/board" measured
+              3.70:1 (needs 4.5) and it configured before it explained: a stranger's first screen
+              should not open with stakes jargon. The board count it carried was then shown by the
+              hero table; that art was replaced by D1 on 2026-08-30, so the count now lives ONLY in
+              the teaching sentence below — which is the right medium for it, per handoffs 125/127:
+              a rules fact is READ, not seen. */}
+        </View>
+
+        {/*
+          C6's SENTENCE — a stranger must learn what this game IS from the home screen, and the
+          rotating taglines never told them. Nine of the ten were mood, not instruction.
+          LUXURY-HOME 2026-09-01 — MOVED here (below the CTAs) as "the tagline" in the approved
+          Luxury order. Same text, same style; only its position changed.
+
+          ⚠️ C6's CONCEPT WORDING SAID "Four boards run at once" AND THAT IS FALSE. The board
+          count is DYNAMIC (2P=4, 3P=3, 4P=2). Every clause below is true at EVERY seat count:
+          four cards per board per player always holds, all boards run together, and the hand
+          goes to whoever takes the most.
+        */}
+        <Animated.Text
+          /* #cfd8d2 on the deep-green felt measures well past the 4.5 bar (the felt under this line
+             is darker than the old #0a0a0a, so the margin only grew — re-measured in the harness). */
+          style={[styles.titleSub, { color: '#cfd8d2' }, taglineAnimStyle]}
+          numberOfLines={3}
+        >
+          {t().homeTeaching}
+        </Animated.Text>
+
+        {/* C2 — THE 2P/3P/4P SELECTOR IS GONE FROM HOME.
+            It was three controls at 41x28, 54x28 and 41x28 — all three under the 44pt minimum —
+            and it put a SETTING on the front door. Nothing is lost: the stored player count still
+            drives Practice (S74's one-tap property is intact, 3P on first run), and the per-seat
+            choice already exists where the tables are listed, as bot-table-2/3/4 in the lobby.
+            This REMOVES a selector; it does not add one. */}
 
         {/* HOME-DECLUTTER — "Welcome to CAPS Poker! Tap Play to start" card removed:
             redundant now that onboarding + the clear Play button + Play Online CTA exist. */}
@@ -1510,10 +1573,10 @@ export default function HomeScreen() {
             style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: rs(6), paddingVertical: rs(8), paddingHorizontal: rs(14), marginTop: rs(10) }}
             onPress={handleFriendChallenge}
             accessibilityRole="button"
-            accessibilityLabel="Challenge a Friend"
+            accessibilityLabel={t().homeChallengeFriendA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(13), fontWeight: '600' }}>⚔️ Challenge a Friend</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: rf(13), fontWeight: '600' }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeChallengeFriend}</Text>
           </Pressable>
         )}
 
@@ -1548,10 +1611,10 @@ export default function HomeScreen() {
               setShowCompleteBanner(false);
             }}
             accessibilityRole="button"
-            accessibilityLabel="Share your COMPLETE win"
+            accessibilityLabel={t().homeShareCompleteA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
             style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1.5, borderColor: '#c9a84c', borderRadius: rv(12), paddingVertical: rs(10), paddingHorizontal: rs(16), marginBottom: rs(4), alignItems: 'center' }}
           >
-            <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }}>🏆 You got COMPLETE! Share it?</Text>
+            <Text style={{ color: '#c9a84c', fontWeight: '900', fontSize: rf(13) }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeShareComplete}</Text>
           </Pressable>
         )}
 
@@ -1560,7 +1623,7 @@ export default function HomeScreen() {
         {justClaimed ? (
           <AnimatedRN.View style={{ opacity: ackAnim }} accessibilityLiveRegion="polite" testID="daily-claimed-ack">
             <View style={[styles.dailyPill, styles.dailyPillClaim]}>
-              <Text style={styles.dailyPillText}>✅ +{justClaimed.reward} claimed · Day {justClaimed.streak} streak</Text>
+              <Text style={styles.dailyPillText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeDailyClaimed(justClaimed.reward, justClaimed.streak)}</Text>
             </View>
           </AnimatedRN.View>
         ) : canClaim ? (
@@ -1568,13 +1631,13 @@ export default function HomeScreen() {
             <Pressable
               onPress={handleClaimDailyReward}
               accessibilityRole="button"
-              accessibilityLabel="Claim daily bonus"
+              accessibilityLabel={t().homeDailyClaimA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               style={[styles.dailyPill, styles.dailyPillClaim]}
             >
               {dailyRewardStreak >= 6 ? (
-                <Text style={styles.dailyPillText}>🔥 Day {dailyRewardStreak + 1} streak! +500 chips!</Text>
+                <Text style={styles.dailyPillText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeDailyStreakClaim(dailyRewardStreak + 1, 500)}</Text>
               ) : (
-                <Text style={styles.dailyPillText}>🎁 Claim daily bonus · Day {dailyRewardStreak + 1}</Text>
+                <Text style={styles.dailyPillText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeDailyClaim(dailyRewardStreak + 1)}</Text>
               )}
             </Pressable>
           </AnimatedRN.View>
@@ -1584,10 +1647,10 @@ export default function HomeScreen() {
               const nextStreak = dailyRewardStreak + 1;
               const nextReward = calculateDailyReward(nextStreak);
               const isMilestone = nextStreak === 7 || nextStreak === 30;
-              const milestoneLabel = nextStreak === 30 ? ' (Monthly bonus!)' : nextStreak === 7 ? ' (Weekly bonus!)' : '';
+              const milestoneLabel = nextStreak === 30 ? t().homeMilestoneMonthly : nextStreak === 7 ? t().homeMilestoneWeekly : '';
               return (
-                <Text style={styles.dailyStreakInfoText} accessibilityLabel={`Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}>
-                  {`🔥 Day ${dailyRewardStreak} streak! Tomorrow: +${nextReward} chips${milestoneLabel}`}
+                <Text style={styles.dailyStreakInfoText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={`${t().dailyStreakMsg(dailyRewardStreak, nextReward)}${milestoneLabel}`}>
+                  {`🔥 ${t().dailyStreakMsg(dailyRewardStreak, nextReward)}${milestoneLabel}`}
                 </Text>
               );
             })()}
@@ -1597,9 +1660,9 @@ export default function HomeScreen() {
         {/* Win streak — beginner+ only */}
         {show_streak && currentWinStreak >= 2 && (
           <View style={styles.homeStreakRow}>
-            <Text style={styles.homeStreakText} accessibilityLabel={`${currentWinStreak} wins in a row`}>🔥 {currentWinStreak} win streak</Text>
+            <Text style={styles.homeStreakText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homeWinStreakA11y(currentWinStreak)}>{t().homeWinStreak(currentWinStreak)}</Text>
             {bestWinStreak > currentWinStreak && (
-              <Text style={styles.homeStreakBest}> · Best: {bestWinStreak}</Text>
+              <Text style={styles.homeStreakBest} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}> · {t().bestStreakLabel(bestWinStreak)}</Text>
             )}
           </View>
         )}
@@ -1607,11 +1670,11 @@ export default function HomeScreen() {
         {/* Play of the Day card (D10) — only shown when player name is known */}
         {potd?.available && potd.data && potd.player && potd.player !== 'Anonymous' && (
           <View style={styles.potdCard}>
-            <Text style={styles.potdTitle} accessibilityRole="header" accessibilityLabel="Play of the Day">🏆 Play of the Day</Text>
+            <Text style={styles.potdTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homePotdA11y}>{t().homePotd}</Text>
             <Text style={styles.potdPlayer} numberOfLines={1}>
-              {potd.player} · {potd.data.hand_name ?? 'Winning hand'}
+              {potd.player} · {potd.data.hand_name ?? t().homePotdWinningHand}
             </Text>
-            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLabel={`Pot: ${(potd.data.pot_won ?? 0).toLocaleString()} chips`}>Pot: {(potd.data.pot_won ?? 0).toLocaleString()} 💰</Text>}
+            {(potd.data.pot_won ?? 0) > 0 && <Text style={styles.potdPot} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homePotdPotA11y((potd.data.pot_won ?? 0).toLocaleString())}>{t().homePotdPot((potd.data.pot_won ?? 0).toLocaleString())}</Text>}
           </View>
         )}
 
@@ -1622,7 +1685,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/hand-history' as any)}
             accessibilityRole="button"
-            accessibilityLabel={`Hand history, ${totalHandCount} hands saved`}
+            accessibilityLabel={t().homeHandsSavedA11y(totalHandCount)} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.statsBtn}
           >
@@ -1638,7 +1701,7 @@ export default function HomeScreen() {
                 handsPlayed, AsyncStorage caps_games_played, and this history length — and only
                 this one is displayed. Same shape as "+75 chips" and the 2,530 balance: correct
                 behaviour, misleading presentation. */}
-            <Text style={styles.statsBtnText}>📊 {totalHandCount} hands saved</Text>
+            <Text style={styles.statsBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeHandsSaved(totalHandCount)}</Text>
           </Pressable>
         )}
 
@@ -1650,12 +1713,12 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push('/achievements' as any)}
               accessibilityRole="button"
-              accessibilityLabel="My Progress"
+              accessibilityLabel={t().homeMyProgress} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>My Progress</Text>
+              <Text style={homeDataCardStyles.label} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeMyProgress}</Text>
               <Text style={homeDataCardStyles.value}>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</Text>
-              <Text style={homeDataCardStyles.sub}>Achievements · {handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—'} win rate</Text>
+              <Text style={homeDataCardStyles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeProgressSub(handsPlayed > 0 ? `${Math.round(handsWon / handsPlayed * 100)}%` : '—')}</Text>
             </Pressable>
             <Pressable
               // Re-pointed 2026-07-20 /missions → /leaderboard: the Missions claim path
@@ -1663,15 +1726,15 @@ export default function HomeScreen() {
               // display; tap now goes to the leaderboard, never to the broken claim screen.
               onPress={() => router.push('/leaderboard' as any)}
               accessibilityRole="button"
-              accessibilityLabel="Competition"
+              accessibilityLabel={t().homeCompetition} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               style={homeDataCardStyles.card}
             >
-              <Text style={homeDataCardStyles.label}>Competition</Text>
+              <Text style={homeDataCardStyles.label} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeCompetition}</Text>
               {/* Was `missionData.progress/total` over a "Missions ·" sub-label. Missions are
                   retired, so the value showed a permanent dash under the name of a feature that no
                   longer exists. The card has always opened the leaderboard; it now says so. */}
               <Text style={homeDataCardStyles.value}>{leaderboardData && leaderboardData.rank > 0 ? `#${leaderboardData.rank}` : '—'}</Text>
-              <Text style={homeDataCardStyles.sub}>{leaderboardData && leaderboardData.rank > 0 ? 'Leaderboard rank' : 'Play to be ranked'}</Text>
+              <Text style={homeDataCardStyles.sub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{leaderboardData && leaderboardData.rank > 0 ? t().homeLeaderboardRank : t().homePlayToBeRanked}</Text>
             </Pressable>
           </View>
         )}
@@ -1679,19 +1742,19 @@ export default function HomeScreen() {
         {/* Activity Feed + Recent Hands — veteran only */}
         {show_veteran && (
           <View style={styles.feedSection}>
-            <Text style={styles.feedTitle} accessibilityRole="header" accessibilityLabel="Recent wins">🏆 Recent Wins</Text>
+            <Text style={styles.feedTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homeRecentWinsA11y}>{t().homeRecentWins}</Text>
             {activityFeed.length === 0 ? (
-              <Text style={styles.feedEmpty}>Play Sit and Go to see your history</Text>
+              <Text style={styles.feedEmpty} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeNoHistoryYet}</Text>
             ) : (
               activityFeed.map((item, i) => {
                 // The RPC decides this now; the client no longer sees either device_id.
                 const won = item.won;
                 return (
                   <View key={i} style={styles.feedItem}>
-                    <Text style={styles.feedItemText} accessibilityLabel={won ? `You won Sit and Go — +${item.chips_won ?? 0} chips` : `Sit and Go — next time`}>
+                    <Text style={styles.feedItemText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={won ? t().homeSitAndGoWinA11y(item.chips_won ?? 0) : t().homeSitAndGoLossA11y}>
                       {won
-                        ? `✅ Won Sit and Go — +${item.chips_won ?? 0} 💰`
-                        : `❌ Sit and Go — next time`}
+                        ? t().homeSitAndGoWin(item.chips_won ?? 0)
+                        : t().homeSitAndGoLoss}
                     </Text>
                     <Text style={styles.feedItemTime}>
                       {item.ended_at ? new Date(item.ended_at).toLocaleDateString() : ''}
@@ -1706,7 +1769,7 @@ export default function HomeScreen() {
         {/* Recent Hands — veteran only */}
         {show_veteran && recentHands.length > 0 && (
           <View style={{ width: '100%', marginTop: 4 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Recent Hands</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11), fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeRecentHands}</Text>
             {recentHands.map((hand, i) => {
               const boardsWon = hand.boards.filter(b => b.winner === 'player').length;
               const effPct = Math.round(boardsWon / hand.boardCount * 100);
@@ -1717,14 +1780,14 @@ export default function HomeScreen() {
                   key={hand.id}
                   onPress={() => router.push(`/hand-history?handId=${hand.id}` as any)}
                   accessibilityRole="button"
-                  accessibilityLabel="View hand history"
+                  accessibilityLabel={t().homeViewHandHistory} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderBottomWidth: i < recentHands.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.07)' }}
                 >
                   <Text style={{ color: boardsWon > hand.boardCount / 2 ? '#4CAF50' : '#EF5350', fontSize: rs(13), fontWeight: '700' }}>
                     {boardsWon}/{hand.boardCount} boards
                   </Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rs(12) }}>{effPct}% eff</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: rs(12) }} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeEff(effPct)}</Text>
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rs(11) }}>{timeStr}</Text>
                 </Pressable>
               );
@@ -1736,38 +1799,35 @@ export default function HomeScreen() {
         <View style={styles.referralRow}>
           {myReferralCode ? (
             <View style={styles.referralCard}>
-              <Text style={styles.referralCardLabel}>YOUR CODE</Text>
+              <Text style={styles.referralCardLabel} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeYourCode}</Text>
               <Text style={styles.referralCardCode}>{myReferralCode}</Text>
               <View style={styles.referralCardButtons}>
                 <Pressable
                   onPress={handleCopyCode}
                   accessibilityRole="button"
-                  accessibilityLabel="Copy referral code"
+                  accessibilityLabel={t().homeCopyA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.referralActionBtn}
                 >
-                  <Text style={styles.referralActionBtnText}>📋 Copy</Text>
+                  <Text style={styles.referralActionBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeCopy}</Text>
                 </Pressable>
                 <Pressable
                   onPress={handleInviteFriends}
                   accessibilityRole="button"
-                  accessibilityLabel="Share referral code"
+                  accessibilityLabel={t().homeShareA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.referralActionBtn}
                 >
-                  <Text style={styles.referralActionBtnText}>📤 Share</Text>
+                  <Text style={styles.referralActionBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeShare}</Text>
                 </Pressable>
               </View>
             </View>
           ) : (
-            <Pressable
-              onPress={handleInviteFriends}
-              accessibilityRole="button"
-              accessibilityLabel="Invite friends"
-              style={styles.inviteBtn}
-            >
-              <Text style={styles.inviteBtnText}>Invite Friends 🎁</Text>
-            </Pressable>
+            /* C2 — INVITE MOVED OFF THE FRONT DOOR. Referral is a returning-player action and
+               it already has a whole screen (/referral, via the Play tab), which the comment
+               below already said was the full home for it. The streak/code block above is
+               untouched for players who already have a code. */
+            null
           )}
           {/* HOME-DECLUTTER — "Got an invite code?" removed so Home has ONE invite affordance
               ("Invite Friends 🎁"). Full invite + redeem lives on /referral (Play tab). */}
@@ -1781,9 +1841,11 @@ export default function HomeScreen() {
             colliding at others, including after two different offset strategies). Rendering
             it as normal content instead makes overlap structurally impossible — no absolute
             positioning, no magic number to keep re-tuning. */}
-        <View style={{ marginTop: rs(4), width: '100%' }}>
-          <ReportBugButton variant="row" />
-        </View>
+        {/* C2 — THE BUG-REPORT ROW IS GONE FROM HOME. A large card asking a stranger to report a
+            defect, in their first three seconds, on the front door. THE PATH IS NOT REMOVED: it
+            is still a row in Settings (app/settings.tsx:1160) and the global <BugReporter> gesture
+            wrapper in app/_layout.tsx is untouched, so nothing about reporting a bug gets harder
+            for the person who actually has one. */}
 
         {/* RESPONSIVE-FIX 2026-07-06 — fontSize/margins were hardcoded (fixed px regardless
             of screen width), an Iron Rule violation. This 62-char string wraps to 2 lines on
@@ -1797,7 +1859,7 @@ export default function HomeScreen() {
           marginTop: rs(18),
           marginBottom: rs(6),
         }}>
-          {"Free play | Virtual chips only | No real-money gambling | 18+"}
+          {t().legalLine}
         </Text>
 
       </ScrollView>
@@ -1830,43 +1892,47 @@ export default function HomeScreen() {
             style={styles.modalCard}
             onPress={() => {}}
             accessibilityRole="none"
-            accessibilityLabel="Invite code dialog"
+            accessibilityLabel={t().homeInviteDialogA11y} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
           >
-            <Text style={styles.modalTitle} accessibilityRole="header" accessibilityLabel="Enter Invite Code">🎁 Enter Invite Code</Text>
-            <Text style={styles.modalSub}>Enter the code your friend shared</Text>
+            <Text style={styles.modalTitle} accessibilityRole="header" accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined} accessibilityLabel={t().homeEnterInviteCode}>{t().homeEnterInviteCode}</Text>
+            <Text style={styles.modalSub} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().homeEnterInviteCodeSub}</Text>
             <TextInput
               style={styles.codeInput}
               value={referralCodeInput}
-              onChangeText={v => setReferralCodeInput(v.toUpperCase().slice(0, 6))}
-              placeholder="A3F2B1"
+              // THE-NEGLECTED 2026-09-03 — same truncation as /referral carried a SECOND copy here.
+              // Codes are EIGHT characters; `.slice(0, 6)` cut them and still passed the >=6 check.
+              onChangeText={v => setReferralCodeInput(normaliseReferralCode(v).slice(0, REFERRAL_CODE_MAX))}
+              placeholder="A3F2B1C7"
               placeholderTextColor="rgba(255,255,255,0.25)"
               autoCapitalize="characters"
               maxLength={REFERRAL_CODE_MAX}
               returnKeyType="done"
               onSubmitEditing={handleRedeemCode}
             />
-            {/* S89: 6-char counter clarifies what the 6 means */}
+            {/* THE-NEGLECTED 2026-09-03 — the counter said "/6" while the database issues eight,
+                so it actively taught the wrong length. The client is deliberately permissive
+                (constants/appLinks.ts): show what has been typed, assert no fixed length. */}
             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: rf(11), alignSelf: 'flex-end', marginTop: rs(-4) }}>
-              {referralCodeInput.length}/6 characters
+              {t().homeCharacters(referralCodeInput.length)}
             </Text>
             <Pressable
               style={[styles.redeemBtn, referralSubmitting && { opacity: 0.6 }]}
               onPress={handleRedeemCode}
               accessibilityRole="button"
-              accessibilityLabel="Redeem invite code for 100 chips"
+              accessibilityLabel={t().homeRedeemA11y(100)} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}
               accessibilityState={{ disabled: referralSubmitting, busy: referralSubmitting }}
               disabled={referralSubmitting}
             >
-              <Text style={styles.redeemBtnText}>{referralSubmitting ? 'Checking...' : 'Redeem +100 💰'}</Text>
+              <Text style={styles.redeemBtnText} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{referralSubmitting ? t().homeChecking : t().homeRedeemBtn(100)}</Text>
             </Pressable>
             <Pressable
               onPress={() => setShowReferralModal(false)}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t().cancel}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginTop: rs(8) }}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>{t().cancel}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -2094,27 +2160,42 @@ const styles = StyleSheet.create({
   },
   titleCaps: {
     fontWeight: '900',
-    letterSpacing: 8,
+    // D1 — was a fixed `letterSpacing: 8`. At 41pt that opened a small title out; at 118pt it
+    // pushes the word past the frame and reads as a spaced-out label rather than a masthead.
+    // Display type tightens as it grows, so this goes NEGATIVE and scales with the width.
+    letterSpacing: rs(-3),
     textShadowColor: 'rgba(0,0,0,0.85)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 24,
   },
   titlePoker: {
-    fontSize: rf(18),
+    // D1 — the subtitle is now the counterweight to a 118pt word, so it goes smaller and much
+    // wider-tracked. Same relationship the concept render had between the two lines.
+    fontSize: rf(13),
     fontWeight: '600',
-    letterSpacing: 3,
+    letterSpacing: rs(10),
     textTransform: 'uppercase',
     color: '#c9a84c',
     opacity: 1.0,
-    marginTop: -2,
-    marginBottom: 2,
+    // The negative pull existed to close a gap under a small title; a big one already sits close.
+    marginTop: rs(2),
+    marginBottom: rs(2),
+    // NOTE: tracking leaves a trailing space after the last letter, so a centred word sits about
+    // half a space left of true centre — 5pt at 393. `textIndent` would correct it and is WEB-ONLY
+    // CSS; smuggling it into a StyleSheet behind `as any` to buy 5pt is a worse trade than the 5pt.
+    // Left alone deliberately.
   },
   titleSub: {
-    fontSize: rf(11),
-    fontWeight: '400',
-    letterSpacing: 1.5,
-    marginTop: rs(6),
-    textTransform: 'uppercase',
+    // Was 11px / letterSpacing 1.5 / UPPERCASE — fine for a five-word mood tagline, fatal for a
+    // sentence: the caps and the tracking made it so wide that numberOfLines={2} cut it at
+    // "PLAYS AT ONCE...." and dropped the clause stating how you WIN. Every metric still read
+    // zero, because a truncated string has perfectly good contrast.
+    fontSize: rf(13),
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    lineHeight: rf(19),
+    marginTop: rs(8),
+    paddingHorizontal: rs(18),
     textAlign: 'center',
   },
   titleDivider: {
@@ -2147,41 +2228,20 @@ const styles = StyleSheet.create({
       android: { elevation: 0 },
     }),
   },
-  playBtn: {
-    minHeight: rv(72),
-    backgroundColor: '#22C55E',
-    borderRadius: rv(16),
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: rs(18),
-    // RESPONSIVE-FIX 2026-07-06 — was rs(32). Combined with the old 0.75 width ratio
-    // this left too little room for "Practice vs Bots" on narrow devices (320-375pt);
-    // rs(20) + the wider 0.82 ratio above give the label real breathing room.
-    paddingHorizontal: rs(20),
-    overflow: 'hidden',
-    ...Platform.select({
-      web: { boxShadow: '0 8px 32px rgba(34,197,94,0.4), 0 2px 8px rgba(0,0,0,0.3)' } as any,
-      ios: { shadowColor: '#22C55E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 20 },
-      android: { elevation: 12 },
-    }),
-  },
-  playBtnHighlight: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    height: '50%' as any,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderTopLeftRadius: rv(16),
-    borderTopRightRadius: rv(16),
-  },
+  // ── C2: PRACTICE IS THE FALLBACK, NOT THE HERO ──────────────────────────────────────────
+  // Was a filled #22C55E slab — the largest and loudest thing on the screen, for the mode that
+  // is not the product, and its white label measured 2.28:1 against a 3:1 bar. Now an OUTLINED
+  // secondary: mint text on the page background, which is a contrast pair that passes rather
+  // than one that needed the white to be shouted.
+  // BUILD-ELONGATED-CHIP — the label on the QUIET secondary chip (dark #12211B fill, mint rim).
   playBtnText: {
-    color: '#ffffff',
-    // RESPONSIVE-FIX 2026-07-06 — was rf(22) (default floor ~17, i.e. it could barely
-    // shrink at narrow widths). Explicit min:13 lets it shrink further on tiny screens;
-    // the wider button + smaller padding above mean it rarely needs to go that low.
-    fontSize: rf(20, 13, 25),
-    fontWeight: '900',
-    // was a fixed 1.5 (didn't scale down on narrow screens, eating into the same
-    // tight space that caused the truncation).
+    // mint on the dark chip fill = high contrast (well past 4.5:1).
+    color: '#4FD6A8',
+    // Smaller than the primary title (rf(19)) so the hierarchy reads by SIZE too, not only by
+    // fill — refinement 1, do not equalise. Floor 12 keeps "Practice vs bots" legible on tiny
+    // screens; adjustsFontSizeToFit(min 0.6) is the backstop.
+    fontSize: rf(15, 12, 18),
+    fontWeight: '800',
     letterSpacing: rs(0.8),
     textAlign: 'center',
   },
@@ -2193,23 +2253,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   // HOME-MP-LINK — mint accent so it reads as a distinct primary path next to the green Play
-  playOnlineBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(12),
-    marginHorizontal: rs(16),
-    marginTop: rs(10),
-    paddingVertical: rs(13),
-    paddingHorizontal: rs(16),
-    borderRadius: rv(14),
-    borderWidth: 1.5,
-    borderColor: '#4FD6A8',
-    backgroundColor: 'rgba(79,214,168,0.12)',
-  },
+  // C3's HERO TABLE — the fifteen blank rectangles — was REMOVED for D1 on 2026-08-30. Handoff
+  // 124 measured it as the reason the home screen did not land: "the hero is fifteen blank white
+  // rounded rectangles". The felt tokens it borrowed are untouched and still live in paintThemes.
+
+  // ── C2: PLAY ONLINE IS THE HERO — now the elongated chip (components/ChipButton.tsx) ────────
+  // The mint fill + brass dashed rim + bevel + pressed sink live in ChipButton; the row content
+  // (emoji · label column · chevron) and its text styles stay here. Dark ink on mint measures far
+  // above the bar, where the old white-on-green practice button measured 2.28:1.
   playOnlineEmoji: { fontSize: rf(24) },
-  playOnlineTitle: { color: '#4FD6A8', fontSize: rf(16), fontWeight: '900', letterSpacing: 0.5 },
-  playOnlineSub: { color: 'rgba(255,255,255,0.7)', fontSize: rf(11), marginTop: rs(1) },
-  playOnlineGo: { color: '#4FD6A8', fontSize: rf(24), fontWeight: '900' },
+  playOnlineTitle: { color: '#08130F', fontSize: rf(19), fontWeight: '900', letterSpacing: 0.5 },
+  // #0A1A14 on mint = well past 4.5:1. The old 'rgba(255,255,255,0.7)' sub-line was 3.7:1 dim
+  // grey on near-black; as dark ink on the filled button it is no longer a borderline case.
+  playOnlineSub: { color: '#0A1A14', fontSize: rf(12), fontWeight: '700', marginTop: rs(1) },
+  playOnlineGo: { color: '#08130F', fontSize: rf(24), fontWeight: '900' },
   stakesLabel: {
     fontSize: rf(11),
     fontWeight: '500',
@@ -2221,12 +2278,20 @@ const styles = StyleSheet.create({
 
   // Daily reward pill
   dailyPill: {
-    backgroundColor: 'rgba(255,215,0,0.12)',
+    // THE-LAST-THREE 2026-09-03 — this pill is a Pressable when the bonus is claimable, and it
+    // wore the winner cue rgba(255,215,0,·) while its own text is #e8c96a (wordmark gold family).
+    // Fill and border now match the text; #FFD700 stays reserved for WON.
+    backgroundColor: 'rgba(201,168,76,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.3)',
+    borderColor: 'rgba(201,168,76,0.30)',
     borderRadius: rv(24),
     paddingVertical: rs(10),
     paddingHorizontal: rs(22),
+    // minHeight 44 + centring: it rendered 39pt tall, five short of the WCAG 2.5.5 / Apple HIG
+    // minimum. A LITERAL 44, deliberately NOT rs(44) — the floor is an absolute point value and
+    // scaling it down on a narrow screen is precisely the failure it exists to prevent.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   dailyPillText: {
     color: '#e8c96a',

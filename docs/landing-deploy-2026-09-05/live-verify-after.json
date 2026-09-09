@@ -1,0 +1,144 @@
+{
+ "origin": "https://caps.ftable.co.il",
+ "tag": "after",
+ "canary": {
+  "vocabSize": 452,
+  "knownHebrew": {
+   "hits": [
+    "היד",
+    "שלך",
+    "מוכן",
+    "הקלפים",
+    "הונחו",
+    "בוט",
+    "קלפים",
+    "בורד",
+    "לפי",
+    "נצח",
+    "ידיים",
+    "ביטול",
+    "כאן",
+    "בוטים",
+    "מוצג",
+    "עוצמת"
+   ],
+   "hitCount": 16
+  },
+  "knownEnglish": {
+   "hits": [],
+   "hitCount": 0
+  },
+  "flagsHebrew": true,
+  "clearsEnglish": true
+ },
+ "rows": [
+  {
+   "engine": "webkit",
+   "how": "the live https:// URL, loaded directly",
+   "lang": "en",
+   "width": 320,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "webkit",
+   "how": "the live https:// URL, loaded directly",
+   "lang": "en",
+   "width": 393,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "webkit",
+   "how": "the live https:// URL, loaded directly",
+   "lang": "he",
+   "width": 320,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "webkit",
+   "how": "the live https:// URL, loaded directly",
+   "lang": "he",
+   "width": 393,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "chromium",
+   "how": "live bytes streamed at request time (Chromium cannot open the origin in this container)",
+   "lang": "en",
+   "width": 320,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "chromium",
+   "how": "live bytes streamed at request time (Chromium cannot open the origin in this container)",
+   "lang": "en",
+   "width": 393,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "chromium",
+   "how": "live bytes streamed at request time (Chromium cannot open the origin in this container)",
+   "lang": "he",
+   "width": 320,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  },
+  {
+   "engine": "chromium",
+   "how": "live bytes streamed at request time (Chromium cannot open the origin in this container)",
+   "lang": "he",
+   "width": 393,
+   "images": 2,
+   "srcs": [
+    "game-boards.webp",
+    "game-reveal.webp"
+   ],
+   "hebrewWordsInImages": 0,
+   "words": []
+  }
+ ],
+ "failures": [],
+ "failureCount": 0,
+ "byteIdentityChecks": 16,
+ "byteMismatches": 0
+}

@@ -43,7 +43,7 @@ import { onGameStart, onGameEnd } from '../utils/crashDetector';
 import { scheduleReengagement } from '../utils/notifications';
 import { rv as rvOld } from '../constants/deviceBreakpoints';
 import { rf, rh, rs, rv, rb } from '../utils/responsive';
-import { t, getLanguage } from '../utils/i18n';
+import { t, getLanguage, isRTL } from '../utils/i18n';
 import BoardReveal from '../components/BoardReveal';
 import GuidedTooltip from '../components/GuidedTooltip';
 import { TimerController, TimerBar } from '../components/TimerController';
@@ -53,6 +53,7 @@ import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
 import PracticeLiveOverlay from '../components/PracticeLiveOverlay';
 import { getPracticeLiveState, requestPracticeLiveJumpNow } from '../utils/practiceLiveSession';
+import { loadDismissedTips, isTipDismissed, markTipDismissed, gameTipId, BOARD_HINT_ID } from '../utils/tipsSeen';
 
 const GAMES_PLAYED_KEY = 'caps_games_played';
 const GUIDED_FORCED_KEY = 'guidedModeForced';
@@ -67,7 +68,7 @@ const TIPS = [
   // S71 — teach the Auto-Place fast path alongside tap-to-place (placing 4×N cards by hand
   // is the biggest first-hand friction; Auto-Place fills a board in one tap).
   () => TIP('Tap a card then a slot — or tap Auto-Place to fill a board fast.', 'לחץ קלף ואז מקום ריק — או Auto-Place למילוי מהיר.'),
-  () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הלוח הזה.'),
+  () => TIP('Nice! 3 more cards on this board.', 'יופי! עוד 3 קלפים על הבורד הזה.'),
   () => TIP('Hand strength shown here. Better hands win more!', 'עוצמת היד מוצגת כאן. ידיים טובות יותר מנצחות יותר!'),
   // Tip 5 (index 4): Omaha hand selection — the game picks the best 2+3 automatically.
   () => TIP(
@@ -295,6 +296,51 @@ function GameScreenInner() {
   const isDealingRef = useRef(false);
   // FUNNEL 2026-08-16 — one cards_placed per hand, whichever path confirms the placement.
   const cardsPlacedTrackedRef = useRef(false);
+  // ⚠️ FIX-THE-FOUR 2026-09-08 — THE BUY-IN IS TAKEN WHEN THE PLAYER COMMITS, NOT WHEN THE SCREEN
+  // MOUNTS. It used to be charged inside the deal effect below, which runs on mount. Measured:
+  // typing /game and closing the tab took 75 chips, 2,000 -> 1,925, with no confirmation asked and
+  // no hand played. A URL must not be able to spend somebody's balance.
+  //
+  // ⚠️ THE BUY-IN IS NOT REMOVED — ONLY MOVED. A played hand still costs exactly what it cost.
+  // It is charged at the moment placement is CONFIRMED, which is the point of no return: after it
+  // the boards resolve and winnings are paid. Both routes to that point call confirmPlacement()
+  // below — pressing READY, and letting the arrangement clock run out — so neither can drift from
+  // the other, and doNavigate() calls the same guarded function as a backstop so no COMPLETED hand
+  // can ever be free. The ref makes it exactly once per hand; it is reset with the deal.
+  const buyInChargedRef = useRef(false);
+
+  /**
+   * Take the match buy-in, at most once per hand, never in practice.
+   *
+   * ⚠️ THE AMOUNT AND THE RULE ARE UNCHANGED — only the MOMENT moved. Same getMatchCost, same
+   * potPerBoard, same DYNAMIC boardCount (2P=4, 3P=3, 4P=2 — never a literal), same
+   * matchCostEnabled gate on the spend tracker, same practice exemption. A played hand costs
+   * exactly what it cost yesterday.
+   */
+  const chargeBuyInOnce = useCallback(() => {
+    if (isPractice || buyInChargedRef.current) return;
+    buyInChargedRef.current = true;
+    const buyIn = getMatchCost(config.potPerBoard, boardCount);
+    addChips(-buyIn);
+    if (ECONOMY_FLAGS.matchCostEnabled) trackChipsSpent(buyIn);
+    debugLog(`buy-in charged on commit: -${buyIn}`);
+  }, [isPractice, config.potPerBoard, boardCount, addChips, trackChipsSpent]);
+
+  /**
+   * The single "the player has committed to this hand" gate.
+   *
+   * ⚠️ TWO ROUTES REACH IT AND THEY MUST NOT DRIFT APART — pressing READY, and letting the
+   * arrangement clock run out (which resolves the hand without ever calling handleReady; that is
+   * how cards_placed under-fired for months). Folding the tracking and the charge into ONE
+   * function is what stops a future edit from fixing one path and forgetting the other.
+   */
+  const confirmPlacement = useCallback((source: 'ready' | 'timeout') => {
+    if (cardsPlacedTrackedRef.current) return;
+    cardsPlacedTrackedRef.current = true;
+    track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
+      source }, 'game');
+    chargeBuyInOnce();
+  }, [isPractice, numberOfPlayers, boardCount, chargeBuyInOnce]);
   // VAMOS-FIX-SCROLLREVEAL 2026-06-17 — fail-safe to release the isDealingRef
   // lock if a navigate silently fails to occur. Without this, a successful
   // handleReady that hits the `doNavigateRef.current(...)` happy path never
@@ -332,57 +378,80 @@ function GameScreenInner() {
 
   // ÂÂ Guided first game tooltips ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
   const advanceTooltip = useCallback(() => {
+    // DISMISS-THE-TIPS 2026-09-06 — a dismissal is now RECORDED, per device, for ever. Before
+    // this the only thing standing between a player and the same six tips was
+    // `caps_games_played === 0`, a counter written solely when a hand REACHES THE REVEAL. Open a
+    // hand, read the tips, leave: nothing was recorded, and the next hand taught you again.
+    // Measured: four abandoned hands, six tips every time, counter still null.
+    markTipDismissed(gameTipId(tooltipStep));
     setTooltipVisible(false);
     // Tip 2 auto-shows 300ms after tip 1 dismissed — handled by step watcher below
+  }, [tooltipStep]);
+
+  /**
+   * Show a tip UNLESS this device has already dismissed it.
+   *
+   * The step still advances when a tip is suppressed: every hand-off in the chain below is
+   * driven either by a game event (a card placed, a board filled) or by `tooltipVisible`
+   * falling back to false, which a suppressed tip satisfies immediately. So a returning player
+   * walks the whole sequence silently instead of stalling on a tip they have already read.
+   */
+  const showTip = useCallback((step: number) => {
+    setTooltipStep(step);
+    setTooltipVisible(!isTipDismissed(gameTipId(step)));
   }, []);
 
   // Tip 1 — cards dealt (step 0 Â 1)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 0 || playerHand.length === 0) return;
-    const id = setTimeout(() => { setTooltipStep(1); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => showTip(1), 500);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, playerHand.length]);
+  }, [isFirstGame, tooltipStep, playerHand.length, showTip]);
 
   // Tip 2 — auto after tip 1 dismissed (step 1 Â 2, tooltipVisible just became false)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 1 || tooltipVisible) return;
-    const id = setTimeout(() => { setTooltipStep(2); setTooltipVisible(true); }, 300);
+    const id = setTimeout(() => showTip(2), 300);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, tooltipVisible]);
+  }, [isFirstGame, tooltipStep, tooltipVisible, showTip]);
 
   // Tip 3 — first card placed (step 2 Â 3)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 2) return;
     const anyCardPlaced = boards.some((b) => b.playerCards.length >= 1);
     if (!anyCardPlaced) return;
-    const id = setTimeout(() => { setTooltipStep(3); setTooltipVisible(true); }, 200);
+    // The board hint reads "Tap a card from your hand, then tap a board to place it". The player
+    // has just done that, so it has taught its lesson and is retired for good — it was on the
+    // same broken `gamesPlayed < 1` gate and repeated on every abandoned hand too.
+    markTipDismissed(BOARD_HINT_ID);
+    const id = setTimeout(() => showTip(3), 200);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, boards]);
+  }, [isFirstGame, tooltipStep, boards, showTip]);
 
   // Tip 4 — first board full (step 3 Â 4)
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 3) return;
     const hasFullBoard = boards.some((b) => b.playerCards.length === CARDS_PER_BOARD);
     if (!hasFullBoard) return;
-    const id = setTimeout(() => { setTooltipStep(4); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => showTip(4), 500);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, boards]);
+  }, [isFirstGame, tooltipStep, boards, showTip]);
 
   // Tip 5 — auto after tip 4 dismissed (step 4 Â 5): 2-of-4 rule explainer
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 4 || tooltipVisible) return;
-    const id = setTimeout(() => { setTooltipStep(5); setTooltipVisible(true); }, 400);
+    const id = setTimeout(() => showTip(5), 400);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, tooltipVisible]);
+  }, [isFirstGame, tooltipStep, tooltipVisible, showTip]);
 
   // Tip 6 — all boards full (step 5 Â 6): ready to submit
   useEffect(() => {
     if (!isFirstGame || tooltipStep !== 5) return;
     const allFull = boards.every((b) => b.playerCards.length === CARDS_PER_BOARD);
     if (!allFull) return;
-    const id = setTimeout(() => { setTooltipStep(6); setTooltipVisible(true); }, 500);
+    const id = setTimeout(() => showTip(6), 500);
     return () => clearTimeout(id);
-  }, [isFirstGame, tooltipStep, boards]);
+  }, [isFirstGame, tooltipStep, boards, showTip]);
   // ÂÂ End guided tooltips ÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂÂ
 
   // Start 30s countdown
@@ -470,11 +539,8 @@ function GameScreenInner() {
       // FUNNEL 2026-08-16 — this branch completes the hand WITHOUT going through handleReady, so
       // it never emitted cards_placed. A player who let the clock run out finished a hand with no
       // placement step: 58 devices placed cards while 88 completed a hand, which cannot happen.
-      if (!cardsPlacedTrackedRef.current) {
-        cardsPlacedTrackedRef.current = true;
-        track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
-          source: 'timeout' }, 'game');
-      }
+      // The clock expiring IS a commitment: the boards fill and the hand resolves from here.
+      confirmPlacement('timeout');
       const shuffled = [...playerHandRef.current].sort(() => Math.random() - 0.5);
       const { boards: filledBoards, remainingHand } = autoFillPlayerCards(shuffled, boardsRef.current);
 
@@ -520,7 +586,7 @@ function GameScreenInner() {
       // Navigate directly with the filled boards
       doNavigateRef.current(filledBoards);
     }
-  }, [countdownActive, countdown, playerReady]);
+  }, [countdownActive, countdown, playerReady, confirmPlacement]);
 
   // Cleanup
   useEffect(() => {
@@ -553,6 +619,9 @@ function GameScreenInner() {
     Promise.all([
       AsyncStorage.getItem(GAMES_PLAYED_KEY),
       AsyncStorage.getItem(GUIDED_FORCED_KEY),
+      // Hydrated in the SAME await as the counter, so the first render that can show a tip
+      // already knows which tips this device has retired.
+      loadDismissedTips(),
     ]).then(([gamesVal, guidedVal]) => {
       const played = parseInt(gamesVal ?? '0', 10);
       setGamesPlayed(played);
@@ -607,14 +676,11 @@ function GameScreenInner() {
     track('hand_dealt', { player_count: numberOfPlayers, board_count: boardCount,
       auto_sim: autoSim === 'true' }, 'game');
 
-    // Deduct buy-in — NOT in practice (bot-table games are chip-neutral by design)
-    const buyIn = getMatchCost(config.potPerBoard, boardCount);
-    if (!isPractice) {
-      addChips(-buyIn);
-      if (ECONOMY_FLAGS.matchCostEnabled) {
-        trackChipsSpent(buyIn);
-      }
-    }
+    // ⚠️ THE BUY-IN USED TO BE DEDUCTED HERE, ON MOUNT, AND THAT IS THE BUG THIS COMMENT MARKS.
+    // This effect runs the moment /game renders — before the player has agreed to anything. Typing
+    // the URL and closing the tab cost 75 chips: measured 2,000 -> 1,925, no prompt, no hand.
+    // It now happens in chargeBuyInOnce(), called when placement is CONFIRMED. Do not move it back.
+    buyInChargedRef.current = false;
 
     // Bot timers — when first bot finishes, it triggers the countdown
     for (let botIdx = 0; botIdx < numberOfBots; botIdx++) {
@@ -647,6 +713,10 @@ function GameScreenInner() {
     if (hasNavigatedRef.current || !mountedRef.current) { debugLog('1.1 already navigated or unmounted — abort'); return; }
     debugLog('2 hasNavigatedRef=true');
     hasNavigatedRef.current = true;
+    // BACKSTOP. Every completed hand passes through here, and it is guarded by the same ref, so it
+    // cannot double-charge. If a future path ever reaches results without confirmPlacement(), the
+    // hand is still paid for rather than silently free.
+    chargeBuyInOnce();
 
     // PRACTICE-TO-LIVE — if a real opponent is mid-countdown, this bot hand just reached its
     // natural end: cut here and jump to the live game rather than waiting the full 30s. The
@@ -695,6 +765,10 @@ function GameScreenInner() {
         playerCards: board.playerCards,
         allBotCards: board.allBotCards,
         winner: result ? result.winner : ('tie' as const),
+        // Carried through so /results derives the outcome with the server's seat-by-seat rule.
+        // A board the reveal never resolved has no winner at all, which is -1 (awards nobody) —
+        // the same thing the 'tie' token above says, not a silent credit to seat 0.
+        winnerSeat: result ? result.winnerSeat : -1,
         playerHandName: result?.playerResult.name || '',
         botHandName: result?.botResult.name || '',
         allBotHandNames: results.allBotResults[i]?.map((br) => br.name) || [],
@@ -866,7 +940,7 @@ function GameScreenInner() {
       debugLog(`14E router.replace CRASHED: ${String(e)}`, 'error');
       try { router.push('/results' as any); } catch { /* ignore */ }
     }
-  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim, liveMode]);
+  }, [config, numberOfPlayers, boardCount, setRevealData, addChips, router, autoSim, liveMode, chargeBuyInOnce]);
 
   // Keep doNavigate in a ref so bot timers always call the latest version
   const doNavigateRef = useRef(doNavigate);
@@ -1166,11 +1240,7 @@ function GameScreenInner() {
     // flipped never got counted, so cards_placed under-fired relative to hands
     // completed (11 vs 13, an impossible ratio). Track unconditionally, right where a
     // placement is confirmed — guaranteed once per hand via the guards above.
-    if (!cardsPlacedTrackedRef.current) {
-      cardsPlacedTrackedRef.current = true;
-      track('cards_placed', { mode: isPractice ? 'practice' : 'solo', numberOfPlayers, boardCount,
-        source: 'ready' }, 'game');
-    }
+    confirmPlacement('ready');
     debugLog(`H2 boards: ${boards.map(b => `${b.playerCards.length}/4`).join(' ')}`);
     debugLog('H3 hapticNotify');
     hapticNotify(Haptics?.NotificationFeedbackType?.Success);
@@ -1210,7 +1280,7 @@ function GameScreenInner() {
         }
       }, 8000);
     }
-  }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots]);
+  }, [allBoardsFull, boards, countdownActive, startCountdown, numberOfBots, confirmPlacement]);
 
   // Demo deep-link (caps-poker://game?demo=1): auto-fill all 4 boards + auto-ready,
   // so the iOS simulator auto-tour (ios-simulator-smoke.yml) can capture the full
@@ -1410,7 +1480,7 @@ function GameScreenInner() {
             </Text>
           )}
           {playerReady && allBotsReady && !showContinueButton && !showSafeReveal && (
-            <Text style={styles.calculatingText} accessibilityLiveRegion="polite">Calculating results...</Text>
+            <Text style={styles.calculatingText} accessibilityLiveRegion="polite">{t().calculatingResults}</Text>
           )}
         </>
       }
@@ -1440,15 +1510,19 @@ function GameScreenInner() {
       }
       chrome={
         <>
-          {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips) */}
-          {isPractice && (
-            <View style={styles.practiceSessionPill} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? 'Practice, no chips at stake' : `Practice, this session ${practiceSessionNet > 0 ? 'plus' : 'minus'} ${Math.abs(practiceSessionNet)} chips`}>
+          {/* PRACTICE-TO-LIVE — on-screen demo session counter (separate from real chips).
+              GAME-UPGRADES step 2 (2026-09-01) — HIDDEN at ≤340pt (the 320 crowd the audit found:
+              this absolute pill crossed the "PLACE N CARDS" instruction). Per this pill's own history
+              note, the PLACE string is the actual instruction during placement, so it wins the narrow
+              band; the "no chips" reassurance drops on tiny screens only. Unchanged ≥375. */}
+          {isPractice && screenW > 340 && (
+            <View style={[styles.practiceSessionPill, isRTL() ? { right: rs(64) } : { left: rs(64) }]} pointerEvents="none" accessibilityRole="text" accessibilityLabel={practiceSessionNet === 0 ? t().practiceA11yNoChips : t().practiceA11yNet(practiceSessionNet)}>
               {/* "Session +0" is dev jargon — until the player has actually won/lost, just say
                   what matters (no real chips). Show the running tally only once it's non-zero. */}
               <Text style={styles.practiceSessionText}>
                 {practiceSessionNet === 0
-                  ? '🤖 Practice · no chips'
-                  : `🤖 Practice · ${practiceSessionNet > 0 ? '+' : ''}${practiceSessionNet} chips`}
+                  ? t().practiceNoChips
+                  : t().practiceSessionNet(practiceSessionNet)}
               </Text>
             </View>
           )}
@@ -1472,12 +1546,12 @@ function GameScreenInner() {
           )}
 
           {/* Guided first-game tooltips (tips 1-6) -- non-blocking */}
-          {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= 6 && (
+          {isFirstGame && tooltipVisible && tooltipStep >= 1 && tooltipStep <= TIPS.length && (
             <GuidedTooltip
               text={TIPS[tooltipStep - 1]?.() ?? ''}
               visible={tooltipVisible}
               onDismiss={advanceTooltip}
-              position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === 6 ? 'top' : 'bottom'}
+              position={tooltipStep <= 2 ? 'bottom' : tooltipStep === 5 ? 'center' : tooltipStep === TIPS.length ? 'top' : 'bottom'}
               // REVERTED 2026-08-13, same day it shipped. This passed
               // `_handZoneActualH + rs(20, screenW)` and MADE THE SCREEN WORSE: measured live,
               // coverage went from 6 cards to TWELVE (78% @375, 81% @393, 75% @1706x960). The
@@ -1591,9 +1665,12 @@ const styles = StyleSheet.create({
     borderRadius: rv(12),
     backgroundColor: 'rgba(79,214,168,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.30)',
+    // GAME-UPGRADES step 2 — luxury pill: mint fill + BRASS gilded hairline (the home's chip
+    // identity), with a soft lift so it reads as raised, not a flat translucent slab.
+    borderColor: 'rgba(201,168,76,0.55)',
     overflow: 'hidden',
     textTransform: 'uppercase' as any,
+    ...Platform.select({ web: { boxShadow: '0 2px 6px rgba(0,0,0,0.35)' } as any, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.35, shadowRadius: 4 } }),
   },
   headerChips: {
     // VAMOS-PLACEMENT-POLISH-2 FIX 3 — money/balance pill: gold rgba bg/border → mint
@@ -1605,7 +1682,10 @@ const styles = StyleSheet.create({
     paddingVertical: rs(4),
     paddingHorizontal: rs(10),
     borderWidth: 1,
-    borderColor: 'rgba(79,214,168,0.25)',
+    // GAME-UPGRADES step 2 — luxury pill: brass gilded hairline + soft lift (matches the PLACE pill
+    // and the home's mint-fill/brass-edge chip identity).
+    borderColor: 'rgba(201,168,76,0.55)',
+    ...Platform.select({ web: { boxShadow: '0 2px 6px rgba(0,0,0,0.35)' } as any, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.35, shadowRadius: 4 } }),
   },
   headerChipsEmoji: {
     fontSize: rf(14),
@@ -1658,7 +1738,23 @@ const styles = StyleSheet.create({
     // that string is the actual instruction during placement. That trades down, not up.
     // NOT stacked onto its own row: the gap between the header row (bottom y 39) and the bot
     // status row (top y 57) is 18px for a 16px pill. 1px of clearance is not a fix.
-    left: rs(64),
+    //
+    // LANDING-AND-AUTOSWEEP 2026-09-05 — this anchor was DIRECTION-BLIND, and Hebrew paid for it.
+    // Every reason above is about clearing the ✕ BUTTON. In RTL the ✕ moves to the right and the
+    // allPlaced / "PLACE N CARDS" pill moves to the left — so a hard `left: 64` stopped clearing
+    // the ✕ and started sitting on top of that pill. Measured rendering, in Hebrew at 440 CSS px:
+    // practice pill x 82-199 against the status pill x 18-163 = 81px of horizontal overlap, with
+    // "🤖 תרגול · בלי צ׳יפים" drawn across "כל הקלפים הונחו!". English was clean (overlapX 0).
+    //
+    // ⚠️ TWO FIXES WERE TRIED AND MEASURED FIRST; BOTH FAILED, AND BOTH FAILED SILENTLY.
+    //   1. `start: rs(64)`. Compiled, exported, and the pill did not move — still x 82 in Hebrew,
+    //      still 81px of overlap. RN-Web did not map it to insetInlineStart in this build.
+    //   2. Keeping `left` here and overriding with `{ left: undefined, right: rs(64) }` at the
+    //      call site. `undefined` does not REMOVE a StyleSheet value, so the pill rendered with
+    //      left:64px AND right:64px and stretched to 302px wide — worse than the bug.
+    // So the anchor is not stated here at all. It is supplied at the call site, one edge at a
+    // time, from isRTL(). The 64px and its whole derivation above are unchanged — only which
+    // edge it is counted from. No `left`/`right`/`start` key belongs in this block.
     backgroundColor: 'rgba(245,181,70,0.16)',
     borderWidth: 1,
     borderColor: 'rgba(245,181,70,0.5)',

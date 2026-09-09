@@ -29,6 +29,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { rf, rs } from '../utils/responsive';
 import { SeatEquity } from '../utils/revealEquity';
+import { t } from '../utils/i18n';
 
 interface Props {
   seats: SeatEquity[];
@@ -104,7 +105,7 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
     return () => a.stop();
   }, [selfPct, pending]);
 
-  const label = (s: SeatEquity) => (s.isSelf ? 'YOU' : seatLabel ? seatLabel(s.seat) : `BOT ${s.seat}`);
+  const label = (s: SeatEquity) => (s.isSelf ? t().equityYou : seatLabel ? seatLabel(s.seat) : `${t().bot} ${s.seat}`);
   const barH = rs(14, screenW);
   const multi = seats.length > 2;
 
@@ -122,7 +123,7 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
     const rowH = rs(15, screenW);
     return (
       <View style={styles.wrap} testID="equity-bar" accessibilityLiveRegion="polite"
-        accessibilityLabel={pending ? 'Calculating odds' : ordered.map((s) => `${label(s)} ${s.pct} percent`).join(', ') + deltaSpeech}>
+        accessibilityLabel={pending ? t().calculatingOdds : ordered.map((s) => `${label(s)} ${s.pct} percent`).join(', ') + deltaSpeech}>
         {ordered.map((s, i) => (
           <View key={s.seat} style={[styles.seatRow, { marginBottom: rs(3, screenW) }]}>
             <Text style={[styles.ordinal, { fontSize: rf(11, undefined, undefined, screenW), width: rs(13, screenW) }]}>{i + 1}.</Text>
@@ -149,7 +150,7 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
                 so raising the size without the box would have clipped "LEAD" rather than
                 enlarged it. The bar beside it is flex and absorbs the 8px. */}
             <Text style={[styles.leadTag, { fontSize: rf(11, undefined, undefined, screenW), width: rs(38, screenW) }]}>
-              {i === 0 && !pending ? 'LEAD' : ''}
+              {i === 0 && !pending ? t().equityLead : ''}
             </Text>
           </View>
         ))}
@@ -163,15 +164,15 @@ export function EquityBar({ seats, prevSelfPct, screenW, pending, seatLabel }: P
   const oppPct = opp ? opp.pct : 100 - selfPct;
   const playerLeads = selfPct >= oppPct;
   const left = playerLeads
-    ? { pct: selfPct, tag: 'LEADING', who: 'YOU', seat: self ? self.seat : 0, tid: 'equity-value-self' }
-    : { pct: oppPct, tag: 'LEADING', who: 'OPP', seat: opp ? opp.seat : 1, tid: 'equity-value-opponent' };
+    ? { pct: selfPct, tag: t().equityLeading, who: t().equityYou, seat: self ? self.seat : 0, tid: 'equity-value-self' }
+    : { pct: oppPct, tag: t().equityLeading, who: t().equityOpp, seat: opp ? opp.seat : 1, tid: 'equity-value-opponent' };
   const right = playerLeads
-    ? { pct: oppPct, tag: 'TRAILING', who: 'OPP', seat: opp ? opp.seat : 1, tid: 'equity-value-opponent' }
-    : { pct: selfPct, tag: 'TRAILING', who: 'YOU', seat: self ? self.seat : 0, tid: 'equity-value-self' };
+    ? { pct: oppPct, tag: t().equityTrailing, who: t().equityOpp, seat: opp ? opp.seat : 1, tid: 'equity-value-opponent' }
+    : { pct: selfPct, tag: t().equityTrailing, who: t().equityYou, seat: self ? self.seat : 0, tid: 'equity-value-self' };
 
   return (
     <View style={styles.wrap} testID="equity-bar" accessibilityLiveRegion="polite"
-      accessibilityLabel={pending ? 'Calculating odds' : `You ${selfPct} percent, opponent ${oppPct} percent${deltaSpeech}`}>
+      accessibilityLabel={pending ? t().calculatingOdds : `You ${selfPct} percent, opponent ${oppPct} percent${deltaSpeech}`}>
       <View style={styles.figureRow}>
         {[left, right].map((side, i) => (
           <View key={i} style={[styles.figureCol, i === 1 && styles.figureColRight]}>

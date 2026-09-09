@@ -30,13 +30,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS, setCompleteBonusPctByBoards, setMpBoardRevealEnabled } from '../constants/gameConfig';
 import { useGameStore } from '../store/gameStore';
-import { setLanguage, Language, applyHtmlLocale } from '../utils/i18n';
+import { setLanguage, Language, applyHtmlLocale, getLanguage } from '../utils/i18n';
 import * as Updates from 'expo-updates';
 // expo-insights is a passive SDK — auto-collects crashes + app opens via native integration
 // No API call needed; installing the package is sufficient
 import 'expo-insights';
 import { preloadSounds } from '../utils/sounds';
-import { registerAndSavePushToken } from '../utils/notifications';
+import { registerPushIfGranted, scheduleReturnReminders, cancelReturnReminders, promptAndScheduleReturns } from '../utils/notifications';
 import * as Notifications from 'expo-notifications';
 import { WebContainer } from '../components/WebContainer';
 import { BugReporter } from '../components/BugReporter';
@@ -54,7 +54,20 @@ import { CrashBoundary } from '../components/CrashBoundary';
 import WaitingSeatBanner from '../components/WaitingSeatBanner';
 import AuthErrorBanner from '../components/AuthErrorBanner';
 import { PaintProvider } from '../contexts/PaintProvider';
+import { LuxuryBackdrop } from '../components/LuxuryBackdrop';
 import { recordGlobalTap, onScreenChanged } from '../utils/frictionSignals';
+
+// VAMOS SPLASH-AND-LANDING 2026-09-02 — the JS splash overlay is the web build's actual first
+// frame (web has no native OS splash) and, on native, the frame right after the OS splash PNG.
+// It must be the SAME identity the home paints: the gilded serif masthead over LuxuryBackdrop
+// felt. DISPLAY_FONT mirrors index.tsx (Playfair on web — loaded from Google Fonts above —,
+// Georgia on iOS, generic serif → Noto Serif on Android). No px literal; a real display serif.
+const SPLASH_DISPLAY_FONT = Platform.select({
+  web: 'Playfair Display, Georgia, serif',
+  ios: 'Georgia',
+  android: 'serif',
+  default: undefined,
+});
 
 // Lazy-load expo-screen-orientation (not available on web)
 let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
@@ -151,10 +164,14 @@ function SplashOverlay({ onDone }: { onDone: () => void }) {
 
   return (
     <View style={splashStyles.container}>
+      {/* VAMOS SPLASH-AND-LANDING — the SAME felt ground the home paints (LuxuryBackdrop over the
+          #161922 base, exactly as index.tsx composits it), so OS-splash → JS-splash → home is one
+          continuous felt with no colour flash. */}
+      <LuxuryBackdrop />
       <Animated.View style={[splashStyles.content, animStyle]}>
         <Text style={splashStyles.suits}>♠ ♥ ♦ ♣</Text>
-        <Text style={splashStyles.title}>CAPS POKER</Text>
-        <Text style={splashStyles.sub}>Place Your Cards. Own Every Board.</Text>
+        <Text style={[splashStyles.title, SPLASH_DISPLAY_FONT ? { fontFamily: SPLASH_DISPLAY_FONT } : {}]}>CAPS</Text>
+        <Text style={splashStyles.poker}>POKER</Text>
         <View style={splashStyles.divider} />
       </Animated.View>
     </View>
@@ -170,10 +187,12 @@ const splashStyles = StyleSheet.create({
     zIndex: 9999,
   },
   content: { alignItems: 'center' },
-  suits: { fontSize: 22, color: '#c9a84c', letterSpacing: 10, marginBottom: 18, opacity: 0.8 },
-  title: { fontSize: 40, fontWeight: '900', color: '#c9a84c', letterSpacing: 5 },
-  sub: { fontSize: 13, color: '#888', letterSpacing: 3, marginTop: 8, textTransform: 'uppercase' },
-  divider: { width: 60, height: 2, backgroundColor: '#c9a84c', marginTop: 20, opacity: 0.4 },
+  suits: { fontSize: 22, color: '#c9a84c', letterSpacing: 10, marginBottom: 14, opacity: 0.6, paddingLeft: 10 },
+  // Gilded serif CAPS + tracked POKER — the home masthead lockup (index.tsx titleCaps/titlePoker),
+  // gold #c9a84c (the wordmark gold, NOT the winner cue #FFD700). Serif face via SPLASH_DISPLAY_FONT.
+  title: { fontSize: 68, fontWeight: '900', color: '#c9a84c', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 18 },
+  poker: { fontSize: 20, fontWeight: '600', color: '#c9a84c', letterSpacing: 11, textTransform: 'uppercase', marginTop: 4, paddingLeft: 11 },
+  divider: { width: 90, height: 2, backgroundColor: '#c9a84c', marginTop: 18, opacity: 0.4 },
 });
 
 // Smart-default language detection — Hebrew if browser/device locale starts with "he",
@@ -335,8 +354,22 @@ export default function RootLayout() {
     const sub = AppState.addEventListener('change', (state: string) => {
       if (state === 'background' || state === 'inactive') {
         markCleanExit()
+        // VAMOS PHASE-A — leaving after playing: (re)arm the day-1/day-3 return reminders from this
+        // session (no-ops until permission is granted). Only once they've actually played a hand.
+        try {
+          const played = useGameStore.getState().handsPlayed > 0;
+          if (played) void scheduleReturnReminders(getLanguage() === 'he');
+        } catch {}
       } else if (state === 'active') {
         flushCrashSessionNow()
+        // They came back — clear the pending reminders, then (at this good moment, having already
+        // played) ask for permission at most once and arm the reminders. Never on first launch:
+        // handsPlayed === 0 guards it.
+        try {
+          void cancelReturnReminders();
+          const played = useGameStore.getState().handsPlayed > 0;
+          void promptAndScheduleReturns(played, getLanguage() === 'he');
+        } catch {}
       }
     })
     return () => sub.remove()
@@ -453,7 +486,9 @@ export default function RootLayout() {
         // CI guard: sim auto-tour build sets EXPO_PUBLIC_CAPS_CI=1; skip push
         // registration so iOS doesn't fire the permission prompt that blocks deep-links.
         if (process.env.EXPO_PUBLIC_CAPS_CI !== '1') {
-          registerAndSavePushToken().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
+          // VAMOS PHASE-A — launch NEVER prompts: register the push token only if permission is
+          // already granted. The permission ask moved to a good moment (foreground after a hand).
+          registerPushIfGranted().catch((e) => { debugLog('[launch] pushToken failed: ' + String(e), 'warn'); });
         }
         // Track push notification opens (fire-and-forget, never blocks UX)
         const _pushSub = Notifications.addNotificationResponseReceivedListener((response) => {

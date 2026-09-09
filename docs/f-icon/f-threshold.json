@@ -1,0 +1,3874 @@
+{
+  "ts": "2026-09-07T08:11:59.078Z",
+  "rule": "all five of POKER's letter cells hold >=2 ink px, and that holds at every larger size",
+  "rejectedRule": "connected-component count — a serif FRAGMENTS at these sizes (12 regions at 180, 4 at 96), so the count is noise in both directions",
+  "threshold": 128,
+  "firstResolving": 75,
+  "pokerPxAtThreshold": 7.71,
+  "rows": [
+    {
+      "size": 40,
+      "pokerPx": 2.41,
+      "suitsPx": 2.65,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 2,
+      "suitsInk": 2,
+      "suitCells": [
+        1,
+        0,
+        0,
+        1
+      ],
+      "suitsWeakestCell": 0
+    },
+    {
+      "size": 41,
+      "pokerPx": 2.47,
+      "suitsPx": 2.72,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 4,
+      "suitCells": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 42,
+      "pokerPx": 2.53,
+      "suitsPx": 2.78,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 3,
+      "suitsInk": 5,
+      "suitCells": [
+        2,
+        1,
+        0,
+        2
+      ],
+      "suitsWeakestCell": 0
+    },
+    {
+      "size": 43,
+      "pokerPx": 2.59,
+      "suitsPx": 2.85,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 7,
+      "suitCells": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 44,
+      "pokerPx": 2.65,
+      "suitsPx": 2.91,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 3,
+      "suitsInk": 3,
+      "suitCells": [
+        1,
+        0,
+        1,
+        1
+      ],
+      "suitsWeakestCell": 0
+    },
+    {
+      "size": 45,
+      "pokerPx": 2.71,
+      "suitsPx": 2.98,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 5,
+      "suitCells": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 46,
+      "pokerPx": 2.77,
+      "suitsPx": 3.05,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 7,
+      "suitCells": [
+        2,
+        1,
+        2,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 47,
+      "pokerPx": 2.83,
+      "suitsPx": 3.11,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 6,
+      "suitCells": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 48,
+      "pokerPx": 2.89,
+      "suitsPx": 3.18,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 4,
+      "suitCells": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 49,
+      "pokerPx": 2.95,
+      "suitsPx": 3.25,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 3,
+      "suitsInk": 5,
+      "suitCells": [
+        2,
+        1,
+        0,
+        2
+      ],
+      "suitsWeakestCell": 0
+    },
+    {
+      "size": 50,
+      "pokerPx": 3.01,
+      "suitsPx": 3.31,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 9,
+      "suitCells": [
+        1,
+        3,
+        2,
+        3
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 51,
+      "pokerPx": 3.07,
+      "suitsPx": 3.38,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 5,
+      "suitCells": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 52,
+      "pokerPx": 3.13,
+      "suitsPx": 3.44,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 5,
+      "suitCells": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 53,
+      "pokerPx": 3.19,
+      "suitsPx": 3.51,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 7,
+      "suitCells": [
+        2,
+        1,
+        2,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 54,
+      "pokerPx": 3.25,
+      "suitsPx": 3.58,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 6,
+      "suitCells": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 55,
+      "pokerPx": 3.31,
+      "suitsPx": 3.64,
+      "pokerRegions": 1,
+      "pokerInk": 1,
+      "pokerCells": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 5,
+      "suitCells": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 56,
+      "pokerPx": 3.37,
+      "suitsPx": 3.71,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 7,
+      "suitCells": [
+        2,
+        2,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 57,
+      "pokerPx": 3.43,
+      "suitsPx": 3.78,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 10,
+      "suitCells": [
+        2,
+        3,
+        2,
+        3
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 58,
+      "pokerPx": 3.49,
+      "suitsPx": 3.84,
+      "pokerRegions": 1,
+      "pokerInk": 2,
+      "pokerCells": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 6,
+      "suitCells": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 59,
+      "pokerPx": 3.55,
+      "suitsPx": 3.91,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 7,
+      "suitCells": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 60,
+      "pokerPx": 3.61,
+      "suitsPx": 3.97,
+      "pokerRegions": 1,
+      "pokerInk": 1,
+      "pokerCells": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 10,
+      "suitCells": [
+        2,
+        3,
+        2,
+        3
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 61,
+      "pokerPx": 3.67,
+      "suitsPx": 4.04,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 9,
+      "suitCells": [
+        1,
+        4,
+        1,
+        3
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 62,
+      "pokerPx": 3.73,
+      "suitsPx": 4.11,
+      "pokerRegions": 1,
+      "pokerInk": 2,
+      "pokerCells": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 7,
+      "suitCells": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "suitsWeakestCell": 1
+    },
+    {
+      "size": 63,
+      "pokerPx": 3.79,
+      "suitsPx": 4.17,
+      "pokerRegions": 0,
+      "pokerInk": 0,
+      "pokerCells": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 8,
+      "suitCells": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 64,
+      "pokerPx": 3.85,
+      "suitsPx": 4.24,
+      "pokerRegions": 4,
+      "pokerInk": 7,
+      "pokerCells": [
+        2,
+        0,
+        2,
+        0,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 12,
+      "suitCells": [
+        2,
+        4,
+        2,
+        4
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 65,
+      "pokerPx": 3.91,
+      "suitsPx": 4.31,
+      "pokerRegions": 3,
+      "pokerInk": 6,
+      "pokerCells": [
+        1,
+        0,
+        0,
+        2,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 15,
+      "suitCells": [
+        4,
+        4,
+        3,
+        4
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 66,
+      "pokerPx": 3.97,
+      "suitsPx": 4.37,
+      "pokerRegions": 5,
+      "pokerInk": 12,
+      "pokerCells": [
+        3,
+        4,
+        3,
+        0,
+        2
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 11,
+      "suitCells": [
+        2,
+        2,
+        3,
+        4
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 67,
+      "pokerPx": 4.03,
+      "suitsPx": 4.44,
+      "pokerRegions": 5,
+      "pokerInk": 17,
+      "pokerCells": [
+        5,
+        1,
+        2,
+        3,
+        6
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 13,
+      "suitCells": [
+        3,
+        3,
+        2,
+        5
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 68,
+      "pokerPx": 4.09,
+      "suitsPx": 4.5,
+      "pokerRegions": 6,
+      "pokerInk": 12,
+      "pokerCells": [
+        3,
+        1,
+        3,
+        3,
+        2
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 16,
+      "suitCells": [
+        4,
+        3,
+        3,
+        6
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 69,
+      "pokerPx": 4.15,
+      "suitsPx": 4.57,
+      "pokerRegions": 5,
+      "pokerInk": 8,
+      "pokerCells": [
+        1,
+        4,
+        0,
+        2,
+        1
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 14,
+      "suitCells": [
+        3,
+        4,
+        3,
+        4
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 70,
+      "pokerPx": 4.22,
+      "suitsPx": 4.64,
+      "pokerRegions": 5,
+      "pokerInk": 12,
+      "pokerCells": [
+        1,
+        1,
+        4,
+        3,
+        3
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 15,
+      "suitCells": [
+        2,
+        4,
+        4,
+        5
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 71,
+      "pokerPx": 4.28,
+      "suitsPx": 4.7,
+      "pokerRegions": 5,
+      "pokerInk": 14,
+      "pokerCells": [
+        4,
+        2,
+        2,
+        0,
+        6
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 14,
+      "suitCells": [
+        3,
+        4,
+        2,
+        5
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 72,
+      "pokerPx": 4.34,
+      "suitsPx": 4.77,
+      "pokerRegions": 5,
+      "pokerInk": 14,
+      "pokerCells": [
+        3,
+        3,
+        4,
+        0,
+        4
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 16,
+      "suitCells": [
+        4,
+        4,
+        3,
+        5
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 73,
+      "pokerPx": 4.4,
+      "suitsPx": 4.84,
+      "pokerRegions": 2,
+      "pokerInk": 7,
+      "pokerCells": [
+        3,
+        0,
+        0,
+        0,
+        4
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 14,
+      "suitCells": [
+        2,
+        4,
+        3,
+        5
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 74,
+      "pokerPx": 4.46,
+      "suitsPx": 4.9,
+      "pokerRegions": 4,
+      "pokerInk": 10,
+      "pokerCells": [
+        4,
+        3,
+        0,
+        0,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 16,
+      "suitCells": [
+        4,
+        3,
+        2,
+        7
+      ],
+      "suitsWeakestCell": 2
+    },
+    {
+      "size": 75,
+      "pokerPx": 4.52,
+      "suitsPx": 4.97,
+      "pokerRegions": 5,
+      "pokerInk": 17,
+      "pokerCells": [
+        3,
+        3,
+        2,
+        3,
+        6
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 19,
+      "suitCells": [
+        5,
+        4,
+        4,
+        6
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 76,
+      "pokerPx": 4.58,
+      "suitsPx": 5.03,
+      "pokerRegions": 5,
+      "pokerInk": 17,
+      "pokerCells": [
+        4,
+        2,
+        4,
+        3,
+        4
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 15,
+      "suitCells": [
+        4,
+        4,
+        3,
+        4
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 77,
+      "pokerPx": 4.64,
+      "suitsPx": 5.1,
+      "pokerRegions": 6,
+      "pokerInk": 13,
+      "pokerCells": [
+        3,
+        4,
+        4,
+        0,
+        2
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 18,
+      "suitCells": [
+        3,
+        6,
+        4,
+        5
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 78,
+      "pokerPx": 4.7,
+      "suitsPx": 5.17,
+      "pokerRegions": 4,
+      "pokerInk": 11,
+      "pokerCells": [
+        2,
+        3,
+        0,
+        3,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 19,
+      "suitCells": [
+        5,
+        4,
+        3,
+        7
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 79,
+      "pokerPx": 4.76,
+      "suitsPx": 5.23,
+      "pokerRegions": 4,
+      "pokerInk": 10,
+      "pokerCells": [
+        3,
+        2,
+        2,
+        0,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 19,
+      "suitCells": [
+        5,
+        4,
+        4,
+        6
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 80,
+      "pokerPx": 4.82,
+      "suitsPx": 5.3,
+      "pokerRegions": 5,
+      "pokerInk": 20,
+      "pokerCells": [
+        4,
+        2,
+        5,
+        2,
+        7
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 18,
+      "suitCells": [
+        3,
+        5,
+        4,
+        6
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 81,
+      "pokerPx": 4.88,
+      "suitsPx": 5.37,
+      "pokerRegions": 6,
+      "pokerInk": 18,
+      "pokerCells": [
+        4,
+        3,
+        4,
+        4,
+        3
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 19,
+      "suitCells": [
+        4,
+        4,
+        3,
+        8
+      ],
+      "suitsWeakestCell": 3
+    },
+    {
+      "size": 82,
+      "pokerPx": 4.94,
+      "suitsPx": 5.43,
+      "pokerRegions": 4,
+      "pokerInk": 9,
+      "pokerCells": [
+        1,
+        2,
+        4,
+        0,
+        2
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 20,
+      "suitCells": [
+        5,
+        5,
+        4,
+        6
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 83,
+      "pokerPx": 5,
+      "suitsPx": 5.5,
+      "pokerRegions": 5,
+      "pokerInk": 12,
+      "pokerCells": [
+        1,
+        3,
+        2,
+        3,
+        3
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 21,
+      "suitCells": [
+        5,
+        5,
+        5,
+        6
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 84,
+      "pokerPx": 5.06,
+      "suitsPx": 5.56,
+      "pokerRegions": 5,
+      "pokerInk": 21,
+      "pokerCells": [
+        4,
+        2,
+        5,
+        4,
+        6
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 21,
+      "suitCells": [
+        4,
+        7,
+        4,
+        6
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 85,
+      "pokerPx": 5.12,
+      "suitsPx": 5.63,
+      "pokerRegions": 5,
+      "pokerInk": 14,
+      "pokerCells": [
+        4,
+        3,
+        4,
+        0,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 21,
+      "suitCells": [
+        5,
+        4,
+        4,
+        8
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 86,
+      "pokerPx": 5.18,
+      "suitsPx": 5.7,
+      "pokerRegions": 9,
+      "pokerInk": 19,
+      "pokerCells": [
+        4,
+        4,
+        4,
+        3,
+        4
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 21,
+      "suitCells": [
+        5,
+        5,
+        5,
+        6
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 87,
+      "pokerPx": 5.24,
+      "suitsPx": 5.76,
+      "pokerRegions": 7,
+      "pokerInk": 14,
+      "pokerCells": [
+        3,
+        2,
+        4,
+        1,
+        4
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 21,
+      "suitCells": [
+        4,
+        6,
+        4,
+        7
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 88,
+      "pokerPx": 5.3,
+      "suitsPx": 5.83,
+      "pokerRegions": 5,
+      "pokerInk": 20,
+      "pokerCells": [
+        4,
+        2,
+        5,
+        3,
+        6
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 24,
+      "suitCells": [
+        4,
+        7,
+        5,
+        8
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 89,
+      "pokerPx": 5.36,
+      "suitsPx": 5.9,
+      "pokerRegions": 7,
+      "pokerInk": 19,
+      "pokerCells": [
+        5,
+        5,
+        3,
+        3,
+        3
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 23,
+      "suitCells": [
+        6,
+        5,
+        4,
+        8
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 90,
+      "pokerPx": 5.42,
+      "suitsPx": 5.96,
+      "pokerRegions": 7,
+      "pokerInk": 15,
+      "pokerCells": [
+        4,
+        2,
+        4,
+        0,
+        5
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 21,
+      "suitCells": [
+        5,
+        5,
+        5,
+        6
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 91,
+      "pokerPx": 5.48,
+      "suitsPx": 6.03,
+      "pokerRegions": 6,
+      "pokerInk": 20,
+      "pokerCells": [
+        2,
+        6,
+        4,
+        4,
+        4
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 25,
+      "suitCells": [
+        5,
+        7,
+        5,
+        8
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 92,
+      "pokerPx": 5.54,
+      "suitsPx": 6.09,
+      "pokerRegions": 6,
+      "pokerInk": 20,
+      "pokerCells": [
+        4,
+        4,
+        5,
+        3,
+        4
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 25,
+      "suitCells": [
+        6,
+        7,
+        4,
+        8
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 93,
+      "pokerPx": 5.6,
+      "suitsPx": 6.16,
+      "pokerRegions": 4,
+      "pokerInk": 11,
+      "pokerCells": [
+        6,
+        0,
+        2,
+        0,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 23,
+      "suitCells": [
+        4,
+        6,
+        5,
+        8
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 94,
+      "pokerPx": 5.66,
+      "suitsPx": 6.23,
+      "pokerRegions": 8,
+      "pokerInk": 28,
+      "pokerCells": [
+        5,
+        6,
+        6,
+        4,
+        7
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 23,
+      "suitCells": [
+        5,
+        7,
+        4,
+        7
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 95,
+      "pokerPx": 5.72,
+      "suitsPx": 6.29,
+      "pokerRegions": 6,
+      "pokerInk": 17,
+      "pokerCells": [
+        2,
+        4,
+        5,
+        2,
+        4
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 28,
+      "suitCells": [
+        5,
+        8,
+        6,
+        9
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 96,
+      "pokerPx": 5.78,
+      "suitsPx": 6.36,
+      "pokerRegions": 4,
+      "pokerInk": 17,
+      "pokerCells": [
+        3,
+        0,
+        7,
+        4,
+        3
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 24,
+      "suitCells": [
+        5,
+        7,
+        4,
+        8
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 97,
+      "pokerPx": 5.84,
+      "suitsPx": 6.43,
+      "pokerRegions": 8,
+      "pokerInk": 23,
+      "pokerCells": [
+        6,
+        6,
+        4,
+        4,
+        3
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 23,
+      "suitCells": [
+        4,
+        8,
+        5,
+        6
+      ],
+      "suitsWeakestCell": 4
+    },
+    {
+      "size": 98,
+      "pokerPx": 5.9,
+      "suitsPx": 6.49,
+      "pokerRegions": 7,
+      "pokerInk": 21,
+      "pokerCells": [
+        5,
+        3,
+        6,
+        0,
+        7
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 29,
+      "suitCells": [
+        7,
+        7,
+        5,
+        10
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 99,
+      "pokerPx": 5.96,
+      "suitsPx": 6.56,
+      "pokerRegions": 9,
+      "pokerInk": 25,
+      "pokerCells": [
+        6,
+        4,
+        5,
+        4,
+        6
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 26,
+      "suitCells": [
+        5,
+        8,
+        5,
+        8
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 100,
+      "pokerPx": 6.02,
+      "suitsPx": 6.62,
+      "pokerRegions": 8,
+      "pokerInk": 21,
+      "pokerCells": [
+        2,
+        6,
+        6,
+        4,
+        3
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 26,
+      "suitCells": [
+        5,
+        6,
+        6,
+        9
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 101,
+      "pokerPx": 6.08,
+      "suitsPx": 6.69,
+      "pokerRegions": 6,
+      "pokerInk": 22,
+      "pokerCells": [
+        6,
+        1,
+        5,
+        4,
+        6
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 27,
+      "suitCells": [
+        6,
+        7,
+        6,
+        8
+      ],
+      "suitsWeakestCell": 6
+    },
+    {
+      "size": 102,
+      "pokerPx": 6.14,
+      "suitsPx": 6.76,
+      "pokerRegions": 8,
+      "pokerInk": 28,
+      "pokerCells": [
+        5,
+        5,
+        6,
+        4,
+        8
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 34,
+      "suitCells": [
+        8,
+        9,
+        6,
+        11
+      ],
+      "suitsWeakestCell": 6
+    },
+    {
+      "size": 103,
+      "pokerPx": 6.2,
+      "suitsPx": 6.82,
+      "pokerRegions": 8,
+      "pokerInk": 26,
+      "pokerCells": [
+        5,
+        5,
+        7,
+        1,
+        8
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 27,
+      "suitCells": [
+        5,
+        8,
+        5,
+        9
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 104,
+      "pokerPx": 6.26,
+      "suitsPx": 6.89,
+      "pokerRegions": 7,
+      "pokerInk": 21,
+      "pokerCells": [
+        2,
+        2,
+        7,
+        5,
+        5
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 27,
+      "suitCells": [
+        5,
+        8,
+        5,
+        9
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 105,
+      "pokerPx": 6.32,
+      "suitsPx": 6.96,
+      "pokerRegions": 8,
+      "pokerInk": 25,
+      "pokerCells": [
+        5,
+        5,
+        5,
+        4,
+        6
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 33,
+      "suitCells": [
+        8,
+        7,
+        6,
+        12
+      ],
+      "suitsWeakestCell": 6
+    },
+    {
+      "size": 106,
+      "pokerPx": 6.38,
+      "suitsPx": 7.02,
+      "pokerRegions": 5,
+      "pokerInk": 22,
+      "pokerCells": [
+        4,
+        4,
+        6,
+        0,
+        8
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 34,
+      "suitCells": [
+        7,
+        8,
+        8,
+        11
+      ],
+      "suitsWeakestCell": 7
+    },
+    {
+      "size": 107,
+      "pokerPx": 6.44,
+      "suitsPx": 7.09,
+      "pokerRegions": 6,
+      "pokerInk": 29,
+      "pokerCells": [
+        5,
+        3,
+        7,
+        5,
+        9
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 31,
+      "suitCells": [
+        5,
+        8,
+        8,
+        10
+      ],
+      "suitsWeakestCell": 5
+    },
+    {
+      "size": 108,
+      "pokerPx": 6.5,
+      "suitsPx": 7.15,
+      "pokerRegions": 9,
+      "pokerInk": 31,
+      "pokerCells": [
+        6,
+        6,
+        8,
+        4,
+        7
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 31,
+      "suitCells": [
+        7,
+        7,
+        7,
+        10
+      ],
+      "suitsWeakestCell": 7
+    },
+    {
+      "size": 109,
+      "pokerPx": 6.56,
+      "suitsPx": 7.22,
+      "pokerRegions": 6,
+      "pokerInk": 22,
+      "pokerCells": [
+        4,
+        5,
+        7,
+        4,
+        2
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 37,
+      "suitCells": [
+        8,
+        10,
+        8,
+        11
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 110,
+      "pokerPx": 6.62,
+      "suitsPx": 7.29,
+      "pokerRegions": 7,
+      "pokerInk": 28,
+      "pokerCells": [
+        7,
+        3,
+        7,
+        4,
+        7
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 35,
+      "suitCells": [
+        7,
+        10,
+        7,
+        11
+      ],
+      "suitsWeakestCell": 7
+    },
+    {
+      "size": 111,
+      "pokerPx": 6.68,
+      "suitsPx": 7.35,
+      "pokerRegions": 10,
+      "pokerInk": 32,
+      "pokerCells": [
+        6,
+        6,
+        7,
+        3,
+        10
+      ],
+      "pokerWeakestCell": 3,
+      "suitsRegions": 4,
+      "suitsInk": 33,
+      "suitCells": [
+        6,
+        9,
+        7,
+        11
+      ],
+      "suitsWeakestCell": 6
+    },
+    {
+      "size": 112,
+      "pokerPx": 6.74,
+      "suitsPx": 7.42,
+      "pokerRegions": 9,
+      "pokerInk": 33,
+      "pokerCells": [
+        6,
+        6,
+        8,
+        5,
+        8
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 36,
+      "suitCells": [
+        8,
+        9,
+        7,
+        12
+      ],
+      "suitsWeakestCell": 7
+    },
+    {
+      "size": 113,
+      "pokerPx": 6.8,
+      "suitsPx": 7.48,
+      "pokerRegions": 6,
+      "pokerInk": 22,
+      "pokerCells": [
+        4,
+        5,
+        7,
+        4,
+        2
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 37,
+      "suitCells": [
+        9,
+        9,
+        8,
+        11
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 114,
+      "pokerPx": 6.86,
+      "suitsPx": 7.55,
+      "pokerRegions": 7,
+      "pokerInk": 27,
+      "pokerCells": [
+        6,
+        5,
+        8,
+        0,
+        8
+      ],
+      "pokerWeakestCell": 0,
+      "suitsRegions": 4,
+      "suitsInk": 35,
+      "suitCells": [
+        6,
+        10,
+        8,
+        11
+      ],
+      "suitsWeakestCell": 6
+    },
+    {
+      "size": 115,
+      "pokerPx": 6.92,
+      "suitsPx": 7.62,
+      "pokerRegions": 8,
+      "pokerInk": 36,
+      "pokerCells": [
+        7,
+        7,
+        7,
+        5,
+        10
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 35,
+      "suitCells": [
+        9,
+        7,
+        7,
+        12
+      ],
+      "suitsWeakestCell": 7
+    },
+    {
+      "size": 116,
+      "pokerPx": 6.99,
+      "suitsPx": 7.68,
+      "pokerRegions": 8,
+      "pokerInk": 35,
+      "pokerCells": [
+        7,
+        6,
+        8,
+        5,
+        9
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 38,
+      "suitCells": [
+        8,
+        10,
+        8,
+        12
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 117,
+      "pokerPx": 7.05,
+      "suitsPx": 7.75,
+      "pokerRegions": 9,
+      "pokerInk": 24,
+      "pokerCells": [
+        2,
+        6,
+        8,
+        4,
+        4
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 38,
+      "suitCells": [
+        8,
+        10,
+        8,
+        12
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 118,
+      "pokerPx": 7.11,
+      "suitsPx": 7.82,
+      "pokerRegions": 9,
+      "pokerInk": 34,
+      "pokerCells": [
+        6,
+        6,
+        9,
+        5,
+        8
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 42,
+      "suitCells": [
+        9,
+        12,
+        9,
+        12
+      ],
+      "suitsWeakestCell": 9
+    },
+    {
+      "size": 119,
+      "pokerPx": 7.17,
+      "suitsPx": 7.88,
+      "pokerRegions": 9,
+      "pokerInk": 30,
+      "pokerCells": [
+        7,
+        4,
+        7,
+        2,
+        10
+      ],
+      "pokerWeakestCell": 2,
+      "suitsRegions": 4,
+      "suitsInk": 39,
+      "suitCells": [
+        8,
+        9,
+        8,
+        14
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 120,
+      "pokerPx": 7.23,
+      "suitsPx": 7.95,
+      "pokerRegions": 8,
+      "pokerInk": 36,
+      "pokerCells": [
+        7,
+        6,
+        8,
+        5,
+        10
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 39,
+      "suitCells": [
+        9,
+        10,
+        8,
+        12
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 121,
+      "pokerPx": 7.29,
+      "suitsPx": 8.01,
+      "pokerRegions": 10,
+      "pokerInk": 32,
+      "pokerCells": [
+        7,
+        5,
+        9,
+        5,
+        6
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 43,
+      "suitCells": [
+        8,
+        13,
+        9,
+        13
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 122,
+      "pokerPx": 7.35,
+      "suitsPx": 8.08,
+      "pokerRegions": 9,
+      "pokerInk": 30,
+      "pokerCells": [
+        6,
+        5,
+        9,
+        4,
+        6
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 40,
+      "suitCells": [
+        9,
+        10,
+        7,
+        14
+      ],
+      "suitsWeakestCell": 7
+    },
+    {
+      "size": 123,
+      "pokerPx": 7.41,
+      "suitsPx": 8.15,
+      "pokerRegions": 8,
+      "pokerInk": 37,
+      "pokerCells": [
+        7,
+        6,
+        9,
+        5,
+        10
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 39,
+      "suitCells": [
+        8,
+        10,
+        9,
+        12
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 124,
+      "pokerPx": 7.47,
+      "suitsPx": 8.21,
+      "pokerRegions": 8,
+      "pokerInk": 40,
+      "pokerCells": [
+        8,
+        6,
+        9,
+        6,
+        11
+      ],
+      "pokerWeakestCell": 6,
+      "suitsRegions": 4,
+      "suitsInk": 44,
+      "suitCells": [
+        9,
+        12,
+        10,
+        13
+      ],
+      "suitsWeakestCell": 9
+    },
+    {
+      "size": 125,
+      "pokerPx": 7.53,
+      "suitsPx": 8.28,
+      "pokerRegions": 10,
+      "pokerInk": 36,
+      "pokerCells": [
+        6,
+        8,
+        10,
+        5,
+        7
+      ],
+      "pokerWeakestCell": 5,
+      "suitsRegions": 4,
+      "suitsInk": 44,
+      "suitCells": [
+        9,
+        13,
+        10,
+        12
+      ],
+      "suitsWeakestCell": 9
+    },
+    {
+      "size": 126,
+      "pokerPx": 7.59,
+      "suitsPx": 8.35,
+      "pokerRegions": 7,
+      "pokerInk": 31,
+      "pokerCells": [
+        6,
+        6,
+        10,
+        5,
+        4
+      ],
+      "pokerWeakestCell": 4,
+      "suitsRegions": 4,
+      "suitsInk": 43,
+      "suitCells": [
+        9,
+        11,
+        8,
+        15
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 127,
+      "pokerPx": 7.65,
+      "suitsPx": 8.41,
+      "pokerRegions": 8,
+      "pokerInk": 32,
+      "pokerCells": [
+        7,
+        6,
+        9,
+        1,
+        9
+      ],
+      "pokerWeakestCell": 1,
+      "suitsRegions": 4,
+      "suitsInk": 42,
+      "suitCells": [
+        9,
+        12,
+        9,
+        12
+      ],
+      "suitsWeakestCell": 9
+    },
+    {
+      "size": 128,
+      "pokerPx": 7.71,
+      "suitsPx": 8.48,
+      "pokerRegions": 11,
+      "pokerInk": 49,
+      "pokerCells": [
+        9,
+        8,
+        12,
+        8,
+        12
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 47,
+      "suitCells": [
+        11,
+        12,
+        9,
+        15
+      ],
+      "suitsWeakestCell": 9
+    },
+    {
+      "size": 129,
+      "pokerPx": 7.77,
+      "suitsPx": 8.54,
+      "pokerRegions": 9,
+      "pokerInk": 40,
+      "pokerCells": [
+        7,
+        9,
+        8,
+        6,
+        10
+      ],
+      "pokerWeakestCell": 6,
+      "suitsRegions": 4,
+      "suitsInk": 49,
+      "suitCells": [
+        11,
+        12,
+        10,
+        16
+      ],
+      "suitsWeakestCell": 10
+    },
+    {
+      "size": 130,
+      "pokerPx": 7.83,
+      "suitsPx": 8.61,
+      "pokerRegions": 9,
+      "pokerInk": 48,
+      "pokerCells": [
+        10,
+        10,
+        9,
+        7,
+        12
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 44,
+      "suitCells": [
+        8,
+        11,
+        10,
+        15
+      ],
+      "suitsWeakestCell": 8
+    },
+    {
+      "size": 131,
+      "pokerPx": 7.89,
+      "suitsPx": 8.68,
+      "pokerRegions": 11,
+      "pokerInk": 51,
+      "pokerCells": [
+        9,
+        12,
+        10,
+        7,
+        13
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 49,
+      "suitCells": [
+        10,
+        12,
+        12,
+        15
+      ],
+      "suitsWeakestCell": 10
+    },
+    {
+      "size": 132,
+      "pokerPx": 7.95,
+      "suitsPx": 8.74,
+      "pokerRegions": 8,
+      "pokerInk": 54,
+      "pokerCells": [
+        9,
+        11,
+        17,
+        6,
+        11
+      ],
+      "pokerWeakestCell": 6,
+      "suitsRegions": 4,
+      "suitsInk": 54,
+      "suitCells": [
+        11,
+        13,
+        11,
+        19
+      ],
+      "suitsWeakestCell": 11
+    },
+    {
+      "size": 133,
+      "pokerPx": 8.01,
+      "suitsPx": 8.81,
+      "pokerRegions": 8,
+      "pokerInk": 43,
+      "pokerCells": [
+        7,
+        11,
+        8,
+        7,
+        10
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 53,
+      "suitCells": [
+        11,
+        14,
+        11,
+        17
+      ],
+      "suitsWeakestCell": 11
+    },
+    {
+      "size": 134,
+      "pokerPx": 8.07,
+      "suitsPx": 8.88,
+      "pokerRegions": 8,
+      "pokerInk": 60,
+      "pokerCells": [
+        11,
+        11,
+        18,
+        7,
+        13
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 48,
+      "suitCells": [
+        10,
+        13,
+        10,
+        15
+      ],
+      "suitsWeakestCell": 10
+    },
+    {
+      "size": 135,
+      "pokerPx": 8.13,
+      "suitsPx": 8.94,
+      "pokerRegions": 10,
+      "pokerInk": 52,
+      "pokerCells": [
+        9,
+        15,
+        10,
+        6,
+        12
+      ],
+      "pokerWeakestCell": 6,
+      "suitsRegions": 4,
+      "suitsInk": 55,
+      "suitCells": [
+        12,
+        13,
+        12,
+        18
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 136,
+      "pokerPx": 8.19,
+      "suitsPx": 9.01,
+      "pokerRegions": 10,
+      "pokerInk": 60,
+      "pokerCells": [
+        9,
+        11,
+        18,
+        10,
+        12
+      ],
+      "pokerWeakestCell": 9,
+      "suitsRegions": 4,
+      "suitsInk": 53,
+      "suitCells": [
+        12,
+        14,
+        11,
+        16
+      ],
+      "suitsWeakestCell": 11
+    },
+    {
+      "size": 137,
+      "pokerPx": 8.25,
+      "suitsPx": 9.07,
+      "pokerRegions": 10,
+      "pokerInk": 50,
+      "pokerCells": [
+        9,
+        11,
+        11,
+        7,
+        12
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 54,
+      "suitCells": [
+        12,
+        14,
+        11,
+        17
+      ],
+      "suitsWeakestCell": 11
+    },
+    {
+      "size": 138,
+      "pokerPx": 8.31,
+      "suitsPx": 9.14,
+      "pokerRegions": 9,
+      "pokerInk": 58,
+      "pokerCells": [
+        10,
+        11,
+        16,
+        10,
+        11
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 5,
+      "suitsInk": 51,
+      "suitCells": [
+        10,
+        13,
+        12,
+        16
+      ],
+      "suitsWeakestCell": 10
+    },
+    {
+      "size": 139,
+      "pokerPx": 8.37,
+      "suitsPx": 9.21,
+      "pokerRegions": 11,
+      "pokerInk": 60,
+      "pokerCells": [
+        15,
+        12,
+        12,
+        8,
+        13
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 59,
+      "suitCells": [
+        15,
+        13,
+        11,
+        20
+      ],
+      "suitsWeakestCell": 11
+    },
+    {
+      "size": 140,
+      "pokerPx": 8.43,
+      "suitsPx": 9.27,
+      "pokerRegions": 9,
+      "pokerInk": 56,
+      "pokerCells": [
+        11,
+        10,
+        15,
+        8,
+        12
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 54,
+      "suitCells": [
+        12,
+        14,
+        12,
+        16
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 141,
+      "pokerPx": 8.49,
+      "suitsPx": 9.34,
+      "pokerRegions": 10,
+      "pokerInk": 57,
+      "pokerCells": [
+        10,
+        13,
+        11,
+        11,
+        12
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 5,
+      "suitsInk": 58,
+      "suitCells": [
+        13,
+        15,
+        12,
+        18
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 142,
+      "pokerPx": 8.55,
+      "suitsPx": 9.41,
+      "pokerRegions": 10,
+      "pokerInk": 57,
+      "pokerCells": [
+        10,
+        12,
+        15,
+        8,
+        12
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 56,
+      "suitCells": [
+        13,
+        13,
+        12,
+        18
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 143,
+      "pokerPx": 8.61,
+      "suitsPx": 9.47,
+      "pokerRegions": 10,
+      "pokerInk": 59,
+      "pokerCells": [
+        15,
+        12,
+        12,
+        8,
+        12
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 62,
+      "suitCells": [
+        13,
+        16,
+        13,
+        20
+      ],
+      "suitsWeakestCell": 13
+    },
+    {
+      "size": 144,
+      "pokerPx": 8.67,
+      "suitsPx": 9.54,
+      "pokerRegions": 11,
+      "pokerInk": 71,
+      "pokerCells": [
+        13,
+        13,
+        18,
+        12,
+        15
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 4,
+      "suitsInk": 59,
+      "suitCells": [
+        13,
+        16,
+        12,
+        18
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 145,
+      "pokerPx": 8.73,
+      "suitsPx": 9.6,
+      "pokerRegions": 10,
+      "pokerInk": 53,
+      "pokerCells": [
+        10,
+        12,
+        11,
+        7,
+        13
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 57,
+      "suitCells": [
+        11,
+        14,
+        12,
+        20
+      ],
+      "suitsWeakestCell": 11
+    },
+    {
+      "size": 146,
+      "pokerPx": 8.79,
+      "suitsPx": 9.67,
+      "pokerRegions": 9,
+      "pokerInk": 61,
+      "pokerCells": [
+        10,
+        14,
+        16,
+        9,
+        12
+      ],
+      "pokerWeakestCell": 9,
+      "suitsRegions": 4,
+      "suitsInk": 63,
+      "suitCells": [
+        16,
+        15,
+        12,
+        20
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 147,
+      "pokerPx": 8.85,
+      "suitsPx": 9.74,
+      "pokerRegions": 12,
+      "pokerInk": 61,
+      "pokerCells": [
+        12,
+        13,
+        13,
+        10,
+        13
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 4,
+      "suitsInk": 59,
+      "suitCells": [
+        12,
+        15,
+        14,
+        18
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 148,
+      "pokerPx": 8.91,
+      "suitsPx": 9.8,
+      "pokerRegions": 9,
+      "pokerInk": 69,
+      "pokerCells": [
+        14,
+        14,
+        14,
+        8,
+        19
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 64,
+      "suitCells": [
+        15,
+        17,
+        13,
+        19
+      ],
+      "suitsWeakestCell": 13
+    },
+    {
+      "size": 149,
+      "pokerPx": 8.97,
+      "suitsPx": 9.87,
+      "pokerRegions": 9,
+      "pokerInk": 57,
+      "pokerCells": [
+        10,
+        13,
+        11,
+        11,
+        12
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 4,
+      "suitsInk": 65,
+      "suitCells": [
+        15,
+        14,
+        14,
+        22
+      ],
+      "suitsWeakestCell": 14
+    },
+    {
+      "size": 150,
+      "pokerPx": 9.03,
+      "suitsPx": 9.94,
+      "pokerRegions": 10,
+      "pokerInk": 56,
+      "pokerCells": [
+        9,
+        14,
+        13,
+        8,
+        12
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 65,
+      "suitCells": [
+        16,
+        16,
+        13,
+        20
+      ],
+      "suitsWeakestCell": 13
+    },
+    {
+      "size": 151,
+      "pokerPx": 9.09,
+      "suitsPx": 10,
+      "pokerRegions": 10,
+      "pokerInk": 67,
+      "pokerCells": [
+        12,
+        15,
+        13,
+        12,
+        15
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 5,
+      "suitsInk": 62,
+      "suitCells": [
+        14,
+        16,
+        12,
+        20
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 152,
+      "pokerPx": 9.15,
+      "suitsPx": 10.07,
+      "pokerRegions": 9,
+      "pokerInk": 73,
+      "pokerCells": [
+        19,
+        13,
+        13,
+        11,
+        17
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 68,
+      "suitCells": [
+        18,
+        17,
+        12,
+        21
+      ],
+      "suitsWeakestCell": 12
+    },
+    {
+      "size": 153,
+      "pokerPx": 9.21,
+      "suitsPx": 10.13,
+      "pokerRegions": 10,
+      "pokerInk": 59,
+      "pokerCells": [
+        10,
+        16,
+        12,
+        7,
+        14
+      ],
+      "pokerWeakestCell": 7,
+      "suitsRegions": 4,
+      "suitsInk": 70,
+      "suitCells": [
+        17,
+        16,
+        15,
+        22
+      ],
+      "suitsWeakestCell": 15
+    },
+    {
+      "size": 154,
+      "pokerPx": 9.27,
+      "suitsPx": 10.2,
+      "pokerRegions": 10,
+      "pokerInk": 70,
+      "pokerCells": [
+        11,
+        13,
+        16,
+        16,
+        14
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 65,
+      "suitCells": [
+        14,
+        16,
+        14,
+        21
+      ],
+      "suitsWeakestCell": 14
+    },
+    {
+      "size": 155,
+      "pokerPx": 9.33,
+      "suitsPx": 10.27,
+      "pokerRegions": 12,
+      "pokerInk": 63,
+      "pokerCells": [
+        11,
+        15,
+        14,
+        10,
+        13
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 5,
+      "suitsInk": 67,
+      "suitCells": [
+        15,
+        18,
+        14,
+        20
+      ],
+      "suitsWeakestCell": 14
+    },
+    {
+      "size": 156,
+      "pokerPx": 9.39,
+      "suitsPx": 10.33,
+      "pokerRegions": 9,
+      "pokerInk": 74,
+      "pokerCells": [
+        20,
+        15,
+        13,
+        8,
+        18
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 69,
+      "suitCells": [
+        15,
+        17,
+        14,
+        23
+      ],
+      "suitsWeakestCell": 14
+    },
+    {
+      "size": 157,
+      "pokerPx": 9.45,
+      "suitsPx": 10.4,
+      "pokerRegions": 10,
+      "pokerInk": 66,
+      "pokerCells": [
+        10,
+        12,
+        13,
+        14,
+        17
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 4,
+      "suitsInk": 69,
+      "suitCells": [
+        16,
+        17,
+        14,
+        22
+      ],
+      "suitsWeakestCell": 14
+    },
+    {
+      "size": 158,
+      "pokerPx": 9.51,
+      "suitsPx": 10.47,
+      "pokerRegions": 11,
+      "pokerInk": 70,
+      "pokerCells": [
+        11,
+        17,
+        15,
+        10,
+        17
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 5,
+      "suitsInk": 70,
+      "suitCells": [
+        15,
+        18,
+        15,
+        22
+      ],
+      "suitsWeakestCell": 15
+    },
+    {
+      "size": 159,
+      "pokerPx": 9.57,
+      "suitsPx": 10.53,
+      "pokerRegions": 11,
+      "pokerInk": 64,
+      "pokerCells": [
+        11,
+        14,
+        14,
+        11,
+        14
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 72,
+      "suitCells": [
+        18,
+        20,
+        13,
+        21
+      ],
+      "suitsWeakestCell": 13
+    },
+    {
+      "size": 160,
+      "pokerPx": 9.63,
+      "suitsPx": 10.6,
+      "pokerRegions": 11,
+      "pokerInk": 71,
+      "pokerCells": [
+        14,
+        13,
+        12,
+        9,
+        23
+      ],
+      "pokerWeakestCell": 9,
+      "suitsRegions": 4,
+      "suitsInk": 75,
+      "suitCells": [
+        18,
+        19,
+        15,
+        23
+      ],
+      "suitsWeakestCell": 15
+    },
+    {
+      "size": 161,
+      "pokerPx": 9.69,
+      "suitsPx": 10.66,
+      "pokerRegions": 11,
+      "pokerInk": 80,
+      "pokerCells": [
+        18,
+        19,
+        14,
+        10,
+        19
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 5,
+      "suitsInk": 76,
+      "suitCells": [
+        16,
+        20,
+        16,
+        24
+      ],
+      "suitsWeakestCell": 16
+    },
+    {
+      "size": 162,
+      "pokerPx": 9.76,
+      "suitsPx": 10.73,
+      "pokerRegions": 10,
+      "pokerInk": 74,
+      "pokerCells": [
+        10,
+        16,
+        15,
+        16,
+        17
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 5,
+      "suitsInk": 69,
+      "suitCells": [
+        15,
+        18,
+        14,
+        22
+      ],
+      "suitsWeakestCell": 14
+    },
+    {
+      "size": 163,
+      "pokerPx": 9.82,
+      "suitsPx": 10.8,
+      "pokerRegions": 10,
+      "pokerInk": 66,
+      "pokerCells": [
+        11,
+        18,
+        14,
+        8,
+        15
+      ],
+      "pokerWeakestCell": 8,
+      "suitsRegions": 4,
+      "suitsInk": 78,
+      "suitCells": [
+        19,
+        20,
+        15,
+        24
+      ],
+      "suitsWeakestCell": 15
+    },
+    {
+      "size": 164,
+      "pokerPx": 9.88,
+      "suitsPx": 10.86,
+      "pokerRegions": 9,
+      "pokerInk": 80,
+      "pokerCells": [
+        16,
+        16,
+        16,
+        10,
+        22
+      ],
+      "pokerWeakestCell": 10,
+      "suitsRegions": 4,
+      "suitsInk": 75,
+      "suitCells": [
+        17,
+        19,
+        15,
+        24
+      ],
+      "suitsWeakestCell": 15
+    },
+    {
+      "size": 165,
+      "pokerPx": 9.94,
+      "suitsPx": 10.93,
+      "pokerRegions": 10,
+      "pokerInk": 89,
+      "pokerCells": [
+        19,
+        15,
+        15,
+        16,
+        24
+      ],
+      "pokerWeakestCell": 15,
+      "suitsRegions": 5,
+      "suitsInk": 79,
+      "suitCells": [
+        18,
+        18,
+        16,
+        27
+      ],
+      "suitsWeakestCell": 16
+    },
+    {
+      "size": 166,
+      "pokerPx": 10,
+      "suitsPx": 11,
+      "pokerRegions": 12,
+      "pokerInk": 74,
+      "pokerCells": [
+        11,
+        20,
+        15,
+        11,
+        17
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 79,
+      "suitCells": [
+        19,
+        21,
+        15,
+        24
+      ],
+      "suitsWeakestCell": 15
+    },
+    {
+      "size": 167,
+      "pokerPx": 10.06,
+      "suitsPx": 11.06,
+      "pokerRegions": 9,
+      "pokerInk": 66,
+      "pokerCells": [
+        11,
+        16,
+        15,
+        9,
+        15
+      ],
+      "pokerWeakestCell": 9,
+      "suitsRegions": 4,
+      "suitsInk": 82,
+      "suitCells": [
+        19,
+        21,
+        17,
+        25
+      ],
+      "suitsWeakestCell": 17
+    },
+    {
+      "size": 168,
+      "pokerPx": 10.12,
+      "suitsPx": 11.13,
+      "pokerRegions": 11,
+      "pokerInk": 84,
+      "pokerCells": [
+        15,
+        14,
+        17,
+        14,
+        24
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 83,
+      "suitCells": [
+        19,
+        20,
+        16,
+        28
+      ],
+      "suitsWeakestCell": 16
+    },
+    {
+      "size": 169,
+      "pokerPx": 10.18,
+      "suitsPx": 11.19,
+      "pokerRegions": 11,
+      "pokerInk": 85,
+      "pokerCells": [
+        19,
+        20,
+        15,
+        9,
+        22
+      ],
+      "pokerWeakestCell": 9,
+      "suitsRegions": 4,
+      "suitsInk": 85,
+      "suitCells": [
+        19,
+        20,
+        18,
+        28
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 170,
+      "pokerPx": 10.24,
+      "suitsPx": 11.26,
+      "pokerRegions": 11,
+      "pokerInk": 77,
+      "pokerCells": [
+        11,
+        19,
+        14,
+        16,
+        17
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 84,
+      "suitCells": [
+        19,
+        23,
+        17,
+        25
+      ],
+      "suitsWeakestCell": 17
+    },
+    {
+      "size": 171,
+      "pokerPx": 10.3,
+      "suitsPx": 11.33,
+      "pokerRegions": 12,
+      "pokerInk": 83,
+      "pokerCells": [
+        14,
+        18,
+        19,
+        14,
+        18
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 88,
+      "suitCells": [
+        19,
+        23,
+        18,
+        28
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 172,
+      "pokerPx": 10.36,
+      "suitsPx": 11.39,
+      "pokerRegions": 11,
+      "pokerInk": 81,
+      "pokerCells": [
+        14,
+        17,
+        18,
+        11,
+        21
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 85,
+      "suitCells": [
+        20,
+        19,
+        18,
+        28
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 173,
+      "pokerPx": 10.42,
+      "suitsPx": 11.46,
+      "pokerRegions": 10,
+      "pokerInk": 92,
+      "pokerCells": [
+        19,
+        16,
+        16,
+        17,
+        24
+      ],
+      "pokerWeakestCell": 16,
+      "suitsRegions": 4,
+      "suitsInk": 89,
+      "suitCells": [
+        19,
+        24,
+        18,
+        28
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 174,
+      "pokerPx": 10.48,
+      "suitsPx": 11.53,
+      "pokerRegions": 11,
+      "pokerInk": 83,
+      "pokerCells": [
+        19,
+        18,
+        15,
+        12,
+        19
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 4,
+      "suitsInk": 89,
+      "suitCells": [
+        21,
+        22,
+        18,
+        28
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 175,
+      "pokerPx": 10.54,
+      "suitsPx": 11.59,
+      "pokerRegions": 11,
+      "pokerInk": 98,
+      "pokerCells": [
+        15,
+        20,
+        25,
+        18,
+        20
+      ],
+      "pokerWeakestCell": 15,
+      "suitsRegions": 4,
+      "suitsInk": 90,
+      "suitCells": [
+        20,
+        22,
+        18,
+        30
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 176,
+      "pokerPx": 10.6,
+      "suitsPx": 11.66,
+      "pokerRegions": 10,
+      "pokerInk": 84,
+      "pokerCells": [
+        14,
+        17,
+        17,
+        12,
+        24
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 4,
+      "suitsInk": 93,
+      "suitCells": [
+        23,
+        22,
+        18,
+        30
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 177,
+      "pokerPx": 10.66,
+      "suitsPx": 11.72,
+      "pokerRegions": 10,
+      "pokerInk": 87,
+      "pokerCells": [
+        16,
+        19,
+        21,
+        9,
+        22
+      ],
+      "pokerWeakestCell": 9,
+      "suitsRegions": 4,
+      "suitsInk": 89,
+      "suitCells": [
+        19,
+        23,
+        20,
+        27
+      ],
+      "suitsWeakestCell": 19
+    },
+    {
+      "size": 178,
+      "pokerPx": 10.72,
+      "suitsPx": 11.79,
+      "pokerRegions": 12,
+      "pokerInk": 98,
+      "pokerCells": [
+        21,
+        22,
+        16,
+        18,
+        21
+      ],
+      "pokerWeakestCell": 16,
+      "suitsRegions": 4,
+      "suitsInk": 92,
+      "suitCells": [
+        21,
+        25,
+        18,
+        28
+      ],
+      "suitsWeakestCell": 18
+    },
+    {
+      "size": 179,
+      "pokerPx": 10.78,
+      "suitsPx": 11.86,
+      "pokerRegions": 11,
+      "pokerInk": 89,
+      "pokerCells": [
+        15,
+        18,
+        25,
+        12,
+        19
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 4,
+      "suitsInk": 93,
+      "suitCells": [
+        21,
+        23,
+        20,
+        29
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 180,
+      "pokerPx": 10.84,
+      "suitsPx": 11.92,
+      "pokerRegions": 12,
+      "pokerInk": 85,
+      "pokerCells": [
+        14,
+        18,
+        18,
+        12,
+        23
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 4,
+      "suitsInk": 95,
+      "suitCells": [
+        22,
+        24,
+        19,
+        30
+      ],
+      "suitsWeakestCell": 19
+    },
+    {
+      "size": 181,
+      "pokerPx": 10.9,
+      "suitsPx": 11.99,
+      "pokerRegions": 11,
+      "pokerInk": 104,
+      "pokerCells": [
+        16,
+        20,
+        25,
+        19,
+        24
+      ],
+      "pokerWeakestCell": 16,
+      "suitsRegions": 4,
+      "suitsInk": 94,
+      "suitCells": [
+        21,
+        23,
+        20,
+        30
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 182,
+      "pokerPx": 10.96,
+      "suitsPx": 12.06,
+      "pokerRegions": 12,
+      "pokerInk": 95,
+      "pokerCells": [
+        21,
+        20,
+        19,
+        14,
+        21
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 95,
+      "suitCells": [
+        22,
+        24,
+        19,
+        30
+      ],
+      "suitsWeakestCell": 19
+    },
+    {
+      "size": 183,
+      "pokerPx": 11.02,
+      "suitsPx": 12.12,
+      "pokerRegions": 11,
+      "pokerInk": 104,
+      "pokerCells": [
+        22,
+        19,
+        24,
+        19,
+        20
+      ],
+      "pokerWeakestCell": 19,
+      "suitsRegions": 4,
+      "suitsInk": 96,
+      "suitCells": [
+        23,
+        23,
+        20,
+        30
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 184,
+      "pokerPx": 11.08,
+      "suitsPx": 12.19,
+      "pokerRegions": 9,
+      "pokerInk": 95,
+      "pokerCells": [
+        16,
+        22,
+        19,
+        11,
+        27
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 98,
+      "suitCells": [
+        21,
+        24,
+        20,
+        33
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 185,
+      "pokerPx": 11.14,
+      "suitsPx": 12.25,
+      "pokerRegions": 12,
+      "pokerInk": 97,
+      "pokerCells": [
+        15,
+        21,
+        25,
+        12,
+        24
+      ],
+      "pokerWeakestCell": 12,
+      "suitsRegions": 4,
+      "suitsInk": 98,
+      "suitCells": [
+        23,
+        26,
+        19,
+        30
+      ],
+      "suitsWeakestCell": 19
+    },
+    {
+      "size": 186,
+      "pokerPx": 11.2,
+      "suitsPx": 12.32,
+      "pokerRegions": 11,
+      "pokerInk": 97,
+      "pokerCells": [
+        21,
+        21,
+        18,
+        18,
+        19
+      ],
+      "pokerWeakestCell": 18,
+      "suitsRegions": 4,
+      "suitsInk": 101,
+      "suitCells": [
+        22,
+        26,
+        21,
+        32
+      ],
+      "suitsWeakestCell": 21
+    },
+    {
+      "size": 187,
+      "pokerPx": 11.26,
+      "suitsPx": 12.39,
+      "pokerRegions": 9,
+      "pokerInk": 101,
+      "pokerCells": [
+        22,
+        22,
+        24,
+        11,
+        22
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 100,
+      "suitCells": [
+        23,
+        26,
+        20,
+        31
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 188,
+      "pokerPx": 11.32,
+      "suitsPx": 12.45,
+      "pokerRegions": 12,
+      "pokerInk": 96,
+      "pokerCells": [
+        17,
+        19,
+        19,
+        13,
+        28
+      ],
+      "pokerWeakestCell": 13,
+      "suitsRegions": 4,
+      "suitsInk": 101,
+      "suitCells": [
+        23,
+        24,
+        20,
+        34
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 189,
+      "pokerPx": 11.38,
+      "suitsPx": 12.52,
+      "pokerRegions": 11,
+      "pokerInk": 105,
+      "pokerCells": [
+        14,
+        24,
+        25,
+        18,
+        24
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 101,
+      "suitCells": [
+        24,
+        26,
+        21,
+        30
+      ],
+      "suitsWeakestCell": 21
+    },
+    {
+      "size": 190,
+      "pokerPx": 11.44,
+      "suitsPx": 12.59,
+      "pokerRegions": 11,
+      "pokerInk": 90,
+      "pokerCells": [
+        21,
+        21,
+        18,
+        11,
+        19
+      ],
+      "pokerWeakestCell": 11,
+      "suitsRegions": 4,
+      "suitsInk": 103,
+      "suitCells": [
+        25,
+        26,
+        20,
+        32
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 191,
+      "pokerPx": 11.5,
+      "suitsPx": 12.65,
+      "pokerRegions": 12,
+      "pokerInk": 114,
+      "pokerCells": [
+        24,
+        18,
+        27,
+        22,
+        23
+      ],
+      "pokerWeakestCell": 18,
+      "suitsRegions": 4,
+      "suitsInk": 104,
+      "suitCells": [
+        26,
+        25,
+        20,
+        33
+      ],
+      "suitsWeakestCell": 20
+    },
+    {
+      "size": 192,
+      "pokerPx": 11.56,
+      "suitsPx": 12.72,
+      "pokerRegions": 10,
+      "pokerInk": 115,
+      "pokerCells": [
+        25,
+        26,
+        19,
+        14,
+        31
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 109,
+      "suitCells": [
+        24,
+        26,
+        23,
+        36
+      ],
+      "suitsWeakestCell": 23
+    },
+    {
+      "size": 193,
+      "pokerPx": 11.62,
+      "suitsPx": 12.78,
+      "pokerRegions": 11,
+      "pokerInk": 103,
+      "pokerCells": [
+        15,
+        22,
+        26,
+        13,
+        27
+      ],
+      "pokerWeakestCell": 13,
+      "suitsRegions": 4,
+      "suitsInk": 107,
+      "suitCells": [
+        24,
+        28,
+        23,
+        32
+      ],
+      "suitsWeakestCell": 23
+    },
+    {
+      "size": 194,
+      "pokerPx": 11.68,
+      "suitsPx": 12.85,
+      "pokerRegions": 11,
+      "pokerInk": 96,
+      "pokerCells": [
+        16,
+        23,
+        19,
+        20,
+        18
+      ],
+      "pokerWeakestCell": 16,
+      "suitsRegions": 4,
+      "suitsInk": 109,
+      "suitCells": [
+        26,
+        28,
+        22,
+        33
+      ],
+      "suitsWeakestCell": 22
+    },
+    {
+      "size": 195,
+      "pokerPx": 11.74,
+      "suitsPx": 12.92,
+      "pokerRegions": 9,
+      "pokerInk": 123,
+      "pokerCells": [
+        25,
+        28,
+        29,
+        16,
+        25
+      ],
+      "pokerWeakestCell": 16,
+      "suitsRegions": 5,
+      "suitsInk": 111,
+      "suitCells": [
+        23,
+        27,
+        23,
+        38
+      ],
+      "suitsWeakestCell": 23
+    },
+    {
+      "size": 196,
+      "pokerPx": 11.8,
+      "suitsPx": 12.98,
+      "pokerRegions": 12,
+      "pokerInk": 112,
+      "pokerCells": [
+        25,
+        20,
+        18,
+        19,
+        30
+      ],
+      "pokerWeakestCell": 18,
+      "suitsRegions": 4,
+      "suitsInk": 112,
+      "suitCells": [
+        27,
+        29,
+        22,
+        34
+      ],
+      "suitsWeakestCell": 22
+    },
+    {
+      "size": 197,
+      "pokerPx": 11.86,
+      "suitsPx": 13.05,
+      "pokerRegions": 11,
+      "pokerInk": 111,
+      "pokerCells": [
+        14,
+        24,
+        26,
+        19,
+        28
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 112,
+      "suitCells": [
+        25,
+        29,
+        23,
+        35
+      ],
+      "suitsWeakestCell": 23
+    },
+    {
+      "size": 198,
+      "pokerPx": 11.92,
+      "suitsPx": 13.12,
+      "pokerRegions": 11,
+      "pokerInk": 98,
+      "pokerCells": [
+        17,
+        25,
+        21,
+        14,
+        21
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 117,
+      "suitCells": [
+        26,
+        29,
+        24,
+        38
+      ],
+      "suitsWeakestCell": 24
+    },
+    {
+      "size": 199,
+      "pokerPx": 11.98,
+      "suitsPx": 13.18,
+      "pokerRegions": 12,
+      "pokerInk": 119,
+      "pokerCells": [
+        25,
+        21,
+        28,
+        22,
+        23
+      ],
+      "pokerWeakestCell": 21,
+      "suitsRegions": 4,
+      "suitsInk": 117,
+      "suitCells": [
+        25,
+        29,
+        23,
+        40
+      ],
+      "suitsWeakestCell": 23
+    },
+    {
+      "size": 200,
+      "pokerPx": 12.04,
+      "suitsPx": 13.25,
+      "pokerRegions": 12,
+      "pokerInk": 113,
+      "pokerCells": [
+        25,
+        25,
+        18,
+        14,
+        31
+      ],
+      "pokerWeakestCell": 14,
+      "suitsRegions": 4,
+      "suitsInk": 118,
+      "suitCells": [
+        28,
+        31,
+        23,
+        36
+      ],
+      "suitsWeakestCell": 23
+    }
+  ]
+}

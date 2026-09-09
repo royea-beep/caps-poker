@@ -1,0 +1,206 @@
+{
+  "generated": "2026-09-02T18:27:26.551Z",
+  "note": "Local web export audit. controls=visible focusable button/link; unnamed=focusable control with no accessible name; tiny=control <44px in either dimension. Onboarding counts include home controls behind the modal.",
+  "rows": [
+    {
+      "combo": "en-393",
+      "screen": "home",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 16,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "en-393",
+      "screen": "onboarding",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 21,
+      "unnamed": 0,
+      "tiny": 6
+    },
+    {
+      "combo": "en-393",
+      "screen": "placement",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 20,
+      "unnamed": 0,
+      "tiny": 4
+    },
+    {
+      "combo": "en-393",
+      "screen": "reveal",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 27,
+      "unnamed": 0,
+      "tiny": 0
+    },
+    {
+      "combo": "en-393",
+      "screen": "results",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 5,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "en-320",
+      "screen": "home",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 16,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "en-320",
+      "screen": "onboarding",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 21,
+      "unnamed": 0,
+      "tiny": 6
+    },
+    {
+      "combo": "en-320",
+      "screen": "placement",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 20,
+      "unnamed": 0,
+      "tiny": 4
+    },
+    {
+      "combo": "en-320",
+      "screen": "reveal",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 27,
+      "unnamed": 0,
+      "tiny": 24
+    },
+    {
+      "combo": "en-320",
+      "screen": "results",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 5,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "he-393",
+      "screen": "home",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 16,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "he-393",
+      "screen": "onboarding",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 21,
+      "unnamed": 0,
+      "tiny": 6
+    },
+    {
+      "combo": "he-393",
+      "screen": "placement",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 20,
+      "unnamed": 0,
+      "tiny": 4
+    },
+    {
+      "combo": "he-393",
+      "screen": "reveal",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 27,
+      "unnamed": 0,
+      "tiny": 0
+    },
+    {
+      "combo": "he-393",
+      "screen": "results",
+      "overflow": false,
+      "sw": 393,
+      "iw": 393,
+      "controls": 5,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "he-320",
+      "screen": "home",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 16,
+      "unnamed": 0,
+      "tiny": 1
+    },
+    {
+      "combo": "he-320",
+      "screen": "onboarding",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 21,
+      "unnamed": 0,
+      "tiny": 6
+    },
+    {
+      "combo": "he-320",
+      "screen": "placement",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 20,
+      "unnamed": 0,
+      "tiny": 4
+    },
+    {
+      "combo": "he-320",
+      "screen": "reveal",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 27,
+      "unnamed": 0,
+      "tiny": 24
+    },
+    {
+      "combo": "he-320",
+      "screen": "results",
+      "overflow": false,
+      "sw": 320,
+      "iw": 320,
+      "controls": 5,
+      "unnamed": 0,
+      "tiny": 1
+    }
+  ]
+}

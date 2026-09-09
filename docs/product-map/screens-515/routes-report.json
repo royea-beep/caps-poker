@@ -1,0 +1,238 @@
+[
+ {
+  "route": "/",
+  "file": "home.png",
+  "textStart": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/achievements",
+  "file": "achievements.png",
+  "textStart": "‹ Back Achievements No achievements yet All Skill Streak Milestone Social Collection 🏆 No achievements found Keep playing to unlock rewards",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/battle-pass",
+  "file": "battle-pass.png",
+  "textStart": "‹ Back Season 1 — First Deal 55d 23h remaining 0 Tier 0 0 / 100 XP Total XP: 0 TIER TRACK FREE PREM 1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 ",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/chip-store",
+  "file": "chip-store.png",
+  "textStart": "‹ Back 🎰 Chip Shop 💰 2,000 🃏 Shop is empty right now. Retry",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/club/DEMO",
+  "file": "club-DEMO.png",
+  "textStart": "‹ Back Club CLUB CODE DEMO 📤 Share CLUB TABLES No open tables — start one below START A CLUB TABLE Heads-Up 2 players · 4 boards Start › 3-Player 3 players · 3",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/coaching",
+  "file": "coaching.png",
+  "textStart": "‹ Back Coaching 💡 No coaching yet Play hands to get personalized tips Play Now",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/cups",
+  "file": "cups.png",
+  "textStart": "CUPS 0/0 cups · 4 cards. Every board. 1 winner. 🏠 🏠 Home ♠️ ♠️ Play 👤 👤 Profile",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/debug",
+  "file": "debug.png",
+  "textStart": "👤 Player 1 💰 2,000 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 2,000 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/friends",
+  "file": "friends.png",
+  "textStart": "CLUBS Your circle · play only your friends You're not in a club yet — create one or join with a code. CREATE A CLUB Create JOIN A CLUB Join 🏠 🏠 Home ♠️ ♠️ Pla",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/game",
+  "file": "game.png",
+  "textStart": "✕ PLACE 16 CARDS 💰 1,900 🤖 BOT 1 ✓ READY BOARD 1 ⚡ Auto-Place C 2 ♥ ♥ C 5 ♠ ♠ C J ♥ ♥ C 8 ♦ ♦ C 10 ♥ ♥ BOARD 2 ⚡ Auto-Place C 6 ♥ ♥ C 6 ♣ ♣ C 10 ♣ ♣ C 4 ♠ ♠ C",
+  "hebrewChars": 0,
+  "errors": [
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ]
+ },
+ {
+  "route": "/gameover",
+  "file": "gameover.png",
+  "textStart": "GAME OVER Not enough chips to continue FINAL BALANCE 1,900 PLAY AGAIN MAIN MENU",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/hand-history",
+  "file": "hand-history.png",
+  "textStart": "‹ Back HAND HISTORY All (0) Wins (0) Losses (0) 🃏 No hands yet Your past hands will show here ♠ ♠ ♠ Play Now",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/heatmap",
+  "file": "heatmap.png",
+  "textStart": "👤 Player 1 💰 1,900 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 1,900 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/invite/DEMO",
+  "file": "invite-DEMO.png",
+  "textStart": "🃏 CAPS Poker Invite This invite link does not contain a valid code. Continue to CAPS",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/leaderboard",
+  "file": "leaderboard.png",
+  "textStart": "‹ Back LEADERBOARD 🪙 Chips % Win Rate # Player Chips No players yet Play a hand to get on the board!",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/lobby",
+  "file": "lobby.png",
+  "textStart": "‹ Back LOBBY Public tables · auto-start when full 👤 REAL PLAYERS — TABLES FOR FRIENDS A real person joins here · invite a friend or wait at a table HEADS-UP 2 ",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/lobby/private",
+  "file": "lobby-private.png",
+  "textStart": "‹ Back PRIVATE TABLE Play your friends with a shared code JOIN A FRIEND'S TABLE Join CREATE A TABLE TO SHARE Heads-Up 2 players · 4 boards Create › 3-Player 3 p",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/lobby/table",
+  "file": "lobby-table.png",
+  "textStart": "Online multiplayer is unavailable right now. Back to Lobby",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/missions",
+  "file": "missions.png",
+  "textStart": "👤 Player 1 💰 1,900 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 1,900 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/multiplayer-game",
+  "file": "multiplayer-game.png",
+  "textStart": "✕ ALL CARDS PLACED! 💰 1,900 2P GUEST · Seat 1 YOUR HAND 0 All cards placed! 👆 Tap a card from your hand, then tap a board to place it WIN ALL → +0 🟡 Cancel ✓",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/orientation-pick",
+  "file": "orientation-pick.png",
+  "textStart": "CAPS POKER CHOOSE YOUR PLAY STYLE 📱 PORTRAIT Classic Phone held vertically Standard layout SELECT 🖥️ WIDESCREEN Pro Phone/tablet horizontal Side-by-side board",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/play",
+  "file": "play.png",
+  "textStart": "PLAY Choose your game mode 🤖 Single Player Practice vs bots · 4 boards 🌐 Multiplayer Lobby Join an open public table · auto-start when full 🔒 Quick Private T",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/profile",
+  "file": "profile.png",
+  "textStart": "PROFILE Player 1 0 HANDS 0% WIN RATE 0 STREAK 1,900 CHIPS 💰 🥇 Achievements › 📖 Hand History › 📊 Detailed Stats › 🏆 Cups › ⚙️ Settings › 🏠 🏠 Home ♠️ ♠️ Pl",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/rank",
+  "file": "rank.png",
+  "textStart": "‹ Back YOUR RANK 🏆 No rank yet Play a game to claim your spot on the ladder Play Now",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/referral",
+  "file": "referral.png",
+  "textStart": "‹ Back Invite Friends 🎁 Invite friends You get 300 💰, they get 100 💰 when they join! Your code -------- Share to WhatsApp 💬 0 Friends joined 0 Chips earned ",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/replay",
+  "file": "replay.png",
+  "textStart": "No hand selected Open a hand from your history to replay it card by card. HAND HISTORY ← BACK",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/results",
+  "file": "results.png",
+  "textStart": "This hand is no longer available. Back to home",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/settings",
+  "file": "settings.png",
+  "textStart": "← Back SETTINGS 🎨 VISUAL STYLE ♠ CLASSIC Timeless ✓ ♠ FIVE-O Modern PROFILE 👤 Player 1 Shown on leaderboard · Tap to edit EDIT GAMEPLAY Players 2 Players (vs ",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/shop",
+  "file": "shop.png",
+  "textStart": "‹ Back 🎰 Chip Shop 💰 1,900 🃏 Shop is empty right now. Retry",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/simulate",
+  "file": "simulate.png",
+  "textStart": "👤 Player 1 💰 1,900 chips 👥 Friends 🎓 COACHING 📖 TUTORIAL 🌐 🌐 LANGUAGE: English 🔵 SIGN IN 🪙 1,900 👤 ♠ ♥ ♦ ♣ CAPS POKER C 10 ♠ ♠ C J ♠ ♠ C Q ♠ ♠ C K ♠ ♠",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/spectate",
+  "file": "spectate.png",
+  "textStart": "← BACK SPECTATE ⚠️ No room code provided",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/stats",
+  "file": "stats.png",
+  "textStart": "‹ Back STATS 📊 No stats yet Play a few hands and your stats appear here Play Now",
+  "hebrewChars": 0,
+  "errors": []
+ },
+ {
+  "route": "/theme-pick",
+  "file": "theme-pick.png",
+  "textStart": "CAPS POKER Choose your style ♠ CLASSIC Timeless Dark gold Elegant look SELECT ♠ FIVE-O Modern Navy table Mint accents SELECT Can be changed anytime in Settings",
+  "hebrewChars": 0,
+  "errors": []
+ }
+]

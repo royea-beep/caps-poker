@@ -84,7 +84,43 @@ export function Button({
       size="small"
     />
   ) : (
-    <Text style={[styles.text, textStyle]}>{title}</Text>
+    /**
+     * numberOfLines={1} — WHY A BUTTON LABEL MUST NEVER WRAP.
+     *
+     * "REMATCH" rendered as "REMATC / H" on iOS. That is not a typo, it is the documented
+     * divergence between the two text engines: when a SINGLE WORD is wider than its container,
+     * CSS (`overflow-wrap: normal`) lets the word OVERFLOW the box, so react-native-web shows it
+     * whole and nothing looks wrong — while iOS falls back to breaking the word mid-character.
+     * So the web sweeps that have run for 117 sprints could not have caught this, and could not
+     * catch the next one either.
+     *
+     * numberOfLines alone would only trade the break for a truncation ("REMATC…"), so it is
+     * paired with adjustsFontSizeToFit: the label shrinks to fit its box instead, down to 75% —
+     * below that the button is too small for the label regardless and the layout is the bug.
+     * Both props are no-ops on web, where the word never breaks in the first place, so this
+     * cannot change the rendering the visual baselines are pinned to.
+     *
+     * This lives in Button rather than at the REMATCH call site because every button in the app
+     * has the same exposure, and fixing one call site sets up the next report.
+     */
+    <Text
+      style={[styles.text, textStyle]}
+      /**
+       * NATIVE ONLY — and the first attempt at this shipped a WEB REGRESSION.
+       *
+       * Applying numberOfLines={1} on both platforms turned "REMATCH" into "REMAT…" on web:
+       * adjustsFontSizeToFit is a NO-OP in react-native-web, so numberOfLines alone just clips.
+       * Measured at 320pt: the label is 92.8px of text in an 89px box, over by 3.8px.
+       *
+       * Web never had the defect — CSS lets an over-long word OVERFLOW its box, which is why
+       * "REMATCH" has always rendered whole there — so the correct scope is native only. iOS gets
+       * the pair (shrink to fit, floor at 75%, which the 92.8px label reaches at ~0.96) and web is
+       * left exactly as it was, so the visual baselines do not move.
+       */
+      {...(Platform.OS !== 'web'
+        ? { numberOfLines: 1, adjustsFontSizeToFit: true, minimumFontScale: 0.75 }
+        : {})}
+    >{title}</Text>
   );
 
   // Web: use Pressable with static style (no function callback — more reliable on web)

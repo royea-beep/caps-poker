@@ -1,55 +1,184 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CAPS Poker — מדיניות פרטיות</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CAPS Poker — Privacy Policy</title>
+<meta name="description" content="What CAPS Poker stores, who it is shared with, and how to ask for it to be deleted.">
+<meta name="robots" content="index,follow">
+<!--
+  ⚠️ THIS FILE IS THE ONE THAT SHIPS, AND THE PATH MATTERS.
+  The web build is `npx expo export` (which copies public/ into dist/) followed by
+  scripts/fix-web-html.js, which copies THIS root privacy.html into dist/ AFTERWARDS. The generator
+  therefore wins: a public/privacy.html would be silently overwritten by this file. Edit this one.
+  tests/privacy-page.test.ts asserts both that no shadow copy exists and that the claims below are
+  the ones the code actually supports.
+
+  ⚠️ AND EVERY CLAIM HERE WAS READ OUT OF THE CODE OR THE DATABASE ON 2026-09-08, NOT TEMPLATED.
+  The version this replaces was a Hebrew-only page dated April 2026 that got four things wrong:
+    · it promised account deletion through Settings was "immediate and irreversible" — the RPC is
+      REVOKED (delete_user_account: anon false, authenticated false, checked on production), so
+      that button is guaranteed to fail and the app itself tells you to email instead;
+    · it described Apple processing purchases — payments are off and there are 0 purchases, ever;
+    · it said "we do not share with third parties" and then named two, while omitting four more
+      that genuinely receive data (Telegram, Anthropic, OpenAI, Expo);
+    · it said the app is for ages 12+, while the app's own home screen and this listing say 18+.
+-->
 <style>
-  body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 24px; background: #0a0508; color: #ccc; line-height: 1.8; }
-  h1 { color: #c9a84c; font-size: 24px; }
-  h2 { color: #e0c070; font-size: 18px; margin-top: 32px; }
-  a { color: #c9a84c; }
-  .updated { color: #666; font-size: 13px; }
+  :root{
+    --felt-top:#0C2C1D; --felt-mid:#071C12; --felt-bot:#03110B;
+    --gold:#c9a84c; --gold-bright:#F2E0A6;
+    --ink:#EAF2EC; --ink-dim:rgba(234,242,236,0.70); --ink-faint:rgba(234,242,236,0.45);
+    --sans:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{min-height:100%;}
+  body{
+    font-family:var(--sans); color:var(--ink); line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-color:var(--felt-mid);
+    background-image:linear-gradient(180deg, var(--felt-top) 0%, var(--felt-mid) 55%, var(--felt-bot) 100%);
+    background-attachment:fixed;
+    padding:max(20px, env(safe-area-inset-top)) 20px max(40px, env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:720px; margin:0 auto;}
+  h1{font-size:clamp(22px,5.6vw,28px); color:var(--gold-bright); letter-spacing:0.3px;}
+  .sub{color:var(--ink-faint); font-size:13px; margin-top:6px;}
+  h2{font-size:clamp(16px,4.2vw,19px); color:var(--gold); margin-top:34px; margin-bottom:8px;}
+  p{margin-top:10px; color:var(--ink-dim); font-size:15px;}
+  ul{margin-top:10px; padding-inline-start:22px; color:var(--ink-dim); font-size:15px;}
+  li{margin-top:7px;}
+  strong{color:var(--ink); font-weight:700;}
+  a{color:var(--gold); text-underline-offset:2px;}
+  .callout{margin-top:14px; padding:14px 16px; border-radius:12px;
+    border:1px solid rgba(201,168,76,0.38); background:rgba(0,0,0,0.26);}
+  .foot{margin-top:40px; padding-top:18px; border-top:1px solid rgba(201,168,76,0.22);
+    font-size:13px; color:var(--ink-faint);}
+  .foot a{color:var(--ink-dim);}
 </style>
 </head>
 <body>
-<h1>מדיניות פרטיות — CAPS Poker</h1>
-<p class="updated">עדכון אחרון: אפריל 2026</p>
+<main class="wrap">
 
-<h2>מבוא</h2>
-<p>CAPS Poker ("האפליקציה") היא משחק קלפים חינמי עם צ'יפים וירטואליים בלבד. אין הימורים בכסף אמיתי. מדיניות זו מסבירה אילו נתונים אנו אוספים ואיך אנו משתמשים בהם.</p>
+  <h1>Privacy Policy — CAPS Poker</h1>
+  <p class="sub">Last updated 8 September 2026 · applies to the CAPS Poker app and to caps.ftable.co.il</p>
 
-<h2>מידע שאנו אוספים</h2>
-<p><strong>מידע חשבון (אופציונלי):</strong> אם תבחר להתחבר עם Google, נשמור את שמך ותמונת הפרופיל שלך. ניתן לשחק כאורח ללא מסירת מידע אישי.</p>
-<p><strong>מזהה מכשיר:</strong> מזהה אנונימי של המכשיר שלך לצורך שמירת התקדמות במשחק.</p>
-<p><strong>נתוני משחק:</strong> סטטיסטיקות משחק (ידות ששוחקו, ניצחונות, צ'יפים), הישגים, רצף יומי, ודירוג בלוח המובילים.</p>
-<p><strong>נתוני שימוש:</strong> אירועי אנליטיקה אנונימיים לצורך שיפור המוצר.</p>
-<p><strong>התראות Push:</strong> אם תאשר, נשמור את ה-token שלך לשליחת התראות.</p>
-<p><strong>דיווחי באגים:</strong> מידע טכני על המכשיר וצילום מסך (אם תבחר לצרף).</p>
-<p><strong>רכישות:</strong> Apple מעבדת את התשלום. אנחנו שומרים רק את מזהה הקבלה לאימות.</p>
+  <p>CAPS Poker is a free card game played with <strong>virtual chips only</strong>. There is no
+  real-money gambling, no cash prizes, no payouts, and nothing you win inside the game can be
+  cashed out or exchanged for money or anything of value.</p>
 
-<h2>מידע שאיננו אוספים</h2>
-<p>אנחנו <strong>לא</strong> אוספים: כתובת אימייל, מספר טלפון, מיקום, אנשי קשר, או מידע פיננסי.</p>
+  <p>This page describes what the app actually stores and who actually receives it. It was written
+  by reading the code, not from a template.</p>
 
-<h2>שימוש במידע</h2>
-<p>המידע משמש אך ורק לצורכי: שמירת התקדמות במשחק, הצגת לוח מובילים, שיפור חוויית המשחק, שליחת התראות (אם אושרו), ותיקון באגים.</p>
+  <h2>Who you are to us</h2>
+  <p>You can play without giving us anything. When you first open CAPS, the app creates an
+  <strong>anonymous device identifier</strong> — a random string — and an anonymous account on our
+  backend. That identifier is how your chips and progress find their way back to you. It is not
+  your name, your email or your phone number, and we do not attempt to link it to them.</p>
+  <p><strong>Signing in with Google is optional.</strong> If you choose it, Google tells us the
+  basic profile information tied to that sign-in so your progress can follow you to another device.
+  If you never sign in, we never receive it. Almost everybody who plays CAPS today is anonymous.</p>
 
-<h2>שיתוף מידע</h2>
-<p>אנחנו <strong>לא מוכרים ולא משתפים</strong> מידע אישי עם צדדים שלישיים. המידע מאוחסן ב-Supabase. Google מקבלת מידע אימות רק אם תבחר להתחבר דרכו.</p>
+  <h2>What we store</h2>
+  <ul>
+    <li><strong>Game progress</strong> — your chip balance, hands played, hands won, your board-by-board
+      results, your win streak and your daily-login streak.</li>
+    <li><strong>Achievements</strong> — which of the in-game achievements you have earned, and when.</li>
+    <li><strong>Leaderboard standing</strong> — your chip total and player name as shown on the
+      in-game leaderboard.</li>
+    <li><strong>Analytics events</strong> — which screens you opened and which actions you took, tied
+      to the device identifier, so we can find where the game confuses people.</li>
+    <li><strong>Push notification token</strong> — only if you allow notifications. It lets us send a
+      reminder to that device and nothing else.</li>
+    <li><strong>Bug reports</strong> — only when you send one. See the next section; it carries more
+      than the words you type.</li>
+  </ul>
+  <p>We do <strong>not</strong> collect your location, your contacts, your photo library, your phone
+  number, or any payment or financial information.</p>
 
-<h2>מחיקת חשבון</h2>
-<p>ניתן למחוק את כל המידע שלך בכל עת דרך הגדרות > מחק חשבון. המחיקה היא מיידית ובלתי הפיכה.</p>
+  <h2>⚠️ What a bug report actually contains</h2>
+  <p>If you tap the report button and send us a problem, the report carries more than your
+  description, and you should know that before you send one. Attached automatically:</p>
+  <ul>
+    <li>the screen you were on and the text you wrote;</li>
+    <li>a <strong>breadcrumb trail</strong> — the screens you visited before it, in order;</li>
+    <li>the <strong>last 20 lines of the app's own console output</strong>, which can include values
+      the game was working with at the time;</li>
+    <li><strong>your device identifier</strong>, platform, operating-system version, app version,
+      installed build number and the language the app was set to;</li>
+    <li>a <strong>screenshot</strong>, and an audio clip, if you chose to attach them.</li>
+  </ul>
+  <p>Please do not type anything into a bug report that you would not want us to read.</p>
 
-<h2>אבטחה</h2>
-<p>המידע מאוחסן בשרתים מאובטחים עם הצפנה בתעבורה (TLS). גישה למסד הנתונים מוגנת באמצעות Row Level Security (RLS).</p>
+  <h2>Who else receives your data</h2>
+  <p>We do not sell your data and we do not share it for advertising. We do use other companies to
+  run the game, and these are all of them:</p>
+  <ul>
+    <li><strong>Supabase</strong> — hosts the database, the anonymous accounts, uploaded files and
+      the server functions. Effectively everything above is stored here.</li>
+    <li><strong>Vercel</strong> — hosts caps.ftable.co.il, the browser version of the game.</li>
+    <li><strong>Google</strong> — only if you choose to sign in with Google.</li>
+    <li><strong>Telegram</strong> — when you send a bug report, it is forwarded automatically to a
+      private channel our team reads, including the screenshot if you attached one.</li>
+    <li><strong>Anthropic</strong> — a bug report's text and technical details are sent to the Claude
+      API, which summarises it so we can prioritise it. This is automatic and happens for every
+      report.</li>
+    <li><strong>OpenAI</strong> — only if you attach an <em>audio</em> clip to a bug report; it is
+      transcribed into text so we can read it.</li>
+    <li><strong>Expo</strong> — delivers push notifications, if you allowed them.</li>
+    <li><strong>Apple</strong> — distributes the app. No purchase or payment information reaches us,
+      because the game currently sells nothing for money.</li>
+  </ul>
 
-<h2>ילדים</h2>
-<p>האפליקציה מיועדת לגילאי 12+. איננו אוספים ביודעין מידע מילדים מתחת לגיל 13.</p>
+  <h2>Money</h2>
+  <p>Chips in CAPS are a score. They are earned by playing, by daily rewards and by streaks, and
+  they can be spent inside the game on cosmetic items such as card backs and avatars.
+  <strong>Chips cannot be bought with money and cannot be converted into money.</strong> The app has
+  no active in-app purchases and has never processed a payment. If that ever changes, this page will
+  say so before it does.</p>
 
-<h2>שינויים במדיניות</h2>
-<p>אם נעדכן מדיניות זו, נפרסם את הגרסה המעודכנת באפליקציה ובעמוד זה.</p>
+  <h2>⚠️ Deleting your data</h2>
+  <div class="callout">
+    <p style="margin-top:0"><strong>Ask us by email and we will delete it manually.</strong> Write to
+    <a href="mailto:caps@ftable.co.il">caps@ftable.co.il</a> from the device you play on, or include
+    your player name, and we will remove your account and its data.</p>
+    <p>We are telling you this rather than pointing at a button because the in-app
+    <em>Delete account</em> control <strong>does not currently work</strong>. It was switched off
+    after we found it could be used to delete somebody else's account, and it has not yet been
+    replaced. The button is still visible in Settings and will tell you the same thing if you press
+    it. Nothing is deleted when you press it.</p>
+  </div>
+  <p>We do not currently offer an automated way to export a copy of your data. If you want one, ask
+  at the same address and we will put it together by hand.</p>
 
-<h2>יצירת קשר</h2>
-<p>שאלות? <a href="mailto:support@ftable.co.il">support@ftable.co.il</a></p>
+  <h2>How long we keep it</h2>
+  <p>Game progress is kept for as long as the account exists, so that your chips are still there when
+  you come back. Bug reports and analytics events are kept while they are still useful for fixing
+  and improving the game. Ask us to delete your data and we remove it.</p>
+
+  <h2>Security</h2>
+  <p>Data travels over encrypted connections (TLS) and the database uses row-level security so that
+  one player's rows are not readable by another. No system is perfect; if we discover a breach that
+  affects you, we will say so.</p>
+
+  <h2>Age</h2>
+  <p>CAPS Poker simulates gambling with virtual chips and is intended for players aged
+  <strong>18 and over</strong>. We do not knowingly collect information from children. If you believe
+  a child has been playing and has given us data, write to us and we will remove it.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes we will update this page and change the date at the top. Material changes
+  will also be announced in the app.</p>
+
+  <h2>Contact</h2>
+  <p>Questions, deletion requests, or anything else about this policy:
+  <a href="mailto:caps@ftable.co.il">caps@ftable.co.il</a></p>
+
+  <nav class="foot">
+    <a href="/landing.html">CAPS Poker</a> ·
+    <a href="/terms.html">Terms of Use</a> ·
+    <a href="mailto:caps@ftable.co.il">Contact</a>
+  </nav>
+
+</main>
 </body>
 </html>

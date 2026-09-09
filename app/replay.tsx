@@ -17,6 +17,8 @@ import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
 import { getHand, HandRecord, HandBoardRecord } from '../utils/handHistory';
 import { safeBack } from '../components/BackControl';
+import { tallyBoards, tallyLine, tallySpoken } from '../utils/boardTally';
+import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   hearts: '\u2665',
@@ -100,22 +102,28 @@ function BoardView({ board, boardNumber, totalBoards }: { board: HandBoardRecord
 
 function SummaryView({ hand, onCoach }: { hand: HandRecord; onCoach: () => void }) {
   // Same class-A line as hand-history: `netChips >= 0` painted a TIE green with a "+".
-  const rpPlayerWins = hand.boards.filter((b) => b.winner === 'player').length;
-  const rpBotWins = hand.boards.filter((b) => b.winner === 'bot').length;
-  const outcome: 'win' | 'loss' | 'tie' =
-    rpPlayerWins > rpBotWins ? 'win' : rpPlayerWins < rpBotWins ? 'loss' : 'tie';
-  const playerWins = hand.boards.filter((b) => b.winner === 'player').length;
-  const botWins = hand.boards.filter((b) => b.winner === 'bot').length;
+  // Was four filters over the same array producing two identical pairs — rpPlayerWins/rpBotWins
+  // for the outcome and playerWins/botWins for the display. One tally now, and it carries the
+  // TIED count the two-number score dropped.
+  const tally = tallyBoards(hand.boards);
+  const playerWins = tally.won;
+  const botWins = tally.lost;
+  // AUDIT-REST 2026-09-05 — C1 CLOSED HERE, same change as hand-history.tsx and for the same
+  // reason: `playerWins > botWins` is the COLLAPSED count, and it disagreed with every other
+  // reader of the same stored hand on three players / three boards / one board each. The two
+  // numbers printed below are unchanged; only the verdict moved onto the one derivation.
+  const outcome: HandOutcome = deriveHandOutcome(hand.boards);
 
   return (
     <View style={styles.summaryContainer}>
       <Text style={styles.summaryTitle}>HAND COMPLETE</Text>
 
-      <View style={styles.scoreRow}>
+      <View style={styles.scoreRow} accessibilityLabel={tallySpoken(tally)}>
         <Text style={[styles.scoreBig, { color: COLORS.neonGreen }]}>{playerWins}</Text>
         <Text style={styles.scoreDash}> — </Text>
         <Text style={[styles.scoreBig, { color: COLORS.neonRed }]}>{botWins}</Text>
       </View>
+      {tally.hasTie && <Text style={styles.scoreTally}>{tallyLine(tally)}</Text>}
 
       <Text style={[styles.netChips, { color: outcome === 'win' ? COLORS.neonGreen : outcome === 'loss' ? COLORS.neonRed : COLORS.textDim }]}>
         {hand.netChips > 0 ? '+' : ''}{hand.netChips === 0 ? '±0' : hand.netChips} chips
@@ -422,6 +430,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  scoreTally: { color: COLORS.textDim, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, marginTop: 2, textAlign: 'center' },
   scoreBig: {
     fontSize: rf(48),
     fontWeight: '900',
@@ -448,7 +457,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.gold,
     borderRadius: rv(16),
-    backgroundColor: 'rgba(255,215,0,0.08)',
+    // THE-LAST-THREE 2026-09-03 — fill was the winner cue rgba(255,215,0,·) while the border and
+    // text were already COLORS.gold #c9a84c (the wordmark gold). Fill now matches its own border.
+    backgroundColor: 'rgba(201,168,76,0.08)',
     alignSelf: 'center',
   },
   coachingBtnText: {

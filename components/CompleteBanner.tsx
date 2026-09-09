@@ -56,7 +56,7 @@ export function CompleteBanner({ visible, bonusChips, scale, isPractice = false 
         ))}
       </View>
       <Text style={styles.completeLabel}>{t().complete} {t().completeBonus}</Text>
-      {!isPractice && <Text style={styles.completeAmount}>+{bonusChips} bonus chips!</Text>}
+      {!isPractice && <Text style={styles.completeAmount}>{t().completeBonusChips(bonusChips)}</Text>}
     </Animated.View>
   );
 }

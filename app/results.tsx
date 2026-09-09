@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, Aler
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
-import { DealMeInButton } from '../components/DealMeInButton';
+import { ChipButton } from '../components/ChipButton';
 import { BoardResultCard } from '../components/BoardResultCard';
 import { CompleteBanner } from '../components/CompleteBanner';
 import CompleteOverlay from '../components/CompleteOverlay';
@@ -12,10 +12,12 @@ import { ShareSection } from '../components/ShareSection';
 import { EfficiencyCard } from '../components/EfficiencyCard';
 import ChipsDisplay from '../components/ChipsDisplay';
 import { FriendsBg } from '../components/FriendsBg';
+import { LuxuryBackdrop } from '../components/LuxuryBackdrop';
 import { useResultsAnimations } from '../hooks/useResultsAnimations';
 import { useGameStore } from '../store/gameStore';
 import { RevealData } from '../types/gameTypes';
 import { deriveHandOutcome, type HandOutcome } from '../utils/handOutcome';
+import { tallyBoards, tallyLine, tallySpoken } from '../utils/boardTally';
 import { isLocalComplete, isOpponentComplete } from '../utils/resultsGating';
 import { applyDevRevealFixture, publishProbeSnapshot } from '../utils/devRevealFixture';
 import { getSpecificHandName } from '../utils/handNames';
@@ -43,7 +45,7 @@ import { queueHandResult } from '../utils/handOutbox';
 import { shouldPromptLogin } from '../utils/auth';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { debugLog } from '../components/DebugOverlay';
-import { claimShareReward, earnChips, recordHandNet, recordReward } from '../utils/supabaseEconomy';
+import { claimShareReward, earnChips, recordHandNet, recordReward, callRPC } from '../utils/supabaseEconomy';
 import { track } from '../utils/analytics';
 import { getDeviceId } from '../utils/leaderboard';
 import { FloatingChips } from '../components/FloatingChips';
@@ -101,15 +103,15 @@ export default function ResultsScreen() {
             It also never stops saying "Loading" — there is nothing still loading; the data is
             gone and will not arrive. Honest copy plus one way out. */}
         <View style={styles.loadingContainer} accessibilityLiveRegion="polite">
-          <Text style={styles.loadingText}>This hand is no longer available.</Text>
+          <Text style={styles.loadingText}>{t().handUnavailable}</Text>
           <Pressable
             onPress={() => router.replace('/')}
             accessibilityRole="button"
-            accessibilityLabel="Back to home"
+            accessibilityLabel={t().backToHome}
             style={{ marginTop: rs(16), minHeight: 44, justifyContent: 'center', paddingHorizontal: rs(24),
                      borderRadius: rv(12), borderWidth: 1, borderColor: COLORS.mint }}
           >
-            <Text style={{ color: COLORS.mint, fontSize: rf(15), fontWeight: '700' }}>Back to home</Text>
+            <Text style={{ color: COLORS.mint, fontSize: rf(15), fontWeight: '700' }}>{t().backToHome}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -136,6 +138,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
    */
   const playerWins = revealData.boards.filter((b) => b.winner === 'player').length;
   const botWins = revealData.boards.filter((b) => b.winner === 'bot').length;
+  // EVERY BOARD ACCOUNTED FOR. playerWins and botWins are both outright-winner counts, so a TIED
+  // board is in neither and the scoreboard rendered "3 — 0" for a four-board hand. Three plus zero
+  // is three. The tally derives the tied count as the REMAINDER, so the three numbers cannot fail
+  // to sum to the board count. See utils/boardTally.ts.
+  const tally = tallyBoards(revealData.boards);
   // ALIGN-THE-CELEBRATION 2026-08-23 - ONE DERIVATION, and it now lives in utils/handOutcome.ts
   // so the local achievement check reads the SAME function rather than a second copy of the rule.
   // Every reader below asks this variable. Nothing on this screen decides the outcome for itself.
@@ -200,6 +207,11 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savedHandId, setSavedHandId] = useState<string | null>(null);
   const [xpGained, setXpGained] = useState(0);
+  // RESULTS-IA 2026-09-01 — progressive disclosure. The secondary detail rows (XP breakdown,
+  // placement efficiency, best hand, session stats, board-by-board, hand history) collapse
+  // behind ONE toggle so the default view is the outcome + the board reveal, not 34 competing
+  // lines. Nothing is deleted — every collapsed row is one tap away. Default collapsed.
+  const [showDetails, setShowDetails] = useState(false);
   const [pendingAchievements, setPendingAchievements] = useState<Achievement[]>([]);
   const [autoShareUrl, setAutoShareUrl] = useState<string | null>(null);
   const [autoShareId, setAutoShareId] = useState<string | null>(null);
@@ -402,6 +414,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     const historyBoards: HandBoardRecord[] = revealData.boards.map((b, i) => ({
       boardIndex: i,
       winner: b.winner,
+      winnerSeat: b.winnerSeat,
       playerHandName: b.playerHandName,
       botHandName: b.botHandName,
       playerCards: b.playerCards.map((c) => ({ rank: c.rank, suit: c.suit })),
@@ -516,6 +529,31 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     // practice, SOLO quick_poker, and multiplayer — and the server adjudicates only the last.
     // Gating on practice would have silently stopped paying every solo real hand, which no server
     // path covers. Practice was already excluded here and stays excluded.
+    // PLAY-NOT-PRESENCE — PRACTICE NOW REACHES THE SAME WRITER, WITH NET 0.
+    //
+    // Under 1% of every chip ever minted came from playing; the rest was paid for opening the
+    // app. Moving the faucet to play would have starved the one group that plays most and earns
+    // least — someone learning the game — because practice writes nothing here.
+    //
+    // So practice calls record_hand_net with net 0: the HAND stays chip-neutral exactly as
+    // before (no buy-in, no winnings, XP only — Roye's rule is unchanged), and the only chips
+    // that move are the play grant, which the server pays at play_grant_practice_pct of the real
+    // rate. Real play therefore stays strictly the better deal and the grant cannot become a
+    // reason to avoid opponents.
+    //
+    // It goes through record_hand_net rather than beside it because a second chip writer is the
+    // bug this project has already fixed twice. Same guards, same daily cap, same per-hand
+    // idempotency — the practice hand is just a hand whose net happens to be zero.
+    if (isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
+      handNetPersistedRef.current = true;
+      void (async () => {
+        try {
+          const deviceId = await getDeviceId();
+          await recordHandNet(deviceId, 0, revealData.handId, true);
+        } catch (_) { /* a missed practice grant must never block the results screen */ }
+      })();
+    }
+
     if (!isPracticeGame && !isMultiplayer && !handNetPersistedRef.current) {
       handNetPersistedRef.current = true;
       void (async () => {
@@ -580,10 +618,13 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
         // READER 4 - the server-side mission tick. Missions are inactive, but it decided a win
         // from chips like the rest and would have disagreed the moment they were switched on.
         const isWin = handOutcome === 'win';
+        // AE2 — through callRPC so these inherit the app-open auth gate. update_mission_progress is
+        // econ_bind_ok-gated; a direct sb.rpc bypassed the choke point. The gate is shared, so these
+        // three await an already-resolved promise rather than three sign-ins.
         await Promise.all([
-          sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_played', p_amount: 1 }),
-          ...(isWin ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'games_won', p_amount: 1 })] : []),
-          ...(boardsWon > 0 ? [sb.rpc('update_mission_progress', { p_device_id: deviceId, p_type: 'boards_won', p_amount: boardsWon })] : []),
+          callRPC('update_mission_progress', { p_device_id: deviceId, p_type: 'games_played', p_amount: 1 }),
+          ...(isWin ? [callRPC('update_mission_progress', { p_device_id: deviceId, p_type: 'games_won', p_amount: 1 })] : []),
+          ...(boardsWon > 0 ? [callRPC('update_mission_progress', { p_device_id: deviceId, p_type: 'boards_won', p_amount: boardsWon })] : []),
         ]);
       } catch {} // Silent — never crash the game
     })();
@@ -841,9 +882,9 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
     if (isMultiplayer) {
       setWaitingForNextHand(true);
       waitingTimeoutRef.current = setTimeout(() => {
-        Alert.alert('Waiting Timed Out', 'No response from other players.', [
-          { text: 'Keep Waiting', style: 'cancel' },
-          { text: 'Leave', style: 'destructive', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } },
+        Alert.alert(t().waitingTimedOut, t().waitingTimedOutBody, [
+          { text: t().keepWaiting, style: 'cancel' },
+          { text: t().leaveBtn, style: 'destructive', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } },
         ]);
       }, WAITING_STATE_TIMEOUT_MS);
 
@@ -872,16 +913,16 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           },
           onHostLost: () => {
             if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
-            setDisconnectMessage('Host disconnected');
-            Alert.alert('Host Disconnected', 'The host has left the game.', [{ text: 'Leave', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } }]);
+            setDisconnectMessage(t().hostDisconnected);
+            Alert.alert(t().hostDisconnected, t().hostDisconnectedBody, [{ text: t().leaveBtn, onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } }]);
           },
           onDisconnected: () => {
             if (waitingTimeoutRef.current) clearTimeout(waitingTimeoutRef.current);
-            setDisconnectMessage('Connection lost');
+            setDisconnectMessage(t().connectionLost);
             const code = storeRoomCode;
-            Alert.alert('Connection Lost', 'Lost connection to the game room. You can try to rejoin.', [
-              { text: 'Leave', style: 'cancel', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } },
-              { text: 'Rejoin', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/lobby' as any); } },
+            Alert.alert(t().connectionLost, t().connectionLostBody, [
+              { text: t().leaveBtn, style: 'cancel', onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); } },
+              { text: t().rejoin, onPress: () => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/lobby' as any); } },
             ]);
           },
         });
@@ -1007,6 +1048,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* EVERY-SCREEN luxury pass (2026-09-01) — the app-wide LuxuryBackdrop (deep radial-green
+          vignette + beam + felt) behind everything, one visual language across home/game/results.
+          pointerEvents:none, zero layout impact. NOTE: this is the SAFE visual pass only — results'
+          information architecture (the "34 competing lines") is a separate rethink, proposed in
+          docs/screen-audit, NOT redesigned under cover of a paint pass. */}
+      <LuxuryBackdrop />
       <FriendsBg />
 
       {/* PRACTICE-TO-LIVE — between hands: if a real opponent triggers the countdown, jump
@@ -1160,25 +1207,36 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* Title + score */}
           <View style={styles.titleSection}>
             <Text testID="result-headline" accessibilityRole="header" style={[styles.title, { color: isPerfectGame ? COLORS.mint : handOutcome === 'win' ? gameColors.win : handOutcome === 'loss' ? gameColors.lose : COLORS.mint }]}>
-              {isPerfectGame ? 'PERFECT!' : handOutcome === 'win' ? 'YOU WIN' : handOutcome === 'loss' ? 'YOU LOSE' : 'TIE GAME'}
+              {isPerfectGame ? t().perfect : handOutcome === 'win' ? t().youWinBig : handOutcome === 'loss' ? t().youLoseBig : t().tieGame}
             </Text>
             {revealData.isPractice && (
               <View style={{ backgroundColor: 'rgba(245,181,70,0.14)', borderWidth: 1, borderColor: 'rgba(245,181,70,0.5)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14, marginTop: 6, alignSelf: 'center' }} accessibilityRole="text" testID="practice-banner">
-                <Text style={{ color: '#F5B546', fontWeight: '800', fontSize: 13 }}>🤖 Practice vs bot — XP only, no chips</Text>
+                <Text style={{ color: '#F5B546', fontWeight: '800', fontSize: 13 }}>{t().practiceXpNote}</Text>
                 {/* PRACTICE-TO-LIVE — demo session counter (separate from real bankroll) */}
                 <Text style={{ color: '#F5B546', fontWeight: '900', fontSize: 14, textAlign: 'center', marginTop: 3 }} testID="practice-session-net">
-                  This session: {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}
+                  {t().thisSession}: {practiceSessionNet >= 0 ? '+' : ''}{practiceSessionNet}
                 </Text>
               </View>
             )}
-            <Text testID="score-numerals" style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
+            <Text testID="score-numerals" accessibilityLabel={tallySpoken(tally)} style={[styles.scoreDisplay, { fontSize: Math.min(42, Math.floor(SCREEN_W * 0.105)) }]}>
               <Text style={{ color: gameColors.win }}>{playerWins}</Text>
               <Text style={[styles.scoreSep, { fontSize: Math.min(32, Math.floor(SCREEN_W * 0.08)) }]}> — </Text>
               <Text style={{ color: gameColors.lose }}>{botWins}</Text>
             </Text>
+            {/* Only when a two-number score would be incomplete. A hand with no tied board is
+                unchanged, so this costs a returning player nothing. */}
+            {tally.hasTie && (
+              <Text testID="board-tally" style={styles.boardTally} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+                <Text style={{ color: gameColors.win }}>{tally.won} {t().tallyWon}</Text>
+                <Text style={styles.boardTallyDot}> · </Text>
+                <Text style={styles.boardTallyTied}>{tally.tied} {t().tallyTied}</Text>
+                <Text style={styles.boardTallyDot}> · </Text>
+                <Text style={{ color: gameColors.lose }}>{tally.lost} {t().tallyLost}</Text>
+              </Text>
+            )}
             {playerWins === botWins && netChips > 0 && !revealData.isPractice && (
               <Text style={styles.tieBonusText}>
-                {`Tie bonus: +${netChips} chips`}
+                {t().tieBonus(netChips)}
               </Text>
             )}
           </View>
@@ -1186,22 +1244,34 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {/* Win streak badge */}
           {currentWinStreak >= 2 && (
             <View style={styles.streakBadge} accessibilityLiveRegion="assertive">
-              <Text style={styles.streakBadgeText} accessibilityLabel={`${currentWinStreak} win streak!`}>🔥 {currentWinStreak} WIN STREAK!</Text>
+              <Text style={styles.streakBadgeText} accessibilityLabel={t().winStreakBadge(currentWinStreak)}>🔥 {t().winStreakBadge(currentWinStreak)}</Text>
               {bestWinStreak >= 2 && currentWinStreak < bestWinStreak && (
-                <Text style={styles.streakBestText}>Best: {bestWinStreak}</Text>
+                <Text style={styles.streakBestText}>{t().bestStreakLabel(bestWinStreak)}</Text>
               )}
             </View>
           )}
 
-          {/* Chips earned + shop CTA — hidden in practice (no chips actually moved) */}
-          {netChips > 0 && !revealData.isPractice && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Visit Shop" onPress={() => router.push('/shop' as any)} style={styles.shopCta} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.shopCtaText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💰 +{netChips} chips earned | <Text style={styles.shopCtaLink}>Visit Shop</Text></Text>
-            </Pressable>
-          )}
+          {/* RESULTS-IA 2026-09-01 — the after-every-hand shop CTA is GONE from this flow.
+              Selling on the highest-frequency screen made the game feel cheap; chips earned
+              still read in the Net Result block and the stats row below. Shop lives on a
+              natural break (the home/lobby), not after every hand. */}
 
-          {/* Battle Pass XP banner */}
-          {xpGained > 0 && (() => {
+          {/* RESULTS-IA — one progressive-disclosure toggle for all the secondary detail rows. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showDetails }}
+            accessibilityLabel={showDetails ? t().hideHandDetails : t().showHandDetails}
+            onPress={() => setShowDetails((v) => !v)}
+            style={styles.detailsToggle}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.detailsToggleText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+              {showDetails ? t().hideDetailsToggle : t().showDetailsToggle}
+            </Text>
+          </Pressable>
+
+          {/* Battle Pass XP banner — RESULTS-IA: secondary detail, behind the toggle */}
+          {showDetails && xpGained > 0 && (() => {
             let bpCurrentXP = 0;
             let bpCurrentTier = 1;
             let bpProgress = 0;
@@ -1223,10 +1293,10 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               <View style={styles.xpBanner}>
                 <Text style={styles.xpBannerTitle} accessibilityLabel={`+${xpGained} XP`}>⭐ +{xpGained} XP</Text>
                 <Text style={styles.xpBannerBreakdown}>
-                  {'Game: ' + BATTLE_PASS_CONFIG.xpPerGame}
-                  {boardsWonForBanner > 0 ? (' | Boards: +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
-                  {isWinnerForBanner ? (' | Win: +' + BATTLE_PASS_CONFIG.xpPerGameWin) : ''}
-                  {localComplete ? (' | Complete: +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
+                  {t().xpLabelGame + ': ' + BATTLE_PASS_CONFIG.xpPerGame}
+                  {boardsWonForBanner > 0 ? (' | ' + t().xpLabelBoards + ': +' + boardsWonForBanner * BATTLE_PASS_CONFIG.xpPerBoardWin) : ''}
+                  {isWinnerForBanner ? (' | ' + t().xpLabelWin + ': +' + BATTLE_PASS_CONFIG.xpPerGameWin) : ''}
+                  {localComplete ? (' | ' + t().xpLabelComplete + ': +' + BATTLE_PASS_CONFIG.xpPerComplete) : ''}
                 </Text>
                 <XPBar
                   currentXP={bpCurrentXP}
@@ -1311,26 +1381,28 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             }}
           />}
 
-          {/* Placement efficiency */}
-          <EfficiencyCard boards={boards as any} screenW={SCREEN_W} />
+          {/* Placement efficiency — RESULTS-IA: secondary detail, behind the toggle */}
+          {showDetails && <EfficiencyCard boards={boards as any} screenW={SCREEN_W} />}
 
-          {/* Best hand highlight */}
-          {bestName ? (
+          {/* Best hand highlight — RESULTS-IA: secondary detail, behind the toggle */}
+          {showDetails && bestName ? (
             <View style={styles.bestHandRow}>
-              <Text style={styles.bestHandText} accessibilityLabel={`Best hand: ${bestName} on Board ${bestBoard}`}>⭐ Best hand: {bestName} on Board {bestBoard}</Text>
+              <Text style={styles.bestHandText} accessibilityLabel={t().bestHandOnBoard(bestName, bestBoard)}>{t().bestHandOnBoard(bestName, bestBoard)}</Text>
             </View>
           ) : null}
 
-          {/* Stats row */}
-          <View style={styles.statsRow}>
-            <Text style={styles.statItem}>Boards: {playerWins}/{boards.length}</Text>
-            <Text style={styles.statSep}>|</Text>
-            <Text style={[styles.statItem, { color: revealData.isPractice ? '#F5B546' : netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
-              {revealData.isPractice ? 'Net: XP only' : `Net: ${netChips >= 0 ? '+' : ''}${netChips}`}
-            </Text>
-            <Text style={styles.statSep}>|</Text>
-            <Text style={styles.statItem}>Games: {useGameStore.getState().handsPlayed}</Text>
-          </View>
+          {/* Stats row — RESULTS-IA: secondary detail, behind the toggle */}
+          {showDetails && (
+            <View style={styles.statsRow}>
+              <Text style={styles.statItem}>{t().statBoardsLabel}: {playerWins}/{boards.length}{tally.hasTie ? ` ${t().statTied(tally.tied)}` : ''}</Text>
+              <Text style={styles.statSep}>|</Text>
+              <Text style={[styles.statItem, { color: revealData.isPractice ? '#F5B546' : netChips >= 0 ? COLORS.neonGreen : COLORS.neonRed }]}>
+                {revealData.isPractice ? `${t().statNetLabel}: ${t().xpOnly}` : `${t().statNetLabel}: ${netChips >= 0 ? '+' : ''}${netChips}`}
+              </Text>
+              <Text style={styles.statSep}>|</Text>
+              <Text style={styles.statItem}>{t().statGamesLabel}: {useGameStore.getState().handsPlayed}</Text>
+            </View>
+          )}
 
           {/* COMPLETE celebration title — scale pop (LOCAL complete only) */}
           {localComplete && (
@@ -1338,14 +1410,14 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
               accessibilityLiveRegion="assertive"
               style={[styles.completeCelebTitle, { transform: [{ scale: completeTitleScale }] }]}
             >
-              COMPLETE! ALL BOARDS!
+              {t().completeAllBoards}
             </Animated.Text>
           )}
 
           {/* Opponent swept all boards — loss framing, never a celebration */}
           {opponentComplete && (
             <Text accessibilityLiveRegion="assertive" style={styles.opponentSweptText}>
-              Opponent swept all boards
+              {t().opponentSwept}
             </Text>
           )}
 
@@ -1360,7 +1432,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {!revealData.isPractice && (
             <View style={styles.netSection}>
               <View style={styles.netRow}>
-                <Text style={styles.netLabel} accessibilityRole="header">Net Result</Text>
+                <Text style={styles.netLabel} accessibilityRole="header">{t().netResult}</Text>
                 {netChips > 0 ? (
                   <Animated.Text style={[styles.netAmount, { color: chipsFlashAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: ['#FFD700', '#FFD700', '#4CAF50'] }) }]}>
                     +{netChips}
@@ -1377,7 +1449,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             const streakBonusAmount = dailyRewardStreak >= 30 ? 500 : dailyRewardStreak >= 7 ? 100 : dailyRewardStreak >= 3 ? 20 : 10;
             return (
               <View style={styles.streakBonusRow}>
-                <Text style={styles.streakBonusText} accessibilityLabel={`Day ${dailyRewardStreak} streak! +${streakBonusAmount} bonus chips tomorrow`}>🔥 Day {dailyRewardStreak} streak! +{streakBonusAmount} bonus chips tomorrow</Text>
+                <Text style={styles.streakBonusText} accessibilityLabel={t().dailyStreakMsg(dailyRewardStreak, streakBonusAmount)}>🔥 {t().dailyStreakMsg(dailyRewardStreak, streakBonusAmount)}</Text>
               </View>
             );
           })()}
@@ -1386,7 +1458,7 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           {localComplete && (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Share COMPLETE"
+              accessibilityLabel={t().shareCompleteBtn}
               style={styles.shareCompleteBtn}
               onPress={async () => {
                 try {
@@ -1398,14 +1470,14 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 } catch {}
               }}
             >
-              <Text style={styles.shareCompleteBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🏆 Share COMPLETE!</Text>
+              <Text style={styles.shareCompleteBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">🏆 {t().shareCompleteBtn}!</Text>
             </TouchableOpacity>
           )}
 
           {/* Current balance — hidden in practice (XP-only, no chips actually moved,
               so showing a real-money-looking balance here is misleading, not just noise) */}
           {!revealData.isPractice && (
-            <ChipsDisplay amount={displayChips} label="Current Balance" size="large" />
+            <ChipsDisplay amount={displayChips} label={t().currentBalance} size="large" />
           )}
 
           {/* VAMOS-UNIFY-FINAL 2026-06-28 — "Try 4 boards" upgrade nudge removed. */}
@@ -1415,30 +1487,30 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             <Text
               style={[styles.mpResultHeader, { color: handOutcome === 'win' ? '#c9a84c' : handOutcome === 'loss' ? '#ef5350' : COLORS.mint }]}
               accessibilityLabel={
-                handOutcome === 'win' ? `You beat ${storeOpponentName}!`
-                : handOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
-                : `Tied with ${storeOpponentName}`
+                handOutcome === 'win' ? t().mpBeat(storeOpponentName)
+                : handOutcome === 'loss' ? t().mpDefeatedBy(storeOpponentName)
+                : t().mpTiedWith(storeOpponentName)
               }
             >
-              {handOutcome === 'win' ? `🏆 You beat ${storeOpponentName}!`
-                : handOutcome === 'loss' ? `Defeated by ${storeOpponentName}`
-                : `🤝 Tied with ${storeOpponentName}`}
+              {handOutcome === 'win' ? `🏆 ${t().mpBeat(storeOpponentName)}`
+                : handOutcome === 'loss' ? t().mpDefeatedBy(storeOpponentName)
+                : `🤝 ${t().mpTiedWith(storeOpponentName)}`}
             </Text>
           ) : null}
 
           {/* S117: ELO change badge */}
           {eloChange !== 0 && (
             <View style={styles.eloChangeBadge}>
-              <Text style={[styles.eloChangeText, { color: eloChange > 0 ? '#4CAF50' : '#ef5350' }]} accessibilityLabel={eloChange > 0 ? 'Rank up' : 'Rank down'}>
+              <Text style={[styles.eloChangeText, { color: eloChange > 0 ? '#4CAF50' : '#ef5350' }]} accessibilityLabel={eloChange > 0 ? t().rankUp : t().rankDown}>
                 {eloChange > 0 ? '▲' : '▼'} {Math.abs(eloChange)} ELO
               </Text>
             </View>
           )}
 
-          {/* S115: Session stats — shows when 2+ games in session */}
-          {sessionHistory.length >= 2 && (
+          {/* S115: Session stats — shows when 2+ games in session. RESULTS-IA: behind the toggle */}
+          {showDetails && sessionHistory.length >= 2 && (
             <View style={styles.sessionRow}>
-              <Text style={styles.sessionLabel}>This session</Text>
+              <Text style={styles.sessionLabel}>{t().thisSession}</Text>
               <Text style={styles.sessionStats} accessibilityLabel={`${sessionWins} wins, ${sessionLosses} losses, ${sessionChips >= 0 ? '+' : ''}${sessionChips} chips`}>
                 {sessionWins}W / {sessionLosses}L
                 <Text style={{ color: sessionChips >= 0 ? '#c9a84c' : '#ef5350' }}>
@@ -1448,10 +1520,12 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             </View>
           )}
 
-          {/* S115: Board breakdown — compact one-row-per-board summary */}
-          {boards.length > 0 && (
+          {/* S115: Board breakdown — compact one-row-per-board summary. RESULTS-IA: behind the
+              toggle. The big BoardResultCard reveal above stays visible; this redundant compact
+              list is the "board-by-board" the brief moves into progressive disclosure. */}
+          {showDetails && boards.length > 0 && (
             <View style={styles.breakdownSection}>
-              <Text style={styles.breakdownTitle} accessibilityRole="header">Board by board</Text>
+              <Text style={styles.breakdownTitle} accessibilityRole="header">{t().boardByBoard}</Text>
               {boards.map((board, i) => {
                 const playerWon = board.winner === 'player';
                 const chipChange = playerWon ? potPerBoardTotal : -potPerBoardTotal;
@@ -1464,17 +1538,17 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
                 const pHand = getSpecificHandName(board.playerHandName, board.playerBestCards) || '—';
                 const bHand = board.botHandName ? getSpecificHandName(board.botHandName, board.botBestCards) : '';
                 return (
-                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`Board ${i + 1}, ${playerWon ? 'won' : board.winner === 'tie' ? 'tied' : 'lost'}, ${pHand}${bHand ? ` vs ${bHand}` : ''}${revealData.isPractice ? '' : `, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}`}>
+                  <View key={i} style={styles.breakdownRow} accessible={true} accessibilityLabel={`${t().boardLabel(i + 1)}, ${playerWon ? t().tallyWon : board.winner === 'tie' ? t().tallyTied : t().tallyLost}, ${pHand}${bHand ? ` ${t().vsPrefix} ${bHand}` : ''}${revealData.isPractice ? '' : `, ${board.winner === 'tie' ? '0 chips' : `${playerWon ? '+' : ''}${chipChange} chips`}`}`}>
                     <View style={styles.breakdownLeft}>
-                      <Text style={styles.breakdownNum}>Board {i + 1}</Text>
-                      <Text style={[styles.breakdownIcon, { color: playerWon ? gameColors.win : board.winner === 'tie' ? '#aaa' : gameColors.lose }]} accessibilityLabel={playerWon ? 'Won' : board.winner === 'tie' ? 'Tied' : 'Lost'}>
+                      <Text style={styles.breakdownNum}>{t().boardLabel(i + 1)}</Text>
+                      <Text style={[styles.breakdownIcon, { color: playerWon ? gameColors.win : board.winner === 'tie' ? '#aaa' : gameColors.lose }]} accessibilityLabel={playerWon ? t().tallyWon : board.winner === 'tie' ? t().tallyTied : t().tallyLost}>
                         {playerWon ? '✓' : board.winner === 'tie' ? '=' : '✗'}
                       </Text>
                     </View>
                     <View style={styles.breakdownMid}>
                       <Text testID="breakdown-hand" style={styles.breakdownHand}>{pHand}</Text>
                       {bHand ? (
-                        <Text testID="breakdown-vs" style={styles.breakdownVs}>vs {bHand}</Text>
+                        <Text testID="breakdown-vs" style={styles.breakdownVs}>{t().vsPrefix} {bHand}</Text>
                       ) : null}
                     </View>
                     {/* OTA-COSMETIC-FIXES 2026-07-09 — this compact list, not BoardResultCard's
@@ -1491,16 +1565,16 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
             </View>
           )}
 
-          {/* S115: Hand history link */}
-          {!isMultiplayer && (
+          {/* S115: Hand history link — RESULTS-IA: behind the toggle (solo only) */}
+          {showDetails && !isMultiplayer && (
             <TouchableOpacity
               accessibilityRole="link"
-              accessibilityLabel="View hand history"
+              accessibilityLabel={t().viewHandHistory}
               onPress={() => router.push('/hand-history' as any)}
               style={styles.historyLink}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.historyLinkText}>View hand history →</Text>
+              <Text style={styles.historyLinkText}>{t().viewHandHistory}</Text>
             </TouchableOpacity>
           )}
 
@@ -1508,43 +1582,51 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
           <View style={styles.buttons}>
             {waitingForNextHand ? (
               <View style={styles.waitingNextHand} accessibilityLiveRegion={disconnectMessage ? 'assertive' : 'polite'}>
-                <Text style={styles.waitingNextHandText}>{disconnectMessage || 'Waiting for other players...'}</Text>
+                <Text style={styles.waitingNextHandText}>{disconnectMessage || t().waitingForOthers(2)}</Text>
                 {disconnectMessage && (
-                  <Button title="LEAVE" variant="secondary" onPress={() => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); }} style={{ marginTop: 8, width: '100%' }} />
+                  <Button title={t().leaveBtn} variant="secondary" onPress={() => { useGameStore.getState().resetMultiplayer(); clearRevealData(); router.replace('/'); }} style={{ marginTop: 8, width: '100%' }} />
                 )}
               </View>
             ) : (
               <>
                 {savedHandId && !isMultiplayer && (
                   <Animated.View style={{ opacity: dealBtnOpacity, alignItems: 'center', marginTop: rs(8) }}>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Coaching" style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
-                      <Text style={styles.coachingBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💡 COACHING</Text>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t().coaching} style={styles.coachingBtn} onPress={() => router.push(`/coaching?handId=${savedHandId}`)}>
+                      <Text style={styles.coachingBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">💡 {t().coaching}</Text>
                     </Pressable>
                   </Animated.View>
                 )}
                 {!isMultiplayer && (
                   <View style={styles.shareRow}>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Share Hand" style={styles.shareBtn} onPress={handleShareHand}>
-                      <Text style={styles.shareBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">📤 Share Hand</Text>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t().shareHand} style={styles.shareBtn} onPress={handleShareHand}>
+                      <Text style={styles.shareBtnText} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">📤 {t().shareHand}</Text>
                     </Pressable>
                   </View>
                 )}
                 <View style={styles.rematchRow}>
-                  {!isMultiplayer && <Button title="REMATCH" variant="secondary" onPress={() => { handleRematch(); }} style={{ flex: 1 }} />}
+                  {!isMultiplayer && <Button title={t().rematch} variant="secondary" onPress={() => { handleRematch(); }} style={{ flex: 1 }} />}
+                  {/* SHIP-513 — MP has NO sticky DEAL ME IN (that is !isMultiplayer), so ⚡ REMATCH
+                      IS the MP primary restart. It was the one plain Button left in this screen
+                      family; it is now the app's ChipButton, matching the solo sticky primary
+                      (mint chip, dark label, brass edge). HOME stays the quiet secondary. */}
                   {isMultiplayer && isMpHost && (
-                    <Button
-                      title="⚡ REMATCH"
-                      variant="secondary"
+                    <ChipButton
+                      variant="primary"
+                      compact
+                      flex
                       onPress={() => {
                         // Unified: rematch returns to the Multiplayer Lobby to start a fresh table.
                         useGameStore.getState().resetMultiplayer();
                         clearRevealData();
                         router.replace('/lobby' as any);
                       }}
-                      style={{ flex: 1 }}
-                    />
+                      accessibilityLabel={t().rematch}
+                      testID="mp-rematch"
+                    >
+                      <Text style={styles.playAgainChipText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>⚡ {t().rematch}</Text>
+                    </ChipButton>
                   )}
-                  <Button title="HOME" variant="secondary" onPress={() => { handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
+                  <Button title={t().homeBtn} variant="secondary" onPress={() => { handleHome(); }} style={!isMultiplayer ? { flex: 1 } : {}} />
                 </View>
               </>
             )}
@@ -1557,10 +1639,21 @@ function ResultsContent({ revealData }: { revealData: RevealData }) {
       {!waitingForNextHand && !isMultiplayer && (
         <View style={[styles.stickyBottom, { paddingBottom: Math.max(insets.bottom, rs(16)) }]}>
           <Animated.View style={{ opacity: dealBtnOpacity, transform: [{ scale: dealBtnScale }], width: '75%' }}>
-            <DealMeInButton
-              label={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : 'GAME OVER'}
+            {/* RESULTS-IA 2026-09-01 — the single primary CTA is now a ChipButton (the app's
+                action identity), replacing DealMeInButton whose fill was a SOLID #FFD700 — the
+                winner cue used as a button colour. Same label/gating/handler; mint chip fill,
+                dark label, brass edge. Home/Share/Rematch stay quiet secondaries. */}
+            <ChipButton
+              variant="primary"
               onPress={() => { handleNextHand(); }}
-            />
+              accessibilityLabel={chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : t().gameOver}
+              style={{ width: '100%' }}
+              testID="results-play-again"
+            >
+              <Text style={styles.playAgainChipText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                {chips >= config.potPerBoard * revealData.boardCount ? t().dealMeIn : t().gameOver}
+              </Text>
+            </ChipButton>
           </Animated.View>
         </View>
       )}
@@ -1578,6 +1671,11 @@ const styles = StyleSheet.create({
   scoreDisplay: { fontSize: rf(42), fontWeight: '900' },
   scoreSep: { color: COLORS.textDim, fontSize: rf(32), fontWeight: '300' },
   tieBonusText: { color: COLORS.mint, fontSize: rf(13), fontWeight: '600', opacity: 0.75, marginTop: rs(2) },
+  // letterSpacing rather than a bigger size: this line must read as a caption to the numerals
+  // above it, not compete with them.
+  boardTally: { fontSize: rf(13), fontWeight: '800', letterSpacing: 0.6, marginTop: rs(3), textAlign: 'center' },
+  boardTallyTied: { color: COLORS.textDim },
+  boardTallyDot: { color: COLORS.textDim, fontWeight: '400' },
   netSection: { width: '100%' },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: rs(4) },
   netLabel: { color: COLORS.textMuted, fontSize: rf(16), fontWeight: '600' },
@@ -1591,7 +1689,10 @@ const styles = StyleSheet.create({
   // keeps the label centred once the box is taller than its text.
   shareBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), minHeight: 44, justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: rv(16), backgroundColor: 'rgba(255,255,255,0.06)' },
   shareBtnText: { color: 'rgba(255,255,255,0.7)', fontSize: rf(14), fontWeight: '700', letterSpacing: 0.5 },
-  coachingBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: COLORS.mint, borderRadius: rv(16), backgroundColor: 'rgba(255,215,0,0.08)' },
+  // RESULTS-IA 2026-09-01 — was backgroundColor 'rgba(255,215,0,0.08)': the winner gold #FFD700
+  // on a button fill. Gold is the WON cue, not a button colour. Retinted to a mint wash that
+  // matches the mint border + mint label — the app's action palette, not the cue token.
+  coachingBtn: { paddingVertical: rs(10), paddingHorizontal: rs(28), borderWidth: 1, borderColor: COLORS.mint, borderRadius: rv(16), backgroundColor: 'rgba(79,214,168,0.08)' },
   coachingBtnText: { color: COLORS.mint, fontSize: rf(14), fontWeight: '800', letterSpacing: 1.5 },
   waitingNextHand: { backgroundColor: COLORS.feltLight, paddingVertical: rs(14), borderRadius: rv(10), borderWidth: 1, borderColor: COLORS.boardBorder, alignItems: 'center' },
   waitingNextHandText: { color: COLORS.textSecondary, fontSize: rf(16), fontWeight: '600' },
@@ -1705,6 +1806,32 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
+  // RESULTS-IA 2026-09-01 — the one progressive-disclosure toggle. Brass hairline pill, felt
+  // ground; a quiet control, subordinate to the outcome hero and the primary chip CTA.
+  detailsToggle: {
+    alignSelf: 'center',
+    paddingVertical: rs(8),
+    paddingHorizontal: rs(18),
+    borderRadius: rv(16),
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.22)',
+  },
+  detailsToggleText: {
+    color: '#c9a84c',
+    fontSize: rf(12),
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  // The primary chip label — dark on the mint fill (same contrast choice as the home primary).
+  playAgainChipText: {
+    color: '#08130F',
+    fontSize: rf(18),
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  // RESULTS-IA — shopCta retired from the post-hand flow; styles kept dormant to avoid churn.
   shopCta: {
     paddingVertical: rs(6),
     paddingHorizontal: rs(14),

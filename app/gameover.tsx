@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { rf, rs } from '../utils/responsive';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -13,15 +13,37 @@ import Animated, {
 import ChipsDisplay from '../components/ChipsDisplay';
 import { Button } from '../components/Button';
 import { useGameStore } from '../store/gameStore';
-import { COLORS } from '../constants/gameConfig';
-import { fetchPokerShop } from '../utils/supabaseEconomy';
+import { COLORS, getBoardCount } from '../constants/gameConfig';
+import { getMatchCost } from '../utils/economy';
+import { fetchPokerShop, callRPC } from '../utils/supabaseEconomy';
 import { getDeviceId } from '../utils/leaderboard';
 import { getSupabase } from '../utils/supabase';
 
+/**
+ * ⚠️ FIX-THE-FOUR 2026-09-08 — THIS SCREEN USED TO TELL SOLVENT PLAYERS THEY WERE BROKE.
+ *
+ * "GAME OVER / Not enough chips to continue" and the balance underneath were both rendered
+ * UNCONDITIONALLY. Typed by someone holding 2,000 chips it said they had run out, printing 2,000
+ * directly below the sentence denying it — the claim and its own refutation on one screen.
+ *
+ * The guard below is the whole fix. "Not enough" is now a measured statement: it means the balance
+ * cannot cover the next match's buy-in. Anyone who CAN afford a hand is not in a game over, so they
+ * go Home — the same Redirect pattern /missions, /heatmap and /battle-pass use, which always leaves
+ * a way forward and a way back (there is no app/+not-found.tsx).
+ *
+ * ⚠️ THE THRESHOLD IS DERIVED, NEVER TYPED. getMatchCost(potPerBoard, getBoardCount(players)) —
+ * board count is DYNAMIC (2P=4, 3P=3, 4P=2) and a literal here would be wrong at two table sizes
+ * out of three.
+ */
 export default function GameOverScreen() {
   const router = useRouter();
   const chips = useGameStore((s) => s.chips);
   const setChips = useGameStore((s) => s.setChips);
+  const config = useGameStore((s) => s.config);
+
+  // What the next hand would actually cost, at the table size this device is set to play.
+  const nextHandCost = getMatchCost(config.potPerBoard, getBoardCount(config.numberOfPlayers));
+  const canAffordAnotherHand = chips >= nextHandCost;
 
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +69,10 @@ export default function GameOverScreen() {
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
+
+  // ⚠️ AFTER the hooks, never before — an early return above them changes hook order between
+  // renders and React throws. This is why the effect and the animated style stay where they are.
+  if (canAffordAnotherHand) return <Redirect href="/" />;
 
   const handlePlayAgain = () => {
     if (!confirming) {
@@ -87,7 +113,9 @@ export default function GameOverScreen() {
           if (balance === 0) {
             const client = getSupabase();
             if (client) {
-              const { data } = await client.rpc('claim_emergency_chips', { p_device_id: deviceId });
+              // AE2 — through callRPC for the app-open auth gate; claim_emergency_chips is
+              // econ_bind_ok-gated and this is the zero-chip rescue, the worst place to be refused.
+              const data = await callRPC<any>('claim_emergency_chips', { p_device_id: deviceId });
               // Refusals ('already_claimed_today', 'still_have_chips') are normal, not errors:
               // the player simply stays where they are and the daily faucet is their way back.
               if (data?.ok && typeof data.new_balance === 'number') balance = data.new_balance;

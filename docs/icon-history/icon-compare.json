@@ -1,0 +1,194 @@
+{
+  "ts": "2026-09-07T05:36:50.396Z",
+  "method": "chromium stamps, maths verbatim from tools/thirty-directions/icon-legibility.mjs",
+  "rows": [
+    {
+      "id": "EXPO",
+      "file": "00-expo-placeholder-2026-03-11-91f0f6a.png",
+      "commit": "91f0f6a",
+      "date": "2026-03-11",
+      "shipped": "11 Mar, hours",
+      "depicts": "Expo template chevron on pale blue, construction guides visible",
+      "at60": {
+        "subjectArea": 13.8,
+        "contrast": 2.08,
+        "bigRegions": 1,
+        "crispness": 0.272,
+        "ground": 0.886,
+        "ringGround": 0.886
+      },
+      "at1024": {
+        "subjectArea": 13.8,
+        "contrast": 2.1,
+        "bigRegions": 1,
+        "crispness": 0.054,
+        "ground": 0.886,
+        "ringGround": 0.886
+      },
+      "clip": {
+        "subjectPx": 144411,
+        "outsideCircle": 968,
+        "lostPct": 0.67
+      },
+      "regionsLost": 0
+    },
+    {
+      "id": "FLAT",
+      "file": "01-flat-green-2026-03-11-20c853d.png",
+      "commit": "20c853d",
+      "date": "2026-03-11",
+      "shipped": "11 Mar, hours",
+      "depicts": "flat dark green square, no mark at all (declared a placeholder in its own commit)",
+      "at60": {
+        "subjectArea": 0,
+        "contrast": 1,
+        "bigRegions": 0,
+        "crispness": 0,
+        "ground": 0.008,
+        "ringGround": 0.008,
+        "unreliable": true,
+        "why": "ground mis-identified (vignette or near-uniform tile) — NOT a finding"
+      },
+      "at1024": {
+        "subjectArea": 0,
+        "contrast": 1,
+        "bigRegions": 0,
+        "crispness": 0,
+        "ground": 0.008,
+        "ringGround": 0.008,
+        "unreliable": true,
+        "why": "ground mis-identified (vignette or near-uniform tile) — NOT a finding"
+      },
+      "clip": {
+        "subjectPx": 0,
+        "outsideCircle": 0,
+        "lostPct": 0
+      },
+      "regionsLost": 0
+    },
+    {
+      "id": "CP",
+      "file": "02-CP-2026-03-11-adee655.png",
+      "commit": "adee655",
+      "date": "2026-03-11",
+      "shipped": "11–12 Mar, 1 day",
+      "depicts": "gold \"CP\" on dark green, small gold spade in the lower-right corner — rounded, with TRANSPARENT corners",
+      "at60": {
+        "subjectArea": 99,
+        "contrast": 1.68,
+        "bigRegions": 1,
+        "crispness": 0.116,
+        "ground": 0,
+        "ringGround": 0.034,
+        "unreliable": true,
+        "why": "ground mis-identified (vignette or near-uniform tile) — NOT a finding"
+      },
+      "at1024": {
+        "subjectArea": 99.4,
+        "contrast": 1.68,
+        "bigRegions": 1,
+        "crispness": 0.007,
+        "ground": 0,
+        "ringGround": 0.034,
+        "unreliable": true,
+        "why": "ground mis-identified (vignette or near-uniform tile) — NOT a finding"
+      },
+      "clip": {
+        "subjectPx": 1042553,
+        "outsideCircle": 218961,
+        "lostPct": 21
+      },
+      "regionsLost": 0
+    },
+    {
+      "id": "C-GREEN",
+      "file": "03-C-GREEN-2026-03-12-582e93c.png",
+      "commit": "582e93c",
+      "date": "2026-03-12",
+      "shipped": "12–18 Mar, 6 days",
+      "depicts": "ivory letter C on a poker-green gradient, gold double ring, four suit pips at the corners",
+      "at60": {
+        "subjectArea": 10.1,
+        "contrast": 1.91,
+        "bigRegions": 2,
+        "crispness": 0.072,
+        "ground": 0.035,
+        "ringGround": 0.042
+      },
+      "at1024": {
+        "subjectArea": 9.3,
+        "contrast": 2.63,
+        "bigRegions": 2,
+        "crispness": 0.016,
+        "ground": 0.035,
+        "ringGround": 0.042
+      },
+      "clip": {
+        "subjectPx": 97473,
+        "outsideCircle": 0,
+        "lostPct": 0
+      },
+      "regionsLost": 0
+    },
+    {
+      "id": "C-BLACK",
+      "file": "04-C-BLACK-2026-03-18-64cef22.png",
+      "commit": "64cef22",
+      "date": "2026-03-18",
+      "shipped": "18 Mar – 30 Aug, 165 days",
+      "depicts": "gold letter C on near-black, thin gold ring, four suit pips (gold club, red heart, red diamond, gold spade)",
+      "at60": {
+        "subjectArea": 13.8,
+        "contrast": 4.25,
+        "bigRegions": 1,
+        "crispness": 0.156,
+        "ground": 0.003,
+        "ringGround": 0.003
+      },
+      "at1024": {
+        "subjectArea": 10.7,
+        "contrast": 8.66,
+        "bigRegions": 2,
+        "crispness": 0.028,
+        "ground": 0.003,
+        "ringGround": 0.003
+      },
+      "clip": {
+        "subjectPx": 112610,
+        "outsideCircle": 0,
+        "lostPct": 0
+      },
+      "regionsLost": 1
+    },
+    {
+      "id": "C1",
+      "file": "05-C1-CARD-2026-08-30-fe1b60c.png",
+      "commit": "fe1b60c",
+      "date": "2026-08-30",
+      "shipped": "30 Aug – today",
+      "depicts": "cream playing card, gold border, navy spade, near-black ground — THE CURRENT ICON",
+      "at60": {
+        "subjectArea": 41.4,
+        "contrast": 18.96,
+        "bigRegions": 1,
+        "crispness": 0.47,
+        "ground": 0.003,
+        "ringGround": 0.003
+      },
+      "at1024": {
+        "subjectArea": 39.9,
+        "contrast": 18.96,
+        "bigRegions": 1,
+        "crispness": 0.028,
+        "ground": 0.003,
+        "ringGround": 0.003
+      },
+      "clip": {
+        "subjectPx": 418094,
+        "outsideCircle": 0,
+        "lostPct": 0
+      },
+      "regionsLost": 0
+    }
+  ]
+}

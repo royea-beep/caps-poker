@@ -52,7 +52,7 @@ export default function SideMenu({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
   const playerAvatar = useGameStore((s) => s.playerAvatar) || '👤';
-  const playerName = useGameStore((s) => s.playerName) || 'Player';
+  const playerName = useGameStore((s) => s.playerName) || t().playerFallback;
   // Subscribe to languageVersion so the menu re-renders when language changes
   const languageVersion = useGameStore((s) => s.languageVersion);
   void languageVersion; // suppress unused warning
@@ -105,7 +105,26 @@ export default function SideMenu({
         style={[StyleSheet.absoluteFillObject, styles.overlay, { opacity: overlayOpacity }]}
         pointerEvents={visible ? 'auto' : 'none'}
       >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        {/*
+          PRE-EXISTING, FOUND WHILE VERIFYING D1'S FLOOR — not a D1 change.
+          This backdrop was the ONE unnamed control on the home screen, at every width, on the
+          shipped build as well as the new one. Two faults, one line each:
+            1. NO NAME. A full-screen button that announced nothing.
+            2. STILL FOCUSABLE WHEN CLOSED. SideMenu stays MOUNTED with `pointerEvents: 'none'`,
+               which stops touch but does NOT remove an element from the tab order or the
+               accessibility tree on web — so a keyboard or screen-reader user landed on an
+               invisible 393x788 target on every screen that renders this menu.
+          `focusable={visible}` is the part that matters: pointerEvents was never going to do it.
+        */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={onClose}
+          focusable={visible}
+          accessibilityElementsHidden={!visible}
+          importantForAccessibility={visible ? 'yes' : 'no-hide-descendants'}
+          accessibilityRole="button"
+          accessibilityLabel="Close menu"
+        />
       </Animated.View>
 
       {/* Menu panel */}
@@ -131,33 +150,46 @@ export default function SideMenu({
               {user?.user_metadata?.full_name ?? playerName}
             </Text>
             <Text style={styles.profileChips}>
-              {'💰 '}{(chips ?? 0).toLocaleString()}{' chips'}
+              {'💰 '}{(chips ?? 0).toLocaleString()}{' '}{t().chipsWord}
             </Text>
           </View>
 
           <View style={styles.divider} />
 
-          {/* Online / Multiplayer — single entry: the Multiplayer Lobby (/lobby). */}
-          <MenuItem icon="🎮" label={t().playOnline} onPress={() => navigate('/lobby')} />
+          {/* VAMOS-NAV-3TABS 2026-08-31 — Friends/Clubs moved off the bottom bar to here (1 club,
+              2 members ever). /friends route is unchanged; the tab was dropped with href:null. */}
+          <MenuItem icon="👥" label={t().tabFriends} onPress={() => navigate('/friends')} />
 
           <View style={styles.divider} />
 
-          {/* Progress & History */}
-          <MenuItem icon="⚔️" label={t().battlePass} onPress={() => navigate('/battle-pass')} />
-          <MenuItem icon="📊" label={t().stats} onPress={() => navigate('/stats')} />
-          <MenuItem icon="📜" label={t().handHistory} onPress={() => navigate('/hand-history')} />
+          {/* Secondary / rare features only. VAMOS-NAV-DEDUPE 2026-08-31 — REMOVED four duplicate
+              entries so each destination has one obvious route:
+                · Play Online  → canonical: the Play tab's Multiplayer Lobby + the big PLAY ONLINE
+                  CTA on the home screen (this very drawer opens from that same screen).
+                · Stats, Hand History, Settings → canonical: the Profile tab's menu rows.
+              The drawer now holds only what has no other home: Battle Pass, Coaching, Tutorial,
+              Language, and auth. (Leaderboard was already deduped to the Play tab.) */}
+          {/* THE-LAST-THREE 2026-09-03 — BATTLE PASS ENTRY HIDDEN. The route, the screen, the store
+              and the config all stay; only this door is closed. Measured, not assumed:
+                · app_config.battle_pass_enabled = false since 2026-03-27, and NO client code reads
+                  it (the constant was dropped from constants/economyConfig.ts on 2026-08-31), so
+                  the flag could never have gated this link.
+                · stores/battlePassStore.ts claimFreeReward()/claimPremiumReward() only append the
+                  tier number to a local AsyncStorage array. They credit NO chips and unlock NO
+                  cosmetic. Tier 1 advertises "500 chips" and pays zero.
+                · upgradeToPremium() asks "Spend 5,000 chips to unlock the Premium track?" and then
+                  charges nothing at all.
+                · 0 of the 60 reward ids in constants/battlePassConfig.ts resolve anywhere in the
+                  app. (`ocean`/`emerald` exist in constants/homeThemes.ts as HOME BACKGROUNDS —
+                  a different namespace that no claim path touches.)
+              A screen that promises sixty rewards and delivers none is the "no half-done features
+              visible" release rule, so the link comes off the drawer until the rewards are real.
+              To restore: delete this comment and uncomment the line below. */}
+          {/* <MenuItem icon="⚔️" label={t().battlePass} onPress={() => navigate('/battle-pass')} /> */}
           <MenuItem icon="🎓" label={t().coaching} onPress={() => navigate('/coaching')} />
-          {/* THE-ONE-DAY 2026-08-22 — SPECTATOR removed from the menu. /spectate was reachable in
-              ONE tap and is a dead end: four lines, "⚠️ No room code provided", zero working
-              controls and no way back (scope panel, handoff 87). The route stays on disk — it is
-              reachable with a real room code — but it must not be offered as a destination.
-              Nothing depends on this entry; the remaining items are unchanged. */}
-          {/* Dedupe: leaderboard canonical in Friends tab — removed here + from Profile. */}
 
           <View style={styles.divider} />
 
-          {/* Settings */}
-          <MenuItem icon="⚙️" label={t().settings} onPress={() => navigate('/settings')} />
           <MenuItem
             icon="📖"
             label={t().tutorial}

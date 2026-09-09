@@ -1,0 +1,218 @@
+import React, { useRef } from 'react';
+import { Animated, Pressable, View, Platform, StyleSheet, ViewStyle } from 'react-native';
+import { rs, rv } from '../utils/responsive';
+
+/**
+ * ChipButton — the E identity, built for real.
+ *
+ * Roye ranked treatment E (the beveled poker-chip) #1 in the button sweep, then chose the
+ * ELONGATED stadium shape over the true circle: the round chip clips "Play Online" — Hebrew
+ * "שחק אונליין · מול שחקנים אמיתיים" overflows a circle by +17px at BOTH 320 and 393 (measured,
+ * ROUND-CHIP-2026-09-01). The stadium holds the full label in EN and HE at both widths while
+ * keeping every part of the poker-chip look: a mint fill, a brass DASHED rim (the chip edge),
+ * a bevel (top highlight + bottom shadow), and a pressed state that sinks.
+ *
+ * COLOURS — the app's own, restated as literals (index.tsx already hardcodes '#4FD6A8'):
+ *   MINT  #4FD6A8 — the action / the primary fill.
+ *   BRASS #C9A84C — the chip EDGE only (a smooth solid rim line). A different colour from the cue.
+ *   winner gold #FFD700 (the WON cue, Card.tsx, 3px) appears NOWHERE on this button.
+ *
+ * EDGE — smooth, not dashed. Roye reviewed the dashed rim in the Luxury-Home design and removed
+ * the dash: the edge is now a clean solid brass line (LUXURY-HOME 2026-09-01).
+ *
+ * DIMENSIONS — every one via rf/rs/rv (Iron Rule #3). No pixel literals: the corner radius,
+ * padding, gap, the dashed edge width and its inset, the bevel heights and the drop shadow all
+ * scale with the screen. Colours and opacities are not dimensions.
+ *
+ * LAYERING — two layers on purpose: the OUTER (sinking) view carries the fill + radius + drop
+ * shadow (iOS casts a shadow only from an un-clipped, backed, rounded view); the INNER Pressable
+ * carries `overflow:'hidden'` so the bevel bars are clipped to the stadium. Putting the shadow and
+ * overflow on one view would make the shadow vanish on iOS (overflow:hidden ⇒ masksToBounds).
+ */
+
+const MINT = '#4FD6A8'; // action / primary fill
+const BRASS = '#C9A84C'; // the chip edge (dashed rim) — NOT the winner cue
+const CHIP_DARK = '#12211B'; // secondary chip fill (dark felt), mint rim
+
+// Platform-aware outer drop shadow — mirrors the platformShadow helper in components/Button.tsx.
+// Spatial args (offsetY, radius) arrive already scaled through rs() so this stays literal-free.
+function dropShadow(offsetY: number, radius: number, opacity: number, elevation: number): ViewStyle {
+  if (Platform.OS === 'web') {
+    return { boxShadow: `0px ${offsetY}px ${radius}px rgba(0,0,0,${opacity})` } as ViewStyle;
+  }
+  if (Platform.OS === 'android') {
+    return { elevation };
+  }
+  return {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: offsetY },
+    shadowOpacity: opacity,
+    shadowRadius: radius,
+  };
+}
+
+type Variant = 'primary' | 'secondary';
+
+interface ChipButtonProps {
+  variant?: Variant;
+  onPress: () => void;
+  accessibilityLabel: string;
+  children: React.ReactNode;
+  /** Applied to the outer (sinking) wrapper — use for margins / width, not for the chip skin. */
+  style?: ViewStyle;
+  // ── GAME-UPGRADES step 1 — optional, backward-compatible. The home never passes these. ──
+  /** Override the mint/dark fill (e.g. the game's green "✓ READY" state). */
+  fillOverride?: string;
+  /** Override the brass/mint edge line to match a fill override. */
+  edgeOverride?: string;
+  /** Dim + block the press (disabled CTA). */
+  disabled?: boolean;
+  /** Stretch to fill a flex row (the game's two-up Cancel/Confirm footer). */
+  flex?: boolean;
+  /** Footer height instead of the tall home height — keeps the fixed action bar its current size. */
+  compact?: boolean;
+  testID?: string;
+  accessibilityState?: { disabled?: boolean; busy?: boolean };
+}
+
+export function ChipButton({
+  variant = 'primary',
+  onPress,
+  accessibilityLabel,
+  children,
+  style,
+  fillOverride,
+  edgeOverride,
+  disabled = false,
+  flex = false,
+  compact = false,
+  testID,
+  accessibilityState,
+}: ChipButtonProps) {
+  // Pressed state — the chip SINKS (translateY), the poker-chip "press". POLISH-1 (2): the
+  // onPressIn/onPressOut pair is also what keeps Play Online's very first tap from being dropped
+  // by react-native-web's press recognizer, so every ChipButton carries it.
+  const sink = useRef(new Animated.Value(0)).current;
+  const isPrimary = variant === 'primary';
+
+  const fill = fillOverride ?? (isPrimary ? MINT : CHIP_DARK);
+  const edgeColor = edgeOverride ?? (isPrimary ? BRASS : MINT);
+
+  // ── Every dimension responsive — no pixel literals ─────────────────────────
+  const radius = rv(60); // clamps to a stadium (half-height) at these button heights
+  // compact = the fixed action-bar height (rv(52)), so chipifying the footer does not change its
+  // size; otherwise the home hierarchy (primary rv(72) dominant, secondary rv(52) quiet).
+  const minHeight = compact ? rv(52) : isPrimary ? rv(72) : rv(52);
+  const padV = compact ? rs(12) : isPrimary ? rs(14) : rs(10);
+  const padH = isPrimary ? rs(24) : rs(20);
+  const gap = isPrimary ? rs(12) : rs(8);
+  const edgeInset = rs(6); // the dashed rim sits this far in from the fill edge
+  const edgeWidth = rv(2); // the smooth solid rim line
+  const bevelTop = rs(4); // inner top highlight — the chip catches light (SHIP-5: raised for depth)
+  const bevelBottom = rs(11); // inner bottom shadow — the chip has depth (SHIP-5: raised)
+  const sinkTo = rs(4);
+
+  const onIn = () =>
+    Animated.timing(sink, { toValue: sinkTo, duration: 80, useNativeDriver: true }).start();
+  const onOut = () =>
+    Animated.timing(sink, { toValue: 0, duration: 150, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View
+      style={[
+        { transform: [{ translateY: sink }], backgroundColor: fill, borderRadius: radius },
+        dropShadow(rs(10), rs(22), 0.5, isPrimary ? 10 : 6),
+        flex ? { flex: 1 } : null,
+        disabled ? { opacity: 0.5 } : null,
+        style,
+      ]}
+    >
+      <Pressable
+        onPress={disabled ? undefined : onPress}
+        onPressIn={disabled ? undefined : onIn}
+        onPressOut={disabled ? undefined : onOut}
+        disabled={disabled}
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={accessibilityState ?? (disabled ? { disabled: true } : undefined)}
+        style={[
+          styles.chip,
+          {
+            backgroundColor: fill,
+            borderRadius: radius,
+            minHeight,
+            paddingVertical: padV,
+            // keep the content clear of the dashed rim (padH + the rim's own inset)
+            paddingHorizontal: padH + edgeInset,
+            gap,
+          },
+        ]}
+      >
+        {/* BEVEL — inner top highlight */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.bevel,
+            {
+              top: 0,
+              height: bevelTop,
+              borderTopLeftRadius: radius,
+              borderTopRightRadius: radius,
+              backgroundColor: 'rgba(255,255,255,0.55)',
+            },
+          ]}
+        />
+        {/* BEVEL — inner bottom shadow */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.bevel,
+            {
+              bottom: 0,
+              height: bevelBottom,
+              borderBottomLeftRadius: radius,
+              borderBottomRightRadius: radius,
+              backgroundColor: 'rgba(0,0,0,0.28)',
+            },
+          ]}
+        />
+        {/* THE CHIP EDGE — a smooth SOLID rim line (brass on primary, mint on secondary). Roye
+            removed the dash in the Luxury-Home review; a solid rounded border renders identically
+            on web and iOS, so this is no longer a device-fidelity unknown. */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: edgeInset,
+            left: edgeInset,
+            right: edgeInset,
+            bottom: edgeInset,
+            borderRadius: radius,
+            borderWidth: edgeWidth,
+            borderColor: edgeColor,
+            borderStyle: 'solid',
+            opacity: 0.9,
+          }}
+        />
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export default ChipButton;
+
+const styles = StyleSheet.create({
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden', // clip the bevel bars to the stadium
+  },
+  bevel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+  },
+});

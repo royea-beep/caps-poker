@@ -87,7 +87,7 @@ npx jest --silent      # must be 115/115
 | `app/lobby/host.tsx` | TCP local multiplayer host |
 | `app/lobby/internet-host.tsx` | Supabase Realtime internet host |
 | `components/Card.tsx` | 5-0 poker style, 4-color suits, diamond lattice back, flip anim |
-| `components/Board.tsx` | Red felt, WIN/LOSE/TIE banners with hand name, theme tokens |
+| `components/Board.tsx` | GREEN felt, WIN/LOSE/TIE banners with hand name, theme tokens. (Corrected 2026-09-05: this row said "Red felt" and the app has never rendered red felt — `FELT_GRADIENT.classic` is `['#003115','#062E18']`. Same class as the FIVE-O "Red felt" copy, fixed 2026-09-03.) |
 | `components/RevealSequence.tsx` | Five-O vertical layout, probability, delta, BEST card glow |
 | `components/BugReporter.tsx` | Shake/FAB → Supabase bug_reports, hidden on game screens |
 | `constants/visualThemes.ts` | Classic/Five-O token system (boardBg, accent, cardFace, etc.) |

@@ -1,0 +1,137 @@
+{
+  "lang": "en",
+  "width": 393,
+  "screens": {
+    "home": {
+      "sw": 393,
+      "iw": 393,
+      "overflow": false,
+      "controlCount": 16,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 1,
+      "tiny": [
+        {
+          "name": "Challenge a Friend",
+          "role": "button",
+          "w": 164,
+          "h": 31
+        }
+      ],
+      "consoleErrors": 0
+    },
+    "onboarding": {
+      "sw": 393,
+      "iw": 393,
+      "overflow": false,
+      "controlCount": 21,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 6,
+      "tiny": [
+        {
+          "name": "Skip the tutorial",
+          "role": "button",
+          "w": 85,
+          "h": 33
+        },
+        {
+          "name": "Step 1 of 3",
+          "role": "button",
+          "w": 22,
+          "h": 8
+        },
+        {
+          "name": "Step 2 of 3",
+          "role": "button",
+          "w": 8,
+          "h": 8
+        },
+        {
+          "name": "Step 3 of 3",
+          "role": "button",
+          "w": 8,
+          "h": 8
+        },
+        {
+          "name": "Continue, step 1 of 3",
+          "role": "button",
+          "w": 307,
+          "h": 43
+        },
+        {
+          "name": "Challenge a Friend",
+          "role": "button",
+          "w": 164,
+          "h": 31
+        }
+      ],
+      "consoleErrors": 0
+    },
+    "placement": {
+      "sw": 393,
+      "iw": 393,
+      "overflow": false,
+      "controlCount": 20,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 4,
+      "tiny": [
+        {
+          "name": "Auto-Place — Board 1",
+          "role": "button",
+          "w": 91,
+          "h": 18
+        },
+        {
+          "name": "Auto-Place — Board 2",
+          "role": "button",
+          "w": 91,
+          "h": 18
+        },
+        {
+          "name": "Auto-Place — Board 3",
+          "role": "button",
+          "w": 91,
+          "h": 18
+        },
+        {
+          "name": "Auto-Place ALL",
+          "role": "button",
+          "w": 112,
+          "h": 18
+        }
+      ],
+      "consoleErrors": 3
+    },
+    "reveal": {
+      "sw": 393,
+      "iw": 393,
+      "overflow": false,
+      "controlCount": 27,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 0,
+      "tiny": [],
+      "consoleErrors": 3
+    },
+    "results": {
+      "sw": 393,
+      "iw": 393,
+      "overflow": false,
+      "controlCount": 5,
+      "unnamedCount": 0,
+      "unnamed": [],
+      "tinyCount": 1,
+      "tiny": [
+        {
+          "name": "Show hand details",
+          "role": "button",
+          "w": 133,
+          "h": 32
+        }
+      ],
+      "consoleErrors": 11
+    }
+  }
+}

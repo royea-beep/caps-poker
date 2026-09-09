@@ -1,0 +1,88 @@
+{
+ "label": "after",
+ "ts": "2026-09-01T16:22:30.375Z",
+ "views": [
+  {
+   "W": 320,
+   "H": 720,
+   "collapsed": {
+    "headline": "YOU WIN",
+    "scoreNumerals": "2 — 1",
+    "boardTally": "2 WON · 1 TIED · 1 LOST",
+    "practiceBanner": false,
+    "playAgainPresent": true,
+    "playAgainBg": "rgb(79, 214, 168)",
+    "coachingPresent": true,
+    "coachingBg": "rgba(79, 214, 168, 0.08)",
+    "toggleLabel": "Show hand details",
+    "xpBanner": false,
+    "breakdownHand": false,
+    "boardByBoard": false,
+    "historyLink": false,
+    "shopCta": false,
+    "goldButtonHits": 0
+   },
+   "expanded": {
+    "headline": "YOU WIN",
+    "scoreNumerals": "2 — 1",
+    "boardTally": "2 WON · 1 TIED · 1 LOST",
+    "practiceBanner": false,
+    "playAgainPresent": true,
+    "playAgainBg": "rgb(79, 214, 168)",
+    "coachingPresent": true,
+    "coachingBg": "rgba(79, 214, 168, 0.08)",
+    "toggleLabel": "Hide hand details",
+    "xpBanner": true,
+    "breakdownHand": true,
+    "boardByBoard": true,
+    "historyLink": true,
+    "shopCta": false,
+    "goldButtonHits": 0
+   },
+   "errs": [
+    "PAGEERROR: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ]
+  },
+  {
+   "W": 393,
+   "H": 852,
+   "collapsed": {
+    "headline": "YOU WIN",
+    "scoreNumerals": "2 — 1",
+    "boardTally": "2 WON · 1 TIED · 1 LOST",
+    "practiceBanner": false,
+    "playAgainPresent": true,
+    "playAgainBg": "rgb(79, 214, 168)",
+    "coachingPresent": true,
+    "coachingBg": "rgba(79, 214, 168, 0.08)",
+    "toggleLabel": "Show hand details",
+    "xpBanner": false,
+    "breakdownHand": false,
+    "boardByBoard": false,
+    "historyLink": false,
+    "shopCta": false,
+    "goldButtonHits": 0
+   },
+   "expanded": {
+    "headline": "YOU WIN",
+    "scoreNumerals": "2 — 1",
+    "boardTally": "2 WON · 1 TIED · 1 LOST",
+    "practiceBanner": false,
+    "playAgainPresent": true,
+    "playAgainBg": "rgb(79, 214, 168)",
+    "coachingPresent": true,
+    "coachingBg": "rgba(79, 214, 168, 0.08)",
+    "toggleLabel": "Hide hand details",
+    "xpBanner": true,
+    "breakdownHand": true,
+    "boardByBoard": true,
+    "historyLink": true,
+    "shopCta": false,
+    "goldButtonHits": 0
+   },
+   "errs": [
+    "PAGEERROR: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+   ]
+  }
+ ]
+}

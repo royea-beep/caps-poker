@@ -47,14 +47,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface CardProps {
   card?: CardType;
   faceDown?: boolean;
-  small?: boolean;
+  // VAMOS-NAV-DEAD-CODE 2026-08-31 — `small` and `suitsOnly` removed: neither was ever passed by
+  // any caller (repo-wide grep = 0), so the small-size fallback and the suit-only render arm below
+  // were unreachable. `themeOverride` is KEPT — it is inert here but 4 simulate.tsx call sites pass
+  // it, so the prop is load-bearing for their typing.
   highlighted?: boolean;
   dimmed?: boolean;
   flipDuration?: number;
   cardWidth?: number;
   cardHeight?: number;
-  themeOverride?: string; // kept for prop compatibility
-  suitsOnly?: boolean;
+  themeOverride?: string; // kept for prop compatibility (passed by simulate.tsx; ignored here)
   isCommunityCard?: boolean;
   /** CARD-FACE batch — whose card this is. Drives the ALWAYS-cyan ownership glow on the UPGRADED
    *  face (player = cyan glow, bot/undefined = none). Ignored on the default face. */
@@ -181,13 +183,11 @@ const SUIT_COLORS_4_FIVEO: Record<string, string> = {
 function CardComponent({
   card,
   faceDown = false,
-  small,
   highlighted,
   dimmed,
   flipDuration = 800,
   cardWidth,
   cardHeight,
-  suitsOnly = false,
   isCommunityCard = false,
   owner,
   zone,
@@ -204,10 +204,10 @@ function CardComponent({
   const _explicitFloorH = isCommunityCard ? 34 : 22;
   const width = cardWidth != null
     ? Math.max(_explicitFloorW, cardWidth)
-    : Math.max(small ? rs(52) : rs(58), _minW);
+    : Math.max(rs(58), _minW);
   const height = cardHeight != null
     ? Math.max(_explicitFloorH, cardHeight)
-    : Math.max(small ? rs(74) : rs(82), _minH);
+    : Math.max(rs(82), _minH);
   const fourColorSuits = useGameStore((s) => s.fourColorSuits);
   const visualTheme = useGameStore((s) => s.visualTheme);
   const cardConfig = useGameStore((s) => s.cardConfig);
@@ -480,7 +480,13 @@ function CardComponent({
     // failed `tsc` from the day it landed. It is type-only and erased before emit, so removing
     // it changes the colour, the width and the rendered pixel not at all.
     ? { borderWidth: 2, borderColor: OBSIDIAN.mint }                         // the field — mint
-    : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.22)' as const };         // neutral
+    // NEUTRAL — the third state of the winner cue. Was rgba(0,0,0,0.22), which composites over
+    // the card face #FCFAF3 to rgb(197,195,190): 1.69:1 AGAINST THE CARD IT IS DRAWN ON, i.e.
+    // not legible, on every felt including the one shipping before this change. 0.45 gives
+    // rgb(139,138,134) and 3.31:1 — clear with margin rather than sitting on the 3.00 line,
+    // which 0.42 would have. Still black, still 1px, so the WIDTH channel (3 gold / 2 mint /
+    // 1 neutral) is untouched and the cue stays a width in greyscale.
+    : { borderWidth: 1, borderColor: 'rgba(0,0,0,0.45)' as const };         // neutral
 
   if (!card) {
     return (
@@ -598,19 +604,9 @@ function CardComponent({
             that is a deliberate design decision, not a 1px bar.
             The identical copy in StaticCard.tsx (which is what /results renders) is deleted too
             — fixing only one of the two is how the bar survived the last round. */}
-        {suitsOnly ? (
-          <View style={styles.suitBottomLeft}>
-            <Text style={[styles.suitOnlyText, {
-              color: suitColor,
-              fontSize: Math.floor(height * 0.44),
-              textShadowColor: isRed ? 'rgba(211,47,47,0.35)' : 'rgba(255,255,255,0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-            }]}>
-              {SUIT_SYMBOLS[card.suit]}
-            </Text>
-          </View>
-        ) : isV2 ? (
+        {/* VAMOS-NAV-DEAD-CODE 2026-08-31 — the `suitsOnly` render arm was removed: the prop was
+            never passed, so this only ever took the isV2 path. */}
+        {isV2 ? (
           <>
             {/* top-left corner */}
             <View style={styles.cornerTopLeft} pointerEvents="none">
@@ -703,19 +699,6 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.35,
-  },
-  suitBottomLeft: {
-    position: 'absolute',
-    bottom: 4,
-    left: 6,
-  },
-  suitOnlyText: {
-    fontWeight: '700',
-    lineHeight: undefined,
-    ...Platform.select({
-      web: { fontFamily: 'Arial Black, Arial, sans-serif' } as any,
-      default: {},
-    }),
   },
   // V2 Minimalist styles
   v2CornerRank: {

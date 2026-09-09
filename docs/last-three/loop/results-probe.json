@@ -1,0 +1,72 @@
+{
+ "seed4": {
+  "outcome": {
+   "url": "/results",
+   "headline": "YOU WIN",
+   "mine": 2,
+   "theirs": 1,
+   "result": "WIN",
+   "boardsWon": null,
+   "boardsTotal": null,
+   "swept": false,
+   "text": "Hand won! 🎉\nYOU WIN\n🤖 Practice vs bot — XP only, no chips\nThis session: +25\n2 — 1\n2 WON · 1 TIED · 1 LOST\nHand details ▾\nBoard 1\nLOSS\nBot\nK\n♥\n♥\nK\n♣\n♣\nK\n♠\n♠\nK\n♦\n♦\nPair of Kings\n9\n♥\n♥\nA\n♦\n♦\n5\n♥\n♥\n7\n♠\n♠\n10\n♣\n♣\nYOU\n4\n♦\n♦\n4\n♣\n♣\n6\n♠\n♠\n6\n♦\n♦\nPair of Sixes\nPair of Kings beats Pair of Sixes\n★ Best hand from 9 cards\n❌ YOU LOSE\nBoard 2\nWIN\nBot\n8\n♠\n♠\n9\n♠\n♠\n10\n♠\n♠\n3\n♠\n♠\nTwo Pair, Eights and Sixes\n4\n♥\n♥\n6\n♥\n♥"
+  },
+  "det": {
+   "url": "/results",
+   "controls": 5,
+   "gold": [],
+   "controlLabels": [
+    "Show hand details",
+    "Share Hand",
+    "REMATCH",
+    "HOME",
+    "DEAL ME IN"
+   ]
+  },
+  "pageErrors": [
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "handHistory": {
+   "gold": [],
+   "text": "‹\nBack\nHAND HISTORY\nAll (0)\nWins (0)\nLosses (0)\n🃏\nNo hands yet\nYour past hands will show here\n♠\n♠\n♠\nPlay Now"
+  }
+ },
+ "seed20260827": {
+  "outcome": {
+   "url": "/results",
+   "headline": "YOU WIN",
+   "mine": 3,
+   "theirs": 1,
+   "result": "WIN",
+   "boardsWon": null,
+   "boardsTotal": null,
+   "swept": false,
+   "text": "Hand won! 🎉\nYOU WIN\n🤖 Practice vs bot — XP only, no chips\nThis session: +50\n3 — 1\nHand details ▾\nBoard 1\nWIN\nBot\nQ\n♣\n♣\n10\n♣\n♣\n9\n♠\n♠\n8\n♦\n♦\nThree of a Kind, Fours\n4\n♦\n♦\n7\n♣\n♣\n7\n♦\n♦\n4\n♣\n♣\n4\n♥\n♥\nYOU\n2\n♠\n♠\n2\n♥\n♥\n2\n♣\n♣\nK\n♠\n♠\nFull House, Fours over Twos\nFull House, Fours over Twos beats Three of a Kind, Fours\n★ Best hand from 9 cards\n✅ YOU WIN\nBoard 2\nLOSS\nBot\nJ\n♠\n♠\nJ\n♥\n♥\nJ\n♣\n♣\n8\n♥\n♥\nThree of a Kind, J"
+  },
+  "det": {
+   "url": "/results",
+   "controls": 5,
+   "gold": [],
+   "controlLabels": [
+    "Show hand details",
+    "Share Hand",
+    "REMATCH",
+    "HOME",
+    "DEAL ME IN"
+   ]
+  },
+  "pageErrors": [
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD",
+   "NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
+  ],
+  "handHistory": {
+   "gold": [],
+   "text": "‹\nBack\nHAND HISTORY\nAll (0)\nWins (0)\nLosses (0)\n🃏\nNo hands yet\nYour past hands will show here\n♠\n♠\n♠\nPlay Now"
+  }
+ }
+}

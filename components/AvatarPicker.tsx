@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants/gameConfig';
 import { rf, rs, rv } from '../utils/responsive';
-import { avatarOptionsFor, AVATAR_OPTIONS, AVATAR_PREMIUM_SKU } from '../utils/playerProfile';
+import { avatarOptionsFor, AVATAR_OPTIONS } from '../utils/playerProfile';
 import { useOwnedSkus } from '../utils/ownedItems';
 
 interface Props {

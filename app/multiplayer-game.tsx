@@ -16,7 +16,7 @@ import { BoardRevealPayload, HandCompletePayload, CardsDealtPayload } from '../c
 import { RevealBoardData } from '../types/gameTypes';
 import { playSound, startAmbient, stopAmbient } from '../utils/sounds';
 import { sortHand } from '../utils/sortHand';
-import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot } from '../utils/realtimeMultiplayer';
+import { WAITING_STATE_TIMEOUT_MS, SpectatorSnapshot, isOnlineMultiplayerAvailable } from '../utils/realtimeMultiplayer';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import { CapsHooks } from '../utils/learning';
@@ -36,6 +36,7 @@ import { t } from '../utils/i18n';
 import { useGameLayout } from '../hooks/useGameLayout';
 import { GameView } from '../components/GameView';
 import { BoardState } from '../utils/gameLogic';
+import { deriveHandOutcome } from '../utils/handOutcome';
 
 // Lazy-load expo-haptics — not available on web
 let Haptics: any = null;
@@ -679,6 +680,16 @@ function MultiplayerGameScreenInner() {
         br.winnerIndex === myIdx ? 'player' :
         br.winnerIndex === -1 ? 'tie' : 'bot';
 
+      // THE SEAT, NOT JUST THE SIDE. `winner` above folds all three opponents into 'bot', so a
+      // 1-1-1 split and a 1-2-0 split look identical to anything counting it — and the server
+      // calls the first a TIE and the second a LOSS. Rotated so the local player is 0 and every
+      // opponent keeps a DISTINCT index (seats below mine shift up by one, seats above keep
+      // theirs), which is a bijection and therefore preserves each opponent's own count.
+      const winnerSeat =
+        br.winnerIndex === -1 ? -1 :
+        br.winnerIndex === myIdx ? 0 :
+        br.winnerIndex < myIdx ? br.winnerIndex + 1 : br.winnerIndex;
+
       /**
        * THE OPPONENT THE COMPARISON LINE IS ABOUT — and why this used to be blank.
        *
@@ -708,6 +719,7 @@ function MultiplayerGameScreenInner() {
         playerCards: board.playerCards[myIdx] || [],
         allBotCards: otherCards,
         winner,
+        winnerSeat,
         playerHandName: myResult?.name || '',
         botHandName: bestOpp?.name || '',
         allBotHandNames: otherHandNames,
@@ -749,6 +761,16 @@ function MultiplayerGameScreenInner() {
       handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
 
+    // PRE-INVITE 2026-09-06 — `outcome` DERIVED FROM BOARDS, mirroring solo `game_ended`.
+    //
+    // `won: myDelta > 0` is a statement about CHIPS. A hand where the boards tie records
+    // `won:false` for every seat, so a tie is indistinguishable from a loss in the event stream —
+    // and a fifth place deciding who won from chips is exactly the two-sources-of-truth defect
+    // this project already closed on the screen, the ladder and the record. `outcome` comes from
+    // deriveHandOutcome over the SAME revealBoards the celebration reads, so the analytics row
+    // and the screen can never disagree. `won` is kept unchanged for compatibility with the 19
+    // events already recorded and anything reading them.
+    const outcome = deriveHandOutcome(revealBoards);
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
     track('mp_game_ended', {
       role: 'host',
@@ -757,6 +779,7 @@ function MultiplayerGameScreenInner() {
       board_count: boardCount,
       net_chips: myDelta,
       won: myDelta > 0,
+      outcome,
       is_complete: handResult.completeWinner !== null,
     }, 'multiplayer-game');
     // Host owns the lobby room — mark it finished + clear its roster (kills the 'playing'
@@ -832,6 +855,13 @@ function MultiplayerGameScreenInner() {
         reveal.winnerIndex === playerIndex ? 'player' :
         reveal.winnerIndex === -1 ? 'tie' : 'bot';
 
+      // Same rotation as the host path. The guest builds its OWN reveal from the broadcast, so
+      // fixing only the host would have aligned the celebration for one seat at the table.
+      const winnerSeat =
+        reveal.winnerIndex === -1 ? -1 :
+        reveal.winnerIndex === playerIndex ? 0 :
+        reveal.winnerIndex < playerIndex ? reveal.winnerIndex + 1 : reveal.winnerIndex;
+
       // Same defect, same fix as the host path above: the comparison slot is the BEST OPPOSING
       // hand whoever won, chosen by score so it holds at 3 and 4 players.
       let bestOppHand: any = null;
@@ -847,6 +877,7 @@ function MultiplayerGameScreenInner() {
         playerCards: myHand?.cards || board.playerCards,
         allBotCards: otherCards,
         winner,
+        winnerSeat,
         playerHandName: myHand?.handRank || '',
         botHandName: bestOppHand?.handRank || '',
         allBotHandNames: otherHandNames,
@@ -891,6 +922,10 @@ function MultiplayerGameScreenInner() {
       handId: `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     });
 
+    // Same derivation as the host path. The guest builds its OWN revealBoards from the
+    // broadcast, so adding `outcome` only on the host would have left half the table's events
+    // still chips-derived — the same asymmetry the winnerSeat rotation had to fix.
+    const outcome = deriveHandOutcome(revealBoards);
     CapsHooks.gameCompleted(myDelta + config.potPerBoard * boardCount, myDelta > 0, 0);
     track('mp_game_ended', {
       role: 'guest',
@@ -899,6 +934,7 @@ function MultiplayerGameScreenInner() {
       board_count: boardCount,
       net_chips: myDelta,
       won: myDelta > 0,
+      outcome,
       is_complete: result.isComplete,
     }, 'multiplayer-game');
     // If this was a club table, submit the FULL roster. Guest builds it from the
@@ -1604,7 +1640,44 @@ function MultiplayerGameScreenInner() {
  * line 2020). Crashes in placement/wait UI now hit the boundary instead of tearing
  * down the realtime/lobby chain above.
  */
+/**
+ * ⚠️ FIX-THE-FOUR 2026-09-08 — NO ROOM, NO TABLE. This screen used to render cold.
+ *
+ * Typing /multiplayer-game with no room drew the whole thing: a seat ("2P GUEST · Seat 1"), the
+ * player's real chip balance, the placement instruction and a green ✓ READY button — for a game
+ * that does not exist and cannot start. A control that promises something it cannot do is the same
+ * defect as the battle pass's 5,000-chip button, in a different costume.
+ *
+ * ⚠️ THE WORDING IS NOT NEW, AND DELIBERATELY SO. app/lobby/table.tsx:111-113 already handles the
+ * identical case honestly — same condition, same sentence, same way out. Inventing a third phrasing
+ * for the same fact is how a product ends up saying two things about one situation. If that string
+ * ever changes, change it in both places.
+ *
+ * The guard is on the OUTER component so the inner screen never mounts without a room: none of its
+ * timers, channels or seat heartbeats start for a table that isn't there.
+ */
 export default function MultiplayerGameScreen() {
+  const router = useRouter();
+  const roomCode = useGameStore((s) => s.roomCode);
+
+  if (!roomCode || !isOnlineMultiplayerAvailable()) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.noRoomCenter}>
+          <Text style={styles.noRoomText}>Online multiplayer is unavailable right now.</Text>
+          <Pressable
+            style={styles.noRoomBtn}
+            onPress={() => router.replace('/lobby' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Back to lobby"
+          >
+            <Text style={styles.noRoomBtnText}>Back to Lobby</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <MultiplayerGameScreenInner />
@@ -1620,6 +1693,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     // backgroundColor applied inline via theme.background
+  },
+  // The no-room state. Deliberately plain: it is a dead end that says so, not a screen.
+  noRoomCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rs(16),
+    padding: rs(24),
+    backgroundColor: COLORS.background,
+  },
+  noRoomText: {
+    color: COLORS.textSecondary,
+    fontSize: rf(16),
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  noRoomBtn: {
+    paddingHorizontal: rs(22),
+    paddingVertical: rs(12),
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: rv(999),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  noRoomBtnText: {
+    color: COLORS.text,
+    fontSize: rf(15),
+    fontWeight: '700',
   },
   topBar: {
     flexDirection: 'row',

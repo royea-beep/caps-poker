@@ -1,0 +1,166 @@
+{
+  "320": {
+    "C1": {
+      "textCount": 11,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 8,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C2": {
+      "textCount": 12,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C3": {
+      "textCount": 9,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C4": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.64,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C5": {
+      "textCount": 12,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C6": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 8,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C7": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.64,
+      "controls": 7,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C8": {
+      "textCount": 8,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 6,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C9": {
+      "textCount": 19,
+      "failing": [],
+      "minRatio": 5.64,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C10": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 8,
+      "unnamed": 0,
+      "under44": []
+    }
+  },
+  "393": {
+    "C1": {
+      "textCount": 11,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 8,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C2": {
+      "textCount": 12,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C3": {
+      "textCount": 9,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C4": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.64,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C5": {
+      "textCount": 12,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C6": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 8,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C7": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.64,
+      "controls": 7,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C8": {
+      "textCount": 8,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 6,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C9": {
+      "textCount": 19,
+      "failing": [],
+      "minRatio": 5.64,
+      "controls": 9,
+      "unnamed": 0,
+      "under44": []
+    },
+    "C10": {
+      "textCount": 13,
+      "failing": [],
+      "minRatio": 6.69,
+      "controls": 8,
+      "unnamed": 0,
+      "under44": []
+    }
+  }
+}

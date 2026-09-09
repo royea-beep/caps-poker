@@ -159,7 +159,21 @@ function LandingCard({ index, landFrom, landT, children }: { index: number; land
 // Board but sits OUTSIDE its render scope, so it cannot see Board's getTheme() result.
 // In-file, private component, no external contract → same risk class as the rest of this
 // batch. (BoardArrangement stays deferred: cross-file = a public API change.)
-function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, slotHeight, theme }: { isArrangement?: boolean; hasSelection?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number; theme: ThemeTokens }) {
+/**
+ * ⚠️ A CORRECTION, WRITTEN WHERE THE CODE IS. VERIFY-EVERYTHING reported the only unnamed
+ * interactive element in a 33-route sweep as "the bot's face-down card, components/Board.tsx:796".
+ * THAT ATTRIBUTION WAS WRONG. I matched the sweep's 28x33 unnamed div to a Pressable I found by
+ * READING the source, instead of asking the DOM which element it was. Dumping the actual node
+ * settles it: `<div tabindex="0">` wrapping a dashed 36x42 box — THIS component, the empty card
+ * slot, sixteen of them (4 boards x 4 slots) in a two-player hand.
+ *
+ * A SLOT IS A CONTROL, so it is named rather than removed from the tab order: tapping it is how a
+ * card gets placed, and it is the primary interaction of the whole placement screen. It needs to
+ * say WHICH board and WHICH position, because "button" sixteen times in a row tells a screen-reader
+ * user nothing about where the card is going — hence the two new props, threaded from the render
+ * sites that already know both numbers.
+ */
+function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, slotHeight, theme, boardIndex, slotIndex }: { isArrangement?: boolean; hasSelection?: boolean; onPress?: () => void; slotWidth: number; slotHeight: number; theme: ThemeTokens; boardIndex: number; slotIndex: number }) {
   // CG1 RESULT — the sentinel 0.137 read back on 25/25 samples on live. The useEffect below
   // NEVER WRITES this value: its `else` branch would set 0.6 and its `if` branch would start a
   // pulse, and neither happened. What it DOES prove is that a static shared value reaches the
@@ -210,7 +224,17 @@ function EmptySlotAnimated({ isArrangement, hasSelection, onPress, slotWidth, sl
   }));
 
   return (
-    <Pressable onPress={onPress}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      // Board and position both, because sixteen identical "button"s are not navigable. The
+      // second sentence changes with `hasSelection` for the same reason the outline does: it
+      // reports whether this slot can take the card you are holding, which is the fact the
+      // sighted player reads off the active border and the screen-reader user otherwise cannot.
+      accessibilityLabel={`${t().boardLabel(boardIndex + 1)}, empty slot ${slotIndex + 1} of ${CARDS_PER_BOARD}. ${
+        hasSelection ? t().a11yTapToPlace : t().a11ySelectFirst}`}
+      accessibilityState={{ disabled: !hasSelection }}
+    >
       {/* S76-BOARD-ROUTING — colour overrides only; every geometry value (borderWidth,
           borderStyle, radius, margin, width/height) stays in the StyleSheet untouched. */}
       {/* CD2 — the ACTIVE state now keys on hasSelection, not isArrangement. It used to say
@@ -656,9 +680,24 @@ export default function Board({
         // boardAccent: per-board IDENTITY (PRD.board.accent), not a theme colour.
         { backgroundColor: theme.boardPanelFallback, borderColor: boardAccent },
         boardIdentityGlow(boardAccent),
+        // SHIP-V1 2026-08-27 — THE `background` LINE IS GONE, AND ONLY IT. It painted the panel
+        // gradient a SECOND time on web, on top of the absolute-fill <LinearGradient> below, at a
+        // different angle (CSS 165deg vs the child's 131.6deg as the browser resolves its
+        // start/end). Both carried the token's ~0.55 alpha, so web composited to
+        // 1-(1-0.55)^2 = 0.80 while native — which has no CSS layer at all — painted the single
+        // 0.55 the token asks for. Measured off the live DOM, not inferred: the container and its
+        // first child both reported a background-image, and the rendered panel moved
+        // rgb(23,33,33) -> rgb(23,41,35) when this line was removed with nothing else changed.
+        // The child is the layer that stays because it is the one native already uses, so
+        // deleting this one makes web MATCH native rather than inventing a third behaviour.
+        // boxShadow is kept exactly as it was: it is web's stand-in for the native elevation and
+        // has nothing to do with the panel fill.
         Platform.OS === 'web' && {
-          background: `linear-gradient(165deg, ${theme.boardPanelTop} 0%, ${theme.boardPanelBottom} 100%)`,
-          boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62)`,
+          // GAME-UPGRADES step 5 (SHIP-5 amplitude) — recessed well + top-bevel light via appended
+          // INSET shadows. PAINT ONLY (geometry byte-identical). The panel FILL alpha is a documented
+          // card/back legibility calibration (0.55 → face-down 1.08:1), so depth comes from SHADOW,
+          // never fill. Pushed deeper than the timid preview.
+          boxShadow: `0 0 18px ${boardAccent}66, 0 14px 32px rgba(0,0,0,0.62), inset 0 5px 14px rgba(0,0,0,0.60), inset 0 1px 0 rgba(255,255,255,0.07)`,
         } as any,
         // S76-BOARD-ROUTING — colour-only overrides. shadowColor is guarded to iOS to
         // mirror the StyleSheet's Platform.select exactly: Android uses `elevation` and
@@ -781,6 +820,23 @@ export default function Board({
                   BoardResultCard, and is NOT the same control as BoardReveal's "🤖 Bot 1".
                   Text-matching between them caused two wrong findings. */}
               <Text testID="seat-label" style={[styles.rowLabel, { color: theme.boardTextDim }]}>{`${t().bot} ${botIdx + 1}`}</Text>
+              {/* CLOSE-THE-SIX 2026-08-31 — this was the ONLY unnamed interactive element in a
+                  33-route sweep: focusable at every width on both engines, and a screen reader
+                  announced nothing at all.
+
+                  NAMED RATHER THAN DE-FOCUSED, and the reason is the tooltip. A card is indeed not
+                  a control — but this one carries an onPress whose entire job is to TELL YOU
+                  SOMETHING ("Revealed after River"), and that something is only ever delivered as a
+                  2-second visual popover. Removing the focus would remove a sighted-only
+                  affordance and leave a screen-reader user with no way to learn why the opponent's
+                  cards are blank. So the answer is not "make it not a control", it is "stop hiding
+                  what it says": the fact now lives in the accessibilityLabel, where it is
+                  announced on focus without anyone having to trigger a popover they cannot see.
+
+                  Only the face-down state is interactive. Once `revealed` is true onPress is
+                  undefined, the element stops being focusable, and CardComponent's own label (rank
+                  and suit) is what should be read — so the role and label are applied on the same
+                  condition, never left dangling on a plain card. */}
               {(botCardSet ?? []).map((c) => (
                 <Pressable
                   key={c.id}
@@ -789,6 +845,10 @@ export default function Board({
                     setBotTooltipVisible(true);
                     botTooltipTimer.current = setTimeout(() => setBotTooltipVisible(false), 2000);
                   } : undefined}
+                  accessibilityRole={!revealed ? 'button' : undefined}
+                  accessibilityLabel={!revealed
+                    ? `${t().bot} ${botIdx + 1}, ${t().revealedAfterRiver}`
+                    : undefined}
                 >
                   <CardComponent
                     card={c}
@@ -804,7 +864,7 @@ export default function Board({
               ))}
               {!revealed && botTooltipVisible && (
                 <View style={styles.botTooltip}>
-                  <Text style={styles.botTooltipText}>Revealed after River</Text>
+                  <Text style={styles.botTooltipText}>{t().revealedAfterRiver}</Text>
                 </View>
               )}
               {/* BW1 — MP-ONLY. The branch below is gated on `revealed`, hardcoded false in
@@ -889,13 +949,19 @@ export default function Board({
               </Pressable>
             ))
           ) : (
-            Array.from({ length: 4 }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} hasSelection={hasSelection} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
+            Array.from({ length: CARDS_PER_BOARD }).map((_, i) => (
+              // boardIndex/slotIndex are for the accessible name only — no geometry changes. The
+              // count comes from CARDS_PER_BOARD rather than a literal 4, per the hard rule that a
+              // dimension is never typed in.
+              <EmptySlotAnimated key={`player-empty-${i}`} isArrangement={isArrangement} hasSelection={hasSelection} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} boardIndex={index} slotIndex={i} />
             ))
           )}
-          {playerCards.length > 0 && playerCards.length < 4 && isArrangement &&
-            Array.from({ length: 4 - playerCards.length }).map((_, i) => (
-              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} hasSelection={hasSelection} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} />
+          {playerCards.length > 0 && playerCards.length < CARDS_PER_BOARD && isArrangement &&
+            Array.from({ length: CARDS_PER_BOARD - playerCards.length }).map((_, i) => (
+              // The remaining slots sit AFTER the cards already placed, so the announced position
+              // has to be offset by playerCards.length — otherwise a half-filled board announces
+              // "slot 1" for what is visibly the third one.
+              <EmptySlotAnimated key={`player-empty-fill-${i}`} isArrangement={isArrangement} hasSelection={hasSelection} onPress={onPress} slotWidth={slotW} slotHeight={slotH} theme={theme} boardIndex={index} slotIndex={playerCards.length + i} />
             ))
           }
           {/* PR-N 2026-06-02 — hand-strength hint suppressed during arrangement.
@@ -945,7 +1011,7 @@ export default function Board({
         {winner && (
           <Animated.View style={[styles.winnerBadge, { borderTopColor: theme.boardMintHairline }, winner === 'player' ? { backgroundColor: gameColors.win } : winner === 'bot' ? { backgroundColor: gameColors.lose } : [styles.tieBadge, { backgroundColor: theme.boardTieBg }], bannerAnimStyle]}>
             <Text style={[styles.winnerText, { color: theme.boardCardInk }]}>
-              {winner === 'player' ? 'WIN' : winner === 'bot' ? 'LOSE' : 'TIE'}
+              {winner === 'player' ? t().winShort : winner === 'bot' ? t().lossShort : t().tieShort}
             </Text>
             {winner === 'player' && playerHandName ? (
               <Text style={[styles.bannerHandName, { color: theme.boardCardInk }]}>{playerHandName}</Text>
@@ -1185,6 +1251,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: OBSIDIAN.slotFill,
+    // GAME-UPGRADES step 4 (SHIP-5 amplitude) — mint INNER GLOW so the empty slot reads as a target.
+    // GLOW ONLY: the 3:1 dashed OUTLINE and the resting FILL are BOTH untouched (the outline contrast
+    // is calibrated against the fill). Pushed stronger than the preview, measured against the 3:1 floor.
+    ...Platform.select({ web: { boxShadow: 'inset 0 0 13px rgba(79,214,168,0.44)' } as any, default: {} }),
   },
   dropTarget: {
     // VAMOS-VISUAL-C — when a hand card is selected, slot brightens to solid mint

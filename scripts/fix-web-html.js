@@ -101,8 +101,28 @@ console.log('✓ index.html patched (type="module", error handler, dvh viewport 
 // headers MUST live here or they do not deploy. Framing protection ONLY — frame-ancestors 'none'
 // is the sole CSP directive (no default-src/script-src), so it restricts embedding and nothing
 // else; Supabase/Realtime/fonts are untouched. A full CSP is a separate, verified pass.
+//
+// ⚠️ EMBED-THE-VIDEO 2026-09-07 — THE CATCH-ALL 404 FIX WAS FIXED IN THE WRONG FILE, AND WAS NEVER
+// LIVE. On 2026-09-03 the dotted-path exclusion went into the ROOT vercel.json and was declared
+// done. The root file is exactly the one the comment four lines above says prod never reads. So
+// for four days the trap stayed open in production, measured on caps.ftable.co.il this morning:
+//     /definitely-missing-abc123.html  ->  200, 1,902 bytes of the app's HTML
+//     /nope.png                        ->  200, 1,902 bytes
+//     /nope.mp4                        ->  200, 1,902 bytes
+// That 200 is the whole reason the rule exists: it is what twice made an absent file read as
+// "deployed". The exclusion now lives HERE, where it ships, and the root file is kept identical so
+// `vercel dev` and any future root-config deploy behave the same. tests/vercel-rewrites.test.ts
+// asserts BOTH files, and asserts they agree — a check that would have caught this on day one.
+// The three explicit .html rewrites are carried over too; without them a dotted path that IS a
+// real page depends on static-file precedence alone.
+const CATCH_ALL_NO_DOTS = "/((?!.*\\.).*)";
 const vercelJson = JSON.stringify({
-  rewrites: [{ source: "/privacy.html", destination: "/privacy.html" }, { source: "/(.*)", destination: "/index.html" }],
+  rewrites: [
+    { source: "/privacy.html", destination: "/privacy.html" },
+    { source: "/terms.html", destination: "/terms.html" },
+    { source: "/landing.html", destination: "/landing.html" },
+    { source: CATCH_ALL_NO_DOTS, destination: "/index.html" },
+  ],
   headers: [{ source: "/(.*)", headers: [
     { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
     { key: "X-Frame-Options", value: "DENY" },

@@ -65,7 +65,10 @@ const scan = `(() => {
   return { count: nodes.length, pairs, url: location.pathname };
 })()`;
 
-const browser = await chromium.launch({ headless: false, args: ['--window-size=410,900'] });
+// CAPS_BROWSER_PATH — named explicitly where the container's Playwright build does not match
+// the pinned version. Unset everywhere else, so an ordinary run is unchanged.
+const browser = await chromium.launch({ headless: false, args: ['--window-size=410,900'],
+  ...(process.env.CAPS_BROWSER_PATH ? { executablePath: process.env.CAPS_BROWSER_PATH } : {}) });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 812 }, deviceScaleFactor: 1 });
 await ctx.addInitScript((s) => { for (const [k, v] of Object.entries(s)) { try { localStorage.setItem(k, v); } catch {} } }, SEED);
 const page = await ctx.newPage();

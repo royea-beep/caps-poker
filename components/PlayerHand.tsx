@@ -273,7 +273,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
             <Pressable
               onPress={onAutoFillAll}
               accessibilityRole="button"
-              accessibilityLabel="Auto-place all boards"
+              accessibilityLabel={t().autoPlaceAll}
               // Matches the per-board control exactly (Board.tsx:717): an 18dp chip with
               // 15dp hitSlop clears the 44pt target at 48. The chip is NOT grown to 44 —
               // that is the pattern this project already defends on the board headers.
@@ -281,7 +281,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
               style={({ pressed }) => [styles.autoAllChip, pressed && { opacity: 0.85 }]}
             >
               <Text style={styles.autoAllChipText} allowFontScaling={false}>
-                <Text style={styles.autoAllChipBolt}>⚡</Text> Auto-Place ALL
+                <Text style={styles.autoAllChipBolt}>⚡</Text> {t().autoPlaceAll}
               </Text>
             </Pressable>
           </>
@@ -364,7 +364,7 @@ export default function PlayerHand({ cards, selectedCardIds = [], onSelectCard, 
         </View>
       ) : (
         <View style={styles.emptyRow}>
-          <Text style={styles.emptyText}>All cards placed!</Text>
+          <Text style={styles.emptyText}>{t().allPlaced}</Text>
         </View>
       )}
     </View>

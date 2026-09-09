@@ -28,6 +28,20 @@ async function secureSet(key: string, value: string): Promise<void> {
   }
 }
 
+/**
+ * The already-resolved device id, or null if nothing has asked for one yet.
+ *
+ * PRE-INVITE 2026-09-06 — added for utils/webErrorReporter, which is the ONLY crash writer that
+ * never set `device_id` (crash-evidence and notifications both do, per AU2.1). Its `report()` is
+ * called from a window 'error' handler and must stay synchronous and non-throwing, so it cannot
+ * await getDeviceId(); it warms this cache at init instead and reads it here. A crash in the few
+ * milliseconds before the warm-up resolves still writes null — that is the honest value, not a
+ * placeholder.
+ */
+export function getCachedDeviceId(): string | null {
+  return _deviceId ?? null;
+}
+
 /** Get or create a stable device ID, stored in SecureStore (AsyncStorage on web) */
 export async function getDeviceId(): Promise<string> {
   if (_deviceId) return _deviceId;

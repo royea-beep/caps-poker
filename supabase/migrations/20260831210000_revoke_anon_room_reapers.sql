@@ -1,0 +1,44 @@
+-- RED-TEAM 2026-08-31 — ⚠️ CLOSING A GLOBAL GAME-BREAKING DoS.
+--
+-- ═══ WHAT WAS PERFORMED ══════════════════════════════════════════════════════════════════════
+-- From outside, no session, public anon key:
+--     evict_ghost_seats(999999999)         → {"ok": true, "evicted": 0}
+--     finish_wedged_playing_rooms(999999999) → {"ok": true, "finished": 0}
+-- The huge argument matches no rows, so nothing was harmed — but the calls REACHED the function
+-- body and ran. Both are SECURITY DEFINER, so they execute with full privilege regardless of the
+-- caller. Swapping the argument to 0 (or a negative) inverts the staleness test:
+--   · evict_ghost_seats(0) deletes EVERY seat from EVERY public waiting lobby.
+--   · finish_wedged_playing_rooms(0) sets EVERY 'playing' room to 'finished' and DELETES all of
+--     their room_players — i.e. it ends every live multiplayer hand for every player at once.
+-- That is the strongest "break the game for others" primitive in the surface: one anon call kills
+-- all live games. I did NOT fire the 0-argument form against production, because it would damage
+-- real and seed rooms; the huge-argument proof establishes the anon-execute capability safely.
+--
+-- ═══ WHY REVOKE IS THE RIGHT CLOSE, AND SAFE ═════════════════════════════════════════════════
+-- These are CRON-ONLY reapers, never called by the client:
+--   caps_evict_ghost_seats       * * * * *    SELECT evict_ghost_seats(90)
+--   caps_finish_wedged_playing   * * * * *    SELECT finish_wedged_playing_rooms(120)
+--   caps_cleanup_expired_rooms   */2 * * * *  SELECT cleanup_expired_rooms()
+-- The client's only references to evict_ghost_seats are COMMENTS explaining the 25s heartbeat vs
+-- the 90s reaper window (WaitingSeatBanner.tsx, practiceLiveSession.ts, lobbyApi.ts); there is no
+-- rpc('evict_ghost_seats') call anywhere in app/ components/ utils/ hooks/, and zero references to
+-- finish_wedged_playing_rooms or cleanup_expired_rooms. pg_cron runs the jobs as their owner, not
+-- as anon, so revoking anon EXECUTE does not touch the scheduled path.
+--
+-- cleanup_expired_rooms is SECURITY INVOKER and already fails closed for anon (it returned 42501,
+-- permission denied for table game_rooms, because anon lacks write on game_rooms). It is revoked
+-- here too for tidiness — it is cron-only and nothing legitimate loses by it — but it was not
+-- exploitable.
+--
+-- ═══ NOT CLOSED HERE, AND WHY — reported instead ═════════════════════════════════════════════
+-- finish_table(room_code) and leave_table(room_code, player_id, device_id) are ALSO anon-callable
+-- with no authorization — finish_table ends any room by its code (and room codes are handed out
+-- publicly by list_open_tables), leave_table kicks any device_id from any room. But BOTH are
+-- genuine client game-actions (3 and 5 call sites), so a blanket revoke would break leaving a
+-- table. They need an authorization check — the caller may only finish/leave a room it hosts or is
+-- seated in — which is a design change, not a one-line close. They are reported for Roye, not
+-- changed, exactly because there is no safe minimal fix the way there is for the cron reapers.
+
+REVOKE EXECUTE ON FUNCTION public.evict_ghost_seats(integer)            FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.finish_wedged_playing_rooms(integer)  FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.cleanup_expired_rooms()               FROM anon, authenticated, PUBLIC;

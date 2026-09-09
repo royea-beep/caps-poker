@@ -203,7 +203,7 @@ function Step3Visual() {
               key={i}
               style={[vis.boardBox, { backgroundColor: bgColor, borderColor }]}
             >
-              <Animated.Text style={[vis.boardWin, { opacity: litVal }]}>WIN</Animated.Text>
+              <Animated.Text style={[vis.boardWin, { opacity: litVal }]}>{t().winShort}</Animated.Text>
             </Animated.View>
           );
         })}
@@ -214,7 +214,7 @@ function Step3Visual() {
           { transform: [{ scale: badgeScale }], opacity: badgeOpacity },
         ]}
       >
-        <Text style={vis.completeBadgeText}>🏆 COMPLETE +50%</Text>
+        <Text style={vis.completeBadgeText}>{t().tutorialCompleteBadge}</Text>
       </Animated.View>
     </View>
   );

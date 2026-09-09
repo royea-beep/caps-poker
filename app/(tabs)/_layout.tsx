@@ -14,7 +14,14 @@ const SCREEN_W = Dimensions.get('window').width;
 // Border-top hairline also retoned to mint @15%. Cascades to all 5 tabs.
 const TAB_BG = '#0D0D0D';
 const ACTIVE = '#4FD6A8';
-const INACTIVE = 'rgba(255,255,255,0.35)';
+// 0.52, was 0.35. THIS IS AN APP-WIDE FIX, NOT A HOME-SCREEN ONE — the tab bar renders on every
+// tab, so the inactive labels failed on every screen in the app.
+//   0.35 over TAB_BG #0D0D0D composites to rgb(98,98,98) = 3.17:1, against a 4.5:1 bar for the
+//   9-10px label. Measured, not estimated.
+//   0.52 composites to rgb(139,139,139) = 5.7:1, with margin so a future TAB_BG nudge does not
+//   silently drop it back under.
+// The ACTIVE mint is untouched, so the active/inactive distinction still reads.
+const INACTIVE = 'rgba(255,255,255,0.52)';
 const TAB_BORDER = 'rgba(79,214,168,0.20)';
 
 function TabIcon({ label, emoji, focused }: { label: string; emoji: string; focused: boolean }) {
@@ -80,24 +87,13 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon label={t().tabPlay} emoji="♠️" focused={focused} />,
         }}
       />
-      <Tabs.Screen
-        name="friends"
-        options={{
-          title: t().tabFriends,
-          // PR-J: explicit a11y label = localized word only
-          tabBarAccessibilityLabel: t().tabFriends,
-          tabBarIcon: ({ focused }) => <TabIcon label={t().tabFriends} emoji="👥" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="cups"
-        options={{
-          title: t().tabCups,
-          // PR-J: explicit a11y label = localized word only
-          tabBarAccessibilityLabel: t().tabCups,
-          tabBarIcon: ({ focused }) => <TabIcon label={t().tabCups} emoji="🏆" focused={focused} />,
-        }}
-      />
+      {/* VAMOS-NAV-3TABS 2026-08-31 — five tabs → three. Friends/Clubs (1 club, 2 members) and Cups
+          (5 cup-earners ever) did not warrant a bottom-tab slot; the benchmark's highest-clarity cut.
+          href:null REMOVES each from the tab bar but KEEPS the route: Friends is reached from the
+          side menu, Cups from the Profile screen. Nothing that links to /friends or /cups breaks —
+          the paths are unchanged (the files stay in (tabs)/). Bottom bar is now Home / Play / Profile. */}
+      <Tabs.Screen name="friends" options={{ href: null }} />
+      <Tabs.Screen name="cups" options={{ href: null }} />
       <Tabs.Screen
         name="profile"
         options={{
