@@ -18,9 +18,21 @@ VAMOS CAPS FACEBOOK-NOW. Facebook-only update to the existing Capspokerapp Page
   authorization, so the edit was cancelled/reverted before submission. Live name is still
   `Capspokerapp`. Facebook's own copy says review can take "up to 3 days" and, once changed,
   the name is locked for **60 days** (not ~3 days as assumed in the brief).
-- **Cover photo**: no landscape hero image exists in the repo. `_preview_felt.png` at the repo
-  root was checked and is a portrait gameplay screenshot with UI chrome (score, buttons, "PLACE
-  12 CARDS" banner) — not hero material. Left unset rather than uploading something wrong.
+- ~~**Cover photo**: no landscape hero image exists in the repo.~~ **SUPERSEDED 2026-09-09 —
+  the cover is LIVE.** Uploaded by Claude Code on 2026-09-09; that session crashed before writing
+  its report, so the upload's only record is the Page itself. Read back from the Page the same day: the cover slot shows the CAPS
+  wordmark on green felt, the photo's own post reads "Capspokerapp updated their cover photo",
+  and the button under it says *Edit* cover photo, not *Add*. The live art is
+  `docs/cover-art-2026-09-09/facebook-cover-851x315.png` (851×315, generated in `61ec8742`) —
+  identified BY CONTENT, not by name: it is the only cover file with a spade left of CAPS, a
+  heart right of it, and the `caps.ftable.co.il` line. The older
+  `docs/social/caps-cover-facebook-1640x664.png` has four suits in a row and no URL, and is NOT
+  what is live. The paragraph above was true when written (the 1640×664 file was never checked
+  because the search looked at the repo root, and the 851×315 file did not exist yet); it is kept
+  struck through so nobody re-derives "no cover exists" from it.
+  ⚠️ Do not re-upload the same file: Facebook publishes a fresh "updated their cover photo" post
+  and a duplicate album photo on every upload, with no visible change. The upload procedure and
+  every other Page operation now live in `docs/social/FACEBOOK-PAGE-RUNBOOK.md`.
 
 ## Bio before → after
 
