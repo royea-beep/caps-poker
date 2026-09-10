@@ -4,6 +4,9 @@
 1. Run on Empire HQ (vjxqlqtlywovnbidovit):
    SELECT bot_landing_brief('caps-poker');
 2. Read the response — it has EVERYTHING: state, blockers, rules, risks
+   ⚠️ Measured 2026-09-10: the brief is ALIVE but its `risks` are stale — it says CAPS has no Hebrew
+   (live since 2026-09-02) and no account-deletion flow (Settings has one; `process_pending_deletions`
+   runs nightly). Read it for hierarchy and guidelines, not for state.
 3. Register your session:
    SELECT bot_register_session('caps-poker', 'cc-caps-main', 'claude_code', 'task description');
 4. Heartbeat every 10-15 min:
@@ -26,17 +29,39 @@
 - Code: getBoardCount() + getCardsPerPlayer() in constants/gameConfig.ts
 - NEVER hardcode board counts
 
-## Current state (corrected 2026-09-07 — every number below was measured, not recalled)
+## Current state (corrected 2026-09-07 — every number below was measured, not recalled; re-measured 2026-09-10 where marked)
+- ⚠️ **MAIN IS BEHIND PRODUCTION (measured 2026-09-10).** Branch `claude/vamos-caps-align-celebration-flppo0` is
+  **33 commits ahead of main** and carries a migration that has been LIVE since 2026-09-08
+  (`20260908000000_close_submit_score_chip_faucet.sql`), 14 test files, the corrected version of this
+  file, and the docs behind handoffs 199–207. A reader of main reads a `submit_score` that has not run
+  for two days. Merging is Roye's call; until it happens, prefer that branch's CLAUDE.md for anything
+  dated after 2026-09-07. The measured inventory of everything — screens, DB objects, assets, docs,
+  workflows, branches — is **`docs/deep-audit-2026-09-10/README.md`**, with the SQL behind every number
+  in `QUERIES.md` beside it.
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
-- Tests: **2,824/2,824 across 52 suites** (was 2,474 — that figure was 350 tests stale)
+- Tests: **2,846/2,846 across 53 suites on main** (measured 2026-09-10 by running `npx jest --ci`; was
+  written as 2,824/52 on 2026-09-07). The celebration branch reports 2,869/56 — it carries 14 test files main lacks.
 - **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
-  Functions" — two of the three were low and the Edge Function count was high)
-- Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
-  ledger gap 0 · 0 rooms have ever reached `playing` · 0 purchases, ever**
+  Functions" — two of the three were low and the Edge Function count was high). Re-measured 2026-09-10,
+  unchanged, plus: 8 triggers · 100 RLS policies · 31 cron jobs, all active, 0 failures in 7 days.
+  ⚠️ **14 is the DEPLOYED count. The repo holds 13 directories** — `resolver-probe` exists only as a
+  deployment — and **8 of the 14 were hand-deployed** (`entrypoint_path` = `source/index.ts`), so for
+  those eight the repo copy is not necessarily what runs. Diff before deploying any of them.
+- Live data (re-measured 2026-09-10): **403 devices · 25 have ever played · 78 hands · 14 bindings ·
+  float 812,400 = ledger 812,400, gap 0 · 9 rooms all `waiting`, 0 have ever reached `playing` ·
+  0 purchases, ever**. "Have ever played" is `leaderboard.games_played > 0`; by `hands_played > 0` it is
+  26 and by distinct `hand_history.device_id` it is 10 — three answers to one question, so name the
+  column when you quote it. ⚠️ **No control computes the gap**: `health_check()` sums the float and
+  counts ledger rows but never compares them; "gap 0" is a hand measurement every sprint.
 - **THE PRODUCT MAP IS `docs/product-map/PRODUCT-MAP-2026-09-07.md`** and it regenerates its
   route list from `app/`. Read it before describing a screen or a feature to anyone.
+  ⚠️ Only the route LIST regenerates. Its "reached by" and R/U columns were hand-typed and, measured
+  2026-09-10 by grepping every navigation call, were wrong for 3 routes (`/theme-pick`,
+  `/orientation-pick`, `/spectate` have NO tap path — URL-only), 2 redirects (`/simulate` renders in a
+  dev build; `/debug` opens on `__DEV__`, not on the dev-unlock gesture) and 8 "reached by" entries.
+  Corrected in place; the measured index is `docs/deep-audit-2026-09-10/SCREENS.md`.
 - ✅ **`/battle-pass` is CLOSED as of 2026-09-07 — the route redirects to Home.** It used to be
   unreachable but NOT dark: nothing linked to it, `battle_pass_enabled = false` gated nothing (no
   client code reads it), and typing the URL rendered a full screen with a running "55d 23h
@@ -86,8 +111,11 @@
   dropped seat. `submit_score` gained the guard it never had — it was the third mint vector, and
   PART 1 alone would have left it open. Proven: raw anon minted 2,000 before and 0 after; a
   brand-new anonymous device cold-launched against production still gets its grant and plays.
-  ⚠️ STILL OPEN: `submit_score` moves `leaderboard.total_chips` with NO `chip_transactions` row, so
-  it can break the gap invariant. Gated now, but still unledgered.
+  ✅ CLOSED 2026-09-08 (handoff 202): `submit_score` is STATS-ONLY on production — it never writes
+  `total_chips` and returns `chips_written:false` (read from `pg_get_functiondef` on 2026-09-10; the
+  line above used to say STILL OPEN). ⚠️ Its migration file lives ONLY on the celebration branch, and
+  the live function's own `COMMENT` still describes the old clamp-and-raise behaviour — a comment is a
+  claim. `hands_played` / `hands_won` / `biggest_win` are still caller-supplied: cosmetic, no chips, no ladder.
 - ⚠️ **The catch-all 404 was fixed in the WRONG FILE on 2026-09-03 and only went live 2026-09-07.**
   The exclusion went into the ROOT `vercel.json`. **PRODUCTION NEVER READS THAT FILE** — the deploy
   runs `npx vercel --prod` from `dist/`, and **`scripts/fix-web-html.js` writes `dist/vercel.json`**,
@@ -163,7 +191,9 @@
 
 ## Key RPCs
 - health_check() — run first every session
-- get_current_build() — what build is live
+- get_live_build() — the build devices are RUNNING (device telemetry, `analytics_events.native_build`).
+  `get_current_build()` wraps it and adds `build_history` metadata — a table last written 2026-05-08, so
+  those extra fields are stale by construction. Read `get_live_build()`.
 - delete_user_account(device_id, user_id) — account deletion (22 tables)
 - merge_guest_to_user(device_id, user_id) — guest to Google merge
 - track_event(event, device_id, properties, screen) — analytics
@@ -195,6 +225,12 @@
   overwritten six times in place · a stale bundle under an unchanged hash · three different files
   called `caps-explainer-FINAL.mp4` · the catch-all 404 fixed in `vercel.json` when prod reads
   `dist/vercel.json` · and `variant="gold"` on a button that has painted MINT since the theme sweep.
+  ⚠️ And the ninth, found 2026-09-10: **`assets/sounds/boardLose.wav` is byte-for-byte `boardWin.wav`**
+  (so is `revealStart.wav`; sha256 3c395893…). March placeholders (`b6e99ff`) never replaced, so on
+  any platform that loads `expo-audio` a LOST board plays the win chime (`components/BoardReveal.tsx:555`;
+  sound is on by default, `utils/sounds.ts:165`). Not heard in any QA because native has never been
+  verified and the web rigs run muted. Three declared `SoundName`s (`turnReveal`, `riverReveal`,
+  `boardTransition`) have no file at all and resolve to `null`.
   Before believing a file is what its name says: read its bytes, and check which copy the deploy,
   the CI gate or the bundler actually consumes. A test that certifies the wrong file is worse than
   no test — it is a green check over an open hole, and one stood for five days.
