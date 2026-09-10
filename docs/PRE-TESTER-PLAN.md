@@ -1,5 +1,8 @@
 # PRE-TESTER PLAN — rewritten against the reconciled backlog, 2026-08-13
 
+> ⚠️ SUPERSEDED (2026-08-13, same day by the backlog's second pass): the iOS build chain is unblocked (515), C4 is fixed, D3/E3/E5/E6 closed, and the function counts (68/81) predate three migrations that executed parts of the plan. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 **Supersedes the 2026-08-13 first draft (`f8bfecf`).** That version had eight sprints. Two of
 them did not exist: the work was already done. This version is built from
 `docs/PRE-TESTER-BACKLOG.md` **after** every item was checked against the code that would

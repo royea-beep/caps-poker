@@ -1,4 +1,7 @@
 # CAPS POKER — Project Manifest
+
+> ⚠️ DO NOT READ THIS FIRST — 14 of its claims are false on `ef55640`: `hooks/useRevealSequence.ts`, `components/Tutorial.tsx`, `ProQuoteBanner`, `utils/gameServer.ts`/`gameClient.ts` do not exist; the bot is not random-only; there IS a backend (73 tables, 198 functions, 14 edge functions, server-authoritative economy); chat exists (`components/ChatOverlay.tsx`); local TCP multiplayer is gone. The measured map is `docs/deep-audit-2026-09-10/SCREENS.md` and the root `CLAUDE.md`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **For AI agents — read this before generating any plan**
 
 ## Feature Map

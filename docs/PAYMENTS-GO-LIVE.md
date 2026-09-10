@@ -22,7 +22,7 @@ the caller** — that is the whole point of it, and it must stay that way.
 | | |
 |---|---|
 | package ids that exist today | `small`, `medium`, `large`, `premium`, `mega` |
-| ids the client actually buys | **`starter_pack`** (`app/shop.tsx:74`) · **`starter_pack_2x`** (`components/StarterOfferModal.tsx:40`) |
+| ids the client actually buys | **`starter_pack`** (`app/shop.tsx:76`) · **`starter_pack_2x`** (`components/StarterOfferModal.tsx:40`) |
 | what happens if flipped as-is | `credit_purchase` returns `{"ok": false, "reason": "unknown_package"}` |
 
 **It is two missing packages, not one.** The shop's starter pack and the starter-offer modal's 2×
@@ -72,12 +72,12 @@ Edge Function, not `credit_purchase`, not the client:
 
 ## 4 · The client still calls the retired credit path
 
-`app/shop.tsx:95 handleBuyStarterPack` calls `earn_chips('iap_starter_pack')`. **That RPC no longer
+`app/shop.tsx:81 handleBuyStarterPack` (the `earn_chips` call at :97-100) calls `earn_chips('iap_starter_pack')`. **That RPC no longer
 pays it** — migration `20260831130000` made it return `purchase_not_verified`, because a device
 resolving a purchase and then telling the server it happened is not proof of anything.
 
 It is harmless today: the button is behind `Platform.OS !== 'web' && isIapEnabled()`
-(`app/shop.tsx:233`) and `iap_enabled` is `false`. **It is not harmless the moment the flag flips**
+(`app/shop.tsx:239`) and `iap_enabled` is `false`. **It is not harmless the moment the flag flips**
 — every starter-pack purchase would take the money and credit nothing.
 
 **The client must be rewired so the provider calls `verify-purchase` server-to-server**, and the

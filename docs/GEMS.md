@@ -1,5 +1,8 @@
 # GEMS — caps-poker
 
+> ⚠️ TWO STALE RECIPES: the direct-route list (line ~40) names `/tournament`, `/sit-and-go`, `/lobby/host`, `/lobby/internet-*`, none of which exist (33 routes: `docs/deep-audit-2026-09-10/SCREENS.md`); `web-deploy.yml` no longer triggers on `fix/**` — main only since 2026-07-19. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 > CAPS poker iOS/Android (Expo + Supabase).
 > Living document of non-obvious lessons, gotchas, and patterns specific to this project.
 > Created 2026-05-25 by DEEP-DISC standardization sweep. Empty sections are placeholders — fill as you hit them.

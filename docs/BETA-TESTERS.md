@@ -1,4 +1,7 @@
 # Caps Poker — Beta Tester Program
+
+> ⚠️ STALE TESTER SCRIPT (March 2026): version is 2.7.0 / build 515 via GitHub Actions (no EAS); there is no theme or orientation picker on first launch (`app/_layout.tsx:270-280` seeds classic/portrait); Classic is green felt, FIVE-O navy; there is no landscape 3-panel layout and no local-WiFi mode; Google sign-in is live. Do not hand this to a tester. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Date:** 2026-03-20 | **Stage:** Launch Prep (Stage 7)
 
 ---
