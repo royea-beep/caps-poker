@@ -30,14 +30,28 @@
 - NEVER hardcode board counts
 
 ## Current state (corrected 2026-09-07 — every number below was measured, not recalled; re-measured 2026-09-10 where marked)
-- ⚠️ **MAIN IS BEHIND PRODUCTION (measured 2026-09-10).** Branch `claude/vamos-caps-align-celebration-flppo0` is
-  **33 commits ahead of main** and carries a migration that has been LIVE since 2026-09-08
-  (`20260908000000_close_submit_score_chip_faucet.sql`), 14 test files, the corrected version of this
-  file, and the docs behind handoffs 199–207. A reader of main reads a `submit_score` that has not run
-  for two days. Merging is Roye's call; until it happens, prefer that branch's CLAUDE.md for anything
-  dated after 2026-09-07. The measured inventory of everything — screens, DB objects, assets, docs,
-  workflows, branches — is **`docs/deep-audit-2026-09-10/README.md`**, with the SQL behind every number
-  in `QUERIES.md` beside it.
+- ✅ **MAIN IS CURRENT AGAIN (2026-09-10).** `claude/vamos-caps-align-celebration-flppo0` (33 commits,
+  including the `submit_score` migration live since 2026-09-08) and the deep-audit branch were both
+  merged to `main` on 2026-09-10. Main had spent two days describing a `submit_score` that had already
+  stopped running. The measured inventory of everything — screens, DB objects, assets, docs, workflows,
+  branches — is **`docs/deep-audit-2026-09-10/README.md`**, with the SQL behind every number in
+  `QUERIES.md` beside it.
+- ✅ **THE ANON READ SURFACE IS CLOSED (2026-09-10, applied to production, branch-proven first).**
+  `chip_transactions_prereset_20260901` (RLS on, client roles revoked) and seven views that handed
+  `anon` what their base tables deny. ⚠️ The archive was not merely readable: the schema default ACL
+  gave `anon` and `authenticated` INSERT, DELETE and **TRUNCATE**, and a branch reproduction took a
+  25-row copy to **zero rows** with the anon role. Production re-attacked afterwards with the shipped
+  public key over HTTPS: all eight objects and both destructive probes return `401 / 42501`, while
+  `leaderboard` and `app_config` still return 200. Migrations `20260910120000` + `20260910120100`.
+  ⚠️ **AND THE CLASS, WHICH IS THE PART TO REMEMBER:** nothing was ever "granted" to anon. This
+  project has `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated`,
+  and `defaclobjtype='r'` covers **views as well as tables** — so every new object in `public` is BORN
+  with all seven privileges for both client roles, and a REVOKE protects only the object it names.
+  That is how 20260831170000 could revoke `v_harness_devices` ("the detector itself should not be a
+  public listing of device ids") and 20260907000000 could hand the same rows back through
+  `v_harness_devices_v2` five weeks later with no wrong SQL anywhere. The next one is caught by
+  `anon_read_surface_violations()`, wired into `security_posture_tripwire()` (cron 37, hourly), which
+  must return zero rows — proven to FIRE on a planted `_v3` before it was applied.
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
@@ -50,11 +64,24 @@
   deployment — and **8 of the 14 were hand-deployed** (`entrypoint_path` = `source/index.ts`), so for
   those eight the repo copy is not necessarily what runs. Diff before deploying any of them.
 - Live data (re-measured 2026-09-10): **403 devices · 25 have ever played · 78 hands · 14 bindings ·
-  float 812,400 = ledger 812,400, gap 0 · 9 rooms all `waiting`, 0 have ever reached `playing` ·
-  0 purchases, ever**. "Have ever played" is `leaderboard.games_played > 0`; by `hands_played > 0` it is
-  26 and by distinct `hand_history.device_id` it is 10 — three answers to one question, so name the
-  column when you quote it. ⚠️ **No control computes the gap**: `health_check()` sums the float and
-  counts ledger rows but never compares them; "gap 0" is a hand measurement every sprint.
+  float = ledger, gap 0 · 9 rooms all `waiting`, 0 have ever reached `playing` · 0 purchases, ever**.
+
+  ⚠️ **"HAVE PLAYED" — THE CANONICAL DEFINITION (ruled 2026-09-10). QUOTE `games_played > 0` = 25,
+  AND NAME THE COLUMN.** Three columns answer this question and they disagree, so a bare "25" is an
+  unfalsifiable number:
+  | number | query | what it actually counts |
+  |---|---|---|
+  | **25** ← **the default; say "25 by `games_played`"** | `count(*) from leaderboard where games_played > 0` | devices the SERVER credited with a finished game. Written only by `tg_hand_history_leaderboard_counters`, which since CLOSE-S2 runs for `service_role` only — so this is the *server-authoritative* count and the one that cannot be forged. |
+  | 26 | `count(*) from leaderboard where hands_played > 0` | +1. `hands_played` is caller-supplied through `submit_score` and was never gated; it is a DISPLAY stat, forgeable, and must never be used to size the player base. |
+  | 10 | `count(distinct device_id) from hand_history` | devices with a stored hand ROW. Lower because practice hands are not written, and because 23 of the 25 pre-date the current write path. |
+  Use 25. If a number in a report is not one of these three, it is wrong.
+
+  ⚠️ **The float-vs-ledger gap is still computed by NOTHING, and is still a hand measurement.**
+  `health_check()` sums the float and counts ledger rows but never subtracts them. What it would
+  take is written out in `docs/deep-audit-2026-09-10/FINDINGS.md` §"computing the gap"; it was
+  NOT built this sprint, on instruction. One thing measured 2026-09-10 that nobody had established:
+  **all 403 devices reconcile INDIVIDUALLY** (`chips` = per-device `sum(amount)` on every row, 0
+  exceptions), so the aggregate zero is not hiding offsetting per-device errors.
 - **THE PRODUCT MAP IS `docs/product-map/PRODUCT-MAP-2026-09-07.md`** and it regenerates its
   route list from `app/`. Read it before describing a screen or a feature to anyone.
   ⚠️ Only the route LIST regenerates. Its "reached by" and R/U columns were hand-typed and, measured
@@ -225,12 +252,20 @@
   overwritten six times in place · a stale bundle under an unchanged hash · three different files
   called `caps-explainer-FINAL.mp4` · the catch-all 404 fixed in `vercel.json` when prod reads
   `dist/vercel.json` · and `variant="gold"` on a button that has painted MINT since the theme sweep.
-  ⚠️ And the ninth, found 2026-09-10: **`assets/sounds/boardLose.wav` is byte-for-byte `boardWin.wav`**
-  (so is `revealStart.wav`; sha256 3c395893…). March placeholders (`b6e99ff`) never replaced, so on
-  any platform that loads `expo-audio` a LOST board plays the win chime (`components/BoardReveal.tsx:555`;
-  sound is on by default, `utils/sounds.ts:165`). Not heard in any QA because native has never been
-  verified and the web rigs run muted. Three declared `SoundName`s (`turnReveal`, `riverReveal`,
-  `boardTransition`) have no file at all and resolve to `null`.
+  ⚠️ And the ninth, found 2026-09-10 and **CORRECTED THE SAME DAY — the first report of it was wrong
+  in the direction that flatters the product.** `boardWin.wav`, `boardLose.wav` and `revealStart.wav`
+  were byte-identical (sha256 3c395893…, 44,178 B), and the first pass concluded "a lost board plays
+  the win chime". Reading the SAMPLES says otherwise: all three were **0.5 s of digital silence** —
+  22,050 frames, every sample exactly 0, ffmpeg's null source (`ISFT: Lavf62.3.100` is still in the
+  header). A won board, a lost board and the start of every reveal played NOTHING, for five and a half
+  months, with sound on by default. ⚠️ **sha256 equality proved the three files were the SAME; it did
+  not prove WHAT they were** — and I asserted the "same chime" without reading a sample. FIXED
+  2026-09-10: all three regenerated by `scripts/generate-reveal-sounds.py`, guarded by
+  `tests/sound-assets.test.ts`, which asserts distinctness AND signal (a uniqueness check alone
+  passes on three DIFFERENT silent files).
+  ⚠️ ALSO CORRECTED: `turnReveal`, `riverReveal` and `boardTransition` do **not** lack files. They
+  deliberately reuse `cardFlip` / `chipsWin` / `cardPlace` at distinct volumes (`utils/sounds.ts:62-64`)
+  and all three are played from `components/BoardReveal.tsx`. That claim was mine and it was wrong.
   Before believing a file is what its name says: read its bytes, and check which copy the deploy,
   the CI gate or the bundler actually consumes. A test that certifies the wrong file is worse than
   no test — it is a green check over an open hole, and one stood for five days.
