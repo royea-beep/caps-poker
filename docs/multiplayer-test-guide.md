@@ -1,5 +1,8 @@
 # Multiplayer Test Guide — Caps Poker
 
+> ⚠️ STALE — describes a LAN TCP host/join transport (host IP, port 8765, 4-digit codes, `eas build`) that no longer exists. Multiplayer is Supabase Realtime (`utils/realtimeMultiplayer.ts`), entered from the Play tab → lobby, with 4-character alphanumeric room codes; `react-native-tcp-socket` is imported by no source file; builds come from `ios-testflight.yml`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 ## Prerequisites
 
 - 2 iPhones (or 1 iPhone + 1 iPad) on the **same WiFi network**

@@ -1,4 +1,7 @@
 # Hard-Won Findings & Lessons Learned
+
+> ⚠️ STALE GUIDANCE (March 2026) — the maroon palette (#1C0508 / #6B1520) was replaced by navy FIVE-O on 2026-06-13; `extra.buildNumber` is abandoned at 330 and the build number is `ios.buildNumber` (515); there is no EAS counter; production reads `dist/vercel.json`, not the root file. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **From:** Caps Poker sessions | **Date:** 2026-03-20/21
 
 ---

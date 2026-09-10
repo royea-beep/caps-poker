@@ -1,5 +1,8 @@
 # WhatsApp Bot — Multi-Project Design
 
+> ⚠️ STALE 'Current State' — multi-project routing is already implemented (`supabase/functions/whatsapp-bot-handler/index.ts:14-52`, 8 repos); `claude-fix.yml` is `disabled_manually`, so the APPROVE → commit leg does not run; the product descriptions inside ("Omaha poker", "fantasy football") are wrong in both this doc and the handler. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 ## Current State
 Single bot hardcoded for Caps Poker (`royea-beep/caps-poker`).
 Edge Function: `whatsapp-bot-handler` on Supabase project `gxrpunvhjcrzqnitbqah`.
