@@ -1,4 +1,7 @@
 # App Store Submission Checklist
+
+> ⚠️ STALE (track paused; 'Current State' from 2026-03-14): version 2.7.0 / build 515, tests 2,846; 'local WiFi multiplayer' no longer exists (online via Supabase). The 2026-09-08 listing draft is `docs/listing/` on the celebration branch and `docs/last-gaps/THE-LAST-GAPS-2026-09-08.md`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 > ⏸️ **TRACK PAUSED** — Do not act on this file until Roye explicitly says "resume App Store". Never mention App Store proactively.
 
 ## Current State (2026-03-14)

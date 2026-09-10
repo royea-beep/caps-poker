@@ -1,4 +1,7 @@
 # VAMOS CAPS — UX TOP 5
+
+> ⚠️ SUPERSEDED TASKS (2026-04-27): `app/(tabs)/friends.tsx` is now the Clubs screen with no navigation cards, and there is no `daily_streaks` table (streaks are `player_streaks` + `claim_daily_streak`, guarded by the 2026-08-31 migrations). *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Date:** 2026-04-27 | **Source:** ux-audit-2026-04-27.md
 
 These 5 tasks are ordered by behavioral impact. Each is self-contained.

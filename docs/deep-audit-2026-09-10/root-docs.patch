@@ -134,7 +134,7 @@ index 76fcb91..9420065 100644
 +#   #9 DB ground truth · #10 watch it run · #11 QA on a branch · #14 a claim is not evidence ·
 +#   #26 never trust app.json buildNumber — are NOT in this file. They are recorded in MEMORY.md
 +#   and in the headers of tests/verify-*.mjs and the 2026-08/09 migrations. This file is the
-+#   2026-03-21 cross-project template; its PROJECT block below (Omaha, Central Perk, no backend)
++#   2026-03-21 cross-project template; its PROJECT block below (Central Perk theme, no backend, no Supabase Realtime)
 +#   has been false since spring. The universal Git / Code / Database / Payments rules still stand.
  
  ## UNIVERSAL RULES (all projects)

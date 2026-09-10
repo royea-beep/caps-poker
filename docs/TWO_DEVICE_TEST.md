@@ -1,4 +1,7 @@
 # CAPS Poker — 2-Device Test Checklist
+
+> ⚠️ STALE (build 338 era): there is no local/WiFi mode; room codes are 4 characters (not 6, not 4-digit); the Play tab offers Single Player, Multiplayer Lobby and Quick private table; the current build is 515. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ## Setup
 - Device A (Host): iPhone with TestFlight Build 338
 - Device B (Guest): iPhone with TestFlight Build 338

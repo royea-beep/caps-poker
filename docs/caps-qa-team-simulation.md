@@ -1,3 +1,5 @@
+> ⚠️ STALE WALKTHROUGH (skill): the side-menu game modes it lists (Sit & Go, Quick Poker, Host, Join, Tournaments, Battle Pass, Spectator) are gone — the menu holds Friends/Coaching/Tutorial/Language/auth and the app has a 3-tab bar (Home/Play/Profile); Missions retired 2026-08-22; the reveal swaps boards instantly. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ---
 name: caps-qa-team-simulation
 description: Use when Roye asks for a "צוות בדיקה" simulation, COUNCIL, multi-perspective review of CAPS Poker, or a structured walkthrough of all menus and buttons. Activates phrases like "תפעיל COUNCIL", "צוות QA", "סימולציה של בודקים", "להריץ צוות". Provides 6 personas that each examine the app from their angle and produce a structured report.

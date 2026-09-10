@@ -1,3 +1,5 @@
+> ⚠️ STALE CHECKLIST (skill): the pink build pill was removed 2026-08-08 (Settings → Version row is the identity); FIVE-O is navy, not maroon; classic felt is #003115/#062E18; card face #FCFAF3 not #FFFEF8; the side menu holds Friends/Coaching/Tutorial/Language/auth only; TIMING/BOT/DEVELOPER sections exist in production (7-tap unlock); `app_config.current_build`/`next_build_number` no longer exist. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ---
 name: caps-build-checklist
 description: Use whenever a new CAPS Poker build (b<N>) lands on TestFlight and the user wants verification, or whenever Claude is about to declare a build live. (It must NOT write build_history to do that — see "After running checklist".) Activates on phrases like "b372 הגיע", "b373 לבדיקה", "build is live", "אישרת את ה-build". Provides the full QA checklist that should run on every build before it's considered stable.
