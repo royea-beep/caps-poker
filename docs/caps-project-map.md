@@ -1,5 +1,8 @@
 # CAPS Poker — Project Map for Claude Code CI
 
+> ⚠️ STALE MAP (2026-03-27): `app/index.tsx`, `sit-and-go.tsx`, `tournament.tsx` no longer exist (Home is `app/(tabs)/index.tsx`); the palette is green felt via `constants/paintThemes.ts`, not #1C0508/#6B1520; tests are 2,846 not 2,444; `CompleteOverlay` IS rendered on results (the NEVER rule and the code disagree); OTA has no backing Expo account. The measured map is `docs/deep-audit-2026-09-10/SCREENS.md`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 ## Stack
 React Native + Expo SDK 55 | TypeScript strict | Supabase backend | Jest 29
 

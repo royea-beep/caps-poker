@@ -1,3 +1,5 @@
+> ⚠️ STALE (skill): the board slide was removed 2026-06-19 (instant swap, `BoardReveal.tsx:272,321`); `Card.tsx` gates on `cardTheme !== 'v1'` with `isV2` hardcoded true — `card_layout` is not read; board count is dynamic (2P=4/3P=3/4P=2); `build_history` is dead since 2026-05-08 (use `get_live_build()`); every cited line number has moved. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ---
 name: caps-debug-flows
 description: Use when debugging complex multi-step flows in CAPS Poker — placement state machine, reveal animation, drag/drop hand interaction, scroll/navigation between boards, or scale/layout calculations. Activates on questions about "why X behavior", "the reveal does Y", "scrolling problem", "card placement issue", "layout cuts off". Provides debugging methodology for behaviors that aren't visible in single screenshots.

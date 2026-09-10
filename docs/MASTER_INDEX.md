@@ -1,6 +1,6 @@
 # 📚 CAPS Poker — Master Index
 
-**Last updated:** 2026-07-15
+**Last updated:** 2026-07-15 — ⚠️ **STALE (banner added 2026-09-10):** the Edge Function table below says 11 live; the project has **14 deployed** (`resolver-probe`, `resolve-hand`, `verify-purchase` added since) and 13 in the repo. `CLAUDE_CODE_RULES.md` is NOT what sits at the repo root as `CLAUDE.md` — the root file is its own, newer document. For a measured inventory of every screen, DB object, asset, doc and workflow read `docs/deep-audit-2026-09-10/README.md`.
 **Maintainer:** Claude (auto-updated each session)
 
 ---

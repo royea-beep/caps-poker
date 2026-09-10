@@ -42,6 +42,8 @@ Backend: **73 tables · 198 functions · 12 views · 14 Edge Functions.**
 **33 routes, derived from `app/` by `tools/product-map-shots.mjs`, not typed into this document.**
 A hand-written route list is how a map goes stale; this one regenerates.
 
+⚠️ **The route LIST regenerates; the "Reached by" and R/U columns do not — they are hand-typed, and on 2026-09-10 a grep of every navigation call found 3 routes marked R with no tap path (`/theme-pick`, `/orientation-pick`, `/spectate`), 2 redirect descriptions wrong (`/simulate`, `/debug`) and 8 "reached by" entries naming a screen that has no link. Each row is corrected in place and marked. Measured index: `docs/deep-audit-2026-09-10/SCREENS.md`.**
+
 R = reachable by tapping · U = URL only · **→** = the URL redirects somewhere else
 
 ### The three tabs
@@ -59,27 +61,27 @@ R = reachable by tapping · U = URL only · **→** = the URL redirects somewher
 | `/game` | The hand | Place 4 cards per board, Auto-Place, Confirm, Ready | Home, Play, Play-again | R |
 | `/results` | Hand result | Per-board tally, net chips, play again, hand details | End of a hand | R |
 | `/lobby` | Table list | Heads-up / 3-player / 4-player tables | Play tab | R |
-| `/lobby/private` | Private table | Create or join by code | Lobby | R |
+| `/lobby/private` | Private table | Create or join by code | Play tab (`play.tsx:74`); the lobby has no link to it *(corrected 2026-09-10)* | R |
 | `/lobby/table` | A seated table | Wait for players, leave | Lobby join | R |
 | `/multiplayer-game` | A live MP hand | Same placement flow against humans | Lobby, when a table fills | R |
 | `/hand-history` | Past hands | Browse and open a hand | Profile, results | R |
 | `/replay` | One hand replayed | Step through a stored hand | Hand history | R |
 | `/settings` | Settings | Visual style, language, sound, **Show tips**, bug report, tutorial replay, account deletion | Profile | R |
-| `/shop` | Chip shop | Look. Nothing is buyable | Chip count, side menu | R |
-| `/leaderboard` | Ladder | Ranked players by chips and win rate | Home, profile | R |
+| `/shop` | Chip shop | Look. Nothing is buyable | Two Home buttons (`index.tsx:1335`, `:1345`); NOT the chip count, NOT the side menu *(corrected 2026-09-10)* | R |
+| `/leaderboard` | Ladder | Ranked players by chips and win rate | Home, Play tab (`profile.tsx:61` removed its entry) *(corrected 2026-09-10)* | R |
 | `/achievements` | Achievements | See what is unlocked | Profile, side menu | R |
 | `/stats` | Statistics | Aggregates, after 5 hands | Profile | R |
-| `/rank` | Rank detail | ELO and progress | Profile | R |
-| `/referral` | Invite | Copy a code. 300 chips to you, 100 to them | Side menu | R |
+| `/rank` | Rank detail | ELO and progress | Settings (`settings.tsx:1426`), not Profile *(corrected 2026-09-10)* | R |
+| `/referral` | Invite | Copy a code. 300 chips to you, 100 to them | Play tab (`play.tsx:92`), not the side menu *(corrected 2026-09-10)* | R |
 | `/invite/[code]` | Accept an invite | Redeem a code | A shared link | R |
 | `/coaching` | Coaching | Read tips from played hands | Side menu | R |
-| `/friends` | **Clubs** | Create a club or join one by code | Home, side menu — **not on the tab bar** | R |
-| `/cups` | Cups | Cup events | Home — **not on the tab bar** | R |
-| `/club/[code]` | A club | Club code, share, club tables | A club link | R |
+| `/friends` | **Clubs** | Create a club or join one by code | Side menu only (`SideMenu.tsx:161`); Home has no link — **not on the tab bar** *(corrected 2026-09-10)* | R |
+| `/cups` | Cups | Cup events | Profile (`profile.tsx:58`), not Home — **not on the tab bar** *(corrected 2026-09-10)* | R |
+| `/club/[code]` | A club | Club code, share, club tables | A tap on `/friends` (`friends.tsx:62`); no club-link builder exists in `constants/appLinks.ts` *(corrected 2026-09-10)* | R |
 | `/gameover` | Out of chips | Take the free refill | Zero chips | R |
-| `/orientation-pick` | Layout choice | Portrait or landscape | Game | R |
-| `/theme-pick` | Visual theme | Classic or FIVE-O | Settings | R |
-| `/spectate` | Watch a table | Observe, with a room code | Lobby | R |
+| `/orientation-pick` | Layout choice | Portrait or landscape | **Nothing.** `game.tsx` has 0 references; the only inbound is `theme-pick.tsx:18` (itself URL-only) and a root-layout fallback that cannot fire *(corrected 2026-09-10: was "Game · R")* | U |
+| `/theme-pick` | Visual theme | Classic or FIVE-O | **Nothing.** Settings changes the theme inline (`VisualThemePicker`, `settings.tsx:723`) and never navigates here; the `_layout.tsx:592` fallback needs `visualTheme === null`, which is seeded `'classic'` at :278 *(corrected 2026-09-10: was "Settings · R")* | U |
+| `/spectate` | Watch a table | Observe, with a room code | **Nothing.** 0 inbound sites anywhere; `lobby/*.tsx` have 0 references *(corrected 2026-09-10: was "Lobby · R")* | U |
 
 ⚠️ **`/friends` is a CLUBS screen, not a friends list.** It reads "CLUBS · Your circle · play only
 your friends" and offers Create a club / Join a club. The previous map called it "Add and see
@@ -95,8 +97,8 @@ tab bar since `eaf9201`, reached from Home and the side menu. A de-duplication, 
 | `/missions` | **Redirects to Home.** `<Redirect href="/">` | **→** |
 | `/heatmap` | **Redirects to Home.** `<Redirect href="/">` | **→** |
 | `/chip-store` | **Redirects to `/shop`.** | **→** |
-| `/simulate` | **Redirects to Home, always** — `router.replace('/')` at line 33 | **→** |
-| `/debug` | **Redirects to Home unless dev-unlocked** — `if (!allowed) router.replace('/')` | **→ U** |
+| `/simulate` | **Redirects to Home in production builds** — `if (!__DEV__) router.replace('/')` at line 32. In a dev build it renders, and Settings links to it when `caps_dev_unlocked` (`settings.tsx:1026`, gated :1243) *(corrected 2026-09-10: was "always")* | **→ (prod) · U (dev)** |
+| `/debug` | **Redirects to Home unless the build is `__DEV__`** — `allowed = __DEV__` at line 697. The `caps_dev_unlocked` gesture does NOT open it; its Settings button is itself inside `__DEV__ &&` (`settings.tsx:1244`) *(corrected 2026-09-10: was "unless dev-unlocked")* | **→ U** |
 | `/battle-pass` | **Redirects to Home** as of 2026-09-07. It used to render in full. See §2 | **→** |
 
 ⚠️ **"No UI path" was the wrong description and it mattered.** These are not dead routes a typed

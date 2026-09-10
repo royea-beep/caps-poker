@@ -1,4 +1,7 @@
 # SHARED GEMS, UTILS & LIBRARIES
+
+> ⚠️ STALE (2026-03-21): the TestFlight pattern is no longer `push main → EAS`; `ios-testflight.yml` is dispatch-only, Expo-free (xcodebuild + altool) and needs `APPLE_API_*` secrets, not `EXPO_TOKEN`; `claude-fix.yml` is disabled; the on-screen version badge lives only in Settings; expo-audio's option is `playsInSilentMode`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Last updated:** 2026-03-21 15:49 IST
 **Purpose:** Reusable patterns across ALL Roye's projects
 

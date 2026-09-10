@@ -1,4 +1,7 @@
 # VAMOS METHODOLOGY — Reusable Guide
+
+> ⚠️ PARTLY STALE: `eas build:list` (A5) and the EAS-credentials section (§5) describe an account that is disabled; builds are GitHub Actions runs (`gh run list`). *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 *Extracted from Caps Poker development | 2026-03-18*
 
 ---

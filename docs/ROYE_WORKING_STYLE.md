@@ -1,4 +1,7 @@
 # ROYE — Working Style & Collaboration Guide
+
+> ⚠️ CROSS-PROJECT GUIDE (2026-03-21) with two rules that are wrong for CAPS: `npx vercel --prod --yes` is NOT self-approved here (production deploys only from `web-deploy.yml` on main since 2026-07-19), and iOS builds are GitHub Actions, not EAS. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Version:** 1.0 | **Date:** 2026-03-21 | **Time:** 10:55 IST
 **שים קובץ זה ב:** `docs/ROYE_WORKING_STYLE.md` בכל פרויקט
 

@@ -1,3 +1,5 @@
+> ⚠️ OBSOLETE TASK — caps.ftable.co.il is served by Vercel with Vercel-managed TLS (deployed by `web-deploy.yml`), not cPanel/FTP. A bot following this would act on the wrong host. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 VAMOS CAPS SSL
 
 Read MEMORY.md and confirm Iron Rules 1-8 before starting.

@@ -1,4 +1,7 @@
 # WhatsApp Bot Setup — Manual Steps
+
+> ⚠️ STALE — v1.9.3-era setup; the table exists, `db push` is not a setup step (the live ledger is ~330 entries against 43 files), and `claude-fix.yml` is disabled so APPROVE triggers nothing. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ## Caps Poker | v1.9.3
 
 ---

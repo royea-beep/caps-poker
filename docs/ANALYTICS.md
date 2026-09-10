@@ -1,5 +1,8 @@
 # CAPS Analytics — Onboarding Funnel
 
+> ⚠️ STALE WIRING MAP (2026-05-17): `app/index.tsx` no longer exists (one emitter, `app/(tabs)/index.tsx:804/810`, no SQL dedupe needed); `game_started` fires from `app/game.tsx:671`; `track_event` has no `session_id` argument (it travels in `p_data`); `onboarding_screen` is emitted nowhere; every cited line number has moved. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 ## Pipeline
 
 All events go through `track(event, properties?, screen?)` in `utils/analytics.ts` → Supabase RPC `track_event` → `analytics_events` table. Fire-and-forget; never blocks UX; silently drops if Supabase is unconfigured.

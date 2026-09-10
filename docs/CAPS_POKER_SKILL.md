@@ -1,3 +1,5 @@
+> ⚠️ SUPERSEDED BY THE ROOT `CLAUDE.md` (audit 2026-09-10: 28 stale claims). Among them: `build_history` is dead since 2026-05-08 (the running build is `get_live_build()`); `github-debug` / `github-file` edge functions are retired; native builds are Expo-free, not EAS. Do not follow its startup protocol. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ---
 name: caps-poker-ops
 description: CAPS Poker mobile game operations skill. Use this skill whenever Roye mentions CAPS Poker, b<number> builds (b367, b368, b369, b370, etc.), TestFlight, EAS, ios-testflight.yml workflow, BoardArrangement, stacked-only layout, card scale ladder, V21 EMBED, מסך משחק, לוחות, בורד, slots, community cards, Card.tsx V2/Classic, brown noise ambient, cups (Bronze/Silver/Gold/Platinum/Diamond), VAMOS files, github-debug EF, github-file EF, telegram-bot-handler, @caps_bug_bot, ExportArchive, Apple Provisioning, build_history table, or session_handoffs. ALWAYS read this file FIRST before answering anything CAPS-related.

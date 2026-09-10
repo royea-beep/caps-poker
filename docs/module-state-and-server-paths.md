@@ -12,7 +12,7 @@ bundles green, runs, and returns a plausible number that is wrong.
 ## What nearly shipped
 
 `getCompleteBonusPercent(boardCount, fallback)` reads `_remoteBonusPctByBoards`, which is set only
-by `setCompleteBonusPctByBoards` — called once from `app/_layout.tsx:489`, in a fire-and-forget
+by `setCompleteBonusPctByBoards` — called once from `app/_layout.tsx:535`, in a fire-and-forget
 `useEffect` with a silent `catch`.
 
 Server-side adjudication was one refactor away from importing that. Nothing on a server ever calls
@@ -31,7 +31,7 @@ overstate at 4P. `utils/completeBonusPct.ts` replaced that with the self-fetchin
 
 | where | value | source | shape |
 |---|---|---|---|
-| `constants/gameConfig.ts:8` | `_remoteBonusPctByBoards` | `complete_bonus_pct_by_boards` | **PUSHED** — set by `_layout.tsx:489` |
+| `constants/gameConfig.ts:8` | `_remoteBonusPctByBoards` | `complete_bonus_pct_by_boards` | **PUSHED** — set by `_layout.tsx:535` |
 | `constants/gameConfig.ts:26` | `_remoteMpBoardRevealEnabled` | `mp_board_reveal_enabled` | **PUSHED** — set by `_layout.tsx` |
 | `utils/iapEnabled.ts:14` | `_iapEnabled` | `iap_enabled` | self-fetching, defaults `false` |
 | `utils/privateChannel.ts:60` | `_enforced` | `phase0_channel_authz_enforced` | self-fetching, defaults `true` |

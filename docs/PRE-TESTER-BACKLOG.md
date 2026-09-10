@@ -1,5 +1,8 @@
 # PRE-TESTER BACKLOG — RECONCILED against code 2026-08-13
 
+> ⚠️ COUNTS NOT UPDATED after the 2026-08-14/21 edits: the OPEN table carries a row marked FIXED (C4) and items later closed in code (the countdown-expiry path now emits `card_placed`, `app/game.tsx:563`); 'no iOS build until…' is over — build 515 shipped 2026-09-07. Re-status every row against `main` before acting on it. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 > ## ⚠️ THE CLOSURE RULE — read before editing this file
 >
 > **An item is not closed until THIS FILE says so. A code comment is not a closure record.**

@@ -1,3 +1,5 @@
+> ⚠️ STALE (skill): the pink build pill was removed 2026-08-08; the 'locked palette' #1C0508/#6B1520/#8B6914 was replaced by green felt (`constants/paintThemes.ts`) on 2026-08-08. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ---
 name: caps-screenshot-qa
 description: Use when Roye sends CAPS Poker screenshots and Claude needs to analyze them like a QA engineer. Triggers when user uploads images of TestFlight/iPhone playing CAPS Poker, especially game/placement/reveal/menu screens. Read this BEFORE giving any visual feedback.

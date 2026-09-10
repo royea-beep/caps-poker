@@ -1,4 +1,7 @@
 # TestFlight Pipeline — Standard Template
+
+> ⚠️ STALE TEMPLATE — describes an EAS cloud pipeline. The live `ios-testflight.yml` runs on macos-15, prebuild + xcodebuild archive/export + altool upload, keyed by `APPLE_API_KEY_ID`/`APPLE_API_KEY_BASE64`/`APPLE_API_ISSUER_ID`, with a rescued signing profile; no `eas` command, no `EXPO_TOKEN`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ## Updated: 2026-03-23 | Apple Team: 3K9KJNGL9U
 
 ---

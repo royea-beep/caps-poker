@@ -1,4 +1,7 @@
 # 🃏 CAPS - MEGA PROMPT
+
+> ⚠️ HISTORICAL PROMPT (March 2026) — DO NOT PASTE AS-IS; every embedded fact about schema, economy, build and URLs is from March. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 > Complete guide for CAPS Card Game development and maintenance
 > Last Updated: March 27, 2026
 

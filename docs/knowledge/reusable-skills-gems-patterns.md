@@ -1,4 +1,7 @@
 # Reusable Skills, Gems & Patterns
+
+> ⚠️ STALE PATTERNS (2026-03-21) — the FIVE-O gradient is navy not maroon; web deploys are CI-only (`web-deploy.yml`, manual `vercel --prod` removed 2026-07-19); iOS builds are dispatch-only and Expo-free; there is one build number (`ios.buildNumber` 515). *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Source:** Caps Poker development sessions | **Last updated:** 2026-03-21
 
 ---

@@ -1,4 +1,7 @@
 # 🃏 CAPS POKER — MASTER MEGA & G PROMPTS
+
+> ⚠️ HISTORICAL PROMPT LIBRARY (March 2026) — DO NOT PASTE AS-IS. Its CURRENT STATE blocks are from a 26-table, 31-player, 0-ledger database; today it is 73 tables, 403 devices, a reconciled 467-row ledger, 2.7.0 / build 515. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ### Version 1.0 | March 27, 2026
 ### Based on: Full Supabase audit, 26 tables, 8 RPCs, 211 bug reports analyzed
 

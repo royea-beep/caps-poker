@@ -1,3 +1,5 @@
+> ⚠️ OBSOLETE — WOULD TAKE PRODUCTION DOWN. Adding the 195.225.46.105 A record would point caps.ftable.co.il away from Vercel (76.76.21.21, verified 2026-09-10). *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 VAMOS CAPS DNS-FIX
 
 The subdomain caps.ftable.co.il resolves correctly on Google DNS (8.8.8.8) but not on the user's local DNS.

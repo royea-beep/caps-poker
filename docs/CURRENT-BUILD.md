@@ -1,3 +1,5 @@
+> ⚠️ **STALE — DO NOT READ FOR CURRENT STATE (banner added 2026-09-10).** Last refreshed 2026-06-21 by `scripts/build-tracker.js`; it says build 445 and "OTA reaches no one". The shipped build is **515** (`app.json` ios.buildNumber, uploaded 2026-09-07 via `ios-testflight.yml`), and the build a device is RUNNING comes from `get_live_build()` — device telemetry — never from this file. Kept as history; regenerate with the script or delete the claim, never hand-edit the table.
+
 # CAPS Current Build (auto-generated)
 
 **Last refresh:** 2026-06-21T15:46:50.936Z

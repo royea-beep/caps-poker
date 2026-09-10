@@ -1,5 +1,8 @@
 # Handoff — CAPS Anthropic Proxy Edge Function
 
+> ⚠️ DONE — DO NOT EXECUTE. The status line says 'drafted but not executed'; `supabase/functions/anthropic-proxy/index.ts` exists and is deployed (v9), `components/BugReporter.tsx:301` already invokes it, and the anchor line these steps replace is gone. Following step 4 today would overwrite the deployed source. The `anthropic_usage` migration in step 5 was never created. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 **Status:** drafted but not executed in session 2026-05-17. Empty directory created at `supabase/functions/anthropic-proxy/` — nothing else done.
 
 **Goal:** move `EXPO_PUBLIC_ANTHROPIC_API_KEY` off the iOS client bundle by routing all Anthropic calls through a Supabase Edge Function. Apply remaining audit P0 from session 2026-05-17.
