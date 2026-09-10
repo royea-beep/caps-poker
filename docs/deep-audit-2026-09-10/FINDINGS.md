@@ -4,14 +4,14 @@ Every finding below was verified on two sources by the orchestrator (a query and
 
 | # | cost | class | finding | status |
 |---|---|---|---|---|
-| 1 | HIGH | security · name≠content | **The pre-reset ledger archive is readable and writable with the anon key.** `chip_transactions_prereset_20260901` has RLS OFF and every grant to `anon`; `SET ROLE anon; SELECT count(*)` → 4,237 rows of device_id, user_id, amount, description. The live ledger is service-role-only; its copy is not. No function, view, cron or repo file reads it. | reported — SQL below |
-| 2 | HIGH | security · policy governs nothing | **Seven SECURITY-DEFINER views hand anon what the tables deny.** Measured as anon: `v_grant_without_session` 7 rows of device_id + total_chips; `v_harness_devices_v2` 8 device_ids — a UNION over `v_harness_devices`, which migration 20260831170000 explicitly REVOKED from anon ("should not be a public listing of device ids"), and `v_simulator_devices`; `friction_heatmap`/`top_*` read `analytics_events`, whose comment says READS ARE service_role ONLY. Migration 20260907000000 created `_v2` without the revoke. device_id is the identity every economy RPC keys on. | reported — SQL below |
-| 3 | HIGH | repo ≠ production | **main is 33 commits behind the branch that runs.** `claude/vamos-caps-align-celebration-flppo0` carries `20260908000000_close_submit_score_chip_faucet.sql` (live in the ledger as `20260908213547`), 14 test files, the corrected CLAUDE.md and 9 docs. Every bot that starts from main's CLAUDE.md read "submit_score STILL OPEN" for two days after it closed. | CLAUDE.md pointer fixed; merge is Roye's |
+| 1 | ✅ **CLOSED 2026-09-10** | security · name≠content | **The pre-reset ledger archive is readable AND DESTROYABLE with the anon key.** ⚠️ Upgraded on measurement: the schema default ACL gave `anon` and `authenticated` INSERT, DELETE and **TRUNCATE**, not just SELECT — a branch reproduction took a 25-row copy to **zero rows** as `anon`. Original finding text follows. **The pre-reset ledger archive is readable and writable with the anon key.** `chip_transactions_prereset_20260901` has RLS OFF and every grant to `anon`; `SET ROLE anon; SELECT count(*)` → 4,237 rows of device_id, user_id, amount, description. The live ledger is service-role-only; its copy is not. No function, view, cron or repo file reads it. | reported — SQL below |
+| 2 | ✅ **CLOSED 2026-09-10** (and the CLASS with it — see the migration header) | security · policy governs nothing | **Seven SECURITY-DEFINER views hand anon what the tables deny.** Measured as anon: `v_grant_without_session` 7 rows of device_id + total_chips; `v_harness_devices_v2` 8 device_ids — a UNION over `v_harness_devices`, which migration 20260831170000 explicitly REVOKED from anon ("should not be a public listing of device ids"), and `v_simulator_devices`; `friction_heatmap`/`top_*` read `analytics_events`, whose comment says READS ARE service_role ONLY. Migration 20260907000000 created `_v2` without the revoke. device_id is the identity every economy RPC keys on. | reported — SQL below |
+| 3 | ✅ **MERGED 2026-09-10** (`origin/main` 6a50647) | repo ≠ production | **main is 33 commits behind the branch that runs.** `claude/vamos-caps-align-celebration-flppo0` carries `20260908000000_close_submit_score_chip_faucet.sql` (live in the ledger as `20260908213547`), 14 test files, the corrected CLAUDE.md and 9 docs. Every bot that starts from main's CLAUDE.md read "submit_score STILL OPEN" for two days after it closed. | CLAUDE.md pointer fixed; merge is Roye's |
 | 3a | HIGH (ops) | what is written is not what runs | **Two edge functions run code the repo has never held.** `whatsapp-bot-handler` (deployed v70, 2026-07-15; repo last touched 2026-05-17) and `crash-analyzer` (v17, 2026-07-15) send outbound WhatsApp through Empire HQ `empire-messaging`; the repo copies POST straight to Twilio, `!`-assert `TWILIO_WHATSAPP_FROM` at module load, and the repo `whatsapp-bot-handler` sends a real "Direct test" message to a hardcoded personal number in its diagnostic branch. A deploy from the repo reverts the egress route and refuses every send if that secret is absent — the `seo-prerender` shape. Deployed bytes saved and diffed; `resolve-hand` (the settlement writer) and the other seven repo-backed functions are byte-identical. | reported — commit the deployed source before anyone deploys; `EDGE-FUNCTIONS.md` |
 | 4 | HIGH (when testers hold balances) | control that cannot fire · number never asserted | **Nothing computes the float-vs-ledger gap.** `health_check()` sums `leaderboard.total_chips` and counts ledger rows but never compares them; `run_daily_reconciliation` reconciles prompt-log counts with Empire HQ; the tripwires read neither. "Gap 0" is a hand measurement every sprint, and handoff 202 records that today's 0 rests on a one-off 2026-09-01 backfill — the signup 2,000 is not ledgered at grant time. | reported — needs a tripwire on the economy path |
 | 4a | HIGH (CI integrity) | guard that cannot fail | **The blocking WCAG gate passes when the site cannot be loaded.** `tests/wcag-audit.js:68-73`: a route whose `goto` throws gets `routeEntry.error` set and counts of 0, and the verdict at :84 reads only `totals.critical > 0`. `web-deploy.yml:207` runs it as "fail on critical" after a bare `sleep 45` (:197, a step *named* "Wait for caps.ftable.co.il to serve new SHA" that checks nothing). If alias propagation is slow or the storageState is broken, all 14 routes error, the gate prints PASS, and the audit certifies the previous build. | reported — `tests/` is in the allowance, but the fix is a design choice (fail on any errored route, or on `error` count > N) |
 | 4b | HIGH | number printed, never asserted · name≠content | **The live payment-forge probe cannot fail.** `tests/verify-payment-lock.mjs:88-91` prints `expected : 401` beside `http : <status>` for every probe and never compares them; there is no exit code. Its header (:9-11) says `purchases` / `chip_transactions` "are counted before and after so a silent write would be visible" — no such count exists in the file. If a probe started minting, the run would print the 200 next to "expected 401" and exit 0. | reported — needs a real comparison and the counts the header promises |
-| 5 | MEDIUM | name≠content — **the ninth** | **`assets/sounds/boardLose.wav` is byte-for-byte `boardWin.wav`** (sha256 `3c395893a27a6618…`, 44,178 B); so is `revealStart.wav`. Committed 2026-03-25 as placeholders (`b6e99ff` "revealStart sound placeholder") and never replaced. `components/BoardReveal.tsx:552/555` plays `boardWin` on a won board and `boardLose` on a lost one — the same chime. Sound is on by default (`utils/sounds.ts:165`). Never heard in QA: native has never been verified and the web rigs run muted. Three declared `SoundName`s (`turnReveal`, `riverReveal`, `boardTransition`) have no file at all. | reported — `assets/` is outside the edit allowance and needs real audio, not a rename |
+| 5 | ✅ **FIXED 2026-09-10 — AND THE FINDING ITSELF WAS WRONG.** The three files were not 'the same chime': they were 0.5 s of DIGITAL SILENCE (every sample 0, ffmpeg null source), so wins, losses and reveal-start were all silent. sha256 equality proved they were the same and never proved what they were. Regenerated; `tests/sound-assets.test.ts` now asserts signal as well as distinctness. | name≠content — **the ninth** | **`assets/sounds/boardLose.wav` is byte-for-byte `boardWin.wav`** (sha256 `3c395893a27a6618…`, 44,178 B); so is `revealStart.wav`. Committed 2026-03-25 as placeholders (`b6e99ff` "revealStart sound placeholder") and never replaced. `components/BoardReveal.tsx:552/555` plays `boardWin` on a won board and `boardLose` on a lost one — the same chime. Sound is on by default (`utils/sounds.ts:165`). Never heard in QA: native has never been verified and the web rigs run muted. Three declared `SoundName`s (`turnReveal`, `riverReveal`, `boardTransition`) have no file at all. | reported — `assets/` is outside the edit allowance and needs real audio, not a rename |
 | 6 | MEDIUM | name≠content | **The COMPLETE banner says "+50% BONUS" on every hand.** `utils/i18n.ts:977` (`'+50% BONUS'`, Hebrew :556) is a constant, while the bonus is `complete_bonus_pct_by_boards` {2: 25, 3: 50, 4: 75} via `utils/completeBonusPct.ts:65` — right for 3 players, wrong for 2P (4 boards, 75%) and 4P (2 boards, 25%). The chip amount beside it is correct. | reported — results-screen copy, economy-adjacent |
 | 7 | MEDIUM | guard that cannot fire | **Settings "2 / 4 colour suits" paints nothing on in-game cards.** `components/Card.tsx:506` computes `suitColor` from `fourColorSuits`, then every V2 render at :613/:614/:621/:622/:630 uses `v2SuitColor = isRed ? V2_RED : V2_BLACK`. Only `StaticCard.tsx:54` (results) honours the toggle. | reported — card rendering |
 | 8 | MEDIUM | name≠content | **The CLASSIC swatch in the theme picker is brown/gold; the theme paints green felt.** `app/settings.tsx:733` `bg: '#1a0800', accent: '#c9a84c'` beside a FIVE-O row that was corrected on 2026-09-03 (`#1A1A2E`/`#4FD6A8`). Same class as the maroon-felt line. | reported — one-line fix, Roye's colour call |
@@ -96,7 +96,51 @@ The three-lens adversarial verification the workflow was built for did not run �
 Client-side constants that are not remote: `PRACTICE_LIVE_ENABLED=false` (`constants/featureFlags.ts:28`, kills the practice-to-live overlay while `practiceLiveSession.test.ts` mocks it true), `ECONOMY_FLAGS` (2 of 6 read), `__DEV__`. `EXPO_PUBLIC_REVENUECAT_IOS_KEY/ANDROID_KEY` (`app/_layout.tsx:504-505`) are set nowhere in the repo or its workflows — whether an EAS-dashboard secret supplies them is UNMEASURABLE from here.
 
 
-## The SQL for #1 and #2 (not applied — DDL on the economy's security surface is Roye's; ship as a migration file)
+
+## Computing the float-vs-ledger gap — what it would take (NOT BUILT, on instruction)
+
+The invariant is `sum(leaderboard.chips)` = `sum(chip_transactions.amount)`. It is checked by
+hand every sprint and by no control: `health_check()` sums the float and counts ledger ROWS but
+never subtracts, and `run_daily_reconciliation` reconciles prompt-log counts with Empire HQ.
+
+**Measured 2026-09-10, and stronger than anyone had established:** all **403 of 403 devices
+reconcile individually** — per-device `chips` equals per-device `sum(amount)` on every row, zero
+exceptions, positive gap 0 and negative gap 0. So the aggregate zero is not two errors cancelling.
+Also measured: 0 ledger rows and 0 leaderboard rows carry a NULL `device_id`, so a device-keyed
+check is complete rather than a sample.
+
+What building it would actually take, in order:
+
+1. **One function, four lines of SQL.** `sum(chips)` from `leaderboard`, `sum(amount)` from
+   `chip_transactions`, the difference, and the per-device breakdown for locating a break. Both
+   tables are service_role-only, so it runs as a SECURITY DEFINER function like every other
+   control here. This is the easy part and it is genuinely easy.
+2. **Name the column, and say so in the function.** `leaderboard` carries BOTH `chips` and
+   `total_chips`; they are equal on all 403 rows today, and nothing enforces that. A gap check
+   that does not say which one it means is the "have played" trap again in the economy.
+3. **Decide what the baseline is.** Handoff 202 recorded that opening balances were unledgered
+   before 2026-08-28 and that today's zero rests on a one-off `reset_baseline` backfill on
+   2026-09-01. Since every device now reconciles individually, no offset constant is needed —
+   but that is a fact about today, and the check should assert it from a stated epoch rather
+   than assume it holds backwards forever.
+4. **Know the one structural hole it must watch.** `leaderboard.total_chips` has a column
+   `DEFAULT 2000`, which is NOT a ledgered event. It reconciles only because the trigger
+   `trg_ledger_starting_grant` (migration 20260828160000) writes the matching ledger row on
+   INSERT. Any insert path that bypasses that trigger — `COPY`, a disabled trigger, a restore —
+   opens a silent per-device gap of exactly 2,000. That, not arithmetic, is what the control
+   exists to catch.
+5. **Wire it where a failure is seen.** `security_posture_tripwire()` (cron 37, hourly) already
+   has the alerting path, the 4-a-day cap and the 60-minute suppression, and now carries the
+   class detector; a `gap <> 0` row would fit beside it. The daily digest is the alternative.
+6. **Prove it can fail before trusting it.** The same discipline used for the class detector
+   this sprint: plant a gap on a branch, watch the control fire, remove it, watch it go quiet.
+   A control that has only ever returned zero is indistinguishable from one that cannot fire.
+
+⚠️ Deliberately not built. The brief said to say what it would take and not to build it without
+asking, and step 3 is a judgement about which epoch the invariant is asserted from — that is
+Roye's call, not a migration's.
+
+## The SQL for #1 and #2 (SUPERSEDED — APPLIED 2026-09-10; kept for the record; original note: not applied — DDL on the economy's security surface is Roye's; ship as a migration file)
 
 ```sql
 -- #1 the archive: same posture as the live ledger

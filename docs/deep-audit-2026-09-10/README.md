@@ -69,3 +69,59 @@ Native iOS rendering on a real device (every visual verdict in this project is a
 
 Committed and pushed on `origin/claude/caps-deep-audit-nr8z17` (branch from `ef55640`; not merged, no version bumped, no flag, cue, card size, arc, economy value, `game_rooms` or `room_players` row touched, nothing deployed, nothing submitted). Handoff 210 in `vamos_handoffs`; the same text in `HANDOFF.md` beside this file.
 
+
+---
+
+## ADDENDUM — CLOSE-THE-FOUR, 2026-09-10 (same day)
+
+All four items closed. What changed in the findings above:
+
+| # | was | now |
+|---|---|---|
+| 1 archive | "readable with the anon key" | **CLOSED — and it was worse than reported.** The schema default ACL gave `anon` and `authenticated` INSERT, DELETE and **TRUNCATE**. A branch reproduction took a 25-row copy to **zero rows** as `anon`. RLS on, client roles revoked; 4,237 rows intact. |
+| 2 seven views | "reported, SQL given" | **CLOSED**, and the CLASS with it: `anon_read_surface_violations()` wired into `security_posture_tripwire()` (cron 37, hourly), proven to fire on a planted `_v3`. |
+| 3 main behind production | "merge is Roye's" | **MERGED.** `origin/main` = `6a50647`. |
+| 5 the sounds | "a lost board plays the win chime" | **WRONG, AND FIXED.** They were 0.5 s of digital silence. Nothing played, on wins, losses or reveal-start. |
+
+### The class, stated once
+
+`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated` is set on
+this project, and `defaclobjtype='r'` covers **views as well as tables**. Every new object in
+`public` is therefore born with all seven privileges for both client roles, and a REVOKE protects
+only the object it names. Nothing was ever "granted" to anon — the archive and all seven views
+still carried the untouched default `anon=arwdDxtm`, while the objects someone had revoked show the
+gap in the same column (`analytics_events` = `anon=xtm`, `leaderboard` and `v_harness_devices` =
+`anon=awdDxtm`). That is how 20260831170000 could revoke `v_harness_devices` and 20260907000000
+could hand the same rows back through `v_harness_devices_v2` five weeks later with no wrong SQL.
+
+The detector keys on the consequence, not the ACL text: a relation a client role can read whose
+source that role cannot, plus any RLS-off table a client role can touch. It caught two mistakes in
+the reproduction *while the reproduction was being built*, which is the best evidence it will catch
+the next real one.
+
+### Instrument faults in this sprint — four, each caught by looking
+
+1. **"A lost board plays the win chime" was wrong.** sha256 equality proved the three files were
+   the same; it never proved what they were. They were silence. I compared hashes and did not read
+   a sample.
+2. **"Three SoundNames have no file at all" was wrong.** `turnReveal`, `riverReveal` and
+   `boardTransition` deliberately reuse `cardFlip` / `chipsWin` / `cardPlace` at distinct volumes
+   (`utils/sounds.ts:62-64`) and all three are played from `BoardReveal.tsx`. All 14 declared names
+   resolve to a real file; the new test enforces that.
+3. **My first four web-delta markers were comment-only** — "scroll for more", "there is more
+   below", "more time where it scrolls", "Again no audio" all live in comments, which the bundler
+   strips, so they read 0 in the served bundle and would have been filed as "the deploy did not
+   land". The real markers are `attachment incomplete` and `failed to upload`, 0 in old main and 1
+   in the served bytes.
+4. **The branch reproduction was imperfect twice** — I created `v_automation_devices` and
+   `whatsapp_outbound` on the branch without replicating production's posture. The detector found
+   both.
+
+### One thing found on the way, not in the brief
+
+**The live landing page was already ahead of main.** Before either merge, `/landing.html` served
+md5 `c8e340b0…`, byte-identical to the celebration branch and differing from `main` (`ef55640`) on
+8 lines — the `CAPS POKER` → `CAPS Poker` casing. So production was serving unmerged code, which is
+the failure `vercel.json`'s own header says was removed on 2026-07-19 "after it put unmerged code
+live". The merge has made main match what was already served; the divergence is the finding, and
+nothing in this sprint caused it.
