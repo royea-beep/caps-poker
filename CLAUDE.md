@@ -30,7 +30,7 @@
 - Version: 2.7.0 | Build: **515**, uploaded and proven installable from Apple's own records.
   (Was "B458 (building)". ⚠️ The build a device is RUNNING comes from `get_live_build()` —
   device telemetry — never from a number typed here or into `app_config`.)
-- Tests: **2,824/2,824 across 52 suites** (was 2,474 — that figure was 350 tests stale)
+- Tests: **2,846/2,846 across 53 suites** (was 2,474 — that figure was 372 tests stale)
 - **73 tables, 198 functions, 12 views, 14 Edge Functions** (was "56 tables, 127 RPCs, 16 Edge
   Functions" — two of the three were low and the Edge Function count was high)
 - Live data: **393 devices · 25 have ever played · 78 hands · 7 bindings · float 789,530 ·
@@ -97,6 +97,407 @@
   **EDIT `scripts/fix-web-html.js` FOR ANYTHING THAT MUST SHIP — headers, rewrites, redirects.**
   The root file is kept identical so `vercel dev` matches; `tests/vercel-rewrites.test.ts` now reads
   the GENERATOR's source and fails if the two disagree (proven to fire).
+- ✅ **THE REPORTER IS HONEST STILLS NOW, AND SAYS WHEN IT LOSES ONE (2026-09-08).** `report_type`
+  is DERIVED — `'frames'` when frames arrived, else `'text'` (nothing anywhere filters on it,
+  checked across the client, scripts and all 14 Edge Functions); `has_video` is `false`; the WHOLE
+  burst uploads (8s each, one 12s retry) into `metadata.frame_urls` with
+  `frames_captured`/`frames_uploaded`/`attachment_complete`; and a failed attachment writes
+  `[attachment incomplete — N of M screen frames failed to upload]` into `description` and changes
+  the toast. ⚠️ **`video_url` IS STILL WRITTEN ON PURPOSE** — four Edge Functions read it and two
+  (`analyze-bug-report:234`, `retriage-pending:195`) already assign it to a var called
+  `screenshotUrl`; it feeds the AI triage vision call and the Telegram photo, and Edge Functions
+  cannot be deployed from a VAMOS lane. It carries the LAST frame. Audio untouched — 27 real `.m4a`.
+  ⚠️ **CORRECTION to handoff 196:** the nine lost frames were NOT the "leading comma" in
+  `handleStop` — that value is a duplicate of the last frame and `crashDetector.ts:53` uses it. The
+  loss was at the upload, which only sent `frames[length-1]`.
+  ⚠️ **NO LIVE PROOF YET — needs a device.** `BugReporter.handleStart` returns early on web
+  (`:472`), so no browser can start the recorder. A settings-entry E2E also failed here: the
+  container's browser cannot reach Supabase (`TypeError: Failed to fetch`) even though curl can —
+  and the ROW proved it, 252 unchanged, 0 rows with the stamp, while the rig's log said "submitted".
+  ⚠️ **TWO WRITERS EXIST**: `ReportBugButton.tsx` (Settings, text only, always honest) and
+  `BugReporter.tsx` (shake/FAB, the media path). Do not assume a fix to one touches the other.
+- ⚠️ **THE SOLO ARRANGEMENT PHASE HAS NO CLOCK — "MORE TIME WHERE IT SCROLLS" IS A NO-OP THERE
+  (2026-09-08).** `startCountdown()` has exactly ONE call site, inside the player's READY handler,
+  and it runs AFTER `setPlayerReady(true)` — so the timeout branch, gated on `!playerReady`, can
+  never fire; and if the bots are already done (they are, immediately) the same handler navigates on
+  the next line. `app/game.tsx:713` says it outright: *"Solo: bots never start countdown — player
+  has free thinking time."* WATCHED IT: 47s on the 320/2P placement screen, 31 samples, no countdown
+  painted, no auto-resolve (`tests/solo-clock-reachability.mjs`). **A solo player has unlimited time
+  to arrange.** The derived clock IS wired and tested (`getArrangeSeconds` in `constants/gameConfig.ts`
+  → 70s/44s/33s vs 30s base, from `boardsContentH/boardsAvailH`, the same two numbers that decide
+  `boardsScroll`) but it changes nothing a solo player feels. Kept so the day a solo clock is
+  switched on it is already layout-aware. ⚠️ **THE REAL CLOCK IS MULTIPLAYER'S** — `COUNTDOWN_SECS
+  = 60`, BROADCAST, with `DEAL_CLOCK_MS` 15s above it. Both ways to extend it break one of Roye's
+  rules: per-device desyncs players, and raising the shared constant lengthens it where the layout
+  fits. The clean fix is server-side per-room. **Roye's call; 0 rooms have ever reached `playing`.**
+  ⚠️ **PROBE LESSON, second time:** a text locator on `/READY/` grabs the BOT's "✓ READY" status pill
+  before the commit button — the click lands on a label, nothing happens, and the rig reports a
+  broken product. Use `getByRole('button')`. Trace the URL after a click before believing a failure.
+- ⚠️ **BOARD 4 SCROLLS AND CANNOT STOP WITHOUT SMALLER CARDS (measured 2026-09-08).** Both engines:
+  **320/2P hides 271px** (206/477), **320/3P hides 113px** (254/367), **393/2P hides 44px**
+  (512/556); 393/3P, 393/4P and 320/4P fit. 271px is NOT recoverable from spacing, and
+  `useGameLayout` already searches card width down and sets `boardsScroll` only when the minimum
+  still does not fit — the system had already concluded it. **Roye ruled card sizes stay, so this is
+  his trade, not a defect to fix.** Shipped instead: a **"▼ N more boards below"** pill, absolutely
+  positioned in a `pointerEvents="box-none"` row so it adds ZERO height — every overflow number is
+  identical before and after — appearing only where content is hidden and paging down on one tap.
+  ⚠️ The first fit probe reported **0px in all 12 cells** because it matched any element with
+  `overflow-y:auto` containing a BOARD label (the document qualifies). A scroller that is not
+  scrolling is not the scroller — select by ACTUAL overflow. And the first pill passed every
+  assertion while **covering board 4's cards**; only looking caught it.
+- ⚠️ **THE 252 BUG REPORTS ARE 195 MACHINE PINGS — AND THE "VIDEO" REPORTER HAS NEVER SHOT A VIDEO
+  (read 2026-09-08).** Of the 204 rows with no summary: **195 are `[ping] app opened vX` dev
+  telemetry** (writer still live at `components/BugReporter.tsx:380`, `__DEV__`-gated so it cannot
+  fire from TestFlight), 1 is a self-declared test, 5 are empty video shells, and the **3 with human
+  sentences are SEEDS** — they arrived via `submit_feedback`, an RPC with **zero callers in the
+  repo**, tagged `tournament_lobby`/`cash_table`, screens CAPS does not have, and one praises
+  tournaments that have never existed. **0 of the 204 are a player's words.** The real voice is the
+  48 rows that WERE summarised and closed in March/April.
+  ⚠️ **`video_url` HOLDS A JPEG.** Measured: 29 rows have one, **29 of 29 point at
+  `/frames/bug-frame-*.jpg`, 0 are mp4/mov/webm, and 29 of 29 equal `screenshot_url`.**
+  `utils/screenRecorder.ts` samples ≤10 stills at 0.5fps (`MAX_FRAMES = 10`), `stopRecording()`'s
+  return is discarded by a leading comma, and only the LAST frame is uploaded — nine of ten are
+  thrown away every report. `report_type: 'video'` is a hardcoded literal. Losses are silent:
+  **7 of 36** `has_video` rows have no URL (5s upload timeout → null), **15 of 42** lost the audio.
+  ✅ **ZERO reports about multiplayer or the lobby, ever** — a regex over every text column across
+  all 252 returns 2 hits and neither is about multiplayer. The tester round will be the first time
+  those surfaces are exercised by anyone.
+  ⚠️ **AND THE CARD REPORT IS STILL LIVE AND WAS ANSWERED BACKWARDS.** One tester asked twelve times
+  (reports 9/22/70/72/73/74/75/77/78/81, MASTER #7, plus the May 1★ #713) to delete the top-left
+  corner index and keep a LARGE CENTRE RANK. Measured on the built app: a 2P card is 40×56px with
+  exactly three glyphs — **rank 12px in the corner, suit 9px under it, suit 26px in the centre.
+  There is NO centre rank at any player count.** So the rank appears once, at the smallest size on
+  the card, while 26px repeats the suit. 515 kept the corner, ADDED a bottom-right one, and deleted
+  the centre rank. `Card.tsx:23` says the corners are "DELIBERATELY UNTOUCHED" — it is a decision,
+  not a defect, and it is Roye's to reverse or confirm. Also `Card.tsx:25` claims the bottom-right
+  index shows at 3P; measured 0 at BOTH 2P (40px) and 3P (46px) — both under its 54px gate.
+- ✅ **`submit_score` IS CLOSED — IT NO LONGER WRITES CHIPS AT ALL (2026-09-08, applied to prod).**
+  Migration `supabase/migrations/20260908000000_close_submit_score_chip_faucet.sql`. Doc:
+  `docs/economy/CLOSE-SUBMIT-SCORE-2026-09-08.md`.
+  ⚠️ **THE GRANT WAS REMOVED, NOT RE-DERIVED, AND THAT IS THE RIGHT ANSWER** — read from
+  `app/results.tsx` before touching the function. There is exactly ONE caller
+  (`utils/leaderboard.ts:107` ← `app/results.tsx:576`), it runs LAST after `record_hand_net` and
+  `record_reward`, it passes `latest ?? gs.chips` where `latest` is **the balance the server itself
+  just returned**, and the wrapper discards the response (`return !error`). The results screen's
+  own comment calls it *"a no-op echo of the true post-delta total"*. There is no chip movement
+  here to derive — it already happened upstream and was ledgered.
+  ⚠️ **UPDATE-ONLY, NEVER AN UPSERT.** `leaderboard.total_chips` is `NOT NULL DEFAULT 2000`, so an
+  INSERT that merely omitted the column would ITSELF have granted 2,000 unledgered chips by a
+  second route. `record_hand_net` creates the row first in the same block.
+  ⚠️ **THE SIGNATURE IS UNCHANGED ON PURPOSE** — `p_total_chips` is accepted and IGNORED, because
+  build 515 is on TestFlight and still sends it. `tests/submit-score-contract.test.ts` pins that
+  the client keeps sending all six arguments and that `submit_score` stays sequenced AFTER
+  `record_hand_net`; two of its three tests were proven to fail by planting the defect.
+  **BRANCH BEFORE/AFTER** (preview `ywxjotjcexkqjgxdzhwd`; its migration replay failed at 5 tables
+  / 0 functions, so the environment was rebuilt from production's own definitions and the guards
+  stubbed permissive to test the worst case). Four identical forged calls at 999,999,999:
+  **before 2,000 → 4,000 → 6,000 → 7,000, gained_today 5,000 · after 2,000 → 2,000 → 2,000 →
+  2,000, gained_today NULL.**
+  **RE-ATTACKED ON PRODUCTION** with a real anonymous session: four forged calls refused
+  (`no_leaderboard_row`, no row created), then the REAL sequence — `record_hand_net` net 120 paid
+  rake 6 and play_grant 80 for `new_balance` **194**, `submit_score` echoed 194 with
+  `chips_written: false`, and two more forged calls **with a row present** left it at 194.
+  Read back: **total_chips 194 = ledger_sum 194, GAP 0**, rows `rake=-6, hand_net=120,
+  play_grant=80`, and **elo 1000 / games_played 0 — S2 holds.** Anonymous players still work
+  (`econ_bind_ok` true). Verified on prod: the function no longer writes `total_chips`, no longer
+  touches `econ_score_gain_daily`, keeps both guards, and has exactly ONE overload.
+  ⚠️ **STILL FORGEABLE, DELIBERATELY LEFT:** `hands_played` / `hands_won` / `biggest_win` are still
+  caller-supplied, so a player can inflate their OWN displayed stats (the forged device came out
+  `biggest_win 999999`). No chips, no ELO, no ladder. Reported, not folded in, so the diff stays
+  exactly "chips removed".
+  ⚠️ **AND A THING FOUND ON THE WAY: THE STARTING 2,000 HAS NEVER BEEN LEDGERED AT GRANT TIME.**
+  It comes from the column default via `ensure_leaderboard_row`, and the whole-DB gap is 0 only
+  because a one-off `reset_baseline` backfill on 2026-09-01 wrote matching rows for every device
+  then alive — three sampled devices all carry that identical timestamp as their first row. A
+  device created today takes a different path: `record_hand_net` creates its row and every chip is
+  ledgered from the first hand. **Do not read the 0 as proof the signup grant is ledgered.**
+- ⚠️ **SUPERSEDED, kept for the shape — `submit_score` MINTED UNLEDGERED until 2026-09-08.**
+  With a real ANONYMOUS session (anyone can mint one from the public key in one HTTP call — proven:
+  `role: authenticated, is_anonymous: true`) a brand-new device was driven to **total_chips 9,000 /
+  ledger_sum 6,000 / GAP 3,000**. The 3,000 is exactly the `submit_score` gains, which write no
+  `chip_transactions` row. Bounded and the bound holds: **5,000 per device per day**, shared with
+  `record_reward`, which refused correctly with `reward_cap_daily`. But 9,000 is ~3× the richest
+  real player (3,250), reached without playing a hand.
+  ⚠️ **WHY THE LIVE GAP IS STILL 0**: `app/results.tsx` calls `submit_score` as an ABSOLUTE
+  read-back write of the balance the ledger already produced, sequenced after every ledgered delta,
+  so normal play grants nothing. The hole is that the server **CLAMPS a caller-supplied number
+  instead of DERIVING it from a verified game event**. ✅ The ladder did NOT move — `elo` stayed
+  1000, `games_played` 0 — so **S2 holds**; `hands_played` is forgeable, the competitive ladder is
+  not. **This is the single most valuable thing left to fix.**
+- ⚠️ **`finish_table` REAPS ABANDONED ROOMS BY DESIGN — and my first reading of that was wrong.**
+  A stranger with no session ended `5JT6` and `CZ9Z` (`waiting → finished`, confirmed by SELECT).
+  Reading the function shows why: `IF NOT v_is_participant AND v_has_fresh_seat THEN
+  RETURN 'not_authorized'` — a stranger is refused **only if a seat was seen in the last 90
+  seconds**. Both rooms had `roster_cleared: 0` and `room_players` is EMPTY across the whole
+  database, so what ran was the deliberate abandoned-room reaper, NOT a griefing vector.
+  The narrower real risk: room codes are **4 characters** and the protection lapses 90s after a
+  heartbeat, so a backgrounded tester's waiting room can be ended by anyone guessing the code.
+  ⚠️ **COULD NOT VERIFY** the branch that protects a LIVE seat — `create_table` refuses a forged
+  host (FK to `users`). Those two rooms are left `finished`: never hand-edit a `game_rooms` row.
+- ⚠️ **FINAL-QA 2026-09-08 — `docs/final-qa/FINAL-QA-2026-09-08.md`. Suite 2,866/2,866, tsc clean.**
+  Ground truth re-measured independently and matches: **398 devices · 25 played · 78 hands · 12
+  bindings · gap 0 · max 3,250 · 0 purchases**. Two numbers here were stale and are corrected:
+  **float is 800,920** (was 789,530) and there are **9 rooms, all `waiting`/`finished`, 0 ever
+  `playing`**. Every mint vector WITHOUT a session refuses with `identity_mismatch`; `earn_chips`
+  refuses a negative with `invalid_amount`; direct writes to `leaderboard`, `chip_transactions` and
+  `game_rooms` are all `permission denied`; `get_leaderboard` leaks **no user_id, no device_id, no
+  uuid**; `delete_user_account` is revoked for anon AND authenticated. Card face measured
+  **rgb(252,250,243) = #FCFAF3 exactly**. Privacy page md5 identical across live, repo and dist.
+  ⚠️ **A 204 IS NOT A WRITE.** An anon PATCH on `leaderboard` returned **HTTP 204** and changed
+  nothing — RLS matched zero rows. Reporting the status code would have filed a catastrophic false
+  positive. Read the row.
+  ⚠️ **STILL OVERPROMISING, all verified live and unfixed:** `/lobby` says "auto-start when full"
+  in TWO places (`app/lobby/index.tsx:280` and `utils/i18n.ts:1214`, so the Play screen says it
+  too) while 0 rooms have ever played · `/club/DEMO` opens a club for any typed code · an unknown
+  route renders Expo Router's developer page **"Unmatched Route … Go back • Sitemap"** (confirmed
+  on production: live `/nope-xyz` returns the same 1,902-byte shell as `/`) · and `/shop`,
+  `/chip-store`, `/achievements`, `/rank` have a loading state with **no failure state**, while
+  `/leaderboard` shows headers with no empty state.
+  ⚠️ **SIX INSTRUMENT FAILURES IN ONE SPRINT, every one caught by looking at the output:**
+  `python3 -m http.server` does no SPA rewrite and reported **32 of 33 routes broken** · I read the
+  card faces as grey and the measurement said #FCFAF3 · a tooltip selector matched a 393×852
+  wrapper and invented 16 overlaps · the first attack batch used wrong RPC parameter names so
+  refusals and 404s were indistinguishable · the 204 above · and my first `finish_table` verdict.
+  **`tests/serve-dist-like-prod.mjs` now serves `dist/` using `dist/vercel.json`'s OWN rules** so a
+  local walk reproduces production, honest 404s included. Use it instead of a static server.
+  ⚠️ **NEVER VERIFIED, said plainly:** native iOS rendering on a device · the reporter's media path
+  (`BugReporter.handleStart` returns early on web) · two real clients in one room · MP under load.
+  The container's browser **cannot reach Supabase or caps.ftable.co.il** — `fetch` THREW for both
+  while `curl` reached both — so every browser check runs backend-dark.
+- ✅ **THE SECRET GUARD EXISTS AND HAS BEEN WATCHED REFUSING A REAL COMMIT (2026-09-08).** Both
+  halves, since `41b534d` on 2026-09-06: `.githooks/pre-commit` (installed by a `prepare` script in
+  `package.json`, because `core.hooksPath` is local config a fresh clone does not get) and
+  `.github/workflows/secret-scan.yml` on every push and PR — the hook is the fast local no, the
+  workflow is the one `--no-verify` cannot skip. `scripts/scan-secrets.mjs` walks **`git ls-files`**,
+  so **`docs/**` and every `.json` are in scope**; the token leaked in `docs/MASTER_INDEX.md` as well
+  as in source, and a source-only scanner would have caught half of it.
+  **Proven three ways, not asserted:** `--rev a40ea15` and `--rev 345c327` BLOCK the two commits that
+  actually leaked the bot token, naming `docs/MASTER_INDEX.md` first; a real `git commit` carrying a
+  fake token in a `.ts`, a `.md` and a `.json` exited 1 with HEAD unmoved; and over **820 commits /
+  4,142 files those two are the ONLY refusals — 0 false positives**, now a standing CI step
+  (`tests/secret-scan-falsepos.mjs`). Current tree: **clean**. Nothing rotated.
+  ⚠️ **TWO SILENT HOLES WERE FOUND AND CLOSED, and both are this project's signature shape.**
+  `--staged` read the WORKING TREE, so staging a secret then scrubbing the file passed — it now reads
+  the INDEX (`git show :<path>`), which is what `git commit` writes. And a shell-interpolated path
+  made git die on `app/(tabs)/index.tsx` — parentheses are shell syntax — with the throw swallowed by
+  a `catch`, so the app's 2,475-line home screen was never opened while the scanner printed "clean".
+  Every git call is `execFileSync` with an argument array now. **Caught by looking at the output.**
+- ⚠️ **THE ROOT `vercel.json` IS KEPT ON PURPOSE, AND IT NOW LABELS ITSELF (2026-09-08).** It is NOT
+  read by the deploy that serves caps.ftable.co.il — that is `dist/vercel.json` from
+  `scripts/fix-web-html.js` — but it IS read by Vercel's Git integration (that schema check is what
+  failed 29 deploys), and its `buildCommand` is a WORKING build, so it is the correct fallback if the
+  Ignored Build Step is ever switched off. Deleting it would swap a labelled trap for a silent
+  zero-config deploy of the repo root onto the production domain.
+  **The warning is the VALUE of `installCommand`, the file's first key** — a legal string in a legal
+  field, NOT a new property, so the closed schema is untouched, and it prints into the build log of
+  any deploy that ever uses this config. It still ends in `npm install`. Four tests hold it; two were
+  proven to fire by stripping the warning and by planting an apostrophe. ⚠️ A note BESIDE a trap is
+  not a label ON it: the generator has carried the same sentence in a real comment since 2026-08-15
+  and it stopped nobody, me included.
+  Sibling sweep: no shadow copies exist today (`public/privacy.html`, `public/terms.html`,
+  `public/bugs`, `public/hand` all absent), and no generated output is tracked.
+- ✅ **`ios-testflight-DISABLED.yml` IS DELETED (2026-09-08, Roye's call).** The name said off; GitHub
+  said `state: "active"` and it carried a live `workflow_dispatch:`. It had **never run once —
+  `total_count: 0`** — while still importing a p12 and signing with the cert its own header calls
+  revoked (`45EBC138DF94E77658BA9558EAAE19FC`). Apple hard-limits ~10 uploads per app per day.
+  ⚠️ **`.github/workflows/ios-testflight.yml` IS THE ONLY WORKFLOW THAT BUILDS CAPS**, and that was
+  CHECKED, not read off the names: run 1227 (`34107249013`), `workflow_dispatch` on main, **success**,
+  head `b8b7ae1a3` — and `git show b8b7ae1a3:app.json` reads `ios.buildNumber: 515`, which is the
+  input its own step reads via `node -p "require('./app.json').expo.ios.buildNumber"`. Same workflow
+  succeeded for 509→515, seven in a row. The deleted file's stated keep-condition — *"KEPT until this
+  one produces a successful build"* — was met seven times over. Nothing referenced it: no
+  `workflow_call`, no `uses: ./`, no script, no dispatch by display name; the seven hits were all
+  prose. Its two header lines in `ios-testflight.yml` were rewritten in the same commit, because a
+  comment pointing at a deleted file is the defect being closed. Diff still available:
+  `git show 9577aa5:.github/workflows/ios-testflight-DISABLED.yml`.
+  ⚠️ **CORRECTION 2026-09-08 — `asc-details.yml` / `asc-list.yml` ARE NOT "backed by nothing".**
+  I called them dispatchable workflows backed by nothing. Two of those claims were false. **Each RAN
+  ONCE** — 2026-05-14, `push` on branch `recovery/may4-clean`, both SUCCESS (ids 276765913 and
+  276759157) — and **each reads `APPLE_API_KEY_ID` / `APPLE_API_ISSUER_ID` / `APPLE_API_KEY_BASE64`**,
+  mints an ES256 JWT and calls Apple. Both files were read back from their own run commits
+  (`8e77cfe`, `2e25b87`); their Apple calls are **read-only** (`GET /v1/apps`, `GET /v1/builds`).
+  `recovery/may4-clean` is gone from origin's 65 branches, which is why the file resolves nowhere.
+  ✅ **AND THEY ARE NOT DISPATCHABLE — proven, not assumed.** A real dispatch attempt of each against
+  main was refused: *"Workflow does not have 'workflow_dispatch' trigger"*. Both files DO declare it;
+  GitHub resolves the trigger from the file ON THE TARGET REF, and no ref carries it. They are inert
+  history records. `state: "active"` only means GitHub never marks a workflow deleted when its branch
+  disappears. **NOT DELETED** — they ran and they hold credentials, so the rule is report; and the
+  REST API has `/enable` and `/disable` but **no delete** anyway. Nothing live to remove.
+  ⚠️ **STILL LYING, REPORTED NOT CHANGED:** `ios-testflight-free.yml` is named "FREE — no EAS cloud" and runs `eas build`
+  against the dead Expo account (last run 2026-06-25) · `ios-simulator-smoke.yml` runs `eas build`
+  on **push** · `variant="gold"` survives at `app/simulate.tsx:232` and `:323` and has painted MINT
+  since the theme sweep · and `MEMORY.md:951` still instructs a future session to wire a new cert
+  into the file just deleted. ✅ `KILL_Board`/`KILL_game` are NOT liars — `KILL_FINITE_ON_THIS_PLATFORM
+  = true`, name matches state; the "false on web" line is honest history of a reverted experiment.
+- ✅ **THE SPLASH IS CURRENT AND THE EDGE FIX HOLDS — re-verified by measurement 2026-09-08.**
+  `app.json`: `./assets/splash.png`, `backgroundColor #071C12`, `resizeMode contain`. Decoded the PNG
+  and sampled **240 edge pixels**: worst deviation from the declared background is **0 channels**, on
+  both `splash.png` and `splash-icon.png` (byte-identical, md5 `3a231e9d139efb81c085c4fc2547543a`,
+  1284×2778). Art and background cannot separate into side bars. **NATIVE-ONLY, confirmed:**
+  `dist/index.html` has **0** splash references; the only hit in `dist/` is inert expo-splash-screen
+  module code. It belongs on Roye's device list and cannot be checked from a browser. Not re-done.
+- ✅ **THE APP STORE LISTING IS WRITTEN — SEVEN FIELDS AND THE AGE RATING, ON THE LIVE LISTING
+  (2026-09-08, Roye's call). Record: `docs/listing/WRITE-THE-LISTING-2026-09-08.md`.**
+  Verified by an INDEPENDENT read (run `34282378266`, `store-listing`, GET only) after every write:
+  **promotionalText · description (1,253 chars) · subtitle `Multi-board poker, free` · keywords ·
+  privacyPolicyUrl `https://caps.ftable.co.il/privacy.html` · supportUrl · category
+  GAMES/GAMES_CARD/GAMES_STRATEGY · appStoreAgeRating `SEVENTEEN_PLUS`.**
+  ⚠️ **NOTHING SUBMITTED FOR REVIEW.** No build selected, version state still
+  `PREPARE_FOR_SUBMISSION` at 1.0, no pricing or territory touched.
+  ⚠️ **THE AGE RATING WAS ANSWERED, NOT SET.** `ageRatingOverride` reads `NONE` and is on a hard
+  never-send list with `koreaAgeRatingOverride` and `kidsAgeBand`; 17+ is Apple's own computation.
+  **Apple's questionnaire is ALL-OR-NOTHING** — a lone `gamblingSimulated` was refused with 21
+  `ENTITY_ERROR.ATTRIBUTE.REQUIRED` errors, so the whole form goes in one request. The required
+  field list and which questions are yes/no are both PARSED FROM APPLE'S OWN ERRORS, never from a
+  remembered schema. ⚠️ Apple reports a wrong type under `ENTITY_ERROR.ATTRIBUTE.TYPE`, NOT
+  `.INVALID` — watching only `.INVALID` ignored nine errors that named the booleans outright.
+  ⚠️ **THE WRITER IS `store-listing-write`, ONE FIELD PER RUN, `apply` DEFAULTS TO FALSE.**
+  `tools/asc/store_listing_write.rb`. The verdict is a SEPARATE read-back, never the PATCH status,
+  and every run prints its own undo line. The copy is PARSED AT RUNTIME from
+  `docs/listing/LISTING-PACK-2026-09-08.md` — edit the pack, not a second copy
+  (`tests/listing-copy.test.ts` pins the parse). NOT written: `marketingUrl` (optional) and
+  `whatsNew` (correct for a first version).
+- ✅ **THE LISTING NAME IS `CAPS Poker` (2026-09-08, Roye's call). Record:
+  `docs/listing/RENAME-THE-LISTING-2026-09-08.md`.** It was `CAPS - Card game`. Preview run
+  `34284889330`, write `34285144841`, read back by a SEPARATE GET: `AFTER name = "CAPS Poker"`.
+  **Apple raised no uniqueness objection** — store names are unique-checked on write and it accepted
+  this one. Revert line: set `CAPS - Card game` on
+  `/v1/appInfoLocalizations/7d60730c-a3f3-4e30-8d4c-dfafe5416b52`.
+- ✅ **ONE NAME EVERYWHERE — `CAPS Poker`, PROVEN WHERE IT RENDERS (2026-09-09, Roye's call).**
+  Record: `docs/brand/ONE-NAME-2026-09-09.md`. Changed: `app.json` `expo.name` AND
+  `microphonePermission` · `public/landing.html` (`<title>`, `og:title`, and the `TITLES` map in
+  BOTH languages) · `components/ShareCard.tsx` ×4 · `app/orientation-pick.tsx:36` ·
+  `app/theme-pick.tsx:26` · `web-replay/index.html` ×2.
+  ⚠️ **`app.json` `expo.name` IS THE SINGLE SOURCE FOR TWO ARTEFACTS** — the iOS home-screen label
+  (`ios/CapsPoker/Info.plist` `CFBundleDisplayName`) and the web tab title (`dist/index.html`).
+  `ios/` is untracked prebuild output: change the line, never the artefact.
+  ✅ **IDENTIFIERS UNTOUCHED and asserted in the edit script, not eyeballed:** `slug`/`scheme`
+  `caps-poker`, `com.capspoker.app` ×2, `package.json` `caps-poker`. They are ids, not names.
+  ⚠️ **TWO SURFACES NO LIST HAD:** `web-replay/index.html` SHIPS (`scripts/fix-web-html.js:171`
+  copies it, `/hand` is live 200) and carried a `CAPS POKER` wordmark; and `app.json`'s
+  **microphonePermission**, the iOS system dialog shown when a bug report records audio — a
+  permission prompt is user-visible text that a display-surface sweep never thinks to check.
+  ⚠️ **THE LANDING MASTHEAD IS DELIBERATELY UNCHANGED and is Roye's to overrule.** It is not a
+  string but a two-part lockup — `<span class="caps">CAPS</span>` at up to 104px with a gold
+  gradient plus `<span class="poker">POKER</span>` at 20px, `letter-spacing:11px`,
+  `text-transform:uppercase`. Unifying it is a redesign, not a word. Two edits reverse it:
+  `>Poker<` and dropping the uppercase rule at `public/landing.html:105`.
+  **RENDERED CHECK: `tests/one-name-render.mjs`, 13/13**, reading the BUILT `dist/` served by
+  `dist/vercel.json`'s own rules. ⚠️ **The iOS label is native-only — a browser cannot show it.**
+  On Roye's device list. Suite 2,874/2,874 across 57 suites, tsc clean.
+- ⚠️ **THREE RIG FAILURES IN THAT ONE SPRINT, AND THE THIRD PRINTED A FALSE GREEN (2026-09-09).**
+  (1) `tests/serve-dist-like-prod.mjs` **HARDCODES PORT 8899** and ignores any argument — a rig
+  passing 8931 hung on every `goto` and produced no output at all. (2) **`innerText` APPLIES CSS
+  `text-transform`**, so a page whose source says `CAPS Poker` reads back as `CAPS POKER`; judging
+  spelling from `innerText` files a defect against a typographic treatment. Judge spelling from
+  `textContent`. (3) **A LEAF-ONLY SCAN CANNOT SEE A WORDMARK SPLIT ACROSS TWO SPANS** — neither
+  `CAPS` nor `POKER` matches a `/CAPS POKER/` test on its own, so the rig announced "every element
+  spells CAPS Poker" while the page painted the opposite. Only two rigs disagreeing caught it.
+  ⚠️ And `pkill -f` matched its own shell again (exit 144) — it is already in these notes.
+- ⚠️ **SUPERSEDED — THE PRODUCT CARRIED THREE CASINGS (2026-09-08, closed 2026-09-09).**
+  Measured from the files and the generated artefacts, not assumed:
+  **store `CAPS Poker`** · **iOS home-screen label `Caps Poker`** (`ios/CapsPoker/Info.plist`
+  `CFBundleDisplayName`, generated from `app.json` `expo.name`; `ios/` is untracked prebuild output)
+  · **web tab title `Caps Poker`** (`dist/index.html`, same source) · **landing page title
+  `CAPS POKER`** · privacy/terms titles and the in-app onboarding card `CAPS Poker` · share cards and
+  the orientation/theme pickers `CAPS POKER`. **The cheapest fix is ONE LINE — `app.json`
+  `expo.name` → `CAPS Poker` — which moves the device label and the web tab title together because
+  both derive from it**; the landing title is a second one-liner. Neither was done: it is an
+  app-level change needing a rebuild. `com.capspoker.app` and `package.json`'s `caps-poker` are ids,
+  not display names, and are correct as they are.
+  ⚠️ **THE SOCIAL BIOS ARE ROYE'S AND I COULD NOT READ THEM.** No handle, URL or bio text for any
+  social account exists anywhere in this repo — only per-platform image assets under `docs/social/`.
+  Whether the accounts exist and what they say is unknown from here.
+- ⚠️ **A NEW WORKFLOW ACTION IS DISPATCHABLE FROM A FEATURE BRANCH — NO MERGE NEEDED. I claimed
+  the opposite and was wrong (corrected 2026-09-08).** `ASC-PASTE-ORDER-2026-09-08.md` said a new
+  `action` choice "would have to be on the default branch to be dispatchable". FALSE: commit
+  `09114f86` added the `store-listing` option on a feature branch and run `34163935410` dispatched
+  it with `ref` = that branch, days before the merge; `set-public-link` and its `link_enabled`
+  input went the same way. **GitHub resolves a dispatch's trigger AND its inputs from the file ON
+  THE TARGET REF** — the same mechanism that makes `asc-details.yml`/`asc-list.yml` undispatchable,
+  read the other way round. That doc now carries a retraction banner.
+- ⚠️ **AN ID THAT EXISTS IS NOT AN ID IN THE RIGHT ROLE (2026-09-08, the category write).** I found
+  `GAMES_CARD` in Apple's category list and used it as a PRIMARY category. The id was real; it is a
+  SUBCATEGORY. Apple refused with `ENTITY_ERROR.RELATIONSHIP.INVALID` on both relationships. **The
+  App Store model is ONE category plus up to TWO subcategories** (`primaryCategory` +
+  `primarySubcategoryOne`/`Two`); `secondaryCategory` is a different top-level category and CAPS
+  sets none. ⚠️ **AND THE GUARD THAT CAUGHT IT THEN NEARLY FILED A FALSE FINDING:** reading
+  subcategories through `include=subcategories` returns exactly TEN — a PAGE, not the catalogue —
+  with no `GAMES_CARD`, so it reported "Apple does not offer a Card subcategory". Read
+  `/v1/appCategories/GAMES/subcategories?limit=200` and it is there. Print the count; abort on a
+  `next` link.
+  ⚠️ **STILL BLOCKING A SUBMISSION, all measured today:** **0 screenshots** (18 ready in
+  `docs/product-map/store-515/`, a separate upload API) · **export compliance never answered**
+  (`appEncryptionDeclarations` → **404**) · version still **1.0 created 2026-03-11** while the app
+  is 2.7.0/515 · a build must be selected · and the two CODE rejections, Google sign-in without
+  Sign in with Apple and the dead delete-account control.
+  ⚠️ **THE SUPPORT URL IS THE LANDING PAGE, a compromise not a choice.** `/support.html` returns
+  **404** — it does not exist. `landing.html` is 200 and carries `caps@ftable.co.il`, so it is
+  honest, but it is marketing and Apple has rejected support URLs that only sell.
+- ⚠️ **SUPERSEDED — THE LISTING WAS BLANK AND I SAID I COULD NOT FILL IT (2026-09-08).** Re-read live today (run `34270807514`, `store-listing`, GET only): description,
+  keywords, what's new, promo text, support URL, marketing URL, subtitle and privacy URL all `null`;
+  `screenshots []`; every age-rating field `null`, override `NONE`; version still 1.0 created
+  2026-03-11, `PREPARE_FOR_SUBMISSION`.
+  **THE PASTE DOCUMENT IS `docs/listing/ASC-PASTE-ORDER-2026-09-08.md`** — field by field in ASC's
+  own order, with the age-rating question named exactly: **Contests → Simulated Gambling →
+  `Frequent/Intense`**, every other question `None`, and **no override**.
+  ⚠️ **WHY I DID NOT WRITE IT.** The credential demonstrably writes TestFlight (run `34135814835`
+  PATCHed a beta group's public link and read it back), but **beta groups and App Store metadata are
+  different permission areas** — a Developer-role key writes the first and not the second, App
+  Manager writes both, and the evidence fits either. Apple has no dry run, so "find out" and "write
+  to the live listing" are one act. And there is no ASC key in the container: every call goes through
+  a workflow dispatch, `testflight-manage.yml` validates `action` against a fixed `choice` list, and
+  a new write action must be on the DEFAULT branch to be dispatchable — which needs a merge, outside
+  sprint scope. A half-filled live listing is worse than an empty one plus a good document.
+  The four record IDs a future write needs are in the doc; `lib.rb` already does PATCH and
+  `store_listing.rb` already resolves them, so it is the merge, not the code, that is missing.
+  ⚠️ **BEYOND METADATA, STILL BLOCKING:** export compliance **has never been answered**
+  (`appEncryptionDeclarations` → **404**, none exists) · 0 screenshots uploaded (18 ready in
+  `docs/product-map/store-515/`) · version reads 1.0 while the app is 2.7.0 · a build must be
+  selected (my read did not include the build relationship — confirm in the dashboard) · and the two
+  CODE rejections: Google sign-in without Sign in with Apple, and the dead delete-account control.
+- ⚠️ **BACKUPS — WAL ARCHIVING IS HEALTHY; THE PITR ADD-ON IS STILL NOT READABLE (2026-09-08).**
+  Read from the database: `archive_mode on` · `wal_level logical` · `archive_command` is Supabase's
+  wal-g `admin-mgr wal-push` · `archive_timeout 120s` · **119,797 segments archived** since
+  2026-02-13 · last WAL `00000001000001D300000072` archived **7.2 seconds** before the query · **2
+  failures ever, the last 2026-05-05** · Postgres 17.6.
+  ⚠️ **NOT ASSERTED, and refused a second time:** whether the PITR add-on is purchased and what the
+  retention window is. `archive_mode on` is a platform default that also serves ordinary daily
+  backups — it does NOT prove PITR is enabled. The plan tier is unreadable too: `get_organization`
+  returns *"You do not have permission to perform this action"*.
+  **WHAT ROYE CHECKS:** Supabase → Project Settings → Database → Backups → the Point-in-Time
+  Recovery panel — healthy looks like PITR enabled with a stated recovery window and an
+  "earliest restore point" roughly that far back; an upgrade offer or only daily snapshots means the
+  add-on is not active.
+- ⚠️ **THE `paths-ignore` RULE HAS NEVER FIRED. BUILDS DID NOT DROP (measured 2026-09-08).** It is on
+  the branch, **not on `origin/main`**, and it only triggers on pushes to main. The last Web Deploy
+  run started at 07:39:12Z; the rule was committed at 08:25:34Z — **46 minutes later**. Successful
+  runs per day went 7 (09-07) → 1 (09-08), and that is a quiet day, not a saving.
+  What it WOULD save, measured the same way: of **70 successful runs, 24 (34%)** had a diff entirely
+  of `docs/**` or `**/*.md`. Aimed correctly, saved nothing yet. **First thing to check after the
+  next merge to main: a docs-only push must show NO Web Deploy run.** No dollar figure is claimed —
+  this session has no billing access. Red deploys still cost nothing (`buildingAt == ready`, no
+  build-log events, no container).
+- ⚠️ **`vercel.json` IS JSON — A COMMENT IN IT KILLED EVERY GIT DEPLOY FOR FIVE DAYS (2026-09-08).**
+  The SAME 2026-09-03 commit that put the 404 fix in the wrong file also added a `_comment_rewrites`
+  array to the ROOT `vercel.json` to explain the change. JSON has no comment syntax, so that is a
+  real property, and Vercel validates `vercel.json` against a CLOSED schema **BEFORE** it runs the
+  project's Ignored Build Step. Measured over 21.7 hours: **40 deploys — 29 ERROR, 8 READY,
+  3 CANCELED**, every ERROR carrying
+  `should NOT have additional property _comment_rewrites`. Fixed by deleting the key;
+  `tests/vercel-rewrites.test.ts` now fails on any top-level key outside Vercel's schema or
+  starting with `_`, and was proven to fire by putting the defect back.
+  ⚠️ **AND THE RED WAS NOT THE BILL.** A failed deploy has `buildingAt == ready == createdAt` and
+  NO build log events — no container is ever allocated, so 29 failures cost nothing. The money went
+  to the GREEN ones: **5 of the 8 production deploys in that window were pushes whose entire diff
+  was a `.md` or something under `docs/`**, each running a full `expo export` + Playwright + WCAG +
+  BackstopJS + `vercel --prod` to publish a byte-identical bundle. `web-deploy.yml` now carries
+  `paths-ignore: ['docs/**', '**/*.md']`. ⚠️ **That ignore is NOT yet proven on a live trigger** —
+  it only fires on pushes to `main`. Check the first docs-only push to main shows NO Web Deploy run.
+  ✅ **An Ignored Build Step ALREADY EXISTS on `caps-poker-web` and on `wingman-api-staging`, and it
+  skips EVERYTHING, not just docs** — proven by a CANCELED deploy of `820b6c6`, a twelve-file
+  application-code commit. Do NOT "add" one, and do NOT disconnect the Git integration: the skip is
+  the control that was already working, and the schema error was merely running before it.
 - **FIVE-O is NAVY, not red (corrected 2026-09-03).** `visual.fiveo` paints surface `#1A1A2E` with a
   mint `#4FD6A8` accent. The picker showed a `#5c0000` red preview and said "Red felt / Bold action";
   both are corrected. Same class as the maroon-felt line above — a description contradicting the
@@ -159,6 +560,25 @@
   multiplayer is unavailable right now" — deliberately not a third wording for one fact.
   ⚠️ STILL OPEN, reported and left for Roye: `/lobby` promises "auto-start when full" while 0 rooms
   have ever reached `playing`, and `/club/DEMO` renders a full club for any typed code.
+- ⚠️ **THE PRIVACY PAGE IS `privacy.html` AT THE REPO ROOT — NOT `public/`.** `expo export` copies
+  `public/` into `dist/`, and **then** `scripts/fix-web-html.js` copies the ROOT `privacy.html` over
+  the top, so a `public/privacy.html` would be silently overwritten. Same class as the 404 fix.
+  `tests/privacy-page.test.ts` asserts no shadow copy exists AND pins every claim to the code.
+  Rewritten 2026-09-08 from the source; the page it replaced was Hebrew-only, dated April, and
+  wrong on four counts: it promised in-app account deletion (the RPC is REVOKED —
+  `delete_user_account` is anon=false/authenticated=false, so the Settings button always fails),
+  described Apple processing payments (0 purchases, ever), claimed no third-party sharing, and said
+  12+. **Seven third parties genuinely receive data**: Supabase · Vercel · Google (only on sign-in)
+  · **Telegram** (an `on_bug_report_inserted` AFTER INSERT trigger forwards every bug report, with
+  its screenshot, to a private channel) · **Anthropic** (the Claude API summarises every report) ·
+  **OpenAI** (Whisper, only when audio is attached) · **Expo** (push delivery). ⚠️ A bug report also
+  carries a breadcrumb trail, the last 20 console lines, the device id and the build number — the
+  page now says so.
+- **THE LISTING PACK IS `docs/listing/LISTING-PACK-2026-09-08.md`** — description, subtitle,
+  keywords, promo text, what's new, support URL, privacy URL, category and the exact age-rating
+  answers, ready to paste. ⚠️ NOTHING has been written to App Store Connect. Two likely rejections
+  are named there and are CODE, not metadata: **Google sign-in without Sign in with Apple**, and the
+  **in-app delete-account control that cannot work**.
 - Auth: Anonymous + Google login prompt after game 3-5
 
 ## Key RPCs
@@ -190,6 +610,11 @@
 - Never suggest App Store submission unless Roye says so
 - GitHub Actions builds (not EAS)
 - VAMOS = always .md file, never chat-only instructions
+- ⚠️ **NEVER PUT PROSE IN A `.json` FILE.** `vercel.json`, `app.json`, `package.json` — a `_comment`
+  key is a real property and a closed schema rejects the whole file. Explanations go in the `.js`
+  that generates it (`scripts/fix-web-html.js`), in a test, or in a doc. This cost five days of red.
+- ⚠️ **BUNDLE DOCS WITH THE CODE THEY DOCUMENT.** A docs-only push to `main` used to trigger a full
+  web build and a production deploy. One commit per section of a brief — code, tests and docs together.
 - ⚠️ **A FILENAME IS NOT EVIDENCE. Verify by CONTENT, and verify at the place that actually SHIPS.**
   This shape has now cost this project six times: Hebrew screenshots under two names · the icon
   overwritten six times in place · a stale bundle under an unchanged hash · three different files

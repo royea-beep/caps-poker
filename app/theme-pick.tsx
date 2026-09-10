@@ -23,7 +23,7 @@ export default function ThemePickScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>CAPS POKER</Text>
+      <Text style={styles.title}>CAPS Poker</Text>
       <Text style={styles.subtitle} accessibilityLanguage={getLanguage() === 'he' ? 'he' : undefined}>{t().setChooseStyle}</Text>
 
       <View style={styles.cardsRow}>

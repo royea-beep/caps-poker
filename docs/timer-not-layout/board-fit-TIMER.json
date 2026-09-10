@@ -1,0 +1,518 @@
+{
+  "chromium-320-2P": {
+    "viewport": {
+      "w": 320,
+      "h": 568
+    },
+    "scroller": {
+      "top": 81,
+      "bottom": 287,
+      "h": 206,
+      "clientH": 206,
+      "scrollH": 477,
+      "overflowPx": 271,
+      "scrolls": true
+    },
+    "scrollerCandidates": 1,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 90,
+        "bottom": 106,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 209,
+        "bottom": 225,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 328,
+        "bottom": 344,
+        "h": 16
+      },
+      {
+        "label": "Board 4",
+        "top": 447,
+        "bottom": 463,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 304,
+    "confirmBottom": 544,
+    "tailGap": 24,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 271,
+      "overflowAfterPlant": 511,
+      "delta": 240,
+      "caught": true,
+      "why": null
+    }
+  },
+  "chromium-320-3P": {
+    "viewport": {
+      "w": 320,
+      "h": 568
+    },
+    "scroller": {
+      "top": 81,
+      "bottom": 335,
+      "h": 254,
+      "clientH": 254,
+      "scrollH": 367,
+      "overflowPx": 113,
+      "scrolls": true
+    },
+    "scrollerCandidates": 1,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 90,
+        "bottom": 106,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 212,
+        "bottom": 228,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 334,
+        "bottom": 350,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 352,
+    "confirmBottom": 544,
+    "tailGap": 24,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 113,
+      "overflowAfterPlant": 353,
+      "delta": 240,
+      "caught": true,
+      "why": null
+    }
+  },
+  "chromium-320-4P": {
+    "viewport": {
+      "w": 320,
+      "h": 568
+    },
+    "scroller": null,
+    "scrollerCandidates": 0,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 95,
+        "bottom": 111,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 217,
+        "bottom": 233,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 352,
+    "confirmBottom": 544,
+    "tailGap": 24,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 0,
+      "overflowAfterPlant": 231,
+      "delta": 231,
+      "caught": true,
+      "why": null
+    }
+  },
+  "chromium-393-2P": {
+    "viewport": {
+      "w": 393,
+      "h": 852
+    },
+    "scroller": {
+      "top": 86,
+      "bottom": 598,
+      "h": 512,
+      "clientH": 512,
+      "scrollH": 556,
+      "overflowPx": 44,
+      "scrolls": true
+    },
+    "scrollerCandidates": 1,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 95,
+        "bottom": 111,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 234,
+        "bottom": 250,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 373,
+        "bottom": 389,
+        "h": 16
+      },
+      {
+        "label": "Board 4",
+        "top": 512,
+        "bottom": 528,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 616,
+    "confirmBottom": 827,
+    "tailGap": 25,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 44,
+      "overflowAfterPlant": 284,
+      "delta": 240,
+      "caught": true,
+      "why": null
+    }
+  },
+  "chromium-393-3P": {
+    "viewport": {
+      "w": 393,
+      "h": 852
+    },
+    "scroller": null,
+    "scrollerCandidates": 0,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 99,
+        "bottom": 115,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 262,
+        "bottom": 278,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 425,
+        "bottom": 441,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 600,
+    "confirmBottom": 827,
+    "tailGap": 25,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 0,
+      "overflowAfterPlant": 233,
+      "delta": 233,
+      "caught": true,
+      "why": null
+    }
+  },
+  "chromium-393-4P": {
+    "viewport": {
+      "w": 393,
+      "h": 852
+    },
+    "scroller": null,
+    "scrollerCandidates": 0,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 105,
+        "bottom": 121,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 318,
+        "bottom": 334,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 550,
+    "confirmBottom": 827,
+    "tailGap": 25,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 0,
+      "overflowAfterPlant": 220,
+      "delta": 220,
+      "caught": true,
+      "why": null
+    }
+  },
+  "webkit-320-2P": {
+    "viewport": {
+      "w": 320,
+      "h": 568
+    },
+    "scroller": {
+      "top": 80,
+      "bottom": 287,
+      "h": 207,
+      "clientH": 207,
+      "scrollH": 477,
+      "overflowPx": 270,
+      "scrolls": true
+    },
+    "scrollerCandidates": 1,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 89,
+        "bottom": 105,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 208,
+        "bottom": 224,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 327,
+        "bottom": 343,
+        "h": 16
+      },
+      {
+        "label": "Board 4",
+        "top": 446,
+        "bottom": 462,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 304,
+    "confirmBottom": 544,
+    "tailGap": 24,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 270,
+      "overflowAfterPlant": 510,
+      "delta": 240,
+      "caught": true,
+      "why": null
+    }
+  },
+  "webkit-320-3P": {
+    "viewport": {
+      "w": 320,
+      "h": 568
+    },
+    "scroller": {
+      "top": 80,
+      "bottom": 335,
+      "h": 255,
+      "clientH": 255,
+      "scrollH": 367,
+      "overflowPx": 112,
+      "scrolls": true
+    },
+    "scrollerCandidates": 1,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 89,
+        "bottom": 105,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 211,
+        "bottom": 227,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 333,
+        "bottom": 349,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 352,
+    "confirmBottom": 544,
+    "tailGap": 24,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 112,
+      "overflowAfterPlant": 352,
+      "delta": 240,
+      "caught": true,
+      "why": null
+    }
+  },
+  "webkit-320-4P": {
+    "viewport": {
+      "w": 320,
+      "h": 568
+    },
+    "scroller": null,
+    "scrollerCandidates": 0,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 94,
+        "bottom": 110,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 216,
+        "bottom": 232,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 352,
+    "confirmBottom": 544,
+    "tailGap": 24,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 0,
+      "overflowAfterPlant": 230,
+      "delta": 230,
+      "caught": true,
+      "why": null
+    }
+  },
+  "webkit-393-2P": {
+    "viewport": {
+      "w": 393,
+      "h": 852
+    },
+    "scroller": {
+      "top": 85,
+      "bottom": 598,
+      "h": 513,
+      "clientH": 513,
+      "scrollH": 556,
+      "overflowPx": 43,
+      "scrolls": true
+    },
+    "scrollerCandidates": 1,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 94,
+        "bottom": 110,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 233,
+        "bottom": 249,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 372,
+        "bottom": 388,
+        "h": 16
+      },
+      {
+        "label": "Board 4",
+        "top": 511,
+        "bottom": 527,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 616,
+    "confirmBottom": 827,
+    "tailGap": 25,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 43,
+      "overflowAfterPlant": 283,
+      "delta": 240,
+      "caught": true,
+      "why": null
+    }
+  },
+  "webkit-393-3P": {
+    "viewport": {
+      "w": 393,
+      "h": 852
+    },
+    "scroller": null,
+    "scrollerCandidates": 0,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 98,
+        "bottom": 114,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 261,
+        "bottom": 277,
+        "h": 16
+      },
+      {
+        "label": "Board 3",
+        "top": 424,
+        "bottom": 440,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 600,
+    "confirmBottom": 827,
+    "tailGap": 25,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 0,
+      "overflowAfterPlant": 232,
+      "delta": 232,
+      "caught": true,
+      "why": null
+    }
+  },
+  "webkit-393-4P": {
+    "viewport": {
+      "w": 393,
+      "h": 852
+    },
+    "scroller": null,
+    "scrollerCandidates": 0,
+    "boards": [
+      {
+        "label": "Board 1",
+        "top": 105,
+        "bottom": 121,
+        "h": 16
+      },
+      {
+        "label": "Board 2",
+        "top": 318,
+        "bottom": 334,
+        "h": 16
+      }
+    ],
+    "handLabelTop": 550,
+    "confirmBottom": 827,
+    "tailGap": 25,
+    "canary": {
+      "plantedPx": 240,
+      "overflowBefore": 0,
+      "overflowAfterPlant": 219,
+      "delta": 219,
+      "caught": true,
+      "why": null
+    }
+  }
+}

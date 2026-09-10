@@ -1,0 +1,74 @@
+{
+  "chromium-320-2P": {
+    "over": 271,
+    "pill": "▼ 3 more boards below",
+    "scrollBefore": 0,
+    "scrollAfter": 175
+  },
+  "chromium-320-3P": {
+    "over": 113,
+    "pill": "▼ 1 more board below",
+    "scrollBefore": 0,
+    "scrollAfter": 113
+  },
+  "chromium-320-4P": {
+    "over": 0,
+    "pill": null,
+    "scrollBefore": null,
+    "scrollAfter": null
+  },
+  "chromium-393-2P": {
+    "over": 44,
+    "pill": "▼ 1 more board below",
+    "scrollBefore": 0,
+    "scrollAfter": 44
+  },
+  "chromium-393-3P": {
+    "over": 0,
+    "pill": null,
+    "scrollBefore": null,
+    "scrollAfter": null
+  },
+  "chromium-393-4P": {
+    "over": 0,
+    "pill": null,
+    "scrollBefore": null,
+    "scrollAfter": null
+  },
+  "webkit-320-2P": {
+    "over": 270,
+    "pill": "▼ 3 more boards below",
+    "scrollBefore": 0,
+    "scrollAfter": 175
+  },
+  "webkit-320-3P": {
+    "over": 112,
+    "pill": "▼ 1 more board below",
+    "scrollBefore": 0,
+    "scrollAfter": 112
+  },
+  "webkit-320-4P": {
+    "over": 0,
+    "pill": null,
+    "scrollBefore": null,
+    "scrollAfter": null
+  },
+  "webkit-393-2P": {
+    "over": 43,
+    "pill": "▼ 1 more board below",
+    "scrollBefore": 0,
+    "scrollAfter": 43
+  },
+  "webkit-393-3P": {
+    "over": 0,
+    "pill": null,
+    "scrollBefore": null,
+    "scrollAfter": null
+  },
+  "webkit-393-4P": {
+    "over": 0,
+    "pill": null,
+    "scrollBefore": null,
+    "scrollAfter": null
+  }
+}

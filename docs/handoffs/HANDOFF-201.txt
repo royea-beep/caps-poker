@@ -1,0 +1,182 @@
+VAMOS CAPS FINAL-QA — handoff 201 — 2026-09-08
+Copy 2 of 3. Copy 1 is vamos_handoffs row 201 (slug final-qa-2026-09-08).
+Copy 3 was the PASTE block in the session output.
+Full detail: docs/final-qa/FINAL-QA-2026-09-08.md
+
+Branch claude/vamos-caps-align-celebration-flppo0, commit 43cc109. NOT merged, no bump.
+Suite 2,866/2,866 across 55 suites. tsc clean. No app code changed: no flag, economy value, cue,
+card size or 83px arc. No Edge Function deployed. No payment enabled, no public link re-enabled,
+nothing submitted to Apple. Test rows created and REMOVED, verified by fresh SELECT.
+
+=== GROUND TRUTH — RE-MEASURED INDEPENDENTLY, EVERY NUMBER CONFIRMED ===
+398 devices · 25 played · 78 hands · 12 bindings · ledger gap 0 · max chips 3,250 · purchases 0
+(both purchases and chip_purchases) · iap_enabled false · econ_binding_enabled true ·
+hand_rake_pct 5 · live / 200 · /landing.html 200 · /privacy.html 200 · /nope-xyz.html 404 ·
+/nope.png 404 · /nope.mp4 404.
+TWO STALE NUMBERS IN CLAUDE.md CORRECTED: float is 800,920 (was 789,530), and there are 9 rooms,
+all waiting/finished, 0 have EVER reached playing.
+
+=== SECURITY RE-ATTACKED FROM OUTSIDE (shipped public key), EVERY RESULT READ BACK ===
+PASS  anon INSERT chip_transactions          401 permission denied
+PASS  anon INSERT leaderboard 1e9 chips      401 RLS violation
+PASS  anon PATCH leaderboard richest row     204 — AND WROTE NOTHING (see below)
+PASS  submit_score 999,999,999 no session    identity_mismatch
+PASS  earn_chips 2,000 no session            identity_mismatch, 0 granted
+PASS  earn_chips NEGATIVE -5,000             invalid_amount — the floor holds
+PASS  record_reward 50,000 no session        identity_mismatch, 0 granted
+PASS  spend_chips on a foreign device        identity_mismatch
+PASS  DELETE / PATCH all game_rooms          401 both, permission denied
+PASS  forged purchases / chip_purchases      400, refused
+PASS  create_table forged host               FK violation, host_id must exist in users
+PASS  ELO ladder public read                 leaderboard direct read DENIED; get_leaderboard
+                                             returns name/chips/hands/win-rate/rank —
+                                             NO user_id, NO device_id, NO uuid anywhere
+PASS  delete_user_account                    anon false, authenticated false — the Settings
+                                             button genuinely cannot work, as the privacy page says
+PASS  econ_bind_ok no session -> false; WITH an anonymous session -> true. Exactly as documented:
+      S1 refuses NO SESSION, not ANONYMOUS.
+
+⚠️ A 204 IS NOT A WRITE. The leaderboard PATCH returned HTTP 204 — success-shaped. It changed
+nothing: RLS matched zero rows, max still 3,250, float unchanged. Reporting the status code would
+have filed a catastrophic false positive. READ THE ROW.
+
+=== ⚠️ THE ONE REAL FAILURE — submit_score MINTS UNLEDGERED. REPRODUCED IN PRODUCTION. ===
+CLAUDE.md carried this as "STILL OPEN ... can break the gap invariant". It is no longer theoretical.
+Anyone can mint an anonymous session from the public key in ONE HTTP call — proven, the token
+decodes to role authenticated, is_anonymous true. With one, a brand-new device reached:
+
+    total_chips 9,000     ledger_sum 6,000     GAP 3,000     tx_rows 3
+
+The 3,000 is EXACTLY the submit_score gains, which write no chip_transactions row. Measured
+sequence: grant +2,000 ledgered · record_reward +2,000 +2,000 ledgered, then correctly refused
+with reward_cap_daily (cap 5,000) · submit_score +2,000 +1,000 NOT ledgered, gain_capped true at
+the same 5,000/day.
+
+BOUNDED, AND THE BOUND HOLDS: 5,000 per device per day, shared across both faucets. But 9,000 is
+~3x the richest real player (3,250), reached without playing a hand.
+WHY THE LIVE GAP IS STILL 0: app/results.tsx calls submit_score as an ABSOLUTE read-back write of
+the balance the ledger already produced, sequenced after every ledgered delta — so normal play
+grants nothing. The hole is that the server CLAMPS a caller-supplied number instead of DERIVING it
+from a verified game event.
+✅ THE LADDER DID NOT MOVE — elo stayed 1000, games_played 0. S2 holds: hands_played is forgeable,
+the competitive ladder is not.
+
+=== ⚠️ AND I GOT finish_table WRONG FIRST — the correction is the finding ===
+A stranger with no session ended 5JT6 and CZ9Z (waiting -> finished, confirmed by SELECT, two
+different forged devices). My first verdict was "authorization does not hold". Reading the function
+shows that is wrong in the way that matters:
+    IF NOT v_is_participant AND v_has_fresh_seat THEN RETURN 'not_authorized'; END IF;
+A stranger is refused ONLY IF a seat was seen in the last 90 seconds. Both rooms returned
+roster_cleared 0, and room_players is EMPTY across the entire database — so what ran was the
+deliberate ABANDONED-ROOM REAPER, not a griefing vector.
+THE NARROWER REAL RISK: room codes are FOUR CHARACTERS and the protection lapses 90s after a
+heartbeat, so a backgrounded tester's waiting room can be ended by anyone guessing the code.
+COULD NOT VERIFY the branch that protects a LIVE seat — create_table refuses a forged host.
+Those two rooms are left finished: never hand-edit a game_rooms row, and that outranks tidiness.
+
+=== ECONOMY · RULES · TIPS · REPORTER · GUARD · ASSETS ===
+PASS  buy-in at COMMIT not mount — chargeBuyInOnce() app/game.tsx:351, called only from
+      confirmPlacement() :373, reached by READY and by the clock :574, doNavigate :750 as backstop
+PASS  practice free + charged once — `if (isPractice || buyInChargedRef.current) return;`
+PASS  ledger gap 0 before, during and after every attack, and after cleanup
+PASS  tie / boards decide / tally / one writer — verify-rules, handTiebreak, gameLogic all green
+PASS  tips toggle — the gate is ONE line INSIDE isTipDismissed (utils/tipsSeen.ts:110), so the home
+      tutorial, the six game tooltips and the board hint are covered and none can be missed.
+      Default ON ("absent means ON"); a first open renders the coach card, screenshotted.
+PASS  reporter (CODE) — report_type derived :258, has_video false :261, frame_urls :281,
+      attachment_complete :286
+PASS  secret guard — self-test passed, tree clean, a planted token in docs/ BLOCKED a real commit
+      (exit 1), 0 false positives over 39 commits / 300 files
+PASS  privacy page — md5 b70cd5c3741e3690f32b5ac26a69a222 IDENTICAL across live, repo and dist
+PASS  icon 410,061b · splash 976,739b · splash bg #071C12 (green identity, not retired maroon)
+PASS  card face MEASURED rgb(252,250,243) = #FCFAF3 exactly, on 44 elements
+PASS  no gold on the game CTA — Cancel and Confirm both mint/green outline
+
+=== FIRST SESSION AS A STRANGER ===
+⚠️ BOUNDARY FIRST: this container's browser CANNOT reach Supabase or caps.ftable.co.il — proven,
+fetch THREW "Failed to fetch" for both while curl reaches both. The walk ran against the real built
+bundle served locally with the BACKEND DARK. Reading an empty screen as a product defect is exactly
+the error that produced the false "the shop is empty" finding.
+
+ALL 33 ROUTES RENDER. NOTHING STRANDED. NOTHING CLIPPED (zero elements with scrollWidth >
+clientWidth). Home on first open TEACHES: coach card, four real cards, "Place 4 cards on each
+board", three page dots, Continue, reachable SKIP, and the legal line "Free play | Virtual chips
+only | No real-money gambling | 18+". Three tabs. Six routes correctly redirect to Home
+(/battle-pass /missions /heatmap /simulate /gameover /debug). /multiplayer-game and /lobby/table
+both say "Online multiplayer is unavailable right now" — one wording for one fact. Practice vs real
+is legible: "Practice vs bots · 3 boards" and "PLACE 12 CARDS · BOTS 0/2" = 3 players, 3 boards,
+12 cards, consistent with the dynamic rule. Honest empty states on /stats /hand-history /coaching
+/cups /replay /spectate.
+
+NEW DEVICE: 2,000, LEDGERED, GAP UNCHANGED — PASS, proven server-side with a real anonymous session
+because the browser could not. Row removed afterwards.
+
+⚠️ CONTRADICTORY / OVERPROMISING — FOUND, VERIFIED LIVE, UNFIXED:
+1. /lobby promises "Public tables · auto-start when full" while 0 rooms have ever played — and it
+   is in TWO places, app/lobby/index.tsx:280 AND utils/i18n.ts:1214, so the Play screen says it too
+2. /club/DEMO opens a club for ANY typed code
+3. An unknown route renders Expo Router's DEVELOPER page: "Unmatched Route — Page could not be
+   found — Go back • Sitemap". Confirmed on PRODUCTION: live /nope-xyz returns the same 1,902-byte
+   shell as /, so the SPA router paints the same screen. A "Sitemap" link offered to strangers.
+4. The new-device home payload contradicts itself: chips 1000 in the same object as a welcome
+   promising 2,000 free. The device DID receive 2,000, so the text is right and that first payload
+   field is not the granted balance — a screen rendering it before the grant lands shows a wrong
+   number.
+5. LOADING WITH NO FAILURE STATE: /shop, /chip-store, /achievements, /rank sit on "Loading..."
+   forever on a dead network; /leaderboard shows column headers with no rows and no empty state.
+   /stats, /hand-history and /coaching do it correctly, so the pattern already exists.
+
+=== ⚠️ SIX INSTRUMENT FAILURES IN ONE SPRINT — every one caught by LOOKING at the output ===
+1. python3 -m http.server does no SPA rewrite: the first route walk reported 32 OF 33 ROUTES BROKEN.
+   A rig defect accusing the product. Replaced by tests/serve-dist-like-prod.mjs, which loads
+   dist/vercel.json's OWN rules and reproduces production including the honest 404s. USE IT.
+2. I read the card faces as grey from the screenshot. Measured: exactly #FCFAF3. My eye, wrong.
+3. A tooltip-overlap selector matched a 393x852 page wrapper and invented 16 overlaps.
+4. The first attack batch used wrong RPC parameter names — the 404s were indistinguishable from
+   refusals. Re-run against real signatures read from pg_proc.
+5. The HTTP 204 that wrote nothing.
+6. My first finish_table verdict.
+
+=== NEVER VERIFIED — ONCE, PLAINLY ===
+Native iOS rendering on a real device. The bug reporter's MEDIA path end to end (handleStart
+returns early on web, and no device was available). Two real clients in one room. Multiplayer under
+any load. Every MP verdict in this report is code-read or single-client, and 0 rooms have ever
+reached playing in the product's entire history.
+Also could not verify: the live shop catalogue and the grant THROUGH THE UI; whether finish_table
+refuses a stranger when a seat IS fresh; and whether the first-run coach tooltip overlaps board 3's
+slots — the screenshot suggests it does, a corrected measurement says it covers ZERO, and I will
+not assert either.
+
+=== WHAT A TESTER WILL HIT ===
+1. A room left idle 90s can be ended by anyone guessing its 4-character code
+2. "Auto-start when full" on two screens, with no other player to fill a table
+3. A wrong URL gives a developer's "Unmatched Route" page with a Sitemap link
+4. "Loading..." forever on shop / achievements / rank if their network drops
+5. /club/DEMO opens for any typed code
+6. Previously reported, unfixed: achievements filter clips "Collection"; the reveal DANGER pill
+   reads "ANGER"; the "You won 50 chips!" toast lands on the YOU WIN headline
+
+=== VERDICT ===
+1. YES — ready for a tester round on the SINGLE-PLAYER LOOP, and only that loop. The economy is
+   sound under attack, the ledger invariant holds at 398 devices, every mint vector without a
+   session refuses, all 33 routes render, suite green at 2,866.
+2. WHAT I WOULD NOT WANT A TESTER TO HIT: the multiplayer lobby. It promises auto-starting tables
+   on two screens, no room has ever reached playing, and two clients in one room is unverified —
+   the one surface that has never worked is the one the copy advertises hardest.
+3. THE SINGLE MOST VALUABLE THING LEFT: derive submit_score's chip gain SERVER-SIDE instead of
+   clamping a caller-supplied number. It is the only defect proven to break the gap invariant, that
+   invariant is the alarm every other economic check depends on, and once testers hold real
+   balances a silent 5,000-a-day drift makes every future economy measurement unreliable.
+
+=== TEST ROWS CLEANED — FRESH SELECT ===
+398 devices · 25 played · 78 hands · 12 bindings · max 3,250 · float 800,920 · purchases 0 ·
+qa rows left 0 · qa transactions left 0 · LEDGER GAP 0. Identical to the opening measurement.
+The only production change this sprint: game_rooms 5JT6 and CZ9Z are now `finished` (both empty and
+abandoned since June, reaped through the public API during the authorization test). Not hand-edited
+back, per the standing rule.
+
+=== FILES ===
+  docs/final-qa/FINAL-QA-2026-09-08.md     NEW — the full record
+  tests/serve-dist-like-prod.mjs           NEW — serves dist/ by dist/vercel.json's own rules
+  tests/stranger-walk.mjs                  NEW — the 33-route walk, clip detection, console errors
+  CLAUDE.md                                three entries

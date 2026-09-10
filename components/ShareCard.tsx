@@ -39,7 +39,7 @@ export function SingleBoardShareCard({ board, boardIndex, potAmount, isPractice 
   return (
     <View style={styles.card}>
       {/* Header */}
-      <Text style={styles.logo}>♠ CAPS POKER ♦</Text>
+      <Text style={styles.logo}>♠ CAPS Poker ♦</Text>
       <View style={styles.divider} />
 
       <Text style={styles.boardTitle}>Board {boardIndex + 1}</Text>
@@ -115,7 +115,7 @@ export function FullGameShareCard({
   return (
     <View style={styles.card}>
       {/* Header */}
-      <Text style={styles.logo}>♠ CAPS POKER ♦</Text>
+      <Text style={styles.logo}>♠ CAPS Poker ♦</Text>
       <View style={styles.divider} />
 
       {/* Boards summary */}
@@ -357,7 +357,7 @@ export function StoryShareCard({
 
     return (
       <View style={storyStyles.card}>
-        <Text style={storyStyles.logo}>♠ CAPS POKER ♦</Text>
+        <Text style={storyStyles.logo}>♠ CAPS Poker ♦</Text>
         <View style={storyStyles.divider} />
 
         <Text style={storyStyles.boardTitle}>Board {boardIndex + 1}</Text>
@@ -415,7 +415,7 @@ export function StoryShareCard({
 
   return (
     <View style={storyStyles.card}>
-      <Text style={storyStyles.logo}>♠ CAPS POKER ♦</Text>
+      <Text style={storyStyles.logo}>♠ CAPS Poker ♦</Text>
       <View style={storyStyles.divider} />
 
       {allBoards.map((b, i) => {

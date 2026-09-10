@@ -1,0 +1,127 @@
+VAMOS CAPS CLOSE-THE-THREE — handoff 199 — 2026-09-08
+Copy 2 of 3. Copy 1 is vamos_handoffs row 199 (slug close-the-three-2026-09-08).
+Copy 3 was the PASTE block in the session output. Full detail:
+docs/infra/CLOSE-THE-THREE-2026-09-08.md
+
+Branch claude/vamos-caps-align-celebration-flppo0, commit 9577aa5. NOT merged, no bump.
+Full suite 2,866/2,866 across 55 suites. tsc clean. No app code touched: no economy, flag, cue,
+layout, card size or 83px arc. No Edge Function deployed. No credential rotated or revoked.
+
+=== §1 THE SECRET GUARD ===
+
+⚠️ THE PREMISE DID NOT SURVIVE THE FILES. The brief said a guard "was recommended and it never
+was" added. Both halves have existed since 41b534d, 2026-09-06 03:22 UTC:
+  .githooks/pre-commit                 (core.hooksPath=.githooks) — the fast local no
+  .github/workflows/secret-scan.yml    on push AND pull_request — the one --no-verify cannot skip
+BOTH, deliberately. The hook refuses before the object exists and costs nothing; it is skippable.
+The workflow is not. The hook comment asserted the workflow existed; that was checked, not believed.
+
+⚠️ TWO SILENT HOLES FOUND AND CLOSED — both this project's signature shape.
+1. --staged read the WORKING TREE. `git add secrets.ts` then editing the secret back out of the
+   file passed: the index still carries the token and the index is what git commit writes. Now
+   reads `git show :<path>`. PROVEN: staged 3 files with a token, scrubbed all 3 worktree copies,
+   commit still exited 1, HEAD unmoved.
+2. A shell-interpolated path made git die on app/(tabs)/index.tsx — parentheses are shell syntax —
+   and the throw was swallowed by a catch. A scanner printing "clean" while never opening the
+   app's 2,475-line home screen. Every git call is execFileSync with an argument array now.
+   CAUGHT BY LOOKING AT THE OUTPUT, not by a test.
+3. A fresh clone got no hook: core.hooksPath is local config and nothing installed it.
+   package.json now has "prepare": "git config core.hooksPath .githooks || true". Proven by
+   unsetting the config and reading it back.
+
+PROVEN TO FIRE ON THE REAL LEAK (new --rev <sha> mode reads bytes at that commit):
+  a40ea15  2026-06-17  BLOCKED  docs/MASTER_INDEX.md                          Telegram bot token
+  345c327  2026-07-15  BLOCKED  docs/MASTER_INDEX.md                          Telegram bot token
+                       BLOCKED  supabase/functions/retriage-pending/index.ts  Telegram bot token
+docs/MASTER_INDEX.md is the FIRST line of both — the DOC half. Source-only would have missed it.
+
+PROVEN TO FIRE ON A REAL COMMIT ATTEMPT, all three file types:
+  BLOCKED _guardproof.json / docs/_guardproof/NOTE.md / utils/_guardproof.ts -> Telegram bot token
+  git commit exit=1, HEAD unchanged at af20d13. Files removed afterwards; tree left clean.
+Scope is `git ls-files` minus vendored dirs and binaries, so docs/** and every .json are in.
+It prints the FILE and the KIND, never the value.
+
+PROVEN NOT TO FIRE ON REAL WORK — tests/secret-scan-falsepos.mjs:
+  commits scanned  820   (of the last 900; merges and empty diffs skipped)
+  files scanned    4,142
+  commits blocked  2     — both of them the leak above
+  FALSE POSITIVES  0
+Now a CI step (25 commits, fetch-depth 30) so the number stays live. It reports, does not fail:
+a genuine credential in recent history SHOULD show up there.
+
+CURRENT TREE: `secret scan: clean`. Nothing to rotate. History still holds the token in those two
+commits — unchanged, that is what the 2026-09-06 revoke was for.
+The anon key is ignored on purpose (public by design); only a service_role JWT is a finding, decided
+by base64url-decoding the payload, not a prefix. Self-test asserts both directions.
+
+=== §2 THE ROOT vercel.json — KEPT, AND IT LABELS ITSELF ===
+
+WHO READS IT, checked:
+  production deploy (vercel --prod from dist/)  NO  — it serves dist/vercel.json from fix-web-html.js
+  Vercel Git integration                         YES — its schema check is what failed 29 deploys
+  vercel dev                                     never run here: no script, no workflow, no doc
+  tests/vercel-rewrites.test.ts                  yes
+  anything else                                  no
+
+NOT DELETED, and the reason is checkable: its buildCommand is a WORKING build (fix-web-html.js
+accepts both dist/ and web-dist/), so it is the correct fallback if the Ignored Build Step is ever
+switched off. Deleting it swaps a labelled trap for a silent zero-config deploy of the repo root
+onto the production domain.
+
+THE LABEL: JSON has no comments and the schema is closed, so the warning is the VALUE of
+installCommand, now the file's FIRST key — a legal string in a legal field, NOT a new property.
+It still ends in `npm install` (whole chain run under /bin/sh to prove it), and it prints into the
+build log of any deploy that ever uses this config. Four tests hold it; two were proven to fail by
+stripping the warning and by planting an apostrophe.
+⚠️ A note BESIDE a trap is not a label ON it. fix-web-html.js has carried the same sentence in a
+real comment since 2026-08-15 and it stopped nobody, me included.
+
+SIBLING SWEEP — files edited by people but ignored by production:
+  OK   no shadow copies exist (public/privacy.html, public/terms.html, public/bugs, public/hand
+       all absent; fix-web-html.js would silently overwrite them)
+  OK   zero tracked files under dist/, web-dist/, ios/, android/
+  OK   tests/visual/baselines/ absent, already recorded
+  WARN .github/workflows/ios-testflight-DISABLED.yml IS STILL workflow_dispatch-ABLE despite the
+       name — only the push trigger was removed — and it signs with cert 45EBC138DF94E77658BA9558
+       EAAE19FC, which its own header calls revoked. REPORTED, NOT CHANGED.
+  WARN ios-simulator-smoke.yml runs `eas build` on push while ios-testflight.yml states the Expo
+       account is disabled and not coming back. REPORTED, NOT CHANGED.
+
+=== §3 BUILDS DID NOT DROP. THE RULE HAS NEVER FIRED. ===
+
+Counts only. No dollar figure — this session has no billing access.
+Successful Web Deploy runs per day (each = expo export + Playwright + WCAG + BackstopJS + prod):
+  08-22  16    08-23  13    08-27  14    08-28   2    08-30   3    08-31   3
+  09-01   6    09-02   4    09-05   1    09-07   7    09-08   1
+
+The 7 -> 1 is a quiet day, not a saving:
+  · paths-ignore committed in ec17b41 at 2026-09-08 08:25:34Z
+  · last Web Deploy run started 2026-09-08 07:39:12Z — FORTY-SIX MINUTES EARLIER
+  · it fires only on pushes to main, and ec17b41/bc2a94d are NOT ancestors of origin/main.
+    `git show origin/main:.github/workflows/web-deploy.yml` still has no paths-ignore at all.
+  · no pushes to main since.
+
+WHAT IT WOULD SAVE, measured the same way: of 70 successful runs, 24 (34%) had a diff entirely of
+docs/** or **/*.md. Aimed correctly. Saved nothing yet.
+
+Red deploys still cost nothing — buildingAt == ready == createdAt, no build-log events, no
+container. Since ec17b41 every Git-integration deploy is CANCELED by the Ignored Build Step.
+
+⚠️ FIRST THING TO CHECK AFTER THE NEXT MERGE TO MAIN: a docs-only push must show NO Web Deploy run.
+
+=== FILES ===
+  scripts/scan-secrets.mjs                    --rev mode, index reads, execFileSync everywhere
+  tests/secret-scan-falsepos.mjs              NEW — the false-positive harness
+  .github/workflows/secret-scan.yml           fetch-depth 30 + the FP sweep step
+  package.json                                prepare -> installs the hook in a fresh clone
+  vercel.json                                 installCommand carries the warning, first key
+  tests/vercel-rewrites.test.ts               4 new tests, 2 proven to fire
+  CLAUDE.md                                   three entries
+  docs/infra/CLOSE-THE-THREE-2026-09-08.md    NEW — the full record
+
+=== FOR ROYE ===
+1. Nothing to do about secrets. The tree is clean and the guard is proven on the real leak.
+2. The billing fix is NOT live. It needs a merge to main. Until then every push to main still runs
+   a full build, docs-only included.
+3. Two workflows are lying about themselves — a DISABLED one that can be dispatched with a revoked
+   cert, and a smoke test that calls a dead Expo account. Your call whether they go.

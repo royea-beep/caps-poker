@@ -17,9 +17,30 @@ name: Web Deploy (Vercel)
 # production domain via `vercel --prod`. Non-main QA now uses `qa/` PREVIEW deployments
 # + a Protection Bypass token — never the production domain.
 
+# STOP-THE-VERCEL-BLEED 2026-09-08 — DOCUMENTATION DOES NOT NEED A PRODUCTION DEPLOY.
+# Measured over 21.7 hours on 2026-09-07/08: 8 production deploys, and 5 of them were pushes whose
+# ENTIRE diff was a .md file or something under docs/. Each one ran a full `expo export`, a
+# Playwright install, a WCAG audit, BackstopJS and `vercel --prod` to publish a bundle that was
+# byte-for-byte the one already live. That is the compute this project was actually paying for —
+# NOT the 29 red Git-integration deploys in the same window, which die at vercel.json schema
+# validation before a container is ever allocated and cost nothing.
+#
+# ⚠️ THE IGNORE LIST IS DELIBERATELY NARROW, and verified rather than assumed: `expo export` copies
+# public/ into dist/ and fix-web-html.js then copies the ROOT privacy.html and terms.html over the
+# top. docs/ is referenced by neither, no source file imports from docs/ or from any .md, and
+# public/ contains no .md at all — so nothing on this list can change a served byte. Everything
+# that CAN (app/, components/, public/, privacy.html, terms.html, scripts/, package.json, assets/)
+# still deploys on every push, exactly as before.
+#
+# paths-ignore skips a push only when EVERY changed file matches, so a commit that bundles docs
+# WITH its code still deploys — which is the rhythm this is meant to encourage. workflow_dispatch
+# is kept as the escape hatch: a docs-only change that must go live is one manual run.
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 concurrency:

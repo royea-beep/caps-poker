@@ -1,0 +1,106 @@
+VAMOS CAPS CLOSE-SUBMIT-SCORE — handoff 202 — 2026-09-08
+Copy 2 of 3. Copy 1 is vamos_handoffs row 202 (slug close-submit-score-2026-09-08).
+Copy 3 was the PASTE block in the session output.
+Full detail: docs/economy/CLOSE-SUBMIT-SCORE-2026-09-08.md
+
+Branch claude/vamos-caps-align-celebration-flppo0, commit f00073f. NOT merged, no bump.
+Suite 2,869/2,869 across 56 suites. tsc clean. APPLIED TO PRODUCTION.
+Nothing else changed: no economy value, flag, cue, layout, card size or 83px arc. No room-code
+hardening (Roye declined). No Edge Function deployed. No payment enabled.
+
+=== WHAT THE REAL CLIENT NEEDS FROM submit_score — read from results.tsx FIRST ===
+Exactly ONE caller: utils/leaderboard.ts:107, from app/results.tsx:576. It runs LAST in a strictly
+sequenced block — record_hand_net, then record_reward per achievement, then this — and it passes
+`latest ?? gs.chips`, where `latest` is THE BALANCE THE SERVER ITSELF JUST RETURNED. The results
+screen's own comment calls it "a no-op echo of the true post-delta total". The wrapper discards the
+response (`return !error`).
+
+=== THE FIX: THE GRANT IS REMOVED ENTIRELY, NOT RE-DERIVED ===
+Because the legitimate path needs no grant. There is no chip movement here to derive from a
+verified event — it already happened upstream, in record_hand_net / record_reward / earn_chips,
+and was ledgered. total_chips is no longer written by this function at all.
+NOT A LOWER CAP. The cap was never the defect; it bounded the damage. A clamp on an invented
+number is still an invented number.
+
+TWO DETAILS THAT MATTER MORE THAN THEY LOOK:
+- UPDATE-ONLY, NEVER AN UPSERT. leaderboard.total_chips is NOT NULL DEFAULT 2000, so an INSERT
+  that merely omitted the column would ITSELF have granted 2,000 unledgered chips by a second
+  route. record_hand_net creates the row first in the same block.
+- THE SIGNATURE IS UNCHANGED ON PURPOSE. p_total_chips is accepted and DELIBERATELY IGNORED,
+  because build 515 is on TestFlight and still sends it. Changing the argument list would break
+  every installed copy of the app.
+
+=== BRANCH BEFORE/AFTER (Rule 11) — preview ywxjotjcexkqjgxdzhwd ===
+Its migration replay FAILED at 5 tables / 0 functions, so the environment was rebuilt from
+production's own definitions: econ_score_gain_daily created, the total_chips default aligned from
+1000 to production's 2000, production's CURRENT submit_score installed verbatim, and the two
+identity guards stubbed PERMISSIVE so the test exercises the worst case — a caller who has already
+passed identity. If the faucet is closed for them it is closed for everyone.
+
+Four identical forged calls at p_total_chips = 999,999,999:
+  BEFORE   2,000 -> 4,000 -> 6,000 -> 7,000     gained_today 5,000
+  AFTER    2,000 -> 2,000 -> 2,000 -> 2,000     gained_today NULL, chips_written false
+
+Read back in a SEPARATE statement — a UNION ALL subselect reads the snapshot at statement start
+and reported a stale 2,000 the first time. Caught by looking.
+Two more cases on the branch after the fix: a LEGITIMATE ECHO (a device on 2,450 submitting 2,450)
+kept 2,450 and wrote its stats; a call with NO leaderboard row was refused with no_leaderboard_row,
+no INSERT, no default grant.
+
+=== RE-ATTACKED ON PRODUCTION, real anonymous session (role authenticated, is_anonymous true) ===
+  econ_bind_ok on a brand-new device       true — ANONYMOUS STILL WORKS
+  4 forged submit_score, no row yet        refused, no_leaderboard_row x4, no row, no ledger row
+  record_hand_net net 120 (a real hand)    ok, rake 6, play_grant 80, new_balance 194
+  submit_score echoing 194                 ok, total_chips 194, chips_written FALSE
+  2 more forged calls WITH A ROW PRESENT   194, unchanged, twice — the real worst case
+
+READ BACK FROM THE DATABASE:
+  total_chips 194   ledger_sum 194   GAP 0
+  ledger rows: rake=-6, hand_net=120, play_grant=80
+  elo 1000   games_played 0   wins 0      -> S2 STILL HOLDS
+
+VERIFIED ON PROD AFTER APPLYING: the function no longer writes total_chips, no longer touches
+econ_score_gain_daily, keeps econ_bind_ok AND econ_authz_probe, and has exactly ONE overload.
+
+=== STILL FORGEABLE, DELIBERATELY LEFT ===
+hands_played / hands_won / biggest_win are still caller-supplied, so a player can inflate their
+OWN displayed stats — the forged device came out biggest_win 999999. NO chips, NO ELO, NO ladder.
+Reported rather than folded in, so the diff stays exactly "chips removed".
+
+=== AND A THING FOUND ON THE WAY ===
+THE STARTING 2,000 HAS NEVER BEEN LEDGERED AT GRANT TIME. It comes from the column default via
+ensure_leaderboard_row (which inserts device_id only), and the whole-database gap is 0 ONLY because
+a one-off reset_baseline backfill on 2026-09-01 wrote matching rows for every device then alive —
+three sampled devices all carry that identical timestamp as their first ledger row. A device
+created today takes a different path: record_hand_net creates its row and every chip is ledgered
+from the first hand, which is why the fresh device above came out gap 0.
+DO NOT READ THE 0 AS PROOF THAT THE SIGNUP GRANT IS LEDGERED. It is not. Today a new device gets
+nothing until it plays.
+Also corrected: get_home_screen_v3 does NOT grant — it returned chips 1000 / stage new and created
+no row and no ledger row. In the FINAL-QA run it was submit_score ITSELF that created the row at
+the 2,000 default. That route is now closed too.
+
+=== GUARDS ===
+tests/submit-score-contract.test.ts — three tests, TWO PROVEN TO FAIL by planting the defect:
+  - the client still sends all six arguments build 515 expects (plant: delete p_total_chips)
+  - submit_score stays sequenced AFTER record_hand_net (plant: re-order the block)
+  - nothing reads a balance out of its response
+
+=== CLEANUP — FRESH SELECT ===
+devices 398 - played 25 - hands 78 - bindings 12 - max_chips 3,250 - float 800,920 - purchases 0 -
+qa rows 0 - qa transactions 0 - LEDGER GAP 0.
+max(total_chips) is back to 3,250 — a real player's number. Branch dropped.
+
+=== FILES ===
+  supabase/migrations/20260908000000_close_submit_score_chip_faucet.sql   NEW — applied to prod
+  tests/submit-score-contract.test.ts                                    NEW — the two guards
+  docs/economy/CLOSE-SUBMIT-SCORE-2026-09-08.md                          NEW — full record
+  CLAUDE.md                                                              entry replaced
+
+=== FOR ROYE ===
+1. The mint is closed, on production, proven both directions. A tester cannot notice it because it
+   no longer happens.
+2. A player can still inflate their own displayed hands/biggest-win on the leaderboard. Cosmetic,
+   no chips, no ladder. Your call whether that matters for the round.
+3. The signup grant currently pays nothing until a hand is played, and the gap-0 invariant rests on
+   a one-off backfill rather than a ledgered grant. Worth a look before the round, separately.

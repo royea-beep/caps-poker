@@ -22,7 +22,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 //   v3.1 panel tunings, all size gates are named constants at the top of this file:
 //     - centre suit centerSuitBig *0.64. CORNER GLYPHS DELIBERATELY UNTOUCHED — the corner is the
 //       legibility workhorse at 40px, and we do not move two legibility variables in one change.
-//     - bottom-right index (rotated 180°) only at width >= DOUBLE_CORNER_MIN_W (54) => 3P/4P yes, 2P no.
+//     - bottom-right index (rotated 180°) only at width >= DOUBLE_CORNER_MIN_W (54).
+//       ⚠️ CORRECTED 2026-09-08 (REPORTER-AND-BOARD4) — this said "3P/4P yes, 2P no" and 3P was
+//       WRONG. The gate is on WIDTH, and width falls out of the boards layout, so it must be
+//       stated per width, not per player count. MEASURED on the built app at a 393pt viewport,
+//       counting the glyphs the card actually paints:
+//           2P (4 boards)  card 40px  ->  0 bottom-right indices
+//           3P (3 boards)  card 46px  ->  0 bottom-right indices   <- the one that was wrong
+//           4P (2 boards)  card 64px  -> 14 of 14 face-up cards have one
+//       So today: 4P yes, 3P and 2P no. At another viewport the widths move and so does the
+//       answer — read the width, never the player count. A comment is a claim, not evidence.
 //     - ownership RIM (not an aura): 0 0 6px rgba(58,214,255,0.30), spread 0, PLAYER cards only,
 //       gated by owner + ZONE (hand/reveal glow, board-placed does NOT) — NEVER by width, because
 //       hand and board cards are the same width (see the measured width map below). One-time 250ms
@@ -141,7 +150,10 @@ const GLOW_PULSE_MS = 250;      // one-time ease-out on deal-in; no loops, no re
 // CONSEQUENCE: width CANNOT separate "hand" from "board-placed" — the proposed GLOW_MIN_W=48 proxy
 // would have silently killed the glow on the 2P HAND (40px), the exact opposite of the intent.
 // The glow is therefore gated by owner + ZONE (see CardProps.zone), never by width. No GLOW_MIN_W.
-const DOUBLE_CORNER_MIN_W = 54; // bottom-right index renders at/above this width => 3P+4P yes, 2P (40px) no
+// ⚠️ CORRECTED 2026-09-08 — was "=> 3P+4P yes, 2P (40px) no". 3P was wrong: its cards measure
+// 46px at a 393pt viewport, under this gate, so 3P renders NO bottom-right index either.
+// Measured, both engines: 2P 40px -> 0, 3P 46px -> 0, 4P 64px -> present on every face-up card.
+const DOUBLE_CORNER_MIN_W = 54; // bottom-right index renders at/above this WIDTH (not player count)
 const DEPTH_RICH_MIN_W = 48;    // above: gradient + warm two-tier shadow. at/below: inset highlight only
 const CARD_GLOW_CYAN = `rgba(58,214,255,${GLOW_REST_ALPHA})`;
 const GLOW_RGB = '#3ad6ff';

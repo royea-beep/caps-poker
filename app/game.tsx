@@ -19,7 +19,7 @@ import { WEB_MAX_WIDTH } from '../components/WebContainer';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useGameStore } from '../store/gameStore';
 import { getTheme } from '../constants/visualThemes';
-import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE, getCardDimensions } from '../constants/gameConfig';
+import { COLORS, Card, CARDS_PER_BOARD, getBoardCount, CARD_SCALE, getCardDimensions, ARRANGE_CLOCK, getArrangeSeconds } from '../constants/gameConfig';
 import { ECONOMY_FLAGS } from '../constants/economyConfig';
 import { getMatchCost } from '../utils/economy';
 import {
@@ -98,7 +98,11 @@ const hapticNotify = (type: any) => {
   Haptics?.notificationAsync?.(type)?.catch?.(() => {});
 };
 
-const COUNTDOWN_SECONDS = 30;
+// TIMER-NOT-LAYOUT 2026-09-08 — the BASE clock, for a boards zone whose boards all fit. Where the
+// zone actually overflows it is scaled by getArrangeSeconds() from useGameLayout's own numbers;
+// see constants/gameConfig.ts for the derivation and the measured cells. Value moved to config so
+// it can be retuned without touching this screen.
+const COUNTDOWN_SECONDS = ARRANGE_CLOCK.baseSeconds;
 
 // Layout constants — PR-M aggressive vertical budget (2026-05-29).
 // Top chrome (header + bot bar) collapsed to rh(56); FLOATING_ACTIONS to rs(56).
@@ -197,6 +201,33 @@ function GameScreenInner() {
   const _gridRows = _L.gridRows;
   const _gridCols = _L.gridCols;
   const _boardCardH = _L.boardCardH;
+  // ⚠️⚠️ TIMER-NOT-LAYOUT 2026-09-08 — THIS IS CORRECT AND CURRENTLY UNREACHABLE IN SOLO. READ ON
+  // BEFORE ASSUMING A PLAYER FEELS IT.
+  // Roye chose "more time where it scrolls" because the problem is scrolling UNDER A CLOCK. Solo
+  // has no clock. startCountdown() has exactly ONE call site (below, in the READY handler) and it
+  // runs AFTER setPlayerReady(true), so the timeout branch — gated on `!playerReady` — can never
+  // fire; and the bot-ready handler says so in its own words: "Solo: bots never start countdown —
+  // player has free thinking time". WATCHED IT RUN, 320x568 2P, the worst cell (271px hidden):
+  // 47 seconds on the placement screen, 31 samples, NO countdown ever painted and the hand never
+  // resolved itself (tests/solo-clock-reachability.mjs).
+  // So this wiring changes nothing a solo player experiences TODAY. It is kept because it is right
+  // and free: the day a solo clock is switched on it is already layout-aware, instead of someone
+  // pasting a bare 30 back in here. The real clock is MULTIPLAYER's, and that one cannot take this
+  // treatment — see the note on the SOLO-ONLY scoping below.
+  //
+  // MORE TIME ONLY WHERE THE BOARDS ZONE ACTUALLY SCROLLS.
+  // Derived from useGameLayout's own boardsScroll + the two heights that decide it, so the clock
+  // follows the real condition at any viewport rather than a typed list of widths and player
+  // counts. Base (30s) everywhere the boards fit — a longer clock on a layout that fits is a worse
+  // game, not a safer one. ⚠️ SOLO ONLY, deliberately: multiplayer's clock is BROADCAST
+  // (app/multiplayer-game.tsx:78) and paired with DEAL_CLOCK_MS 15s above it, so a per-device
+  // layout-dependent clock would desync players and could trip the force-complete on whichever
+  // phone got the longer one. That is a server-side decision, not a client one.
+  const arrangeSeconds = getArrangeSeconds({
+    boardsScroll: _L.boardsScroll,
+    boardsContentH: _L.boardsContentH,
+    boardsAvailH: _L.boardsAvailH,
+  });
   const boardCardCapDp = _L.boardCardCapDp;
 
   const [gamesPlayed, setGamesPlayed] = useState(99); // default high so hint is hidden until loaded
@@ -234,7 +265,7 @@ function GameScreenInner() {
 
   // New timer logic: no timer at start, 30s countdown when first player finishes
   const [countdownActive, setCountdownActive] = useState(false);
-  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);  // replaced by arrangeSeconds when the clock actually starts
   const [firstFinisher, setFirstFinisher] = useState<string | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -459,7 +490,7 @@ function GameScreenInner() {
     if (countdownRef.current) return; // already running
     setFirstFinisher(finisherName);
     setCountdownActive(true);
-    setCountdown(COUNTDOWN_SECONDS);
+    setCountdown(arrangeSeconds);
     playSound('timerLow');
 
     countdownRef.current = setInterval(() => {
@@ -482,7 +513,7 @@ function GameScreenInner() {
         return prev - 1;
       });
     }, 1000);
-  }, []);
+  }, [arrangeSeconds]);
 
   // Pre-calculate results in background as soon as countdown starts (first finisher done)
   // By the time both are ready, results are already computed Â zero-wait navigation

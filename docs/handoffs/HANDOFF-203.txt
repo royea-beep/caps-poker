@@ -1,0 +1,145 @@
+VAMOS CAPS FOUR-LOOSE-ENDS — handoff 203 — 2026-09-08
+Copy 2 of 3. Copy 1 is vamos_handoffs row 203 (slug four-loose-ends-2026-09-08).
+Copy 3 was the PASTE block in the session output.
+Full detail: docs/infra/FOUR-LOOSE-ENDS-2026-09-08.md
+The paste document: docs/listing/ASC-PASTE-ORDER-2026-09-08.md
+
+Branch claude/vamos-caps-align-celebration-flppo0, commit fd04954. NOT merged, no bump.
+Nothing in the app changed: no economy value, flag, cue, layout, card size or 83px arc. No Edge
+Function deployed. NOTHING SUBMITTED TO APPLE. No workflow deleted. No billing status asserted.
+
+=== WHAT I COULD REACH vs NOT — STATED UP FRONT ===
+  #8 phantom workflows   FULLY REACHABLE — and my earlier finding was WRONG. Reported, not deleted.
+  #5 splash              FULLY REACHABLE — verified still current, by measurement. Not re-done.
+  #4 store listing       READ ONLY — five fields still null. Paste document written instead.
+  #7 backups             PARTLY — WAL state read; the add-on is not readable and is NOT asserted.
+
+=== §1 THE PHANTOM WORKFLOWS (#8) — THE CORRECTION IS THE FINDING ===
+In FINAL-QA I called asc-details.yml and asc-list.yml "dispatchable workflows backed by nothing".
+TWO OF THOSE THREE CLAIMS ARE FALSE.
+
+  EACH RAN ONCE, and both succeeded:
+    asc-details.yml  id 276765913  2026-05-14 14:25:18Z  push on recovery/may4-clean  commit 8e77cfe
+    asc-list.yml     id 276759157  2026-05-14 14:14:03Z  push on recovery/may4-clean  commit 2e25b87
+
+  EACH HOLDS THE APPLE SIGNING KEY. Both read secrets.APPLE_API_KEY_ID, APPLE_API_ISSUER_ID and
+  APPLE_API_KEY_BASE64, decode the .p8 and mint an ES256 JWT for App Store Connect. Both files were
+  READ BACK from their own run commits — GitHub still serves the blobs though the branch is gone.
+  Their Apple calls are READ-ONLY: GET /v1/apps by bundle id, GET /v1/builds. No PATCH, no POST.
+
+  recovery/may4-clean is GONE — absent from origin's 65 branches. That is why the file resolves
+  nowhere and why my clone-history check came back empty.
+
+AND THEY ARE NOT DISPATCHABLE — PROVEN, NOT ASSUMED.
+I attempted a real dispatch of each against main. GitHub refused both:
+    failed to run workflow: Workflow does not have 'workflow_dispatch' trigger
+Both files DO declare workflow_dispatch. GitHub resolves the trigger from the file ON THE TARGET
+REF, and no ref carries it, so the trigger cannot be found. They are inert history records, not
+live attack surface. state:"active" only means GitHub never marks a workflow deleted when the
+branch holding it disappears — it keeps the record so the run history stays readable.
+
+NOT DELETED, and there is no way to anyway. The brief's rule applies twice over (they ran AND they
+hold credentials) so the answer is report. It is also moot: the GitHub REST API exposes
+/actions/workflows/{id}/enable and /disable but NO DELETE. A workflow record goes away when its
+file does, and the file is already gone. Nothing left to remove, nothing live to disable.
+
+CONFIRMED FROM GITHUB, NOT FROM A 200: the contents API on main returns "the file does not exist in
+the repository", while the same path at commit 8e77cfe returns the full text.
+
+=== §2 THE SPLASH (#5) — STILL CURRENT. NOT RE-DONE. ===
+app.json declares ./assets/splash.png, backgroundColor #071C12, resizeMode contain.
+Decoded the PNG and sampled 240 pixels around all four edges against the declared background:
+    assets/splash.png       1284x2778   worst edge deviation from #071C12: 0 CHANNELS
+    assets/splash-icon.png  1284x2778   worst edge deviation from #071C12: 0 CHANNELS
+Zero, not "close". Both byte-identical, md5 3a231e9d139efb81c085c4fc2547543a. The 2026-09-07 edge
+fix holds; art and background cannot separate into faint side bars on a short device.
+NATIVE-ONLY, CONFIRMED: dist/index.html has 0 splash references. The web export never paints it —
+the only hit anywhere in dist/ is inert expo-splash-screen module code inside the JS bundle. So it
+belongs on Roye's DEVICE list and cannot be verified from a browser. Nothing changed.
+
+=== §3 THE STORE LISTING (#4) — READ ONLY, AND EXACTLY WHY ===
+THE DELIVERABLE: docs/listing/ASC-PASTE-ORDER-2026-09-08.md — field by field in the order App Store
+Connect presents them, companion to the existing LISTING-PACK which holds the copy.
+
+RE-READ LIVE TODAY rather than trusting yesterday (run 34270807514, store-listing, GET only,
+success). Nothing has moved: description, keywords, whats_new, promotional_text, support_url,
+marketing_url, subtitle and privacy_policy_url ALL NULL; screenshots []; every age-rating field
+null with override NONE; version still 1.0 created 2026-03-11, state PREPARE_FOR_SUBMISSION.
+
+CAN THE CREDENTIAL WRITE? CHECKED — the answer is UNPROVEN, not "no".
+  - It DEMONSTRABLY writes TestFlight: run 34135814835 (2026-09-07) PATCHed a beta group's public
+    link and confirmed it by reading the group back from Apple.
+  - That does NOT settle the listing. Beta groups and App Store version metadata are DIFFERENT
+    PERMISSION AREAS. A Developer-role ASC key writes the first and not the second; App Manager
+    writes both. The evidence fits either role.
+  - Apple offers NO DRY RUN, so "find out whether I can write" and "write to Roye's live listing"
+    are the same act.
+  - And it needs a MERGE. There is no ASC key in this container — it exists only as GitHub Actions
+    secrets, so every ASC call goes through a workflow dispatch; testflight-manage.yml validates its
+    `action` input against a fixed choice list; a new store-listing-write option must be on the
+    DEFAULT branch to be dispatchable. Merging is outside every VAMOS sprint's scope.
+
+A half-filled live listing is worse than an empty one plus a good document. So I wrote the document
+and left the listing alone. It carries the four record IDs a future write needs:
+    app 6760429619 - appInfo 5c17297f-4f19-4a5a-9b6c-fe8bb0f0654d
+    appStoreVersion 32f6e99e-a82d-47da-96be-7412610a68b1
+    appStoreVersionLocalization (en-US) 6beab340-07c8-43ed-90ca-30c8d9065092
+tools/asc/lib.rb ALREADY supports PATCH and store_listing.rb ALREADY resolves those IDs — it is the
+merge, not the code, that is missing.
+
+THE AGE-RATING QUESTION, NAMED EXACTLY (the task is to ANSWER, not to raise a number):
+    App Information -> Age Rating -> Edit -> Contests -> "Simulated Gambling"
+    ANSWER: Frequent/Intense.   Every other question: None.   DO NOT use the age-rating override.
+
+STILL BLOCKING A REAL SUBMISSION, BEYOND METADATA:
+  1. Export compliance has NEVER been answered — GET /v1/apps/{id}/appEncryptionDeclarations
+     returns 404, no declaration exists at all. testflight-manage.yml has answer-export-compliance.
+  2. ZERO screenshots uploaded; 18 files ready in docs/product-map/store-515/.
+  3. The version record reads 1.0 (created 2026-03-11) while the app is 2.7.0.
+  4. A build must be selected — my read did NOT include the version's build relationship, so
+     confirm that one in the dashboard rather than taking it from me.
+  5. Two likely rejections that are CODE, not metadata: Google sign-in without Sign in with Apple,
+     and the in-app delete-account control that cannot work (delete_user_account is revoked for
+     both anon and authenticated).
+
+=== §4 THE BACKUPS (#7) — WHAT IS READABLE ===
+Read from the database itself:
+    archive_mode        on
+    wal_level           logical
+    archive_command     /usr/bin/admin-mgr wal-push %p   (Supabase's wal-g archiver)
+    archive_timeout     120s — a segment is forced every two minutes even when idle
+    archived_count      119,797 segments since 2026-02-13
+    last_archived_wal   00000001000001D300000072
+    last_archived_time  2026-09-08 22:44:16 — 7.2 SECONDS before I asked
+    failed_count        2, the last on 2026-05-05, four months ago
+    Postgres            17.6
+WAL ARCHIVING IS HEALTHY AND CONTINUOUS. That is the substrate PITR runs on, and it is working.
+
+NOT ASSERTED, and refused a second time: whether the PITR ADD-ON is purchased, and what the
+retention window is. archive_mode=on is a platform default that ALSO serves Supabase's ordinary
+daily backups — it does NOT prove PITR is enabled or how far back a restore reaches. The plan tier
+is unreadable too: get_organization returns "You do not have permission to perform this action".
+
+WHAT ROYE CHECKS, IN ONE SENTENCE: open Supabase -> Project Settings -> Database -> Backups and
+look at the Point-in-Time Recovery panel — healthy looks like PITR enabled with a stated recovery
+window (7 days on the smallest paid tier) and an "earliest restore point" timestamp roughly that
+far in the past; if it instead offers to UPGRADE or shows only a list of daily backups, the add-on
+is not active and the window is whatever those daily snapshots give.
+
+=== PRODUCTION UNCHANGED ===
+No economy value, flag, cue, layout, card size, 83px arc or security surface touched. No Edge
+Function deployed. No workflow deleted or disabled. Nothing submitted to Apple. The one workflow
+dispatched (store-listing) is GET only and changed nothing.
+
+=== FILES ===
+  docs/infra/FOUR-LOOSE-ENDS-2026-09-08.md      NEW — the full record
+  docs/listing/ASC-PASTE-ORDER-2026-09-08.md    NEW — the paste document, ASC order
+  CLAUDE.md                                      correction + three new entries
+
+=== FOR ROYE ===
+1. The two "phantom" workflows are harmless and cannot be fired. Nothing to do. I was wrong to call
+   them backed by nothing — they ran once each in May and they carry the Apple key.
+2. The splash is done and correct. Device list only.
+3. The listing needs your hands or one merge. The paste doc is in ASC's own order; the age-rating
+   answer is Simulated Gambling = Frequent/Intense and nothing else.
+4. Backups: WAL archiving is healthy. Check the PITR panel yourself — one look tells you.

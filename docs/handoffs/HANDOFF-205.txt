@@ -1,0 +1,92 @@
+VAMOS CAPS RENAME-THE-LISTING — handoff 205 — 2026-09-08
+Branch claude/vamos-caps-align-celebration-flppo0, commit f0da897. NOT merged, no bump.
+Production untouched: no economy value, flag, cue, layout, card size or 83px arc. No Edge Function.
+No migration. No game_rooms row. NOTHING SUBMITTED TO APPLE FOR REVIEW.
+
+=== THE WRITE ===
+NAME SET TO "CAPS Poker" — LANDED.
+  Preview 34284889330 (apply=false): BEFORE name = "CAPS - Card game", INTEND "CAPS Poker" (10
+  chars), wrote nothing.
+  Write 34285144841: PATCH /v1/appInfoLocalizations/7d60730c-a3f3-4e30-8d4c-dfafe5416b52, then a
+  SEPARATE GET: AFTER name = "CAPS Poker".
+  NO UNIQUENESS OBJECTION. App Store names are unique-checked across the store on write and Apple
+  accepted this one without comment. Had it refused, the run would have printed Apple's status,
+  code, title, detail and source pointer — the patch! fix from the last sprint exists for exactly
+  that moment — and the rule was to stop and let Roye pick, never invent a variant.
+  REVERT: set "CAPS - Card game" on that same endpoint. The run prints the line itself.
+
+=== THE PART WORTH KEEPING — THE PRODUCT DOES NOT AGREE WITH ITSELF ===
+Measured from files and generated artefacts, not assumed:
+  store listing name    CAPS Poker    <- just written
+  iOS home-screen       Caps Poker    ios/CapsPoker/Info.plist CFBundleDisplayName
+  app.json expo.name    Caps Poker    the line the label is generated from (ios/ is untracked
+                                      prebuild output, so this one line decides the label)
+  web tab title         Caps Poker    dist/index.html <title>, same source
+  landing page title    CAPS POKER    public/landing.html
+  privacy page title    CAPS Poker    root privacy.html
+  terms page title      CAPS Poker    root terms.html
+  onboarding card       CAPS Poker    app/(tabs)/index.tsx:514,519
+  share cards           CAPS POKER    components/ShareCard.tsx x4
+  orientation/theme     CAPS POKER    app/orientation-pick.tsx:36, app/theme-pick.tsx:26
+  legal block both langs CAPS Poker   utils/i18n.ts:949,1370
+  com.capspoker.app / package.json "caps-poker" — ids, not display names. Correct as they are.
+
+THREE CASINGS LIVE AT ONCE: "CAPS Poker", "Caps Poker", "CAPS POKER".
+WHICH DISAGREE, reported and NOT changed:
+  1. The DEVICE HOME-SCREEN LABEL reads "Caps Poker" while the store now reads "CAPS Poker". A
+     player installing from the store sees one name on the listing and a differently-cased one
+     under the icon.
+  2. The LANDING PAGE TITLE says "CAPS POKER" — a third form.
+  3. The in-app surfaces are themselves split: onboarding and the legal block say "CAPS Poker",
+     share cards and the two picker screens say "CAPS POKER".
+This is small but it is the same class as a filename that does not match its bytes, and this
+project has paid for that shape eight times.
+THE CHEAPEST FIX, NOT DONE: ONE LINE — app.json expo.name -> "CAPS Poker" — moves the device label
+AND the web tab title together, because both derive from it. The landing title is a second
+one-liner. Not done because the brief said report first and expo.name is an app-level change
+needing a rebuild.
+
+WHICH ARE ROYE'S: the SOCIAL BIOS. And I could not read them — no handle, URL or bio text for any
+social account exists anywhere in this repo. Only per-platform image assets under docs/social/
+(instagram-320, tiktok-200, facebook-360, facebook cover 1640x664). Whether the accounts exist at
+all and what their bios say is UNKNOWN from here — a thing to check, never a thing to assert.
+
+=== LISTING STATE AFTERWARDS, READ FROM APPLE (run 34285359921, GET only) ===
+  name                CAPS Poker                                <- changed this sprint
+  subtitle            Multi-board poker, free
+  privacyPolicyUrl    https://caps.ftable.co.il/privacy.html
+  description         1,253 chars
+  keywords            88 chars
+  promotionalText     140 chars
+  supportUrl          https://caps.ftable.co.il/landing.html
+  marketingUrl        null    (optional, not asked for)
+  whatsNew            null    (correct — the field is for updates, this is 1.0)
+  category            GAMES / GAMES_CARD / GAMES_STRATEGY
+  appStoreAgeRating   SEVENTEEN_PLUS  (Apple's computation; override never written)
+  screenshots         []      still zero
+  version             1.0, PREPARE_FOR_SUBMISSION, created 2026-03-11
+  appEncryptionDeclarations  HTTP 404 — none exists
+NOT SUBMITTED FOR REVIEW. No build selected. Version state unchanged. Pricing, availability and
+territories untouched.
+
+=== STILL BLOCKING A REAL SUBMISSION ===
+  1. Zero screenshots uploaded. Apple requires one. 18 ready in docs/product-map/store-515/;
+     uploading is a separate API (reserve, chunked upload, commit).
+  2. Export compliance never answered — appEncryptionDeclarations 404.
+  3. Version record still 1.0 from 2026-03-11 while the product is 2.7.0 build 515.
+  4. A build must be selected on the version — confirm in the dashboard.
+  5. Two CODE rejections: Google sign-in without Sign in with Apple, and the in-app
+     delete-account control that cannot work (delete_user_account revoked).
+  6. NEW AND SMALL: the device label and the store name disagree in casing.
+
+=== HOUSEKEEPING DONE ON THE WAY ===
+The listing pack's banner said "Nothing in this document has been written to App Store Connect.
+Every field below is still null on Apple's side." Seven fields and the age rating went live
+yesterday, so that sentence described a state the product had already left. It now says what is
+written, what is not, and that the file is LOAD-BEARING: tools/asc/listing_copy.rb parses it at
+runtime and hands the strings to a PATCH against the live listing.
+The pack now carries Name (30 max): CAPS Poker; tests/listing-copy.test.ts pins the exact string
+and the 30-char limit, so a typo fails before it reaches Apple. 5/5 green.
+
+Record: docs/listing/RENAME-THE-LISTING-2026-09-08.md
+Commits: d9317df, f0da897

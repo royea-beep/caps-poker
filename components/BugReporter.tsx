@@ -26,6 +26,7 @@ import * as Updates from 'expo-updates';
 import { getGlobalLogs, debugLog } from './DebugOverlay';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { startRecording, stopRecording, getLastCrashScreenshots } from '../utils/screenRecorder';
+import { attachmentNote } from '../utils/attachmentNote';
 import { getSupabase } from '../utils/supabase';
 import { getConsoleLogs, getGameLogs } from '../utils/logBuffer';
 import { getBreadcrumbs, addBreadcrumb } from '../utils/breadcrumbs';
@@ -174,6 +175,40 @@ async function uploadFrame(frameUri: string): Promise<string | null> {
   }
 }
 
+// ─── The frame SEQUENCE, and saying so when it does not arrive ────────────────
+// REPORTER-AND-BOARD4 2026-09-08. Two defects, measured across all 252 rows before touching this:
+//
+//   1. NINE OF TEN CAPTURED FRAMES WERE THROWN AWAY. handleStop already had the whole sequence
+//      (getLastCrashScreenshots returns every file on disk), but only frames[length-1] was ever
+//      uploaded. ⚠️ CORRECTING MY OWN EARLIER CLAIM: the discarded `stopRecording()` return in
+//      handleStop is NOT the cause — that value is a duplicate of the last frame, and
+//      crashDetector.ts:53 legitimately uses it, which is why its signature is unchanged. The loss
+//      was here, at the upload.
+//   2. THE LOSS WAS SILENT. 7 of 36 rows flagged has_video carried NO url at all: the 5s upload
+//      returned null and the report filed anyway, reading as a complete report with no evidence.
+//      A tester who submits evidence and loses it does not submit again.
+//
+// So: upload every frame, in parallel, each with ONE retry on a longer budget; then say plainly in
+// the report itself how many arrived. Bounded by MAX_FRAMES (10) in utils/screenRecorder.ts — this
+// deliberately derives its cap from the sequence it is handed rather than hardcoding a count.
+async function uploadFrameOnce(uri: string, budgetMs: number): Promise<string | null> {
+  return withTimeout(uploadFrame(uri), budgetMs, null, 'upload-frame');
+}
+
+export async function uploadFrames(uris: string[]): Promise<string[]> {
+  if (!uris.length) return [];
+  const settled = await Promise.all(
+    uris.map(async (uri) => {
+      // 8s, then one retry at 12s. The old single 5s attempt is what lost 7 of 36.
+      const first = await uploadFrameOnce(uri, 8000);
+      if (first) return first;
+      console.warn('[BUG-PIPE] Step 4b: frame upload failed once, retrying:', uri.slice(-32));
+      return uploadFrameOnce(uri, 12000);
+    }),
+  );
+  return settled.filter((u): u is string => !!u);
+}
+
 // ─── Submit (INSERT to bug_reports via Supabase client) ───────────────────────
 
 async function submitBugReport(opts: {
@@ -183,7 +218,9 @@ async function submitBugReport(opts: {
   audioUrl: string | null;
   videoUrl: string | null;
   screenshotUrl: string | null;
-  hasVideo: boolean;
+  frameUrls: string[];
+  framesCaptured: number;
+  audioCaptured: boolean;
   deviceInfo: DeviceInfo;
   consoleLogs: string[];
   breadcrumbs: ReturnType<typeof getBreadcrumbs>;
@@ -207,9 +244,29 @@ async function submitBugReport(opts: {
     // first; the minted value stays only as a fallback when analytics has not started.
     session_id: getSessionId() ?? `caps-${Date.now().toString(36)}`,
     status: 'open',
-    report_type: 'video',
-    has_video: opts.hasVideo,
+    // REPORTER-AND-BOARD4 2026-09-08 — THE NAME NOW MATCHES THE CONTENT.
+    // This was the hardcoded literal 'video'. It has never been a video: the capture path is
+    // react-native-view-shot's captureScreen, a STILL-frame API, sampled every 2000ms and capped at
+    // MAX_FRAMES. Measured before the change: 29 of 29 rows carrying a video_url pointed at a
+    // /frames/bug-frame-*.jpg, 0 were mp4/mov/webm, and 29 of 29 equalled screenshot_url.
+    // ⚠️ SAFE TO RENAME, CHECKED RATHER THAN ASSUMED: nothing anywhere — client, scripts or the 14
+    // Edge Functions — filters or branches on report_type. Grep returns zero comparisons.
+    // ⚠️ DERIVED, NOT FIXED. 'frames' only when frames actually arrived; otherwise this report
+    // carries the same payload as the settings-entry writer (components/ReportBugButton.tsx),
+    // which has always and correctly said 'text'. Hardcoding either one is how the old literal
+    // 'video' outlived the thing it described.
+    report_type: opts.frameUrls.length > 0 ? 'frames' : 'text',
+    // Likewise never true in substance, and read by nothing. frames_captured/frames_uploaded below
+    // carry the real answer.
+    has_video: false,
     audio_url: opts.audioUrl,
+    // ⚠️ DO NOT NULL THIS COLUMN, however wrong its name is. FOUR Edge Functions read it, and two
+    // of them already know what it holds — analyze-bug-report:234 and retriage-pending:195 both
+    // assign it straight to a variable called `screenshotUrl`, and it is the image the AI triage
+    // vision call and the Telegram/WhatsApp photo are built from. Nulling it here would blind
+    // triage, and Edge Functions cannot be deployed from this lane (verify_jwt resets).
+    // It carries the REPRESENTATIVE frame — the last one, i.e. the screen as the tester left it.
+    // The full sequence lives in metadata.frame_urls.
     video_url: opts.videoUrl,
     screenshot_url: opts.screenshotUrl,
     device_info: { ...opts.deviceInfo, device_id: await getDeviceId() },
@@ -218,8 +275,16 @@ async function submitBugReport(opts: {
     metadata: {
       device: opts.deviceInfo.model,
       platform: opts.deviceInfo.platform,
-      hasVideo: opts.hasVideo,
+      hasVideo: false,
       hasAudio: !!opts.audioUrl,
+      // The whole burst, not just the one frame video_url points at.
+      frame_urls: opts.frameUrls,
+      frames_captured: opts.framesCaptured,
+      frames_uploaded: opts.frameUrls.length,
+      audio_captured: opts.audioCaptured,
+      audio_uploaded: !!opts.audioUrl,
+      attachment_complete:
+        opts.frameUrls.length === opts.framesCaptured && (!opts.audioCaptured || !!opts.audioUrl),
       logCount: opts.consoleLogs.length,
       frameCount: opts.frameCount,
       recordingDuration: opts.elapsed,
@@ -350,6 +415,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
   const [audioAvailable, setAudioAvailable] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const capturedAudioUri = useRef<string | null>(null);
+  const capturedFrames = useRef<string[]>([]);
   const capturedFrameCount = useRef(0);
   const capturedLastFrame = useRef<string | null>(null);
   const capturedLogs = useRef<ReturnType<typeof getGlobalLogs>>([]);
@@ -483,6 +549,9 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     const [, audioUri, frames] = await Promise.all([stopRecording(), withTimeout(stopAudio(), 8000, null, 'stop-audio'), getLastCrashScreenshots()]);
     console.log('[BUG-PIPE] Step 3a: Screen capture stopped. Total frames:', frames.length);
     capturedAudioUri.current = audioUri;
+    // REPORTER-AND-BOARD4 — keep the WHOLE burst. handleStop always had it; only the last frame
+    // was ever carried forward, so nine of ten captures were dropped before the upload even ran.
+    capturedFrames.current = frames;
     capturedFrameCount.current = frames.length;
     capturedLastFrame.current = frames.length > 0 ? frames[frames.length - 1] : null;
     capturedLogs.current = getGlobalLogs();
@@ -499,6 +568,7 @@ export function BugReporter({ children, overlayActive = false }: Props) {
     const audioUri = capturedAudioUri.current;
     const frameCount = capturedFrameCount.current;
     const lastFrame = capturedLastFrame.current;
+    const frameUris = capturedFrames.current;
     const recordingElapsed = capturedElapsed.current;
     setPhase('idle');
     setNote('');
@@ -513,12 +583,14 @@ export function BugReporter({ children, overlayActive = false }: Props) {
           : null;
         console.log('[BUG-PIPE] Step 4a: audioUrl=', audioUrl ? 'SET' : 'NULL (timeout/fail)');
 
-        // 4b: Upload last frame — 5s timeout
-        console.log('[BUG-PIPE] Step 4b: Uploading screenshot... lastFrame=', lastFrame ? 'SET' : 'NULL');
-        const videoUrl = lastFrame
-          ? await withTimeout(uploadFrame(lastFrame), 5000, null, 'upload-frame')
-          : null;
-        console.log('[BUG-PIPE] Step 4b: videoUrl=', videoUrl ? 'SET' : 'NULL (timeout/fail)');
+        // 4b: Upload the WHOLE frame sequence — each 8s with one 12s retry (was: last frame only,
+        // one 5s attempt, which is what lost 7 of 36 attachments outright).
+        console.log('[BUG-PIPE] Step 4b: Uploading', frameUris.length, 'frame(s)...');
+        const frameUrls = await uploadFrames(frameUris);
+        // The representative frame is the LAST one — the screen as the tester left it. It is what
+        // video_url and screenshot_url carry, so every existing Edge Function keeps working.
+        const videoUrl = frameUrls.length > 0 ? frameUrls[frameUrls.length - 1] : null;
+        console.log('[BUG-PIPE] Step 4b:', frameUrls.length, 'of', frameUris.length, 'frames uploaded');
 
         // 4c: Collect device info
         console.log('[BUG-PIPE] Step 4c: Collecting device info...');
@@ -538,14 +610,26 @@ export function BugReporter({ children, overlayActive = false }: Props) {
 
         // 4f: INSERT to Supabase
         console.log('[BUG-PIPE] Step 4f: Inserting report to Supabase...');
+        // ⚠️ SILENT LOSS ENDS HERE. If an attachment did not arrive, the report SAYS SO, in the
+        // one field the Telegram and WhatsApp handlers already render.
+        const lostNote = attachmentNote({
+          framesCaptured: frameUris.length,
+          framesUploaded: frameUrls.length,
+          audioCaptured: !!audioUri,
+          audioUploaded: !!audioUrl,
+        });
+        const bodyText = [noteToSend, lostNote].filter(Boolean).join('\n');
+
         const reportId = await withTimeout(submitBugReport({
           title: noteToSend || 'Bug recorded',
-          description: noteToSend,
+          description: bodyText,
           screen: path || 'unknown',
           audioUrl,
           videoUrl,
           screenshotUrl: videoUrl,
-          hasVideo: frameCount > 0,
+          frameUrls,
+          framesCaptured: frameUris.length,
+          audioCaptured: !!audioUri,
           deviceInfo,
           consoleLogs,
           breadcrumbs: crumbs,
@@ -609,11 +693,14 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         const FileSystem = Platform.OS !== 'web' ? (() => { try { return require('expo-file-system'); } catch { return null; } })() : null;
         if (FileSystem) {
           if (audioUri) FileSystem.deleteAsync(audioUri, { idempotent: true }).catch(() => {});
-          if (lastFrame) FileSystem.deleteAsync(lastFrame, { idempotent: true }).catch(() => {});
+          // Every frame now, not just the last — the other nine used to be left on disk to be
+          // evicted later by the MAX_FRAMES ring buffer.
+          for (const uri of frameUris) FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
         }
 
         // Reset capture refs
         capturedAudioUri.current = null;
+        capturedFrames.current = [];
         capturedFrameCount.current = 0;
         capturedLastFrame.current = null;
         capturedLogs.current = [];
@@ -621,7 +708,14 @@ export function BugReporter({ children, overlayActive = false }: Props) {
         console.log('[BUG-PIPE] Step 7: ✅ Cleanup complete');
 
         playHaptic('success');
-        showToast(reportId ? 'Report sent ✅' : 'Sent (upload issue) ⚠️');
+        // ⚠️ The old toast said "Report sent ✅" even when every attachment had silently vanished.
+        // A tester whose evidence disappears without being told does not send a second report.
+        showToast(
+          !reportId ? 'Sent (upload issue) ⚠️'
+            : lostNote ? 'Sent — but the screen capture did not upload ⚠️'
+            : 'Report sent ✅',
+          lostNote ? 4500 : 2500,
+        );
       } catch (err) {
         console.error('[BUG-PIPE] ❌ handleSend failed:', err);
         showToast('Failed to send ❌');

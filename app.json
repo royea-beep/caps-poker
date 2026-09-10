@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Caps Poker",
+    "name": "CAPS Poker",
     "slug": "caps-poker",
     "version": "2.7.0",
     "orientation": "portrait",
@@ -76,7 +76,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow Caps Poker to record audio for bug reports"
+          "microphonePermission": "Allow CAPS Poker to record audio for bug reports"
         }
       ],
       [

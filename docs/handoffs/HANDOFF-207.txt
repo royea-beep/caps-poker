@@ -1,0 +1,100 @@
+VAMOS CAPS SOCIAL-PROFILES — handoff 207 — 2026-09-09
+Branch claude/vamos-caps-align-celebration-flppo0, commit a14712b. NOT merged, no bump.
+NOTHING WAS CHANGED ON ANY SOCIAL ACCOUNT. No login attempted. No password requested. Nothing
+posted. Production untouched — no app, economy, flag, cue, layout or store-listing change.
+
+=== THE PREMISE IS WRONG, AND I MEASURED IT RATHER THAN ASSERTING IT ===
+The brief says "YOU run Playwright on his machine, where those accounts are already signed in."
+I do not run on Roye's machine. Three independent measurements:
+
+1. WHERE I AM: host vm · user root · cwd /home/user/caps-poker · Linux 6.18.44-fc-v24.
+   An ephemeral cloud VM with a fresh clone, reclaimed when the session ends. Not Windows, not
+   C:\Projects\POKER\Caps.
+2. NO LOGGED-IN BROWSER EXISTS HERE. /root/.config/chromium contains ONLY a "Crash Reports"
+   folder — there is no Default profile. A filesystem-wide search for Cookies and cookies.sqlite
+   returns NONE. Every Playwright context I opened reported 0 cookies.
+3. THE BROWSER CANNOT OPEN THE THREE SITES. Loaded for real:
+     facebook   net::ERR_CONNECTION_RESET   0 cookies
+     instagram  net::ERR_CONNECTION_RESET   0 cookies
+     tiktok     net::ERR_CONNECTION_RESET   0 cookies
+     page text: "This site can't be reached — The connection was reset ... ERR_CONNECTION_RESET"
+   The three screenshots are BYTE-IDENTICAL (md5 e4ccbb07e597e30b181de4cf8da5e887) — which is
+   itself the finding: all three failed the same way, at the network layer, before a page existed.
+
+THE FINDING IS NOT "THE SITES ARE DOWN". curl reaches all three with HTTP 200. This is the SAME
+browser-versus-curl split already recorded for Supabase and caps.ftable.co.il: the container's
+BROWSER has no network path where curl does. "Unreachable" would have been the wrong sentence.
+
+AND A BOUNDARY I CHOSE, NOT ONE THE CONTAINER IMPOSED: I will not ask for the account passwords.
+Routing live social credentials through a session transcript is not a thing to do, and two-factor
+would land on his phone regardless.
+
+A CORRECTION TO MY OWN WORDING LAST SPRINT: I wrote the accounts were "not reachable from here",
+which conflated two things. Accurate: the handles and bios are NOT RECORDED IN THIS REPO, and this
+container has NO SESSION and NO BROWSER NETWORK PATH. The earlier phrasing was right by accident.
+
+=== WHAT EACH ACCOUNT ALREADY HAD ===
+UNKNOWN, and stated as unknown. I never loaded a single profile. Anything I said about the current
+state would be invention. The brief's own rule — check before writing, do not overwrite something
+Roye chose — is therefore impossible for me to honour, which is the second reason this is a
+handover rather than an attempt.
+
+TWO-FACTOR PROMPTS HIT: none. I never reached a login form.
+
+COULD NOT SET: EVERY FIELD ON ALL THREE PLATFORMS — name, image, cover, bio, link, category,
+contact email. Reason is the same for all: no session, and no browser network path.
+
+SCREENSHOTS: docs/social/session-probe-2026-09-09/{facebook,instagram,tiktok}.png — these are the
+error pages, i.e. proof of the boundary, NOT proof of a change.
+  git show a14712b --stat
+  git show a14712b:docs/social/SOCIAL-PROFILES-HANDOVER-2026-09-09.md
+
+=== THE HANDOVER THAT REPLACES THE ATTEMPT ===
+Doc: docs/social/SOCIAL-PROFILES-HANDOVER-2026-09-09.md
+Handle capspokerapp on all three · contact caps@ftable.co.il · link https://caps.ftable.co.il
+
+NAME (all three):  CAPS Poker      <- exactly that casing, the point of the last sprint
+BIO (all three):
+  Multi-board poker. Four cards on every board.
+  Free · no download · no sign-up
+CATEGORY: Video Game — NOT Casino, NOT Gambling. That classification invites review scrutiny the
+  product does not need; the App Store age rating already declares simulated gambling honestly.
+CONTACT: caps@ftable.co.il. NO PHONE NUMBER.
+
+IMAGES — measured from the files, not recalled:
+  Facebook profile   docs/social/caps-profile-facebook-360.png    360x360
+  Facebook cover     docs/social/caps-cover-facebook-1640x664.png 1640x664
+  Instagram profile  docs/social/caps-profile-instagram-320.png   320x320
+  TikTok profile     docs/social/caps-profile-tiktok-200.png      200x200
+  spare              docs/social/caps-profile-1024.png            1024x1024
+  circular-crop-proof.json records outside_circle: 0 for each, with 23.6-24.0% of radius margin.
+
+TWO THINGS FLAGGED RATHER THAN SILENTLY SHIPPED:
+  1. The supplied bio arrived as a RUN-ON LINE — "every board.Free · no download" — with the break
+     missing. Written as two lines above.
+  2. "no download" is TRUE of the browser build and NOT of the iOS app, which is a download by
+     definition. If the accounts will ever point at the App Store,
+     "Free · play in your browser · no sign-up" says the same thing without the ambiguity.
+     ROYE'S CALL — I have not chosen for him.
+
+NO UNBACKABLE CLAIMS: confirmed. No player counts, no ratings, no store date. 25 devices have ever
+played a hand and nothing in the copy suggests otherwise.
+
+CLICK PATHS:
+  Facebook  facebook.com/profile.php?id=61593891042796 -> Edit page info: Name, Bio, Category
+    (Video Game), Contact email, Website; images from the page header.
+    A page NAME CHANGE can take up to 3 days and Facebook may refuse a second change after it.
+  Instagram instagram.com/capspokerapp -> Edit profile: Name, Bio, Link. Category exists ONLY on a
+    Professional/Business account — if it is Personal the field will not appear. That is a switch,
+    not a failure.
+  TikTok    tiktok.com/@capspokerapp -> Edit profile: Name, Bio, Website.
+    TikTok GATES SEVERAL FIELDS TO THE MOBILE APP and forced the app at signup. If the link or
+    category is not editable on desktop that is a phone tap, not a blocker.
+
+=== SO A FUTURE SESSION DOES NOT RE-LITIGATE THIS ===
+Anything needing a LOGGED-IN SESSION ON A THIRD-PARTY SITE cannot be done from this environment:
+no browser profile, no cookies, and the browser has no network path to those hosts even though curl
+does. That is a property of the container, not of Playwright. A session running on Roye's own
+machine with his browser profile would be a different matter — but that is not where this runs.
+
+Commits: a14712b

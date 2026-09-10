@@ -119,4 +119,89 @@ describe('vercel.json catch-all rewrite', () => {
   it('landing.html keeps an explicit rewrite of its own', () => {
     expect(cfg.rewrites.some((r: any) => r.source === '/landing.html')).toBe(true);
   });
+
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  // ⚠️ vercel.json IS JSON. IT HAS NO COMMENTS, AND VERCEL REJECTS THE WHOLE FILE FOR ONE.
+  //
+  // STOP-THE-VERCEL-BLEED 2026-09-08. The 2026-09-03 catch-all commit added a `_comment_rewrites`
+  // array to this file to explain the change. JSON has no comment syntax, so that was a real
+  // property — and Vercel validates vercel.json against a CLOSED schema BEFORE it runs the
+  // project's Ignored Build Step. Every Git-integration deploy from that commit onward died at:
+  //
+  //     The `vercel.json` schema validation failed with the following message:
+  //     should NOT have additional property `_comment_rewrites`
+  //
+  // 29 of 40 deploys in one 21.7-hour window. The skip that this project's Ignored Build Step had
+  // been performing correctly for weeks (state CANCELED, errorLink -> the ignored-build-step docs)
+  // could not run, because validation comes first. A red dashboard for five days, from prose.
+  //
+  // The prose was not even needed: scripts/fix-web-html.js — the file that ACTUALLY ships, and
+  // which is JavaScript — already carries the same explanation in a real comment. Put commentary
+  // there. This file gets data only.
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  it('the root vercel.json carries no key Vercel would reject', () => {
+    // Vercel's documented top-level properties. A key outside this set fails the deploy.
+    const ALLOWED = new Set([
+      'alias', 'build', 'buildCommand', 'cleanUrls', 'crons', 'devCommand', 'env', 'framework',
+      'functionFailoverRegions', 'functions', 'git', 'headers', 'ignoreCommand', 'images',
+      'installCommand', 'name', 'outputDirectory', 'public', 'redirects', 'regions',
+      'relatedProjects', 'rewrites', 'routes', 'scope', 'trailingSlash', 'version',
+    ]);
+    const keys = Object.keys(cfg);
+    // Named explicitly so the failure message says WHICH key, not just "some key".
+    expect(keys.filter((k) => k.startsWith('_'))).toEqual([]);
+    expect(keys.filter((k) => !ALLOWED.has(k))).toEqual([]);
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  // CLOSE-THE-THREE 2026-09-08 — THE WARNING LIVES IN THE FILE A PERSON OPENS.
+  //
+  // The generator has carried "the root vercel.json is never read in prod" in a real comment since
+  // 2026-08-15. It did not stop the 404 fix going into the root file on 2026-09-03, and it did not
+  // stop me repeating the mistake. A note BESIDE a trap is not a label ON it.
+  //
+  // But this file is JSON: it has no comment syntax, and Vercel rejects the whole file for an
+  // unknown top-level key — which is the outage that started all of this. So the warning goes in
+  // the only place that is both schema-legal and impossible to miss: the VALUE of installCommand,
+  // the file's first key. It is a legal string in a legal field, not a new property, so the closed
+  // schema is untouched — and it prints into the build log of any deploy that ever does use this
+  // config, which is the exact moment somebody needs to read it.
+  //
+  // ⚠️ THE FILE IS KEPT, NOT DELETED, and the reason is checkable rather than sentimental: its
+  // buildCommand is a WORKING build of this app (scripts/fix-web-html.js accepts both dist/ and
+  // web-dist/, so the export and the patch agree), which is what a Git-integration deploy would
+  // fall back on if the project Ignored Build Step were ever switched off. Deleting it would swap
+  // a five-day-old trap for a silent zero-config deploy of the repository root onto the production
+  // domain. Labelled beats absent.
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  describe('the root vercel.json labels itself', () => {
+    const install: string = cfg.installCommand;
+
+    it('still installs — the warning must not have replaced the actual work', () => {
+      expect(install.endsWith('npm install')).toBe(true);
+    });
+
+    it('carries the warning, naming the generator and the file production really serves', () => {
+      expect(install).toMatch(/PRODUCTION NEVER READS IT/);
+      expect(install).toMatch(/scripts\/fix-web-html\.js/);
+      expect(install).toMatch(/NEVER ADD A COMMENT KEY HERE/);
+    });
+
+    it('is the FIRST key, so the warning is the first thing the file says', () => {
+      expect(Object.keys(cfg)[0]).toBe('installCommand');
+    });
+
+    it('is a shell string that cannot break on a stray quote', () => {
+      // The value is built from echo "..." segments. A single quote or a backtick inside would
+      // change how /bin/sh parses it and could turn the install step into a syntax error — a
+      // config-file comment taking down deploys a second time, by a different mechanism.
+      expect(install).not.toMatch(/['`$\\]/);
+    });
+  });
+
+  it('the shipped vercel.json is built from an object literal, so it cannot carry one either', () => {
+    // dist/vercel.json is JSON.stringify'd from a literal in the generator: a JS comment beside it
+    // never reaches the file. This asserts the generator has not grown a "_comment" PROPERTY.
+    expect(generator).not.toMatch(/^\s*_[A-Za-z0-9_]*\s*:/m);
+  });
 });

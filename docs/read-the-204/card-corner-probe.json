@@ -1,0 +1,20 @@
+{
+  "4P": {
+    "cards": 18,
+    "cardWidths": [
+      64
+    ],
+    "cardsWithTopLeftIndex": 14,
+    "cardsWithBottomRightIndex": 14,
+    "centreSuitGlyphs": 14,
+    "centreRankGlyphs": 0,
+    "topLeftFontPx": [
+      14,
+      19
+    ],
+    "centreFontPx": [
+      32,
+      41
+    ]
+  }
+}

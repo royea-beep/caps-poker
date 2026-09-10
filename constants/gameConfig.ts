@@ -92,6 +92,56 @@ export const BOARD_CLOSED_CARDS = 2;
 /** @deprecated Default for 2 players only. Use getCardsPerPlayer(numberOfPlayers) for dynamic count. */
 export const PLAYER_HAND_SIZE = 16;
 
+/**
+ * THE ARRANGEMENT CLOCK — and the extra time given ONLY where the boards zone scrolls.
+ *
+ * TIMER-NOT-LAYOUT 2026-09-08. Roye's ruling, after three options were put to him: the problem was
+ * never the scroll, it is scrolling UNDER A CLOCK. Card sizes, _FIT_SAFETY and the 83px arc are all
+ * off-limits and were left byte-identical; this is a timer change and nothing else.
+ *
+ * MEASURED, both engines, before anything was changed (docs/reporter-and-board4/board-fit-*.json):
+ *     320x568  2P (4 boards)   viewport 206 / content 477   271px hidden   ratio 2.32
+ *     320x568  3P (3 boards)   viewport 254 / content 367   113px hidden   ratio 1.45
+ *     393x852  2P (4 boards)   viewport 512 / content 556    44px hidden   ratio 1.09
+ *     320/4P · 393/3P · 393/4P                               nothing hidden
+ *
+ * ⚠️ HOW THE EXTRA TIME IS DERIVED, rather than guessed. The base clock is enough for a layout
+ * whose boards are ALL visible. Where only a fraction of the stack is on screen, the player must
+ * traverse the whole of it, so the clock scales by exactly that fraction:
+ *
+ *     seconds = ceil(baseSeconds * boardsContentH / boardsAvailH)
+ *
+ * Both figures come from useGameLayout — the SAME two numbers that already decide `boardsScroll` —
+ * so the clock follows the real condition and there is no second opinion to drift from the first.
+ * ⚠️ NOT A TYPED LIST of widths and player counts: a viewport nobody has measured yet gets the
+ * right clock on the day it appears, and a layout that stops overflowing silently returns to base.
+ *
+ * ⚠️ maxScrollMultiplier IS THE ONE TYPED NUMBER, and it is a guard, not a tuning knob. The worst
+ * cell measured today is 2.32x, so at 2.6 the cap does NOT bite any real layout — it exists only so
+ * a future pathological viewport cannot mint a two-minute clock. If a real device ever hits it, the
+ * cap is the wrong answer and the layout is the thing to look at.
+ */
+export const ARRANGE_CLOCK = {
+  baseSeconds: 30,
+  maxScrollMultiplier: 2.6,
+};
+
+/** Seconds on the arrangement clock for a given boards zone. Base unless it actually overflows. */
+export function getArrangeSeconds(opts: {
+  boardsScroll: boolean;
+  boardsContentH: number;
+  boardsAvailH: number;
+}): number {
+  const { baseSeconds, maxScrollMultiplier } = ARRANGE_CLOCK;
+  // ⚠️ Nothing hidden -> base, unchanged. A longer clock on a layout that fits is a worse game.
+  if (!opts.boardsScroll || opts.boardsAvailH <= 0) return baseSeconds;
+  const ratio = opts.boardsContentH / opts.boardsAvailH;
+  if (!Number.isFinite(ratio) || ratio <= 1) return baseSeconds;
+  return Math.ceil(baseSeconds * Math.min(ratio, maxScrollMultiplier));
+}
+
+
+
 /** Board count depends on player count (52-card deck constraint) */
 export function getBoardCount(numberOfPlayers: number): number {
   if (numberOfPlayers === 3) return 3;
