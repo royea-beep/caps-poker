@@ -1,5 +1,8 @@
 # G PROMPT: CAPS Poker React Hooks Crash Fix
 
+> ⚠️ HISTORICAL PROMPT (March 2026) — do not paste as-is; the hooks crash it targets was closed (`app_config.hooks_crash_known = false`). *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 ## OBJECTIVE
 Fix the React hooks ordering violation causing 92% of real crashes in CAPS Poker Build 266.
 

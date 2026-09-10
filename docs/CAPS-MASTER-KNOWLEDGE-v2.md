@@ -1,4 +1,7 @@
 # CAPS POKER — Master Knowledge Base v2
+
+> ⚠️ STALE HEADER AND IDENTITY (audit 2026-09-10: 27 stale claims). The app is 2.7.0 / build 515, not v1.9.3 / b104 / EAS #117; it is a multi-board placement game (2P=4, 3P=3, 4P=2 boards), not Omaha; the repo is PUBLIC, not private; tests are 2,846/53 on main. Read the root `CLAUDE.md` first. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Date:** 2026-03-20 | **Version:** v1.9.3 | Code b104 | EAS #117 | **Tests:** 115/115
 
 ---

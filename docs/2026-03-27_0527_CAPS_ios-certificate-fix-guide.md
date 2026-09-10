@@ -1,4 +1,7 @@
 # 🔐 iOS Certificate Fix — Step-by-Step
+
+> ⚠️ HISTORICAL (March 2026). The secret names it tells you to set (`DISTRIBUTION_CERTIFICATE_*`) are read by no workflow here — the live pipeline reads `BUILD_CERT_P12_BASE64` / `BUILD_PROVISIONING_PROFILE_*` / `APPLE_API_*` — and a push to main no longer builds (`ios-testflight.yml` is dispatch-only). *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 ### Fixes TestFlight for: WINGMAN, Caps Poker, PostPilot, 9Soccer
 ### March 27, 2026
 

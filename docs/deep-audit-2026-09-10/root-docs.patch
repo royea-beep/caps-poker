@@ -1,3 +1,54 @@
+diff --git a/APPSTORE_METADATA.md b/APPSTORE_METADATA.md
+index c00df6d..ec1da34 100644
+--- a/APPSTORE_METADATA.md
++++ b/APPSTORE_METADATA.md
+@@ -1,5 +1,8 @@
+ # App Store Connect Metadata
+ 
++> ⚠️ STALE LISTING COPY (2026-07-18). It says single-player, no login, local-WiFi multiplayer, no internet required — the app signs in to Supabase anonymously at launch, local WiFi was retired 2026-06-25, and multiplayer is Supabase Realtime. The current listing draft is `docs/listing/` on branch `claude/vamos-caps-align-celebration-flppo0` and `docs/last-gaps/THE-LAST-GAPS-2026-09-08.md`. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Required for App Store Review
+ 
+ ### App Information
+diff --git a/AUDIT_REPORT.md b/AUDIT_REPORT.md
+index 0e78c95..633725f 100644
+--- a/AUDIT_REPORT.md
++++ b/AUDIT_REPORT.md
+@@ -1,5 +1,8 @@
+ # Caps Poker — Cross-Project Audit Report
+ 
++> ⚠️ HISTORICAL (March 2026 cross-project audit). Its TestFlight path (`eas build`) is gone — the Expo account is disabled; builds come from `.github/workflows/ios-testflight.yml`. 'No backend' is false: 73 tables, 198 functions, 14 edge functions. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Immediate Wins (copy as-is this sprint)
+ 
+ | Item | Source Project | File | What it does |
+diff --git a/BUILD_INSTRUCTIONS.md b/BUILD_INSTRUCTIONS.md
+index e027eed..9726ef6 100644
+--- a/BUILD_INSTRUCTIONS.md
++++ b/BUILD_INSTRUCTIONS.md
+@@ -1,5 +1,8 @@
+ # How to Build Caps Poker
+ 
++> ⚠️ STALE — EAS builds are unavailable (Expo account disabled since 2026-08-06). The build procedure is Actions → `iOS TestFlight (Expo-free)` (`ios-testflight.yml`, workflow_dispatch), which reads `ios.buildNumber` from `app.json`. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Development Build (for testing multiplayer)
+ ```
+ eas build --platform ios --profile development
+diff --git a/CAPS_POKER_MASTER.md b/CAPS_POKER_MASTER.md
+index 0d711de..dfc99a9 100644
+--- a/CAPS_POKER_MASTER.md
++++ b/CAPS_POKER_MASTER.md
+@@ -1,4 +1,7 @@
+ # CAPS POKER — Master Project Summary
++
++> ⚠️ HISTORICAL (Sprint 18, March 2026). `app/summary.tsx`, `lobby/host.tsx`, `lobby/join.tsx`, `gameServer.ts`, `gameClient.ts` no longer exist; the post-hand screen is `app/results.tsx`; starting chips are 2,000, not 1,000. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
+ _עודכן: 11.3.2026 | Sprint 18 Complete_
+ 
+ ---
 diff --git a/CAPS_STATE.md b/CAPS_STATE.md
 index 3646583..ab58ce9 100644
 --- a/CAPS_STATE.md
@@ -57,6 +108,19 @@ index c5ea36f..34c7068 100644
 +1. Merge (or deliberately not merge) `claude/vamos-caps-align-celebration-flppo0` so main matches the database
 +2. Close the anon-readable views and the RLS-off ledger archive (FINDINGS #1, #2)
 +3. Replace the three placeholder sound files so a lost board does not play the win sound
+diff --git a/DEV_BUILD_GUIDE.md b/DEV_BUILD_GUIDE.md
+index 2c81022..da58df7 100644
+--- a/DEV_BUILD_GUIDE.md
++++ b/DEV_BUILD_GUIDE.md
+@@ -1,5 +1,8 @@
+ # Caps Poker — Development Build Guide
+ 
++> ⚠️ STALE — describes an EAS dev client for local-WiFi multiplayer. `react-native-tcp-socket` is imported by no source file, local WiFi was retired 2026-06-25, and there is no EAS build page any more. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Why you need a dev build
+ react-native-tcp-socket (used for local multiplayer) requires native code
+ that is NOT included in Expo Go.
 diff --git a/IRON_RULES.md b/IRON_RULES.md
 index 76fcb91..9420065 100644
 --- a/IRON_RULES.md
@@ -74,6 +138,19 @@ index 76fcb91..9420065 100644
 +#   has been false since spring. The universal Git / Code / Database / Payments rules still stand.
  
  ## UNIVERSAL RULES (all projects)
+ 
+diff --git a/PREPLAN.md b/PREPLAN.md
+index cf02a65..f32f2a1 100644
+--- a/PREPLAN.md
++++ b/PREPLAN.md
+@@ -1,5 +1,8 @@
+ # CAPS POKER — PREPLAN
+ 
++> ⚠️ STALE (2026-06-25). Native is build 515 (nine builds 509–515 shipped from main since 2026-08-28), OTA publishing is blocked (Expo account disabled), and the 'Where we are' section describes June. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ > North star: **App Store launch** of a polished **single-player** experience + a **working
+ > multiplayer lobby**. iOS first (TestFlight → App Store), Android + web alongside.
  
 diff --git a/PROJECT-INFO.json b/PROJECT-INFO.json
 index 78755d3..a6649e0 100644
@@ -127,6 +204,19 @@ index 19bff89..37119c4 100644
  - WhatsApp QA pipeline (VAMOS) is active
  
  ## Token Discipline
+diff --git a/QA_CHECKLIST.md b/QA_CHECKLIST.md
+index b538772..3fab22b 100644
+--- a/QA_CHECKLIST.md
++++ b/QA_CHECKLIST.md
+@@ -1,5 +1,8 @@
+ # Caps Poker — QA Checklist (Pre-TestFlight)
+ 
++> ⚠️ STALE (2026-03-24). 'New Hand' and 'Next Hand' controls do not exist (the control is REMATCH on `app/results.tsx`), `app/summary.tsx` was deleted in Sprint 44, and local-WiFi multiplayer is gone. The measured route index is `docs/deep-audit-2026-09-10/SCREENS.md`. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Core Game Flow
+ - [ ] App launches without crash
+ - [ ] Home screen shows chip balance
 diff --git a/README.md b/README.md
 index 36b6549..4a8133d 100644
 --- a/README.md
@@ -158,3 +248,55 @@ index 36b6549..4a8133d 100644
  
  ## What this project does NOT do
  - No real-money transactions
+diff --git a/SSL-INSTRUCTIONS.md b/SSL-INSTRUCTIONS.md
+index 63019c1..d722bd8 100644
+--- a/SSL-INSTRUCTIONS.md
++++ b/SSL-INSTRUCTIONS.md
+@@ -1,5 +1,8 @@
+ # SSL Fix for caps.ftable.co.il
+ 
++> ⚠️ HISTORICAL — caps.ftable.co.il is served by Vercel (A 76.76.21.21, verified 2026-09-10), not by SPD shared hosting. Creating the A record this file describes would take the production web app off Vercel. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Problem
+ HTTPS fails for ALL subdomains on ftable.co.il shared hosting (SPD).
+ Apache serves `compass.spd.co.il` cert instead of the correct domain cert.
+diff --git a/TASKLIST.md b/TASKLIST.md
+index 1ae8e0d..9bea3be 100644
+--- a/TASKLIST.md
++++ b/TASKLIST.md
+@@ -1,5 +1,8 @@
+ # CAPS POKER — TASKLIST
+ 
++> ⚠️ STALE (2026-06-25, main e046314). Build is 515 not 506/507, OTA is blocked (Expo account disabled), and the room_players/game_rooms RLS item was done on 2026-07-26 (`20260726100000_rls_write_lockdown.sql`). *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ _Last updated: 2026-06-25 · main `e046314`. Status: ✅ done · 🟡 in progress/partial · ⬜ not started · 🔒 owner-gated_
+ 
+ See **PREPLAN.md** for the phase/north-star framing.
+diff --git a/TESTFLIGHT_GUIDE.md b/TESTFLIGHT_GUIDE.md
+index 4bfeb7c..ea57f6e 100644
+--- a/TESTFLIGHT_GUIDE.md
++++ b/TESTFLIGHT_GUIDE.md
+@@ -1,5 +1,8 @@
+ # Caps Poker — TestFlight Guide
+ 
++> ⚠️ STALE — the Expo/EAS account is disabled and not coming back. TestFlight builds are produced by `.github/workflows/ios-testflight.yml` (prebuild → xcodebuild → altool) and managed by `testflight-manage.yml`. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ ## Prerequisites
+ - Expo account at https://expo.dev
+ - Apple Developer account ($99/year)
+diff --git a/caps-backlog.md b/caps-backlog.md
+index 0a06b00..8ccd29b 100644
+--- a/caps-backlog.md
++++ b/caps-backlog.md
+@@ -1,5 +1,8 @@
+ # CAPS Poker — Backlog (post build-466 COUNCIL audit, 2026-06-08)
+ 
++> ⚠️ DATED BACKLOG (2026-06-08, build 466). At least nine items marked open were fixed since (e.g. the `Board.tsx` 44×44 targets on 2026-07-08 and the bot-card accessibility labels); re-status against `main` before acting on any line. *(banner added 2026-09-10 by the deep audit; body left as written — read `CLAUDE.md` for the live state)*
++
++
+ Non-blocking findings from the 5-perspective audit on commit `4347c6e3` / branch state through `a0122dad`. Logged for a future cleanup pass; do NOT need a separate build to address.
+ 
+ Severity legend: **CRITICAL** (real bug, blocks shipping) · **HIGH** (real bug, ship-around) · **MEDIUM** (tech debt) · **LOW** (nit)

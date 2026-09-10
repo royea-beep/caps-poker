@@ -15,7 +15,7 @@ Source: `.github/workflows/` on `ef55640` and the GitHub Actions API (workflows 
 | asc-cert-audit.yml | ASC Certificate Audit (read-only) | active | workflow_dispatch | 1 | 2026-08-06 | success | |
 | asc-create-caps-profile.yml | ASC - Create CAPS profile (one-shot) | active | workflow_dispatch | 2 | 2026-08-06 | success | |
 | asc-fetch-profile.yml | ASC - Fetch provisioning profile (one-shot) | active | workflow_dispatch | 1 | 2026-08-06 | success | |
-| ios-testflight-free.yml | iOS TestFlight (FREE — macOS runner) | active | workflow_dispatch | 59 | 2026-06-25 | success | dormant since June; superseded by ios-testflight.yml |
+| ios-testflight-free.yml | iOS TestFlight (FREE — macOS runner) | active | push tags `build-*` + workflow_dispatch | 59 | 2026-06-25 | success | dormant since June; superseded by ios-testflight.yml |
 | ios-testflight-DISABLED.yml | iOS TestFlight (DISABLED 2026-05-22 …) | **active** | workflow_dispatch | 0 | never | — | KNOWN name-vs-content: dispatchable, named DISABLED; 0 runs |
 | asc-submit.yml | Submit to App Store Review | active | workflow_dispatch | 3 | 2026-04-09 | **failure** | never succeeded; do not dispatch |
 | delete-asc-version.yml | Delete ASC Version | active | workflow_dispatch | 1 | 2026-04-06 | success | destructive; one-shot |

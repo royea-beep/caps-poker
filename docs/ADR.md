@@ -1,4 +1,7 @@
 # Caps Poker — Architecture Decision Records (ADR)
+
+> ⚠️ HISTORICAL DECISIONS, several superseded: EAS-managed credentials (`credentialsSource: remote`), EAS OTA and `newArchEnabled: false` no longer describe the product — the Expo account is disabled, builds are Expo-free (`.github/workflows/ios-testflight.yml`), `extra.buildNumber` is abandoned at 330, the build number is `app.json` `ios.buildNumber` (515), and `newArchEnabled` is absent from `app.json`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
 **Date:** 2026-03-20 | **Format:** lightweight ADR
 
 Each decision: Context → Options → Choice → Consequences

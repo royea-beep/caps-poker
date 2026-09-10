@@ -94,6 +94,8 @@ URL to paste: `https://[supabase-ref].supabase.co/functions/v1/whatsapp-bot-hand
 ---
 
 ### 8. buildNumber in app.json Ignored When versionSource=remote
+> ⚠️ Correction 2026-09-10: no longer true here. `eas.json` `appVersionSource` is `local`, the Expo account is disabled, and CI (`ios-testflight.yml`) reads `ios.buildNumber` from `app.json` (515). `extra.buildNumber` is an abandoned hand-maintained field stuck at 330; `VersionBadge.tsx` reads `nativeBuildVersion` first for exactly that reason.
+
 **Gotcha:** When using EAS with `versionSource: "remote"`, the `ios.buildNumber` in app.json is ignored. EAS uses its own auto-incrementing build number.
 
 **Fix for VersionBadge:** Read `extra.buildNumber` instead of `ios.buildNumber`:

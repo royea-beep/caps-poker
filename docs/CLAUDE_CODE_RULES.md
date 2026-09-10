@@ -1,5 +1,8 @@
 # CLAUDE.md — CAPS Poker (for Claude Code)
 
+> ⚠️ NOT THE FILE THAT LOADS. The repo-root `CLAUDE.md` is a different, newer document; this one is never read by Claude Code (audit 2026-09-10: 16 stale claims — EAS native builds, the removed `Card.tsx` legacy branch, drag/drop handlers that do not exist). Read the root `CLAUDE.md`. *(banner added 2026-09-10 by the deep audit; body left as written)*
+
+
 This file is read at the start of every Claude Code session. Place at repo root.
 
 ## Project at a glance
