@@ -59,6 +59,7 @@ No repo file reads any of these views (grep, 2026-09-10); the only mention is ME
 
 ## What was NOT found (searched, not assumed)
 
+- **One claim of my own withdrawn.** The truth sheet handed to the doc agents said the game is "not Omaha". That was an over-statement from reading `IRON_RULES.md`'s project block as stale: per-board evaluation IS Omaha-style (`utils/handEvaluator.ts` `evaluateOmahaHand`, used by `utils/gameLogic.ts:114` and `resolve-hand`), and "under Omaha rules" in the 2026-09-08 listing draft is a wording choice, not an error. Every "Omaha is wrong" line the agents produced was discarded and the three banners it leaked into were corrected before commit. What remains true: `IRON_RULES.md`'s project block is stale on the theme ("Central Perk") and on "no backend".
 - No live cron failure: all 31 jobs succeeded every run in the last 7 days; the `up.is_bot does not exist` and `push_log.user_id` failures on the four push jobs are from 2026-04-12/13 and have not recurred.
 - No stale bundle on the web: `web-deploy.yml` ran on `ef55640` at 2026-09-09 10:47 and the live site serves `index-cf4906c09ea1adde3053d25b9b93326b.js`; `/nope.png` and `/definitely-missing.html` return honest 404s.
 - No `caps-explainer-FINAL.mp4` vendored under any name; the shipped clip is pinned by sha in `public/landing.html`.
