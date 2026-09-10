@@ -1,0 +1,48 @@
+# VERCEL CONFIG SCHEMA CHECK — runs where Vercel's own validator runs: on every push, every branch.
+#
+# WHY A WORKFLOW OF ITS OWN, AND NOT A STEP IN web-deploy.yml.
+# The failure this catches happens on the Vercel GIT-INTEGRATION deploy, which fires on every push
+# to every branch. web-deploy.yml fires only on push to main/master and skips docs-only pushes
+# (paths-ignore), so a step inside it could not have seen the two most recent failures at all —
+# both were docs-only commits on main. This runs wherever the thing it guards can break.
+#
+# WHAT IT CAUGHT, MEASURED 2026-09-10. tests/vercel-rewrites.test.ts already validated the root
+# config and reported 56 of 56 PASSING while every Git-integration deploy was failing schema
+# validation: it checked key NAMES against an allowlist and never a value's LENGTH, and the prose
+# that broke the deploys was 1,158 characters inside `installCommand` (cap 256). Four of its 56
+# assertions actively required that prose to be there. No workflow ran it either — jest appears in
+# claude-fix.yml and nowhere else, so the deploy path never executed it once.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+name: vercel config
+
+jobs:
+  validate:
+    name: vercel.json would pass Vercel's validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The self-test runs FIRST and blocks. A checker that cannot refuse is decoration, and this
+      # proves it still refuses BOTH shapes that actually took production down — the 2026-09-03
+      # comment KEY and the 2026-09-08 over-long VALUE — plus accepts the current file, so a
+      # checker that has been broken into always-pass fails the run rather than blessing it.
+      - name: Self-test — the checker still refuses both historical shapes
+        run: node scripts/check-vercel-config.mjs --self-test
+
+      - name: Validate root AND generated vercel.json
+        run: node scripts/check-vercel-config.mjs
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## vercel.json schema check"
+            node scripts/check-vercel-config.mjs 2>&1 || true
+          } >> "$GITHUB_STEP_SUMMARY"
